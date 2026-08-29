@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->timestamps();
 
-            $table->foreignId('roads_id')
+            $table->foreignId('road_id')
                 ->constrained('roads');
             $table->foreignId('project_id')
                 ->constrained('maintenance_projects');

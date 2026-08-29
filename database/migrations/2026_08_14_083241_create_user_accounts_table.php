@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('username');
             $table->string('password');
             $table->string('role');
-            $table->string('is_active');
+            $table->boolean('is_active');
             $table->timestamps();
 
             $table->foreignId('engineer_id')

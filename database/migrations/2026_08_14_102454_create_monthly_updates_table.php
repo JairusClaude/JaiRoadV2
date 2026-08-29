@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('monthly_updates', function (Blueprint $table) {
             $table->id();
-            $table->date('update_month');
+            $table->string('update_month');
             $table->integer('progress_percentage');
             $table->text('summary_of_text_reports');
             $table->timestamps('');
