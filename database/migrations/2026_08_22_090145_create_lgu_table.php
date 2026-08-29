@@ -22,8 +22,8 @@ return new class extends Migration
             $table->string('mayor_last_name');
             $table->timestamps('');
 
-        $table->foreignId('created_by')
-            ->constrained('user_accounts');
+            $table->foreignId('created_by')
+                ->constrained('user_accounts');
         });
     }
 

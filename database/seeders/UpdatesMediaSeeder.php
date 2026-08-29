@@ -38,7 +38,7 @@ class UpdatesMediaSeeder extends Seeder
                 'monthly_updates_id' => 4,
             ],
         ];
-            foreach ($updatesMedias as $updatesMediasData) {
+        foreach ($updatesMedias as $updatesMediasData) {
             UpdatesMedia::create($updatesMediasData);
         }
     }

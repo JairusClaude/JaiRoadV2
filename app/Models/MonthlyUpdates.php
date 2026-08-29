@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Model;
 
 #[Fillable([
     'maintenance_project_id',
@@ -15,11 +15,13 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 
 class MonthlyUpdates extends Model
 {
-    public function userAccount(){
-    return $this->belongsTo(UserAccounts::class, 'created_by');
-}
+    public function userAccount()
+    {
+        return $this->belongsTo(UserAccounts::class, 'created_by');
+    }
 
-    public function maintenanceProject(){
-    return $this->belongsTo(MaintenanceProjects::class, 'maintenance_project_id');
-}
+    public function maintenanceProject()
+    {
+        return $this->belongsTo(MaintenanceProjects::class, 'maintenance_project_id');
+    }
 }

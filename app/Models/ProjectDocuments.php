@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Model;
 
 #[Fillable([
     'document_title',
@@ -15,12 +15,13 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 ])]
 class ProjectDocuments extends Model
 {
-        public function userAccount(){
-    return $this->belongsTo(UserAccounts::class, 'uploaded_by');
-}
+    public function userAccount()
+    {
+        return $this->belongsTo(UserAccounts::class, 'uploaded_by');
+    }
 
-    public function maintenanceProject(){
-    return $this->belongsTo(MaintenanceProjects::class, 'maintenance_project_id',);
-}
-
+    public function maintenanceProject()
+    {
+        return $this->belongsTo(MaintenanceProjects::class, 'maintenance_project_id');
+    }
 }

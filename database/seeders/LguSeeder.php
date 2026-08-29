@@ -12,7 +12,7 @@ class LguSeeder extends Seeder
      */
     public function run(): void
     {
-         $lgu = [
+        $lgu = [
             [
                 'municipality_name' => 'Compostela',
                 'province' => 'Davao del Norte',

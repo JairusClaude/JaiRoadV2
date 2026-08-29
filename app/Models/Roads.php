@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Model;
 
 #[Fillable([
     'road_name',
@@ -15,11 +15,13 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 
 class Roads extends Model
 {
-    public function userAccount(){
-    return $this->belongsTo(UserAccounts::class, 'created_by');
-}
+    public function userAccount()
+    {
+        return $this->belongsTo(UserAccounts::class, 'created_by');
+    }
 
-    public function lgu(){
-    return $this->belongsTo(Lgu::class, 'lgu_id');
-}
+    public function lgu()
+    {
+        return $this->belongsTo(Lgu::class, 'lgu_id');
+    }
 }

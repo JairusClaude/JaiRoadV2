@@ -12,7 +12,7 @@ class MaintenanceProjectsSeeder extends Seeder
      */
     public function run(): void
     {
-         $maintenanceProject = [
+        $maintenanceProject = [
             [
                 'project_title' => 'Project_Maintainance_1',
                 'description' => 'Road Maintenance',

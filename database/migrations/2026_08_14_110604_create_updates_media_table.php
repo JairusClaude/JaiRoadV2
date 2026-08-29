@@ -19,8 +19,8 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreignId('monthly_updates_id')
-                ->constrained('monthly_updates');        
-                
+                ->constrained('monthly_updates');
+
         });
     }
 

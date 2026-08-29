@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Model;
 
 #[Fillable([
     'first_name',
@@ -17,12 +17,15 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
     'created_by',
 ])]
 
-class Engineer extends Model{
-    public function lgu(){
+class Engineer extends Model
+{
+    public function lgu()
+    {
         return $this->belongsTo(Lgu::class, 'lgu_id');
-}
+    }
 
-    public function userAccount(){
+    public function userAccount()
+    {
         return $this->belongsTo(UserAccounts::class, 'created_by');
-}
+    }
 }

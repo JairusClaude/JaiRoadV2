@@ -46,7 +46,7 @@ class ProjectDocumentsSeeder extends Seeder
                 'project_id' => 4,
                 'uploaded_by' => 4,
             ],
-            
+
         ];
         foreach ($projectDocuments as $projectDocumentsData) {
             ProjectDocuments::create($projectDocumentsData);

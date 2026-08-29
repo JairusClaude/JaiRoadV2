@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Model;
 
 #[Fillable([
     'road_id',
@@ -12,12 +12,13 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 
 class RoadNetwork extends Model
 {
-    public function roads(){
-    return $this->belongsTo(Roads::class, 'road_id');
-}
+    public function roads()
+    {
+        return $this->belongsTo(Roads::class, 'road_id');
+    }
 
-    public function maintenanceProject(){
-    return $this->belongsTo(MaintenanceProjects::class, 'project_id');
-}
-
+    public function maintenanceProject()
+    {
+        return $this->belongsTo(MaintenanceProjects::class, 'project_id');
+    }
 }

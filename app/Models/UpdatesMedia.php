@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Model;
 
 #[Fillable([
     'monthly_updates_id',
@@ -11,14 +11,17 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
     'file_path',
     'file_type',
     'created_by',
-    
+
 ])]
 class UpdatesMedia extends Model
 {
-    public function monthlyUpdate(){
-    return $this->belongsTo(MonthlyUpdates::class, 'monthly_updates_id');
-}
-    public function userAccount(){
-    return $this->belongsTo(UserAccounts::class, 'created_by');
-}
+    public function monthlyUpdate()
+    {
+        return $this->belongsTo(MonthlyUpdates::class, 'monthly_updates_id');
+    }
+
+    public function userAccount()
+    {
+        return $this->belongsTo(UserAccounts::class, 'created_by');
+    }
 }

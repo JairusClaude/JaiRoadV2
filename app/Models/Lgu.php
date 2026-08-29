@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Model;
 
 #[Fillable([
     'municipality_name',
@@ -18,7 +18,8 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 
 class Lgu extends Model
 {
-    public function userAccount(){
-    return $this->belongsTo(UserAccounts::class, 'created_by');
-}
+    public function userAccount()
+    {
+        return $this->belongsTo(UserAccounts::class, 'created_by');
+    }
 }

@@ -18,10 +18,10 @@ return new class extends Migration
             $table->text('summary_of_text_reports');
             $table->timestamps('');
 
-        $table->foreignId('created_by')
-            ->constrained('user_accounts');
-        $table->foreignId('maintenance_projects_id')
-            ->constrained('maintenance_projects');
+            $table->foreignId('created_by')
+                ->constrained('user_accounts');
+            $table->foreignId('maintenance_projects_id')
+                ->constrained('maintenance_projects');
         });
     }
 
