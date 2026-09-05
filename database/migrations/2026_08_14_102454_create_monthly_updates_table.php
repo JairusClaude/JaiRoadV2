@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('update_month');
             $table->integer('progress_percentage');
             $table->text('summary_of_text_reports');
-            $table->timestamps('');
+            $table->timestamps();
 
             $table->foreignId('created_by')
                 ->constrained('user_accounts');

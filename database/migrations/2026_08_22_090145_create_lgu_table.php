@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('mayor_first_name');
             $table->string('mayor_middle_name');
             $table->string('mayor_last_name');
-            $table->timestamps('');
+            $table->timestamps();
 
             $table->foreignId('created_by')
                 ->constrained('user_accounts');

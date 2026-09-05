@@ -22,6 +22,8 @@ return new class extends Migration
                 ->constrained('user_accounts');
             $table->foreignId('lgu_id')
                 ->constrained('lgu');
+            $table->foreignId('road_id')
+                ->constrained('roads');
         });
     }
 

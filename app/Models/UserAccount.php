@@ -1,0 +1,40 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+
+#[Fillable([
+    'username',
+    'password',
+    'role',
+    'is_active',
+    'engineer_id',
+    'created_by', //creator_id
+])]
+class UserAccount extends Model
+{
+    public function engineer(): BelongsTo
+    {
+        return $this->belongsTo(Engineer::class, 'engineer_id');
+    }
+    public function maintenanceProjects(): HasMany
+    {
+        return $this->hasMany(UserAccount::class);
+    }
+
+    
+    public function accCreator(): HasMany  //admin creates many account
+    {
+        return $this->hasMany(UserAccount::class, 'created_by');
+    }
+    public function createdBy(): BelongsTo  //account created by one creator
+    {
+        return $this->belongsTo(UserAccount::class, 'created_by');
+    }
+    
+}

@@ -20,10 +20,10 @@ return new class extends Migration
             $table->integer('contact_no');
             $table->string('rank');
             $table->string('position');
-            $table->timestamps('');
+            $table->timestamps();
 
-            $table->foreignId('lgu_id')
-                ->constrained('lgu');
+            $table->foreignId('lgu_id')  //[NEED RECONFIRMATION: NOT IN ERD]
+                 ->constrained('lgu');
             $table->foreignId('created_by')
                 ->constrained('user_accounts');
         });

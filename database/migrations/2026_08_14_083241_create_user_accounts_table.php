@@ -13,14 +13,19 @@ return new class extends Migration
     {
         Schema::create('user_accounts', function (Blueprint $table) {
             $table->id();
-            $table->string('username');
+            $table->string('username') -> unqiue();
             $table->string('password');
-            $table->string('role');
             $table->boolean('is_active');
             $table->timestamps();
+            $table->enum('role', ['user', 'admin']);
 
             $table->foreignId('engineer_id')
-                ->constrained('engineer');
+                ->constrained('engineer')
+                ->unique();
+            $table->foreignId('created_by')
+                ->nullable()
+                ->constrained('user_accounts')
+                ->nullOnDelete();
         });
     }
 
