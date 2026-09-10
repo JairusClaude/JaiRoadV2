@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Roads;
+use App\Models\Road;
 use Illuminate\Database\Seeder;
 
 class RoadsSeeder extends Seeder
@@ -43,7 +43,7 @@ class RoadsSeeder extends Seeder
             ],
         ];
         foreach ($roads as $roadsData) {
-            Roads::create($roadsData);
+            Road::create($roadsData);
         }
     }
 }

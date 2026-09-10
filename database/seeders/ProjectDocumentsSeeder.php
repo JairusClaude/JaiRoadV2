@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\ProjectDocuments;
+use App\Models\ProjectDocument;
 use Illuminate\Database\Seeder;
 
 class ProjectDocumentsSeeder extends Seeder
@@ -49,7 +49,7 @@ class ProjectDocumentsSeeder extends Seeder
 
         ];
         foreach ($projectDocuments as $projectDocumentsData) {
-            ProjectDocuments::create($projectDocumentsData);
+            ProjectDocument::create($projectDocumentsData);
         }
     }
 }

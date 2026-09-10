@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\UserAccounts;
+use App\Models\UserAccount;
 use Illuminate\Database\Seeder;
 
 class UserAccountsSeeder extends Seeder
@@ -43,7 +43,7 @@ class UserAccountsSeeder extends Seeder
             ],
         ];
         foreach ($userAccounts as $userAccountsData) {
-            UserAccounts::create($userAccountsData);
+            UserAccount::create($userAccountsData);
         }
     }
 }
