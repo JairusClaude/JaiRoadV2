@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-//REMEMBER TO USE "git checkout -b my-feature" instead of commiting to main
+// REMEMBER TO USE "git checkout -b my-feature" instead of commiting to main
 #[Fillable([
     'first_name',
     'middle_name',
@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'position',
     'lgu_id', // NEED CONFIRMATION NOT IN ERD
     'created_by',
-])] 
+])]
 class Engineer extends Model
 {
     public function lgu(): BelongsTo
