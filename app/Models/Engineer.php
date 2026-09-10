@@ -21,21 +21,25 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class Engineer extends Model
 {
+    /** @return BelongsTo<Lgu, Engineer> */
     public function lgu(): BelongsTo
     {
         return $this->belongsTo(Lgu::class, 'lgu_id');
     }
 
+    /** @return BelongsTo<UserAccount, Engineer> */
     public function userAccount(): BelongsTo
     {
         return $this->belongsTo(UserAccount::class, 'engineer_id');
     }
 
+    /** @return BelongsTo<UserAccount, Engineer> */
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(UserAccount::class, 'created_by');
     }
 
+    /** @return HasMany<MaintenanceProject, Engineer> */
     public function maintenanceProjects(): HasMany
     {
         return $this->hasMany(MaintenanceProject::class);

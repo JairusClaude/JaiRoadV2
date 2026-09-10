@@ -17,16 +17,19 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MonthlyUpdate extends Model
 {
+    /** @return BelongsTo<UserAccount, MonthlyUpdate> */
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(UserAccount::class, 'created_by');
     }
 
+    /** @return BelongsTo<MaintenanceProject, MonthlyUpdate> */
     public function maintenanceProject(): BelongsTo
     {
         return $this->belongsTo(MaintenanceProject::class, 'maintenance_projects_id');
     }
 
+    /** @return HasMany<UpdatesMedia, MonthlyUpdate> */
     public function updatesMedia(): HasMany
     {
         return $this->hasMany(UpdatesMedia::class);

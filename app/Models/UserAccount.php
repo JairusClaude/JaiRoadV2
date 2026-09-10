@@ -18,21 +18,25 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class UserAccount extends Model
 {
+    /** @return BelongsTo<Engineer, UserAccount> */
     public function engineer(): BelongsTo
     {
         return $this->belongsTo(Engineer::class, 'engineer_id');
     }
 
+    /** @return HasMany<MaintenanceProject, UserAccount> */
     public function maintenanceProjects(): HasMany
     {
-        return $this->hasMany(UserAccount::class);
+        return $this->hasMany(MaintenanceProject::class);
     }
 
+    /** @return HasMany<UserAccount, UserAccount> */
     public function accCreator(): HasMany
     {
         return $this->hasMany(UserAccount::class, 'created_by');
     }
 
+    /** @return BelongsTo<UserAccount, UserAccount> */
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(UserAccount::class, 'created_by');

@@ -20,21 +20,25 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Lgu extends Model
 {
+    /** @return BelongsTo<UserAccount, Lgu> */
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(UserAccount::class, 'created_by');
     }
 
+    /** @return HasMany<Engineer, Lgu> */
     public function engineers(): HasMany
     {
         return $this->hasMany(Engineer::class, 'lgu_id');
     }
 
+    /** @return HasMany<Road, Lgu> */
     public function roads(): HasMany
     {
         return $this->hasMany(Road::class, 'lgu_id');
     }
 
+    /** @return HasMany<MaintenanceProject, Lgu> */
     public function maintenanceProjects(): HasMany
     {
         return $this->hasMany(MaintenanceProject::class, 'lgu_id');

@@ -16,11 +16,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class ProjectDocument extends Model
 {
+    /** @return BelongsTo<UserAccount, ProjectDocument> */
     public function uploadedBy(): BelongsTo
     {
         return $this->belongsTo(UserAccount::class, 'uploaded_by');
     }
 
+    /** @return BelongsTo<MaintenanceProject, ProjectDocument> */
     public function maintenanceProject(): BelongsTo
     {
         return $this->belongsTo(MaintenanceProject::class, 'maintenance_project_id');

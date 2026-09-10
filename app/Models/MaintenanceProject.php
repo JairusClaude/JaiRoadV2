@@ -22,38 +22,45 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class MaintenanceProject extends Model
 {
+    /** @return BelongsTo<Lgu, MaintenanceProject> */
     public function lgu(): BelongsTo
     {
         return $this->belongsTo(Lgu::class, 'lgu_id');
     }
 
+    /** @return BelongsTo<Engineer, MaintenanceProject> */
     public function managingEngineerID(): BelongsTo
     {
         return $this->belongsTo(Engineer::class, 'engineer_id');
     }
 
+    /** @return BelongsTo<UserAccount, MaintenanceProject> */
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(UserAccount::class, 'created_by');
     }
 
+    /** @return HasMany<Road, MaintenacePoject> */
     public function roads(): HasMany
     {
         return $this->hasMany(Road::class);
     }
 
+    /** @return HasMany<Road, MaintenanceProject> */
     public function projectDocuments(): HasMany
     {
-        return $this->hasMany(Road::class, 'maintenance_project_id');
+        return $this->hasMany(ProjectDocument::class, 'maintenance_project_id');
     }
 
+    /** @return HasMany<MonthlyUpdate, MaintenanceProject> */
     public function monthlyUpdates(): HasMany
     {
         return $this->hasMany(MonthlyUpdate::class, 'maintenance_project_id');
     }
 
+    /** @return HasOne<RoadNetwork, MaintenanceProject> */
     public function roadNetwork(): HasOne
     {
-        return $this->hasOne(RoadNetwork::class);
+        return $this->hasOne(RoadNetwork::class, 'maintenance_project_id');
     }
 }
