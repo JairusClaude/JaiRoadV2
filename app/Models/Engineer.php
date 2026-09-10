@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'position',
     'lgu_id', // NEED CONFIRMATION NOT IN ERD
     'created_by',
-])]
+])] //REMEMBER TO USE "git checkout -b my-feature" instead of commiting to main
 
 class Engineer extends Model
 {
