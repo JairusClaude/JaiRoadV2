@@ -22,6 +22,7 @@ class UpdatesMedia extends Model
     }
 
     public function uploadedBy(): BelongsTo // Check if this really is the parameter in the migration
-    {return $this->belongsTo(UserAccount::class, 'created_by');
+    {
+        return $this->belongsTo(UserAccount::class, 'created_by');
     }
 }
