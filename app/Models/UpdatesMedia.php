@@ -16,11 +16,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class UpdatesMedia extends Model
 {
-    public function monthlyUpdate(): BelongsTo{
+    public function monthlyUpdate(): BelongsTo
+    {
         return $this->belongsTo(MonthlyUpdate::class, 'monthly_updates_id');
     }
 
-    public function uploadedBy(): BelongsTo{ //Check if this really is the parameter in the migration
-        return $this->belongsTo(UserAccount::class, 'created_by');
+    public function uploadedBy(): BelongsTo // Check if this really is the parameter in the migration
+    {return $this->belongsTo(UserAccount::class, 'created_by');
     }
 }

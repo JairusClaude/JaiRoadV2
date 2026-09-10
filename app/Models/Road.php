@@ -13,8 +13,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'geojsondata',
     'created_by',
     'lgu_id',
-    'maintenance_project_id'
-])] //ADD PROJECTID IN ERD
+    'maintenance_project_id',
+])] // ADD PROJECTID IN ERD
 
 class Road extends Model
 {
@@ -28,11 +28,12 @@ class Road extends Model
         return $this->belongsTo(Lgu::class, 'lgu_id');
     }
 
-    public function roadNetwork(): HasOne  //NEED CONFIRMATION IF CORRECT SYNTAX AS WELL AS ELOQUENCT
+    public function roadNetwork(): HasOne  // NEED CONFIRMATION IF CORRECT SYNTAX AS WELL AS ELOQUENCT
     {
         return $this->HasOne(RoadNetwork::class);
     }
-    public function maintenanceProjects(): BelongsTo //need confirmation if correct
+
+    public function maintenanceProjects(): BelongsTo // need confirmation if correct
     {
         return $this->belongsTo(MaintenanceProject::class, 'maintenance_project_id');
     }

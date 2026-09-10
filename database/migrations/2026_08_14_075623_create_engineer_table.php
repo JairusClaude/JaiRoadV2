@@ -22,8 +22,8 @@ return new class extends Migration
             $table->string('position');
             $table->timestamps();
 
-            $table->foreignId('lgu_id')  //[NEED RECONFIRMATION: NOT IN ERD]
-                 ->constrained('lgu');
+            $table->foreignId('lgu_id')  // [NEED RECONFIRMATION: NOT IN ERD]
+                ->constrained('lgu');
             $table->foreignId('created_by')
                 ->constrained('user_accounts');
         });
