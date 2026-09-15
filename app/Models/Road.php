@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'geojsondata',
     'created_by',
     'lgu_id',
-    'maintenance_project_id'
+    'maintenance_project_id',
 ])]
 class Road extends Model
 {

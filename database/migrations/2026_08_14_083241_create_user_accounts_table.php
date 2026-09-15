@@ -22,7 +22,7 @@ return new class extends Migration
             $table->foreignId('engineer_id')
                 ->unique()
                 ->constrained('engineer');
-                
+
             $table->foreignId('created_by')
                 ->nullable()
                 ->constrained('user_accounts')
