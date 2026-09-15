@@ -31,13 +31,13 @@ class UserAccount extends Model
     }
 
     /** @return HasMany<UserAccount, UserAccount> */
-    public function accCreator(): HasMany
+    public function createdAccounts(): HasMany              //This creates account
     {
         return $this->hasMany(UserAccount::class, 'created_by');
     }
 
-    /** @return BelongsTo<UserAccount, UserAccount> */
-    public function createdBy(): BelongsTo
+    /** @return BelongsTo<UserAccount, UserAccount> */            
+    public function createdBy(): BelongsTo              
     {
         return $this->belongsTo(UserAccount::class, 'created_by');
     }

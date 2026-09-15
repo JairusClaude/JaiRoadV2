@@ -20,8 +20,9 @@ return new class extends Migration
             $table->enum('role', ['user', 'admin']);
 
             $table->foreignId('engineer_id')
-                ->constrained('engineer')
-                ->unique();
+                ->unique()
+                ->constrained('engineer');
+                
             $table->foreignId('created_by')
                 ->nullable()
                 ->constrained('user_accounts')

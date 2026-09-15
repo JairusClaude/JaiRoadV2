@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
-    'monthly_updates_id',
+    'monthly_update_id',
     'file_name',
     'file_path',
     'file_type',
@@ -19,7 +19,7 @@ class UpdatesMedia extends Model
     /** @return BelongsTo<MonthlyUpdate, UpdatesMedia> */
     public function monthlyUpdate(): BelongsTo
     {
-        return $this->belongsTo(MonthlyUpdate::class, 'monthly_updates_id');
+        return $this->belongsTo(MonthlyUpdate::class, 'monthly_update_id');
     }
 
     /** @return BelongsTo<UserAccount, UpdatesMedia> */
