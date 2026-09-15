@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\MonthlyUpdates;
+use App\Models\MonthlyUpdate;
 use Illuminate\Database\Seeder;
 
 class MonthlyUpdatesSeeder extends Seeder
@@ -44,7 +44,7 @@ class MonthlyUpdatesSeeder extends Seeder
         ];
 
         foreach ($monthlyUpdates as $monthlyUpdatesData) {
-            MonthlyUpdates::create($monthlyUpdatesData);
+            MonthlyUpdate::create($monthlyUpdatesData);
         }
     }
 }

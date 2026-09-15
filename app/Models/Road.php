@@ -38,7 +38,7 @@ class Road extends Model
     }
 
     /** @return BelongsTo<MaintenanceProject, Road> */
-    public function maintenanceProjects(): BelongsTo //need confirmation if correct
+    public function maintenanceProject(): BelongsTo //need confirmation if correct
     {
         return $this->belongsTo(MaintenanceProject::class, 'maintenance_project_id');
     }

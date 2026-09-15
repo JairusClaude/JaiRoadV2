@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\MaintenanceProjects;
+use App\Models\MaintenanceProject;
 use Illuminate\Database\Seeder;
 
 class MaintenanceProjectsSeeder extends Seeder
@@ -60,7 +60,7 @@ class MaintenanceProjectsSeeder extends Seeder
         ];
 
         foreach ($maintenanceProject as $maintenanceProjectData) {
-            MaintenanceProjects::create($maintenanceProjectData);
+            MaintenanceProject::create($maintenanceProjectData);
         }
     }
 }

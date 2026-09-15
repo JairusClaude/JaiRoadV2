@@ -40,13 +40,13 @@ class MaintenanceProject extends Model
         return $this->belongsTo(UserAccount::class, 'created_by');
     }
 
-    /** @return HasMany<Road, MaintenacePoject> */
+    /** @return HasMany<Road, MaintenancePoject> */
     public function roads(): HasMany
     {
         return $this->hasMany(Road::class);
     }
 
-    /** @return HasMany<Road, MaintenanceProject> */
+    /** @return HasMany<ProjectDocument, MaintenanceProject> */
     public function projectDocuments(): HasMany
     {
         return $this->hasMany(ProjectDocument::class, 'maintenance_project_id');

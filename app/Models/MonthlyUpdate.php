@@ -26,7 +26,7 @@ class MonthlyUpdate extends Model
     /** @return BelongsTo<MaintenanceProject, MonthlyUpdate> */
     public function maintenanceProject(): BelongsTo
     {
-        return $this->belongsTo(MaintenanceProject::class, 'maintenance_projects_id');
+        return $this->belongsTo(MaintenanceProject::class, 'maintenance_project_id');
     }
 
     /** @return HasMany<UpdatesMedia, MonthlyUpdate> */

@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+
 
 // REMEMBER TO USE "git checkout -b my-feature" instead of commiting to main
 #[Fillable([
@@ -28,9 +30,9 @@ class Engineer extends Model
     }
 
     /** @return BelongsTo<UserAccount, Engineer> */
-    public function userAccount(): BelongsTo
+    public function userAccount(): HasOne
     {
-        return $this->belongsTo(UserAccount::class, 'engineer_id');
+        return $this->hasOne(UserAccount::class, 'engineer_id');
     }
 
     /** @return BelongsTo<UserAccount, Engineer> */
