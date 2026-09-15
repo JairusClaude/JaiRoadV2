@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-//ADD PROJECTID IN ERD
+// ADD PROJECTID IN ERD
 #[Fillable([
     'road_name',
     'kilometers',
@@ -15,8 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'created_by',
     'lgu_id',
     'maintenance_project_id'
-])] 
-
+])]
 class Road extends Model
 {
     /** @return BelongsTo<UserAccount, Road> */
@@ -32,13 +31,13 @@ class Road extends Model
     }
 
     /** @return HasOne<RoadNetwork, Road> */
-    public function roadNetwork(): HasOne  //NEED CONFIRMATION IF CORRECT SYNTAX AS WELL AS ELOQUENCT
+    public function roadNetwork(): HasOne  // NEED CONFIRMATION IF CORRECT SYNTAX AS WELL AS ELOQUENCT
     {
-        return $this->HasOne(RoadNetwork::class);
+        return $this->hasOne(RoadNetwork::class);
     }
 
     /** @return BelongsTo<MaintenanceProject, Road> */
-    public function maintenanceProject(): BelongsTo //need confirmation if correct
+    public function maintenanceProject(): BelongsTo // need confirmation if correct
     {
         return $this->belongsTo(MaintenanceProject::class, 'maintenance_project_id');
     }
