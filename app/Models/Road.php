@@ -31,13 +31,13 @@ class Road extends Model
     }
 
     /** @return HasOne<RoadNetwork, Road> */
-    public function roadNetwork(): HasOne  // NEED CONFIRMATION IF CORRECT SYNTAX AS WELL AS ELOQUENCT
+    public function roadNetwork(): HasOne
     {
         return $this->hasOne(RoadNetwork::class);
     }
 
     /** @return BelongsTo<MaintenanceProject, Road> */
-    public function maintenanceProject(): BelongsTo // need confirmation if correct
+    public function maintenanceProject(): BelongsTo
     {
         return $this->belongsTo(MaintenanceProject::class, 'maintenance_project_id');
     }

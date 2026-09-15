@@ -30,7 +30,7 @@ class UserAccount extends Model
     }
 
     /** @return HasMany<UserAccount, UserAccount> */
-    public function createdAccounts(): HasMany // This creates account
+    public function createdAccounts(): HasMany
     {
         return $this->hasMany(UserAccount::class, 'created_by');
     }

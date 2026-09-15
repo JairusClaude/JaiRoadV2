@@ -28,7 +28,7 @@ class Engineer extends Model
         return $this->belongsTo(Lgu::class, 'lgu_id');
     }
 
-    /** @return BelongsTo<UserAccount, Engineer> */
+    /** @return HasOne<UserAccount, Engineer> */ // Changed from BelongsTo
     public function userAccount(): HasOne
     {
         return $this->hasOne(UserAccount::class, 'engineer_id');
