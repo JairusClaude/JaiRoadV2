@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-
 // REMEMBER TO USE "git checkout -b my-feature" instead of commiting to main
 #[Fillable([
     'first_name',

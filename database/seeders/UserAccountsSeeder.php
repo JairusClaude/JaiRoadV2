@@ -23,7 +23,7 @@ class UserAccountsSeeder extends Seeder
             ],
             [
                 'username' => 'User2',
-                'password' => 'pass2','password' => Hash::make('pass2'),
+                'password' => Hash::make('pass2'),
                 'role' => 'user',
                 'is_active' => true,
                 'engineer_id' => 2,
