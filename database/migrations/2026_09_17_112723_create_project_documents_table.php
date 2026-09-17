@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('file_path');
             $table->timestamps();
 
-            $table->foreignId('project_id')
+            $table->foreignId('maintenance_projects_id')
                 ->constrained('maintenance_projects');
             $table->foreignId('uploaded_by')
                 ->constrained('user_accounts');

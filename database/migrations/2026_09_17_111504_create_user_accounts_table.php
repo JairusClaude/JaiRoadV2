@@ -19,10 +19,10 @@ return new class extends Migration
             $table->timestamps();
             $table->enum('accountType', ['viewer','user', 'admin']);  //role, ['user', 'admin']
 
-            $table->foreignId('engineer_id')
+            $table->foreignId('engineers_id')
                 ->nullable()
                 ->unique()
-                ->constrained('engineer')
+                ->constrained('engineers')
                 ->nullOnDelete();
 
             $table->foreignId('created_by')

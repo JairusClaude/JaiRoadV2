@@ -21,10 +21,10 @@ return new class extends Migration
             $table->integer('gravelled_road_in_km');
             $table->timestamps();
 
-            $table->foreignId('lgu_id')
-                ->constrained('lgu');
-            $table->foreignId('engineer_id')
-                ->constrained('engineer');
+            $table->foreignId('lgus_id')
+                ->constrained('lgus');
+            $table->foreignId('engineers_id')
+                ->constrained('engineers');
             $table->foreignId('created_by')
                 ->constrained('user_accounts');
         });

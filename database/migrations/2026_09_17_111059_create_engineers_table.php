@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('engineer', function (Blueprint $table) {
+        Schema::create('engineers', function (Blueprint $table) {
             $table->id();
             $table->string('first_name');
             $table->string('middle_name');
@@ -22,8 +22,8 @@ return new class extends Migration
             $table->string('position');
             $table->timestamps();
 
-            $table->foreignId('lgu_id')  // [NEED RECONFIRMATION: NOT IN ERD]
-                ->constrained('lgu');
+            $table->foreignId('lgus_id')  // [NEED RECONFIRMATION: NOT IN ERD]
+                ->constrained('lgus');
             // $table->foreignId('created_by')     //POSSIBLE NOT NEEDED
             //     ->nullable();      // ->constrained('user_accounts');
         });

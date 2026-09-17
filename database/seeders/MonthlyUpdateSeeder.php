@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use App\Models\MonthlyUpdate;
 use Illuminate\Database\Seeder;
 
-class MonthlyUpdatesSeeder extends Seeder
+class MonthlyUpdateSeeder extends Seeder
 {
     /**
      * Run the database seeds.

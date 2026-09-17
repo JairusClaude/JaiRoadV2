@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use App\Models\Road;
 use Illuminate\Database\Seeder;
 
-class RoadsSeeder extends Seeder
+class RoadSeeder extends Seeder
 {
     /**
      * Run the database seeds.

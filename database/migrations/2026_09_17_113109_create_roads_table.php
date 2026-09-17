@@ -11,14 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('road_networks', function (Blueprint $table) {
+        Schema::create('roads', function (Blueprint $table) {
             $table->id();
+            $table->string('road_name');
+            $table->integer('kilometers');
+            $table->string('geojsondata');
             $table->timestamps();
 
+            $table->foreignId('created_by')
+                ->constrained('user_accounts');
+            $table->foreignId('lgus_id')
+                ->constrained('lgus');
             $table->foreignId('road_id')
                 ->constrained('roads');
-            $table->foreignId('project_id')
-                ->constrained('maintenance_projects');
         });
     }
 
@@ -27,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('road_networks');
+        Schema::dropIfExists('roads');
     }
 };

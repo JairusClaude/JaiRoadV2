@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('lgu', function (Blueprint $table) {
+        Schema::create('lgus', function (Blueprint $table) {
             $table->id();
             $table->string('municipality_name');
             $table->string('province');
