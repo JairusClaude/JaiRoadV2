@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'mayor_first_name',
     'mayor_middle_name',
     'mayor_last_name',
-    'created_by',
+    // 'created_by',  //REMOVED, SHOULD ALSO BE REMOVED IN ERD
 ])] // NOTE ERD SHOULD HAVE A POINTER FROM LGU TO ENGINEER
 
 class Lgu extends Model
