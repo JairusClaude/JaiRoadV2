@@ -17,11 +17,13 @@ return new class extends Migration
             $table->string('password');
             $table->boolean('is_active');
             $table->timestamps();
-            $table->enum('role', ['user', 'admin']);
+            $table->enum('accountType', ['viewer','user', 'admin']);  //role, ['user', 'admin']
 
             $table->foreignId('engineer_id')
+                ->nullable()
                 ->unique()
-                ->constrained('engineer');
+                ->constrained('engineer')
+                ->nullOnDelete();
 
             $table->foreignId('created_by')
                 ->nullable()

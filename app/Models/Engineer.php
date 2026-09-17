@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'rank',
     'position',
     'lgu_id', // NEED CONFIRMATION NOT IN ERD
-    'created_by',
+    // 'created_by', //POSSIBLY NOT NEEDED
 ])]
 class Engineer extends Model
 {
@@ -34,11 +34,11 @@ class Engineer extends Model
         return $this->hasOne(UserAccount::class, 'engineer_id');
     }
 
-    /** @return BelongsTo<UserAccount, Engineer> */
-    public function createdBy(): BelongsTo
-    {
-        return $this->belongsTo(UserAccount::class, 'created_by');
-    }
+    // /** @return BelongsTo<UserAccount, Engineer> */  //POSSIBLY NOT NEEDED
+    // public function createdBy(): BelongsTo
+    // {
+    //     return $this->belongsTo(UserAccount::class, 'created_by');
+    // }
 
     /** @return HasMany<MaintenanceProject, Engineer> */
     public function maintenanceProjects(): HasMany

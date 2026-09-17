@@ -24,8 +24,8 @@ return new class extends Migration
 
             $table->foreignId('lgu_id')  // [NEED RECONFIRMATION: NOT IN ERD]
                 ->constrained('lgu');
-            $table->foreignId('created_by')
-                ->constrained('user_accounts');
+            // $table->foreignId('created_by')     //POSSIBLE NOT NEEDED
+            //     ->nullable();      // ->constrained('user_accounts');
         });
     }
 
