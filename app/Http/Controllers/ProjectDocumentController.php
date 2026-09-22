@@ -2,65 +2,115 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ProjectDocument;
 use App\Http\Requests\StoreProjectDocumentRequest;
 use App\Http\Requests\UpdateProjectDocumentRequest;
+use App\Models\MaintenanceProject;
+use App\Models\ProjectDocument;
+use Inertia\Inertia;
 
 class ProjectDocumentController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        $model = ProjectDocument::query()
+            ->where(
+                'document_title',
+                'like',
+                '%'.request()->query('search').'%'
+            )
+            ->orWhere(
+                'description',
+                'like',
+                '%'.request()->query('search').'%'
+            )
+            ->orWhere(
+                'file_name',
+                'like',
+                '%'.request()->query('search').'%'
+            )
+            ->orderBy(
+                request('sort_field', 'created_at'),
+                request('sort_direction', 'desc')
+            )
+            ->paginate(5)
+            ->appends(request()->query());
+
+        return Inertia::render('ProjectDocuments/Index', [
+            'model' => $model,
+            'maintenanceProjects' =>
+                MaintenanceProject::orderBy(
+                    'project_title',
+                    'asc'
+                )->pluck('id', 'project_title'),
+            'queryParams' => request()->query(),
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         //
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreProjectDocumentRequest $request)
-    {
-        //
+    public function store(
+        StoreProjectDocumentRequest $request
+    ) {
+        ProjectDocument::create(
+            $request->validated()
+        );
+
+        session()->flash(
+            'message',
+            'Successfully uploaded a project document'
+        );
+
+        return redirect(
+            route('project-documents.index')
+        );
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(ProjectDocument $projectDocument)
     {
         //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(ProjectDocument $projectDocument)
     {
         //
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateProjectDocumentRequest $request, ProjectDocument $projectDocument)
-    {
-        //
+    public function update(
+        UpdateProjectDocumentRequest $request,
+        ProjectDocument $projectDocument
+    ) {
+        $projectDocument->update(
+            $request->validated()
+        );
+
+        session()->flash(
+            'message',
+            'Successfully updated a project document'
+        );
+
+        return redirect(
+            route(
+                'project-documents.index',
+                $request->query()
+            )
+        );
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(ProjectDocument $projectDocument)
-    {
-        //
+    public function destroy(
+        ProjectDocument $projectDocument
+    ) {
+        $projectDocument->delete();
+
+        session()->flash(
+            'message',
+            'Successfully deleted a project document'
+        );
+
+        return redirect(
+            route('project-documents.index')
+        );
     }
 }

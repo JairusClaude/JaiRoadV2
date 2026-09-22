@@ -2,65 +2,126 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\UserAccount;
 use App\Http\Requests\StoreUserAccountRequest;
 use App\Http\Requests\UpdateUserAccountRequest;
+use App\Models\Engineer;
+use App\Models\UserAccount;
+use Illuminate\Support\Facades\Hash;
+use Inertia\Inertia;
 
 class UserAccountController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        $model = UserAccount::query()
+            ->where(
+                'username',
+                'like',
+                '%'.request()->query('search').'%'
+            )
+            ->orWhere(
+                'role',
+                'like',
+                '%'.request()->query('search').'%'
+            )
+            ->orderBy(
+                request('sort_field', 'created_at'),
+                request('sort_direction', 'desc')
+            )
+            ->paginate(5)
+            ->appends(request()->query());
+
+        return Inertia::render('UserAccounts/Index', [
+            'model' => $model,
+            'engineers' => Engineer::orderBy(
+                'last_name',
+                'asc'
+            )->get(),
+            'queryParams' => request()->query(),
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         //
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreUserAccountRequest $request)
-    {
-        //
+    public function store(
+        StoreUserAccountRequest $request
+    ) {
+        $data = $request->validated();
+
+        if (isset($data['password'])) {
+            $data['password'] = Hash::make(
+                $data['password']
+            );
+        }
+
+        UserAccount::create($data);
+
+        session()->flash(
+            'message',
+            'Successfully created a user account'
+        );
+
+        return redirect(
+            route('user-accounts.index')
+        );
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(UserAccount $userAccount)
     {
         //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(UserAccount $userAccount)
     {
         //
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateUserAccountRequest $request, UserAccount $userAccount)
-    {
-        //
+    public function update(
+        UpdateUserAccountRequest $request,
+        UserAccount $userAccount
+    ) {
+        $data = $request->validated();
+
+        if (
+            isset($data['password']) &&
+            $data['password'] !== ''
+        ) {
+            $data['password'] = Hash::make(
+                $data['password']
+            );
+        } else {
+            unset($data['password']);
+        }
+
+        $userAccount->update($data);
+
+        session()->flash(
+            'message',
+            'Successfully updated a user account'
+        );
+
+        return redirect(
+            route(
+                'user-accounts.index',
+                $request->query()
+            )
+        );
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(UserAccount $userAccount)
     {
-        //
+        $userAccount->delete();
+
+        session()->flash(
+            'message',
+            'Successfully deleted a user account'
+        );
+
+        return redirect(
+            route('user-accounts.index')
+        );
     }
 }

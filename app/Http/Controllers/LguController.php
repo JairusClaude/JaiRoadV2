@@ -2,65 +2,96 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Lgu;
 use App\Http\Requests\StoreLguRequest;
 use App\Http\Requests\UpdateLguRequest;
+use App\Models\Lgu;
+use Inertia\Inertia;
 
 class LguController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        $model = Lgu::query()
+            ->where(
+                'municipality_name',
+                'like',
+                '%'.request()->query('search').'%'
+            )
+            ->orWhere(
+                'province',
+                'like',
+                '%'.request()->query('search').'%'
+            )
+            ->orWhere(
+                'region',
+                'like',
+                '%'.request()->query('search').'%'
+            )
+            ->orderBy(
+                request('sort_field', 'created_at'),
+                request('sort_direction', 'desc')
+            )
+            ->paginate(5)
+            ->appends(request()->query());
+
+        return Inertia::render('LGUs/Index', [
+            'model' => $model,
+            'queryParams' => request()->query(),
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         //
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(StoreLguRequest $request)
     {
-        //
+        Lgu::create($request->validated());
+
+        session()->flash(
+            'message',
+            'Successfully created a new LGU'
+        );
+
+        return redirect(route('lgus.index'));
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Lgu $lgu)
     {
         //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Lgu $lgu)
     {
         //
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateLguRequest $request, Lgu $lgu)
-    {
-        //
+    public function update(
+        UpdateLguRequest $request,
+        Lgu $lgu
+    ) {
+        $lgu->update($request->validated());
+
+        session()->flash(
+            'message',
+            'Successfully updated an LGU'
+        );
+
+        return redirect(
+            route('lgus.index', $request->query())
+        );
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Lgu $lgu)
     {
-        //
+        $lgu->delete();
+
+        session()->flash(
+            'message',
+            'Successfully deleted an LGU'
+        );
+
+        return redirect(route('lgus.index'));
     }
 }
