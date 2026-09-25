@@ -7,11 +7,13 @@ use App\Http\Requests\UpdateMaintenanceProjectRequest;
 use App\Models\Engineer;
 use App\Models\Lgu;
 use App\Models\MaintenanceProject;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class MaintenanceProjectController extends Controller
 {
-    public function index()
+    public function index(): Response
     {
         $model = MaintenanceProject::query()
             ->where(
@@ -41,13 +43,14 @@ class MaintenanceProjectController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(): void
     {
         //
     }
 
-    public function store(StoreMaintenanceProjectRequest $request)
-    {
+    public function store(
+        StoreMaintenanceProjectRequest $request
+    ): RedirectResponse {
         MaintenanceProject::create($request->validated());
 
         session()->flash(
@@ -62,20 +65,20 @@ class MaintenanceProjectController extends Controller
 
     public function show(
         MaintenanceProject $maintenanceProject
-    ) {
+    ): void {
         //
     }
 
     public function edit(
         MaintenanceProject $maintenanceProject
-    ) {
+    ): void {
         //
     }
 
     public function update(
         UpdateMaintenanceProjectRequest $request,
         MaintenanceProject $maintenanceProject
-    ) {
+    ): RedirectResponse {
         $maintenanceProject->update(
             $request->validated()
         );
@@ -95,7 +98,7 @@ class MaintenanceProjectController extends Controller
 
     public function destroy(
         MaintenanceProject $maintenanceProject
-    ) {
+    ): RedirectResponse {
         $maintenanceProject->delete();
 
         session()->flash(

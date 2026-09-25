@@ -6,11 +6,13 @@ use App\Http\Requests\StoreMonthlyUpdateRequest;
 use App\Http\Requests\UpdateMonthlyUpdateRequest;
 use App\Models\MaintenanceProject;
 use App\Models\MonthlyUpdate;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class MonthlyUpdateController extends Controller
 {
-    public function index()
+    public function index(): Response
     {
         $model = MonthlyUpdate::query()
             ->where(
@@ -32,22 +34,22 @@ class MonthlyUpdateController extends Controller
 
         return Inertia::render('MonthlyUpdates/Index', [
             'model' => $model,
-            'maintenanceProjects' =>
-                MaintenanceProject::orderBy(
-                    'project_title',
-                    'asc'
-                )->pluck('id', 'project_title'),
+            'maintenanceProjects' => MaintenanceProject::orderBy(
+                'project_title',
+                'asc'
+            )->pluck('id', 'project_title'),
             'queryParams' => request()->query(),
         ]);
     }
 
-    public function create()
+    public function create(): void
     {
         //
     }
 
-    public function store(StoreMonthlyUpdateRequest $request)
-    {
+    public function store(
+        StoreMonthlyUpdateRequest $request
+    ): RedirectResponse {
         MonthlyUpdate::create($request->validated());
 
         session()->flash(
@@ -60,12 +62,12 @@ class MonthlyUpdateController extends Controller
         );
     }
 
-    public function show(MonthlyUpdate $monthlyUpdate)
+    public function show(MonthlyUpdate $monthlyUpdate): void
     {
         //
     }
 
-    public function edit(MonthlyUpdate $monthlyUpdate)
+    public function edit(MonthlyUpdate $monthlyUpdate): void
     {
         //
     }
@@ -73,7 +75,7 @@ class MonthlyUpdateController extends Controller
     public function update(
         UpdateMonthlyUpdateRequest $request,
         MonthlyUpdate $monthlyUpdate
-    ) {
+    ): RedirectResponse {
         $monthlyUpdate->update(
             $request->validated()
         );
@@ -91,7 +93,7 @@ class MonthlyUpdateController extends Controller
         );
     }
 
-    public function destroy(MonthlyUpdate $monthlyUpdate)
+    public function destroy(MonthlyUpdate $monthlyUpdate): RedirectResponse
     {
         $monthlyUpdate->delete();
 

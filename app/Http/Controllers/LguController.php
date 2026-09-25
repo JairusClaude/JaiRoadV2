@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreLguRequest;
 use App\Http\Requests\UpdateLguRequest;
 use App\Models\Lgu;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class LguController extends Controller
 {
-    public function index()
+    public function index(): Response
     {
         $model = Lgu::query()
             ->where(
@@ -40,12 +42,12 @@ class LguController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(): void
     {
         //
     }
 
-    public function store(StoreLguRequest $request)
+    public function store(StoreLguRequest $request): RedirectResponse
     {
         Lgu::create($request->validated());
 
@@ -57,12 +59,12 @@ class LguController extends Controller
         return redirect(route('lgus.index'));
     }
 
-    public function show(Lgu $lgu)
+    public function show(Lgu $lgu): void
     {
         //
     }
 
-    public function edit(Lgu $lgu)
+    public function edit(Lgu $lgu): void
     {
         //
     }
@@ -70,7 +72,7 @@ class LguController extends Controller
     public function update(
         UpdateLguRequest $request,
         Lgu $lgu
-    ) {
+    ): RedirectResponse {
         $lgu->update($request->validated());
 
         session()->flash(
@@ -83,7 +85,7 @@ class LguController extends Controller
         );
     }
 
-    public function destroy(Lgu $lgu)
+    public function destroy(Lgu $lgu): RedirectResponse
     {
         $lgu->delete();
 

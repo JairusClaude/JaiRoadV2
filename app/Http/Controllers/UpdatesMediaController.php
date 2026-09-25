@@ -6,11 +6,13 @@ use App\Http\Requests\StoreUpdatesMediaRequest;
 use App\Http\Requests\UpdateUpdatesMediaRequest;
 use App\Models\MonthlyUpdate;
 use App\Models\UpdatesMedia;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class UpdatesMediaController extends Controller
 {
-    public function index()
+    public function index(): Response
     {
         $model = UpdatesMedia::query()
             ->where(
@@ -32,23 +34,22 @@ class UpdatesMediaController extends Controller
 
         return Inertia::render('UpdatesMedia/Index', [
             'model' => $model,
-            'monthlyUpdates' =>
-                MonthlyUpdate::orderBy(
-                    'update_month',
-                    'asc'
-                )->pluck('id', 'update_month'),
+            'monthlyUpdates' => MonthlyUpdate::orderBy(
+                'update_month',
+                'asc'
+            )->pluck('id', 'update_month'),
             'queryParams' => request()->query(),
         ]);
     }
 
-    public function create()
+    public function create(): void
     {
         //
     }
 
     public function store(
         StoreUpdatesMediaRequest $request
-    ) {
+    ): RedirectResponse {
         UpdatesMedia::create(
             $request->validated()
         );
@@ -63,12 +64,12 @@ class UpdatesMediaController extends Controller
         );
     }
 
-    public function show(UpdatesMedia $updatesMedia)
+    public function show(UpdatesMedia $updatesMedia): void
     {
         //
     }
 
-    public function edit(UpdatesMedia $updatesMedia)
+    public function edit(UpdatesMedia $updatesMedia): void
     {
         //
     }
@@ -76,7 +77,7 @@ class UpdatesMediaController extends Controller
     public function update(
         UpdateUpdatesMediaRequest $request,
         UpdatesMedia $updatesMedia
-    ) {
+    ): RedirectResponse {
         $updatesMedia->update(
             $request->validated()
         );
@@ -96,7 +97,7 @@ class UpdatesMediaController extends Controller
 
     public function destroy(
         UpdatesMedia $updatesMedia
-    ) {
+    ): RedirectResponse {
         $updatesMedia->delete();
 
         session()->flash(

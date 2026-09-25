@@ -6,11 +6,13 @@ use App\Http\Requests\StoreEngineerRequest;
 use App\Http\Requests\UpdateEngineerRequest;
 use App\Models\Engineer;
 use App\Models\Lgu;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class EngineerController extends Controller
 {
-    public function index()
+    public function index(): Response
     {
         $model = Engineer::query()
             ->where(
@@ -53,12 +55,12 @@ class EngineerController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(): void
     {
         //
     }
 
-    public function store(StoreEngineerRequest $request)
+    public function store(StoreEngineerRequest $request): RedirectResponse
     {
         Engineer::create($request->validated());
 
@@ -70,12 +72,12 @@ class EngineerController extends Controller
         return redirect(route('engineers.index'));
     }
 
-    public function show(Engineer $engineer)
+    public function show(Engineer $engineer): void
     {
         //
     }
 
-    public function edit(Engineer $engineer)
+    public function edit(Engineer $engineer): void
     {
         //
     }
@@ -83,7 +85,7 @@ class EngineerController extends Controller
     public function update(
         UpdateEngineerRequest $request,
         Engineer $engineer
-    ) {
+    ): RedirectResponse {
         $engineer->update($request->validated());
 
         session()->flash(
@@ -96,7 +98,7 @@ class EngineerController extends Controller
         );
     }
 
-    public function destroy(Engineer $engineer)
+    public function destroy(Engineer $engineer): RedirectResponse
     {
         $engineer->delete();
 

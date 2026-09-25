@@ -6,11 +6,13 @@ use App\Http\Requests\StoreRoadRequest;
 use App\Http\Requests\UpdateRoadRequest;
 use App\Models\Lgu;
 use App\Models\Road;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class RoadController extends Controller
 {
-    public function index()
+    public function index(): Response
     {
         $model = Road::query()
             ->where('road_name', 'like', '%'.request()->query('search').'%')
@@ -29,12 +31,12 @@ class RoadController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(): void
     {
         //
     }
 
-    public function store(StoreRoadRequest $request)
+    public function store(StoreRoadRequest $request): RedirectResponse
     {
         Road::create($request->validated());
 
@@ -46,12 +48,12 @@ class RoadController extends Controller
         return redirect(route('roads.index'));
     }
 
-    public function show(Road $road)
+    public function show(Road $road): void
     {
         //
     }
 
-    public function edit(Road $road)
+    public function edit(Road $road): void
     {
         //
     }
@@ -59,7 +61,7 @@ class RoadController extends Controller
     public function update(
         UpdateRoadRequest $request,
         Road $road
-    ) {
+    ): RedirectResponse {
         $road->update($request->validated());
 
         session()->flash(
@@ -72,7 +74,7 @@ class RoadController extends Controller
         );
     }
 
-    public function destroy(Road $road)
+    public function destroy(Road $road): RedirectResponse
     {
         $road->delete();
 

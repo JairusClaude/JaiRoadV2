@@ -6,11 +6,13 @@ use App\Http\Requests\StoreProjectDocumentRequest;
 use App\Http\Requests\UpdateProjectDocumentRequest;
 use App\Models\MaintenanceProject;
 use App\Models\ProjectDocument;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class ProjectDocumentController extends Controller
 {
-    public function index()
+    public function index(): Response
     {
         $model = ProjectDocument::query()
             ->where(
@@ -37,23 +39,22 @@ class ProjectDocumentController extends Controller
 
         return Inertia::render('ProjectDocuments/Index', [
             'model' => $model,
-            'maintenanceProjects' =>
-                MaintenanceProject::orderBy(
-                    'project_title',
-                    'asc'
-                )->pluck('id', 'project_title'),
+            'maintenanceProjects' => MaintenanceProject::orderBy(
+                'project_title',
+                'asc'
+            )->pluck('id', 'project_title'),
             'queryParams' => request()->query(),
         ]);
     }
 
-    public function create()
+    public function create(): void
     {
         //
     }
 
     public function store(
         StoreProjectDocumentRequest $request
-    ) {
+    ): RedirectResponse {
         ProjectDocument::create(
             $request->validated()
         );
@@ -68,12 +69,12 @@ class ProjectDocumentController extends Controller
         );
     }
 
-    public function show(ProjectDocument $projectDocument)
+    public function show(ProjectDocument $projectDocument): void
     {
         //
     }
 
-    public function edit(ProjectDocument $projectDocument)
+    public function edit(ProjectDocument $projectDocument): void
     {
         //
     }
@@ -81,7 +82,7 @@ class ProjectDocumentController extends Controller
     public function update(
         UpdateProjectDocumentRequest $request,
         ProjectDocument $projectDocument
-    ) {
+    ): RedirectResponse {
         $projectDocument->update(
             $request->validated()
         );
@@ -101,7 +102,7 @@ class ProjectDocumentController extends Controller
 
     public function destroy(
         ProjectDocument $projectDocument
-    ) {
+    ): RedirectResponse {
         $projectDocument->delete();
 
         session()->flash(

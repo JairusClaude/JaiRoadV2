@@ -6,12 +6,14 @@ use App\Http\Requests\StoreUserAccountRequest;
 use App\Http\Requests\UpdateUserAccountRequest;
 use App\Models\Engineer;
 use App\Models\UserAccount;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class UserAccountController extends Controller
 {
-    public function index()
+    public function index(): Response
     {
         $model = UserAccount::query()
             ->where(
@@ -41,14 +43,14 @@ class UserAccountController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(): void
     {
         //
     }
 
     public function store(
         StoreUserAccountRequest $request
-    ) {
+    ): RedirectResponse {
         $data = $request->validated();
 
         if (isset($data['password'])) {
@@ -69,12 +71,12 @@ class UserAccountController extends Controller
         );
     }
 
-    public function show(UserAccount $userAccount)
+    public function show(UserAccount $userAccount): void
     {
         //
     }
 
-    public function edit(UserAccount $userAccount)
+    public function edit(UserAccount $userAccount): void
     {
         //
     }
@@ -82,7 +84,7 @@ class UserAccountController extends Controller
     public function update(
         UpdateUserAccountRequest $request,
         UserAccount $userAccount
-    ) {
+    ): RedirectResponse {
         $data = $request->validated();
 
         if (
@@ -111,7 +113,7 @@ class UserAccountController extends Controller
         );
     }
 
-    public function destroy(UserAccount $userAccount)
+    public function destroy(UserAccount $userAccount): RedirectResponse
     {
         $userAccount->delete();
 
