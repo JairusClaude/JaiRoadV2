@@ -54,7 +54,10 @@ return [
             'password' => env('DB_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => env('DB_CHARSET', 'utf8mb4'),
-            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'collation' => env(
+                'DB_COLLATION',
+                'utf8mb4_unicode_ci'
+            ),
             'prefix' => '',
             'prefix_indexes' => true,
             'strict' => true,
@@ -74,7 +77,10 @@ return [
             'password' => env('DB_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => env('DB_CHARSET', 'utf8mb4'),
-            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'collation' => env(
+                'DB_COLLATION',
+                'utf8mb4_unicode_ci'
+            ),
             'prefix' => '',
             'prefix_indexes' => true,
             'strict' => true,
@@ -96,7 +102,7 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
-            'sslmode' => 'require',               //ORIGINAL: 'sslmode' => env('DB_SSLMODE', 'prefer'),
+            'sslmode' => 'require',
         ],
 
         'sqlsrv' => [
@@ -111,7 +117,10 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             // 'encrypt' => env('DB_ENCRYPT', 'yes'),
-            // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
+            // 'trust_server_certificate' => env(
+            //     'DB_TRUST_SERVER_CERTIFICATE',
+            //     'false'
+            // ),
         ],
 
     ],
@@ -139,7 +148,7 @@ return [
     |
     | Redis is an open source, fast, and advanced key-value store that also
     | provides a richer body of commands than a typical key-value system
-    | such as Memcached. You may define your connection settings here.
+    | such as Memcached. You may define the connections below.
     |
     */
 
@@ -149,7 +158,10 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-database-'),
+            'prefix' => env(
+                'REDIS_PREFIX',
+                Str::slug((string) env('APP_NAME', 'laravel')).'-database-'
+            ),
             'persistent' => env('REDIS_PERSISTENT', false),
         ],
 
@@ -161,7 +173,10 @@ return [
             'port' => env('REDIS_PORT', '6379'),
             'database' => env('REDIS_DB', '0'),
             'max_retries' => env('REDIS_MAX_RETRIES', 3),
-            'backoff_algorithm' => env('REDIS_BACKOFF_ALGORITHM', 'decorrelated_jitter'),
+            'backoff_algorithm' => env(
+                'REDIS_BACKOFF_ALGORITHM',
+                'decorrelated_jitter'
+            ),
             'backoff_base' => env('REDIS_BACKOFF_BASE', 100),
             'backoff_cap' => env('REDIS_BACKOFF_CAP', 1000),
         ],
@@ -174,7 +189,10 @@ return [
             'port' => env('REDIS_PORT', '6379'),
             'database' => env('REDIS_CACHE_DB', '1'),
             'max_retries' => env('REDIS_MAX_RETRIES', 3),
-            'backoff_algorithm' => env('REDIS_BACKOFF_ALGORITHM', 'decorrelated_jitter'),
+            'backoff_algorithm' => env(
+                'REDIS_BACKOFF_ALGORITHM',
+                'decorrelated_jitter'
+            ),
             'backoff_base' => env('REDIS_BACKOFF_BASE', 100),
             'backoff_cap' => env('REDIS_BACKOFF_CAP', 1000),
         ],
