@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-// REMEMBER TO USE "git checkout -b my-feature" instead of commiting to main
 #[Fillable([
     'first_name',
     'middle_name',
@@ -17,25 +16,28 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'contact_no',
     'rank',
     'position',
-    'lgu_id', 
+    'lgus_id',
 ])]
 class Engineer extends Model
 {
-    /** @return BelongsTo<Lgu, Engineer> */
+    /** @return BelongsTo<Lgu, $this> */
     public function lgu(): BelongsTo
     {
-        return $this->belongsTo(Lgu::class, 'lgu_id');
+        return $this->belongsTo(Lgu::class, 'lgus_id');
     }
 
-    /** @return HasOne<UserAccount, Engineer> */ // Changed from BelongsTo
+    /** @return HasOne<UserAccount, $this> */
     public function userAccount(): HasOne
     {
-        return $this->hasOne(UserAccount::class, 'engineer_id');
+        return $this->hasOne(UserAccount::class, 'engineers_id');
     }
 
-    /** @return HasMany<MaintenanceProject, Engineer> */
+    /** @return HasMany<MaintenanceProject, $this> */
     public function maintenanceProjects(): HasMany
     {
-        return $this->hasMany(MaintenanceProject::class);
+        return $this->hasMany(
+            MaintenanceProject::class,
+            'engineers_id'
+        );
     }
 }
