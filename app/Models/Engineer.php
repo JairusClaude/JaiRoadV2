@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'contact_no',
     'rank',
     'position',
-    'lgu_id', 
+    'lgu_id',
 ])]
 class Engineer extends Model
 {
