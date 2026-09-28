@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\MaintenanceProject;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class MaintenanceProjectPolicy
 {
@@ -19,8 +18,10 @@ class MaintenanceProjectPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, MaintenanceProject $maintenanceProject): bool
-    {
+    public function view(
+        User $user,
+        MaintenanceProject $maintenanceProject
+    ): bool {
         return false;
     }
 
@@ -35,32 +36,40 @@ class MaintenanceProjectPolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, MaintenanceProject $maintenanceProject): bool
-    {
+    public function update(
+        User $user,
+        MaintenanceProject $maintenanceProject
+    ): bool {
         return false;
     }
 
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, MaintenanceProject $maintenanceProject): bool
-    {
+    public function delete(
+        User $user,
+        MaintenanceProject $maintenanceProject
+    ): bool {
         return false;
     }
 
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, MaintenanceProject $maintenanceProject): bool
-    {
+    public function restore(
+        User $user,
+        MaintenanceProject $maintenanceProject
+    ): bool {
         return false;
     }
 
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, MaintenanceProject $maintenanceProject): bool
-    {
+    public function forceDelete(
+        User $user,
+        MaintenanceProject $maintenanceProject
+    ): bool {
         return false;
     }
 }

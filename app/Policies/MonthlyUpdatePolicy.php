@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\MonthlyUpdate;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class MonthlyUpdatePolicy
 {
@@ -59,8 +58,10 @@ class MonthlyUpdatePolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, MonthlyUpdate $monthlyUpdate): bool
-    {
+    public function forceDelete(
+        User $user,
+        MonthlyUpdate $monthlyUpdate
+    ): bool {
         return false;
     }
 }

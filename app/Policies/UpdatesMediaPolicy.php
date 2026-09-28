@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\UpdatesMedia;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class UpdatesMediaPolicy
 {
@@ -59,8 +58,10 @@ class UpdatesMediaPolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, UpdatesMedia $updatesMedia): bool
-    {
+    public function forceDelete(
+        User $user,
+        UpdatesMedia $updatesMedia
+    ): bool {
         return false;
     }
 }

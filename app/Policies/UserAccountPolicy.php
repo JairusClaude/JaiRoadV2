@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\User;
 use App\Models\UserAccount;
-use Illuminate\Auth\Access\Response;
 
 class UserAccountPolicy
 {
@@ -49,9 +48,7 @@ class UserAccountPolicy
     }
 
     /**
-     * Determine whether the user can restore the model.
-     */
-    public function restore(User $user, UserAccount $userAccount): bool
+     * Determine whether the user can restore(User $user, UserAccount $userAccount): bool
     {
         return false;
     }
@@ -59,8 +56,10 @@ class UserAccountPolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, UserAccount $userAccount): bool
-    {
+    public function forceDelete(
+        User $user,
+        UserAccount $userAccount
+    ): bool {
         return false;
     }
 }
