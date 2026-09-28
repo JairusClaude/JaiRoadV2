@@ -65,3 +65,5 @@ class MonthlyUpdatePolicy
         return false;
     }
 }
+
+// Authorization policy definitions.

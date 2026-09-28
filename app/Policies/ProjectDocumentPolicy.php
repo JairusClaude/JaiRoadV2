@@ -73,3 +73,5 @@ class ProjectDocumentPolicy
         return false;
     }
 }
+
+// Authorization policy definitions.

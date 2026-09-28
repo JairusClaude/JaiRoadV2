@@ -63,3 +63,5 @@ class LguPolicy
         return false;
     }
 }
+
+// Authorization policy definitions.

@@ -65,3 +65,5 @@ class UserAccountPolicy
         return false;
     }
 }
+
+// Authorization policy definitions.

@@ -63,3 +63,5 @@ class EngineerPolicy
         return false;
     }
 }
+
+// Authorization policy definitions.

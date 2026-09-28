@@ -73,3 +73,5 @@ class MaintenanceProjectPolicy
         return false;
     }
 }
+
+// Authorization policy definitions.

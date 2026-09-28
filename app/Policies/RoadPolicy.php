@@ -63,3 +63,5 @@ class RoadPolicy
         return false;
     }
 }
+
+// Authorization policy definitions.

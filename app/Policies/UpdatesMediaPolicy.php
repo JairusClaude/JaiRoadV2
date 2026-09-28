@@ -65,3 +65,5 @@ class UpdatesMediaPolicy
         return false;
     }
 }
+
+// Authorization policy definitions.
