@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'role',
     'is_active',
     'engineer_id',
-    'created_by', // creator_id
+    'created_by',
 ])]
 class UserAccount extends Model
 {

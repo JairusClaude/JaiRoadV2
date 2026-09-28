@@ -30,11 +30,6 @@ class Road extends Model
         return $this->belongsTo(Lgu::class, 'lgu_id');
     }
 
-    /** @return HasOne<RoadNetwork, Road> */
-    public function roadNetwork(): HasOne
-    {
-        return $this->hasOne(RoadNetwork::class);
-    }
 
     /** @return BelongsTo<MaintenanceProject, Road> */
     public function maintenanceProject(): BelongsTo

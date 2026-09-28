@@ -58,9 +58,4 @@ class MaintenanceProject extends Model
         return $this->hasMany(MonthlyUpdate::class, 'maintenance_project_id');
     }
 
-    /** @return HasOne<RoadNetwork, MaintenanceProject> */
-    public function roadNetwork(): HasOne
-    {
-        return $this->hasOne(RoadNetwork::class, 'maintenance_project_id');
-    }
 }
