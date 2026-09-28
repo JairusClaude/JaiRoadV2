@@ -6,6 +6,7 @@ use App\Http\Requests\StoreMonthlyUpdateRequest;
 use App\Http\Requests\UpdateMonthlyUpdateRequest;
 use App\Models\MaintenanceProject;
 use App\Models\MonthlyUpdate;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -14,30 +15,45 @@ class MonthlyUpdateController extends Controller
 {
     public function index(): Response
     {
-        $model = MonthlyUpdate::query()
-            ->where(
-                'update_month',
-                'like',
-                '%'.request()->query('search').'%'
-            )
-            ->orWhere(
-                'summary_of_text_reports',
-                'like',
-                '%'.request()->query('search').'%'
-            )
-            ->orderBy(
-                request('sort_field', 'created_at'),
-                request('sort_direction', 'desc')
-            )
+        $search = trim((string) request()->query('search', ''));
+        $sortField = (string) request()->query('sort_field', 'created_at');
+        $sortDirection = strtolower((string) request()->query('sort_direction', 'desc'));
+
+        $allowedSortFields = [
+            'update_month',
+            'progress_percentage',
+            'created_at',
+        ];
+
+        if (! in_array($sortField, $allowedSortFields, true)) {
+            $sortField = 'created_at';
+        }
+
+        if (! in_array($sortDirection, ['asc', 'desc'], true)) {
+            $sortDirection = 'desc';
+        }
+
+        $query = MonthlyUpdate::query();
+
+        if ($search !== '') {
+            $query->where(function (Builder $query) use ($search): void {
+                $like = '%'.$search.'%';
+
+                $query->where('update_month', 'like', $like)
+                    ->orWhere('summary_of_text_reports', 'like', $like);
+            });
+        }
+
+        $model = $query
+            ->orderBy($sortField, $sortDirection)
             ->paginate(5)
-            ->appends(request()->query());
+            ->withQueryString();
 
         return Inertia::render('MonthlyUpdates/Index', [
             'model' => $model,
-            'maintenanceProjects' => MaintenanceProject::orderBy(
-                'project_title',
-                'asc'
-            )->pluck('id', 'project_title'),
+            'maintenanceProjects' => MaintenanceProject::query()
+                ->orderBy('project_title')
+                ->pluck('id', 'project_title'),
             'queryParams' => request()->query(),
         ]);
     }
@@ -52,14 +68,8 @@ class MonthlyUpdateController extends Controller
     ): RedirectResponse {
         MonthlyUpdate::create($request->validated());
 
-        session()->flash(
-            'message',
-            'Successfully created a monthly update'
-        );
-
-        return redirect(
-            route('monthly-updates.index')
-        );
+        return to_route('monthly-updates.index')
+            ->with('message', 'Successfully created a monthly update');
     }
 
     public function show(MonthlyUpdate $monthlyUpdate): void
@@ -76,34 +86,20 @@ class MonthlyUpdateController extends Controller
         UpdateMonthlyUpdateRequest $request,
         MonthlyUpdate $monthlyUpdate
     ): RedirectResponse {
-        $monthlyUpdate->update(
-            $request->validated()
-        );
+        $monthlyUpdate->update($request->validated());
 
-        session()->flash(
-            'message',
-            'Successfully updated a monthly update'
-        );
-
-        return redirect(
-            route(
-                'monthly-updates.index',
-                $request->query()
-            )
-        );
+        return to_route('monthly-updates.index', $request->query())
+            ->with(
+                'message',
+                'Successfully updated a monthly update'
+            );
     }
 
     public function destroy(MonthlyUpdate $monthlyUpdate): RedirectResponse
     {
         $monthlyUpdate->delete();
 
-        session()->flash(
-            'message',
-            'Successfully deleted a monthly update'
-        );
-
-        return redirect(
-            route('monthly-updates.index')
-        );
+        return to_route('monthly-updates.index')
+            ->with('message', 'Successfully deleted a monthly update');
     }
 }

@@ -6,6 +6,7 @@ use App\Http\Requests\StoreUpdatesMediaRequest;
 use App\Http\Requests\UpdateUpdatesMediaRequest;
 use App\Models\MonthlyUpdate;
 use App\Models\UpdatesMedia;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -14,30 +15,45 @@ class UpdatesMediaController extends Controller
 {
     public function index(): Response
     {
-        $model = UpdatesMedia::query()
-            ->where(
-                'file_name',
-                'like',
-                '%'.request()->query('search').'%'
-            )
-            ->orWhere(
-                'file_type',
-                'like',
-                '%'.request()->query('search').'%'
-            )
-            ->orderBy(
-                request('sort_field', 'created_at'),
-                request('sort_direction', 'desc')
-            )
+        $search = trim((string) request()->query('search', ''));
+        $sortField = (string) request()->query('sort_field', 'created_at');
+        $sortDirection = strtolower((string) request()->query('sort_direction', 'desc'));
+
+        $allowedSortFields = [
+            'file_name',
+            'file_type',
+            'created_at',
+        ];
+
+        if (! in_array($sortField, $allowedSortFields, true)) {
+            $sortField = 'created_at';
+        }
+
+        if (! in_array($sortDirection, ['asc', 'desc'], true)) {
+            $sortDirection = 'desc';
+        }
+
+        $query = UpdatesMedia::query();
+
+        if ($search !== '') {
+            $query->where(function (Builder $query) use ($search): void {
+                $like = '%'.$search.'%';
+
+                $query->where('file_name', 'like', $like)
+                    ->orWhere('file_type', 'like', $like);
+            });
+        }
+
+        $model = $query
+            ->orderBy($sortField, $sortDirection)
             ->paginate(5)
-            ->appends(request()->query());
+            ->withQueryString();
 
         return Inertia::render('UpdatesMedia/Index', [
             'model' => $model,
-            'monthlyUpdates' => MonthlyUpdate::orderBy(
-                'update_month',
-                'asc'
-            )->pluck('id', 'update_month'),
+            'monthlyUpdates' => MonthlyUpdate::query()
+                ->orderBy('update_month')
+                ->pluck('id', 'update_month'),
             'queryParams' => request()->query(),
         ]);
     }
@@ -50,18 +66,10 @@ class UpdatesMediaController extends Controller
     public function store(
         StoreUpdatesMediaRequest $request
     ): RedirectResponse {
-        UpdatesMedia::create(
-            $request->validated()
-        );
+        UpdatesMedia::create($request->validated());
 
-        session()->flash(
-            'message',
-            'Successfully uploaded update media'
-        );
-
-        return redirect(
-            route('updates-media.index')
-        );
+        return to_route('updates-media.index')
+            ->with('message', 'Successfully uploaded update media');
     }
 
     public function show(UpdatesMedia $updatesMedia): void
@@ -78,21 +86,12 @@ class UpdatesMediaController extends Controller
         UpdateUpdatesMediaRequest $request,
         UpdatesMedia $updatesMedia
     ): RedirectResponse {
-        $updatesMedia->update(
-            $request->validated()
-        );
+        $updatesMedia->update($request->validated());
 
-        session()->flash(
-            'message',
-            'Successfully updated update media'
-        );
-
-        return redirect(
-            route(
-                'updates-media.index',
-                $request->query()
-            )
-        );
+        return to_route(
+            'updates-media.index',
+            $request->query()
+        )->with('message', 'Successfully updated update media');
     }
 
     public function destroy(
@@ -100,13 +99,7 @@ class UpdatesMediaController extends Controller
     ): RedirectResponse {
         $updatesMedia->delete();
 
-        session()->flash(
-            'message',
-            'Successfully deleted update media'
-        );
-
-        return redirect(
-            route('updates-media.index')
-        );
+        return to_route('updates-media.index')
+            ->with('message', 'Successfully deleted update media');
     }
 }

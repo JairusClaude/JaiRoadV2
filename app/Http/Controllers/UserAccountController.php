@@ -6,6 +6,7 @@ use App\Http\Requests\StoreUserAccountRequest;
 use App\Http\Requests\UpdateUserAccountRequest;
 use App\Models\Engineer;
 use App\Models\UserAccount;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
@@ -15,30 +16,46 @@ class UserAccountController extends Controller
 {
     public function index(): Response
     {
-        $model = UserAccount::query()
-            ->where(
-                'username',
-                'like',
-                '%'.request()->query('search').'%'
-            )
-            ->orWhere(
-                'role',
-                'like',
-                '%'.request()->query('search').'%'
-            )
-            ->orderBy(
-                request('sort_field', 'created_at'),
-                request('sort_direction', 'desc')
-            )
+        $search = trim((string) request()->query('search', ''));
+        $sortField = (string) request()->query('sort_field', 'created_at');
+        $sortDirection = strtolower((string) request()->query('sort_direction', 'desc'));
+
+        $allowedSortFields = [
+            'username',
+            'accountType',
+            'is_active',
+            'created_at',
+        ];
+
+        if (! in_array($sortField, $allowedSortFields, true)) {
+            $sortField = 'created_at';
+        }
+
+        if (! in_array($sortDirection, ['asc', 'desc'], true)) {
+            $sortDirection = 'desc';
+        }
+
+        $query = UserAccount::query();
+
+        if ($search !== '') {
+            $query->where(function (Builder $query) use ($search): void {
+                $like = '%'.$search.'%';
+
+                $query->where('username', 'like', $like)
+                    ->orWhere('accountType', 'like', $like);
+            });
+        }
+
+        $model = $query
+            ->orderBy($sortField, $sortDirection)
             ->paginate(5)
-            ->appends(request()->query());
+            ->withQueryString();
 
         return Inertia::render('UserAccounts/Index', [
             'model' => $model,
-            'engineers' => Engineer::orderBy(
-                'last_name',
-                'asc'
-            )->get(),
+            'engineers' => Engineer::query()
+                ->orderBy('last_name')
+                ->get(),
             'queryParams' => request()->query(),
         ]);
     }
@@ -53,22 +70,12 @@ class UserAccountController extends Controller
     ): RedirectResponse {
         $data = $request->validated();
 
-        if (isset($data['password'])) {
-            $data['password'] = Hash::make(
-                $data['password']
-            );
-        }
+        $data['password'] = Hash::make($data['password']);
 
         UserAccount::create($data);
 
-        session()->flash(
-            'message',
-            'Successfully created a user account'
-        );
-
-        return redirect(
-            route('user-accounts.index')
-        );
+        return to_route('user-accounts.index')
+            ->with('message', 'Successfully created a user account');
     }
 
     public function show(UserAccount $userAccount): void
@@ -87,43 +94,23 @@ class UserAccountController extends Controller
     ): RedirectResponse {
         $data = $request->validated();
 
-        if (
-            isset($data['password']) &&
-            $data['password'] !== ''
-        ) {
-            $data['password'] = Hash::make(
-                $data['password']
-            );
+        if (filled($data['password'] ?? null)) {
+            $data['password'] = Hash::make($data['password']);
         } else {
             unset($data['password']);
         }
 
         $userAccount->update($data);
 
-        session()->flash(
-            'message',
-            'Successfully updated a user account'
-        );
-
-        return redirect(
-            route(
-                'user-accounts.index',
-                $request->query()
-            )
-        );
+        return to_route('user-accounts.index', $request->query())
+            ->with('message', 'Successfully updated a user account');
     }
 
     public function destroy(UserAccount $userAccount): RedirectResponse
     {
         $userAccount->delete();
 
-        session()->flash(
-            'message',
-            'Successfully deleted a user account'
-        );
-
-        return redirect(
-            route('user-accounts.index')
-        );
+        return to_route('user-accounts.index')
+            ->with('message', 'Successfully deleted a user account');
     }
 }
