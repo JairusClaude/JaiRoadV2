@@ -37,8 +37,7 @@ class MaintenanceProjectController extends Controller
             'model' => $model,
             'lgus' => Lgu::orderBy('municipality_name', 'asc')
                 ->pluck('id', 'municipality_name'),
-            'engineers' => Engineer::orderBy('last_name', 'asc')
-                ->get(),
+            'engineers' => Engineer::orderBy('last_name', 'asc')->get(),
             'queryParams' => request()->query(),
         ]);
     }
@@ -79,9 +78,7 @@ class MaintenanceProjectController extends Controller
         UpdateMaintenanceProjectRequest $request,
         MaintenanceProject $maintenanceProject
     ): RedirectResponse {
-        $maintenanceProject->update(
-            $request->validated()
-        );
+        $maintenanceProject->update($request->validated());
 
         session()->flash(
             'message',
