@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'project_title',
@@ -19,7 +18,6 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'engineer_id',
     'created_by',
 ])]
-
 class MaintenanceProject extends Model
 {
     /** @return BelongsTo<Lgu, MaintenanceProject> */
@@ -57,5 +55,4 @@ class MaintenanceProject extends Model
     {
         return $this->hasMany(MonthlyUpdate::class, 'maintenance_project_id');
     }
-
 }

@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 // ADD PROJECTID IN ERD
 #[Fillable([
@@ -29,7 +28,6 @@ class Road extends Model
     {
         return $this->belongsTo(Lgu::class, 'lgu_id');
     }
-
 
     /** @return BelongsTo<MaintenanceProject, Road> */
     public function maintenanceProject(): BelongsTo
