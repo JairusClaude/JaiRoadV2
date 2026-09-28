@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
     'document_title',
-    'maintenance_project_id',
+    'maintenance_projects_id',
     'description',
     'file_name',
     'file_path',
@@ -16,15 +16,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class ProjectDocument extends Model
 {
-    /** @return BelongsTo<UserAccount, ProjectDocument> */
+    /** @return BelongsTo<UserAccount, $this> */
     public function uploadedBy(): BelongsTo
     {
         return $this->belongsTo(UserAccount::class, 'uploaded_by');
     }
 
-    /** @return BelongsTo<MaintenanceProject, ProjectDocument> */
+    /** @return BelongsTo<MaintenanceProject, $this> */
     public function maintenanceProject(): BelongsTo
     {
-        return $this->belongsTo(MaintenanceProject::class, 'maintenance_project_id');
+        return $this->belongsTo(
+            MaintenanceProject::class,
+            'maintenance_projects_id'
+        );
     }
 }

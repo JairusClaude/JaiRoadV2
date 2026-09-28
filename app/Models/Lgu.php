@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
@@ -16,30 +15,23 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'mayor_middle_name',
     'mayor_last_name',
 ])]
-
 class Lgu extends Model
 {
-    /** @return BelongsTo<UserAccount, Lgu> */
-    public function createdBy(): BelongsTo
-    {
-        return $this->belongsTo(UserAccount::class, 'created_by');
-    }
-
-    /** @return HasMany<Engineer, Lgu> */
+    /** @return HasMany<Engineer, $this> */
     public function engineers(): HasMany
     {
-        return $this->hasMany(Engineer::class, 'lgu_id');
+        return $this->hasMany(Engineer::class, 'lgus_id');
     }
 
-    /** @return HasMany<Road, Lgu> */
+    /** @return HasMany<Road, $this> */
     public function roads(): HasMany
     {
-        return $this->hasMany(Road::class, 'lgu_id');
+        return $this->hasMany(Road::class, 'lgus_id');
     }
 
-    /** @return HasMany<MaintenanceProject, Lgu> */
+    /** @return HasMany<MaintenanceProject, $this> */
     public function maintenanceProjects(): HasMany
     {
-        return $this->hasMany(MaintenanceProject::class, 'lgu_id');
+        return $this->hasMany(MaintenanceProject::class, 'lgus_id');
     }
 }

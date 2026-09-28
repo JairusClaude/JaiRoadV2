@@ -7,24 +7,19 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
-    'monthly_update_id',
+    'monthly_updates_id',
     'file_name',
     'file_path',
     'file_type',
-    'created_by',
-
 ])]
 class UpdatesMedia extends Model
 {
-    /** @return BelongsTo<MonthlyUpdate, UpdatesMedia> */
+    /** @return BelongsTo<MonthlyUpdate, $this> */
     public function monthlyUpdate(): BelongsTo
     {
-        return $this->belongsTo(MonthlyUpdate::class, 'monthly_update_id');
-    }
-
-    /** @return BelongsTo<UserAccount, UpdatesMedia> */
-    public function uploadedBy(): BelongsTo // Check if this really is the parameter in the migration
-    {
-        return $this->belongsTo(UserAccount::class, 'created_by');
+        return $this->belongsTo(
+            MonthlyUpdate::class,
+            'monthly_updates_id'
+        );
     }
 }
