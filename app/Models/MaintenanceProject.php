@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'project_title',
@@ -15,47 +14,51 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'start_date',
     'end_date',
     'gravelled_road_in_km',
-    'lgu_id',
-    'engineer_id',
+    'lgus_id',
+    'engineers_id',
     'created_by',
 ])]
-
 class MaintenanceProject extends Model
 {
-    /** @return BelongsTo<Lgu, MaintenanceProject> */
+    /** @return BelongsTo<Lgu, $this> */
     public function lgu(): BelongsTo
     {
-        return $this->belongsTo(Lgu::class, 'lgu_id');
+        return $this->belongsTo(Lgu::class, 'lgus_id');
     }
 
-    /** @return BelongsTo<Engineer, MaintenanceProject> */
+    /** @return BelongsTo<Engineer, $this> */
     public function managingEngineerID(): BelongsTo
     {
-        return $this->belongsTo(Engineer::class, 'engineer_id');
+        return $this->belongsTo(
+            Engineer::class,
+            'engineers_id'
+        );
     }
 
-    /** @return BelongsTo<UserAccount, MaintenanceProject> */
+    /** @return BelongsTo<UserAccount, $this> */
     public function createdBy(): BelongsTo
     {
-        return $this->belongsTo(UserAccount::class, 'created_by');
+        return $this->belongsTo(
+            UserAccount::class,
+            'created_by'
+        );
     }
 
-    /** @return HasMany<Road, MaintenancePoject> */
-    public function roads(): HasMany
-    {
-        return $this->hasMany(Road::class);
-    }
-
-    /** @return HasMany<ProjectDocument, MaintenanceProject> */
+    /** @return HasMany<ProjectDocument, $this> */
     public function projectDocuments(): HasMany
     {
-        return $this->hasMany(ProjectDocument::class, 'maintenance_project_id');
+        return $this->hasMany(
+            ProjectDocument::class,
+            'maintenance_projects_id'
+        );
     }
 
-    /** @return HasMany<MonthlyUpdate, MaintenanceProject> */
+    /** @return HasMany<MonthlyUpdate, $this> */
     public function monthlyUpdates(): HasMany
     {
-        return $this->hasMany(MonthlyUpdate::class, 'maintenance_project_id');
+        return $this->hasMany(
+            MonthlyUpdate::class,
+            'maintenance_projects_id'
+        );
     }
-
 }
