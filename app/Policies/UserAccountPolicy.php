@@ -48,7 +48,9 @@ class UserAccountPolicy
     }
 
     /**
-     * Determine whether the user can restore(User $user, UserAccount $userAccount): bool
+     * Determine whether the user can restore the model.
+     */
+    public function restore(User $user, UserAccount $userAccount): bool
     {
         return false;
     }
