@@ -12,7 +12,7 @@ class UpdateMonthlyUpdateRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,11 @@ class UpdateMonthlyUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'update_month' => ['required', 'string', 'max:255'],
+            'progress_percentage' => ['required', 'integer', 'min:0', 'max:100'],
+            'summary_of_text_reports' => ['required', 'string'],
+            'created_by' => ['required', 'integer', 'exists:user_accounts,id'],
+            'maintenance_projects_id' => ['required', 'integer', 'exists:maintenance_projects,id'],
         ];
     }
 }

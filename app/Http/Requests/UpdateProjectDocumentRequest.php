@@ -12,7 +12,7 @@ class UpdateProjectDocumentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,12 @@ class UpdateProjectDocumentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'document_title' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string'],
+            'file_name' => ['required', 'string', 'max:255'],
+            'file_path' => ['required', 'string', 'max:255'],
+            'maintenance_projects_id' => ['required', 'integer', 'exists:maintenance_projects,id'],
+            'uploaded_by' => ['required', 'integer', 'exists:user_accounts,id'],
         ];
     }
 }

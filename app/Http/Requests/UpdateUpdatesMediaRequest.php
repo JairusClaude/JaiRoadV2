@@ -12,7 +12,7 @@ class UpdateUpdatesMediaRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,10 @@ class UpdateUpdatesMediaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'file_name' => ['required', 'string', 'max:255'],
+            'file_path' => ['required', 'string', 'max:255'],
+            'file_type' => ['required', 'string', 'max:255'],
+            'monthly_updates_id' => ['required', 'integer', 'exists:monthly_updates,id'],
         ];
     }
 }

@@ -12,7 +12,7 @@ class UpdateEngineerRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,14 @@ class UpdateEngineerRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'first_name' => ['required', 'string', 'max:255'],
+            'middle_name' => ['required', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255'],
+            'contact_no' => ['required', 'integer'],
+            'rank' => ['required', 'string', 'max:255'],
+            'position' => ['required', 'string', 'max:255'],
+            'lgus_id' => ['required', 'integer', 'exists:lgus,id'],
         ];
     }
 }
