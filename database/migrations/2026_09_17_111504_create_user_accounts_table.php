@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('password');
             $table->boolean('is_active');
             $table->timestamps();
-            $table->enum('accountType', ['viewer','user', 'admin']);  //role, ['user', 'admin']
+            $table->enum('accountType', ['viewer', 'user', 'admin']);  // role, ['user', 'admin']
 
             $table->foreignId('engineers_id')
                 ->nullable()
