@@ -14,9 +14,7 @@ class LguFactory extends Factory
     protected $model = Lgu::class;
 
     /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
+     * @extends Factory<Lgu>
      */
     public function definition(): array
     {

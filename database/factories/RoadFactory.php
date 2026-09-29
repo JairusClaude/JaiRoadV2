@@ -8,9 +8,13 @@ use App\Models\Road;
 use App\Models\UserAccount;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends Factory<Road>
+ */
 class RoadFactory extends Factory
 {
     protected $model = Road::class;
+
 
     public function definition(): array
     {

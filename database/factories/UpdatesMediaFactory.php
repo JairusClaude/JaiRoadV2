@@ -14,10 +14,9 @@ class UpdatesMediaFactory extends Factory
 {
     protected $model = UpdatesMedia::class;
 
+
     /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
+     * @extends Factory<UpdatesMedia>
      */
     public function definition(): array
     {

@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Engineer;
-use App\Models\Lgu;
+use App\Models\Lgu; 
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -13,10 +13,9 @@ class EngineerFactory extends Factory
 {
     protected $model = Engineer::class;
 
+
     /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
+     * @extends Factory<Engineer>
      */
     public function definition(): array
     {

@@ -15,10 +15,9 @@ class MaintenanceProjectFactory extends Factory
 {
     protected $model = MaintenanceProject::class;
 
+
     /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
+     * @extends Factory<MaintenanceProject>
      */
     public function definition(): array
     {

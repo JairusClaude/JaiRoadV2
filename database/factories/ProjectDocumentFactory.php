@@ -14,10 +14,9 @@ class ProjectDocumentFactory extends Factory
 {
     protected $model = ProjectDocument::class;
 
+
     /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
+     * @extends Factory<ProjectDocument>
      */
     public function definition(): array
     {

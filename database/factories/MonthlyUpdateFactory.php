@@ -6,7 +6,6 @@ use App\Models\MaintenanceProject;
 use App\Models\MonthlyUpdate;
 use App\Models\UserAccount;
 use Illuminate\Database\Eloquent\Factories\Factory;
-
 /**
  * @extends Factory<MonthlyUpdate>
  */
@@ -15,9 +14,7 @@ class MonthlyUpdateFactory extends Factory
     protected $model = MonthlyUpdate::class;
 
     /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
+     * @extends Factory<MonthlyUpdate>
      */
     public function definition(): array
     {
