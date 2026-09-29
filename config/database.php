@@ -102,7 +102,11 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
+<<<<<<< HEAD
             'sslmode' => 'require',
+=======
+            'sslmode' => 'require','sslmode' => env('DB_SSLMODE', 'require'), //ORIGINAL: 'sslmode' => env('DB_SSLMODE', 'prefer'),
+>>>>>>> a6109de (factory update)
         ],
 
         'sqlsrv' => [
