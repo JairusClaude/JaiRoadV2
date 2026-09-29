@@ -2,10 +2,9 @@
 
 namespace Database\Factories;
 
-use App\Models\ProjectDocument;
 use App\Models\MaintenanceProject;
+use App\Models\ProjectDocument;
 use App\Models\UserAccount;
-
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -14,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class ProjectDocumentFactory extends Factory
 {
     protected $model = ProjectDocument::class;
+
     /**
      * Define the model's default state.
      *

@@ -4,12 +4,13 @@ namespace Database\Factories;
 
 use App\Models\Lgu;
 use App\Models\MaintenanceProject;
+use App\Models\Road;
 use App\Models\UserAccount;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class RoadFactory extends Factory
 {
-    protected $model = \App\Models\Road::class;
+    protected $model = Road::class;
 
     public function definition(): array
     {
@@ -26,11 +27,11 @@ class RoadFactory extends Factory
         ];
 
         return [
-            'road_name'             => $this->faker->streetName(),
-            'kilometers'            => $this->faker->randomFloat(2, 1, 50),
-            'geojsondata'           => json_encode($lineString),
-            'created_by'            => UserAccount::factory(),
-            'lgu_id'                => Lgu::factory(),
+            'road_name' => $this->faker->streetName(),
+            'kilometers' => $this->faker->randomFloat(2, 1, 50),
+            'geojsondata' => json_encode($lineString),
+            'created_by' => UserAccount::factory(),
+            'lgu_id' => Lgu::factory(),
             'maintenance_project_id' => MaintenanceProject::factory(),
         ];
     }
@@ -53,10 +54,10 @@ class RoadFactory extends Factory
 
             return [
                 'geojsondata' => json_encode([
-                    'type'        => 'LineString',
+                    'type' => 'LineString',
                     'coordinates' => $coordinates,
                 ]),
             ];
         });
     }
-}   
+}
