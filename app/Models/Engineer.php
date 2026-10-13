@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\EngineerFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -21,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 ])]
 class Engineer extends Model
 {
+    /** @use HasFactory<EngineerFactory> */
     use HasFactory;
 
     /** @return BelongsTo<Lgu, $this> */

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\MonthlyUpdateFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class MonthlyUpdate extends Model
 {
+    /** @use HasFactory<MonthlyUpdateFactory> */
     use HasFactory;
 
     /** @return BelongsTo<UserAccount, $this> */

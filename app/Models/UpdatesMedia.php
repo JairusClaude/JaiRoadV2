@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\UpdatesMediaFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class UpdatesMedia extends Model
 {
+    /** @use HasFactory<UpdatesMediaFactory> */
     use HasFactory;
 
     /** @return BelongsTo<MonthlyUpdate, $this> */

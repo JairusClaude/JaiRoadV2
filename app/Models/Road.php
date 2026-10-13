@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\RoadFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class Road extends Model
 {
+    /** @use HasFactory<RoadFactory> */
     use HasFactory;
 
     /** @return BelongsTo<UserAccount, $this> */
