@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\Models\Lgu;
-use App\Models\MaintenanceProject;
 use App\Models\Road;
 use App\Models\UserAccount;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -15,53 +14,43 @@ class RoadFactory extends Factory
 {
     protected $model = Road::class;
 
-
     public function definition(): array
     {
-        $lon = $this->faker->longitude();
-        $lat = $this->faker->latitude();
+        // Approximate coordinates around the Davao Region.
+        $longitude = fake()->randomFloat(6, 125.0, 126.5);
+        $latitude = fake()->randomFloat(6, 6.8, 8.2);
 
-        // Generate a simple 2-point LineString (a short "road" segment)
-        $lineString = [
+        $geoJson = [
             'type' => 'LineString',
             'coordinates' => [
-                [$lon, $lat],
-                [$lon + $this->faker->randomFloat(3, -0.05, 0.05), $lat + $this->faker->randomFloat(3, -0.05, 0.05)],
+                [$longitude, $latitude],
+                [
+                    $longitude + fake()->randomFloat(6, -0.005, 0.005),
+                    $latitude + fake()->randomFloat(6, -0.005, 0.005),
+                ],
             ],
         ];
 
         return [
-            'road_name' => $this->faker->streetName(),
-            'kilometers' => $this->faker->randomFloat(2, 1, 50),
-            'geojsondata' => json_encode($lineString),
+            'road_name' => fake()->streetName(),
+            'kilometers' => fake()->numberBetween(1, 50),
+            'geojsondata' => json_encode(
+                $geoJson,
+                JSON_UNESCAPED_SLASHES
+            ),
             'created_by' => UserAccount::factory(),
-            'lgu_id' => Lgu::factory(),
-            'maintenance_project_id' => MaintenanceProject::factory(),
+            'lgus_id' => Lgu::factory(),
+            'road_id' => null,
         ];
     }
 
     /**
-     * A road with a longer, multi-point LineString.
+     * Create a road that has a parent road.
      */
-    public function winding(int $points = 10): static
+    public function child(): static
     {
-        return $this->state(function () use ($points) {
-            $lon = $this->faker->longitude();
-            $lat = $this->faker->latitude();
-
-            $coordinates = [];
-            for ($i = 0; $i < $points; $i++) {
-                $lon += $this->faker->randomFloat(4, -0.01, 0.01);
-                $lat += $this->faker->randomFloat(4, -0.01, 0.01);
-                $coordinates[] = [$lon, $lat];
-            }
-
-            return [
-                'geojsondata' => json_encode([
-                    'type' => 'LineString',
-                    'coordinates' => $coordinates,
-                ]),
-            ];
-        });
+        return $this->state(fn (array $attributes) => [
+            'road_id' => Road::factory(),
+        ]);
     }
 }

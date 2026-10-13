@@ -4,7 +4,6 @@ namespace Database\Factories;
 
 use App\Models\MonthlyUpdate;
 use App\Models\UpdatesMedia;
-use App\Models\UserAccount;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -14,19 +13,15 @@ class UpdatesMediaFactory extends Factory
 {
     protected $model = UpdatesMedia::class;
 
-
-    /**
-     * @extends Factory<UpdatesMedia>
-     */
     public function definition(): array
     {
-        return [
-            'file_name' => $this->faker->word(),
-            'file_path' => $this->faker->filePath(),
-            'file_type' => $this->faker->randomElement(['pdf', 'xlsx', 'docx', 'pptx']),
+        $fileName = fake()->uuid() . '.pdf';
 
-            'monthly_update_id' => MonthlyUpdate::factory(),
-            'created_by' => UserAccount::factory(),
+        return [
+            'file_name' => $fileName,
+            'file_path' => 'updates/' . $fileName,
+            'file_type' => 'docs',
+            'monthly_updates_id' => MonthlyUpdate::factory(),
         ];
     }
 }

@@ -14,19 +14,16 @@ class ProjectDocumentFactory extends Factory
 {
     protected $model = ProjectDocument::class;
 
-
-    /**
-     * @extends Factory<ProjectDocument>
-     */
     public function definition(): array
     {
-        return [
-            'document_title' => $this->faker->sentence(3),
-            'description' => $this->faker->paragraph(),
-            'file_name' => $this->faker->word(),
-            'file_path' => $this->faker->filePath(),
+        $fileName = fake()->uuid() . '.pdf';
 
-            'maintenance_project_id' => MaintenanceProject::factory(),
+        return [
+            'document_title' => fake()->sentence(3),
+            'description' => fake()->paragraph(),
+            'file_name' => $fileName,
+            'file_path' => 'project-documents/' . $fileName,
+            'maintenance_projects_id' => MaintenanceProject::factory(),
             'uploaded_by' => UserAccount::factory(),
         ];
     }

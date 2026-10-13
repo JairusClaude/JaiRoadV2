@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\Models\Lgu;
-use App\Models\UserAccount;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -13,40 +12,30 @@ class LguFactory extends Factory
 {
     protected $model = Lgu::class;
 
-    /**
-     * @extends Factory<Lgu>
-     */
     public function definition(): array
     {
         $lguPool = [
-            ['municipality' => 'Compostela', 'province' => 'Davao de Oro', 'region' => 'Region XI'],
-            ['municipality' => 'Maragusan', 'province' => 'Davao de Oro', 'region' => 'Region XI'],
-            ['municipality' => 'Monkayo', 'province' => 'Davao de Oro', 'region' => 'Region XI'],
-            ['municipality' => 'Montevista', 'province' => 'Davao de Oro', 'region' => 'Region XI'],
-            ['municipality' => 'New Bataan', 'province' => 'Davao de Oro', 'region' => 'Region XI'],
-            ['municipality' => 'Laak', 'province' => 'Davao de Oro', 'region' => 'Region XI'],
-            ['municipality' => 'Mabini', 'province' => 'Davao de Oro', 'region' => 'Region XI'],
-            ['municipality' => 'Maco', 'province' => 'Davao de Oro', 'region' => 'Region XI'],
-            ['municipality' => 'Mawab', 'province' => 'Davao de Oro', 'region' => 'Region XI'],
-            ['municipality' => 'Nabunturan', 'province' => 'Davao de Oro', 'region' => 'Region XI'],
-            ['municipality' => 'Pantukan', 'province' => 'Davao de Oro', 'region' => 'Region XI'],
+            'Compostela',
+            'Maragusan',
+            'Monkayo',
+            'Montevista',
+            'New Bataan',
+            'Laak',
+            'Mabini',
+            'Maco',
+            'Mawab',
+            'Nabunturan',
+            'Pantukan',
         ];
 
-        // 2. Safely pull a unique combination out of the pool
-        $selectedLgu = $this->faker->unique()->randomElement($lguPool);
-
         return [
-            'municipality_name' => $selectedLgu['municipality'],
-            'province' => $selectedLgu['province'],
-            'region' => $selectedLgu['region'],
-
-            'contact_no' => $this->faker->unique()->numerify('09#########'),
-
-            'mayor_first_name' => $this->faker->firstName(),
-            'mayor_middle_name' => $this->faker->lastName(),
-            'mayor_last_name' => $this->faker->lastName(),
-
-            'created_by' => UserAccount::factory(),
+            'municipality_name' => fake()->randomElement($lguPool),
+            'province' => 'Davao de Oro',
+            'region' => 'XI',
+            'contact_no' => fake()->numerify('09#########'),
+            'mayor_first_name' => fake()->firstName(),
+            'mayor_middle_name' => fake()->firstName(),
+            'mayor_last_name' => fake()->lastName(),
         ];
     }
 }

@@ -15,40 +15,28 @@ class MaintenanceProjectFactory extends Factory
 {
     protected $model = MaintenanceProject::class;
 
-
-    /**
-     * @extends Factory<MaintenanceProject>
-     */
     public function definition(): array
     {
-        // 1. Generate chronological sequential dates safely
-        $startDate = $this->faker->dateTimeBetween('-6 months', '+2 months');
+        $startDate = fake()->dateTimeBetween('-6 months', 'now');
 
-        $end = clone $startDate;
-        $end->modify('+1 month');
-
-        $endDate = $this->faker->dateTimeBetween($startDate, $end);
-
-        // 2. Define standard status strings for a project
-        $statuses = ['Pending', 'Ongoing', 'Completed', 'Suspended'];
+        $endDate = (clone $startDate)->modify(
+            '+' . fake()->numberBetween(1, 180) . ' days'
+        );
 
         return [
-            // Combines words uniquely so project titles never collide in a single run
-            'project_title' => $this->faker->unique()->sentence(4),
-            'description' => $this->faker->paragraph(),
-
-            // Randomly assigns a status; safe to duplicate because unique() is NOT called here
-            'status' => $this->faker->randomElement($statuses),
-
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-
-            // Generates a floating point number for road distance (e.g., 2.45 km)
-            'gravelled_road_in_km' => $this->faker->randomFloat(4, 1.0, 4.0),
-
-            // 3. Connect to foreign relationship factories automatically
-            'lgu_id' => Lgu::factory(),
-            'engineer_id' => Engineer::factory(),
+            'project_title' => fake()->unique()->sentence(4),
+            'description' => fake()->paragraph(),
+            'status' => fake()->randomElement([
+                'Pending',
+                'Ongoing',
+                'Completed',
+                'Suspended',
+            ]),
+            'start_date' => $startDate->format('Y-m-d'),
+            'end_date' => $endDate->format('Y-m-d'),
+            'gravelled_road_in_km' => fake()->numberBetween(1, 50),
+            'lgus_id' => Lgu::factory(),
+            'engineers_id' => Engineer::factory(),
             'created_by' => UserAccount::factory(),
         ];
     }
