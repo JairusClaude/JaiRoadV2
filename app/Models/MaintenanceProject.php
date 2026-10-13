@@ -21,8 +21,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class MaintenanceProject extends Model
 {
-
     use HasFactory;
+
     /** @return BelongsTo<Lgu, $this> */
     public function lgu(): BelongsTo
     {

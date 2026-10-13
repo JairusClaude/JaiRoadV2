@@ -20,7 +20,7 @@ class MaintenanceProjectFactory extends Factory
         $startDate = fake()->dateTimeBetween('-6 months', 'now');
 
         $endDate = (clone $startDate)->modify(
-            '+' . fake()->numberBetween(1, 180) . ' days'
+            '+'.fake()->numberBetween(1, 180).' days'
         );
 
         return [

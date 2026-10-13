@@ -15,11 +15,11 @@ class UpdatesMediaFactory extends Factory
 
     public function definition(): array
     {
-        $fileName = fake()->uuid() . '.pdf';
+        $fileName = fake()->uuid().'.pdf';
 
         return [
             'file_name' => $fileName,
-            'file_path' => 'updates/' . $fileName,
+            'file_path' => 'updates/'.$fileName,
             'file_type' => 'docs',
             'monthly_updates_id' => MonthlyUpdate::factory(),
         ];

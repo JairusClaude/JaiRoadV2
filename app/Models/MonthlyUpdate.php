@@ -17,8 +17,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class MonthlyUpdate extends Model
 {
-
     use HasFactory;
+
     /** @return BelongsTo<UserAccount, $this> */
     public function createdBy(): BelongsTo
     {

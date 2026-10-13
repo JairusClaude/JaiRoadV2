@@ -18,8 +18,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class UserAccount extends Model
 {
-
     use HasFactory;
+
     /** @return BelongsTo<Engineer, $this> */
     public function engineer(): BelongsTo
     {

@@ -18,8 +18,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class Road extends Model
 {
-
     use HasFactory;
+
     /** @return BelongsTo<UserAccount, $this> */
     public function createdBy(): BelongsTo
     {

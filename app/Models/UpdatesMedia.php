@@ -15,8 +15,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class UpdatesMedia extends Model
 {
-
     use HasFactory;
+
     /** @return BelongsTo<MonthlyUpdate, $this> */
     public function monthlyUpdate(): BelongsTo
     {

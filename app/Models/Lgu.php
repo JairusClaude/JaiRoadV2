@@ -18,8 +18,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class Lgu extends Model
 {
-
     use HasFactory;
+
     /** @return HasMany<Engineer, $this> */
     public function engineers(): HasMany
     {

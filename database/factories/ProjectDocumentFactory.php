@@ -16,13 +16,13 @@ class ProjectDocumentFactory extends Factory
 
     public function definition(): array
     {
-        $fileName = fake()->uuid() . '.pdf';
+        $fileName = fake()->uuid().'.pdf';
 
         return [
             'document_title' => fake()->sentence(3),
             'description' => fake()->paragraph(),
             'file_name' => $fileName,
-            'file_path' => 'project-documents/' . $fileName,
+            'file_path' => 'project-documents/'.$fileName,
             'maintenance_projects_id' => MaintenanceProject::factory(),
             'uploaded_by' => UserAccount::factory(),
         ];

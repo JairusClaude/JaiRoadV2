@@ -21,8 +21,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 ])]
 class Engineer extends Model
 {
-
     use HasFactory;
+
     /** @return BelongsTo<Lgu, $this> */
     public function lgu(): BelongsTo
     {
