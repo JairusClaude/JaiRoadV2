@@ -1,0 +1,24 @@
+<?php
+
+namespace Database\Factories;
+
+use App\Models\MaintenanceRecord;
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+/**
+ * @extends Factory<MaintenanceRecord>
+ */
+class MaintenanceRecordFactory extends Factory
+{
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
+    public function definition(): array
+    {
+        return [
+            //
+        ];
+    }
+}

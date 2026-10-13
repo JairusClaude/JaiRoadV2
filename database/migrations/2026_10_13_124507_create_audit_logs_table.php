@@ -13,6 +13,25 @@ return new class extends Migration
     {
         Schema::create('audit_logs', function (Blueprint $table) {
             $table->id();
+            $table->string('actor_identifier');
+            $table->string('action');
+            $table->string('entity_type');
+            $table->bigInteger('entity_id');
+            $table->text('description');
+            
+            $table->json('old_value')->nullable(); 
+            $table->json('new_value')->nullable();
+            
+            $table->text('notification_message');
+
+            $table->foreignId('user_id')
+                ->nullable() // Add this if some logs are system-generated
+                ->constrained('user_accounts');
+
+            $table->foreignId('recipient_user_id')
+                ->nullable() // Add this if not every action has a recipient user
+                ->constrained('user_accounts');
+
             $table->timestamps();
         });
     }
