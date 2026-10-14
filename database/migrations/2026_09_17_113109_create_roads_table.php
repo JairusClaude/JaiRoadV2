@@ -23,6 +23,7 @@ return new class extends Migration
             $table->foreignId('lgus_id')
                 ->constrained('lgus');
             $table->foreignId('road_id')
+                ->nullable()
                 ->constrained('roads');
         });
     }

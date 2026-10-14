@@ -28,7 +28,7 @@ class UpdateRoadRequest extends FormRequest
             'geojsondata' => ['required', 'string', 'max:255'],
             'created_by' => ['required', 'integer', 'exists:user_accounts,id'],
             'lgus_id' => ['required', 'integer', 'exists:lgus,id'],
-            'road_id' => ['required', 'integer', 'exists:roads,id'],
+            'road_id' => ['nullable', 'integer', 'exists:roads,id'],
         ];
     }
 }

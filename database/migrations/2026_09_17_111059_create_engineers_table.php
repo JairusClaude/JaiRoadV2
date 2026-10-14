@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('middle_name');
             $table->string('last_name');
             $table->string('email');
-            $table->integer('contact_no');
+            $table->string('contact_no', 11);
             $table->string('rank');
             $table->string('position');
             $table->timestamps();

@@ -27,7 +27,7 @@ class StoreEngineerRequest extends FormRequest
             'middle_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255'],
-            'contact_no' => ['required', 'integer'],
+            'contact_no' => ['required', 'string', 'regex:/^09[0-9]{9}$/'],
             'rank' => ['required', 'string', 'max:255'],
             'position' => ['required', 'string', 'max:255'],
             'lgus_id' => ['required', 'integer', 'exists:lgus,id'],
