@@ -20,8 +20,8 @@ class MaintenanceProjectSeeder extends Seeder
                 'start_date' => '2025-01-01',
                 'end_date' => '2025-02-01',
                 'gravelled_road_in_km' => 4,
-                'lgu_id' => 1,
-                'engineer_id' => 1,
+                'lgus_id' => 1,
+                'engineers_id' => 1,
                 'created_by' => 1,
             ],
             [
@@ -31,8 +31,8 @@ class MaintenanceProjectSeeder extends Seeder
                 'start_date' => '2025-02-01',
                 'end_date' => '2025-03-01',
                 'gravelled_road_in_km' => 3,
-                'lgu_id' => 2,
-                'engineer_id' => 2,
+                'lgus_id' => 2,
+                'engineers_id' => 2,
                 'created_by' => 2,
             ],
             [
@@ -42,8 +42,8 @@ class MaintenanceProjectSeeder extends Seeder
                 'start_date' => '2025-03-01',
                 'end_date' => '2025-04-01',
                 'gravelled_road_in_km' => 5,
-                'lgu_id' => 3,
-                'engineer_id' => 3,
+                'lgus_id' => 3,
+                'engineers_id' => 3,
                 'created_by' => 3,
             ],
             [
@@ -53,8 +53,8 @@ class MaintenanceProjectSeeder extends Seeder
                 'start_date' => '2025-04-01',
                 'end_date' => '2025-05-01',
                 'gravelled_road_in_km' => 6,
-                'lgu_id' => 4,
-                'engineer_id' => 4,
+                'lgus_id' => 4,
+                'engineers_id' => 4,
                 'created_by' => 4,
             ],
         ];
