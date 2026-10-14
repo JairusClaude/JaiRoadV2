@@ -2,16 +2,15 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\MaintenanceRecord;
 use Illuminate\Database\Seeder;
 
 class MaintenanceRecordSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        //
+        MaintenanceRecord::factory()
+            ->count(10)
+            ->create();
     }
 }
