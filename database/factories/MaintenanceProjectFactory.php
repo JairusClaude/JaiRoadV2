@@ -37,7 +37,11 @@ class MaintenanceProjectFactory extends Factory
             'gravelled_road_in_km' => fake()->numberBetween(1, 50),
             'lgus_id' => Lgu::factory(),
             'engineers_id' => Engineer::factory(),
-            'created_by' => UserAccount::factory(),
+
+            'lgus_id' => fn (array $attributes): int =>
+                Engineer::query()
+                ->findOrFail($attributes['engineers_id'])
+                ->lgus_id,
         ];
     }
 }
