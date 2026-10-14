@@ -21,7 +21,7 @@ class EngineerSeeder extends Seeder
                 'contact_no' => '09000000001',
                 'rank' => 'Engineer I',
                 'position' => 'Field Engineer',
-                'lgu_id' => 1,
+                'lgus_id' => 1,
                 'created_by' => 1,
             ],
             [
@@ -32,7 +32,7 @@ class EngineerSeeder extends Seeder
                 'contact_no' => '09000000002',
                 'rank' => 'Engineer II',
                 'position' => 'Field Engineer',
-                'lgu_id' => 2,
+                'lgus_id' => 2,
                 'created_by' => 2,
             ],
             [
@@ -43,7 +43,7 @@ class EngineerSeeder extends Seeder
                 'contact_no' => '09000000003',
                 'rank' => 'Engineer III',
                 'position' => 'Resident Engineer',
-                'lgu_id' => 3,
+                'lgus_id' => 3,
                 'created_by' => 3,
             ],
             [
@@ -54,7 +54,7 @@ class EngineerSeeder extends Seeder
                 'contact_no' => '09000000004',
                 'rank' => 'Engineer IV',
                 'position' => 'Assistant Head',
-                'lgu_id' => 4,
+                'lgus_id' => 4,
                 'created_by' => 4,
             ],
         ];

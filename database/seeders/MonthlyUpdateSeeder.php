@@ -14,28 +14,28 @@ class MonthlyUpdateSeeder extends Seeder
     {
         $monthlyUpdates = [
             [
-                'maintenance_project_id' => 1,
+                'maintenance_projects_id' => 1,
                 'update_month' => 'Febuary',
                 'progress_percentage' => 90,
                 'summary_of_text_reports' => 'Summary...',
                 'created_by' => 1,
             ],
             [
-                'maintenance_project_id' => 2,
+                'maintenance_projects_id' => 2,
                 'update_month' => 'March',
                 'progress_percentage' => 80,
                 'summary_of_text_reports' => 'Summary...',
                 'created_by' => 2,
             ],
             [
-                'maintenance_project_id' => 3,
+                'maintenance_projects_id' => 3,
                 'update_month' => 'April',
                 'progress_percentage' => 70,
                 'summary_of_text_reports' => 'Summary...',
                 'created_by' => 3,
             ],
             [
-                'maintenance_project_id' => 4,
+                'maintenance_projects_id' => 4,
                 'update_month' => 'May',
                 'progress_percentage' => 60,
                 'summary_of_text_reports' => 'Summary...',
