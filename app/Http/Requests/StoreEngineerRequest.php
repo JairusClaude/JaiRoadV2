@@ -1,36 +1,68 @@
+
 <?php
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Models\Engineer;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreEngineerRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Only users authorized by the Engineer policy may create engineers.
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can('create', Engineer::class) ?? false;
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Get the validation rules for creating an engineer.
      *
-     * @return array<string, ValidationRule|array<mixed>|string>
+     * @return array<string, mixed>
      */
     public function rules(): array
     {
         return [
-            'first_name' => ['required', 'string', 'max:255'],
-            'middle_name' => ['required', 'string', 'max:255'],
-            'last_name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255'],
-            'contact_no' => ['required', 'string', 'regex:/^09[0-9]{9}$/'],
-            'rank' => ['required', 'string', 'max:255'],
-            'position' => ['required', 'string', 'max:255'],
-            'lgus_id' => ['required', 'integer', 'exists:lgus,id'],
+            'first_name' => [
+                'required',
+                'string',
+                'max:100',
+            ],
+
+            'middle_name' => [
+                'nullable',
+                'string',
+                'max:100',
+            ],
+
+            'last_name' => [
+                'required',
+                'string',
+                'max:100',
+            ],
+
+            'contact_no' => [
+                'required',
+                'string',
+                'max:30',
+            ],
+
+            'rank' => [
+                'required',
+                'string',
+                'max:100',
+            ],
+
+            'engineer_status' => [
+                'sometimes',
+                'required',
+                'string',
+                'max:20',
+                Rule::in(['Active', 'Retired']),
+            ],
         ];
     }
 }
+
