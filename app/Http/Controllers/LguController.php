@@ -52,7 +52,7 @@ class LguController extends Controller
 
         if ($search !== '') {
             $query->where(function (Builder $query) use ($search): void {
-                $like = '%' . $search . '%';
+                $like = '%'.$search.'%';
 
                 $query->where('municipality_name', 'like', $like)
                     ->orWhere('province', 'like', $like)
@@ -151,7 +151,7 @@ class LguController extends Controller
                 ->with(
                     'error',
                     'This LGU cannot be deleted because road coverage '
-                    . 'or engineer assignment records still reference it.'
+                    .'or engineer assignment records still reference it.'
                 );
         }
 

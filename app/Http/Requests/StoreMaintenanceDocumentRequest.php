@@ -28,7 +28,7 @@ class StoreMaintenanceDocumentRequest extends FormRequest
      */
     public function rules(): array
     {
-        $maintenanceRecord = new MaintenanceRecord();
+        $maintenanceRecord = new MaintenanceRecord;
 
         return [
             'maintenance_id' => [

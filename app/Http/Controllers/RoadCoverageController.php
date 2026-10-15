@@ -84,7 +84,7 @@ class RoadCoverageController extends Controller
 
         if ($search !== '') {
             $query->where(function (Builder $query) use ($search): void {
-                $like = '%' . $search . '%';
+                $like = '%'.$search.'%';
 
                 $query->where('road_name', 'like', $like)
                     ->orWhereHas(
@@ -100,7 +100,7 @@ class RoadCoverageController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        $lguModel = new Lgu();
+        $lguModel = new Lgu;
 
         return Inertia::render('RoadCoverages/Index', [
             'model' => $model,
@@ -162,7 +162,7 @@ class RoadCoverageController extends Controller
             abort(
                 403,
                 'The authenticated account is not linked to an Engineer. '
-                . 'A valid Engineer creator must be established.'
+                .'A valid Engineer creator must be established.'
             );
         }
 
@@ -330,7 +330,7 @@ class RoadCoverageController extends Controller
 
             Gate::authorize('delete', $record);
 
-            $project = new MaintenanceProject();
+            $project = new MaintenanceProject;
 
             $isReferenced = MaintenanceProject::query()
                 ->where(
@@ -363,7 +363,7 @@ class RoadCoverageController extends Controller
                 ->with(
                     'error',
                     'This RoadCoverage cannot be deleted because a '
-                    . 'MaintenanceProject references it.'
+                    .'MaintenanceProject references it.'
                 );
         }
 
@@ -468,8 +468,8 @@ class RoadCoverageController extends Controller
     /**
      * Create an audit event inside the current transaction.
      *
-     * @param array<string, mixed>|null $oldValues
-     * @param array<string, mixed>|null $newValues
+     * @param  array<string, mixed>|null  $oldValues
+     * @param  array<string, mixed>|null  $newValues
      */
     private function writeAuditLog(
         UserAccount $actorAccount,
@@ -488,7 +488,7 @@ class RoadCoverageController extends Controller
         AuditLog::create([
             'user_id' => $actorAccount->getKey(),
             'actor_identifier' => 'UserAccount#'
-                . $actorAccount->getKey(),
+                .$actorAccount->getKey(),
             'action' => $action,
             'entity_type' => 'RoadCoverage',
             'entity_id' => $roadCoverage->getKey(),

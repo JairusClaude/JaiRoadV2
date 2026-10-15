@@ -31,7 +31,7 @@ class UpdateRoadCoverageRequest extends FormRequest
      */
     public function rules(): array
     {
-        $lgu = new Lgu();
+        $lgu = new Lgu;
 
         return [
             'road_name' => [

@@ -90,7 +90,7 @@ class MonthlyUpdateController extends Controller
 
         if ($search !== '') {
             $query->where(function (Builder $query) use ($search): void {
-                $like = '%' . $search . '%';
+                $like = '%'.$search.'%';
 
                 $query->where('update_month', 'like', $like)
                     ->orWhere(
@@ -387,8 +387,8 @@ class MonthlyUpdateController extends Controller
                 ->with(
                     'error',
                     'This monthly update cannot be deleted while Media '
-                    . 'records remain attached. Handle the related media '
-                    . 'records and stored files explicitly first.'
+                    .'records remain attached. Handle the related media '
+                    .'records and stored files explicitly first.'
                 );
         }
 
@@ -472,8 +472,8 @@ class MonthlyUpdateController extends Controller
     /**
      * Save an audit event in the current database transaction.
      *
-     * @param array<string, mixed>|null $oldValues
-     * @param array<string, mixed>|null $newValues
+     * @param  array<string, mixed>|null  $oldValues
+     * @param  array<string, mixed>|null  $newValues
      */
     private function writeAuditLog(
         UserAccount $actorAccount,
@@ -492,7 +492,7 @@ class MonthlyUpdateController extends Controller
         AuditLog::create([
             'user_id' => $actorAccount->getKey(),
             'actor_identifier' => 'UserAccount#'
-                . $actorAccount->getKey(),
+                .$actorAccount->getKey(),
             'action' => $action,
             'entity_type' => 'MonthlyUpdate',
             'entity_id' => $monthlyUpdate->getKey(),

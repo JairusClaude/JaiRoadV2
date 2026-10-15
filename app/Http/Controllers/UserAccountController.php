@@ -64,7 +64,7 @@ class UserAccountController extends Controller
             $sortDirection = 'desc';
         }
 
-        $account = new UserAccount();
+        $account = new UserAccount;
 
         $query = UserAccount::query()->select([
             $account->getKeyName(),
@@ -79,7 +79,7 @@ class UserAccountController extends Controller
 
         if ($search !== '') {
             $query->where(function (Builder $query) use ($search): void {
-                $like = '%' . $search . '%';
+                $like = '%'.$search.'%';
 
                 $query->where('username', 'like', $like)
                     ->orWhere('email', 'like', $like)
@@ -384,8 +384,7 @@ class UserAccountController extends Controller
 
         if (blank($engineerId)) {
             throw ValidationException::withMessages([
-                'engineer_id' =>
-                    'An Engineer profile is required for Admin and Engineer accounts.',
+                'engineer_id' => 'An Engineer profile is required for Admin and Engineer accounts.',
             ]);
         }
 
@@ -402,7 +401,7 @@ class UserAccountController extends Controller
             ->when(
                 $ignoreAccountId !== null,
                 fn (Builder $query) => $query->where(
-                    (new UserAccount())->getKeyName(),
+                    (new UserAccount)->getKeyName(),
                     '<>',
                     $ignoreAccountId
                 )
@@ -411,8 +410,7 @@ class UserAccountController extends Controller
 
         if ($alreadyLinked) {
             throw ValidationException::withMessages([
-                'engineer_id' =>
-                    'This Engineer already has a linked user account.',
+                'engineer_id' => 'This Engineer already has a linked user account.',
             ]);
         }
 
@@ -424,7 +422,7 @@ class UserAccountController extends Controller
      */
     private function availableEngineers(mixed $currentAccountId = null)
     {
-        $engineer = new Engineer();
+        $engineer = new Engineer;
 
         $query = Engineer::query()
             ->select([
@@ -439,18 +437,18 @@ class UserAccountController extends Controller
                 $engineer,
                 $currentAccountId
             ): void {
-                $account = new UserAccount();
+                $account = new UserAccount;
 
                 $subquery->selectRaw('1')
                     ->from($account->getTable())
                     ->whereColumn(
-                        $account->getTable() . '.engineer_id',
-                        $engineer->getTable() . '.' . $engineer->getKeyName()
+                        $account->getTable().'.engineer_id',
+                        $engineer->getTable().'.'.$engineer->getKeyName()
                     );
 
                 if ($currentAccountId !== null) {
                     $subquery->where(
-                        $account->getTable() . '.' . $account->getKeyName(),
+                        $account->getTable().'.'.$account->getKeyName(),
                         '<>',
                         $currentAccountId
                     );
@@ -523,8 +521,8 @@ class UserAccountController extends Controller
     /**
      * Save an audit event inside the account-change transaction.
      *
-     * @param array<string, mixed>|null $oldValues
-     * @param array<string, mixed>|null $newValues
+     * @param  array<string, mixed>|null  $oldValues
+     * @param  array<string, mixed>|null  $newValues
      */
     private function writeAuditLog(
         UserAccount $actor,
@@ -534,24 +532,17 @@ class UserAccountController extends Controller
         ?array $newValues
     ): void {
         $description = match ($action) {
-            'CREATE' =>
-                "UserAccount #{$target->getKey()} was created.",
-            'UPDATE' =>
-                "UserAccount #{$target->getKey()} was updated.",
-            'REASSIGN' =>
-                "UserAccount #{$target->getKey()} Engineer linkage changed.",
-            'ACTIVATE' =>
-                "UserAccount #{$target->getKey()} was activated.",
-            'DEACTIVATE' =>
-                "UserAccount #{$target->getKey()} was deactivated.",
-            default =>
-                "UserAccount #{$target->getKey()} changed.",
+            'CREATE' => "UserAccount #{$target->getKey()} was created.",
+            'UPDATE' => "UserAccount #{$target->getKey()} was updated.",
+            'REASSIGN' => "UserAccount #{$target->getKey()} Engineer linkage changed.",
+            'ACTIVATE' => "UserAccount #{$target->getKey()} was activated.",
+            'DEACTIVATE' => "UserAccount #{$target->getKey()} was deactivated.",
+            default => "UserAccount #{$target->getKey()} changed.",
         };
 
         AuditLog::create([
             'user_id' => $actor->getKey(),
-            'actor_identifier' =>
-                $actor->username . ' (UserAccount #' . $actor->getKey() . ')',
+            'actor_identifier' => $actor->username.' (UserAccount #'.$actor->getKey().')',
             'action' => $action,
             'entity_type' => 'UserAccount',
             'entity_id' => $target->getKey(),

@@ -93,7 +93,7 @@ class MaintenanceDocumentController extends Controller
 
         if ($search !== '') {
             $query->where(function (Builder $query) use ($search): void {
-                $like = '%' . $search . '%';
+                $like = '%'.$search.'%';
 
                 $query->where('document_title', 'like', $like)
                     ->orWhere('file_name', 'like', $like)
@@ -167,7 +167,7 @@ class MaintenanceDocumentController extends Controller
         abort_if($file === null, 422, 'A document file is required.');
 
         $directory = 'maintenance-documents/'
-            . $maintenanceRecord->getKey();
+            .$maintenanceRecord->getKey();
 
         $path = $file->store($directory, 'supabase');
 
@@ -268,7 +268,7 @@ class MaintenanceDocumentController extends Controller
 
         if ($file !== null) {
             $directory = 'maintenance-documents/'
-                . $maintenanceDocument->maintenance_id;
+                .$maintenanceDocument->maintenance_id;
 
             $newPath = $file->store($directory, 'supabase');
 
@@ -408,7 +408,7 @@ class MaintenanceDocumentController extends Controller
             ->with(
                 'message',
                 'Successfully deleted the maintenance document metadata. '
-                . 'The stored file was retained.'
+                .'The stored file was retained.'
             );
     }
 
@@ -480,8 +480,8 @@ class MaintenanceDocumentController extends Controller
     /**
      * Write the audit event in the same database transaction.
      *
-     * @param array<string, mixed>|null $oldValues
-     * @param array<string, mixed>|null $newValues
+     * @param  array<string, mixed>|null  $oldValues
+     * @param  array<string, mixed>|null  $newValues
      */
     private function writeAuditLog(
         UserAccount $actorAccount,
@@ -500,7 +500,7 @@ class MaintenanceDocumentController extends Controller
         AuditLog::create([
             'user_id' => $actorAccount->getKey(),
             'actor_identifier' => 'UserAccount#'
-                . $actorAccount->getKey(),
+                .$actorAccount->getKey(),
             'action' => $action,
             'entity_type' => 'MaintenanceDocument',
             'entity_id' => $document->getKey(),

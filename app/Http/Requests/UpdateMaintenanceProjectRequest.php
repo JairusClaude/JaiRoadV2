@@ -35,7 +35,7 @@ class UpdateMaintenanceProjectRequest extends FormRequest
     public function rules(): array
     {
         $maintenanceProject = $this->route('maintenanceProject');
-        $roadCoverage = new RoadCoverage();
+        $roadCoverage = new RoadCoverage;
 
         return [
             'project_title' => [
@@ -52,7 +52,7 @@ class UpdateMaintenanceProjectRequest extends FormRequest
                     $roadCoverage->getKeyName()
                 ),
                 Rule::unique(
-                    (new MaintenanceProject())->getTable(),
+                    (new MaintenanceProject)->getTable(),
                     'road_coverage_id'
                 )->ignore(
                     $maintenanceProject->getKey(),

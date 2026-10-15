@@ -197,8 +197,8 @@ class EngineerController extends Controller
      * Actor identity is derived from the authenticated account,
      * never from submitted form data.
      *
-     * @param array<string, mixed>|null $oldValues
-     * @param array<string, mixed>|null $newValues
+     * @param  array<string, mixed>|null  $oldValues
+     * @param  array<string, mixed>|null  $newValues
      */
     private function writeAuditLog(
         Request $request,

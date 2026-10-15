@@ -29,8 +29,8 @@ class StoreMaintenanceProjectRequest extends FormRequest
      */
     public function rules(): array
     {
-        $roadCoverage = new RoadCoverage();
-        $maintenanceProject = new MaintenanceProject();
+        $roadCoverage = new RoadCoverage;
+        $maintenanceProject = new MaintenanceProject;
 
         return [
             'project_title' => [

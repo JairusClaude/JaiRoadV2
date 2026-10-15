@@ -30,8 +30,8 @@ class StoreMaintenanceRecordRequest extends FormRequest
      */
     public function rules(): array
     {
-        $project = new MaintenanceProject();
-        $engineer = new Engineer();
+        $project = new MaintenanceProject;
+        $engineer = new Engineer;
 
         return [
             'project_id' => [

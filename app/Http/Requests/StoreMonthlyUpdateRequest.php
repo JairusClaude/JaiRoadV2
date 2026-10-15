@@ -27,8 +27,8 @@ class StoreMonthlyUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
-        $maintenanceRecord = new MaintenanceRecord();
-        $monthlyUpdate = new MonthlyUpdate();
+        $maintenanceRecord = new MaintenanceRecord;
+        $monthlyUpdate = new MonthlyUpdate;
 
         return [
             'maintenance_id' => [

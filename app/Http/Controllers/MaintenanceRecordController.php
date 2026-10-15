@@ -97,7 +97,7 @@ class MaintenanceRecordController extends Controller
 
         if ($search !== '') {
             $query->where(function (Builder $query) use ($search): void {
-                $like = '%' . $search . '%';
+                $like = '%'.$search.'%';
 
                 $query->where('quarter', 'like', $like)
                     ->orWhere('status', 'like', $like)
@@ -128,8 +128,8 @@ class MaintenanceRecordController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        $project = new MaintenanceProject();
-        $engineer = new Engineer();
+        $project = new MaintenanceProject;
+        $engineer = new Engineer;
 
         return Inertia::render('MaintenanceRecords/Index', [
             'model' => $model,
@@ -338,7 +338,7 @@ class MaintenanceRecordController extends Controller
                 ->with(
                     'error',
                     'This maintenance record cannot be deleted while '
-                    . 'monthly updates or maintenance documents reference it.'
+                    .'monthly updates or maintenance documents reference it.'
                 );
         }
 
@@ -397,8 +397,8 @@ class MaintenanceRecordController extends Controller
     /**
      * Create an audit log in the same transaction as the record change.
      *
-     * @param array<string, mixed>|null $oldValues
-     * @param array<string, mixed>|null $newValues
+     * @param  array<string, mixed>|null  $oldValues
+     * @param  array<string, mixed>|null  $newValues
      */
     private function writeAuditLog(
         UserAccount $actorAccount,
@@ -451,7 +451,7 @@ class MaintenanceRecordController extends Controller
         AuditLog::create([
             'user_id' => $actorAccount->getKey(),
             'actor_identifier' => 'UserAccount#'
-                . $actorAccount->getKey(),
+                .$actorAccount->getKey(),
             'action' => $action,
             'entity_type' => 'MaintenanceRecord',
             'entity_id' => $record->getKey(),

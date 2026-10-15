@@ -38,8 +38,8 @@ class UpdateUserAccountRequest extends FormRequest
             return [];
         }
 
-        $account = new UserAccount();
-        $engineer = new Engineer();
+        $account = new UserAccount;
+        $engineer = new Engineer;
 
         return [
             'username' => [

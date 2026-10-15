@@ -52,7 +52,7 @@ class MaintenanceProjectController extends Controller
 
         if ($search !== '') {
             $query->where(function (Builder $query) use ($search): void {
-                $like = '%' . $search . '%';
+                $like = '%'.$search.'%';
 
                 $query->where('project_title', 'like', $like)
                     ->orWhere('description', 'like', $like);
@@ -189,8 +189,8 @@ class MaintenanceProjectController extends Controller
                 ->with(
                     'error',
                     'This project cannot be deleted while MaintenanceRecord '
-                    . 'entries reference it. Handle those records explicitly '
-                    . 'before attempting deletion.'
+                    .'entries reference it. Handle those records explicitly '
+                    .'before attempting deletion.'
                 );
         }
 

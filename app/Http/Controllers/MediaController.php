@@ -6,9 +6,9 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreMediaRequest;
 use App\Http\Requests\UpdateMediaRequest;
 use App\Models\AuditLog;
+use App\Models\MaintenanceRecord;
 use App\Models\Media;
 use App\Models\MonthlyUpdate;
-use App\Models\MaintenanceRecord;
 use App\Models\UserAccount;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -84,7 +84,7 @@ class MediaController extends Controller
 
         if ($search !== '') {
             $query->where(function (Builder $query) use ($search): void {
-                $like = '%' . $search . '%';
+                $like = '%'.$search.'%';
 
                 $query->where('file_name', 'like', $like)
                     ->orWhere('file_type', 'like', $like)
@@ -151,7 +151,7 @@ class MediaController extends Controller
         abort_if($file === null, 422, 'A media file is required.');
 
         $directory = 'maintenance-media/'
-            . $monthlyUpdate->getKey();
+            .$monthlyUpdate->getKey();
 
         $path = $file->store($directory, 'supabase');
 
@@ -250,7 +250,7 @@ class MediaController extends Controller
         );
 
         $newPath = $file->store(
-            'maintenance-media/' . $monthlyUpdate->getKey(),
+            'maintenance-media/'.$monthlyUpdate->getKey(),
             'supabase'
         );
 
@@ -338,7 +338,7 @@ class MediaController extends Controller
             )->with(
                 'warning',
                 'The media record was updated, but the old storage file '
-                . 'could not be removed. Check Supabase Storage for cleanup.'
+                .'could not be removed. Check Supabase Storage for cleanup.'
             );
         }
 
@@ -417,7 +417,7 @@ class MediaController extends Controller
                 ->with(
                     'warning',
                     'The Media database record was deleted, but its storage '
-                    . 'file could not be removed. Check Supabase Storage.'
+                    .'file could not be removed. Check Supabase Storage.'
                 );
         }
 
@@ -529,8 +529,8 @@ class MediaController extends Controller
     /**
      * Write an audit event in the same transaction as the database change.
      *
-     * @param array<string, mixed>|null $oldValues
-     * @param array<string, mixed>|null $newValues
+     * @param  array<string, mixed>|null  $oldValues
+     * @param  array<string, mixed>|null  $newValues
      */
     private function writeAuditLog(
         UserAccount $actorAccount,
@@ -549,7 +549,7 @@ class MediaController extends Controller
         AuditLog::create([
             'user_id' => $actorAccount->getKey(),
             'actor_identifier' => 'UserAccount#'
-                . $actorAccount->getKey(),
+                .$actorAccount->getKey(),
             'action' => $action,
             'entity_type' => 'Media',
             'entity_id' => $media->getKey(),
