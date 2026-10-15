@@ -2,36 +2,46 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
-use Illuminate\Foundation\Http\FormRequest;
+use App\Models\MaintenanceProject;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
-class UpdateMaintenanceProjectRequest extends FormRequest
+class UpdateMaintenanceProjectRequest extends StoreMaintenanceProjectRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
-        return true;
+        $project = $this->route('maintenance_project');
+
+        return $project instanceof MaintenanceProject && ($this->user()?->can('update', $project) ?? false);
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
+    /** @return array<string, mixed> */
     public function rules(): array
     {
+        $project = $this->route('maintenance_project');
+
         return [
             'project_title' => ['required', 'string', 'max:255'],
-            'description' => ['required', 'string'],
-            'status' => ['required', 'string', 'max:255'],
-            'start_date' => ['required', 'date'],
-            'end_date' => ['required', 'date'],
-            'gravelled_road_in_km' => ['required', 'integer', 'min:0'],
-            'lgus_id' => ['required', 'integer', 'exists:lgus,id'],
-            'engineers_id' => ['required', 'integer', 'exists:engineers,id'],
-            'created_by' => ['required', 'integer', 'exists:user_accounts,id'],
+            'description' => ['nullable', 'string'],
+            'road_coverage_id' => ['bail', 'required', 'integer', 'exists:road_coverages,id', Rule::unique('maintenance_projects', 'road_coverage_id')->ignore($project instanceof MaintenanceProject ? $project->getKey() : null)],
+            'created_by' => ['prohibited'],
+            'created_at' => ['prohibited'],
+            'updated_at' => ['prohibited'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            if ($validator->errors()->has('road_coverage_id')) {
+                return;
+            }
+            $project = $this->route('maintenance_project');
+            if ($project instanceof MaintenanceProject
+                && (string) $this->input('road_coverage_id') !== (string) $project->road_coverage_id
+                && $project->maintenanceRecords()->exists()) {
+                $validator->errors()->add('road_coverage_id', 'Road coverage cannot be changed after maintenance history exists.');
+            }
+        });
     }
 }

@@ -2,36 +2,42 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Models\MaintenanceProject;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreMaintenanceProjectRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
-        return true;
+        // Existing policy remains fail-closed while shared identity is unresolved.
+        return $this->user()?->can('create', MaintenanceProject::class) ?? false;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'project_title' => is_string($this->project_title) ? trim($this->project_title) : $this->project_title,
+            'description' => is_string($this->description) ? trim($this->description) ?: null : $this->description,
+        ]);
+    }
+
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [
             'project_title' => ['required', 'string', 'max:255'],
-            'description' => ['required', 'string'],
-            'status' => ['required', 'string', 'max:255'],
-            'start_date' => ['required', 'date'],
-            'end_date' => ['required', 'date'],
-            'gravelled_road_in_km' => ['required', 'integer', 'min:0'],
-            'lgus_id' => ['required', 'integer', 'exists:lgus,id'],
-            'engineers_id' => ['required', 'integer', 'exists:engineers,id'],
-            'created_by' => ['required', 'integer', 'exists:user_accounts,id'],
+            'description' => ['nullable', 'string'],
+            'road_coverage_id' => ['bail', 'required', 'integer', 'exists:road_coverages,id', Rule::unique('maintenance_projects', 'road_coverage_id')],
+            'created_by' => ['prohibited'],
+            'created_at' => ['prohibited'],
+            'updated_at' => ['prohibited'],
         ];
+    }
+
+    /** @return array<string, string> */
+    public function messages(): array
+    {
+        return ['road_coverage_id.unique' => 'This road coverage is already assigned to another project. Choose an available coverage.'];
     }
 }

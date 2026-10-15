@@ -18,6 +18,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('roads', RoadController::class);
     Route::resource('lgus', LguController::class);
     Route::resource('engineers', EngineerController::class);
+    Route::delete('maintenance-projects/bulk', [MaintenanceProjectController::class, 'bulkDestroy'])->name('maintenance-projects.bulk-destroy');
     Route::resource('maintenance-projects', MaintenanceProjectController::class);
     Route::resource('monthly-updates', MonthlyUpdateController::class);
     Route::resource('project-documents', ProjectDocumentController::class);

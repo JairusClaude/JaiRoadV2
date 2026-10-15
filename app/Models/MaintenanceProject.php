@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'project_title',
+    'road_coverage_id',
     'description',
     'status',
     'start_date',
@@ -25,6 +26,20 @@ class MaintenanceProject extends Model
     /** @use HasFactory<MaintenanceProjectFactory> */
     use HasFactory;
 
+    /** @return BelongsTo<RoadCoverage, $this> */
+    public function roadCoverage(): BelongsTo
+    {
+        return $this->belongsTo(RoadCoverage::class);
+    }
+
+    /** @return HasMany<MaintenanceRecord, $this> */
+    public function maintenanceRecords(): HasMany
+    {
+        return $this->hasMany(MaintenanceRecord::class, 'maintenance_projects_id');
+    }
+
+    // Legacy relations remain for existing modules; directory municipality is
+    // derived exclusively through roadCoverage.lgu, never through this old FK.
     /** @return BelongsTo<Lgu, $this> */
     public function lgu(): BelongsTo
     {
