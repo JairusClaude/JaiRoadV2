@@ -1,37 +1,61 @@
+
 <?php
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Models\MaintenanceProject;
+use App\Models\RoadCoverage;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreMaintenanceProjectRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Only users authorized by the MaintenanceProject policy
+     * may create maintenance projects.
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can(
+            'create',
+            MaintenanceProject::class
+        ) ?? false;
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Get the validation rules for creating a maintenance project.
      *
-     * @return array<string, ValidationRule|array<mixed>|string>
+     * @return array<string, mixed>
      */
     public function rules(): array
     {
+        $roadCoverage = new RoadCoverage();
+        $maintenanceProject = new MaintenanceProject();
+
         return [
-            'project_title' => ['required', 'string', 'max:255'],
-            'description' => ['required', 'string'],
-            'status' => ['required', 'string', 'max:255'],
-            'start_date' => ['required', 'date'],
-            'end_date' => ['required', 'date'],
-            'gravelled_road_in_km' => ['required', 'integer', 'min:0'],
-            'lgus_id' => ['required', 'integer', 'exists:lgus,id'],
-            'engineers_id' => ['required', 'integer', 'exists:engineers,id'],
-            'created_by' => ['required', 'integer', 'exists:user_accounts,id'],
+            'project_title' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+
+            'road_coverage_id' => [
+                'required',
+                'integer',
+                Rule::exists(
+                    $roadCoverage->getTable(),
+                    $roadCoverage->getKeyName()
+                ),
+                Rule::unique(
+                    $maintenanceProject->getTable(),
+                    'road_coverage_id'
+                ),
+            ],
+
+            'description' => [
+                'nullable',
+                'string',
+            ],
         ];
     }
 }
