@@ -36,6 +36,10 @@ class AuditLogFactory extends Factory
         ];
     }
 
+    /**
+     * @param  array<string, mixed>|null  $oldValue
+     * @param  array<string, mixed>|null  $newValue
+     */
     public function forChange(
         Model $entity,
         string $action,

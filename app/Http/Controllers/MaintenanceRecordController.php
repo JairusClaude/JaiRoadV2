@@ -37,10 +37,7 @@ class MaintenanceRecordController extends Controller
         Gate::authorize('viewAny', MaintenanceRecord::class);
 
         $search = trim((string) request()->query('search', ''));
-        $sortField = (string) request()->query(
-            'sort_field',
-            'created_at'
-        );
+        $sortField = (string) request()->query('sort_field', 'created_at');
         $sortDirection = strtolower(
             (string) request()->query('sort_direction', 'desc')
         );
@@ -89,10 +86,7 @@ class MaintenanceRecordController extends Controller
                     );
 
                 if (is_numeric($search)) {
-                    $query->orWhere(
-                        'maintenance_year',
-                        (int) $search
-                    );
+                    $query->orWhere('maintenance_year', (int) $search);
                 }
             });
         }
@@ -154,9 +148,7 @@ class MaintenanceRecordController extends Controller
         Gate::authorize('update', $maintenanceRecord);
 
         $data = $request->validated();
-        $oldValues = $maintenanceRecord->only(
-            self::AUDITABLE_FIELDS
-        );
+        $oldValues = $maintenanceRecord->only(self::AUDITABLE_FIELDS);
 
         DB::transaction(function () use (
             $data,
@@ -187,9 +179,7 @@ class MaintenanceRecordController extends Controller
     ): RedirectResponse {
         Gate::authorize('delete', $maintenanceRecord);
 
-        $oldValues = $maintenanceRecord->only(
-            self::AUDITABLE_FIELDS
-        );
+        $oldValues = $maintenanceRecord->only(self::AUDITABLE_FIELDS);
 
         DB::transaction(function () use (
             $maintenanceRecord,
@@ -212,6 +202,10 @@ class MaintenanceRecordController extends Controller
             );
     }
 
+    /**
+     * @param  array<string, mixed>|null  $oldValues
+     * @param  array<string, mixed>|null  $newValues
+     */
     private function writeAuditLog(
         string $action,
         MaintenanceRecord $record,
