@@ -22,7 +22,6 @@ class EngineerSeeder extends Seeder
                 'rank' => 'Engineer I',
                 'position' => 'Field Engineer',
                 'lgus_id' => 1,
-                'created_by' => 1,
             ],
             [
                 'first_name' => 'Bernard',
@@ -33,7 +32,6 @@ class EngineerSeeder extends Seeder
                 'rank' => 'Engineer II',
                 'position' => 'Field Engineer',
                 'lgus_id' => 2,
-                'created_by' => 2,
             ],
             [
                 'first_name' => 'Charles',
@@ -44,7 +42,6 @@ class EngineerSeeder extends Seeder
                 'rank' => 'Engineer III',
                 'position' => 'Resident Engineer',
                 'lgus_id' => 3,
-                'created_by' => 3,
             ],
             [
                 'first_name' => 'Dave',
@@ -55,11 +52,14 @@ class EngineerSeeder extends Seeder
                 'rank' => 'Engineer IV',
                 'position' => 'Assistant Head',
                 'lgus_id' => 4,
-                'created_by' => 4,
             ],
         ];
+
         foreach ($engineers as $engineerData) {
-            Engineer::create($engineerData);
+            Engineer::updateOrCreate(
+                ['email' => $engineerData['email']],
+                $engineerData
+            );
         }
     }
 }

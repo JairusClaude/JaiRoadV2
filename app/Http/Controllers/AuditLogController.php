@@ -3,64 +3,100 @@
 namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
-use App\Http\Requests\StoreAuditLogRequest;
-use App\Http\Requests\UpdateAuditLogRequest;
+use App\Models\User;
+use App\Models\UserAccount;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class AuditLogController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display full audit history to authorized administrators only.
      */
-    public function index()
+    public function index(): Response
     {
-        //
+        Gate::authorize('viewAny', AuditLog::class);
+
+        return Inertia::render('AuditLogs/Index', [
+            'model' => AuditLog::query()
+                ->with([
+                    'user:id,username',
+                    'recipientUser:id,username',
+                ])
+                ->orderByDesc('id')
+                ->paginate(20)
+                ->withQueryString(),
+        ]);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Display one complete audit record to authorized administrators.
      */
-    public function create()
+    public function show(AuditLog $auditLog): Response
     {
-        //
+        Gate::authorize('view', $auditLog);
+
+        return Inertia::render('AuditLogs/Show', [
+            'auditLog' => $auditLog->load([
+                'user:id,username',
+                'recipientUser:id,username',
+            ]),
+        ]);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Display only the authenticated account's eligible notifications.
+     *
+     * Never return OldValue, NewValue, or the complete AuditLog model here.
      */
-    public function store(StoreAuditLogRequest $request)
+    public function notifications(Request $request): Response
     {
-        //
+        Gate::authorize('viewNotifications', AuditLog::class);
+
+        $account = $this->currentActiveUserAccount($request);
+
+        $notifications = AuditLog::query()
+            ->where('recipient_user_id', $account->getKey())
+            ->whereNotNull('notification_message')
+            ->whereRaw("TRIM(notification_message) <> ''")
+            ->orderByDesc('created_at')
+            ->paginate(20)
+            ->through(static function (AuditLog $entry): array {
+                return [
+                    'id' => $entry->getKey(),
+                    'notification_message' => $entry->notification_message,
+                    'created_at' => $entry->created_at,
+                ];
+            })
+            ->withQueryString();
+
+        return Inertia::render('AuditLogs/Notifications', [
+            'notifications' => $notifications,
+        ]);
     }
 
     /**
-     * Display the specified resource.
+     * Resolve the logged-in Laravel user to their active UserAccount.
      */
-    public function show(AuditLog $auditLog)
-    {
-        //
-    }
+    private function currentActiveUserAccount(
+        Request $request
+    ): UserAccount {
+        $user = $request->user();
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(AuditLog $auditLog)
-    {
-        //
-    }
+        abort_unless($user instanceof User, 401);
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateAuditLogRequest $request, AuditLog $auditLog)
-    {
-        //
-    }
+        $account = $user->userAccount()
+            ->where('is_active', true)
+            ->first();
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(AuditLog $auditLog)
-    {
-        //
+        abort_unless(
+            $account instanceof UserAccount,
+            403,
+            'No active UserAccount is linked to your login.'
+        );
+
+        return $account;
     }
 }

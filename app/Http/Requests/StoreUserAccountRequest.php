@@ -2,34 +2,98 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Models\Engineer;
+use App\Models\UserAccount;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreUserAccountRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Only authorized account managers may create user accounts.
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can(
+            'create',
+            UserAccount::class
+        ) ?? false;
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Get the validation rules for creating a user account.
      *
-     * @return array<string, ValidationRule|array<mixed>|string>
+     * @return array<string, mixed>
      */
     public function rules(): array
     {
+        $engineer = new Engineer();
+        $account = new UserAccount();
+
         return [
-            'username' => ['required', 'string', 'max:255', Rule::unique('user_accounts', 'username')],
-            'password' => ['required', 'string', 'min:8'],
-            'accountType' => ['required', 'string', 'in:viewer,user,admin'],
-            'is_active' => ['required', 'boolean'],
-            'engineers_id' => ['nullable', 'integer', 'exists:engineers,id', Rule::unique('user_accounts', 'engineers_id')],
-            'created_by' => ['nullable', 'integer', 'exists:user_accounts,id'],
+            'username' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::unique($account->getTable(), 'username'),
+            ],
+
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique($account->getTable(), 'email'),
+            ],
+
+            'password' => [
+                'required',
+                'string',
+                'min:8',
+                'max:255',
+            ],
+
+            'accountType' => [
+                'required',
+                'string',
+                Rule::in([
+                    'SuperAdmin',
+                    'Admin',
+                    'Engineer',
+                    'Viewer',
+                ]),
+            ],
+
+            'engineer_id' => [
+                Rule::requiredIf(
+                    fn () => in_array(
+                        $this->input('accountType'),
+                        ['Admin', 'Engineer'],
+                        true
+                    )
+                ),
+
+                Rule::prohibitedIf(
+                    fn () => in_array(
+                        $this->input('accountType'),
+                        ['SuperAdmin', 'Viewer'],
+                        true
+                    )
+                ),
+
+                'nullable',
+                'integer',
+
+                Rule::exists(
+                    $engineer->getTable(),
+                    $engineer->getKeyName()
+                ),
+
+                Rule::unique(
+                    $account->getTable(),
+                    'engineer_id'
+                ),
+            ],
         ];
     }
 }
