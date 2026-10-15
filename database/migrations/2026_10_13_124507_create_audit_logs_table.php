@@ -18,10 +18,10 @@ return new class extends Migration
             $table->string('entity_type');
             $table->bigInteger('entity_id');
             $table->text('description');
-            
-            $table->json('old_value')->nullable(); 
+
+            $table->json('old_value')->nullable();
             $table->json('new_value')->nullable();
-            
+
             $table->text('notification_message');
 
             $table->foreignId('user_id')
