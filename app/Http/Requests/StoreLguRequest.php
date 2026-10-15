@@ -2,34 +2,62 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Models\Lgu;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreLguRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Only users authorized by the LGU policy may create LGUs.
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can('create', Lgu::class) ?? false;
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Get the validation rules for creating an LGU.
      *
-     * @return array<string, ValidationRule|array<mixed>|string>
+     * @return array<string, mixed>
      */
     public function rules(): array
     {
         return [
-            'municipality_name' => ['required', 'string', 'max:255'],
-            'province' => ['required', 'string', 'max:255'],
-            'region' => ['required', 'string', 'max:255'],
-            'contact_no' => ['required', 'string', 'max:255'],
-            'mayor_first_name' => ['required', 'string', 'max:255'],
-            'mayor_middle_name' => ['required', 'string', 'max:255'],
-            'mayor_last_name' => ['required', 'string', 'max:255'],
+            'municipality_name' => [
+                'required',
+                'string',
+                'max:100',
+            ],
+
+            'province' => [
+                'required',
+                'string',
+                'max:100',
+            ],
+
+            'region' => [
+                'required',
+                'string',
+                'max:100',
+            ],
+
+            'mayor_first_name' => [
+                'required',
+                'string',
+                'max:100',
+            ],
+
+            'mayor_middle_name' => [
+                'nullable',
+                'string',
+                'max:100',
+            ],
+
+            'mayor_last_name' => [
+                'required',
+                'string',
+                'max:100',
+            ],
         ];
     }
 }
