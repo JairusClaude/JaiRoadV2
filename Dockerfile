@@ -2,7 +2,7 @@
 # Nginx + PHP-FPM; no PHP development server exposed.
 FROM node:22-bookworm AS node-runtime
 
-FROM php:8.3-fpm-bookworm
+FROM php:8.4-fpm-bookworm
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         nginx ca-certificates unzip git \
@@ -31,3 +31,4 @@ RUN mkdir -p storage/app storage/framework/cache/data storage/framework/sessions
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 10000
 CMD ["sh", "-c", "php-fpm -D && exec nginx -g 'daemon off;'"]
+
