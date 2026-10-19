@@ -52,7 +52,7 @@ class LguController extends Controller
 
         if ($search !== '') {
             $query->where(function (Builder $query) use ($search): void {
-                $like = '%' . $search . '%';
+                $like = '%'.$search.'%';
 
                 $query->where('municipality_name', 'like', $like)
                     ->orWhere('province', 'like', $like)
@@ -143,21 +143,11 @@ class LguController extends Controller
     {
         Gate::authorize('delete', $lgu);
 
-        if (
-            $lgu->roadCoverages()->exists()
-            || $lgu->engineerAssignments()->exists()
-        ) {
-            return to_route('lgus.index')
-                ->with(
-                    'error',
-                    'This LGU cannot be deleted because road coverage '
-                    . 'or engineer assignment records still reference it.'
-                );
-        }
-
-        $lgu->delete();
-
-        return to_route('lgus.index')
-            ->with('message', 'Successfully deleted the LGU.');
+        // TEMPORARY SAFETY GUARD: the shared database has no EngineerLGU table.
+        // The deployed engineers.lgus_id also references LGUs, so the old
+        // dependency check cannot establish that deletion is safe.
+        // Restore delete functionality only after the team approves the
+        // complete FK dependency check and transactional AuditLog workflow.
+        abort(409, 'LGU deletion is disabled until EngineerLGU and existing engineer dependencies are safely reconciled.');
     }
 }

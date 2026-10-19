@@ -1,6 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
-    Bell,
     Building2,
     CalendarDays,
     ChevronDown,
@@ -30,23 +29,26 @@ import {
     useSidebar,
 } from '@/components/ui/sidebar';
 import { UserMenuContent } from '@/components/user-menu-content';
+import { JaiRoadsNotifications } from '@/components/jairoads-notifications';
 import { useInitials } from '@/hooks/use-initials';
 import type { User } from '@/types';
+
 import '../../css/maintenance-projects.css';
+import '../../css/jairoads-settings-theme.css';
 
 const navigation = [
-    { title: 'Dashboard', href: '/dashboard', icon: House },
+    { title: 'Dashboard', href: '/admin-dashboard', icon: House },
     {
         title: 'Maintenance Projects',
         href: '/maintenance-projects',
         icon: LayoutDashboard,
     },
-    { title: 'User Management', href: '/user-accounts', icon: Users },
-    { title: 'Monthly Updates', href: '/monthly-updates', icon: CalendarDays },
-    { title: 'Project Documents', href: '/project-documents', icon: FileText },
-    { title: 'Road Sections', href: '/roads', icon: Map },
-    { title: 'LGU', href: '/lgus', icon: Building2 },
-    { title: 'Settings', href: '/settings/profile', icon: Settings },
+    { title: 'User Management', href: '/user-management', icon: Users },
+    { title: 'Monthly Updates', href: '/monthly-updates-preview', icon: CalendarDays },
+    { title: 'Project Documents', href: '/project-documents-preview', icon: FileText },
+    { title: 'Road Sections', href: '/road-sections-preview', icon: Map },
+    { title: 'LGU', href: '/lgus-preview', icon: Building2 },
+    { title: 'Settings', href: '/settings-preview', icon: Settings },
 ];
 
 export function MaintenanceProjectShell({
@@ -62,13 +64,13 @@ export function MaintenanceProjectShell({
     const page = usePage();
     const preview = page.props.previewOnly === true;
     const path = page.url.split('?')[0];
-    const pageName = path.endsWith('/create')
+    const pageName = (path.startsWith('/settings-preview') || path.startsWith('/settings/')) ? 'Settings' : path.startsWith('/lgus-preview') ? 'LGU' : path.startsWith('/road-sections-preview') ? 'Road Sections' : path.endsWith('/create')
         ? 'Add Project'
         : path.endsWith('/edit')
           ? 'Edit Project'
           : /^\/maintenance-projects\/\d+$/.test(path)
             ? 'Project Details'
-            : 'Maintenance Projects';
+            : path.startsWith('/user-management') ? 'User Management' : path.startsWith('/user-management') ? 'User Management' : path.startsWith('/monthly-updates') ? 'Monthly Updates' : path.startsWith('/project-documents-preview') ? 'Project Documents' : 'Maintenance Projects';
 
     return (
         <>
@@ -166,9 +168,9 @@ export function MaintenanceProjectShell({
                                             event.preventDefault();
                                         }
                                     }}
-                                    className={`jr-nav-link ${href === '/maintenance-projects' ? 'jr-active' : ''}`}
+                                    className={`jr-nav-link ${((path === href || path.startsWith(href + '/') || (href === '/settings-preview' && path.startsWith('/settings/')))) ? 'jr-active' : ''}`}
                                     aria-current={
-                                        href === '/maintenance-projects'
+                                        ((path === href || path.startsWith(href + '/') || (href === '/settings-preview' && path.startsWith('/settings/'))))
                                             ? 'page'
                                             : undefined
                                     }
@@ -213,16 +215,11 @@ export function MaintenanceProjectShell({
                         )}
                         <span>JaiROADS</span>
                         <ChevronRight className="size-3" />
-                        <strong className="truncate">{pageName}</strong>
+                        <strong className="truncate">{path.startsWith('/admin-dashboard') ? 'Dashboard' : pageName}</strong>
                     </div>
                     <div className="jr-top-actions">
-                        <button
-                            type="button"
-                            className="jr-icon-button"
-                            aria-label="Notifications"
-                        >
-                            <Bell className="size-[18px]" />
-                        </button>
+                        
+                        <JaiRoadsNotifications />
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button
@@ -259,8 +256,8 @@ export function MaintenanceProjectShell({
                 <main className="jr-content">
                     {preview && (
                         <p className="jr-preview-note" role="note">
-                            Local interface review · sample data in this preview
-                            process · PostgreSQL is not connected.
+                            Local interface review ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· sample data in this preview
+                            process ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· PostgreSQL is not connected.
                         </p>
                     )}
                     {children}
@@ -294,3 +291,8 @@ export default function MaintenanceProjectLayout({
         </SidebarProvider>
     );
 }
+
+
+
+
+

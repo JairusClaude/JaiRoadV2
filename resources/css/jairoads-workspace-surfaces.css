@@ -1,0 +1,375 @@
+/* JaiROADS | shared Admin/Engineer/Viewer content styling (source-only).
+   Restores jr-* component styling after replacing the old Admin layout.
+   Scoped to the shared polished shell; never changes the distinct SuperAdmin shell.
+   These selectors do not grant permissions or change data behavior.
+*/
+.jr-normal-workspace {
+  --jr-surface: #fff;
+  --jr-surface-soft: #faf8f5;
+  --jr-divider: #e5e9f0;
+  --jr-ink: #1c2f47;
+  --jr-muted: #72849d;
+  --jr-accent: #955021;
+  --jr-accent-soft: #fff0e1;
+  min-width: 0;
+}
+
+/* Restore the original unified white page canvas for list/detail modules.
+   Dashboards retain their separate statistic/chart cards. */
+.jr-normal-workspace.jr-content-view {
+  margin-top: 4px;
+  padding-top: 28px;
+  padding-bottom: 32px;
+  background: var(--jr-surface);
+  border: 1px solid var(--jr-divider);
+  border-radius: 22px;
+  box-shadow: 0 8px 28px rgb(32 49 72 / 5%);
+}
+.jr-normal-workspace :where(.jr-page-head) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  column-gap: 20px;
+  row-gap: 12px;
+  margin-bottom: 22px;
+}
+.jr-normal-workspace :where(.jr-page-head h1) {
+  margin: 0;
+  color: var(--jr-ink);
+  font-size: clamp(23px, 2vw, 27px);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.28;
+}
+.jr-normal-workspace :where(.jr-page-head p) {
+  margin-top: 5px;
+  color: var(--jr-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.jr-normal-workspace .jr-primary {
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 9px 16px;
+  border: 1px solid #955021;
+  border-radius: 11px;
+  background: #955021;
+  color: white;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.25;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+.jr-normal-workspace .jr-primary:not(.hidden):not([hidden]) {
+  display: inline-flex;
+}
+.jr-normal-workspace .jr-primary:hover:not(:disabled) {
+  background: #783914;
+  border-color: #783914;
+}
+.jr-normal-workspace .jr-primary:disabled { opacity: .55; cursor: not-allowed; }
+.jr-normal-workspace .jr-primary:focus-visible {
+  outline: 3px solid #efbf8f;
+  outline-offset: 2px;
+}
+
+/* All actual tabular data gets a legible, aligned surface: no vertical gridlines. */
+.jr-normal-workspace :where(.jr-table-wrap),
+.jr-normal-workspace :where(div.overflow-x-auto:has(> table)) {
+  min-width: 0;
+  overflow-x: auto;
+  border: 1px solid var(--jr-divider);
+  border-radius: 14px;
+  background: white;
+  scrollbar-width: thin;
+}
+.jr-normal-workspace :where(table) {
+  width: 100%;
+  border-spacing: 0;
+  border-collapse: separate;
+  background: white;
+  color: #34465f;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: left;
+}
+.jr-normal-workspace :where(table thead) {
+  background: #f6f4f1;
+}
+.jr-normal-workspace :where(table thead th) {
+  padding: 13px 16px;
+  border-bottom: 1px solid #e2e5eb;
+  color: #657991;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.jr-normal-workspace :where(table tbody td) {
+  padding: 15px 16px;
+  border-bottom: 1px solid #edf0f4;
+  vertical-align: middle;
+}
+.jr-normal-workspace :where(table tbody tr:last-child td) { border-bottom: 0; }
+.jr-normal-workspace :where(table tbody tr:hover) { background: #fffaf5; }
+.jr-normal-workspace :where(table th:first-child),
+.jr-normal-workspace :where(table td:first-child) { padding-left: 20px; }
+.jr-normal-workspace :where(table th:last-child),
+.jr-normal-workspace :where(table td:last-child) { padding-right: 20px; }
+.jr-normal-workspace :where(table th.text-right),
+.jr-normal-workspace :where(table td.text-right) { text-align: right; }
+.jr-normal-workspace :where(table .jr-project-title) {
+  color: #20344c;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.jr-normal-workspace :where(.jr-project-id) {
+  display: block;
+  margin-top: 4px;
+  color: #8a9bb0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.jr-normal-workspace :where(.jr-table-toolbar),
+.jr-normal-workspace :where(.jr-table-footer) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #6c809b;
+  font-size: 13px;
+}
+.jr-normal-workspace :where(.jr-table-toolbar) { margin: 18px 0 12px; }
+.jr-normal-workspace :where(.jr-table-footer) { padding: 16px 2px 0; }
+.jr-normal-workspace :where(.jr-empty) {
+  padding: 44px 24px;
+  color: #6d8097;
+  text-align: center;
+}
+.jr-normal-workspace :where(.jr-empty strong) {
+  display: block;
+  color: #293c55;
+  font-size: 15px;
+}
+.jr-normal-workspace :where(.jr-empty p) { margin: 6px auto 0; max-width: 460px; }
+
+/* Bring back comfortable spacing and card framing in Project Details. */
+.jr-normal-workspace :where(.jr-detail-section) {
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid var(--jr-divider);
+  border-radius: 16px;
+  background: white;
+}
+.jr-normal-workspace :where(.jr-section-title-row) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.jr-normal-workspace :where(.jr-detail-grid) { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
+.jr-normal-workspace :where(.jr-detail-fields) { display: grid; gap: 10px; }
+.jr-normal-workspace :where(.jr-history) { margin-top: 22px; }
+.jr-normal-workspace :where(.jr-record-row) { border-top: 1px solid #e9edf2; padding: 14px 0; }
+.jr-normal-workspace :where(.jr-muted,.jr-metadata) { color: #778ba3; font-size: 13px; }
+
+/* Style search/select controls only where the old jr-* surface classes are used. */
+.jr-normal-workspace :where(.jr-search input) {
+  min-height: 42px;
+  border: 1px solid #e0e6ee;
+  border-radius: 10px;
+  background: white;
+}
+.jr-normal-workspace :where(.jr-search input:focus-visible) {
+  outline: 2px solid #d99f6a;
+  outline-offset: 1px;
+}
+
+@media (max-width: 640px) {
+  .jr-normal-workspace.jr-content-view { border-radius: 16px; padding-top: 20px; }
+  .jr-normal-workspace :where(.jr-page-head) { align-items: stretch; }
+  .jr-normal-workspace :where(.jr-page-head .jr-primary) { width: 100%; }
+  .jr-normal-workspace :where(.jr-detail-grid) { grid-template-columns: minmax(0,1fr); }
+  .jr-normal-workspace :where(table thead th) { padding: 12px; }
+  .jr-normal-workspace :where(table tbody td) { padding: 12px; }
+}
+
+/* Explicit dark preference: keep legible backgrounds even when appearance is Dark. */
+.dark .jr-normal-workspace {
+  --jr-surface: #172234;
+  --jr-divider: #334459;
+  --jr-ink: #f5f7fb;
+  --jr-muted: #b3c1d1;
+}
+.dark .jr-normal-workspace :where(.jr-table-wrap),
+.dark .jr-normal-workspace :where(div.overflow-x-auto:has(> table)),
+.dark .jr-normal-workspace :where(table),
+.dark .jr-normal-workspace :where(.jr-detail-section) { background: #172234; color: #e7ecf5; }
+.dark .jr-normal-workspace :where(table thead) { background: #25344a; }
+.dark .jr-normal-workspace :where(table thead th) { color: #cad7e7; border-color: #3b4a61; }
+.dark .jr-normal-workspace :where(table tbody td),
+.dark .jr-normal-workspace :where(.jr-record-row) { border-color: #334459; }
+.dark .jr-normal-workspace :where(table tbody tr:hover) { background: #22334b; }
+.dark .jr-normal-workspace :where(table .jr-project-title),
+.dark .jr-normal-workspace :where(.jr-empty strong) { color: #f2f5fa; }
+
+/* === JaiROADS viewport-aligned workspaces, v1 (Admin/Engineer/Viewer only) ===
+   Uses the EXACT same responsive horizontal gutters as the shared header.
+   The canvas fills the remaining viewport even on short directories.
+   Dashboard stat/charts stay free-flowing (this applies to content views only).
+*/
+@media (min-width: 1024px) {
+  main.jr-normal-workspace.jr-content-view {
+    width: calc(100% - 56px);
+    max-width: none;
+    min-height: calc(100dvh - 112px);
+    margin: 4px 28px 16px;
+    padding: 28px 28px 36px;
+  }
+}
+@media (min-width: 640px) and (max-width: 1023px) {
+  main.jr-normal-workspace.jr-content-view {
+    width: calc(100% - 48px);
+    max-width: none;
+    min-height: calc(100dvh - 112px);
+    margin: 4px 24px 16px;
+    padding: 24px 22px 30px;
+  }
+}
+@media (max-width: 639px) {
+  main.jr-normal-workspace.jr-content-view {
+    width: calc(100% - 32px);
+    max-width: none;
+    min-height: calc(100dvh - 108px);
+    margin: 4px 16px 16px;
+    padding: 20px 16px 28px;
+  }
+}
+/* Keep the outer header and content aligned without a global viewport cap.
+   Horizontal table overflow belongs inside its own scroller, not the page. */
+.jr-normal-workspace { min-width: 0; }
+main.jr-normal-workspace.jr-content-view > * { min-width: 0; }
+
+/* === Maintenance Projects directory only ===
+   Respect the single white workspace. Filters form a subtle inner toolbar,
+   NOT a second independent card; all existing React handlers remain intact.
+*/
+.jr-projects-directory :where(.jr-filters) {
+  display: grid;
+  grid-template-columns: minmax(0,1fr);
+  gap: 12px;
+  margin-top: 20px;
+  margin-bottom: 18px;
+  padding: 16px 18px;
+  background: #faf9f6;
+  border: 1px solid #ebe7e2;
+  border-radius: 16px;
+}
+.jr-projects-directory :where(.jr-search) {
+  display: flex;
+  position: relative;
+  align-items: center;
+  min-width: 0;
+  width: 100%;
+}
+.jr-projects-directory :where(.jr-search > svg, .jr-search-icon) {
+  position: absolute;
+  z-index: 1;
+  left: 15px;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  transform: translateY(-50%);
+  color: #8393a8;
+  pointer-events: none;
+}
+.jr-projects-directory :where(.jr-search input) {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 16px 10px 45px;
+  border: 1px solid #dce3ed;
+  border-radius: 12px;
+  background: #fff;
+  color: #253952;
+  font-size: 14px;
+  box-shadow: 0 1px 1px rgb(32 48 65 / 2%);
+}
+.jr-projects-directory :where(.jr-search input:focus-visible) {
+  border-color: #bc8159;
+  outline: 2px solid #efdabf;
+  outline-offset: 1px;
+}
+.jr-projects-directory :where(.jr-filter-row) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 10px;
+}
+.jr-projects-directory :where(.jr-filter-row select) {
+  box-sizing: border-box;
+  min-width: 164px;
+  min-height: 42px;
+  padding: 9px 32px 9px 12px;
+  border: 1px solid #dce3ed;
+  border-radius: 11px;
+  background-color: white;
+  color: #344b66;
+  font-size: 13px;
+}
+.jr-projects-directory :where(.jr-filter-row select:focus-visible) {
+  outline: 2px solid #efdabf;
+  outline-offset: 1px;
+}
+.jr-projects-directory :where(.jr-table-toolbar) {
+  margin: 18px 0 12px;
+  min-height: 40px;
+}
+.jr-projects-directory :where(.jr-table-wrap) {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e6e9ef;
+  border-radius: 15px;
+  background: #fff;
+}
+.jr-projects-directory :where(.jr-table) { width: 100%; table-layout: auto; }
+.jr-projects-directory :where(.jr-table tbody td) { padding-block: 18px; }
+.jr-projects-directory :where(.jr-table tbody tr:hover) { background: #fffaf5; }
+.jr-projects-directory :where(.jr-table-footer) { margin-top: 4px; }
+/* Distinct actions column; maintain normal semantics and event handlers. */
+.jr-projects-directory :where(.jr-table th:last-child, .jr-table td:last-child) {
+  width: 112px;
+  white-space: nowrap;
+  text-align: right;
+}
+@media (max-width: 639px) {
+  .jr-projects-directory :where(.jr-filters) { padding: 12px; }
+  .jr-projects-directory :where(.jr-filter-row select) { min-width: 0; max-width: 100%; }
+  .jr-projects-directory :where(.jr-table) { min-width: 560px; }
+}
+/* The Viewer uses a dedicated read-only JSX directory; keep its own search,
+   filters, and read-only actions intact, while avoiding a nested white panel. */
+.jr-projects-directory > section[aria-labelledby="viewer-projects-heading"] {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.dark .jr-projects-directory :where(.jr-filters) { background: #202d40; border-color: #39465a; }
+.dark .jr-projects-directory :where(.jr-search input, .jr-filter-row select) {
+  background: #172234; color: #f1f5f9; border-color: #41516a;
+}

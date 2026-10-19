@@ -18,7 +18,16 @@ class MaintenanceProjectPolicy
 
     public function view(User $user, MaintenanceProject $project): bool
     {
-        return $this->viewAny($user);
+        if (! $this->viewAny($user)) {
+            return false;
+        }
+        if ($this->accounts->role($user) !== 'engineer') {
+            return true;
+        }
+        $account = $this->accounts->resolve($user);
+        $coverage = $project->roadCoverage;
+        return $account !== null && $coverage !== null
+            && $this->accounts->assignedTo($account, $coverage);
     }
 
     public function create(User $user): bool

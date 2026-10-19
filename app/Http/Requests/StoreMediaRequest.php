@@ -1,4 +1,3 @@
-
 <?php
 
 namespace App\Http\Requests;
@@ -28,7 +27,7 @@ class StoreMediaRequest extends FormRequest
      */
     public function rules(): array
     {
-        $monthlyUpdate = new MonthlyUpdate();
+        $monthlyUpdate = new MonthlyUpdate;
 
         return [
             'monthly_update_id' => [

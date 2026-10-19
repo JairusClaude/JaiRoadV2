@@ -161,7 +161,7 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // JaiROADS Final DD: anonymous account registration is disabled; account CRU is SuperAdmin/Admin-only.
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([

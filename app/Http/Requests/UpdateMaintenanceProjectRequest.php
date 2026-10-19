@@ -1,4 +1,3 @@
-
 <?php
 
 namespace App\Http\Requests;
@@ -41,8 +40,8 @@ class UpdateMaintenanceProjectRequest extends FormRequest
             return [];
         }
 
-        $project = new MaintenanceProject();
-        $roadCoverage = new RoadCoverage();
+        $project = new MaintenanceProject;
+        $roadCoverage = new RoadCoverage;
 
         return [
             'project_title' => [
@@ -73,6 +72,11 @@ class UpdateMaintenanceProjectRequest extends FormRequest
                 'nullable',
                 'string',
             ],
+
+            // Do not allow the client to override protected fields.
+            'created_by' => ['prohibited'],
+            'created_at' => ['prohibited'],
+            'updated_at' => ['prohibited'],
         ];
     }
 }

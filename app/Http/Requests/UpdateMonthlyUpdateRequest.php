@@ -35,7 +35,7 @@ class UpdateMonthlyUpdateRequest extends FormRequest
         $monthlyUpdate = $this->route('monthlyUpdate')
             ?? $this->route('monthly_update');
 
-        $maintenanceRecord = new MaintenanceRecord();
+        $maintenanceRecord = new MaintenanceRecord;
 
         return [
             'maintenance_id' => [
@@ -53,7 +53,7 @@ class UpdateMonthlyUpdateRequest extends FormRequest
                 'size:7',
                 'regex:/\A\d{4}-(0[1-9]|1[0-2])\z/',
                 Rule::unique(
-                    (new MonthlyUpdate())->getTable(),
+                    (new MonthlyUpdate)->getTable(),
                     'update_month'
                 )
                     ->where(

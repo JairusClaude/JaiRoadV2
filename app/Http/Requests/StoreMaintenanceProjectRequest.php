@@ -1,10 +1,8 @@
-
 <?php
 
 namespace App\Http\Requests;
 
 use App\Models\MaintenanceProject;
-use App\Models\RoadCoverage;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -49,6 +47,11 @@ class StoreMaintenanceProjectRequest extends FormRequest
                 'nullable',
                 'string',
             ],
+
+            // These fields must be controlled by the backend.
+            'created_by' => ['prohibited'],
+            'created_at' => ['prohibited'],
+            'updated_at' => ['prohibited'],
         ];
     }
 }

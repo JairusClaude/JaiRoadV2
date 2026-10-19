@@ -16,6 +16,7 @@ class ProjectMutations
 {
     public function __construct(private VerifiedProjectAccount $accounts) {}
 
+    /** @param array<string, mixed> $data */
     public function create(User $user, array $data): MaintenanceProject
     {
         Gate::forUser($user)->authorize('create', MaintenanceProject::class);
@@ -33,6 +34,7 @@ class ProjectMutations
         }));
     }
 
+    /** @param array<string, mixed> $data */
     public function update(User $user, int $id, array $data): MaintenanceProject
     {
         return $this->coverageConflict(fn () => DB::transaction(function () use ($user, $id, $data) {
@@ -55,7 +57,11 @@ class ProjectMutations
         }));
     }
 
-    /** Individual and bulk deletion share the same atomic implementation. */
+    /**
+     * Individual and bulk deletion share the same atomic implementation.
+     *
+     * @param array<int, int|string> $ids
+     */
     public function delete(User $user, array $ids): void
     {
         Gate::forUser($user)->authorize('deleteAny', MaintenanceProject::class);

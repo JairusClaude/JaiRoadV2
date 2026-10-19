@@ -1,3 +1,10 @@
+// The original Maintenance Projects form/directory styles were formerly imported by
+// MaintenanceProjectLayout. The shared role layout no longer imports them.
+// Load them with the project content so the original two-column selector/map and
+// form grid are restored without replacing the Admin/Engineer/Viewer shell.
+import '../../../css/maintenance-projects.css';
+import '../../../css/jairoads-settings-theme.css';
+import '../../../css/jairoads-module-content.css';
 import { AlertCircle, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
@@ -12,8 +19,14 @@ import type {
     ProjectSummary,
 } from '@/types/maintenance-projects';
 
-export function ProjectWorkspace({ children }: { children: ReactNode }) {
-    return <div className="jr-workspace">{children}</div>;
+export function ProjectWorkspace({ children, className = '' }: { children: ReactNode; className?: string }) {
+    return (
+        // The original styles are scoped beneath .jr-app and .jr-theme.
+        // Apply that context to content ONLY; do not nest another sidebar.
+        <section className={`jr-app jr-theme jr-module-content w-full min-w-0 ${className}`} style={{ display: 'block', minHeight: 0 }}>
+            <div className="jr-workspace w-full min-w-0">{children}</div>
+        </section>
+    );
 }
 
 export function IntegrationNotice({

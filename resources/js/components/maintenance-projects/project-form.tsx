@@ -1,4 +1,5 @@
-import { ArrowLeft, Map, Search } from 'lucide-react';
+import { ArrowLeft, Search } from 'lucide-react';
+import { RoadCoverageMap } from '@/components/maintenance-projects/road-coverage-map';
 import { useState } from 'react';
 import {
     IntegrationNotice,
@@ -71,8 +72,8 @@ export function ProjectForm({
     };
 
     return (
-        <ProjectWorkspace>
-            <button className="jr-back" onClick={onCancel}>
+        <ProjectWorkspace className="jr-project-editor">
+            <button type="button" className="jr-back" onClick={onCancel}>
                 <ArrowLeft className="size-4" />
                 {mode === 'edit' ? 'Project Details' : 'Maintenance Projects'}
             </button>
@@ -129,8 +130,8 @@ export function ProjectForm({
                             <Search className="size-[18px]" />
                             <Input
                                 type="search"
-                                placeholder="Search RoadCoverage by name..."
-                                aria-label="Search RoadCoverage by name"
+                                placeholder="Search road coverage by name..."
+                                aria-label="Search road coverage by name"
                                 value={search}
                                 onChange={(event) =>
                                     setSearch(event.target.value)
@@ -208,17 +209,17 @@ export function ProjectForm({
                         </p>
                     </div>
                     <div>
-                        <p className="jr-field-hint mb-3">
-                            Map preview · placeholder
-                        </p>
-                        <div className="jr-map-placeholder">
-                            <Map className="size-12" />
-                            <strong>RoadCoverage map preview</strong>
-                            <span>
-                                Stored geometry will appear here when map
-                                integration is ready.
-                            </span>
-                        </div>
+                        <RoadCoverageMap
+                            coverages={coverages}
+                            selectedId={selected?.id ?? null}
+                            selectionDisabled={coverageLocked || processing || !integration.ready}
+                            onSelectCoverage={(id) => {
+                                const coverage = coverages.find((item) => item.id === id);
+                                if (coverage && !coverage.assigned && !coverageLocked && !processing && integration.ready) {
+                                    choose(coverage);
+                                }
+                            }}
+                        />
                         <div className="jr-coverage-summary" aria-live="polite">
                             <div>
                                 <strong>
@@ -306,20 +307,12 @@ export function ProjectForm({
                                 {error('project_title')}
                             </p>
                         </div>
-                        <div>
-                            <Label htmlFor="project-municipality">
-                                Municipality
-                            </Label>
-                            <Input
-                                id="project-municipality"
-                                className="mt-2"
-                                value={selected?.municipality ?? ''}
-                                readOnly
-                                placeholder="From selected RoadCoverage"
-                            />
-                            <p className="jr-field-hint mt-2">
-                                Filled automatically from the linked LGU.
-                            </p>
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                            <div className="text-xs font-semibold text-slate-500">Municipality (from Road Coverage)</div>
+                            <div className="mt-2 text-sm font-semibold text-slate-800">
+                                {selected?.municipality ?? 'Select a Road Coverage first'}
+                            </div>
+                            <p className="mt-1 text-xs text-slate-500">Inherited automatically; not another project field.</p>
                         </div>
                     </div>
                     <div className="mt-5">
@@ -351,8 +344,8 @@ export function ProjectForm({
                 <footer className="jr-form-footer">
                     <p>
                         {integration.ready
-                            ? 'The selected coverage can belong to only one project.'
-                            : 'Saving is unavailable until account and database integration is approved.'}
+                            ? 'The selected coverage can belong to only one project. Quarterly schedules can be added as Maintenance Records after saving.'
+                            : 'Saving is temporarily unavailable.'}
                     </p>
                     <div className="flex gap-2">
                         <Button

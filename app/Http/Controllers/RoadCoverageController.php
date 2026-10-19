@@ -14,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use App\Services\MaintenanceProjects\VerifiedProjectAccount;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -84,7 +85,7 @@ class RoadCoverageController extends Controller
 
         if ($search !== '') {
             $query->where(function (Builder $query) use ($search): void {
-                $like = '%' . $search . '%';
+                $like = '%'.$search.'%';
 
                 $query->where('road_name', 'like', $like)
                     ->orWhereHas(
@@ -100,7 +101,7 @@ class RoadCoverageController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        $lguModel = new Lgu();
+        $lguModel = new Lgu;
 
         return Inertia::render('RoadCoverages/Index', [
             'model' => $model,
@@ -158,15 +159,15 @@ class RoadCoverageController extends Controller
          * RoadCoverage.CreatedBy references Engineer.EngineerID,
          * not UserAccount.UserID.
          */
-        if ($actorAccount->engineer_id === null) {
+        if ($actorAccount->engineers_id === null) {
             abort(
                 403,
                 'The authenticated account is not linked to an Engineer. '
-                . 'A valid Engineer creator must be established.'
+                .'A valid Engineer creator must be established.'
             );
         }
 
-        $data['created_by'] = $actorAccount->engineer_id;
+        $data['created_by'] = $actorAccount->engineers_id;
 
         DB::transaction(function () use (
             $data,
@@ -260,9 +261,10 @@ class RoadCoverageController extends Controller
         ): void {
             $record = RoadCoverage::query()
                 ->lockForUpdate()
-                ->findOrFail($roadCoverage->getKey());
+                ->findOrFail((int) $roadCoverage->getKey());
 
             Gate::authorize('update', $record);
+            Gate::authorize('updateForLgu', [$record, Lgu::query()->findOrFail((int) $data['lgu_id'])]);
 
             $oldValues = $this->auditValues($record);
 
@@ -326,11 +328,11 @@ class RoadCoverageController extends Controller
         ): bool {
             $record = RoadCoverage::query()
                 ->lockForUpdate()
-                ->findOrFail($roadCoverage->getKey());
+                ->findOrFail((int) $roadCoverage->getKey());
 
             Gate::authorize('delete', $record);
 
-            $project = new MaintenanceProject();
+            $project = new MaintenanceProject;
 
             $isReferenced = MaintenanceProject::query()
                 ->where(
@@ -363,7 +365,7 @@ class RoadCoverageController extends Controller
                 ->with(
                     'error',
                     'This RoadCoverage cannot be deleted because a '
-                    . 'MaintenanceProject references it.'
+                    .'MaintenanceProject references it.'
                 );
         }
 
@@ -374,82 +376,56 @@ class RoadCoverageController extends Controller
             );
     }
 
-    /**
-     * Return LGUs available to the authenticated user.
-     *
-     * Requires Lgu::engineerAssignments() to return EngineerLGU rows.
-     */
+    /** @return Builder<Lgu> */
     private function availableLgus(): Builder
     {
-        $actorAccount = $this->authenticatedUserAccount();
         $query = Lgu::query()->orderBy('municipality_name');
-
-        if (! Gate::allows('viewAll', RoadCoverage::class)) {
-            if ($actorAccount->engineer_id === null) {
-                return $query->whereRaw('1 = 0');
-            }
-
-            $query->whereHas(
-                'engineerAssignments',
-                fn (Builder $assignmentQuery) => $assignmentQuery
-                    ->where(
-                        'engineer_id',
-                        $actorAccount->engineer_id
-                    )
-                    ->where('is_active', true)
-            );
+        if (Gate::allows('viewAll', RoadCoverage::class)) {
+            return $query;
         }
-
-        return $query;
+        $account = $this->authenticatedUserAccount();
+        if (! $account->engineers_id) {
+            return $query->whereRaw('1 = 0');
+        }
+        return $query->whereIn('id', DB::table('engineer_lgus')
+            ->select('lgus_id')
+            ->where('engineers_id', $account->engineers_id)
+            ->where('is_active', true));
     }
 
-    /**
-     * Limit coverage records to active assigned LGUs.
-     */
-    private function scopeToAssignedLgus(
-        Builder $query,
-        UserAccount $actorAccount
-    ): void {
-        if ($actorAccount->engineer_id === null) {
+    /** @param Builder<RoadCoverage> $query */
+    private function scopeToAssignedLgus(Builder $query, UserAccount $actorAccount): void
+    {
+        if (! $actorAccount->engineers_id) {
             $query->whereRaw('1 = 0');
-
             return;
         }
-
-        $query->whereHas(
-            'lgu.engineerAssignments',
-            fn (Builder $assignmentQuery) => $assignmentQuery
-                ->where(
-                    'engineer_id',
-                    $actorAccount->engineer_id
-                )
-                ->where('is_active', true)
-        );
+        $query->whereIn('lgu_id', DB::table('engineer_lgus')
+            ->select('lgus_id')
+            ->where('engineers_id', $actorAccount->engineers_id)
+            ->where('is_active', true));
     }
 
     /**
-     * Resolve the authenticated identity to its UserAccount.
+     * Resolve an active UserAccount from the authenticated Laravel User.
      */
     private function authenticatedUserAccount(): UserAccount
     {
         $user = Auth::user();
 
-        if ($user instanceof UserAccount) {
-            return $user;
+        if (! $user instanceof \App\Models\User) {
+            abort(403, 'A linked active UserAccount is required.');
         }
 
-        if ($user !== null && method_exists($user, 'userAccount')) {
-            $account = $user->userAccount;
+        $account = $user->userAccount()
+            ->where('is_active', true)
+            ->first();
 
-            if ($account instanceof UserAccount) {
-                return $account;
-            }
+        if (! $account instanceof UserAccount) {
+            abort(403, 'A linked active UserAccount is required.');
         }
 
-        abort(
-            403,
-            'The authenticated user is not linked to a UserAccount.'
-        );
+        return $account;
     }
 
     /**
@@ -468,8 +444,8 @@ class RoadCoverageController extends Controller
     /**
      * Create an audit event inside the current transaction.
      *
-     * @param array<string, mixed>|null $oldValues
-     * @param array<string, mixed>|null $newValues
+     * @param  array<string, mixed>|null  $oldValues
+     * @param  array<string, mixed>|null  $newValues
      */
     private function writeAuditLog(
         UserAccount $actorAccount,
@@ -488,7 +464,7 @@ class RoadCoverageController extends Controller
         AuditLog::create([
             'user_id' => $actorAccount->getKey(),
             'actor_identifier' => 'UserAccount#'
-                . $actorAccount->getKey(),
+                .$actorAccount->getKey(),
             'action' => $action,
             'entity_type' => 'RoadCoverage',
             'entity_id' => $roadCoverage->getKey(),
@@ -496,7 +472,7 @@ class RoadCoverageController extends Controller
             'old_value' => $oldValues,
             'new_value' => $newValues,
             'recipient_user_id' => null,
-            'notification_message' => null,
+            'notification_message' => '',
         ]);
     }
 }

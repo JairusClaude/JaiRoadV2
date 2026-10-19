@@ -1,47 +1,36 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
-use Database\Factories\MonthlyUpdateFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable([
-    'maintenance_projects_id',
-    'update_month',
-    'progress_percentage',
-    'summary_of_text_reports',
-    'created_by',
-])]
+/** Record-linked MonthlyUpdate. Never infer a MaintenanceRecord from a project ID. */
 class MonthlyUpdate extends Model
 {
-    /** @use HasFactory<MonthlyUpdateFactory> */
-    use HasFactory;
+    protected $table = 'monthly_updates';
+    protected $guarded = ['*'];
 
-    /** @return BelongsTo<UserAccount, $this> */
+    protected function casts(): array
+    {
+        return ['progress_percentage' => 'decimal:2'];
+    }
+
+    public function maintenanceRecord(): BelongsTo
+    {
+        return $this->belongsTo(MaintenanceRecord::class, 'maintenance_id');
+    }
+
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(UserAccount::class, 'created_by');
     }
 
-    /** @return BelongsTo<MaintenanceProject, $this> */
-    public function maintenanceProject(): BelongsTo
+    public function media(): HasMany
     {
-        return $this->belongsTo(
-            MaintenanceProject::class,
-            'maintenance_projects_id'
-        );
-    }
-
-    /** @return HasMany<UpdatesMedia, $this> */
-    public function updatesMedia(): HasMany
-    {
-        return $this->hasMany(
-            UpdatesMedia::class,
-            'monthly_updates_id'
-        );
+        return $this->hasMany(MonthlyUpdateMedia::class, 'monthly_updates_id');
     }
 }

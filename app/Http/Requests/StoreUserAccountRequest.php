@@ -27,8 +27,8 @@ class StoreUserAccountRequest extends FormRequest
      */
     public function rules(): array
     {
-        $engineer = new Engineer();
-        $account = new UserAccount();
+        $engineer = new Engineer;
+        $account = new UserAccount;
 
         return [
             'username' => [

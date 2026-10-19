@@ -2,7 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import {
     ArrowLeft,
     ChevronRight,
-    Map,
+
     MoreHorizontal,
     Pencil,
     Plus,
@@ -16,7 +16,8 @@ import {
     ProjectWorkspace,
 } from '@/components/maintenance-projects/project-workspace';
 import { Button } from '@/components/ui/button';
-import type { ProjectSummary } from '@/types/maintenance-projects';
+import { RoadCoverageMap } from '@/components/maintenance-projects/road-coverage-map';
+import type { CoverageChoice, ProjectSummary } from '@/types/maintenance-projects';
 
 type RecordSummary = {
     id: number;
@@ -35,9 +36,13 @@ const date = (value: string | null) =>
 export default function Show({
     project,
     records,
+    coveragePreview = null,
+    canCreateRecord = false,
 }: {
     project: ProjectSummary;
     records: RecordSummary[];
+    coveragePreview?: CoverageChoice | null;
+    canCreateRecord?: boolean;
 }) {
     const years = [...new Set(records.map((record) => record.year))].sort(
         (a, b) => b - a,
@@ -66,11 +71,13 @@ export default function Show({
                                 <Pencil /> Edit Project
                             </Button>
                         )}
-                        <ProjectActions
-                            project={project}
-                            onEdit={edit}
-                            onDelete={() => deletion.open([project])}
-                        />
+                        {(project.can_edit || project.can_delete) && (
+                            <ProjectActions
+                                project={project}
+                                onEdit={edit}
+                                onDelete={() => deletion.open([project])}
+                            />
+                        )}
                     </div>
                 </div>
                 <section className="jr-detail-section">
@@ -120,10 +127,20 @@ export default function Show({
                                 </div>
                             </dl>
                         </div>
-                        <div className="jr-map-placeholder jr-detail-map">
-                            <Map className="size-[18px]" />
-                            <strong>RoadCoverage map preview</strong>
-                            <span>Stored GeoJSON will appear here.</span>
+                        <div className="min-w-0">
+                            {coveragePreview ? (
+                                <RoadCoverageMap
+                                    coverages={[coveragePreview]}
+                                    selectedId={coveragePreview.id}
+                                    onSelectCoverage={() => undefined}
+                                    selectionDisabled
+                                />
+                            ) : (
+                                <div className="jr-map-placeholder jr-detail-map">
+                                    <strong>No linked Road Coverage is available</strong>
+                                    <span>There is no coverage location to display for this project.</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </section>
@@ -133,9 +150,11 @@ export default function Show({
                             <h2>Maintenance History</h2>
                             <p>Records grouped by year and quarter</p>
                         </div>
-                        <Button className="jr-primary" type="button">
-                            <Plus /> Add Record
-                        </Button>
+                        {canCreateRecord && (
+                            <Button className="jr-primary" type="button" onClick={() => router.visit(`/project-documents-preview?project=${project.id}`)}>
+                                <Plus /> Add Record
+                            </Button>
+                        )}
                     </div>
                     {records.length === 0 ? (
                         <div className="jr-history-empty">

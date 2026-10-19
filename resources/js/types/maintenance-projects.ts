@@ -33,6 +33,7 @@ export type CoverageChoice = {
     municipality: string | null;
     kilometers: string;
     assigned: boolean;
+    geojson: unknown | null;
 };
 export type ProjectFormValues = {
     road_coverage_id: string;

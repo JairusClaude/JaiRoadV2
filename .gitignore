@@ -27,3 +27,13 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+.env
+.env.*
+!.env.example
+.jairoads-backups/
+storage/jairoads-installer-backups/
+*.bak
+*.backup
+*.backup-*
+*.original
+configured())

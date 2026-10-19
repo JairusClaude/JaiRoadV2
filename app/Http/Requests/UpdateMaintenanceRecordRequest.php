@@ -1,4 +1,3 @@
-
 <?php
 
 namespace App\Http\Requests;
@@ -34,7 +33,7 @@ class UpdateMaintenanceRecordRequest extends FormRequest
      */
     public function rules(): array
     {
-        $project = new MaintenanceProject();
+        $project = new MaintenanceProject;
 
         return [
             'project_id' => [

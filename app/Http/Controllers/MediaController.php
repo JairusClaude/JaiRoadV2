@@ -1,563 +1,127 @@
-
 <?php
+
+declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreMediaRequest;
-use App\Http\Requests\UpdateMediaRequest;
-use App\Models\AuditLog;
 use App\Models\Media;
-use App\Models\MonthlyUpdate;
-use App\Models\MaintenanceRecord;
-use App\Models\UserAccount;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
-use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
-use Throwable;
 
+/**
+ * Temporary, fail-closed compatibility controller.
+ *
+ * Existing resource routes stay registered, but no operation can read,
+ * mutate or upload business data. Existing policy checks remain in place.
+ * The prior full implementation is backed up by the installer.
+ *
+ * Blocked: the intended Media table, uploader relation, and storage rules are not deployed.
+ * Do not activate CRUD until the shared schema, policies, and file retention
+ * rules have been agreed and implemented.
+ */
 class MediaController extends Controller
 {
     /**
-     * Fields included in Media audit snapshots.
-     */
-    private const AUDITABLE_FIELDS = [
-        'monthly_update_id',
-        'file_name',
-        'file_path',
-        'file_type',
-        'uploaded_by',
-        'created_at',
-    ];
-
-    /**
-     * Display Media records.
+     * Temporarily unavailable while the Media integration is incomplete.
+     * Resource route parameters intentionally remain strings, preventing
+     * implicit Eloquent binding before this guard can run.
      */
     public function index(): Response
     {
         Gate::authorize('viewAny', Media::class);
 
-        $actorAccount = $this->authenticatedUserAccount();
-
-        $search = trim((string) request()->query('search', ''));
-
-        $sortField = (string) request()->query(
-            'sort_field',
-            'created_at'
-        );
-
-        $sortDirection = strtolower(
-            (string) request()->query('sort_direction', 'desc')
-        );
-
-        $allowedSortFields = [
-            'file_name',
-            'file_type',
-            'created_at',
-        ];
-
-        if (! in_array($sortField, $allowedSortFields, true)) {
-            $sortField = 'created_at';
-        }
-
-        if (! in_array($sortDirection, ['asc', 'desc'], true)) {
-            $sortDirection = 'desc';
-        }
-
-        $query = Media::query()->with([
-            'monthlyUpdate',
-            'uploadedBy',
-        ]);
-
-        /*
-         * The MediaPolicy must grant viewAll only to roles
-         * permitted to view the complete Media collection.
-         */
-        if (! Gate::allows('viewAll', Media::class)) {
-            $this->scopeToAssignedMaintenance($query, $actorAccount);
-        }
-
-        if ($search !== '') {
-            $query->where(function (Builder $query) use ($search): void {
-                $like = '%' . $search . '%';
-
-                $query->where('file_name', 'like', $like)
-                    ->orWhere('file_type', 'like', $like)
-                    ->orWhereHas(
-                        'monthlyUpdate',
-                        fn (Builder $updateQuery) => $updateQuery
-                            ->where('update_month', 'like', $like)
-                    );
-            });
-        }
-
-        $model = $query
-            ->orderBy($sortField, $sortDirection)
-            ->paginate(10)
-            ->withQueryString();
-
-        return Inertia::render('Media/Index', [
-            'model' => $model,
-            'monthlyUpdates' => $this->availableMonthlyUpdates(),
-            'queryParams' => request()->query(),
-        ]);
+        $this->unavailable();
     }
 
     /**
-     * Display the form for uploading Media.
+     * Temporarily unavailable while the Media integration is incomplete.
+     * Resource route parameters intentionally remain strings, preventing
+     * implicit Eloquent binding before this guard can run.
      */
     public function create(): Response
     {
-        Gate::authorize('create', Media::class);
+        Gate::authorize('viewAny', Media::class);
 
-        return Inertia::render('Media/Create', [
-            'monthlyUpdates' => $this->availableMonthlyUpdates(),
-        ]);
+        $this->unavailable();
     }
 
     /**
-     * Upload photo/video evidence and register its metadata.
+     * Temporarily unavailable while the Media integration is incomplete.
+     * Resource route parameters intentionally remain strings, preventing
+     * implicit Eloquent binding before this guard can run.
      */
-    public function store(StoreMediaRequest $request): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
-        Gate::authorize('create', Media::class);
+        Gate::authorize('viewAny', Media::class);
 
-        $actorAccount = $this->authenticatedUserAccount();
-
-        $data = $request->safe()->only([
-            'monthly_update_id',
-        ]);
-
-        $monthlyUpdate = MonthlyUpdate::query()
-            ->findOrFail($data['monthly_update_id']);
-
-        /*
-         * This custom policy ability must verify that an Engineer
-         * manages the associated MaintenanceRecord and has the
-         * required active EngineerLGU assignment.
-         */
-        Gate::authorize(
-            'createForMonthlyUpdate',
-            [Media::class, $monthlyUpdate]
-        );
-
-        $file = $request->file('file');
-
-        abort_if($file === null, 422, 'A media file is required.');
-
-        $directory = 'maintenance-media/'
-            . $monthlyUpdate->getKey();
-
-        $path = $file->store($directory, 'supabase');
-
-        if ($path === false) {
-            abort(500, 'The media file could not be uploaded.');
-        }
-
-        try {
-            DB::transaction(function () use (
-                $data,
-                $file,
-                $path,
-                $actorAccount
-            ): void {
-                $media = Media::create([
-                    'monthly_update_id' => $data['monthly_update_id'],
-                    'file_name' => $file->getClientOriginalName(),
-                    'file_path' => $path,
-                    'file_type' => $file->getMimeType(),
-                    'uploaded_by' => $actorAccount->getKey(),
-                ]);
-
-                $this->writeAuditLog(
-                    $actorAccount,
-                    'CREATE',
-                    $media,
-                    null,
-                    $this->auditValues($media)
-                );
-            });
-        } catch (Throwable $exception) {
-            // Prevent an orphaned upload if the database operation fails.
-            Storage::disk('supabase')->delete($path);
-
-            throw $exception;
-        }
-
-        return to_route('media.index')
-            ->with('message', 'Successfully uploaded media evidence.');
+        $this->unavailable();
     }
 
     /**
-     * Display Media metadata.
+     * Temporarily unavailable while the Media integration is incomplete.
+     * Resource route parameters intentionally remain strings, preventing
+     * implicit Eloquent binding before this guard can run.
      */
-    public function show(Media $media): Response
+    public function show(string $media): Response
     {
-        Gate::authorize('view', $media);
+        Gate::authorize('viewAny', Media::class);
 
-        $media->load([
-            'monthlyUpdate',
-            'uploadedBy',
-        ]);
-
-        return Inertia::render('Media/Show', [
-            'media' => $media,
-        ]);
+        $this->unavailable();
     }
 
     /**
-     * Display the form for replacing a Media file.
+     * Temporarily unavailable while the Media integration is incomplete.
+     * Resource route parameters intentionally remain strings, preventing
+     * implicit Eloquent binding before this guard can run.
      */
-    public function edit(Media $media): Response
+    public function edit(string $media): Response
     {
-        Gate::authorize('update', $media);
+        Gate::authorize('viewAny', Media::class);
 
-        $media->load('monthlyUpdate');
-
-        return Inertia::render('Media/Edit', [
-            'media' => $media,
-        ]);
+        $this->unavailable();
     }
 
     /**
-     * Replace the stored photo/video file.
-     *
-     * The existing MonthlyUpdate association is preserved.
+     * Temporarily unavailable while the Media integration is incomplete.
+     * Resource route parameters intentionally remain strings, preventing
+     * implicit Eloquent binding before this guard can run.
      */
-    public function update(
-        UpdateMediaRequest $request,
-        Media $media
-    ): RedirectResponse {
-        Gate::authorize('update', $media);
-
-        $actorAccount = $this->authenticatedUserAccount();
-
-        $file = $request->file('file');
-
-        abort_if($file === null, 422, 'A replacement media file is required.');
-
-        $monthlyUpdate = MonthlyUpdate::query()
-            ->findOrFail($media->monthly_update_id);
-
-        Gate::authorize(
-            'createForMonthlyUpdate',
-            [Media::class, $monthlyUpdate]
-        );
-
-        $newPath = $file->store(
-            'maintenance-media/' . $monthlyUpdate->getKey(),
-            'supabase'
-        );
-
-        if ($newPath === false) {
-            abort(500, 'The replacement media file could not be uploaded.');
-        }
-
-        $oldPath = $media->file_path;
-
-        try {
-            DB::transaction(function () use (
-                $media,
-                $file,
-                $newPath,
-                $actorAccount
-            ): void {
-                $record = Media::query()
-                    ->lockForUpdate()
-                    ->findOrFail($media->getKey());
-
-                Gate::authorize('update', $record);
-
-                $oldValues = $this->auditValues($record);
-
-                $record->fill([
-                    'file_name' => $file->getClientOriginalName(),
-                    'file_path' => $newPath,
-                    'file_type' => $file->getMimeType(),
-                    'uploaded_by' => $actorAccount->getKey(),
-                ]);
-
-                $changedFields = array_values(array_intersect(
-                    self::AUDITABLE_FIELDS,
-                    array_keys($record->getDirty())
-                ));
-
-                if ($changedFields === []) {
-                    return;
-                }
-
-                $changedKeys = array_flip($changedFields);
-
-                $oldValues = array_intersect_key(
-                    $oldValues,
-                    $changedKeys
-                );
-
-                $record->save();
-
-                $newValues = array_intersect_key(
-                    $this->auditValues($record),
-                    $changedKeys
-                );
-
-                $this->writeAuditLog(
-                    $actorAccount,
-                    'UPDATE',
-                    $record,
-                    $oldValues,
-                    $newValues
-                );
-            });
-        } catch (Throwable $exception) {
-            // The previous file is untouched; remove the failed replacement.
-            Storage::disk('supabase')->delete($newPath);
-
-            throw $exception;
-        }
-
-        /*
-         * Storage is external to the database transaction.
-         * Remove the old object only after the database commit succeeds.
-         */
-        try {
-            $oldFileRemoved = $oldPath === $newPath
-                || Storage::disk('supabase')->delete($oldPath);
-        } catch (Throwable) {
-            $oldFileRemoved = false;
-        }
-
-        if (! $oldFileRemoved) {
-            return to_route(
-                'media.index',
-                $request->query()
-            )->with(
-                'warning',
-                'The media record was updated, but the old storage file '
-                . 'could not be removed. Check Supabase Storage for cleanup.'
-            );
-        }
-
-        return to_route(
-            'media.index',
-            $request->query()
-        )->with('message', 'Successfully updated media evidence.');
-    }
-
-    /**
-     * Download the file after authorization.
-     */
-    public function download(Media $media): StreamedResponse
+    public function update(Request $request, string $media): RedirectResponse
     {
-        Gate::authorize('view', $media);
+        Gate::authorize('viewAny', Media::class);
 
-        abort_unless(
-            Storage::disk('supabase')->exists($media->file_path),
-            404,
-            'The media file could not be found in storage.'
-        );
-
-        return Storage::disk('supabase')->download(
-            $media->file_path,
-            $media->file_name
-        );
+        $this->unavailable();
     }
 
     /**
-     * Delete Media metadata and the associated stored object.
-     * Only Admin/SuperAdmin should be authorized by the policy.
+     * Temporarily unavailable while the Media integration is incomplete.
+     * Resource route parameters intentionally remain strings, preventing
+     * implicit Eloquent binding before this guard can run.
      */
-    public function destroy(Media $media): RedirectResponse
+    public function destroy(string $media): RedirectResponse
     {
-        Gate::authorize('delete', $media);
+        Gate::authorize('viewAny', Media::class);
 
-        $actorAccount = $this->authenticatedUserAccount();
-
-        $filePath = $media->file_path;
-
-        DB::transaction(function () use (
-            $media,
-            $actorAccount
-        ): void {
-            $record = Media::query()
-                ->lockForUpdate()
-                ->findOrFail($media->getKey());
-
-            Gate::authorize('delete', $record);
-
-            $oldValues = $this->auditValues($record);
-
-            $record->delete();
-
-            $this->writeAuditLog(
-                $actorAccount,
-                'DELETE',
-                $record,
-                $oldValues,
-                null
-            );
-        });
-
-        /*
-         * Delete the storage object only after the database transaction
-         * succeeds. Storage operations cannot participate in DB rollback.
-         */
-        try {
-            $fileRemoved = Storage::disk('supabase')->delete($filePath);
-        } catch (Throwable) {
-            $fileRemoved = false;
-        }
-
-        if (! $fileRemoved) {
-            return to_route('media.index')
-                ->with(
-                    'warning',
-                    'The Media database record was deleted, but its storage '
-                    . 'file could not be removed. Check Supabase Storage.'
-                );
-        }
-
-        return to_route('media.index')
-            ->with('message', 'Successfully deleted media evidence.');
+        $this->unavailable();
     }
 
     /**
-     * Return monthly updates the current user may select.
+     * Temporarily unavailable while the Media integration is incomplete.
+     * Resource route parameters intentionally remain strings, preventing
+     * implicit Eloquent binding before this guard can run.
      */
-    private function availableMonthlyUpdates()
+    public function download(string $media): StreamedResponse
     {
-        $actorAccount = $this->authenticatedUserAccount();
+        Gate::authorize('viewAny', Media::class);
 
-        $query = MonthlyUpdate::query()
-            ->with('maintenanceRecord.maintenanceProject')
-            ->orderByDesc('update_month');
-
-        if (! Gate::allows('viewAll', Media::class)) {
-            if ($actorAccount->engineer_id === null) {
-                $query->whereRaw('1 = 0');
-            } else {
-                $this->scopeToAssignedMaintenance(
-                    $query,
-                    $actorAccount
-                );
-            }
-        }
-
-        return $query->get();
+        $this->unavailable();
     }
 
-    /**
-     * Restrict records to MaintenanceRecords managed by the Engineer
-     * who also has an active assignment to the related LGU.
-     *
-     * These relationship names and foreign-key columns must match
-     * the application's actual models and migrations.
-     */
-    private function scopeToAssignedMaintenance(
-        Builder $query,
-        UserAccount $actorAccount
-    ): void {
-        if ($actorAccount->engineer_id === null) {
-            $query->whereRaw('1 = 0');
-
-            return;
-        }
-
-        $query->whereHas(
-            'monthlyUpdate.maintenanceRecord',
-            function (Builder $recordQuery) use ($actorAccount): void {
-                $recordQuery
-                    ->where(
-                        'managing_engineer_id',
-                        $actorAccount->engineer_id
-                    )
-                    ->whereHas(
-                        'maintenanceProject.roadCoverage.lgu.engineerAssignments',
-                        fn (Builder $assignmentQuery) => $assignmentQuery
-                            ->where(
-                                'engineer_id',
-                                $actorAccount->engineer_id
-                            )
-                            ->where('is_active', true)
-                    );
-            }
-        );
-    }
-
-    /**
-     * Resolve the authenticated user to the associated UserAccount.
-     */
-    private function authenticatedUserAccount(): UserAccount
+    private function unavailable(): never
     {
-        $user = Auth::user();
-
-        if ($user instanceof UserAccount) {
-            return $user;
-        }
-
-        if ($user !== null && method_exists($user, 'userAccount')) {
-            $account = $user->userAccount;
-
-            if ($account instanceof UserAccount) {
-                return $account;
-            }
-        }
-
-        abort(
-            403,
-            'The authenticated user is not linked to a UserAccount.'
-        );
-    }
-
-    /**
-     * Get fields included in the audit snapshot.
-     *
-     * @return array<string, mixed>
-     */
-    private function auditValues(Media $media): array
-    {
-        return array_intersect_key(
-            $media->getAttributes(),
-            array_flip(self::AUDITABLE_FIELDS)
-        );
-    }
-
-    /**
-     * Write an audit event in the same transaction as the database change.
-     *
-     * @param array<string, mixed>|null $oldValues
-     * @param array<string, mixed>|null $newValues
-     */
-    private function writeAuditLog(
-        UserAccount $actorAccount,
-        string $action,
-        Media $media,
-        ?array $oldValues,
-        ?array $newValues
-    ): void {
-        $description = match ($action) {
-            'CREATE' => "Media #{$media->getKey()} was uploaded.",
-            'UPDATE' => "Media #{$media->getKey()} was updated.",
-            'DELETE' => "Media #{$media->getKey()} was deleted.",
-            default => "Media #{$media->getKey()} changed.",
-        };
-
-        AuditLog::create([
-            'user_id' => $actorAccount->getKey(),
-            'actor_identifier' => 'UserAccount#'
-                . $actorAccount->getKey(),
-            'action' => $action,
-            'entity_type' => 'Media',
-            'entity_id' => $media->getKey(),
-            'description' => $description,
-            'old_value' => $oldValues,
-            'new_value' => $newValues,
-            'recipient_user_id' => null,
-            'notification_message' => null,
-        ]);
+        abort(503, 'This module is temporarily unavailable pending approved schema and authorization alignment.');
     }
 }

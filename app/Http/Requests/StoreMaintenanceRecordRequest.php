@@ -1,4 +1,3 @@
-
 <?php
 
 namespace App\Http\Requests;
@@ -30,8 +29,8 @@ class StoreMaintenanceRecordRequest extends FormRequest
      */
     public function rules(): array
     {
-        $project = new MaintenanceProject();
-        $engineer = new Engineer();
+        $project = new MaintenanceProject;
+        $engineer = new Engineer;
 
         return [
             'project_id' => [
@@ -49,7 +48,17 @@ class StoreMaintenanceRecordRequest extends FormRequest
                 Rule::exists(
                     $engineer->getTable(),
                     $engineer->getKeyName()
-                )->where('engineer_status', 'Active'),
+                ),
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (! \Illuminate\Support\Facades\Schema::hasColumn('engineers', 'engineer_status')) {
+                        $fail('MaintenanceRecord creation is unavailable until EngineerStatus is deployed and approved.');
+                        return;
+                    }
+
+                    if (! Engineer::query()->whereKey($value)->where('engineer_status', 'Active')->exists()) {
+                        $fail('The managing Engineer must have Active status.');
+                    }
+                },
             ],
 
             'maintenance_year' => [

@@ -1,4 +1,3 @@
-
 <?php
 
 namespace App\Http\Controllers;
@@ -10,6 +9,9 @@ use App\Models\Lgu;
 use App\Models\MaintenanceProject;
 use App\Models\RoadCoverage;
 use App\Services\MaintenanceProjects\ProjectMutations;
+use App\Services\MaintenanceProjects\VerifiedProjectAccount;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -74,14 +76,11 @@ class MaintenanceProjectController extends Controller
         if ($filters['search'] !== '') {
             $query->whereLike(
                 'project_title',
-                '%' . $filters['search'] . '%'
+                '%'.$filters['search'].'%'
             );
         }
 
-        if (
-            $filters['municipality'] !== ''
-            && $filters['municipality'] !== null
-        ) {
+        if ($filters['municipality'] !== '') {
             $query->whereHas(
                 'roadCoverage',
                 fn (Builder $coverage) => $coverage->where(
@@ -168,10 +167,25 @@ class MaintenanceProjectController extends Controller
         Gate::authorize('view', $maintenanceProject);
 
         $project = $this->projects()
-            ->findOrFail($maintenanceProject->getKey());
+            ->whereKey($maintenanceProject->getKey())
+            ->firstOrFail();
+
+        // Read only the viewed project's linked coverage. No broad GeoJSON query.
+        $coverage = $project->roadCoverage()->first([
+            'id', 'road_name', 'lgu_id', 'kilometers', 'geojson',
+        ]);
 
         return Inertia::render('MaintenanceProjects/Show', [
             'project' => $this->projectData($project),
+            'canCreateRecord' => Gate::allows('create', \App\Models\MaintenanceRecord::class),
+            'coveragePreview' => $coverage ? [
+                'id' => $coverage->id,
+                'road_name' => $coverage->road_name,
+                'municipality' => $project->roadCoverage?->lgu?->municipality_name,
+                'kilometers' => (string) $coverage->kilometers,
+                'assigned' => true,
+                'geojson' => $coverage->geojson,
+            ] : null,
 
             'records' => $project->maintenanceRecords()
                 ->orderByDesc('maintenance_year')
@@ -200,7 +214,8 @@ class MaintenanceProjectController extends Controller
         Gate::authorize('update', $maintenanceProject);
 
         $project = $this->projects()
-            ->findOrFail($maintenanceProject->getKey());
+            ->whereKey($maintenanceProject->getKey())
+            ->firstOrFail();
 
         return Inertia::render('MaintenanceProjects/Edit', [
             'project' => $this->projectData($project),
@@ -259,10 +274,27 @@ class MaintenanceProjectController extends Controller
     /**
      * Build the query used for project pages.
      */
+    /** @return Builder<MaintenanceProject> */
     private function projects(): Builder
     {
-        return MaintenanceProject::query()
-            ->withCount('maintenanceRecords')
+        $query = MaintenanceProject::query();
+        $user = Auth::user();
+        if ($user instanceof \App\Models\User) {
+            $accounts = app(VerifiedProjectAccount::class);
+            if ($accounts->role($user) === 'engineer') {
+                $account = $accounts->resolve($user);
+                if (! $account?->engineers_id) {
+                    $query->whereRaw('1 = 0');
+                } else {
+                    $query->whereHas('roadCoverage', fn (Builder $coverage) => $coverage
+                        ->whereIn('lgu_id', DB::table('engineer_lgus')
+                            ->select('lgus_id')
+                            ->where('engineers_id', $account->engineers_id)
+                            ->where('is_active', true)));
+                }
+            }
+        }
+        return $query->withCount('maintenanceRecords')
             ->with([
                 'roadCoverage:id,lgu_id,road_name',
                 'roadCoverage.lgu:id,municipality_name',
@@ -273,15 +305,17 @@ class MaintenanceProjectController extends Controller
     /**
      * List RoadCoverage choices that the current user is allowed to assign.
      */
+    /** @return \Illuminate\Support\Collection<int, array{id: mixed, road_name: mixed, municipality: mixed, kilometers: mixed, assigned: bool, geojson: mixed}> */
     private function coverageChoices(
         ?MaintenanceProject $current = null
-    ) {
+    ): \Illuminate\Support\Collection {
         return RoadCoverage::query()
             ->select([
                 'id',
                 'road_name',
                 'lgu_id',
                 'kilometers',
+                'geojson',
             ])
             ->with([
                 'lgu:id,municipality_name',
@@ -301,6 +335,7 @@ class MaintenanceProjectController extends Controller
                 'road_name' => $coverage->road_name,
                 'municipality' => $coverage->lgu?->municipality_name,
                 'kilometers' => $coverage->kilometers,
+                'geojson' => $coverage->geojson,
                 'assigned' => $coverage->maintenanceProject !== null
                     && $coverage->maintenanceProject->id
                         !== $current?->getKey(),
@@ -311,13 +346,14 @@ class MaintenanceProjectController extends Controller
     /**
      * Verify permissions and required database structure.
      */
+    /** @return array{ready: bool, message: string|null} */
     private function integration(string $ability): array
     {
         if (! Gate::allows($ability, MaintenanceProject::class)) {
             return [
                 'ready' => false,
                 'message' => 'Project access requires a verified account link. '
-                    . 'Project records and saving are unavailable for this account.',
+                    .'Project records and saving are unavailable for this account.',
             ];
         }
 
@@ -334,7 +370,7 @@ class MaintenanceProjectController extends Controller
             return [
                 'ready' => false,
                 'message' => 'Project data is unavailable until the database '
-                    . 'structure has been verified and approved changes applied.',
+                    .'structure has been verified and approved changes applied.',
             ];
         }
 
@@ -363,8 +399,7 @@ class MaintenanceProjectController extends Controller
             'created_by' => $project->createdBy?->username,
             'created_at' => $project->created_at?->toIso8601String(),
             'updated_at' => $project->updated_at?->toIso8601String(),
-            'maintenance_records_count' =>
-                (int) $project->maintenance_records_count,
+            'maintenance_records_count' => (int) $project->maintenance_records_count,
             'can_edit' => Gate::allows('update', $project),
             'can_delete' => Gate::allows('delete', $project),
         ];
