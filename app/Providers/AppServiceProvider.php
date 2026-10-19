@@ -2,14 +2,16 @@
 
 namespace App\Providers;
 
-use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\Date;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Auth\Events\Login;
+use App\Auth\LinkedPasswordUserProvider;
 use App\Models\User;
 use App\Services\DataDictionary\DataDictionaryIdentityResolver;
 use App\Services\DataDictionary\DdActivityNotifications;
+use Carbon\CarbonImmutable;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -28,6 +30,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Auth::provider('dd-linked-eloquent', function ($app, array $config): LinkedPasswordUserProvider {
+            return new LinkedPasswordUserProvider($app['hash'], $config['model']);
+        });
         $this->configureDefaults();
         // Fortify dispatches Login after successful authentication. Log only
         // DD-linked successful sign-ins; legacy credentials remain unchanged.
