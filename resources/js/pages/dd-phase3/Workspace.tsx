@@ -9,7 +9,6 @@ import {
   FileText,
   FolderKanban,
   ArrowRight,
-  LayoutDashboard,
   Building2,
   Crown,
   ShieldCheck,
@@ -400,18 +399,11 @@ export default function DdPhase3Workspace({
       )}
       {section === "dashboard" && identity.role === "Admin" && (
         <div className="space-y-6">
-          <section className="relative overflow-hidden rounded-[26px] border border-[#eadbc8] bg-gradient-to-br from-[#fff6e9] via-white to-[#f9fbff] p-6 shadow-sm sm:p-8">
-            <div className="relative max-w-3xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-amber-800"><LayoutDashboard className="h-4 w-4" /> Admin operational workspace</div>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">Operations Dashboard</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-600">Oversee maintenance work, coordinate engineers and LGUs, and keep day-to-day records up to date. System-level oversight belongs to the separate SuperAdmin Command Center.</p>
-            </div>
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <StatCard label="Maintenance projects" value={counts.maintenanceProjects ?? 0} detail="Linked road maintenance projects" icon={FolderKanban} />
               <StatCard label="Maintenance records" value={counts.maintenanceRecords ?? 0} detail="Quarterly maintenance history" icon={Activity} />
               <StatCard label="Monthly updates" value={counts.monthlyUpdates ?? 0} detail="Progress reports" icon={FileText} />
               <StatCard label="LGUs" value={counts.lgus} detail="Municipalities in inventory" icon={Building2} />
-            </div>
           </section>
           {analytics && <DdDashboardAnalytics data={analytics} compact />}
           <section className="grid gap-5 xl:grid-cols-[1.2fr_.8fr]">
