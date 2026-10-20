@@ -7,75 +7,58 @@ namespace App\Services\DataDictionary;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Recipient-specific AuditLog notifications; no new tables, no global feed,
- * and no read/unread state (not approved by the final Data Dictionary).
+ * Provisional DD Workflows matrix, enabled by the AuditLog correction approval.
+ * Pending final client validation. Resolves ONE recipient; never writes events.
  *
  * @phpstan-import-type Identity from DataDictionaryIdentityResolver
  */
 final class DdActivityNotifications
 {
-    /** @return list<string> */
-    public static function recipientsFor(string $actorRole): array
+    public static function qualifies(string $role, string $action, string $entity): bool
     {
-        return match ($actorRole) {
-            'SuperAdmin' => [],
-            'Admin' => ['SuperAdmin'],
-            'Engineer', 'Viewer' => ['Admin', 'SuperAdmin'],
-            default => [],
-        };
+        if ($entity === 'MaintenanceRecord' && $action === 'CREATE') {
+            return true;
+        }
+
+        return in_array($role, ['Admin', 'SuperAdmin'], true)
+            && (($entity === 'MaintenanceRecord' && in_array($action, ['UPDATE', 'REASSIGN'], true))
+                || (in_array($entity, ['MonthlyUpdate', 'MaintenanceDocument', 'Media'], true)
+                    && in_array($action, ['CREATE', 'UPDATE', 'DELETE'], true)));
     }
 
-    /**
-     * Call inside the SAME transaction as the business AuditLog insert.
-     * The actor receives their own event; higher roles receive lower-role activity.
-     * No other engineer/viewer gets another account's notifications.
+    /** @param Identity $actor
+     * @param  array<string, mixed>  $record  Persisted affected entity, before deletion when applicable.
      */
-    /**
-     * @param  Identity  $actor
-     */
-    public function record(array $actor, string $action, string $entity, ?int $entityId, string $description): void
+    public function recipient(array $actor, string $action, string $entity, array $record): ?int
     {
-        $role = (string) $actor['role'];
-        $actorId = (int) $actor['account_id'];
-        $targets = DB::table('jairoads_next.user_accounts')
-            ->where('is_active', true)
-            ->where(function ($q) use ($actorId, $role): void {
-                $q->where('id', $actorId);
-                $parents = self::recipientsFor($role);
-                if ($parents !== []) {
-                    $q->orWhereIn('account_type', $parents);
-                }
-            })->pluck('id')->map(static fn ($id): int => (int) $id)->all();
-        $actorType = match ($role) {
-            'SuperAdmin', 'Admin', 'Engineer', 'Viewer' => $role,
-            default => 'User',
+        if (! self::qualifies($actor['role'], $action, $entity)) {
+            return null;
+        }
+        $maintenanceId = match ($entity) {
+            'MaintenanceRecord' => $record['id'] ?? null,
+            'MonthlyUpdate', 'MaintenanceDocument' => $record['maintenance_id'] ?? null,
+            'Media' => DB::table('jairoads_next.monthly_updates')->where('id', $record['monthly_update_id'] ?? null)->value('maintenance_id'),
+            default => null,
         };
-        $safeAction = substr(str_replace('_', ' ', strtoupper($action)), 0, 40);
-        $safeEntity = substr((string) $entity, 0, 80);
-        $msg = $actorType.' · '.$safeAction.' · '.$safeEntity;
-        if ($entityId !== null) {
-            $msg .= ' #'.$entityId;
+        if ($maintenanceId === null) {
+            return null;
         }
-        // Log in each recipient's own AuditLog notification row, with source
-        // identity but no email, password, IP, private file path or raw payload.
-        $rows = [];
-        foreach ($targets as $targetId) {
-            $rows[] = [
-                'user_id' => $actorId,
-                'actor_identifier' => 'DD-UserAccount#'.$actorId,
-                'action' => $action,
-                'entity_type' => $entity,
-                'entity_id' => $entityId,
-                'description' => 'Recipient notification: '.$description,
-                'old_value' => null,
-                'new_value' => null,
-                'recipient_user_id' => $targetId,
-                'notification_message' => $msg,
-                'created_at' => now(),
-            ];
+        $recipients = DB::table('jairoads_next.maintenance_records as mr')
+            ->join('jairoads_next.maintenance_projects as p', 'p.id', '=', 'mr.project_id')
+            ->join('jairoads_next.road_coverages as r', 'r.id', '=', 'p.road_coverage_id')
+            ->join('jairoads_next.engineers as e', 'e.id', '=', 'mr.managing_engineer_id')
+            ->join('jairoads_next.user_accounts as u', 'u.engineer_id', '=', 'e.id')
+            ->join('jairoads_next.engineer_lgus as el', function ($join): void {
+                $join->on('el.engineer_id', '=', 'e.id')->on('el.lgu_id', '=', 'r.lgu_id');
+            })
+            ->where('mr.id', $maintenanceId)->where('e.engineer_status', 'Active')
+            ->where('u.is_active', true)->where('u.account_type', 'Engineer')
+            ->where('el.is_active', true)->pluck('u.id')->unique();
+        // Fail closed for an ambiguous profile/account link, including self.
+        if ($recipients->count() !== 1 || (int) $recipients->first() === $actor['account_id']) {
+            return null;
         }
-        foreach (array_chunk($rows, 100) as $batch) {
-            DB::table('jairoads_next.audit_logs')->insert($batch);
-        }
+
+        return (int) $recipients->first();
     }
 }

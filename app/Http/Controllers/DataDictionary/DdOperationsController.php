@@ -7,7 +7,7 @@ namespace App\Http\Controllers\DataDictionary;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\DataDictionary\DataDictionaryIdentityResolver;
-use App\Services\DataDictionary\DdActivityNotifications;
+use App\Services\DataDictionary\DdAuditLog;
 use App\Services\DataDictionary\DdRoleAccess;
 use App\Services\DataDictionary\LinkedPasswordUpdater;
 use App\Services\Documents\PrivateSupabaseStorage;
@@ -114,7 +114,9 @@ final class DdOperationsController extends Controller
         $row = $this->t('maintenance_records as mr')
             ->join('jairoads_next.maintenance_projects as p', 'p.id', '=', 'mr.project_id')
             ->join('jairoads_next.road_coverages as r', 'r.id', '=', 'p.road_coverage_id')
-            ->where('mr.id', $recordId)->first(['mr.id', 'mr.project_id', 'mr.managing_engineer_id', 'r.lgu_id']);
+            ->where('mr.id', $recordId)
+            ->when($write && DB::transactionLevel() > 0, fn ($query) => $query->lockForUpdate())
+            ->first(['mr.id', 'mr.project_id', 'mr.managing_engineer_id', 'r.lgu_id']);
         abort_unless($row !== null, 404);
         if ($actor['role'] === 'Engineer') {
             $this->lguAllowed($actor, (int) $row->lgu_id);
@@ -126,26 +128,6 @@ final class DdOperationsController extends Controller
         }
 
         return $row;
-    }
-
-    /**
-     * @param  Identity  $actor
-     * @param  array<string, mixed>  $meta
-     */
-    private function audit(array $actor, string $action, string $entity, ?int $id, string $description, array $meta = []): void
-    {
-        // Only safe identifiers/statuses; no credentials, email, geometry or private paths.
-        $this->t('audit_logs')->insert([
-            'user_id' => $actor['account_id'],
-            'actor_identifier' => 'DD-UserAccount#'.$actor['account_id'],
-            'action' => $action, 'entity_type' => $entity, 'entity_id' => $id,
-            'description' => $description,
-            'old_value' => null, 'new_value' => $meta === [] ? null : json_encode($meta, JSON_THROW_ON_ERROR),
-            'recipient_user_id' => null, 'notification_message' => null,
-            'created_at' => now(),
-        ]);
-        app(DdActivityNotifications::class)
-            ->record($actor, $action, $entity, $id, $description);
     }
 
     private function done(string $section, string $message): RedirectResponse
@@ -297,16 +279,12 @@ final class DdOperationsController extends Controller
                     }
                 }
                 $id2 = (int) $this->t('road_coverages')->insertGetId($data + ['created_by' => $engineerId, 'created_at' => now()]);
-                $this->audit($actor, 'CREATE', 'RoadCoverage', $id2, 'Authorized RoadCoverage created.', [
-                    'created_by_engineer_id' => $engineerId,
-                    'lgu_id' => (int) $v['lgu_id'],
-                ]);
+                app(DdAuditLog::class)->created('RoadCoverage', $id2);
             } else {
                 $row = $this->t('road_coverages')->where('id', $id)->lockForUpdate()->first(['id', 'lgu_id']);
                 abort_unless($row !== null, 404);
                 $this->lguAllowed($actor, (int) $row->lgu_id);
-                $this->t('road_coverages')->where('id', $id)->update($data);
-                $this->audit($actor, 'UPDATE', 'RoadCoverage', $id, 'Authorized RoadCoverage updated.');
+                app(DdAuditLog::class)->update('RoadCoverage', $id, $data);
             }
         });
 
@@ -350,10 +328,9 @@ final class DdOperationsController extends Controller
                 'description' => $v['description'] ?? null, 'updated_at' => now()];
             if ($id === null) {
                 $pid = (int) $this->t('maintenance_projects')->insertGetId($data + ['created_by' => $actor['account_id'], 'created_at' => now()]);
-                $this->audit($actor, 'CREATE', 'MaintenanceProject', $pid, 'Authorized project created.');
+                app(DdAuditLog::class)->created('MaintenanceProject', $pid);
             } else {
-                abort_unless($this->t('maintenance_projects')->where('id', $id)->update($data) === 1, 404);
-                $this->audit($actor, 'UPDATE', 'MaintenanceProject', $id, 'Authorized project updated.');
+                app(DdAuditLog::class)->update('MaintenanceProject', $id, $data);
             }
         });
 
@@ -391,14 +368,13 @@ final class DdOperationsController extends Controller
             $data['updated_at'] = now();
             if ($id === null) {
                 $rid = (int) $this->t('maintenance_records')->insertGetId($data + ['created_by' => $actor['account_id'], 'created_at' => now()]);
-                $this->audit($actor, 'CREATE', 'MaintenanceRecord', $rid, 'Authorized maintenance record created.');
+                app(DdAuditLog::class)->created('MaintenanceRecord', $rid);
             } else {
                 $row = $this->recordScope($actor, $id, true);
                 if ((int) $row->project_id !== (int) $v['project_id'] || (int) $row->managing_engineer_id !== (int) $v['managing_engineer_id']) {
                     throw ValidationException::withMessages(['project_id' => 'Changing project or managing Engineer requires separately approved reassignment.']);
                 }
-                $this->t('maintenance_records')->where('id', $id)->update($data);
-                $this->audit($actor, 'UPDATE', 'MaintenanceRecord', $id, 'Authorized maintenance record updated.');
+                app(DdAuditLog::class)->update('MaintenanceRecord', $id, $data);
             }
         });
 
@@ -417,6 +393,7 @@ final class DdOperationsController extends Controller
         ]);
         $this->recordScope($actor, (int) $v['maintenance_id'], true);
         DB::transaction(function () use ($actor, $v, $id): void {
+            $this->recordScope($actor, (int) $v['maintenance_id'], true);
             // Serialize monthly report changes on the parent record so concurrent
             // submissions receive validation errors rather than duplicate inserts.
             $this->t('maintenance_records')->where('id', $v['maintenance_id'])->lockForUpdate()->first(['id']);
@@ -435,14 +412,13 @@ final class DdOperationsController extends Controller
                     throw ValidationException::withMessages(['update_month' => 'An update already exists for this maintenance record and month.']);
                 }
                 $uid = (int) $this->t('monthly_updates')->insertGetId($data + ['created_by' => $actor['account_id'], 'created_at' => now()]);
-                $this->audit($actor, 'CREATE', 'MonthlyUpdate', $uid, 'Authorized monthly update created.');
+                app(DdAuditLog::class)->created('MonthlyUpdate', $uid);
             } else {
                 $old = $this->t('monthly_updates')->where('id', $id)->first(['maintenance_id']);
                 abort_unless($old !== null, 404);
                 $this->recordScope($actor, (int) $old->maintenance_id, true);
                 abort_unless((int) $old->maintenance_id === (int) $v['maintenance_id'], 422, 'Cannot move monthly update to another maintenance record.');
-                $this->t('monthly_updates')->where('id', $id)->update($data);
-                $this->audit($actor, 'UPDATE', 'MonthlyUpdate', $id, 'Authorized monthly update revised.');
+                app(DdAuditLog::class)->update('MonthlyUpdate', $id, $data);
             }
         });
 
@@ -465,17 +441,18 @@ final class DdOperationsController extends Controller
         abort_unless(Hash::check($v['current_password'], $login->password), 422, 'Current password is incorrect.');
         DB::transaction(function () use ($actor, $username, $v, $login, $passwords): void {
             DB::select('SELECT pg_advisory_xact_lock(1927710963)');
-            if (! empty($v['password'])) {
-                $passwords->change($login, $v['current_password'], $v['password']);
-            }
+            // Match LinkedPasswordUpdater's login -> canonical account lock order.
+            $fresh = User::query()->whereKey($login->getKey())->lockForUpdate()->first();
+            abort_unless($fresh !== null && Hash::check($v['current_password'], $fresh->password), 422, 'Current password is incorrect.');
             $account = $this->t('user_accounts')->where('id', $actor['account_id'])->lockForUpdate()->first(['id', 'username']);
             abort_unless($account !== null, 403);
             if ($this->t('user_accounts')->whereRaw('LOWER(username) = ?', [$username])->where('id', '!=', $actor['account_id'])->exists()) {
                 throw ValidationException::withMessages(['username' => 'Username is already in use.']);
             }
-            $data = ['username' => $username, 'updated_at' => now()];
-            $this->t('user_accounts')->where('id', $actor['account_id'])->update($data);
-            $this->audit($actor, 'UPDATE', 'UserAccount', $actor['account_id'], 'Account holder updated approved identity credentials; no secrets logged.');
+            $passwordChanged = ! empty($v['password']) && ! Hash::check($v['password'], $fresh->password);
+            app(DdAuditLog::class)->settings($username, $passwordChanged, function () use ($passwords, $login, $v): void {
+                $passwords->change($login, $v['current_password'], $v['password']);
+            });
         });
 
         return $this->done('settings', 'Settings saved. Sign in again if you changed your password.');
@@ -496,12 +473,11 @@ final class DdOperationsController extends Controller
             abort_unless($document !== null, 404);
             // Engineer must be the ManagingEngineer with an active LGU assignment.
             $this->recordScope($actor, (int) $document->maintenance_id, true);
-            $this->t('maintenance_documents')->where('id', $id)->update([
+            app(DdAuditLog::class)->update('MaintenanceDocument', $id, [
                 'document_title' => $v['document_title'],
                 'description' => $v['description'] ?? null,
                 'updated_at' => now(),
             ]);
-            $this->audit($actor, 'UPDATE', 'MaintenanceDocument', $id, 'Approved document metadata revised.');
         });
 
         return $this->done('documents', 'Document details updated.');
@@ -524,12 +500,13 @@ final class DdOperationsController extends Controller
         $storage->upload($file, $path);
         try {
             DB::transaction(function () use ($actor, $v, $file, $path): void {
+                $this->recordScope($actor, (int) $v['maintenance_id'], true);
                 $id = (int) $this->t('maintenance_documents')->insertGetId([
                     'maintenance_id' => (int) $v['maintenance_id'], 'document_title' => $v['document_title'],
                     'description' => $v['description'] ?? null, 'file_name' => basename($file->getClientOriginalName()),
                     'file_path' => $path, 'uploaded_by' => $actor['account_id'], 'uploaded_at' => now(), 'updated_at' => now(),
                 ]);
-                $this->audit($actor, 'CREATE', 'MaintenanceDocument', $id, 'Formal maintenance document uploaded.');
+                app(DdAuditLog::class)->created('MaintenanceDocument', $id);
             });
         } catch (\Throwable $e) {
             try {
@@ -565,11 +542,14 @@ final class DdOperationsController extends Controller
         $storage->upload($file, $path);
         try {
             DB::transaction(function () use ($actor, $v, $file, $path, $mime): void {
+                $parent = $this->t('monthly_updates')->where('id', $v['monthly_update_id'])->lockForUpdate()->first(['maintenance_id']);
+                abort_unless($parent !== null, 404);
+                $this->recordScope($actor, (int) $parent->maintenance_id, true);
                 $id = (int) $this->t('media')->insertGetId([
                     'monthly_update_id' => (int) $v['monthly_update_id'], 'file_name' => basename($file->getClientOriginalName()),
                     'file_path' => $path, 'file_type' => $mime, 'uploaded_by' => $actor['account_id'], 'created_at' => now(),
                 ]);
-                $this->audit($actor, 'CREATE', 'Media', $id, 'MonthlyUpdate media evidence uploaded.');
+                app(DdAuditLog::class)->created('Media', $id);
             });
         } catch (\Throwable $e) {
             try {
@@ -593,15 +573,17 @@ final class DdOperationsController extends Controller
             'updates' => ['monthly_updates', 'MonthlyUpdate']];
         abort_unless(isset($allowed[$entity]), 404);
         [$table,$type] = $allowed[$entity];
-        DB::transaction(function () use ($actor, $id, $table, $type): void {
+        DB::transaction(function () use ($id, $table, $type): void {
             $row = $this->t($table)->where('id', $id)->lockForUpdate()->first(['id']);
             abort_unless($row !== null, 404);
             try {
-                $this->t($table)->where('id', $id)->delete();
-            } catch (QueryException) {
+                app(DdAuditLog::class)->delete($type, $id);
+            } catch (QueryException $e) {
+                if (($e->errorInfo[0] ?? '') !== '23503') {
+                    throw $e;
+                }
                 throw ValidationException::withMessages(['delete' => 'This item is still referenced by other records and cannot be deleted.']);
             }
-            $this->audit($actor, 'DELETE', $type, $id, 'Authorized entity removed after restrictive FK check.');
         });
         $section = match ($entity) {
             'roads' => 'roads','projects','records' => 'projects','updates' => 'updates'

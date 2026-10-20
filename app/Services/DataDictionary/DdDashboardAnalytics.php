@@ -74,8 +74,7 @@ final class DdDashboardAnalytics
         $loginActivity = [];
         if ($manager) {
             $audit = DB::table('jairoads_next.audit_logs as l')
-                ->join('jairoads_next.user_accounts as u', 'u.id', '=', 'l.user_id')
-                ->whereNull('l.recipient_user_id'); // exclude fan-out notification copies
+                ->join('jairoads_next.user_accounts as u', 'u.id', '=', 'l.user_id');
             if ($role === 'Admin') {
                 $audit->where(function ($q) use ($accountId): void {
                     $q->where('l.user_id', $accountId)->orWhereIn('u.account_type', ['Engineer', 'Viewer']);
@@ -115,7 +114,7 @@ final class DdDashboardAnalytics
             'trend' => array_map(static fn ($month, $count): array => ['month' => $month, 'count' => $count], array_keys($months), array_values($months)),
             'activity' => $activity,
             'logins' => $loginActivity,
-            'trackingNote' => 'Sign-in history begins when login auditing is enabled. It is not a live online-users count.',
+            'trackingNote' => 'Authentication auditing is deferred. Any sign-in entries shown are historical, not current activity.',
         ];
     }
 }

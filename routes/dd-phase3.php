@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\DataDictionary\DdAuditLogController;
 use App\Http\Controllers\DataDictionary\DdOperationsController;
 use App\Http\Controllers\DataDictionary\DdPhase3Controller;
 use App\Http\Controllers\DataDictionary\DdSectionController;
@@ -9,6 +10,8 @@ use Illuminate\Support\Facades\Route;
 
 // Explicit Data Dictionary-only routes. Never share legacy controller/permission paths.
 Route::middleware(['auth', 'verified'])->prefix('dd-phase3')->name('jairoads.dd-phase3.')->group(function (): void {
+    Route::get('/audit', DdAuditLogController::class)->name('audit.index');
+
     // A single GET section router: registration of two /{section} routes
     // previously replaced the named dashboard route and caused routing failures.
     Route::get('/ops/{section}', DdSectionController::class)

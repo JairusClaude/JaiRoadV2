@@ -64,7 +64,7 @@ final class DdSuperAdminLandingController extends Controller
             'monthlyUpdates' => (int) $table('monthly_updates')->count(),
             'documents' => (int) $table('maintenance_documents')->count(),
             'media' => (int) $table('media')->count(),
-            'auditEvents' => (int) $table('audit_logs')->whereNull('recipient_user_id')->count(),
+            'auditEvents' => (int) $table('audit_logs')->count(),
         ];
 
         // Never return DD hashed credentials or AuditLog old_value/new_value.
@@ -81,7 +81,6 @@ final class DdSuperAdminLandingController extends Controller
             ])->all();
 
         $recentEvents = $table('audit_logs')
-            ->whereNull('recipient_user_id')
             ->orderByDesc('created_at')->orderByDesc('id')->limit(8)
             ->get(['id', 'action', 'entity_type', 'actor_identifier', 'created_at'])
             ->map(static fn ($row): array => [
