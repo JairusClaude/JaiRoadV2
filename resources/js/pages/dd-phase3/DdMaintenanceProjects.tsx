@@ -1,6 +1,5 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, Pencil, Plus } from 'lucide-react';
-import { useMemo } from 'react';
+import { ArrowLeft, Pencil } from 'lucide-react';
 import { ProjectForm } from '@/components/maintenance-projects/project-form';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { RoadCoverageMap } from '@/components/maintenance-projects/road-coverage-map';
@@ -113,33 +112,20 @@ export default function DdMaintenanceProjects({
     };
     const currentPage = Math.max(1, Number(qs.get('page') || 1) || 1);
     const perPage = 10;
-    const filtered = useMemo(
-        () =>
-            summaries
-                .filter(
-                    (p) =>
-                        (!filters.search ||
-                            p.project_title
-                                .toLocaleLowerCase()
-                                .includes(
-                                    filters.search.toLocaleLowerCase(),
-                                )) &&
-                        (!filters.municipality ||
-                            String(
-                                projects.find((r) => r.id === p.id)?.lgu_id,
-                            ) === String(filters.municipality)),
-                )
-                .sort((a, b) =>
-                    filters.sort === 'oldest' ? a.id - b.id : b.id - a.id,
-                ),
-        [
-            summaries,
-            filters.search,
-            filters.municipality,
-            filters.sort,
-            projects,
-        ],
-    );
+    const filtered = summaries
+        .filter(
+            (p) =>
+                (!filters.search ||
+                    p.project_title
+                        .toLocaleLowerCase()
+                        .includes(filters.search.toLocaleLowerCase())) &&
+                (!filters.municipality ||
+                    String(projects.find((r) => r.id === p.id)?.lgu_id) ===
+                        String(filters.municipality)),
+        )
+        .sort((a, b) =>
+            filters.sort === 'oldest' ? a.id - b.id : b.id - a.id,
+        );
     const lastPage = Math.max(1, Math.ceil(filtered.length / perPage));
     const pageNum = Math.min(currentPage, lastPage);
     const from = filtered.length ? (pageNum - 1) * perPage + 1 : null;

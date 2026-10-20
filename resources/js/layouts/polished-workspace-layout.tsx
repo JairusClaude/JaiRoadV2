@@ -1,8 +1,6 @@
-import { DdNotificationBell } from '@/components/dd-notification-bell';
 import '../../css/jairoads-workspace-surfaces.css';
 import { Link, usePage } from '@inertiajs/react';
 import {
-    Bell,
     Building2,
     ChevronDown,
     ChevronRight,
@@ -15,12 +13,12 @@ import {
     PanelLeftClose,
     Route,
     Settings,
-    ShieldCheck,
     Users,
     X,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
+import { DdNotificationBell } from '@/components/dd-notification-bell';
 
 type Identity = { role: string; username: string; name: string } | null;
 type WorkspaceRole = 'admin' | 'engineer' | 'viewer';
@@ -133,18 +131,18 @@ export default function PolishedWorkspaceLayout({
     const role = identity?.role;
     const isDdWorkspace = page.url.split('?')[0].startsWith('/dd-phase3/');
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-    // The icon rail preference survives Inertia page navigation and reloads.
-    useEffect(() => {
+    // The icon rail preference survives Inertia navigation and reloads.
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
         try {
-            setSidebarCollapsed(
+            return (
+                typeof window !== 'undefined' &&
                 window.localStorage.getItem('jairoads.sidebar.collapsed') ===
-                    'true',
+                    'true'
             );
         } catch {
-            /* Private browsing/storage restrictions: default to expanded. */
+            return false;
         }
-    }, []);
+    });
     const toggleSidebar = () => {
         setSidebarCollapsed((previous) => {
             const next = !previous;

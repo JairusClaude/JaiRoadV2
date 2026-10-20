@@ -235,8 +235,6 @@ function Donut({
         );
     }
 
-    let offset = 0;
-
     return (
         <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-between sm:gap-4">
             <div className="relative shrink-0">
@@ -255,10 +253,15 @@ function Donut({
                         stroke="#EDF1F5"
                         strokeWidth="17"
                     />
-                    {values.map((item) => {
+                    {values.map((item, index) => {
                         const percent = (item.count / total) * 100;
-                        const start = offset;
-                        offset += percent;
+                        const start = values
+                            .slice(0, index)
+                            .reduce(
+                                (offset, previous) =>
+                                    offset + (previous.count / total) * 100,
+                                0,
+                            );
 
                         return (
                             <circle

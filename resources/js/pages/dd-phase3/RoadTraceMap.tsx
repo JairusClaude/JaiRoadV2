@@ -1,15 +1,4 @@
 import {
-    Map as MapLibreMap,
-    Marker,
-    NavigationControl,
-    ScaleControl,
-    setWorkerUrl,
-} from 'maplibre-gl';
-import type { GeoJSONSource } from 'maplibre-gl';
-import mapWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import 'maplibre-gl/dist/maplibre-gl.css';
-import {
     Check,
     Eye,
     EyeOff,
@@ -24,6 +13,18 @@ import {
     Undo2,
     Upload,
 } from 'lucide-react';
+import {
+    Map as MapLibreMap,
+    Marker,
+    NavigationControl,
+    ScaleControl,
+    setWorkerUrl,
+} from 'maplibre-gl';
+import type { GeoJSONSource } from 'maplibre-gl';
+import mapWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import 'maplibre-gl/dist/maplibre-gl.css';
+
 import {
     DAVAO_DE_ORO_BOUNDS,
     DAVAO_DE_ORO_CENTER,
@@ -370,9 +371,17 @@ export default function RoadTraceMap({
         }),
         [vicinityData, selectedLguName],
     );
-    actions.current = { onAppendPoint, onReplacePoint, onInsertPoint };
-    modeRef.current = mode;
-    pointCountRef.current = draftPoints.length;
+    useEffect(() => {
+        actions.current = { onAppendPoint, onReplacePoint, onInsertPoint };
+        modeRef.current = mode;
+        pointCountRef.current = draftPoints.length;
+    }, [
+        onAppendPoint,
+        onReplacePoint,
+        onInsertPoint,
+        mode,
+        draftPoints.length,
+    ]);
 
     useEffect(() => {
         if (!containerRef.current) {
@@ -629,7 +638,7 @@ export default function RoadTraceMap({
                 'aria-label',
                 `Move or select road point ${index + 1}`,
             );
-            el.setAttribute('aria-pressed', String(index === selectedIndex));
+            el.setAttribute('aria-pressed', 'false');
             el.tabIndex = 0;
             el.addEventListener('click', (event) => {
                 event.stopPropagation();
@@ -735,10 +744,21 @@ export default function RoadTraceMap({
         }
     }, [loaded, mode, draftPoints]);
     useEffect(() => {
-        if (selectedIndex !== null && selectedIndex >= draftPoints.length) {
-            setSelectedIndex(null);
-        }
-    }, [draftPoints.length, selectedIndex]);
+        markers.current
+            .slice(0, draftPoints.length)
+            .forEach((marker, index) => {
+                marker
+                    .getElement()
+                    .setAttribute(
+                        'aria-pressed',
+                        String(index === selectedIndex),
+                    );
+            });
+    }, [loaded, mode, draftPoints, selectedIndex]);
+
+    if (selectedIndex !== null && selectedIndex >= draftPoints.length) {
+        setSelectedIndex(null);
+    }
 
     const focus = (points: Point[]) => {
         const map = mapRef.current;

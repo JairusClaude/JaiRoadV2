@@ -235,12 +235,6 @@ export default function DdLguDirectory({
         'mayorMiddle',
         'mayorLast',
     ].filter((key) => !availableFields[key as keyof typeof availableFields]);
-    const resetFilters = () => {
-        setQuery('');
-        setProvinceFilter('all');
-        setSort('name');
-        setPage(1);
-    };
     const openAdd = () => {
         if (!canCreate) {
             return;

@@ -39,7 +39,6 @@ createInertiaApp({
             case name.startsWith('road-sections-preview/'):
             case name.startsWith('lgus-preview/'):
             case name.startsWith('settings-preview/'):
-
             case name.startsWith('AdminDashboard/'):
                 return RoleAwareWorkspaceLayout;
             case name === 'settings/profile':

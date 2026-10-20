@@ -5,7 +5,6 @@ import {
     ClipboardCheck,
     FileText,
     FolderKanban,
-    LogIn,
     MapPinned,
 } from 'lucide-react';
 import { useState } from 'react';

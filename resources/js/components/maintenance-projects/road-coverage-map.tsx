@@ -284,17 +284,25 @@ export function RoadCoverageMap({
     const selectedRef = useRef<number | null>(selectedId);
     const validCenterRef = useRef<[number, number]>(DAVAO_DE_ORO_CENTER);
 
-    selectRef.current = onSelectCoverage;
-    disabledRef.current = selectionDisabled;
-    coveragesRef.current = coverages;
-    selectedRef.current = selectedId;
-    roadsVisibleRef.current = roadsVisible;
-
     const features = useMemo(
         () => featuresFor(coverages, selectedId),
         [coverages, selectedId],
     );
-    featuresRef.current = features;
+    useEffect(() => {
+        selectRef.current = onSelectCoverage;
+        disabledRef.current = selectionDisabled;
+        coveragesRef.current = coverages;
+        selectedRef.current = selectedId;
+        roadsVisibleRef.current = roadsVisible;
+        featuresRef.current = features;
+    }, [
+        onSelectCoverage,
+        selectionDisabled,
+        coverages,
+        selectedId,
+        roadsVisible,
+        features,
+    ]);
     const mappedCount = useMemo(
         () =>
             coverages.filter((c) => extractLines(c.geojson).length > 0).length,
@@ -532,7 +540,7 @@ export function RoadCoverageMap({
             mapRef.current = null;
             map.remove();
         };
-    }, [fitProvince]);
+    }, [fitProvince, fitRoads]);
 
     useEffect(() => {
         const map = mapRef.current;

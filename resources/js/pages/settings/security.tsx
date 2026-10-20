@@ -1,4 +1,4 @@
-import { Form, Head, Link } from '@inertiajs/react';
+import { Form, Head, Link, usePage } from '@inertiajs/react';
 import {
     ArrowLeft,
     Fingerprint,
@@ -6,7 +6,7 @@ import {
     LockKeyhole,
     ShieldCheck,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import InputError from '@/components/input-error';
@@ -61,22 +61,17 @@ function Container({ children }: { children: ReactNode }) {
 }
 /** Uses Fortify's existing credential routes and native 2FA/passkey components, not a second auth system. */
 export default function Security(props: Props) {
-    const [tab, setTab] = useState<Tab>('password');
+    const page = usePage();
+    const requestedTab = new URLSearchParams(page.url.split('?')[1] ?? '').get(
+        'tab',
+    );
+    const initialTab: Tab =
+        requestedTab === 'two-factor' || requestedTab === 'passkeys'
+            ? requestedTab
+            : 'password';
+    const [tab, setTab] = useState<Tab>(initialTab);
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
-    useEffect(() => {
-        const requested = new URLSearchParams(window.location.search).get(
-            'tab',
-        );
-
-        if (
-            requested === 'password' ||
-            requested === 'two-factor' ||
-            requested === 'passkeys'
-        ) {
-            setTab(requested);
-        }
-    }, []);
     const switchTab = (next: Tab) => {
         setTab(next);
         window.history.replaceState(

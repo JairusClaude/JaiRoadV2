@@ -1,5 +1,5 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { Activity, FileText, Settings2, ShieldCheck } from 'lucide-react';
+import { Settings2, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import type { ComponentProps, FormEvent } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
@@ -141,16 +141,6 @@ export default function Operations({
         current_password: '',
         password: '',
         password_confirmation: '',
-    });
-    const [document, setDocument] = useState({
-        maintenance_id: '',
-        document_title: '',
-        description: '',
-        file: null as File | null,
-    });
-    const [evidence, setEvidence] = useState({
-        monthly_update_id: '',
-        file: null as File | null,
     });
     const [busy, setBusy] = useState(false);
     const [showRecords, setShowRecords] = useState(true);
@@ -318,14 +308,6 @@ export default function Operations({
             ))}
         </div>
     );
-    const lguOptions = lgus.map((x) => ({
-        value: String(x.id),
-        label: x.municipality_name,
-    }));
-    const roadOptions = roads.map((x) => ({
-        value: String(x.id),
-        label: `${x.road_name} · ${x.pavement_type}`,
-    }));
     const projectOptions = projects.map((x) => ({
         value: String(x.id),
         label: x.project_title,
@@ -335,14 +317,6 @@ export default function Operations({
             canManage ||
             (canWrite && Number(x.managing_engineer_id) === Number(engineerId)),
     );
-    const recordOptions = writableRecords.map((x) => ({
-        value: String(x.id),
-        label: `Record #${x.id} · ${x.maintenance_year} ${x.quarter}`,
-    }));
-    const updateOptions = updates.map((x) => ({
-        value: String(x.id),
-        label: `Update #${x.id} · ${x.update_month}`,
-    }));
     const engineerOptions = engineers.map((x) => ({
         value: String(x.id),
         label: `${x.first_name} ${x.last_name}`,

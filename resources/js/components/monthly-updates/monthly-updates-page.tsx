@@ -17,7 +17,7 @@ import {
     ShieldAlert,
     X,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 
@@ -181,11 +181,14 @@ export default function MonthlyUpdatesPage({
         () => new Map(maintenanceRecords.map((r) => [r.id, r])),
         [maintenanceRecords],
     );
-    const recordName = (id: number) => {
-        const record = recordsById.get(id);
+    const recordName = useCallback(
+        (id: number) => {
+            const record = recordsById.get(id);
 
-        return record ? record.projectTitle : `Maintenance record #${id}`;
-    };
+            return record ? record.projectTitle : `Maintenance record #${id}`;
+        },
+        [recordsById],
+    );
     const months = useMemo(
         () =>
             [...new Set(allUpdates.map((u) => u.month).filter(isValidMonth))]
@@ -208,7 +211,7 @@ export default function MonthlyUpdatesPage({
                         String(u.maintenanceRecordId) === recordFilter)
                 );
             }),
-        [allUpdates, search, monthFilter, recordFilter, maintenanceRecords],
+        [allUpdates, search, monthFilter, recordFilter, recordName],
     );
     const maxPage = Math.max(1, Math.ceil(filtered.length / pageSize));
     const currentPage = Math.min(page, maxPage);

@@ -14,7 +14,7 @@ import {
     Users,
     X,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const destinations = [
     { label: 'Dashboard', href: '/admin-dashboard', Icon: House },
@@ -87,12 +87,8 @@ export function JaiRoadsQuickActions() {
         ];
     });
 
-    const results = useMemo(
-        () =>
-            allowedDestinations.filter((entry) =>
-                entry.label.toLowerCase().includes(query.trim().toLowerCase()),
-            ),
-        [query, path, role],
+    const results = allowedDestinations.filter((entry) =>
+        entry.label.toLowerCase().includes(query.trim().toLowerCase()),
     );
 
     useEffect(() => {
@@ -103,6 +99,7 @@ export function JaiRoadsQuickActions() {
             ) {
                 event.preventDefault();
                 setOpen((previous) => !previous);
+                setSelected(0);
 
                 return;
             }
@@ -121,15 +118,8 @@ export function JaiRoadsQuickActions() {
             return;
         }
 
-        setSelected(0);
         inputRef.current?.focus();
     }, [open]);
-
-    useEffect(() => {
-        if (open) {
-            setSelected(0);
-        }
-    }, [query, open]);
 
     useEffect(() => {
         const unsubscribe = router.on('finish', () => setRefreshing(false));
@@ -165,7 +155,10 @@ export function JaiRoadsQuickActions() {
             <button
                 type="button"
                 className="jr-quick-search"
-                onClick={() => setOpen(true)}
+                onClick={() => {
+                    setOpen(true);
+                    setSelected(0);
+                }}
                 aria-label="Search JaiROADS pages (Control K)"
                 title="Search pages (Ctrl+K)"
             >
@@ -211,7 +204,10 @@ export function JaiRoadsQuickActions() {
                                 autoComplete="off"
                                 aria-label="Search JaiROADS sections"
                                 placeholder="Find a section…"
-                                onChange={(e) => setQuery(e.target.value)}
+                                onChange={(e) => {
+                                    setQuery(e.target.value);
+                                    setSelected(0);
+                                }}
                                 onKeyDown={(e) => {
                                     if (e.key === 'ArrowDown') {
                                         e.preventDefault();

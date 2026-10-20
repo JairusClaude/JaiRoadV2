@@ -356,17 +356,16 @@ const modes: {
 function AppearancePanel() {
     const { appearance, updateAppearance } = useAppearance();
     const [showForm, setShowForm] = useState(false);
-    const [reduceMotion, setReduceMotion] = useState(false);
-    useEffect(() => {
+    const [reduceMotion, setReduceMotion] = useState(() => {
         try {
-            setReduceMotion(
-                window.localStorage.getItem('jairoads-reduce-motion') ===
-                    'true',
+            return (
+                typeof window !== 'undefined' &&
+                window.localStorage.getItem('jairoads-reduce-motion') === 'true'
             );
         } catch {
-            /* Browsers can disable local storage. */
+            return false;
         }
-    }, []);
+    });
     const saveMotion = (next: boolean) => {
         setReduceMotion(next);
         document.documentElement.classList.toggle('jr-reduce-motion', next);

@@ -10,7 +10,7 @@ import {
     ShieldAlert,
     X,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { RoadCoverageMap } from '@/components/maintenance-projects/road-coverage-map';
@@ -244,8 +244,11 @@ export default function DdRoadSections({
             total + (Number.isFinite(item.kilometers) ? item.kilometers : 0),
         0,
     );
-    const lguName = (id: number) =>
-        lgus.find((item) => item.id === id)?.name || `LGU #${id}`;
+    const lguName = useCallback(
+        (id: number) =>
+            lgus.find((item) => item.id === id)?.name || `LGU #${id}`,
+        [lgus],
+    );
     const filtered = useMemo(() => {
         const term = search.trim().toLowerCase();
 
@@ -281,7 +284,7 @@ export default function DdRoadSections({
         conditionFilter,
         projectFilter,
         sort,
-        lgus,
+        lguName,
     ]);
     const pageCount = Math.max(1, Math.ceil(filtered.length / perPage));
     const currentPage = Math.min(page, pageCount);
