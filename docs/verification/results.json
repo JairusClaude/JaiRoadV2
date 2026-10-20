@@ -90,9 +90,20 @@
     },
     "hosted_actions": {
       "pass": null,
-      "status": "pending publication"
+      "status": "blocked: failed push, 0 remote branch runs"
     }
   },
   "diagnostic_entries": 1165,
-  "databases": "Only SQLite :memory: and guarded disposable loopback PostgreSQL were used; shared Supabase untouched."
+  "databases": "Only SQLite :memory: and guarded disposable loopback PostgreSQL were used; shared Supabase untouched.",
+  "publication": {
+    "success": false,
+    "attempted_sha": "d38000090fca4fe19fa29a87b9243edaf170951b",
+    "command": "git push -u origin feature/jairoads-map-demo_PASSWORD_EDIT",
+    "exit_code": 128,
+    "reason": "Shell has no GitHub HTTPS credentials; terminal prompts disabled",
+    "remote_branch_exists": false,
+    "hosted_branch_runs": 0,
+    "original_remote_sha": "2ee94145807a4ffca78a2d19e882980f4ebfb501",
+    "main_remote_sha": "16a0fe7679f06c31ad15939ed578b15dda52eaea"
+  }
 }

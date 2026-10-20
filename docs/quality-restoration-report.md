@@ -13,7 +13,9 @@ Repository: https://github.com/JairusClaude/JaiRoadV2
 - Remote main observed unchanged: `16a0fe7679f06c31ad15939ed578b15dda52eaea`.
 - Earlier integration work remains at `e7564a6`; no branch was reset, rebased, merged, or force-pushed.
 - Intended branch URL: https://github.com/JairusClaude/JaiRoadV2/tree/feature/jairoads-map-demo_PASSWORD_EDIT
-- Publication receipt and final tip are recorded in the delivery message. At report preparation the branch did not exist remotely; normal push authorization is limited to this branch.
+- **Publication blocked:** normal `git push -u origin feature/jairoads-map-demo_PASSWORD_EDIT` was attempted at source/report tip `d38000090fca4fe19fa29a87b9243edaf170951b`. Git exited 128: `could not read Username for https://github.com: terminal prompts disabled`.
+- Read-back confirmed the remote password-edit branch remains absent. GitHub Actions API returned `total_count: 0` for that branch. No push or hosted CI success is claimed. The final local tip (including this receipt) is in the delivery message.
+- Only the password-edit branch was committed. Local main remains `63242429a1ac5aeae1346a549329adae5d0bc689`; local integration remains `e7564a61af4e31cb1192b64d07098be7c0746b4a`. The original feature branch was not checked out locally.
 
 The historical password checkpoint report is `docs/password-synchronization-fix.md`. Its no-push authorization wording describes the earlier checkpoint; the user's latest attachment separately authorizes this branch's publication.
 
@@ -121,7 +123,7 @@ Commands ran from the repository with PHP 8.4.26 and the locked dependencies. Th
 | Workflow YAML parse and isolated target inspection | PASS |
 | `git diff --check` and changed-source credential-pattern review | PASS |
 | Docker image build | NOT RUN: runtime unavailable |
-| Hosted GitHub Actions | NOT RUN until branch publication is possible |
+| Hosted GitHub Actions | BLOCKED: push authentication unavailable; Actions API confirms zero runs on the branch |
 
 The workflow preserves PHP 8.4 and Node 22, installs both lockfiles explicitly, generates Wayfinder before TypeScript/build, runs all quality checks and ordinary tests on SQLite, and runs the full dedicated suite on an ephemeral PostgreSQL 17 service. No shared secrets, Supabase URLs or general setup/migration script are used. Docker keeps its existing Nginx/PHP-FPM serving path; no deployment configuration or live variables were changed.
 
