@@ -31,6 +31,7 @@ class MaintenanceDocumentPolicy
             return true;
         }
         $record = $document->maintenanceRecord;
+
         return $record instanceof MaintenanceRecord
             && $this->createForRecord($user, $record);
     }
@@ -56,12 +57,28 @@ class MaintenanceDocumentPolicy
         }
 
         $coverage = $record->maintenanceProject?->roadCoverage;
+
         return $coverage !== null && $this->accounts->assignedTo($account, $coverage);
     }
 
     // Edit/delete workflows require separately reviewed storage-retention and audit behavior.
-    public function update(User $user, MaintenanceDocument $document): bool { return false; }
-    public function delete(User $user, MaintenanceDocument $document): bool { return false; }
-    public function restore(User $user, MaintenanceDocument $document): bool { return false; }
-    public function forceDelete(User $user, MaintenanceDocument $document): bool { return false; }
+    public function update(User $user, MaintenanceDocument $document): bool
+    {
+        return false;
+    }
+
+    public function delete(User $user, MaintenanceDocument $document): bool
+    {
+        return false;
+    }
+
+    public function restore(User $user, MaintenanceDocument $document): bool
+    {
+        return false;
+    }
+
+    public function forceDelete(User $user, MaintenanceDocument $document): bool
+    {
+        return false;
+    }
 }

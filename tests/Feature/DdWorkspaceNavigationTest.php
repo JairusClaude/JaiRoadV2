@@ -21,6 +21,7 @@ final class DdWorkspaceNavigationTest extends TestCase
         $user->forceFill(['id' => 901, 'dd_user_account_id' => $linked ? 77 : null]);
         $request = Request::create($path, $method);
         $request->setUserResolver(static fn () => $user);
+
         return $request;
     }
 
@@ -29,7 +30,11 @@ final class DdWorkspaceNavigationTest extends TestCase
         $this->app->instance(DataDictionaryIdentityResolver::class, new class($identity)
         {
             public function __construct(private ?array $identity) {}
-            public function resolve(User $user): ?array { return $this->identity; }
+
+            public function resolve(User $user): ?array
+            {
+                return $this->identity;
+            }
         });
     }
 

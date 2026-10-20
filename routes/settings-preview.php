@@ -39,6 +39,7 @@ Route::middleware(['auth', 'verified'])->get('/settings-preview', function () {
                 return true;
             }
         }
+
         return false;
     };
     $pathOrNull = static fn (string $path): ?string => $hasGetPath($path) ? '/'.trim($path, '/') : null;

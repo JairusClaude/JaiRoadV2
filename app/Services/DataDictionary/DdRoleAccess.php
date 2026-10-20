@@ -47,6 +47,7 @@ final class DdRoleAccess
     {
         $manager = self::managesBusinessData($role);
         $engineerScoped = $role === 'Engineer' && $hasAssignment && $linkedEngineer;
+
         return [
             'role' => $role,
             'manageAccounts' => $manager,

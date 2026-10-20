@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class MonthlyUpdateMedia extends Model
 {
     protected $table = 'media';
+
     protected $guarded = ['*'];
 
     public function monthlyUpdate(): BelongsTo

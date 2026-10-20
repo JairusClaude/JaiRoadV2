@@ -8,13 +8,13 @@ use App\Models\AuditLog;
 use App\Models\Lgu;
 use App\Models\MaintenanceProject;
 use App\Models\RoadCoverage;
+use App\Models\User;
 use App\Models\UserAccount;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use App\Services\MaintenanceProjects\VerifiedProjectAccount;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -387,6 +387,7 @@ class RoadCoverageController extends Controller
         if (! $account->engineers_id) {
             return $query->whereRaw('1 = 0');
         }
+
         return $query->whereIn('id', DB::table('engineer_lgus')
             ->select('lgus_id')
             ->where('engineers_id', $account->engineers_id)
@@ -398,6 +399,7 @@ class RoadCoverageController extends Controller
     {
         if (! $actorAccount->engineers_id) {
             $query->whereRaw('1 = 0');
+
             return;
         }
         $query->whereIn('lgu_id', DB::table('engineer_lgus')
@@ -413,7 +415,7 @@ class RoadCoverageController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user instanceof \App\Models\User) {
+        if (! $user instanceof User) {
             abort(403, 'A linked active UserAccount is required.');
         }
 

@@ -101,6 +101,7 @@ Route::middleware(['auth', 'verified'])->get('/lgus-preview', function () {
 
             $records = $raw->map(static function ($row) use ($chosen, $roadCounts, $assignmentCounts, $fields) {
                 $value = static fn ($key) => isset($chosen[$key]) ? ($row->{$chosen[$key]} ?? null) : null;
+
                 return [
                     'id' => (int) $row->id,
                     'municipalityName' => (string) $value('municipality'),

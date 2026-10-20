@@ -27,8 +27,7 @@ final class SuperAdminDashboardController extends Controller
         $account = $access->require($user);
         abort_unless($access->role($user) === 'superadmin', 403);
 
-        $has = static fn (string $table, array $columns = []): bool =>
-            Schema::hasTable($table) && ($columns === [] || Schema::hasColumns($table, $columns));
+        $has = static fn (string $table, array $columns = []): bool => Schema::hasTable($table) && ($columns === [] || Schema::hasColumns($table, $columns));
 
         $accountColumns = ['id', 'username', 'accountType', 'is_active', 'engineers_id'];
         abort_unless($has('user_accounts', $accountColumns), 503, 'UserAccount schema not ready.');

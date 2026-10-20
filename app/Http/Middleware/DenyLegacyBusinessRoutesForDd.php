@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Models\User;
+use App\Services\DataDictionary\DataDictionaryIdentityResolver;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -35,8 +36,9 @@ final class DenyLegacyBusinessRoutesForDd
             ];
             $section = $directories[$request->path()] ?? null;
             if (($request->isMethod('GET') || $request->isMethod('HEAD')) && $section !== null) {
-                $identity = app(\App\Services\DataDictionary\DataDictionaryIdentityResolver::class)->resolve($user);
+                $identity = app(DataDictionaryIdentityResolver::class)->resolve($user);
                 abort_unless($identity !== null, 403, 'Your account is unavailable. Please contact your administrator.');
+
                 return redirect()->route('jairoads.dd-phase3.show', ['section' => $section]);
             }
             // Legacy profile/password actions modify only public.users and can
@@ -68,6 +70,7 @@ final class DenyLegacyBusinessRoutesForDd
                 abort(403, 'This page is unavailable for your account. Open the module from your workspace navigation.');
             }
         }
+
         return $next($request);
     }
 }

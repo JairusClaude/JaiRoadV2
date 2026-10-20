@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class MonthlyUpdate extends Model
 {
     protected $table = 'monthly_updates';
+
     protected $guarded = ['*'];
 
     protected function casts(): array

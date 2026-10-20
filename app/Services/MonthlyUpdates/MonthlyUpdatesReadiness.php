@@ -15,7 +15,9 @@ class MonthlyUpdatesReadiness
         try {
             if (! Schema::hasColumns('monthly_updates', ['id', 'maintenance_id', 'update_month', 'progress_percentage', 'summary_of_text_reports', 'created_by'])
                 || ! Schema::hasColumns('media', ['id', 'monthly_updates_id', 'uploaded_by', 'file_path', 'file_name', 'file_type'])
-                || Schema::hasColumn('monthly_updates', 'maintenance_projects_id')) { return false; }
+                || Schema::hasColumn('monthly_updates', 'maintenance_projects_id')) {
+                return false;
+            }
             $check = DB::selectOne(<<<'SQL'
                 SELECT
                   EXISTS (SELECT 1 FROM pg_constraint c
@@ -37,9 +39,12 @@ class MonthlyUpdatesReadiness
                 SQL);
             // PDO drivers may return PostgreSQL false as the string "f", which casts to true in PHP.
             $isTrue = static fn (mixed $v): bool => $v === true || $v === 1 || $v === '1' || $v === 't' || $v === 'true';
+
             return $isTrue($check?->record_fk) && $isTrue($check?->record_month_unique)
                 && $isTrue($check?->media_attribution) && $isTrue($check?->media_link);
-        } catch (\Throwable) { return false; }
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     public function canWrite(): bool

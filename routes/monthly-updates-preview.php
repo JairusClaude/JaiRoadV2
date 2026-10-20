@@ -6,20 +6,22 @@
 // If the legacy database does not implement that mapping, the page displays a
 // schema notice rather than treating a project-level update as a maintenance update.
 
-use App\Services\MaintenanceProjects\VerifiedProjectAccount;
+use App\Models\MaintenanceRecord;
+use App\Models\MonthlyUpdate;
+use App\Models\User;
 use App\Services\MaintenanceProjects\SidebarMaintenanceRecordScope;
+use App\Services\MaintenanceProjects\VerifiedProjectAccount;
 use App\Services\MonthlyUpdates\MonthlyUpdatesReadiness;
 use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
-use App\Models\MonthlyUpdate;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 
 Route::middleware(['auth', 'verified'])->get('/monthly-updates-preview', function () {
     $user = request()->user();
-    abort_unless($user instanceof \App\Models\User, 401);
+    abort_unless($user instanceof User, 401);
     $role = app(VerifiedProjectAccount::class)->role($user);
     abort_unless($role !== null, 403);
     $scopedRecords = app(SidebarMaintenanceRecordScope::class);
@@ -38,7 +40,7 @@ Route::middleware(['auth', 'verified'])->get('/monthly-updates-preview', functio
             return [
                 'id' => (int) $parent->id,
                 'projectId' => (int) $parent->maintenance_projects_id,
-                'projectTitle' => (string) ($projects[$parent->maintenance_projects_id] ?? ('Project #' . $parent->maintenance_projects_id)),
+                'projectTitle' => (string) ($projects[$parent->maintenance_projects_id] ?? ('Project #'.$parent->maintenance_projects_id)),
                 'year' => $parent->maintenance_year === null ? null : (int) $parent->maintenance_year,
                 'quarter' => $parent->quarter,
                 'status' => (string) $parent->status,
@@ -60,6 +62,7 @@ Route::middleware(['auth', 'verified'])->get('/monthly-updates-preview', functio
                     return $candidate;
                 }
             }
+
             return null;
         };
         $maintenanceFk = $firstMatch(['maintenance_records_id', 'maintenance_record_id', 'maintenance_id', 'MaintenanceID']);
@@ -84,8 +87,8 @@ Route::middleware(['auth', 'verified'])->get('/monthly-updates-preview', functio
                     ? 'summary_of_text_reports exists, but this preview does not yet map it as the report summary'
                     : 'no recognized report-summary field';
             }
-            $schemaNotice = 'Record-linked Monthly Updates are unavailable: ' . implode('; ', $missing)
-                . '. The physical table remains unchanged. Confirm the relationship and field mappings with the team before enabling writes.';
+            $schemaNotice = 'Record-linked Monthly Updates are unavailable: '.implode('; ', $missing)
+                .'. The physical table remains unchanged. Confirm the relationship and field mappings with the team before enabling writes.';
         } else {
             $select = array_values(array_unique(array_filter(['id', $maintenanceFk, $monthField, $summaryField, $authorField, $createdAtField, $progressField])));
             $updateQuery = DB::table('monthly_updates');
@@ -103,13 +106,14 @@ Route::middleware(['auth', 'verified'])->get('/monthly-updates-preview', functio
             $updates = $rows->filter(static fn ($row) => preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', (string) $row->{$monthField}) === 1)
                 ->map(static function ($row) use ($maintenanceFk, $monthField, $summaryField, $authorField, $createdAtField, $progressField, $authors) {
                     $authorId = $authorField ? $row->{$authorField} : null;
+
                     return [
                         'id' => (int) $row->id,
                         'maintenanceRecordId' => (int) $row->{$maintenanceFk},
                         'month' => (string) $row->{$monthField},
                         'summary' => (string) $row->{$summaryField},
                         'progressPercentage' => $progressField ? (float) $row->{$progressField} : null,
-                        'author' => $authorId ? (string) ($authors[$authorId] ?? ('Account #' . $authorId)) : 'Not recorded',
+                        'author' => $authorId ? (string) ($authors[$authorId] ?? ('Account #'.$authorId)) : 'Not recorded',
                         'createdAt' => $createdAtField ? (string) $row->{$createdAtField} : null,
                         'mediaCount' => 0,
                     ];
@@ -125,7 +129,10 @@ Route::middleware(['auth', 'verified'])->get('/monthly-updates-preview', functio
         $mediaColumns = Schema::getColumnListing($mediaTable);
         $mediaFk = null;
         foreach (['monthly_updates_id', 'monthly_update_id', 'MonthlyUpdateID'] as $candidate) {
-            if (in_array($candidate, $mediaColumns, true)) { $mediaFk = $candidate; break; }
+            if (in_array($candidate, $mediaColumns, true)) {
+                $mediaFk = $candidate;
+                break;
+            }
         }
         if ($mediaFk !== null) {
             $updateIds = $updates->pluck('id')->all();
@@ -143,6 +150,7 @@ Route::middleware(['auth', 'verified'])->get('/monthly-updates-preview', functio
                     'id' => (int) $file->id,
                     'name' => (string) $file->file_name,
                 ])->values()->all();
+
                 return $update;
             });
         } else {
@@ -159,11 +167,13 @@ Route::middleware(['auth', 'verified'])->get('/monthly-updates-preview', functio
     $canWrite = $ready && in_array($role, ['admin', 'superadmin', 'engineer'], true);
     if ($canWrite && $role === 'engineer') {
         $maintenanceRecords = $maintenanceRecords->filter(static function (array $option) use ($user) {
-            $record = \App\Models\MaintenanceRecord::query()->find($option['id']);
+            $record = MaintenanceRecord::query()->find($option['id']);
+
             return $record && Gate::forUser($user)->allows('createForRecord', [MonthlyUpdate::class, $record]);
         })->values();
         $canWrite = $maintenanceRecords->isNotEmpty();
     }
+
     return Inertia::render('monthly-updates/Index', [
         'initialUpdates' => $updates->all(),
         'maintenanceRecords' => $maintenanceRecords->all(),
@@ -173,8 +183,6 @@ Route::middleware(['auth', 'verified'])->get('/monthly-updates-preview', functio
         'canWrite' => $canWrite,
     ]);
 })->name('monthly-updates.preview');
-
-
 
 // Explicit, separately gated save/download endpoints. The legacy resource
 // controller stays fail-closed and is not silently activated by this release.

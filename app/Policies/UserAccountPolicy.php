@@ -11,9 +11,7 @@ use App\Services\MaintenanceProjects\VerifiedProjectAccount;
 /** Only creation is authorized for verified administrators. All other mutations remain denied. */
 final class UserAccountPolicy
 {
-    public function __construct(private VerifiedProjectAccount $accounts)
-    {
-    }
+    public function __construct(private VerifiedProjectAccount $accounts) {}
 
     public function viewAny(User $user): bool
     {

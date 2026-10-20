@@ -1,13 +1,20 @@
 <?php
 
+use App\Services\MaintenanceProjects\VerifiedProjectAccount;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
+use Inertia\Inertia;
+use Inertia\Response;
+
 // Official JaiROADS Admin Dashboard: authenticated, verified, admin-only, read-only.
 // This route intentionally does not replace or weaken the existing /dashboard route.
 // No migration, account mutation, or storage write is performed here.
 
-\Illuminate\Support\Facades\Route::middleware(['auth', 'verified'])
-    ->get('/admin-dashboard', function (): \Inertia\Response {
+Route::middleware(['auth', 'verified'])
+    ->get('/admin-dashboard', function (): Response {
         $user = request()->user();
-        $role = strtolower((string) app(\App\Services\MaintenanceProjects\VerifiedProjectAccount::class)->role($user));
+        $role = strtolower((string) app(VerifiedProjectAccount::class)->role($user));
         abort_unless(in_array($role, ['admin', 'superadmin'], true), 403);
 
         // Discover the actual schema instead of assuming newer dictionary columns
@@ -15,17 +22,18 @@
         $columns = [];
         $has = static function (string $table, array $required = []) use (&$columns): bool {
             if (! array_key_exists($table, $columns)) {
-                $columns[$table] = \Illuminate\Support\Facades\Schema::hasTable($table)
-                    ? \Illuminate\Support\Facades\Schema::getColumnListing($table)
+                $columns[$table] = Schema::hasTable($table)
+                    ? Schema::getColumnListing($table)
                     : null;
             }
+
             return $columns[$table] !== null
                 && count(array_diff($required, $columns[$table])) === 0;
         };
         $count = static function (string $table) use ($has): ?int {
-            return $has($table) ? (int) \Illuminate\Support\Facades\DB::table($table)->count() : null;
+            return $has($table) ? (int) DB::table($table)->count() : null;
         };
-        $db = \Illuminate\Support\Facades\DB::class;
+        $db = DB::class;
 
         $stats = [
             'projects' => $count('maintenance_projects'),
@@ -198,23 +206,27 @@
         }
 
         $pathIfRegistered = static function (string $path): ?string {
-            foreach (\Illuminate\Support\Facades\Route::getRoutes()->getRoutes() as $route) {
+            foreach (Route::getRoutes()->getRoutes() as $route) {
                 if (in_array('GET', $route->methods(), true)
                     && trim($route->uri(), '/') === trim($path, '/')) {
                     return '/'.trim($path, '/');
                 }
             }
+
             return null;
         };
         $destination = static function (array $paths) use ($pathIfRegistered): ?string {
             foreach ($paths as $path) {
                 $url = $pathIfRegistered($path);
-                if ($url !== null) return $url;
+                if ($url !== null) {
+                    return $url;
+                }
             }
+
             return null;
         };
 
-        return \Inertia\Inertia::render('AdminDashboard/Index', [
+        return Inertia::render('AdminDashboard/Index', [
             'viewer' => [
                 'name' => (string) $user->name,
                 'role' => $role,

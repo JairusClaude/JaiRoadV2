@@ -89,6 +89,7 @@ class VerifiedProjectAccount
                 || ! Schema::hasColumns('engineers', ['id', 'engineer_status'])) {
                 return false;
             }
+
             // One DB lookup enforces BOTH the EngineerStatus lifecycle and the
             // active EngineerLGU assignment; no alternate legacy fallback.
             return DB::table('engineer_lgus as assignment')

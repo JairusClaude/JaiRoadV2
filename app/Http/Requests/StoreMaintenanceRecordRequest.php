@@ -6,6 +6,7 @@ use App\Models\Engineer;
 use App\Models\MaintenanceProject;
 use App\Models\MaintenanceRecord;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 class StoreMaintenanceRecordRequest extends FormRequest
@@ -50,8 +51,9 @@ class StoreMaintenanceRecordRequest extends FormRequest
                     $engineer->getKeyName()
                 ),
                 function (string $attribute, mixed $value, \Closure $fail): void {
-                    if (! \Illuminate\Support\Facades\Schema::hasColumn('engineers', 'engineer_status')) {
+                    if (! Schema::hasColumn('engineers', 'engineer_status')) {
                         $fail('MaintenanceRecord creation is unavailable until EngineerStatus is deployed and approved.');
+
                         return;
                     }
 

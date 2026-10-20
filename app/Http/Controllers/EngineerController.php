@@ -100,5 +100,4 @@ class EngineerController extends Controller
 
         abort(409, 'Engineer updates and retirement changes are unavailable until the required EngineerStatus schema and rules are approved.');
     }
-
 }

@@ -7,14 +7,17 @@ use App\Http\Requests\StoreMaintenanceProjectRequest;
 use App\Http\Requests\UpdateMaintenanceProjectRequest;
 use App\Models\Lgu;
 use App\Models\MaintenanceProject;
+use App\Models\MaintenanceRecord;
 use App\Models\RoadCoverage;
+use App\Models\User;
 use App\Services\MaintenanceProjects\ProjectMutations;
 use App\Services\MaintenanceProjects\VerifiedProjectAccount;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
@@ -177,7 +180,7 @@ class MaintenanceProjectController extends Controller
 
         return Inertia::render('MaintenanceProjects/Show', [
             'project' => $this->projectData($project),
-            'canCreateRecord' => Gate::allows('create', \App\Models\MaintenanceRecord::class),
+            'canCreateRecord' => Gate::allows('create', MaintenanceRecord::class),
             'coveragePreview' => $coverage ? [
                 'id' => $coverage->id,
                 'road_name' => $coverage->road_name,
@@ -279,7 +282,7 @@ class MaintenanceProjectController extends Controller
     {
         $query = MaintenanceProject::query();
         $user = Auth::user();
-        if ($user instanceof \App\Models\User) {
+        if ($user instanceof User) {
             $accounts = app(VerifiedProjectAccount::class);
             if ($accounts->role($user) === 'engineer') {
                 $account = $accounts->resolve($user);
@@ -294,6 +297,7 @@ class MaintenanceProjectController extends Controller
                 }
             }
         }
+
         return $query->withCount('maintenanceRecords')
             ->with([
                 'roadCoverage:id,lgu_id,road_name',
@@ -305,10 +309,10 @@ class MaintenanceProjectController extends Controller
     /**
      * List RoadCoverage choices that the current user is allowed to assign.
      */
-    /** @return \Illuminate\Support\Collection<int, array{id: mixed, road_name: mixed, municipality: mixed, kilometers: mixed, assigned: bool, geojson: mixed}> */
+    /** @return Collection<int, array{id: mixed, road_name: mixed, municipality: mixed, kilometers: mixed, assigned: bool, geojson: mixed}> */
     private function coverageChoices(
         ?MaintenanceProject $current = null
-    ): \Illuminate\Support\Collection {
+    ): Collection {
         return RoadCoverage::query()
             ->select([
                 'id',

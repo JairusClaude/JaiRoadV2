@@ -83,6 +83,7 @@ class MaintenanceProject extends Model
         if (! Schema::hasColumn('monthly_updates', 'maintenance_id')) {
             return $this->hasMany(MonthlyUpdate::class, 'maintenance_projects_id');
         }
+
         return $this->hasManyThrough(
             MonthlyUpdate::class, MaintenanceRecord::class,
             'maintenance_projects_id', 'maintenance_id', 'id', 'id'

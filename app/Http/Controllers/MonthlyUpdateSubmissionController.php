@@ -13,6 +13,7 @@ use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
@@ -55,7 +56,7 @@ class MonthlyUpdateSubmissionController extends Controller
         $files = $request->file('files', []);
         $files = is_array($files) ? $files : [];
         foreach ($files as $file) {
-            if (! $file instanceof \Illuminate\Http\UploadedFile) {
+            if (! $file instanceof UploadedFile) {
                 throw ValidationException::withMessages(['files' => 'Only uploaded files are accepted.']);
             }
             $mime = (string) $file->getMimeType();
@@ -103,13 +104,15 @@ class MonthlyUpdateSubmissionController extends Controller
         } catch (Throwable $error) {
             Log::error('MonthlyUpdate create failed', ['failure_type' => get_class($error), 'maintenance_record_id' => $record->getKey()]);
             foreach ($uploadedPaths as $path) {
-                try { $storage->removeAfterFailure($path); }
-                catch (Throwable $cleanup) {
+                try {
+                    $storage->removeAfterFailure($path);
+                } catch (Throwable $cleanup) {
                     Log::critical('Monthly evidence cleanup failed', ['path' => $path, 'failure_type' => get_class($cleanup)]);
                 }
             }
             throw ValidationException::withMessages(['form' => 'The monthly report could not be saved. No report was committed. Check for a duplicate month or contact the administrator.']);
         }
+
         return to_route('monthly-updates.preview')->with('message', 'Monthly report saved successfully.');
     }
 
@@ -124,12 +127,16 @@ class MonthlyUpdateSubmissionController extends Controller
         $monthly = MonthlyUpdate::query()->findOrFail((int) $row->monthly_updates_id);
         Gate::authorize('view', $monthly);
         abort_unless($storage->configured(), 503);
-        try { $remote = $storage->fetch((string) $row->file_path); }
-        catch (Throwable) { abort(404, 'The private evidence file is unavailable.'); }
+        try {
+            $remote = $storage->fetch((string) $row->file_path);
+        } catch (Throwable) {
+            abort(404, 'The private evidence file is unavailable.');
+        }
         $name = basename(str_replace('\\', '/', (string) $row->file_name));
         $mime = (string) $row->file_type;
         abort_unless(isset(self::MIME_EXT[$mime]), 404);
         $disposition = HeaderUtils::makeDisposition(HeaderUtils::DISPOSITION_ATTACHMENT, $name, 'evidence.'.self::MIME_EXT[$mime]);
+
         return response($remote->body(), 200, [
             'Content-Type' => $mime, 'Content-Disposition' => $disposition,
             'Cache-Control' => 'private, no-store, max-age=0', 'X-Content-Type-Options' => 'nosniff',

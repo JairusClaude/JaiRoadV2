@@ -16,9 +16,7 @@ use App\Services\MaintenanceProjects\VerifiedProjectAccount;
  */
 final class RoadCoveragePolicy
 {
-    public function __construct(private VerifiedProjectAccount $accounts)
-    {
-    }
+    public function __construct(private VerifiedProjectAccount $accounts) {}
 
     public function viewAny(User $user): bool
     {
@@ -34,6 +32,7 @@ final class RoadCoveragePolicy
             return true;
         }
         $account = $this->accounts->resolve($user);
+
         return $account !== null && $this->accounts->assignedTo($account, $coverage);
     }
 
@@ -48,6 +47,7 @@ final class RoadCoveragePolicy
     {
         $role = $this->accounts->role($user);
         $account = $this->accounts->resolve($user);
+
         return in_array($role, ['admin', 'superadmin', 'engineer'], true)
             && $account !== null && $account->engineers_id !== null;
     }
@@ -61,6 +61,7 @@ final class RoadCoveragePolicy
             return true;
         }
         $account = $this->accounts->resolve($user);
+
         return $account !== null && $this->accounts->assignedToLgu($account, (int) $lgu->getKey());
     }
 
@@ -70,6 +71,7 @@ final class RoadCoveragePolicy
             return true;
         }
         $account = $this->accounts->resolve($user);
+
         return $this->accounts->role($user) === 'engineer'
             && $account !== null && $this->accounts->assignedTo($account, $coverage);
     }
@@ -83,6 +85,7 @@ final class RoadCoveragePolicy
             return true;
         }
         $account = $this->accounts->resolve($user);
+
         return $account !== null && $this->accounts->assignedToLgu($account, (int) $targetLgu->getKey());
     }
 

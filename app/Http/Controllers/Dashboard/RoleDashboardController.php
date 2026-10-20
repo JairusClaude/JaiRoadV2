@@ -28,8 +28,7 @@ final class RoleDashboardController extends Controller
         $role = $access->role($user);
         abort_unless(in_array($role, ['engineer', 'viewer'], true), 403);
 
-        $has = static fn (string $table, array $columns = []): bool =>
-            Schema::hasTable($table) && ($columns === [] || Schema::hasColumns($table, $columns));
+        $has = static fn (string $table, array $columns = []): bool => Schema::hasTable($table) && ($columns === [] || Schema::hasColumns($table, $columns));
 
         $assignedLgus = [];
         $recentRecords = [];

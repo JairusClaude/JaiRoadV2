@@ -60,7 +60,7 @@ class ProjectMutations
     /**
      * Individual and bulk deletion share the same atomic implementation.
      *
-     * @param array<int, int|string> $ids
+     * @param  array<int, int|string>  $ids
      */
     public function delete(User $user, array $ids): void
     {

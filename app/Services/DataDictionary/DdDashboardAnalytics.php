@@ -89,6 +89,7 @@ final class DdDashboardAnalytics
                     'role' => (string) $v->account_type, 'at' => (string) $v->created_at,
                 ])->all();
         }
+
         return [
             'scope' => match ($role) {
                 'SuperAdmin' => 'System-wide', 'Admin' => 'Operations overview',
