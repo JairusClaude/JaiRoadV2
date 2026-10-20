@@ -19,11 +19,20 @@ import type {
     ProjectSummary,
 } from '@/types/maintenance-projects';
 
-export function ProjectWorkspace({ children, className = '' }: { children: ReactNode; className?: string }) {
+export function ProjectWorkspace({
+    children,
+    className = '',
+}: {
+    children: ReactNode;
+    className?: string;
+}) {
     return (
         // The original styles are scoped beneath .jr-app and .jr-theme.
         // Apply that context to content ONLY; do not nest another sidebar.
-        <section className={`jr-app jr-theme jr-module-content w-full min-w-0 ${className}`} style={{ display: 'block', minHeight: 0 }}>
+        <section
+            className={`jr-app jr-theme jr-module-content w-full min-w-0 ${className}`}
+            style={{ display: 'block', minHeight: 0 }}
+        >
             <div className="jr-workspace w-full min-w-0">{children}</div>
         </section>
     );

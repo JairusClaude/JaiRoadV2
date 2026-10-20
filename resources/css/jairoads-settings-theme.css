@@ -9,7 +9,7 @@ html.dark .jr-content {
 }
 html.dark .jr-global-header,
 html.dark .jr-sidebar-container,
-html.dark .jr-sidebar-container [data-sidebar="sidebar"] {
+html.dark .jr-sidebar-container [data-sidebar='sidebar'] {
     background-color: #192435 !important;
     color: #edf3fa;
     border-color: #344259 !important;
@@ -28,12 +28,17 @@ html.dark .jr-global-header span,
 html.dark .jr-workspace .jr-page-head p {
     color: #b9c7d9 !important;
 }
-html.dark .jr-nav-link:hover { background-color: #29394f !important; }
+html.dark .jr-nav-link:hover {
+    background-color: #29394f !important;
+}
 html.dark .jr-nav-link.jr-active {
     background-color: #463426 !important;
     color: #ffdfa8 !important;
 }
-html.dark .jr-identity { background-color: #223248 !important; border-color: #344259 !important; }
+html.dark .jr-identity {
+    background-color: #223248 !important;
+    border-color: #344259 !important;
+}
 html.dark .jr-workspace {
     background-color: #1c2839 !important;
     color: #eef4fb;
@@ -45,8 +50,12 @@ html.dark .jr-menu {
     color: #eef4fb;
 }
 html.dark .jr-icon-button,
-html.dark .jr-account-trigger { color: #e7effa !important; }
-html.dark .jr-settings .jr-page-head h1 { color: #f3f7fc !important; }
+html.dark .jr-account-trigger {
+    color: #e7effa !important;
+}
+html.dark .jr-settings .jr-page-head h1 {
+    color: #f3f7fc !important;
+}
 /* The brand accent remains warm, while information/error/status colors retain their meaning. */
 html.jr-reduce-motion .jr-app *,
 html.jr-reduce-motion .jr-app *::before,
@@ -57,7 +66,9 @@ html.jr-reduce-motion .jr-app *::after {
     scroll-behavior: auto !important;
 }
 @media (prefers-reduced-motion: reduce) {
-    .jr-app *, .jr-app *::before, .jr-app *::after {
+    .jr-app *,
+    .jr-app *::before,
+    .jr-app *::after {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;

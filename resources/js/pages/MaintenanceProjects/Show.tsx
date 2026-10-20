@@ -2,7 +2,6 @@ import { Head, Link, router } from '@inertiajs/react';
 import {
     ArrowLeft,
     ChevronRight,
-
     MoreHorizontal,
     Pencil,
     Plus,
@@ -15,9 +14,12 @@ import {
     ProjectActions,
     ProjectWorkspace,
 } from '@/components/maintenance-projects/project-workspace';
-import { Button } from '@/components/ui/button';
 import { RoadCoverageMap } from '@/components/maintenance-projects/road-coverage-map';
-import type { CoverageChoice, ProjectSummary } from '@/types/maintenance-projects';
+import { Button } from '@/components/ui/button';
+import type {
+    CoverageChoice,
+    ProjectSummary,
+} from '@/types/maintenance-projects';
 
 type RecordSummary = {
     id: number;
@@ -137,8 +139,13 @@ export default function Show({
                                 />
                             ) : (
                                 <div className="jr-map-placeholder jr-detail-map">
-                                    <strong>No linked Road Coverage is available</strong>
-                                    <span>There is no coverage location to display for this project.</span>
+                                    <strong>
+                                        No linked Road Coverage is available
+                                    </strong>
+                                    <span>
+                                        There is no coverage location to display
+                                        for this project.
+                                    </span>
                                 </div>
                             )}
                         </div>
@@ -151,7 +158,15 @@ export default function Show({
                             <p>Records grouped by year and quarter</p>
                         </div>
                         {canCreateRecord && (
-                            <Button className="jr-primary" type="button" onClick={() => router.visit(`/project-documents-preview?project=${project.id}`)}>
+                            <Button
+                                className="jr-primary"
+                                type="button"
+                                onClick={() =>
+                                    router.visit(
+                                        `/project-documents-preview?project=${project.id}`,
+                                    )
+                                }
+                            >
                                 <Plus /> Add Record
                             </Button>
                         )}

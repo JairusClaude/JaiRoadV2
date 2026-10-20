@@ -1,48 +1,281 @@
 /* JaiROADS map is scoped to the Maintenance Project form, never browser Fullscreen API. */
-.jr-road-map-panel { position:relative; min-width:0; overflow:hidden; border:1px solid #dfe5ee; border-radius:14px; background:#fff; color:#23344a; box-shadow:0 1px 3px #182f4908; }
-.jr-road-map-header, .jr-road-map-toolbar, .jr-road-map-footer { display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; padding:10px 12px; }
-.jr-road-map-header { border-bottom:1px solid #e8ecf1; }
-.jr-road-map-heading, .jr-road-map-actions, .jr-road-map-style, .jr-road-map-legend, .jr-road-map-legend span { display:flex; align-items:center; gap:7px; }
-.jr-road-map-heading { font-size:13px; min-width:0; }
-.jr-road-map-heading svg { color:#9b4f25; flex:none; }
-.jr-road-map-count { font-size:11px; color:#7a8da6; white-space:nowrap; }
-.jr-road-map-actions { gap:5px; margin-left:auto; }
-.jr-road-map-actions button { display:flex; align-items:center; gap:5px; padding:6px 9px; border-radius:8px; border:1px solid #dae3ed; font-size:12px; font-weight:600; line-height:1.25; background:#fff; color:#334b63; cursor:pointer; }
-.jr-road-map-actions button:hover:not(:disabled), .jr-road-map-actions button:focus-visible { background:#fff5eb; border-color:#b86f3d; color:#8a4017; }
-.jr-road-map-actions button:disabled { opacity:.48; cursor:not-allowed; }
-.jr-road-map-toolbar { border-bottom:1px solid #e8ecf1; background:#fafbfc; font-size:12px; }
-.jr-road-map-style svg { color:#7186a0; }
-.jr-road-map-style select { border:1px solid #dce4ee; background:#fff; border-radius:8px; padding:5px 20px 5px 8px; cursor:pointer; }
-.jr-road-map-lines { display:flex; gap:6px; align-items:center; cursor:pointer; }
-.jr-road-map-lines input { accent-color:#955124; }
-.jr-road-map-canvas { width:100%; height:316px; min-height:230px; background:#edf1f4; }
-.jr-road-map-panel .maplibregl-ctrl-top-right { top:8px; right:8px; }
-.jr-road-map-panel .maplibregl-ctrl-group { box-shadow:0 2px 10px #1d324126; border-radius:9px; overflow:hidden; }
-.jr-road-map-panel .maplibregl-ctrl-attrib { font-size:10px; }
-.jr-road-map-panel .maplibregl-ctrl-scale { font-size:10px; }
-.jr-road-map-loading, .jr-road-map-warning { position:absolute; z-index:3; left:14px; bottom:69px; border-radius:9px; padding:7px 10px; background:#fff; box-shadow:0 2px 12px #0002; font-size:12px; }
-.jr-road-map-warning { color:#93381f; max-width:80%; }
-.jr-road-map-footer { border-top:1px solid #e8ecf1; color:#73849a; font-size:11px; line-height:1.35; }
-.jr-road-map-footer small { font-size:11px; }
-.jr-road-map-legend i { display:inline-block; width:15px; height:4px; border-radius:4px; }
-.jr-legend-selected { background:#aa521b; }
-.jr-legend-available { background:#167d69; }
-.jr-legend-assigned { background:#77869a; }
-.jr-road-map-backdrop { position:fixed; inset:0; background:#0d1c2a79; border:0; z-index:65; cursor:default; }
-.jr-road-map-panel--focus { position:fixed; z-index:66; top:76px; bottom:22px; right:22px; left:max(274px, 17vw); display:flex; flex-direction:column; border-radius:17px; box-shadow:0 18px 60px #05172855; }
-.jr-road-map-panel--focus .jr-road-map-canvas { height:auto; min-height:200px; flex:1; }
-.jr-road-map-panel--focus .jr-road-map-footer { min-height:50px; }
-.jr-road-map-close { display:none; }
-.jr-road-map-panel :is(button,select,input):focus-visible { outline:2px solid #bd7435; outline-offset:2px; }
-.dark .jr-road-map-panel { background:#1c2a3e; color:#f4f7fc; border-color:#33465e; }
-.dark .jr-road-map-header, .dark .jr-road-map-footer, .dark .jr-road-map-toolbar { border-color:#34465c; }
-.dark .jr-road-map-toolbar { background:#1b293b; }
-.dark .jr-road-map-actions button, .dark .jr-road-map-style select { background:#26374d; color:#f4f7fc; border-color:#465975; }
-.dark .jr-road-map-count, .dark .jr-road-map-footer { color:#afc1d9; }
-@media (max-width:980px) { .jr-road-map-actions button span { display:none; } .jr-road-map-panel--focus { left:18px; top:65px; right:18px; bottom:18px; } }
-@media (max-width:600px) { .jr-road-map-heading { flex-wrap:wrap; } .jr-road-map-count { width:100%; } .jr-road-map-header { align-items:start; } .jr-road-map-actions { margin-left:0; } .jr-road-map-canvas { height:260px; } .jr-road-map-footer { align-items:start; } .jr-road-map-panel--focus { left:8px; right:8px; top:12px; bottom:12px; } }
-@media (prefers-reduced-motion:reduce) { .jr-road-map-panel *, .jr-road-map-panel *::before { transition-duration:.01ms !important; animation-duration:.01ms !important; } }
+.jr-road-map-panel {
+    position: relative;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid #dfe5ee;
+    border-radius: 14px;
+    background: #fff;
+    color: #23344a;
+    box-shadow: 0 1px 3px #182f4908;
+}
+.jr-road-map-header,
+.jr-road-map-toolbar,
+.jr-road-map-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+}
+.jr-road-map-header {
+    border-bottom: 1px solid #e8ecf1;
+}
+.jr-road-map-heading,
+.jr-road-map-actions,
+.jr-road-map-style,
+.jr-road-map-legend,
+.jr-road-map-legend span {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+.jr-road-map-heading {
+    font-size: 13px;
+    min-width: 0;
+}
+.jr-road-map-heading svg {
+    color: #9b4f25;
+    flex: none;
+}
+.jr-road-map-count {
+    font-size: 11px;
+    color: #7a8da6;
+    white-space: nowrap;
+}
+.jr-road-map-actions {
+    gap: 5px;
+    margin-left: auto;
+}
+.jr-road-map-actions button {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 9px;
+    border-radius: 8px;
+    border: 1px solid #dae3ed;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.25;
+    background: #fff;
+    color: #334b63;
+    cursor: pointer;
+}
+.jr-road-map-actions button:hover:not(:disabled),
+.jr-road-map-actions button:focus-visible {
+    background: #fff5eb;
+    border-color: #b86f3d;
+    color: #8a4017;
+}
+.jr-road-map-actions button:disabled {
+    opacity: 0.48;
+    cursor: not-allowed;
+}
+.jr-road-map-toolbar {
+    border-bottom: 1px solid #e8ecf1;
+    background: #fafbfc;
+    font-size: 12px;
+}
+.jr-road-map-style svg {
+    color: #7186a0;
+}
+.jr-road-map-style select {
+    border: 1px solid #dce4ee;
+    background: #fff;
+    border-radius: 8px;
+    padding: 5px 20px 5px 8px;
+    cursor: pointer;
+}
+.jr-road-map-lines {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    cursor: pointer;
+}
+.jr-road-map-lines input {
+    accent-color: #955124;
+}
+.jr-road-map-canvas {
+    width: 100%;
+    height: 316px;
+    min-height: 230px;
+    background: #edf1f4;
+}
+.jr-road-map-panel .maplibregl-ctrl-top-right {
+    top: 8px;
+    right: 8px;
+}
+.jr-road-map-panel .maplibregl-ctrl-group {
+    box-shadow: 0 2px 10px #1d324126;
+    border-radius: 9px;
+    overflow: hidden;
+}
+.jr-road-map-panel .maplibregl-ctrl-attrib {
+    font-size: 10px;
+}
+.jr-road-map-panel .maplibregl-ctrl-scale {
+    font-size: 10px;
+}
+.jr-road-map-loading,
+.jr-road-map-warning {
+    position: absolute;
+    z-index: 3;
+    left: 14px;
+    bottom: 69px;
+    border-radius: 9px;
+    padding: 7px 10px;
+    background: #fff;
+    box-shadow: 0 2px 12px #0002;
+    font-size: 12px;
+}
+.jr-road-map-warning {
+    color: #93381f;
+    max-width: 80%;
+}
+.jr-road-map-footer {
+    border-top: 1px solid #e8ecf1;
+    color: #73849a;
+    font-size: 11px;
+    line-height: 1.35;
+}
+.jr-road-map-footer small {
+    font-size: 11px;
+}
+.jr-road-map-legend i {
+    display: inline-block;
+    width: 15px;
+    height: 4px;
+    border-radius: 4px;
+}
+.jr-legend-selected {
+    background: #aa521b;
+}
+.jr-legend-available {
+    background: #167d69;
+}
+.jr-legend-assigned {
+    background: #77869a;
+}
+.jr-road-map-backdrop {
+    position: fixed;
+    inset: 0;
+    background: #0d1c2a79;
+    border: 0;
+    z-index: 65;
+    cursor: default;
+}
+.jr-road-map-panel--focus {
+    position: fixed;
+    z-index: 66;
+    top: 76px;
+    bottom: 22px;
+    right: 22px;
+    left: max(274px, 17vw);
+    display: flex;
+    flex-direction: column;
+    border-radius: 17px;
+    box-shadow: 0 18px 60px #05172855;
+}
+.jr-road-map-panel--focus .jr-road-map-canvas {
+    height: auto;
+    min-height: 200px;
+    flex: 1;
+}
+.jr-road-map-panel--focus .jr-road-map-footer {
+    min-height: 50px;
+}
+.jr-road-map-close {
+    display: none;
+}
+.jr-road-map-panel :is(button, select, input):focus-visible {
+    outline: 2px solid #bd7435;
+    outline-offset: 2px;
+}
+.dark .jr-road-map-panel {
+    background: #1c2a3e;
+    color: #f4f7fc;
+    border-color: #33465e;
+}
+.dark .jr-road-map-header,
+.dark .jr-road-map-footer,
+.dark .jr-road-map-toolbar {
+    border-color: #34465c;
+}
+.dark .jr-road-map-toolbar {
+    background: #1b293b;
+}
+.dark .jr-road-map-actions button,
+.dark .jr-road-map-style select {
+    background: #26374d;
+    color: #f4f7fc;
+    border-color: #465975;
+}
+.dark .jr-road-map-count,
+.dark .jr-road-map-footer {
+    color: #afc1d9;
+}
+@media (max-width: 980px) {
+    .jr-road-map-actions button span {
+        display: none;
+    }
+    .jr-road-map-panel--focus {
+        left: 18px;
+        top: 65px;
+        right: 18px;
+        bottom: 18px;
+    }
+}
+@media (max-width: 600px) {
+    .jr-road-map-heading {
+        flex-wrap: wrap;
+    }
+    .jr-road-map-count {
+        width: 100%;
+    }
+    .jr-road-map-header {
+        align-items: start;
+    }
+    .jr-road-map-actions {
+        margin-left: 0;
+    }
+    .jr-road-map-canvas {
+        height: 260px;
+    }
+    .jr-road-map-footer {
+        align-items: start;
+    }
+    .jr-road-map-panel--focus {
+        left: 8px;
+        right: 8px;
+        top: 12px;
+        bottom: 12px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .jr-road-map-panel *,
+    .jr-road-map-panel *::before {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
+}
 
 /* Approximate Davao de Oro map lock indicator (display only). */
-.jr-province-lock { display:inline-flex; align-items:center; flex:none; border:1px solid #f5c77e; background:#fff7e8; color:#8a4b13; border-radius:99px; padding:2px 7px; font-size:10px; font-weight:700; white-space:nowrap; }
-.dark .jr-province-lock { border-color:#7b592d; background:#42321f; color:#ffd89e; }
+.jr-province-lock {
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+    border: 1px solid #f5c77e;
+    background: #fff7e8;
+    color: #8a4b13;
+    border-radius: 99px;
+    padding: 2px 7px;
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.dark .jr-province-lock {
+    border-color: #7b592d;
+    background: #42321f;
+    color: #ffd89e;
+}
