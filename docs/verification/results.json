@@ -1,0 +1,98 @@
+{
+  "checkpoint": "a764354f96bafaee1b618502f3e7ba1432257521",
+  "verified_code_commit": "447a6ea82f316aab5f79e1755ccf9fc8d9b7bc8e",
+  "runtime": {
+    "php": "8.4.26",
+    "node": "24.19.0",
+    "npm": "11.9.0",
+    "postgresql": [
+      "16.15",
+      "17.11"
+    ],
+    "ci_node": "22",
+    "ci_postgresql": "17"
+  },
+  "checks": {
+    "php_syntax": {
+      "pass": true,
+      "files": 205
+    },
+    "phpstan": {
+      "pass": true,
+      "errors": 0,
+      "level": 7
+    },
+    "pint": {
+      "pass": true
+    },
+    "eslint": {
+      "pass": true,
+      "errors": 0,
+      "warnings": 0
+    },
+    "prettier": {
+      "pass": true
+    },
+    "typescript": {
+      "pass": true
+    },
+    "vite_build": {
+      "pass": true,
+      "manifest_entries": 106,
+      "missing_manifest_references": 0,
+      "warning": "Existing >500 kB chunks remain"
+    },
+    "laravel": {
+      "pass": true,
+      "tests": 86,
+      "assertions": 458,
+      "skips": 0
+    },
+    "postgresql_16": {
+      "pass": true,
+      "tests": 49,
+      "assertions": 292
+    },
+    "postgresql_17": {
+      "pass": true,
+      "tests": 49,
+      "assertions": 292
+    },
+    "original_password_cases": {
+      "pass": true,
+      "tests": 27,
+      "assertions": 152,
+      "source_unchanged": true
+    },
+    "composer_ci_check": {
+      "pass": true
+    },
+    "composer_install": {
+      "pass": true,
+      "lock_unchanged": true
+    },
+    "composer_platform": {
+      "pass": true
+    },
+    "npm_ci": {
+      "pass": true,
+      "lock_unchanged": true
+    },
+    "wayfinder": {
+      "pass": true
+    },
+    "routes": {
+      "pass": true
+    },
+    "docker_image": {
+      "pass": null,
+      "status": "unavailable: no Docker/Podman daemon or executable"
+    },
+    "hosted_actions": {
+      "pass": null,
+      "status": "pending publication"
+    }
+  },
+  "diagnostic_entries": 1165,
+  "databases": "Only SQLite :memory: and guarded disposable loopback PostgreSQL were used; shared Supabase untouched."
+}
