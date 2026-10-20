@@ -25,7 +25,19 @@ class PrivateMonthlyMediaStorage
 
     private function token(): string
     {
-        return (string) config('jairoads_monthly_updates.service_role_key', '');
+        $mediaToken = (string) config('jairoads_monthly_updates.service_role_key', '');
+        if ($mediaToken !== '') {
+            return $mediaToken;
+        }
+
+        // Both services may safely reuse one server-only credential *only* when
+        // their configured Supabase project URLs match exactly after slash trim.
+        $documentsUrl = rtrim((string) config('jairoads_documents.supabase_url', ''), '/');
+        if ($this->baseUrl() !== '' && $this->baseUrl() === $documentsUrl) {
+            return (string) config('jairoads_documents.service_role_key', '');
+        }
+
+        return '';
     }
 
     private function objectUrl(string $path, bool $authenticated = false): string
