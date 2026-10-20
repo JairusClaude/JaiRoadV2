@@ -9,9 +9,12 @@ use Illuminate\Support\Facades\DB;
 /**
  * Recipient-specific AuditLog notifications; no new tables, no global feed,
  * and no read/unread state (not approved by the final Data Dictionary).
+ *
+ * @phpstan-import-type Identity from DataDictionaryIdentityResolver
  */
 final class DdActivityNotifications
 {
+    /** @return list<string> */
     public static function recipientsFor(string $actorRole): array
     {
         return match ($actorRole) {
@@ -26,6 +29,9 @@ final class DdActivityNotifications
      * Call inside the SAME transaction as the business AuditLog insert.
      * The actor receives their own event; higher roles receive lower-role activity.
      * No other engineer/viewer gets another account's notifications.
+     */
+    /**
+     * @param  Identity  $actor
      */
     public function record(array $actor, string $action, string $entity, ?int $entityId, string $description): void
     {

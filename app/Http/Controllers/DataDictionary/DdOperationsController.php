@@ -29,11 +29,16 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
 /**
  * Final DD module endpoints. public.users is authentication infrastructure only.
  * All business SQL is explicitly jairoads_next qualified and audited.
+ *
+ * @phpstan-import-type Identity from DataDictionaryIdentityResolver
  */
 final class DdOperationsController extends Controller
 {
     private const SECTIONS = ['settings', 'roads', 'projects', 'updates', 'documents'];
 
+    /**
+     * @return Identity
+     */
     private function actor(Request $request, DataDictionaryIdentityResolver $resolver): array
     {
         $user = $request->user();
@@ -44,11 +49,17 @@ final class DdOperationsController extends Controller
         return $identity;
     }
 
+    /**
+     * @param  Identity  $actor
+     */
     private function managers(array $actor): bool
     {
         return DdRoleAccess::managesBusinessData($actor['role']);
     }
 
+    /**
+     * @param  Identity  $actor
+     */
     private function writer(array $actor): void
     {
         abort_unless(DdRoleAccess::canWriteOperations($actor['role']), 403, 'This role cannot change operational records.');
@@ -59,6 +70,10 @@ final class DdOperationsController extends Controller
         return DB::table('jairoads_next.'.$table);
     }
 
+    /**
+     * @param  Identity  $actor
+     * @return array<int, int>
+     */
     private function activeLguIds(array $actor): array
     {
         if ($actor['engineer_id'] === null) {
@@ -69,6 +84,9 @@ final class DdOperationsController extends Controller
             ->where('is_active', true)->pluck('lgu_id')->map(fn ($id) => (int) $id)->all();
     }
 
+    /**
+     * @param  Identity  $actor
+     */
     private function lguAllowed(array $actor, int $lguId): void
     {
         if ($this->managers($actor)) {
@@ -88,7 +106,10 @@ final class DdOperationsController extends Controller
         return $value === null ? null : (int) $value;
     }
 
-    private function recordScope(array $actor, int $recordId, bool $write = false): object
+    /**
+     * @param  Identity  $actor
+     */
+    private function recordScope(array $actor, int $recordId, bool $write = false): \stdClass
     {
         $row = $this->t('maintenance_records as mr')
             ->join('jairoads_next.maintenance_projects as p', 'p.id', '=', 'mr.project_id')
@@ -107,6 +128,10 @@ final class DdOperationsController extends Controller
         return $row;
     }
 
+    /**
+     * @param  Identity  $actor
+     * @param  array<string, mixed>  $meta
+     */
     private function audit(array $actor, string $action, string $entity, ?int $id, string $description, array $meta = []): void
     {
         // Only safe identifiers/statuses; no credentials, email, geometry or private paths.
@@ -601,16 +626,16 @@ final class DdOperationsController extends Controller
                 default => 'application/octet-stream',
             };
         } else {
-            $row = $this->t('media as m')->join('jairoads_next.monthly_updates as mu','mu.id','=','m.monthly_update_id')
-                ->where('m.id',$id)->first(['mu.maintenance_id', 'm.file_name', 'm.file_path', 'm.file_type']);
-            abort_unless($row !== null,404);
-            $this->recordScope($actor,(int) $row->maintenance_id);
+            $row = $this->t('media as m')->join('jairoads_next.monthly_updates as mu', 'mu.id', '=', 'm.monthly_update_id')
+                ->where('m.id', $id)->first(['mu.maintenance_id', 'm.file_name', 'm.file_path', 'm.file_type']);
+            abort_unless($row !== null, 404);
+            $this->recordScope($actor, (int) $row->maintenance_id);
             $result = $media->fetch((string) $row->file_path);
             $mime = (string) $row->file_type;
         }
         $filename = basename(str_replace(['\\', '/'], '', (string) $row->file_name));
 
-        return response($result->body(),200,[
+        return response($result->body(), 200, [
             'Content-Type' => $mime, 'X-Content-Type-Options' => 'nosniff',
             'Cache-Control' => 'private, no-store',
             'Content-Disposition' => "attachment; filename*=UTF-8''".rawurlencode($filename),

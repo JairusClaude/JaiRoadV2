@@ -8,6 +8,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /**
+ * @phpstan-type Identity array{account_id: int, role: string, engineer_id: ?int}
+ *
  * Strict, READ-ONLY resolver for an explicitly linked new DD identity.
  * This does not replace Fortify, issue roles, authorize endpoints or make writes.
  * Data Dictionary: UserAccount(AccountType, IsActive, EngineerID) and
@@ -36,7 +38,7 @@ final class DataDictionaryIdentityResolver
     }
 
     /**
-     * @return array{account_id: int, role: string, engineer_id: ?int}|null
+     * @return Identity|null
      */
     public function resolve(User $login): ?array
     {

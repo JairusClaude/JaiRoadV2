@@ -13,7 +13,6 @@ use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
@@ -56,9 +55,6 @@ class MonthlyUpdateSubmissionController extends Controller
         $files = $request->file('files', []);
         $files = is_array($files) ? $files : [];
         foreach ($files as $file) {
-            if (! $file instanceof UploadedFile) {
-                throw ValidationException::withMessages(['files' => 'Only uploaded files are accepted.']);
-            }
             $mime = (string) $file->getMimeType();
             if (! isset(self::MIME_EXT[$mime])) {
                 throw ValidationException::withMessages(['files' => 'Only JPEG, PNG, WEBP, MP4 and WEBM evidence is permitted.']);
@@ -143,7 +139,11 @@ class MonthlyUpdateSubmissionController extends Controller
         ]);
     }
 
-    /** Insert system-managed audit records; no secrets, file contents or full summary text. */
+    /**
+     * Insert system-managed audit records; no secrets, file contents or full summary text.
+     *
+     * @param  array<string, mixed>  $new
+     */
     private function audit(int $accountId, string $username, string $entity, int $id, string $description, array $new): void
     {
         $now = now();

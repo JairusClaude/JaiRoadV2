@@ -30,7 +30,7 @@ final class SidebarMaintenanceRecordScope
             return $query;
         }
         $account = $this->accounts->resolve($user);
-        $engineerId = (int) ($account?->engineers_id ?? 0);
+        $engineerId = (int) ($account->engineers_id ?? 0);
         if ($engineerId < 1) {
             return $query->whereRaw('1 = 0');
         }

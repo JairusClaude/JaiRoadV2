@@ -46,7 +46,7 @@ final class RoleDashboardController extends Controller
 
         if ($role === 'engineer') {
             // The final dictionary requires a linked Active Engineer profile.
-            abort_unless($account->engineers_id, 403);
+            abort_unless($account->engineers_id !== null && $account->engineers_id > 0, 403);
             abort_unless($has('engineers', ['id', 'first_name', 'last_name', 'engineer_status']), 503);
             $profile = DB::table('engineers')->where('id', $account->engineers_id)
                 ->first(['id', 'first_name', 'middle_name', 'last_name', 'rank', 'engineer_status']);

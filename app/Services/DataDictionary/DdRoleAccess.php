@@ -42,7 +42,11 @@ final class DdRoleAccess
         return self::managesBusinessData($role);
     }
 
-    /** UI guide only: endpoint guards additionally require a live Engineer identity and active LGU scope. */
+    /**
+     * UI guide only: endpoint guards additionally require a live Engineer identity and active LGU scope.
+     *
+     * @return array{role: string, manageAccounts: bool, readAuditLog: bool, createProjects: bool, updateProjects: bool, deleteProjects: bool, createRoads: bool, updateRoads: bool, deleteRoads: bool, createUpdates: bool, createDocuments: bool, manageLgus: bool, readOnly: bool, assignedScope: bool}
+     */
     public static function capabilities(string $role, bool $hasAssignment, bool $linkedEngineer): array
     {
         $manager = self::managesBusinessData($role);

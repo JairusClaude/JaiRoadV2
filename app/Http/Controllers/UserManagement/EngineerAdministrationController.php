@@ -6,6 +6,7 @@ namespace App\Http\Controllers\UserManagement;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\UserAccount;
 use App\Services\MaintenanceProjects\VerifiedProjectAccount;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -21,7 +22,7 @@ use Illuminate\Validation\ValidationException;
  */
 final class EngineerAdministrationController extends Controller
 {
-    private function authorizeAdministrator(Request $request, VerifiedProjectAccount $accounts): object
+    private function authorizeAdministrator(Request $request, VerifiedProjectAccount $accounts): UserAccount
     {
         $user = $request->user();
         abort_unless($user instanceof User, 403);
@@ -64,7 +65,11 @@ final class EngineerAdministrationController extends Controller
         abort_unless(DB::connection()->getDriverName() === 'pgsql', 503, 'Engineer management requires PostgreSQL.');
     }
 
-    private function audit(object $actor, string $action, string $entity, int $entityId, string $description, ?array $before, array $after): void
+    /**
+     * @param  array<string, mixed>|null  $before
+     * @param  array<string, mixed>  $after
+     */
+    private function audit(UserAccount $actor, string $action, string $entity, int $entityId, string $description, ?array $before, array $after): void
     {
         $now = now();
         DB::table('audit_logs')->insert([

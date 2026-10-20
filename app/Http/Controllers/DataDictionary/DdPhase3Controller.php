@@ -25,9 +25,14 @@ use Inertia\Response;
  * PHASE 3A: DD-only role access + essential identity/LGU administration.
  * Never uses legacy public business tables; public.users is Fortify infrastructure.
  * All writes use existing, approved DD entities + a system-written AuditLog.
+ *
+ * @phpstan-import-type Identity from DataDictionaryIdentityResolver
  */
 final class DdPhase3Controller extends Controller
 {
+    /**
+     * @return Identity
+     */
     private function identity(Request $request, DataDictionaryIdentityResolver $resolver): array
     {
         $user = $request->user();
@@ -38,6 +43,9 @@ final class DdPhase3Controller extends Controller
         return $identity;
     }
 
+    /**
+     * @return Identity
+     */
     private function admin(Request $request, DataDictionaryIdentityResolver $resolver): array
     {
         $id = $this->identity($request, $resolver);
@@ -46,6 +54,10 @@ final class DdPhase3Controller extends Controller
         return $id;
     }
 
+    /**
+     * @param  Identity  $actor
+     * @param  array<string, mixed>  $details
+     */
     private function audit(array $actor, string $action, string $entity, int $recordId, string $description, array $details): void
     {
         // Never include password, email, token or secret in the audit payload.

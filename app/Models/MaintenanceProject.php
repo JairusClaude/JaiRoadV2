@@ -75,7 +75,11 @@ class MaintenanceProject extends Model
         );
     }
 
-    /** Compatibility during staged cutover; never reinterpret legacy rows as record history. */
+    /**
+     * Compatibility during staged cutover; never reinterpret legacy rows as record history.
+     *
+     * @return HasMany<MonthlyUpdate, $this>|HasManyThrough<MonthlyUpdate, MaintenanceRecord, $this>
+     */
     public function monthlyUpdates(): HasMany|HasManyThrough
     {
         // ProjectMutations::delete calls this method even before SQL cutover.

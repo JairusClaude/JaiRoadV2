@@ -14,11 +14,13 @@ class MonthlyUpdateMedia extends Model
 
     protected $guarded = ['*'];
 
+    /** @return BelongsTo<MonthlyUpdate, $this> */
     public function monthlyUpdate(): BelongsTo
     {
         return $this->belongsTo(MonthlyUpdate::class, 'monthly_updates_id');
     }
 
+    /** @return BelongsTo<UserAccount, $this> */
     public function uploadedBy(): BelongsTo
     {
         return $this->belongsTo(UserAccount::class, 'uploaded_by');

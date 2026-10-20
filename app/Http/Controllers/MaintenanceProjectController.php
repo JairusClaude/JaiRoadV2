@@ -309,7 +309,7 @@ class MaintenanceProjectController extends Controller
     /**
      * List RoadCoverage choices that the current user is allowed to assign.
      */
-    /** @return Collection<int, array{id: mixed, road_name: mixed, municipality: mixed, kilometers: mixed, assigned: bool, geojson: mixed}> */
+    /** @return Collection<int, array{id: mixed, road_name: mixed, municipality: mixed, kilometers: mixed, geojson: mixed, assigned: bool}> */
     private function coverageChoices(
         ?MaintenanceProject $current = null
     ): Collection {

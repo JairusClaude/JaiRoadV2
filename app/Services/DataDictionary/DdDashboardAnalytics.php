@@ -6,9 +6,15 @@ namespace App\Services\DataDictionary;
 
 use Illuminate\Support\Facades\DB;
 
-/** Read-only summary: source data is the approved jairoads_next business schema. */
+/** Read-only summary: source data is the approved jairoads_next business schema. *
+ * @phpstan-import-type Identity from DataDictionaryIdentityResolver
+ */
 final class DdDashboardAnalytics
 {
+    /**
+     * @param  Identity  $actor
+     * @return array{scope: string, metrics: array<string, int|float|null>, trend: list<array{month: string, count: int}>, activity: array<int, array{id: int, action: string, entity: string, username: string, role: string, at: string}>, logins: array<int, array{id: int, username: string, role: string, at: string}>, trackingNote: string}
+     */
     public function summary(array $actor): array
     {
         $role = (string) $actor['role'];

@@ -140,7 +140,7 @@ Route::middleware(['auth', 'verified'])->get('/project-documents-preview', funct
         ? DB::table('engineers')->orderBy('last_name')
         : null;
     if ($engineerOptions !== null && $role === 'engineer') {
-        $engineerOptions->where('id', (int) ($accounts->resolve($user)?->engineers_id ?? 0));
+        $engineerOptions->where('id', (int) ($accounts->resolve($user)->engineers_id ?? 0));
     }
 
     $availableProjects = $projectOptions !== null
