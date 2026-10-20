@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\DataDictionary\DataDictionaryIdentityResolver;
 use App\Services\DataDictionary\DdRoleAccess;
+use App\Services\DataDictionary\RoadCoverageGeometry;
 use App\Services\Documents\PrivateSupabaseStorage;
 use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
 use Illuminate\Database\QueryException;
@@ -100,7 +101,7 @@ final class DdOperationsController extends Controller
         return $row;
     }
 
-    private function audit(array $actor, string $action, string $entity, ?int $id, string $description, array $meta = []): void
+    private function audit(array $actor, string $action, string $entity, ?int $id, string $description, array $meta = [], array $oldMeta = []): void
     {
         // Only safe identifiers/statuses; no credentials, email, geometry or private paths.
         $this->t('audit_logs')->insert([
@@ -108,7 +109,8 @@ final class DdOperationsController extends Controller
             'actor_identifier' => 'DD-UserAccount#'.$actor['account_id'],
             'action' => $action, 'entity_type' => $entity, 'entity_id' => $id,
             'description' => $description,
-            'old_value' => null, 'new_value' => $meta === [] ? null : json_encode($meta, JSON_THROW_ON_ERROR),
+            'old_value' => $oldMeta === [] ? null : json_encode($oldMeta, JSON_THROW_ON_ERROR),
+            'new_value' => $meta === [] ? null : json_encode($meta, JSON_THROW_ON_ERROR),
             'recipient_user_id' => null, 'notification_message' => null,
             'created_at' => now(),
         ]);
@@ -205,8 +207,12 @@ final class DdOperationsController extends Controller
             'created_by_engineer_id'=>[$id === null && $this->managers($actor) ? 'required' : 'prohibited','integer','min:1'],
         ]);
         $geometry = json_decode($v['geojson'], true);
-        if (! is_array($geometry) || array_is_list($geometry) || ! isset($geometry['type']) || ! is_string($geometry['type'])) {
-            throw ValidationException::withMessages(['geojson'=>'Provide a GeoJSON object with a type.']);
+        // RoadCoverage is mapped road geometry, not a marker/polygon. Preserve
+        // line-based GeoJSON wrappers supported by the existing road editor.
+        if (! RoadCoverageGeometry::valid($geometry)) {
+            throw ValidationException::withMessages([
+                'geojson'=>'Provide nonempty road-line GeoJSON with valid longitude/latitude coordinates.',
+            ]);
         }
         abort_unless($this->t('lgus')->where('id', $v['lgu_id'])->exists(), 422, 'LGU not found.');
         $this->lguAllowed($actor, (int) $v['lgu_id']);
@@ -261,7 +267,15 @@ final class DdOperationsController extends Controller
                 abort_unless($row !== null,404);
                 $this->lguAllowed($actor,(int)$row->lgu_id);
                 $this->t('road_coverages')->where('id',$id)->update($data);
-                $this->audit($actor,'UPDATE','RoadCoverage',$id,'Authorized RoadCoverage updated.');
+                // LguID belongs to the road; maintenance history derives LGU
+                // from it. Record the old/new scope whenever an authorized
+                // update changes that relationship, without exposing geometry.
+                if ((int) $row->lgu_id !== (int) $v['lgu_id']) {
+                    $this->audit($actor,'UPDATE','RoadCoverage',$id,'Authorized RoadCoverage updated.',
+                        ['lgu_id'=>(int) $v['lgu_id']], ['lgu_id'=>(int) $row->lgu_id]);
+                } else {
+                    $this->audit($actor,'UPDATE','RoadCoverage',$id,'Authorized RoadCoverage updated.');
+                }
             }
         });
         return $this->done('roads','Road coverage saved.');
