@@ -205,3 +205,55 @@ must not be represented as new-branch CI success.
 - `routes/dd-phase3.php`
 - `tests/PasswordSync/AuditLogBehaviorTest.php`
 - `tests/Unit/DdNotificationAudienceTest.php`
+
+## Publication result and recovery
+
+Implementation commit: `6923d60`.
+Regression tests, CI trigger and report commit: `873e9aff8a3a32778f2e89ffabc7c34ad2c62136`.
+A separate documentation receipt records this publication result. All are on
+`auditLog_behavior`, descended directly from the verified password-edit source.
+
+The authorized command `GIT_TERMINAL_PROMPT=0 git push -u origin auditLog_behavior`
+failed with exit 128:
+
+```text
+fatal: could not read Username for 'https://github.com': terminal prompts disabled
+```
+
+`origin` is `https://github.com/JairusClaude/JaiRoadV2.git`, without embedded credentials.
+The terminal has no configured credential helper or GitHub authentication environment,
+and GitHub CLI is not installed. `git ls-remote` succeeds: this is missing terminal
+Git authentication, not a wrong repository or a failed read connection. The connected
+GitHub integration can read the repository but does not supply credentials to terminal
+Git. Its exposed object-creation methods lack raw commit/pack import and original
+committer/author inputs; rebuilding these commits would change SHAs. That workaround
+was not used, and no placeholder branch or alternate history was published.
+
+The remote still has no `auditLog_behavior`. No Actions run for these new commits was
+executed. The branch is locally verified, not hosted-CI-verified or ready for merge.
+The source's successful Actions run is not evidence for the new commits.
+
+Remote boundary recheck after the failed push:
+
+| Branch | Unchanged remote HEAD |
+| --- | --- |
+| `feature/jairoads-map-demo_PASSWORD_EDIT` | `225a63ae0bfa81ae850a3ca14585add99ac33b7f` |
+| `feature/jairoads-map-demo` | `916a0577f87ef66059d3b3e81d29d0657dfc208e` |
+| `main` | `16a0fe7679f06c31ad15939ed578b15dda52eaea` |
+
+Recovery: restore the delivered complete Git bundle into a new directory on an
+authenticated machine, then push only the target branch. Configure authentication
+through that machine's secure GitHub credential manager or GitHub CLI browser login;
+never put a password/token in chat, source files, remote URLs or logs. GitHub write
+access must cover this repository and the included Actions workflow file.
+
+```bash
+git clone --single-branch --branch auditLog_behavior JaiRoadV2-auditLog_behavior.bundle JaiRoadV2-auditLog-behavior
+cd JaiRoadV2-auditLog-behavior
+git remote set-url origin https://github.com/JairusClaude/JaiRoadV2.git
+git push -u origin auditLog_behavior
+```
+
+The bundle includes complete ancestry and all local commits; it does not require
+rewriting the password-edit history. After publication, require a successful new
+`tests` Actions run at the pushed HEAD before declaring hosted CI verification.
