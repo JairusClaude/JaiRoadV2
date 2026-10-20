@@ -62,6 +62,7 @@ final class DenyLegacyBusinessRoutesForDd
                 'settings-preview', 'settings-preview/*',
                 'admin-dashboard', 'admin-dashboard/*',
                 'superadmin-dashboard', 'superadmin-dashboard/*',
+                'superadmin-command-center', 'superadmin-command-center/*',
                 'role-dashboard', 'role-dashboard/*',
                 'jairoads-notifications', 'jairoads-notifications/*',
             )) {
