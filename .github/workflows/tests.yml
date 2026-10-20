@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feature/jairoads-map-demo_PASSWORD_EDIT
+      - auditLog_behavior
   pull_request:
 
 permissions:
