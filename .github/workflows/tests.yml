@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - feature/jairoads-map-demo_PASSWORD_EDIT
   pull_request:
 
 permissions:
@@ -12,6 +13,34 @@ permissions:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=
+      APP_URL: http://localhost
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+      DB_URL: ''
+      DATABASE_URL: ''
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      MAIL_MAILER: array
+      QUEUE_CONNECTION: sync
+      BCRYPT_ROUNDS: '4'
+      JAIROADS_PASSWORD_TESTS: '1'
+      JAIROADS_PASSWORD_TEST_PORT: '55432'
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: jairoads_password_test
+          POSTGRES_DB: jairoads_password_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U jairoads_password_test -d jairoads_password_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
 
     steps:
       - name: Checkout code
@@ -24,15 +53,59 @@ jobs:
         with:
           php-version: '8.4'
           tools: composer:v2
+          extensions: pdo_sqlite, pdo_pgsql, mbstring, dom, xml, xmlwriter, intl, zip, bcmath
           coverage: none
 
       - name: Setup Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '22'
+          cache: npm
 
-      - name: Setup Application
-        run: composer setup
+      - name: Install locked PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Run CI Checks
-        run: composer ci:check
+      - name: Check PHP platform requirements
+        run: composer check-platform-reqs
+
+      - name: Set up isolated application configuration
+        run: |
+          # No shared secrets or general composer setup/migration script.
+          printf 'APP_ENV=testing\nDB_CONNECTION=sqlite\nDB_DATABASE=:memory:\nDB_URL=\n' > .env
+          php artisan config:clear
+
+      - name: Install locked JavaScript dependencies
+        run: npm ci
+
+      - name: Generate route bindings
+        run: php artisan wayfinder:generate --with-form
+
+      - name: Check PHP syntax
+        run: git ls-files -z '*.php' | xargs -0 -n1 php -l
+
+      - name: Check PHP formatting
+        run: composer lint:check
+
+      - name: Analyze PHP
+        run: composer types:check
+
+      - name: Check JavaScript lint
+        run: npm run lint:check
+
+      - name: Check frontend formatting
+        run: npm run format:check
+
+      - name: Check TypeScript
+        run: npm run types:check
+
+      - name: Build production assets
+        run: npm run build
+
+      - name: Verify routes
+        run: php artisan route:list --except-vendor
+
+      - name: Test Laravel on guarded in-memory SQLite
+        run: php artisan test --log-junit=storage/logs/laravel-junit.xml
+
+      - name: Test password recovery and DD authorization on disposable PostgreSQL 17
+        run: php vendor/bin/pest --configuration=phpunit-passwords.xml --log-junit=storage/logs/postgres-junit.xml
