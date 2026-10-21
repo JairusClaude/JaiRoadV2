@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\DataDictionary\DataDictionaryIdentityResolver;
 use App\Services\DataDictionary\DdRoleAccess;
+use App\Services\DataDictionary\TwiceYearlyMaintenance;
 use App\Services\DataDictionary\RoadCoverageGeometry;
 use App\Services\Documents\PrivateSupabaseStorage;
 use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
@@ -32,6 +33,7 @@ final class DdOperationsController extends Controller
 {
     private const SECTIONS = ['settings','roads','projects','updates','documents'];
 
+    /** @return array{account_id:int, role:string, engineer_id:?int} */
     private function actor(Request $request, DataDictionaryIdentityResolver $resolver): array
     {
         $user = $request->user();
@@ -83,7 +85,7 @@ final class DdOperationsController extends Controller
         return $value === null ? null : (int) $value;
     }
 
-    private function recordScope(array $actor, int $recordId, bool $write = false): object
+    private function recordScope(array $actor, int $recordId, bool $write = false): \stdClass
     {
         $row = $this->t('maintenance_records as mr')
             ->join('jairoads_next.maintenance_projects as p', 'p.id','=','mr.project_id')
@@ -162,8 +164,27 @@ final class DdOperationsController extends Controller
             ->orderByDesc('m.id');
         if ($restricted) { $media->whereIn('r.lgu_id', $activeLgus); }
 
+        // Project Details uses the complete scoped history; the general listing is paginated separately.
+        $maintenanceHistory = collect();
+        $maintenanceSchedule = null;
+        if ($section === 'projects' && $request->query('view') === 'show') {
+            $projectId = (int) $request->query('project');
+            $projectLgu = $this->projectLgu($projectId);
+            abort_unless($projectLgu !== null, 404);
+            $this->lguAllowed($actor, $projectLgu);
+            $projects->where('p.id', $projectId);
+            $roads->where('id', $this->t('maintenance_projects')->where('id', $projectId)->value('road_coverage_id'));
+            $maintenanceHistory = $this->t('maintenance_records as mr')
+                ->join('jairoads_next.engineers as e', 'e.id', '=', 'mr.managing_engineer_id')
+                ->where('mr.project_id', $projectId)->orderBy('mr.maintenance_year')->orderBy('mr.quarter')->orderBy('mr.id')
+                ->get(['mr.id', 'mr.project_id', 'mr.managing_engineer_id', 'mr.maintenance_year', 'mr.quarter',
+                    'mr.start_date', 'mr.estimated_duration_days', 'mr.complete_date', 'mr.status', 'mr.description',
+                    'e.first_name as manager_first_name', 'e.last_name as manager_last_name']);
+            $maintenanceSchedule = app(TwiceYearlyMaintenance::class)->summarize($maintenanceHistory);
+        }
         $account = $this->t('user_accounts')->where('id', $actor['account_id'])->first(['username','email','account_type','is_active']);
         return Inertia::render('dd-phase3/Operations', [
+            'maintenanceHistory' => $maintenanceHistory, 'maintenanceSchedule' => $maintenanceSchedule,
             'section'=>$section, 'role'=>$actor['role'], 'canManage'=>$this->managers($actor),
             'engineerId'=>$actor['engineer_id'], 'hasAssignment'=>count($activeLgus) > 0,
             'capabilities'=>DdRoleAccess::capabilities($actor['role'], count($activeLgus) > 0, $actor['engineer_id'] !== null),
@@ -327,46 +348,60 @@ final class DdOperationsController extends Controller
 
     public function saveRecord(Request $request, DataDictionaryIdentityResolver $resolver, ?int $id = null): RedirectResponse
     {
-        $actor=$this->actor($request,$resolver);
+        $actor = $this->actor($request, $resolver);
         $this->writer($actor);
-        $v=$request->validate([
-            'project_id'=>['required','integer','min:1'],
-            'managing_engineer_id'=>['required','integer','min:1'],
-            'maintenance_year'=>['required','integer','between:1900,2100'],
-            'quarter'=>['required',Rule::in(['Q1','Q2','Q3','Q4'])],
-            'start_date'=>['required','date'],'estimated_duration_days'=>['required','integer','min:1'],
-            'complete_date'=>['nullable','date','after_or_equal:start_date'],
-            'status'=>['required',Rule::in(['Ongoing','Completed'])],
-            'description'=>['nullable','string','max:10000'],
+        $v = $request->validate([
+            'project_id' => ['required', 'integer', 'min:1'],
+            'managing_engineer_id' => ['required', 'integer', 'min:1'],
+            'maintenance_year' => ['required', 'integer', 'between:1900,2100'],
+            'quarter' => ['required', Rule::in(['Q1', 'Q2', 'Q3', 'Q4'])],
+            'start_date' => ['required', 'date_format:Y-m-d'],
+            'estimated_duration_days' => ['required', 'integer', 'min:1'],
+            'complete_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:start_date'],
+            'status' => ['required', Rule::in(['Ongoing', 'Completed'])],
+            'description' => ['nullable', 'string', 'max:10000'],
         ]);
-        if (($v['status']==='Completed') !== !empty($v['complete_date'])) {
-            throw ValidationException::withMessages(['complete_date'=>'Completed records require a completion date; ongoing records must not have one.']);
+        if (($v['status'] === 'Completed') !== !empty($v['complete_date'])) {
+            throw ValidationException::withMessages(['complete_date' => 'Completed records require a completion date; ongoing records must not have one.']);
         }
-        $lgu=$this->projectLgu((int)$v['project_id']);
-        abort_unless($lgu!==null,404);
-        $this->lguAllowed($actor,$lgu);
-        if ($actor['role']==='Engineer' && (int)$v['managing_engineer_id'] !== (int)$actor['engineer_id']) {
-            abort(403,'Engineer cannot assign another managing Engineer.');
+        app(TwiceYearlyMaintenance::class)->validateStart((int) $v['maintenance_year'], $v['quarter'], $v['start_date']);
+        if ($actor['role'] === 'Engineer' && (int) $v['managing_engineer_id'] !== (int) $actor['engineer_id']) {
+            abort(403, 'Engineer cannot assign another managing Engineer.');
         }
-        DB::transaction(function () use ($actor,$v,$id): void {
-            abort_unless($this->t('engineers')->where('id',$v['managing_engineer_id'])->where('engineer_status','Active')->exists(),422,'Managing Engineer must be active.');
-            $data=array_intersect_key($v,array_flip(['project_id','managing_engineer_id','maintenance_year','quarter','start_date','estimated_duration_days','complete_date','status','description']));
-            $data['complete_date']=$v['complete_date']??null;
-            $data['description']=$v['description']??null;
-            $data['updated_at']=now();
-            if ($id===null) {
-                $rid=(int)$this->t('maintenance_records')->insertGetId($data+['created_by'=>$actor['account_id'],'created_at'=>now()]);
-                $this->audit($actor,'CREATE','MaintenanceRecord',$rid,'Authorized maintenance record created.');
+        DB::transaction(function () use ($actor, $v, $id): void {
+            // Serialize all period writes for a project before inspecting complete history.
+            $project = $this->t('maintenance_projects')->where('id', $v['project_id'])->lockForUpdate()->first();
+            abort_unless($project !== null, 404);
+            $lgu = $this->projectLgu((int) $project->id);
+            abort_unless($lgu !== null, 404);
+            $this->lguAllowed($actor, $lgu);
+            // Preserve the source branch's existing manager eligibility check.
+            abort_unless($this->t('engineers')->where('id', $v['managing_engineer_id'])->where('engineer_status', 'Active')->exists(), 422, 'Managing Engineer must be active.');
+            $data = array_intersect_key($v, array_flip(['project_id', 'managing_engineer_id', 'maintenance_year', 'quarter', 'start_date', 'estimated_duration_days', 'complete_date', 'status', 'description']));
+            $data['complete_date'] = $v['complete_date'] ?? null;
+            $data['description'] = $v['description'] ?? null;
+            $data['updated_at'] = now();
+            if ($id === null) {
+                $history = $this->t('maintenance_records')->where('project_id', $project->id)->get(['maintenance_year', 'quarter']);
+                app(TwiceYearlyMaintenance::class)->validateCreation($history, (int) $v['maintenance_year'], $v['quarter']);
+                $rid = (int) $this->t('maintenance_records')->insertGetId($data + ['created_by' => $actor['account_id'], 'created_at' => now()]);
+                $this->audit($actor, 'CREATE', 'MaintenanceRecord', $rid, 'Authorized maintenance record created.');
             } else {
-                $row=$this->recordScope($actor,$id,true);
-                if ((int)$row->project_id !== (int)$v['project_id'] || (int)$row->managing_engineer_id !== (int)$v['managing_engineer_id']) {
-                    throw ValidationException::withMessages(['project_id'=>'Changing project or managing Engineer requires separately approved reassignment.']);
+                $row = $this->recordScope($actor, $id, true);
+                $period = $this->t('maintenance_records')->where('id', $id)->lockForUpdate()->first(['maintenance_year', 'quarter']);
+                if ((int) $row->project_id !== (int) $v['project_id'] || (int) $row->managing_engineer_id !== (int) $v['managing_engineer_id']) {
+                    throw ValidationException::withMessages(['project_id' => 'Changing project or managing Engineer requires separately approved reassignment.']);
                 }
-                $this->t('maintenance_records')->where('id',$id)->update($data);
-                $this->audit($actor,'UPDATE','MaintenanceRecord',$id,'Authorized maintenance record updated.');
+                if ((int) $period->maintenance_year !== (int) $v['maintenance_year'] || $period->quarter !== $v['quarter']) {
+                    throw ValidationException::withMessages(['quarter' => 'The recorded maintenance year and quarter are fixed. Historical schedule corrections require separate review.']);
+                }
+                $this->t('maintenance_records')->where('id', $id)->update($data);
+                $this->audit($actor, 'UPDATE', 'MaintenanceRecord', $id, 'Authorized maintenance record updated.');
             }
         });
-        return $this->done('projects','Maintenance record saved.');
+
+        return redirect()->route('jairoads.dd-phase3.show', ['section' => 'projects', 'view' => 'show', 'project' => $v['project_id']])
+            ->with('dd_operations_status', 'Maintenance record saved.');
     }
 
     public function saveUpdate(Request $request, DataDictionaryIdentityResolver $resolver, ?int $id = null): RedirectResponse

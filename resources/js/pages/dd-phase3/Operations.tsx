@@ -1,12 +1,15 @@
-import DdRoadSections from '@/pages/dd-phase3/DdRoadSections';
-import DdDocuments from '@/pages/dd-phase3/DdDocuments';
-import DdMonthlyUpdates from '@/pages/dd-phase3/DdMonthlyUpdates';
+import { Head, router, usePage } from '@inertiajs/react';
+import { Settings2, ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
+import type { ComponentProps } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { useAppearance } from '@/hooks/use-appearance';
+import DdDocuments from '@/pages/dd-phase3/DdDocuments';
 import DdMaintenanceProjects from '@/pages/dd-phase3/DdMaintenanceProjects';
-import { Head, router, usePage } from '@inertiajs/react';
-import { useState, type ComponentProps, type FormEvent } from 'react';
-import { Activity, FileText, Settings2, ShieldCheck } from 'lucide-react';
+import DdMonthlyUpdates from '@/pages/dd-phase3/DdMonthlyUpdates';
+import DdQuarterlyMaintenance from '@/pages/dd-phase3/DdQuarterlyMaintenance';
+import type { QuarterlyProps } from '@/pages/dd-phase3/DdQuarterlyMaintenance';
+import DdRoadSections from '@/pages/dd-phase3/DdRoadSections';
 
 type Role = 'SuperAdmin' | 'Admin' | 'Engineer' | 'Viewer';
 type Row = Record<string, any>;
@@ -38,6 +41,8 @@ type Props = {
     identity: { role: Role; username: string; email: string };
     lgus: ProjectInputs['lgus'];
     engineers: Row[];
+    maintenanceHistory: QuarterlyProps['records'];
+    maintenanceSchedule: QuarterlyProps['schedule'];
     roadCreatorChoices: {
         id: number;
         lgu_id: number;
@@ -61,12 +66,12 @@ type Props = {
     status: string | null;
 };
 const box = 'rounded-2xl border border-[#e2e8f1] bg-white p-5 sm:p-6';
+const tiny =
+    'rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs hover:bg-slate-50';
 const input =
     'mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-100';
 const action =
     'rounded-lg bg-[#90451f] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#773917] disabled:opacity-60';
-const tiny =
-    'rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs hover:bg-slate-50';
 const names: Record<Props['section'], string> = {
     settings: 'Settings',
     roads: 'Road Sections',
@@ -74,37 +79,6 @@ const names: Record<Props['section'], string> = {
     updates: 'Monthly Updates',
     documents: 'Project Documents',
 };
-const seed = {
-    roads: {
-        road_name: '',
-        lgu_id: '',
-        kilometers: '',
-        pavement_type: 'Concrete',
-        state_category: 'Good',
-        geojson: '{"type":"LineString","coordinates":[]}',
-    },
-    projects: { project_title: '', road_coverage_id: '', description: '' },
-    records: {
-        project_id: '',
-        managing_engineer_id: '',
-        maintenance_year: String(new Date().getFullYear()),
-        quarter: 'Q1',
-        start_date: '',
-        estimated_duration_days: '',
-        complete_date: '',
-        status: 'Ongoing',
-        description: '',
-    },
-    updates: {
-        maintenance_id: '',
-        update_month: '',
-        progress_percentage: '0',
-        summary_of_text_reports: '',
-    },
-};
-type FormGroup = 'roads' | 'projects' | 'records' | 'updates';
-type EditFields = Record<string, string>;
-
 export default function Operations({
     section,
     role,
@@ -115,6 +89,8 @@ export default function Operations({
     identity,
     lgus,
     engineers,
+    maintenanceHistory,
+    maintenanceSchedule,
     roadCreatorChoices,
     roads,
     projects,
@@ -126,36 +102,15 @@ export default function Operations({
     mediaReady,
     status,
 }: Props) {
-    const [forms, setForms] = useState<Record<FormGroup, EditFields>>(
-        structuredClone(seed),
-    );
-    const [editing, setEditing] = useState<Record<FormGroup, number | null>>({
-        roads: null,
-        projects: null,
-        records: null,
-        updates: null,
-    });
     const [settings, setSettings] = useState({
         username: identity.username,
         current_password: '',
         password: '',
         password_confirmation: '',
     });
-    const [document, setDocument] = useState({
-        maintenance_id: '',
-        document_title: '',
-        description: '',
-        file: null as File | null,
-    });
-    const [evidence, setEvidence] = useState({
-        monthly_update_id: '',
-        file: null as File | null,
-    });
     const [busy, setBusy] = useState(false);
-    const [showRecords, setShowRecords] = useState(true);
     const [issues, setIssues] = useState<Record<string, string>>({});
     const [error, setError] = useState('');
-    const canWrite = capabilities.createProjects;
     const isSuperAdmin = role === 'SuperAdmin';
     const settingsHeroTheme = isSuperAdmin
         ? 'border border-[#111c33] bg-[#111c33] text-white'
@@ -185,7 +140,9 @@ export default function Operations({
             forceFormData: upload,
             preserveScroll: true,
             onSuccess: () => {
-                if (done) done();
+                if (done) {
+                    done();
+                }
             },
             onError: (bad) => {
                 setIssues(bad);
@@ -197,275 +154,6 @@ export default function Operations({
             onFinish: () => setBusy(false),
         });
     };
-    const change = (group: FormGroup, key: string, value: string) =>
-        setForms((old) => ({
-            ...old,
-            [group]: { ...old[group], [key]: value },
-        }));
-    const save = (group: FormGroup) => {
-        const path: Record<FormGroup, string> = {
-            roads: 'roads',
-            projects: 'projects',
-            records: 'records',
-            updates: 'updates',
-        };
-        const id = editing[group];
-        submit(
-            `/dd-phase3/ops/${path[group]}${id ? `/${id}` : ''}`,
-            forms[group],
-            id ? 'put' : 'post',
-            () => {
-                setForms((old) => ({ ...old, [group]: { ...seed[group] } }));
-                setEditing((old) => ({ ...old, [group]: null }));
-            },
-        );
-    };
-    const edit = (group: FormGroup, row: Row) => {
-        const values = Object.fromEntries(
-            Object.keys(seed[group]).map((k) => [
-                k,
-                k === 'geojson' && typeof row[k] === 'object'
-                    ? JSON.stringify(row[k])
-                    : row[k] === null || row[k] === undefined
-                      ? ''
-                      : String(row[k]),
-            ]),
-        );
-        setForms((old) => ({ ...old, [group]: values }));
-        setEditing((old) => ({ ...old, [group]: row.id }));
-        setIssues({});
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-    const remove = (kind: FormGroup, row: Row) => {
-        if (
-            !canManage ||
-            !window.confirm(
-                `Delete ${kind} #${row.id}? Dependent records prevent deletion.`,
-            )
-        )
-            return;
-        router.delete(`/dd-phase3/ops/${kind}/${row.id}`, {
-            preserveScroll: true,
-            onError: (bad) =>
-                setError(
-                    Object.values(bad)[0] ||
-                        'This item could not be deleted. It may still be in use.',
-                ),
-        });
-    };
-    const fields = (
-        group: FormGroup,
-        definitions: {
-            key: string;
-            label: string;
-            type?: string;
-            options?: { value: string; label: string }[];
-            textarea?: boolean;
-        }[],
-    ) => (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {definitions.map((f) => (
-                <label
-                    key={f.key}
-                    className="block text-xs font-semibold text-slate-600"
-                >
-                    {f.label}
-                    {f.options ? (
-                        <select
-                            className={input}
-                            value={forms[group][f.key] ?? ''}
-                            onChange={(e) =>
-                                change(group, f.key, e.target.value)
-                            }
-                        >
-                            <option value="">Choose…</option>
-                            {f.options.map((opt) => (
-                                <option value={opt.value} key={opt.value}>
-                                    {opt.label}
-                                </option>
-                            ))}
-                        </select>
-                    ) : f.textarea ? (
-                        <textarea
-                            className={input}
-                            rows={4}
-                            value={forms[group][f.key] ?? ''}
-                            onChange={(e) =>
-                                change(group, f.key, e.target.value)
-                            }
-                        />
-                    ) : (
-                        <input
-                            className={input}
-                            type={f.type ?? 'text'}
-                            value={forms[group][f.key] ?? ''}
-                            onChange={(e) =>
-                                change(group, f.key, e.target.value)
-                            }
-                        />
-                    )}
-                    {issues[f.key] && (
-                        <span className="mt-1 block text-xs text-red-700">
-                            {issues[f.key]}
-                        </span>
-                    )}
-                </label>
-            ))}
-        </div>
-    );
-    const lguOptions = lgus.map((x) => ({
-        value: String(x.id),
-        label: x.municipality_name,
-    }));
-    const roadOptions = roads.map((x) => ({
-        value: String(x.id),
-        label: `${x.road_name} · ${x.pavement_type}`,
-    }));
-    const projectOptions = projects.map((x) => ({
-        value: String(x.id),
-        label: x.project_title,
-    }));
-    const writableRecords = records.filter(
-        (x) =>
-            canManage ||
-            (canWrite && Number(x.managing_engineer_id) === Number(engineerId)),
-    );
-    const recordOptions = writableRecords.map((x) => ({
-        value: String(x.id),
-        label: `Record #${x.id} · ${x.maintenance_year} ${x.quarter}`,
-    }));
-    const updateOptions = updates.map((x) => ({
-        value: String(x.id),
-        label: `Update #${x.id} · ${x.update_month}`,
-    }));
-    const engineerOptions = engineers.map((x) => ({
-        value: String(x.id),
-        label: `${x.first_name} ${x.last_name}`,
-    }));
-    const formCard = (
-        group: FormGroup,
-        title: string,
-        definitions: Parameters<typeof fields>[1],
-        hint?: string,
-        allowed = canWrite,
-    ) =>
-        !allowed ? null : (
-            <section className={box}>
-                <h2 className="text-lg font-bold">
-                    {editing[group] ? `Edit ${title}` : `Create ${title}`}
-                </h2>
-                {hint && <p className="my-2 text-xs text-slate-500">{hint}</p>}
-                <form
-                    className="mt-4 space-y-4"
-                    onSubmit={(e: FormEvent) => {
-                        e.preventDefault();
-                        save(group);
-                    }}
-                >
-                    {fields(group, definitions)}
-                    <div className="flex gap-2">
-                        <button className={action} disabled={busy}>
-                            {editing[group]
-                                ? 'Save changes'
-                                : `Create ${title.toLowerCase()}`}
-                        </button>
-                        {editing[group] && (
-                            <button
-                                type="button"
-                                className={tiny}
-                                onClick={() => {
-                                    setEditing((old) => ({
-                                        ...old,
-                                        [group]: null,
-                                    }));
-                                    setForms((old) => ({
-                                        ...old,
-                                        [group]: { ...seed[group] },
-                                    }));
-                                }}
-                            >
-                                Cancel edit
-                            </button>
-                        )}
-                    </div>
-                </form>
-            </section>
-        );
-    const listing = (
-        heading: string,
-        group: FormGroup,
-        rows: Row[],
-        columns: { key: string; label: string }[],
-        editable = canWrite,
-    ) => (
-        <section className={box}>
-            <h2 className="mb-3 text-lg font-bold">{heading}</h2>
-            <div className="overflow-auto">
-                <table className="w-full min-w-[650px] text-left text-sm">
-                    <thead>
-                        <tr className="border-b text-xs text-slate-500">
-                            {columns.map((c) => (
-                                <th key={c.key} className="px-2 py-3">
-                                    {c.label}
-                                </th>
-                            ))}
-                            {editable && <th>Actions</th>}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rows.map((row) => (
-                            <tr key={row.id} className="border-b last:border-0">
-                                {columns.map((col) => (
-                                    <td key={col.key} className="px-2 py-3">
-                                        {String(row[col.key] ?? '—')}
-                                    </td>
-                                ))}
-                                {editable && (
-                                    <td>
-                                        {(canManage ||
-                                            group !== 'records' ||
-                                            Number(row.managing_engineer_id) ===
-                                                Number(engineerId)) && (
-                                            <div className="flex gap-2">
-                                                <button
-                                                    type="button"
-                                                    className={tiny}
-                                                    onClick={() =>
-                                                        edit(group, row)
-                                                    }
-                                                >
-                                                    Edit
-                                                </button>
-                                                {canManage && (
-                                                    <button
-                                                        type="button"
-                                                        className={`${tiny} text-red-700`}
-                                                        onClick={() =>
-                                                            remove(group, row)
-                                                        }
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                )}
-                                            </div>
-                                        )}
-                                    </td>
-                                )}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-                {rows.length === 0 && (
-                    <p className="py-5 text-sm text-slate-500">
-                        No records yet.
-                    </p>
-                )}
-            </div>
-        </section>
-    );
-    // Project UI is the original JaiROADS directory and searchable map editor.
-    // Retain the separate DD MaintenanceRecord forms/list on the directory page;
-    // restoring the project UI must not silently remove record management.
     const page = usePage();
     const notice = (
         <>
@@ -497,8 +185,15 @@ export default function Operations({
         quarter: x.quarter,
         status: x.status,
     }));
+    const writableRecords = records.filter(
+        (record) =>
+            canManage ||
+            (capabilities.createUpdates &&
+                Number(record.managing_engineer_id) === Number(engineerId)),
+    );
     const writableRecordIds = writableRecords.map((x) => Number(x.id));
-    if (section === 'roads')
+
+    if (section === 'roads') {
         return (
             <>
                 <Head title="Road Sections" />
@@ -512,6 +207,7 @@ export default function Operations({
                         const project = projects.find(
                             (p) => Number(p.road_coverage_id) === Number(x.id),
                         );
+
                         return {
                             id: Number(x.id),
                             roadName: x.road_name,
@@ -541,7 +237,9 @@ export default function Operations({
                 />
             </>
         );
-    if (section === 'updates')
+    }
+
+    if (section === 'updates') {
         return (
             <>
                 <Head title="Monthly Updates" />
@@ -577,7 +275,9 @@ export default function Operations({
                 />
             </>
         );
-    if (section === 'documents')
+    }
+
+    if (section === 'documents') {
         return (
             <>
                 <Head title="Project Documents" />
@@ -599,6 +299,7 @@ export default function Operations({
                 />
             </>
         );
+    }
 
     const projectView =
         new URLSearchParams(page.url.split('?')[1] ?? '').get('view') ??
@@ -609,7 +310,8 @@ export default function Operations({
     const selectedProject = projects.find(
         (project) => String(project.id) === selectedProjectId,
     );
-    if (section === 'projects')
+
+    if (section === 'projects') {
         return (
             <>
                 {notice}
@@ -620,151 +322,31 @@ export default function Operations({
                     roads={roads}
                     lgus={lgus}
                     projects={projects}
-                    records={records}
+                    records={
+                        projectView === 'show' ? maintenanceHistory : records
+                    }
                 />
                 {projectView === 'show' && selectedProject && (
-                    <ProjectWorkspace>
-                        <div className="jr-form-section space-y-6">
-                            <section>
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setShowRecords((value) => !value)
-                                    }
-                                    aria-expanded={
-                                        showRecords || editing.records !== null
-                                    }
-                                    className="py-3 text-lg font-semibold"
-                                >
-                                    Quarterly maintenance records
-                                </button>
-                                <p className="mb-3 text-sm text-slate-500">
-                                    Each maintenance project may have separate
-                                    records for different years and quarters.
-                                    Set the start date and estimated duration
-                                    for each record; a project does not need
-                                    another municipality or a separate
-                                    project-level date field.
-                                </p>
-                                {(showRecords || editing.records !== null) && (
-                                    <div className="space-y-5">
-                                        {formCard(
-                                            'records',
-                                            'Maintenance record',
-                                            [
-                                                {
-                                                    key: 'project_id',
-                                                    label: 'Project',
-                                                    options:
-                                                        projectOptions.filter(
-                                                            (option) =>
-                                                                String(
-                                                                    option.value,
-                                                                ) ===
-                                                                String(
-                                                                    selectedProject.id,
-                                                                ),
-                                                        ),
-                                                },
-                                                {
-                                                    key: 'managing_engineer_id',
-                                                    label: 'Managing Engineer',
-                                                    options: engineerOptions,
-                                                },
-                                                {
-                                                    key: 'maintenance_year',
-                                                    label: 'Year',
-                                                    type: 'number',
-                                                },
-                                                {
-                                                    key: 'quarter',
-                                                    label: 'Quarter',
-                                                    options: [
-                                                        'Q1',
-                                                        'Q2',
-                                                        'Q3',
-                                                        'Q4',
-                                                    ].map((v) => ({
-                                                        value: v,
-                                                        label: v,
-                                                    })),
-                                                },
-                                                {
-                                                    key: 'start_date',
-                                                    label: 'Start date',
-                                                    type: 'date',
-                                                },
-                                                {
-                                                    key: 'estimated_duration_days',
-                                                    label: 'Estimated duration (days)',
-                                                    type: 'number',
-                                                },
-                                                {
-                                                    key: 'status',
-                                                    label: 'Status',
-                                                    options: [
-                                                        'Ongoing',
-                                                        'Completed',
-                                                    ].map((v) => ({
-                                                        value: v,
-                                                        label: v,
-                                                    })),
-                                                },
-                                                {
-                                                    key: 'complete_date',
-                                                    label: 'Completion date',
-                                                    type: 'date',
-                                                },
-                                                {
-                                                    key: 'description',
-                                                    label: 'Description',
-                                                    textarea: true,
-                                                },
-                                            ],
-                                            'The project and managing engineer stay fixed after a maintenance record is created.',
-                                        )}
-                                        {listing(
-                                            'Maintenance records',
-                                            'records',
-                                            records.filter(
-                                                (record) =>
-                                                    String(
-                                                        record.project_id,
-                                                    ) ===
-                                                    String(selectedProject.id),
-                                            ),
-                                            [
-                                                {
-                                                    key: 'project_id',
-                                                    label: 'Project ID',
-                                                },
-                                                {
-                                                    key: 'managing_engineer_id',
-                                                    label: 'Manager',
-                                                },
-                                                {
-                                                    key: 'maintenance_year',
-                                                    label: 'Year',
-                                                },
-                                                {
-                                                    key: 'quarter',
-                                                    label: 'Quarter',
-                                                },
-                                                {
-                                                    key: 'status',
-                                                    label: 'Status',
-                                                },
-                                            ],
-                                            canManage || role === 'Engineer',
-                                        )}
-                                    </div>
-                                )}
-                            </section>
-                        </div>
-                    </ProjectWorkspace>
+                    <DdQuarterlyMaintenance
+                        key={selectedProject.id}
+                        project={selectedProject}
+                        records={maintenanceHistory}
+                        schedule={maintenanceSchedule}
+                        managers={engineers.map((engineer) => ({
+                            id: Number(engineer.id),
+                            first_name: String(engineer.first_name),
+                            last_name: String(engineer.last_name),
+                        }))}
+                        canCreate={capabilities.createProjects}
+                        canManage={canManage}
+                        engineerId={engineerId}
+                        canEdit={role === 'Engineer' && hasAssignment}
+                    />
                 )}
             </>
         );
+    }
+
     return (
         <ProjectWorkspace>
             <Head title={`JaiROADS — ${names[section]}`} />
