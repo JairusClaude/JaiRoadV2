@@ -1,0 +1,86 @@
+name: Twice-yearly maintenance
+
+on:
+  push:
+    branches: ['QuarterlyFeature_Update']
+
+permissions:
+  contents: read
+
+jobs:
+  quarterly-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: jairoads_scratch_quarterly
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d jairoads_scratch_quarterly"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: testing
+      DB_DATABASE: jairoads_scratch_quarterly
+      DB_PORT: '5432'
+      DB_USERNAME: postgres
+      DB_PASSWORD: disposable-ci-only
+      JAIROADS_SCRATCH_APPROVAL: DISPOSABLE_LOCAL_ONLY
+      PAO_DISABLE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, mbstring
+          tools: composer:v2
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist
+      - name: Guarded PostgreSQL 17 regression suite
+        run: php vendor/bin/pest --configuration=phpunit.quarterly.xml
+      - name: Scheduling service and test formatting
+        run: vendor/bin/pint --test app/Services/DataDictionary/TwiceYearlyMaintenance.php tests/Quarterly tests/Browser/prepare-quarterly.php
+      - name: Scheduling service static analysis
+        run: vendor/bin/phpstan analyse app/Services/DataDictionary/TwiceYearlyMaintenance.php --no-progress
+      - name: Controller syntax
+        run: php -l app/Http/Controllers/DataDictionary/DdOperationsController.php
+
+  frontend:
+    runs-on: ubuntu-latest
+    env:
+      APP_ENV: testing
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+      DB_URL: ''
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      PAO_DISABLE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+          coverage: none
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies without migrations or seeders
+        run: |
+          composer install --no-interaction --prefer-dist
+          npm ci
+          touch .env
+          php artisan wayfinder:generate --with-form
+      - run: npm run build
+      - run: npm run types:check
+      - name: Scheduling UI lint
+        run: npx eslint resources/js/pages/dd-phase3/Operations.tsx resources/js/pages/dd-phase3/DdQuarterlyMaintenance.tsx tests/Browser/quarterly.mjs
+      - name: Scheduling UI formatting
+        run: npx prettier --check resources/js/pages/dd-phase3/Operations.tsx resources/js/pages/dd-phase3/DdQuarterlyMaintenance.tsx tests/Browser/quarterly.mjs
