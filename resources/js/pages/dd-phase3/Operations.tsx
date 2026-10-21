@@ -426,7 +426,7 @@ export default function Operations({
                                         <div
                                             className={`text-xs tracking-wide uppercase ${isSuperAdmin ? 'text-slate-400' : 'text-slate-500'}`}
                                         >
-                                            Role
+                                            Account Type
                                         </div>
                                         <div className="mt-2 text-base font-semibold">
                                             {identity.role}
@@ -472,14 +472,14 @@ export default function Operations({
                                     className={`mt-4 space-y-3 text-sm ${isSuperAdmin ? 'text-slate-200' : 'text-slate-700'}`}
                                 >
                                     <li>
-                                        • Your account role is verified by the
+                                        • Your account type is verified by the
                                         application on each request.
                                     </li>
                                     <li>
                                         •{' '}
                                         {canManage
                                             ? 'Approved credential changes require the current password.'
-                                            : 'Account information is read-only for this role.'}
+                                            : 'Account information is read-only for this account type.'}
                                     </li>
                                     <li>
                                         •{' '}
@@ -643,8 +643,8 @@ export default function Operations({
                                           : 'My account overview'}
                                 </h3>
                                 <p className="mt-1 text-sm text-slate-500">
-                                    Your verified role and applicable account
-                                    protections.
+                                    Your verified Account Type and applicable
+                                    account protections.
                                 </p>
                                 <div className="mt-5 grid gap-3">
                                     <div className="rounded-2xl border border-slate-200 bg-white p-4">
@@ -656,7 +656,7 @@ export default function Operations({
                                             {identity.username}
                                         </div>
                                         <p className="mt-1 text-xs text-slate-500">
-                                            Active DD role: {identity.role}
+                                            Account Type: {identity.role}
                                         </p>
                                     </div>
                                     <div className="rounded-2xl border border-slate-200 bg-white p-4">

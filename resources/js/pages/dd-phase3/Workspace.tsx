@@ -1,11 +1,4 @@
-import {
-    DdDashboardAnalytics,
-    type DdDashboardSummary,
-} from '@/components/dd-dashboard-analytics';
-import DdLguDirectory from '@/pages/dd-phase3/DdLguDirectory';
-import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { Head, Link, router } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
 import {
     BadgeCheck,
     Activity,
@@ -21,6 +14,11 @@ import {
     Users,
     Wrench,
 } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { DdDashboardAnalytics } from '@/components/dd-dashboard-analytics';
+import type { DdDashboardSummary } from '@/components/dd-dashboard-analytics';
+import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
+import DdLguDirectory from '@/pages/dd-phase3/DdLguDirectory';
 
 type Role = 'SuperAdmin' | 'Admin' | 'Engineer' | 'Viewer';
 type Account = {
@@ -114,6 +112,7 @@ function RoleBadge({ role }: { role: Role }) {
         Engineer: 'border-sky-200 bg-sky-50 text-sky-800',
         Viewer: 'border-slate-200 bg-slate-50 text-slate-700',
     };
+
     return (
         <span
             className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[role]}`}
@@ -124,7 +123,10 @@ function RoleBadge({ role }: { role: Role }) {
 }
 
 function FieldError({ message }: { message?: string }) {
-    if (!message) return null;
+    if (!message) {
+        return null;
+    }
+
     return <span className="mt-1 block text-xs text-red-700">{message}</span>;
 }
 
@@ -200,6 +202,7 @@ export default function DdPhase3Workspace({
                 map.set(item.engineer_id, (map.get(item.engineer_id) ?? 0) + 1);
             }
         });
+
         return map;
     }, [assignments]);
 
@@ -250,7 +253,8 @@ export default function DdPhase3Workspace({
         ));
 
     const isManager = canManage;
-    if (section === 'lgus')
+
+    if (section === 'lgus') {
         return (
             <>
                 <Head title="LGU" />
@@ -286,6 +290,7 @@ export default function DdPhase3Workspace({
                 />
             </>
         );
+    }
 
     return (
         <ProjectWorkspace>
@@ -674,8 +679,8 @@ export default function DdPhase3Workspace({
                             <div>
                                 <h2 className={sectionTitle}>User accounts</h2>
                                 <p className={muted}>
-                                    Provisioned business identities with role,
-                                    linked engineer, and active status.
+                                    Provisioned business identities with Account
+                                    Type, linked Engineer, and active status.
                                 </p>
                             </div>
                             <div className="flex flex-wrap gap-2 text-xs font-semibold">
@@ -695,7 +700,7 @@ export default function DdPhase3Workspace({
                                             Account
                                         </th>
                                         <th className="px-4 py-3 font-semibold">
-                                            Role
+                                            Account Type
                                         </th>
                                         <th className="px-4 py-3 font-semibold">
                                             Linked engineer
@@ -710,6 +715,7 @@ export default function DdPhase3Workspace({
                                         const linked = engineers.find(
                                             (item) => item.id === a.engineer_id,
                                         );
+
                                         return (
                                             <tr key={a.id}>
                                                 <td className="px-4 py-3">
@@ -771,7 +777,9 @@ export default function DdPhase3Workspace({
                                         <p className={muted}>
                                             Create an active Engineer first,
                                             then link that Engineer to an
-                                            account if needed.
+                                            account if needed. Rank describes
+                                            professional standing; Account Type
+                                            controls permissions.
                                         </p>
                                     </div>
                                     <div className="rounded-2xl bg-amber-50 p-3 text-amber-700">
@@ -946,7 +954,7 @@ export default function DdPhase3Workspace({
                                     <p className={muted}>
                                         Provision Admin, Engineer, or Viewer
                                         accounts. Engineer linking is optional
-                                        for the first two roles.
+                                        for Admin and Engineer account types.
                                     </p>
                                 </div>
                                 <div className="rounded-2xl bg-violet-50 p-3 text-violet-700">
@@ -1038,7 +1046,7 @@ export default function DdPhase3Workspace({
                                     ['name', 'Display name', 'text'],
                                 ])}
                                 <label className="text-xs font-semibold text-slate-600">
-                                    Role
+                                    Account Type
                                     <select
                                         className={`${inp} mt-1`}
                                         value={account.account_type}

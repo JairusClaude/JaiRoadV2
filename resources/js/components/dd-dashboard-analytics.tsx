@@ -5,7 +5,6 @@ import {
     ClipboardCheck,
     FileText,
     FolderKanban,
-    LogIn,
     MapPinned,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -38,6 +37,7 @@ export type DdDashboardSummary = {
 
 const prettyDate = (value: string) => {
     const date = new Date(value);
+
     return Number.isNaN(date.getTime())
         ? value
         : new Intl.DateTimeFormat(undefined, {
@@ -84,6 +84,7 @@ export function DdDashboardAnalytics({
         { label: 'Road coverages', value: data.metrics.roads, icon: MapPinned },
     ];
     const items = tab === 'activity' ? data.activity : data.logins;
+
     return (
         <section aria-label={`${data.scope} analytics`} className="space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -207,7 +208,7 @@ export function DdDashboardAnalytics({
                         {data.scope === 'My assigned work' ||
                         data.scope === 'Read-only inventory'
                             ? 'Personal activity notices are available from the header bell. Full audit logs remain restricted to administrators.'
-                            : 'Role-filtered events. Only users within your permitted audit scope appear.'}
+                            : 'Events filtered by Account Type. Only users within your permitted audit scope appear.'}
                     </p>
                     {items.length === 0 ? (
                         <div className="mt-5 rounded-xl bg-slate-50 px-4 py-6 text-sm text-slate-500">

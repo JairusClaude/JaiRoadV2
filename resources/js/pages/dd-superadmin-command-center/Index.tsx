@@ -1,7 +1,3 @@
-import {
-    DdDashboardAnalytics,
-    type DdDashboardSummary,
-} from '@/components/dd-dashboard-analytics';
 import { Head, Link } from '@inertiajs/react';
 import {
     Activity,
@@ -12,6 +8,8 @@ import {
     ShieldCheck,
     Users,
 } from 'lucide-react';
+import { DdDashboardAnalytics } from '@/components/dd-dashboard-analytics';
+import type { DdDashboardSummary } from '@/components/dd-dashboard-analytics';
 
 type Counts = {
     accounts: number;
@@ -106,6 +104,7 @@ export default function DdSuperAdminCommandCenter({
             icon: Activity,
         },
     ];
+
     return (
         <>
             <Head title="JaiROADS SuperAdmin Command Center" />
@@ -208,9 +207,11 @@ export default function DdSuperAdminCommandCenter({
                         </div>
                     </section>
                     <section className={`${panel} p-5 sm:p-6`}>
-                        <h2 className="text-lg font-bold">Role distribution</h2>
+                        <h2 className="text-lg font-bold">
+                            Account Type distribution
+                        </h2>
                         <p className="mt-1 text-sm text-slate-500">
-                            Accounts by role
+                            Accounts by Account Type
                         </p>
                         <div className="mt-5 space-y-4">
                             {roles.map(({ name, value }) => (
@@ -264,7 +265,7 @@ export default function DdSuperAdminCommandCenter({
                                 Privileged accounts
                             </h2>
                             <p className="mt-1 text-sm text-slate-500">
-                                Account roles and current status
+                                Account Types and current status
                             </p>
                         </div>
                         <div className="overflow-x-auto">
@@ -275,7 +276,7 @@ export default function DdSuperAdminCommandCenter({
                                             Account
                                         </th>
                                         <th className="px-3 py-3 font-semibold">
-                                            Role
+                                            Account Type
                                         </th>
                                         <th className="px-3 py-3 font-semibold">
                                             Engineer
