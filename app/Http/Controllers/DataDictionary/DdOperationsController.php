@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\DataDictionary\DataDictionaryIdentityResolver;
 use App\Services\DataDictionary\DdRoleAccess;
+use App\Services\DataDictionary\ManagingEngineerEligibility;
 use App\Services\DataDictionary\TwiceYearlyMaintenance;
 use App\Services\DataDictionary\RoadCoverageGeometry;
 use App\Services\Documents\PrivateSupabaseStorage;
@@ -167,6 +168,7 @@ final class DdOperationsController extends Controller
         // Project Details uses the complete scoped history; the general listing is paginated separately.
         $maintenanceHistory = collect();
         $maintenanceSchedule = null;
+        $managerChoices = collect();
         if ($section === 'projects' && $request->query('view') === 'show') {
             $projectId = (int) $request->query('project');
             $projectLgu = $this->projectLgu($projectId);
@@ -181,9 +183,13 @@ final class DdOperationsController extends Controller
                     'mr.start_date', 'mr.estimated_duration_days', 'mr.complete_date', 'mr.status', 'mr.description',
                     'e.first_name as manager_first_name', 'e.last_name as manager_last_name']);
             $maintenanceSchedule = app(TwiceYearlyMaintenance::class)->summarize($maintenanceHistory);
+            if (DdRoleAccess::canWriteOperations($actor['role'])) {
+                $managerChoices = app(ManagingEngineerEligibility::class)->choices($actor, $projectLgu)->get();
+            }
         }
         $account = $this->t('user_accounts')->where('id', $actor['account_id'])->first(['username','email','account_type','is_active']);
         return Inertia::render('dd-phase3/Operations', [
+            'managerChoices' => $managerChoices,
             'maintenanceHistory' => $maintenanceHistory, 'maintenanceSchedule' => $maintenanceSchedule,
             'section'=>$section, 'role'=>$actor['role'], 'canManage'=>$this->managers($actor),
             'engineerId'=>$actor['engineer_id'], 'hasAssignment'=>count($activeLgus) > 0,
@@ -315,6 +321,7 @@ final class DdOperationsController extends Controller
             $road = $this->t('road_coverages')->where('id',$v['road_coverage_id'])->lockForUpdate()->first(['lgu_id']);
             abort_unless($road !== null,404);
             $this->lguAllowed($actor,(int)$road->lgu_id);
+            app(ManagingEngineerEligibility::class)->assertProjectActor($actor, (int) $road->lgu_id);
             $assigned = $this->t('maintenance_projects')->where('road_coverage_id', $v['road_coverage_id']);
             if ($id !== null) { $assigned->where('id', '!=', $id); }
             if ($assigned->exists()) {
@@ -375,13 +382,13 @@ final class DdOperationsController extends Controller
             $lgu = $this->projectLgu((int) $project->id);
             abort_unless($lgu !== null, 404);
             $this->lguAllowed($actor, $lgu);
-            // Preserve the source branch's existing manager eligibility check.
             abort_unless($this->t('engineers')->where('id', $v['managing_engineer_id'])->where('engineer_status', 'Active')->exists(), 422, 'Managing Engineer must be active.');
             $data = array_intersect_key($v, array_flip(['project_id', 'managing_engineer_id', 'maintenance_year', 'quarter', 'start_date', 'estimated_duration_days', 'complete_date', 'status', 'description']));
             $data['complete_date'] = $v['complete_date'] ?? null;
             $data['description'] = $v['description'] ?? null;
             $data['updated_at'] = now();
             if ($id === null) {
+                app(ManagingEngineerEligibility::class)->validate($actor, (int) $v['managing_engineer_id'], $lgu);
                 $history = $this->t('maintenance_records')->where('project_id', $project->id)->get(['maintenance_year', 'quarter']);
                 app(TwiceYearlyMaintenance::class)->validateCreation($history, (int) $v['maintenance_year'], $v['quarter']);
                 $rid = (int) $this->t('maintenance_records')->insertGetId($data + ['created_by' => $actor['account_id'], 'created_at' => now()]);

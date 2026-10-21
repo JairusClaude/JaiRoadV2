@@ -1,6 +1,5 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { useMemo } from 'react';
-import { ArrowLeft, Pencil, Plus } from 'lucide-react';
+import { ArrowLeft, Pencil } from 'lucide-react';
 import { ProjectForm } from '@/components/maintenance-projects/project-form';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { RoadCoverageMap } from '@/components/maintenance-projects/road-coverage-map';
@@ -15,7 +14,6 @@ import type {
     Pagination,
 } from '@/types/maintenance-projects';
 
-type Role = 'SuperAdmin' | 'Admin' | 'Engineer' | 'Viewer';
 type Coverage = {
     id: number;
     road_name: string;
@@ -41,8 +39,8 @@ type Record = {
     status: string;
 };
 type Props = {
-    role: Role;
-    hasAssignment: boolean;
+    canCreate: boolean;
+    canUpdate: boolean;
     canManage: boolean;
     roads: Coverage[];
     lgus: Lgu[];
@@ -55,8 +53,8 @@ const HOME = '/dd-phase3/projects';
 // Uses the original JaiROADS directory and project form, not a generic DD form.
 // Only the URLs and source records change. No legacy business endpoint is called.
 export default function DdMaintenanceProjects({
-    role,
-    hasAssignment,
+    canCreate,
+    canUpdate,
     canManage,
     roads,
     lgus,
@@ -68,8 +66,6 @@ export default function DdMaintenanceProjects({
     const view = qs.get('view') ?? 'directory';
     const id = Number(qs.get('project') ?? 0);
     const selected = projects.find((p) => p.id === id);
-    const canWrite =
-        role !== 'Viewer' && (role !== 'Engineer' || hasAssignment);
     const lguNames = new Map(lgus.map((l) => [l.id, l.municipality_name]));
     const coverages: CoverageChoice[] = roads.map((r) => ({
         id: Number(r.id),
@@ -90,6 +86,7 @@ export default function DdMaintenanceProjects({
     );
     const summaries: ProjectSummary[] = projects.map((p) => {
         const road = coverages.find((c) => c.id === Number(p.road_coverage_id));
+
         return {
             id: Number(p.id),
             project_title: p.project_title,
@@ -101,7 +98,7 @@ export default function DdMaintenanceProjects({
             created_at: null,
             updated_at: null,
             maintenance_records_count: countByProject.get(Number(p.id)) ?? 0,
-            can_edit: canWrite,
+            can_edit: canUpdate,
             can_delete: canManage,
         };
     });
@@ -112,33 +109,20 @@ export default function DdMaintenanceProjects({
     };
     const currentPage = Math.max(1, Number(qs.get('page') || 1) || 1);
     const perPage = 10;
-    const filtered = useMemo(
-        () =>
-            summaries
-                .filter(
-                    (p) =>
-                        (!filters.search ||
-                            p.project_title
-                                .toLocaleLowerCase()
-                                .includes(
-                                    filters.search.toLocaleLowerCase(),
-                                )) &&
-                        (!filters.municipality ||
-                            String(
-                                projects.find((r) => r.id === p.id)?.lgu_id,
-                            ) === String(filters.municipality)),
-                )
-                .sort((a, b) =>
-                    filters.sort === 'oldest' ? a.id - b.id : b.id - a.id,
-                ),
-        [
-            summaries,
-            filters.search,
-            filters.municipality,
-            filters.sort,
-            projects,
-        ],
-    );
+    const filtered = summaries
+        .filter(
+            (p) =>
+                (!filters.search ||
+                    p.project_title
+                        .toLocaleLowerCase()
+                        .includes(filters.search.toLocaleLowerCase())) &&
+                (!filters.municipality ||
+                    String(projects.find((r) => r.id === p.id)?.lgu_id) ===
+                        String(filters.municipality)),
+        )
+        .sort((a, b) =>
+            filters.sort === 'oldest' ? a.id - b.id : b.id - a.id,
+        );
     const lastPage = Math.max(1, Math.ceil(filtered.length / perPage));
     const pageNum = Math.min(currentPage, lastPage);
     const from = filtered.length ? (pageNum - 1) * perPage + 1 : null;
@@ -158,20 +142,27 @@ export default function DdMaintenanceProjects({
         router.visit(url, { preserveScroll: false });
     const cancel = () => navigate(HOME);
     const remove = (rows: ProjectSummary[]) => {
-        if (!canManage || rows.length !== 1) return;
+        if (!canManage || rows.length !== 1) {
+            return;
+        }
+
         const project = rows[0];
+
         if (
             !window.confirm(
                 `Delete ${project.project_title}? Related records prevent deletion.`,
             )
-        )
+        ) {
             return;
+        }
+
         router.delete(`/dd-phase3/ops/projects/${project.id}`, {
             preserveScroll: true,
         });
     };
     const title = 'Maintenance Projects';
-    if (view === 'create' && canWrite)
+
+    if (view === 'create' && canCreate) {
         return (
             <>
                 <Head title="Add Project" />
@@ -182,7 +173,9 @@ export default function DdMaintenanceProjects({
                 />
             </>
         );
-    if (view === 'edit' && selected && canWrite)
+    }
+
+    if (view === 'edit' && selected && canUpdate) {
         return (
             <>
                 <Head title="Edit Project" />
@@ -199,12 +192,15 @@ export default function DdMaintenanceProjects({
                 />
             </>
         );
+    }
+
     if (view === 'show' && selected) {
         const summary = summaries.find((p) => p.id === selected.id)!;
         const chosen = coverages.find(
             (c) => c.id === selected.road_coverage_id,
         );
         const maintenance = records.filter((r) => r.project_id === selected.id);
+
         return (
             <>
                 <Head title={selected.project_title} />
@@ -220,7 +216,7 @@ export default function DdMaintenanceProjects({
                                 maintenance history
                             </p>
                         </div>
-                        {canWrite && (
+                        {canUpdate && (
                             <Button
                                 variant="outline"
                                 type="button"
@@ -296,6 +292,7 @@ export default function DdMaintenanceProjects({
             </>
         );
     }
+
     return (
         <>
             <Head title={title} />
@@ -305,15 +302,21 @@ export default function DdMaintenanceProjects({
                 municipalities={lgus}
                 filters={filters}
                 integration={integration}
-                canCreate={canWrite}
+                canCreate={canCreate}
                 canBulkDelete={false}
                 onNavigate={navigate}
                 onDelete={remove}
                 onFilters={(next) => {
                     const params = new URLSearchParams();
-                    if (next.search) params.set('search', next.search);
-                    if (next.municipality)
+
+                    if (next.search) {
+                        params.set('search', next.search);
+                    }
+
+                    if (next.municipality) {
                         params.set('municipality', String(next.municipality));
+                    }
+
                     params.set('sort', next.sort);
                     navigate(`${HOME}?${params.toString()}`);
                 }}
@@ -347,12 +350,15 @@ function DdProjectEditor({
                 : c.assigned,
     }));
     const onSave = () => {
-        if (project)
+        if (project) {
             form.put(`/dd-phase3/ops/projects/${project.id}`, {
                 preserveScroll: true,
             });
-        else form.post('/dd-phase3/ops/projects', { preserveScroll: true });
+        } else {
+            form.post('/dd-phase3/ops/projects', { preserveScroll: true });
+        }
     };
+
     return (
         <ProjectForm
             mode={project ? 'edit' : 'create'}

@@ -43,6 +43,7 @@ type Props = {
     engineers: Row[];
     maintenanceHistory: QuarterlyProps['records'];
     maintenanceSchedule: QuarterlyProps['schedule'];
+    managerChoices: QuarterlyProps['managers'];
     roadCreatorChoices: {
         id: number;
         lgu_id: number;
@@ -88,9 +89,9 @@ export default function Operations({
     hasAssignment,
     identity,
     lgus,
-    engineers,
     maintenanceHistory,
     maintenanceSchedule,
+    managerChoices,
     roadCreatorChoices,
     roads,
     projects,
@@ -316,9 +317,9 @@ export default function Operations({
             <>
                 {notice}
                 <DdMaintenanceProjects
-                    role={role}
-                    canManage={canManage}
-                    hasAssignment={hasAssignment}
+                    canCreate={capabilities.createProjects}
+                    canUpdate={capabilities.updateProjects}
+                    canManage={capabilities.deleteProjects}
                     roads={roads}
                     lgus={lgus}
                     projects={projects}
@@ -332,11 +333,7 @@ export default function Operations({
                         project={selectedProject}
                         records={maintenanceHistory}
                         schedule={maintenanceSchedule}
-                        managers={engineers.map((engineer) => ({
-                            id: Number(engineer.id),
-                            first_name: String(engineer.first_name),
-                            last_name: String(engineer.last_name),
-                        }))}
+                        managers={managerChoices}
                         canCreate={capabilities.createProjects}
                         canManage={canManage}
                         engineerId={engineerId}
