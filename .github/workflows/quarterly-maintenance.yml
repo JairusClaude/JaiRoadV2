@@ -40,8 +40,10 @@ jobs:
           tools: composer:v2
           coverage: none
       - run: composer install --no-interaction --prefer-dist
+      - name: Prepare empty local test environment file
+        run: touch .env
       - name: Guarded PostgreSQL 17 regression suite
-        run: php vendor/bin/pest --configuration=phpunit.quarterly.xml
+        run: php vendor/bin/pest --configuration=phpunit.quarterly.xml --display-warnings --fail-on-warning
       - name: Scheduling service and test formatting
         run: vendor/bin/pint --test app/Services/DataDictionary/TwiceYearlyMaintenance.php app/Services/DataDictionary/ManagingEngineerEligibility.php tests/Quarterly tests/Browser/prepare-quarterly.php tests/Browser/prepare-assignments.php tests/Browser/prepare-account-terminology.php
       - name: Scheduling service static analysis
