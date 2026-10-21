@@ -1,8 +1,8 @@
-name: Twice-yearly maintenance
+name: Quarterly maintenance and assignments
 
 on:
   push:
-    branches: ['QuarterlyFeature_Update']
+    branches: ['QuarterlyFeature_Update', 'EngineerProjectAssignment_Update']
 
 permissions:
   contents: read
@@ -43,9 +43,9 @@ jobs:
       - name: Guarded PostgreSQL 17 regression suite
         run: php vendor/bin/pest --configuration=phpunit.quarterly.xml
       - name: Scheduling service and test formatting
-        run: vendor/bin/pint --test app/Services/DataDictionary/TwiceYearlyMaintenance.php tests/Quarterly tests/Browser/prepare-quarterly.php
+        run: vendor/bin/pint --test app/Services/DataDictionary/TwiceYearlyMaintenance.php app/Services/DataDictionary/ManagingEngineerEligibility.php tests/Quarterly tests/Browser/prepare-quarterly.php tests/Browser/prepare-assignments.php
       - name: Scheduling service static analysis
-        run: vendor/bin/phpstan analyse app/Services/DataDictionary/TwiceYearlyMaintenance.php --no-progress
+        run: vendor/bin/phpstan analyse app/Services/DataDictionary/TwiceYearlyMaintenance.php app/Services/DataDictionary/ManagingEngineerEligibility.php --no-progress
       - name: Controller syntax
         run: php -l app/Http/Controllers/DataDictionary/DdOperationsController.php
 
@@ -81,6 +81,6 @@ jobs:
       - run: npm run build
       - run: npm run types:check
       - name: Scheduling UI lint
-        run: npx eslint resources/js/pages/dd-phase3/Operations.tsx resources/js/pages/dd-phase3/DdQuarterlyMaintenance.tsx tests/Browser/quarterly.mjs
+        run: npx eslint resources/js/pages/dd-phase3/Operations.tsx resources/js/pages/dd-phase3/DdQuarterlyMaintenance.tsx resources/js/pages/dd-phase3/DdMaintenanceProjects.tsx tests/Browser/quarterly.mjs tests/Browser/assignments.mjs
       - name: Scheduling UI formatting
-        run: npx prettier --check resources/js/pages/dd-phase3/Operations.tsx resources/js/pages/dd-phase3/DdQuarterlyMaintenance.tsx tests/Browser/quarterly.mjs
+        run: npx prettier --check resources/js/pages/dd-phase3/Operations.tsx resources/js/pages/dd-phase3/DdQuarterlyMaintenance.tsx resources/js/pages/dd-phase3/DdMaintenanceProjects.tsx tests/Browser/quarterly.mjs tests/Browser/assignments.mjs
