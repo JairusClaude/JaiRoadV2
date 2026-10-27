@@ -16,10 +16,9 @@ use Illuminate\Support\Facades\DB;
 final class DataDictionaryIdentityResolver
 {
     /**
-     * Explicit project-level exception: Admin/Engineer may now be provisioned
-     * without EngineerID. Unlinked Engineers receive NO LGU/manager authorization
-     * until an administrator attaches a real active Engineer profile.
-     * This differs from the earlier linked-Admin/Engineer application rule.
+     * Historical compatibility only: existing unlinked Admin accounts remain active.
+     * New Admin/Engineer provisioning requires a profile in DdPhase3Controller.
+     * Any historical unlinked Engineer receives NO LGU/manager authorization.
      */
     public static function roleLinkValid(string $role, ?int $engineerId): bool
     {

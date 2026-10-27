@@ -63,6 +63,7 @@ type Props = {
     lgus: Lgu[];
     accounts: Account[];
     engineers: Engineer[];
+    eligibleEngineers: Engineer[];
     assignments: Assignment[];
     canManage: boolean;
     canCreateRoles: Role[];
@@ -137,6 +138,7 @@ export default function DdPhase3Workspace({
     lgus,
     accounts,
     engineers,
+    eligibleEngineers,
     assignments,
     canManage,
     canCreateRoles,
@@ -168,24 +170,11 @@ export default function DdPhase3Workspace({
     });
     const [validation, setValidation] = useState<Record<string, string>>({});
 
-    const linkedEngineerIds = useMemo(
-        () =>
-            new Set(
-                accounts
-                    .filter((item) => item.engineer_id !== null)
-                    .map((item) => Number(item.engineer_id)),
-            ),
-        [accounts],
-    );
     const activeEngineers = useMemo(
         () => engineers.filter((entry) => entry.engineer_status === 'Active'),
         [engineers],
     );
-    const availableEngineers = useMemo(
-        () =>
-            activeEngineers.filter((entry) => !linkedEngineerIds.has(entry.id)),
-        [activeEngineers, linkedEngineerIds],
-    );
+    const availableEngineers = eligibleEngineers;
     const activeAccounts = accounts.filter((entry) => entry.is_active).length;
     const privilegedAccounts = accounts.filter((entry) =>
         ['SuperAdmin', 'Admin'].includes(entry.account_type),
@@ -351,11 +340,10 @@ export default function DdPhase3Workspace({
                             <p
                                 className={`max-w-2xl text-sm leading-6 ${identity.role === 'SuperAdmin' ? 'text-slate-300' : 'text-slate-600'}`}
                             >
-                                Admin and Engineer accounts can now be
-                                provisioned without linking an Engineer. A link
-                                remains optional; unlinked Engineer accounts
-                                cannot edit LGU-scoped records until an
-                                authorized assignment exists.
+                                New Admin and Engineer accounts require an
+                                active, available Engineer profile. Existing
+                                unlinked Admin accounts retain their permitted
+                                access.
                             </p>
                             <div className="grid gap-3 pt-2 sm:grid-cols-3">
                                 <div
@@ -372,7 +360,7 @@ export default function DdPhase3Workspace({
                                     <div
                                         className={`mt-1 text-xs ${identity.role === 'SuperAdmin' ? 'text-slate-300' : 'text-slate-600'}`}
                                     >
-                                        optional profiles available for linking
+                                        active profiles available for linking
                                     </div>
                                 </div>
                                 <div
@@ -416,8 +404,9 @@ export default function DdPhase3Workspace({
                         <div>
                             <h2 className={sectionTitle}>Provisioning rules</h2>
                             <p className={muted}>
-                                Linking is optional for Admin/Engineer; account
-                                uniqueness and password rules still apply.
+                                New Admin/Engineer accounts require a Linked
+                                Engineer; account uniqueness and password rules
+                                still apply.
                             </p>
                         </div>
                         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
@@ -429,17 +418,17 @@ export default function DdPhase3Workspace({
                                     </p>
                                     <ul className="list-disc space-y-1 pl-5 text-[13px] leading-6">
                                         <li>
-                                            Admin and Engineer can be created
-                                            without an Engineer link.
+                                            New Admin and Engineer accounts must
+                                            have an Engineer link.
                                         </li>
                                         <li>
                                             Viewer accounts must not be linked
                                             to an Engineer.
                                         </li>
                                         <li>
-                                            An optional Engineer link must
-                                            reference an active, unlinked
-                                            Engineer profile.
+                                            The required link must reference an
+                                            active Engineer profile that no
+                                            other account uses.
                                         </li>
                                         <li>
                                             Passwords must be strong and must
@@ -953,8 +942,8 @@ export default function DdPhase3Workspace({
                                     </h2>
                                     <p className={muted}>
                                         Provision Admin, Engineer, or Viewer
-                                        accounts. Engineer linking is optional
-                                        for Admin and Engineer account types.
+                                        accounts. Admin and Engineer require a
+                                        Linked Engineer.
                                     </p>
                                 </div>
                                 <div className="rounded-2xl bg-violet-50 p-3 text-violet-700">
@@ -969,8 +958,8 @@ export default function DdPhase3Workspace({
                                         Admin
                                     </div>
                                     <p className="mt-2 text-xs leading-5 text-slate-500">
-                                        Can be created without an Engineer
-                                        profile; linking is optional.
+                                        Requires an active available Engineer
+                                        profile. Account Type remains Admin.
                                     </p>
                                 </div>
                                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -979,9 +968,9 @@ export default function DdPhase3Workspace({
                                         Engineer
                                     </div>
                                     <p className="mt-2 text-xs leading-5 text-slate-500">
-                                        Can be created without a profile;
-                                        operations stay restricted until linked
-                                        and assigned.
+                                        Requires an active available Engineer
+                                        profile. LGU editing also requires an
+                                        active assignment.
                                     </p>
                                 </div>
                                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -998,12 +987,10 @@ export default function DdPhase3Workspace({
 
                             {managerRoleSelected && (
                                 <div className="mt-4 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-950">
-                                    Engineer linking is optional for{' '}
-                                    {account.account_type} accounts. Choose “No
-                                    linked Engineer” to provision immediately;
-                                    an unlinked Engineer cannot manage road or
-                                    maintenance data until assigned a real
-                                    Engineer profile and active LGU scope.
+                                    New Admin and Engineer accounts require a
+                                    Linked Engineer. Create an active Engineer
+                                    profile with its professional Rank first if
+                                    no eligible profile is available.
                                 </div>
                             )}
 
@@ -1071,8 +1058,8 @@ export default function DdPhase3Workspace({
                                         ))}
                                     </select>
                                     <span className="mt-1 block text-[11px] text-slate-500">
-                                        Viewer stays unlinked. Admin and
-                                        Engineer may optionally link to an
+                                        Viewer stays unlinked. New Admin and
+                                        Engineer accounts must link to an
                                         available active Engineer.
                                     </span>
                                     <FieldError
@@ -1080,8 +1067,11 @@ export default function DdPhase3Workspace({
                                     />
                                 </label>
                                 <label className="text-xs font-semibold text-slate-600">
-                                    Engineer
+                                    Linked Engineer
                                     <select
+                                        required={
+                                            account.account_type !== 'Viewer'
+                                        }
                                         className={`${inp} mt-1`}
                                         value={account.engineer_id}
                                         onChange={(e) =>
@@ -1097,7 +1087,7 @@ export default function DdPhase3Workspace({
                                         <option value="">
                                             {account.account_type === 'Viewer'
                                                 ? 'Viewer remains unlinked'
-                                                : 'No linked Engineer (optional)'}
+                                                : 'Select a Linked Engineer (required)'}
                                         </option>
                                         {availableEngineers.map((e) => (
                                             <option key={e.id} value={e.id}>

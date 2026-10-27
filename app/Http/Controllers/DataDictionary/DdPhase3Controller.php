@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\DataDictionary\DataDictionaryIdentityResolver;
 use App\Services\DataDictionary\DdDashboardAnalytics;
 use App\Services\DataDictionary\DdRoleAccess;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -98,6 +99,13 @@ final class DdPhase3Controller extends Controller
         $engineers = $allowedManager ? $t('engineers')->orderBy('id')->limit(200)->get([
             'id','first_name','middle_name','last_name','contact_no','rank','engineer_status',
         ]) : collect();
+        // Do not infer availability from the paginated account directory.
+        $eligibleEngineers = $allowedManager ? $t('engineers as e')
+            ->where('e.engineer_status', 'Active')
+            ->whereNotExists(static fn (Builder $query) => $query->selectRaw('1')
+                ->from('jairoads_next.user_accounts as ua')->whereColumn('ua.engineer_id', 'e.id'))
+            ->orderBy('e.last_name')->orderBy('e.first_name')->orderBy('e.id')
+            ->get(['e.id', 'e.first_name', 'e.last_name', 'e.rank', 'e.engineer_status']) : collect();
         $assignments = $allowedManager ? $t('engineer_lgus')->orderBy('engineer_id')->limit(300)->get([
             'engineer_id','lgu_id','is_active',
         ]) : collect();
@@ -120,7 +128,8 @@ final class DdPhase3Controller extends Controller
             'counts' => $counts,
             'analytics' => $section === 'dashboard' ? app(DdDashboardAnalytics::class)->summary($actor) : null,
             'lgus' => $lgus, 'accounts' => $accounts,
-            'engineers' => $engineers, 'assignments' => $assignments,
+            'engineers' => $engineers,
+            'eligibleEngineers' => $eligibleEngineers, 'assignments' => $assignments,
             'canManage' => $allowedManager,
             // Both authorized administrative roles can create standard DD accounts.
             // Initial SuperAdmin creation is a separate owner-verified bootstrap.
@@ -246,15 +255,15 @@ final class DdPhase3Controller extends Controller
             'email' => ['required','email:rfc','max:255'],
             'name' => ['required','string','max:255'],
             'account_type' => ['required', Rule::in($allowed)],
-            'engineer_id' => ['nullable','integer','min:1'],
+            'engineer_id' => ['required_if:account_type,Admin,Engineer', 'nullable', 'integer', 'min:1'],
             'password' => ['required','confirmed',Password::min(12)->mixedCase()->numbers()->symbols()],
         ]);
         $username = strtolower(trim((string) $v['username']));
         $email = strtolower(trim((string) $v['email']));
         $role = $v['account_type'];
         $engineerId = ! empty($v['engineer_id']) ? (int) $v['engineer_id'] : null;
-        // Explicitly allow unlinked Admin/Engineer provisioning. Viewer is
-        // deliberately kept unlinked. A missing link never grants LGU scope.
+        // New Admin/Engineer identities require an explicit active profile.
+        // Existing unlinked Admin identities remain compatible in the resolver.
         if ($role === 'Viewer' && $engineerId !== null) {
             throw ValidationException::withMessages(['engineer_id' => 'Viewer accounts cannot be linked to an Engineer.']);
         }
