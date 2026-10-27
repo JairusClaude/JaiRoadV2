@@ -1,0 +1,20 @@
+# Checkpoint A — Approved policy synchronization
+
+The [official Google Doc](https://docs.google.com/document/d/1WeaLeaOTvxMMsjce0Ec50VNMz0_2Psf5soC-dmbVcbA/edit) was edited directly through the connected editor. Thirty paragraphs were updated across Entity Overviews/Current Data Dictionary, Account Authorization, Field Rules, CRUD/Permission Matrix and Workflows. A dated revision note was added to the existing main-tab closing paragraph. Readback verified all 2,579 text paragraphs: exactly 30 changed and 2,549 were unchanged. All 15 tabs and the native structure (49 tables, 447 rows, 2,526 cells) were preserved. No pending deletion, file-limit, previous-update or auditing decision was marked approved.
+
+| Confirmed rule                                           | Current implementation / schema contract                                                                                                                                 |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Authorized Engineer may choose any available Q1–Q4       | `TwiceYearlyMaintenance` derives availability, not a mandatory next quarter. The historical class name does not describe a fixed schedule anymore.                       |
+| No mandatory Q1/Q3 or Q2/Q4 pairing                      | No pair/prerequisite or two-period cap; four distinct quarters in one year are allowed. No requirement to create all four or invent future activity.                     |
+| No duplicate project/year/quarter                        | `saveRecord` locks the parent project, checks complete history and validates availability. Database UNIQUE is still missing; see proposal.                               |
+| Quarterly MaintenanceRecord differs from MonthlyUpdate   | Quarterly occurrence belongs to project; monthly report belongs to one MaintenanceRecord, unique by maintenance/month.                                                   |
+| New Admin/Engineer needs Active available Engineer       | `createAccount` checks Active profile and absence of any other account link, including inactive accounts; provisioning locks retained.                                   |
+| Existing unlinked Admin temporarily allowed              | Identity resolver and Task 2 reactivation preserve this exception. EngineerID remains physically nullable; do not impose blanket NOT NULL.                               |
+| Admin self-management needs valid profile/LGU scope      | `ManagingEngineerEligibility` permits linked Admin self-selection, not general assignment of other Admin accounts. Assignment belongs to MaintenanceRecord, not project. |
+| Rank is professional; Account Type is authorization      | Active DD forms use Rank and Account Type; Rank never grants roles. Legacy Position remains isolated.                                                                    |
+| Long-term project derives municipality from RoadCoverage | Canonical project has no separate municipality, manager, maintenance-date or status columns. Canonical reads join coverage's LGU.                                        |
+| MaintenanceRecord status is Ongoing/Completed            | Application and DB constrain both states; completion date required for Completed, absent for Ongoing and not before start.                                               |
+
+The two historical task documents `twice-yearly-maintenance.md` and `quarterly-role-assignment-verification.md` describe earlier pair-based behavior. Their old test counts/decisions are historical, not current requirements. `premerge-policy-alignment.md`, this report and the amended official dictionary supersede those conflicting scheduling/linkage statements. No historical implementation evidence was rewritten.
+
+Google Docs changes were saved before the interruption and verified again on resume. They were not reapplied. See the amendment manifest for exact text and revision IDs.
