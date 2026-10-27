@@ -155,10 +155,10 @@ final class ProjectAssignmentAuthorizationTest extends PostgresTestCase
         $this->putJson('/dd-phase3/ops/records/'.$id, array_replace($data, ['description' => 'Own work']))->assertRedirect();
         $this->deleteJson('/dd-phase3/ops/records/'.$id)->assertForbidden();
         $this->deleteJson('/dd-phase3/ops/projects/'.$f['project'])->assertForbidden();
-        $this->actingAs($this->account('Admin'));
+        $this->withSession(['password_hash_web' => null])->actingAs($this->account('Admin'));
         $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $other, 'Q3'))->assertRedirect();
         $otherRecord = (int) DB::table('jairoads_next.maintenance_records')->where('quarter', 'Q3')->value('id');
-        $this->actingAs($f['user'])->putJson('/dd-phase3/ops/records/'.$otherRecord, $this->recordData($f['project'], $other, 'Q3'))->assertForbidden();
+        $this->withSession(['password_hash_web' => null])->actingAs($f['user'])->putJson('/dd-phase3/ops/records/'.$otherRecord, $this->recordData($f['project'], $other, 'Q3'))->assertForbidden();
         $this->assertSame(2, DB::table('jairoads_next.maintenance_records')->count());
     }
 
@@ -196,7 +196,7 @@ final class ProjectAssignmentAuthorizationTest extends PostgresTestCase
         $data = $this->recordData($f['project'], $f['engineer']);
         $this->postJson('/dd-phase3/ops/records', $data)->assertRedirect();
         $id = DB::table('jairoads_next.maintenance_records')->value('id');
-        $this->actingAs($this->account('Viewer'))->get('/dd-phase3/projects?view=show&project='.$f['project'])->assertOk()
+        $this->withSession(['password_hash_web' => null])->actingAs($this->account('Viewer'))->get('/dd-phase3/projects?view=show&project='.$f['project'])->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page->has('managerChoices', 0)->where('capabilities.createProjects', false)->where('capabilities.updateProjects', false));
         $this->postJson('/dd-phase3/ops/projects', ['project_title' => 'Denied', 'road_coverage_id' => $f['road']])->assertForbidden();
         $this->postJson('/dd-phase3/ops/records', $data)->assertForbidden();

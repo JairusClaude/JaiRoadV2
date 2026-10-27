@@ -6,7 +6,6 @@ namespace Tests\Quarterly;
 
 use App\Models\User;
 use App\Services\DataDictionary\DataDictionaryIdentityResolver;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia;
@@ -132,7 +131,7 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
         $this->actingAs($this->account());
         $engineer = $this->engineer();
         $this->postJson('/dd-phase3/accounts', $this->input('Admin') + ['engineer_id' => $engineer])->assertRedirect();
-        Auth::logout();
+        $this->post(route('logout'))->assertRedirect();
         $this->post(route('login'), ['email' => 'linked-new@example.test', 'password' => 'Linked-Disposable!123'])->assertSessionHasNoErrors();
         $login = User::where('email', 'linked-new@example.test')->firstOrFail();
         $identity = app(DataDictionaryIdentityResolver::class)->resolve($login);

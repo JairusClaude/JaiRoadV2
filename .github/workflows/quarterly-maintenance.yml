@@ -2,7 +2,7 @@ name: JaiROADS focused regressions
 
 on:
   push:
-    branches: ['QuarterlyFeature_Update', 'EngineerProjectAssignment_Update', 'PositionCleanup_Update', 'Quarterly/Role/Assignment_Update', 'feature/premerge-policy-alignment']
+    branches: ['QuarterlyFeature_Update', 'EngineerProjectAssignment_Update', 'PositionCleanup_Update', 'Quarterly/Role/Assignment_Update', 'feature/premerge-policy-alignment', 'integration/dd-system-completion']
 
 permissions:
   contents: read
@@ -86,3 +86,41 @@ jobs:
         run: npx eslint resources/js/pages/dd-phase3/Operations.tsx resources/js/pages/dd-phase3/DdQuarterlyMaintenance.tsx resources/js/pages/dd-phase3/DdMaintenanceProjects.tsx resources/js/pages/dd-phase3/Workspace.tsx resources/js/pages/dd-superadmin-command-center/Index.tsx resources/js/components/dd-dashboard-analytics.tsx tests/Browser/quarterly.mjs tests/Browser/assignments.mjs tests/Browser/account-terminology.mjs
       - name: Scheduling UI formatting
         run: npx prettier --check resources/js/pages/dd-phase3/Operations.tsx resources/js/pages/dd-phase3/DdQuarterlyMaintenance.tsx resources/js/pages/dd-phase3/DdMaintenanceProjects.tsx resources/js/pages/dd-phase3/Workspace.tsx resources/js/pages/dd-superadmin-command-center/Index.tsx resources/js/components/dd-dashboard-analytics.tsx tests/Browser/quarterly.mjs tests/Browser/assignments.mjs tests/Browser/account-terminology.mjs
+
+  password-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: jairoads_password_test
+          POSTGRES_USER: jairoads_password_test
+          POSTGRES_PASSWORD: disposable-ci-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U jairoads_password_test -d jairoads_password_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: testing
+      JAIROADS_PASSWORD_TESTS: '1'
+      JAIROADS_PASSWORD_TEST_PORT: '5432'
+      JAIROADS_PASSWORD_TEST_PASSWORD: disposable-ci-only
+      PAO_DISABLE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, mbstring
+          tools: composer:v2
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist
+      - run: touch .env
+      - name: All original password/DD regressions and integration hardening
+        run: php vendor/bin/pest --configuration=phpunit-passwords.xml --display-warnings --fail-on-warning
+      - name: Password code and regression formatting
+        run: vendor/bin/pint --test app/Auth app/Services/DataDictionary/LinkedPasswordUpdater.php app/Actions/Fortify/ResetUserPassword.php app/Http/Controllers/Settings/SecurityController.php app/Providers/AppServiceProvider.php bootstrap/app.php config/auth.php tests/PasswordSync tests/PasswordSyncTestCase.php tests/DdOperationsTestCase.php
+      - name: Password static analysis
+        run: vendor/bin/phpstan analyse app/Auth app/Services/DataDictionary/LinkedPasswordUpdater.php app/Actions/Fortify/ResetUserPassword.php app/Http/Controllers/Settings/SecurityController.php --no-progress
