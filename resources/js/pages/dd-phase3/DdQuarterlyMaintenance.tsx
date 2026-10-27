@@ -22,15 +22,12 @@ export type QuarterlyProps = {
     project: { id: number; project_title: string };
     records: Maintenance[];
     schedule: {
-        pattern: Quarter[] | null;
         conflict: boolean;
         years: {
             year: number;
             quarters: Quarter[];
-            missing: Quarter[];
-            state: string;
+            available: Quarter[];
         }[];
-        next: { year: number; quarter: Quarter } | null;
     } | null;
     managers: {
         id: number;
@@ -79,17 +76,12 @@ export default function DdQuarterlyMaintenance({
     canEdit,
     engineerId,
 }: QuarterlyProps) {
-    const [year, setYear] = useState(
-        String(schedule?.next?.year ?? new Date().getFullYear()),
-    );
-    const [first, setFirst] = useState<Quarter>('Q1');
+    const [year, setYear] = useState(String(new Date().getFullYear()));
     const [form, setForm] = useState<Form | null>(null);
     const [editing, setEditing] = useState<number | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [busy, setBusy] = useState(false);
-    const pattern =
-        schedule?.pattern ??
-        (first === 'Q1' ? (['Q1', 'Q3'] as const) : (['Q2', 'Q4'] as const));
+    const quarters: Quarter[] = ['Q1', 'Q2', 'Q3', 'Q4'];
     const selected = records.filter(
         (record) => record.maintenance_year === Number(year),
     );
@@ -140,6 +132,7 @@ export default function DdQuarterlyMaintenance({
             method: editing ? 'put' : 'post',
             data: form,
             preserveScroll: true,
+            preserveState: true,
             onError: setErrors,
             onSuccess: () => {
                 setForm(null);
@@ -163,54 +156,29 @@ export default function DdQuarterlyMaintenance({
                     Quarterly maintenance · {project.project_title}
                 </h2>
                 <p className="text-sm text-slate-600">
-                    Two maintenance periods per year. Each record has its own
-                    ManagingEngineer; this project can exist without any
-                    records.
+                    Each quarterly record has its own ManagingEngineer. This
+                    project can exist without any maintenance records.
                 </p>
-                {schedule?.conflict ? (
+                {schedule?.conflict && (
                     <p
                         role="alert"
                         className="rounded-lg bg-amber-50 p-4 text-amber-900"
                     >
-                        Historical schedule needs administrator review. Existing
-                        records are preserved. New periods are blocked until a
-                        separately approved correction resolves the conflict.
+                        Historical duplicate or invalid periods need
+                        administrator review. Existing records are preserved.
+                        Other available quarters can still be recorded.
                     </p>
-                ) : (
-                    <>
-                        <p className="font-medium">
-                            {schedule?.pattern
-                                ? `Schedule: ${pattern[0]} → ${pattern[1]}, repeated each year.`
-                                : 'No quarterly records scheduled yet.'}
-                        </p>
-                        {schedule?.next && (
-                            <div className="flex flex-wrap items-center gap-3">
-                                <span>
-                                    Next expected period: {schedule.next.year}{' '}
-                                    {schedule.next.quarter}
-                                </span>
-                                {canCreate && schedule.next.year <= 2100 && (
-                                    <button
-                                        className={button}
-                                        onClick={() =>
-                                            prepare(
-                                                schedule.next!.quarter,
-                                                schedule.next!.year,
-                                            )
-                                        }
-                                    >
-                                        Create next quarterly record
-                                    </button>
-                                )}
-                            </div>
-                        )}
-                        <p className="text-sm text-slate-500">
-                            Expected slots are guidance only. Save a record when
-                            maintenance has actually begun or been completed; no
-                            future activity is created automatically.
-                        </p>
-                    </>
                 )}
+                <p className="font-medium">
+                    {records.length === 0
+                        ? 'No quarterly records recorded yet.'
+                        : 'Choose any available quarter for the selected year.'}
+                </p>
+                <p className="text-sm text-slate-500">
+                    Q1, Q2, Q3 and Q4 are available independently. Record actual
+                    maintenance; no future activity is created automatically.
+                    Each project can have only one record per year and quarter.
+                </p>
                 <div className="flex flex-wrap items-end gap-4">
                     <label className="text-sm font-medium">
                         Active maintenance year
@@ -224,22 +192,6 @@ export default function DdQuarterlyMaintenance({
                             className={input}
                         />
                     </label>
-                    {!schedule?.pattern && !schedule?.conflict && (
-                        <label className="text-sm font-medium">
-                            Annual pattern
-                            <select
-                                className={input}
-                                value={first}
-                                onChange={(e) => {
-                                    setFirst(e.target.value as Quarter);
-                                    setForm(null);
-                                }}
-                            >
-                                <option value="Q1">Start in Q1, then Q3</option>
-                                <option value="Q2">Start in Q2, then Q4</option>
-                            </select>
-                        </label>
-                    )}
                 </div>
                 <div className="flex flex-wrap gap-2">
                     {schedule?.years.map((annual) => (
@@ -248,76 +200,57 @@ export default function DdQuarterlyMaintenance({
                             className={secondary}
                             onClick={() => setYear(String(annual.year))}
                         >
-                            {annual.year} ·{' '}
-                            {annual.state === 'review'
-                                ? 'Review required'
-                                : annual.state === 'complete'
-                                  ? 'Both periods recorded'
-                                  : `Missing ${annual.missing.join(', ')}`}
+                            {annual.year} · {annual.quarters.length} record(s)
                         </button>
                     ))}
                 </div>
-                {!schedule?.conflict && (
-                    <div className="grid gap-3 sm:grid-cols-2">
-                        {pattern.map((quarter, index) => {
-                            const record = selected.find(
-                                (item) => item.quarter === quarter,
-                            );
-                            const canPrepare =
-                                index === 0 ||
-                                selected.some(
-                                    (item) => item.quarter === pattern[0],
-                                );
+                <div className="grid gap-3 sm:grid-cols-2">
+                    {quarters.map((quarter) => {
+                        const recorded = selected.filter(
+                            (item) => item.quarter === quarter,
+                        );
 
-                            return (
-                                <div
-                                    key={quarter}
-                                    className="rounded-xl border border-slate-200 p-4"
-                                >
-                                    <h3 className="font-semibold">
-                                        {year} {quarter}
-                                    </h3>
-                                    {record ? (
-                                        <p>
+                        return (
+                            <div
+                                key={quarter}
+                                className="rounded-xl border border-slate-200 p-4"
+                            >
+                                <h3 className="font-semibold">
+                                    {year} {quarter}
+                                </h3>
+                                {recorded.length > 0 ? (
+                                    recorded.map((record) => (
+                                        <p key={record.id}>
                                             {record.status} ·{' '}
                                             {record.manager_first_name}{' '}
                                             {record.manager_last_name}
                                         </p>
-                                    ) : (
-                                        <>
-                                            <p className="my-2 text-sm text-slate-600">
-                                                Expected slot · no activity
-                                                recorded
-                                            </p>
-                                            {canCreate && (
-                                                <button
-                                                    className={secondary}
-                                                    disabled={
-                                                        !canPrepare ||
-                                                        !/^\d{4}$/.test(year) ||
-                                                        Number(year) < 1900 ||
-                                                        Number(year) > 2100
-                                                    }
-                                                    onClick={() =>
-                                                        prepare(quarter)
-                                                    }
-                                                >
-                                                    Create {quarter} record
-                                                </button>
-                                            )}
-                                            {!canPrepare && (
-                                                <p className="mt-2 text-xs text-slate-500">
-                                                    Record {pattern[0]} for this
-                                                    year first.
-                                                </p>
-                                            )}
-                                        </>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
+                                    ))
+                                ) : (
+                                    <>
+                                        <p className="my-2 text-sm text-slate-600">
+                                            Available quarter · no activity
+                                            recorded
+                                        </p>
+                                        {canCreate && (
+                                            <button
+                                                className={secondary}
+                                                disabled={
+                                                    !/^\d{4}$/.test(year) ||
+                                                    Number(year) < 1900 ||
+                                                    Number(year) > 2100
+                                                }
+                                                onClick={() => prepare(quarter)}
+                                            >
+                                                Create {quarter} record
+                                            </button>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
                 {form && (
                     <form
                         onSubmit={save}
