@@ -51,7 +51,7 @@ async function createProject(page, roadName, title) {
     await page.getByText(title, { exact: true }).first().click();
     await page.waitForURL(/view=show/);
     await page
-        .getByText('No quarterly records scheduled yet.', { exact: true })
+        .getByText('No quarterly records recorded yet.', { exact: true })
         .waitFor();
 }
 async function prepareRecord(page, quarter) {

@@ -130,6 +130,23 @@ final class IntegrationCompatibilityTest extends PostgresTestCase
         }
     }
 
+    public function test_monthly_updates_keep_their_own_monthly_uniqueness_and_parent_when_another_quarter_is_added(): void
+    {
+        $f = $this->fixture('Engineer');
+        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q4'))->assertRedirect();
+        $id = (int) DB::table('jairoads_next.maintenance_records')->value('id');
+        $data = ['maintenance_id' => $id, 'update_month' => '2026-10', 'progress_percentage' => 10, 'summary_of_text_reports' => 'Disposable progress'];
+        $this->postJson('/dd-phase3/ops/updates', $data)->assertRedirect();
+        $before = DB::table('jairoads_next.audit_logs')->count();
+        $this->postJson('/dd-phase3/ops/updates', $data)->assertUnprocessable()->assertJsonValidationErrors('update_month');
+        $this->assertSame($before, DB::table('jairoads_next.audit_logs')->count());
+        $this->postJson('/dd-phase3/ops/updates', array_replace($data, ['update_month' => '2026-11']))->assertRedirect();
+        $history = DB::table('jairoads_next.monthly_updates')->orderBy('id')->get()->toJson();
+        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q2'))->assertRedirect();
+        $this->assertSame($history, DB::table('jairoads_next.monthly_updates')->orderBy('id')->get()->toJson());
+        $this->assertSame(2, DB::table('jairoads_next.monthly_updates')->where('maintenance_id', $id)->count());
+    }
+
     private function assertSynchronizedIdentity(User $user, string $password): void
     {
         $canonical = DB::table('jairoads_next.user_accounts')->where('id', $user->dd_user_account_id)->first();

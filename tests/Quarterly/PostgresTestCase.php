@@ -11,44 +11,10 @@ use Tests\TestCase;
 
 abstract class PostgresTestCase extends TestCase
 {
-    private static bool $initialized = false;
-
     protected function setUp(): void
     {
         parent::setUp();
-        $db = DB::connection();
-        if (getenv('JAIROADS_SCRATCH_APPROVAL') !== 'DISPOSABLE_LOCAL_ONLY'
-            || ! app()->environment('testing') || getenv('RENDER') !== false
-            || $db->getDriverName() !== 'pgsql'
-            || ! in_array($db->getConfig('host'), ['127.0.0.1', 'localhost'], true)
-            || $db->getConfig('url')
-            || ! preg_match('/^jairoads_scratch_[a-z0-9_]+$/', (string) $db->getConfig('database'))) {
-            throw new \RuntimeException('Refusing tests: explicit disposable local PostgreSQL configuration required.');
-        }
-        // Only after the local-target guard: this disposable server has no TLS.
-        config(['database.connections.pgsql.sslmode' => 'disable']);
-        DB::purge('pgsql');
-        $db = DB::connection();
-        $server = $db->selectOne("SELECT current_database() AS name, current_setting('server_version_num')::int AS version");
-        if ($server->name !== $db->getConfig('database') || $server->version < 170000 || $server->version >= 180000) {
-            throw new \RuntimeException('A disposable PostgreSQL 17 database is required.');
-        }
-        if (! self::$initialized) {
-            // Use the existing authoritative baseline unchanged. It refuses existing schemas/tables.
-            $migration = require database_path('jairoads_fresh_migrations/2026_10_20_220000_create_jairoads_next_baseline_scratch_only.php');
-            $migration->up();
-            DB::unprepared(<<<'SQL'
-CREATE TABLE public.users (
- id bigserial PRIMARY KEY, name varchar(255) NOT NULL, email varchar(255) UNIQUE NOT NULL,
- email_verified_at timestamp, password varchar(255) NOT NULL, remember_token varchar(100),
- dd_user_account_id bigint UNIQUE REFERENCES jairoads_next.user_accounts(id), user_account_id bigint,
- two_factor_secret text, two_factor_recovery_codes text, two_factor_confirmed_at timestamp,
- created_at timestamp, updated_at timestamp
-);
-CREATE TABLE public.password_reset_tokens (email varchar(255) PRIMARY KEY, token varchar(255), created_at timestamp);
-SQL);
-            self::$initialized = true;
-        }
+        PostgresTestSchema::prepare();
         DB::beginTransaction();
         $this->withoutVite();
     }

@@ -11,7 +11,7 @@ final class QuarterlyBrowserFixture extends PostgresTestCase
     public function prepare(): void
     {
         $this->setUp();
-        $fixture = $this->fixture();
+        $fixture = $this->fixture('Engineer');
         DB::commit();
         echo json_encode(['email' => $fixture['user']->email, 'project' => $fixture['project']], JSON_THROW_ON_ERROR);
     }

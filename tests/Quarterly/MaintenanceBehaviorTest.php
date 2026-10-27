@@ -11,29 +11,24 @@ use PHPUnit\Framework\Attributes\DataProvider;
 
 final class MaintenanceBehaviorTest extends PostgresTestCase
 {
-    /** @return iterable<string,array{string,string}> */
-    public static function patterns(): iterable
+    /** @return iterable<string,array{string}> */
+    public static function quarters(): iterable
     {
-        yield 'Q1 Q3' => ['Q1', 'Q3'];
-        yield 'Q2 Q4' => ['Q2', 'Q4'];
+        foreach (['Q1', 'Q2', 'Q3', 'Q4'] as $quarter) {
+            yield $quarter => [$quarter];
+        }
     }
 
-    #[DataProvider('patterns')]
-    public function test_pattern_repeats_across_years(string $first, string $second): void
+    #[DataProvider('quarters')]
+    public function test_engineer_can_choose_any_first_quarter_and_reuse_it_next_year(string $quarter): void
     {
-        $f = $this->fixture();
-        $this->assertSame([], $this->summary($f['project'])['years']);
-        foreach ([[2026, $first, 2026, $second], [2026, $second, 2027, $first], [2027, $first, 2027, $second], [2027, $second, 2028, $first]] as [$year, $quarter, $nextYear, $nextQuarter]) {
-            $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], $quarter, $year))
-                ->assertRedirect('/dd-phase3/projects?view=show&project='.$f['project']);
-            $summary = $this->summary($f['project']);
-            $this->assertSame(['year' => $nextYear, 'quarter' => $nextQuarter], $summary['next']);
-            $this->assertSame([$first, $second], $summary['pattern']);
+        $f = $this->fixture('Engineer');
+        foreach ([2026, 2027] as $year) {
+            $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], $quarter, $year))->assertRedirect();
+            $this->assertDatabaseHas('jairoads_next.maintenance_records', ['project_id' => $f['project'], 'maintenance_year' => $year, 'quarter' => $quarter]);
         }
-        $this->assertSame('complete', $summary['years'][0]['state']);
-        $this->assertSame('complete', $summary['years'][1]['state']);
-        $this->assertSame(4, DB::table('jairoads_next.maintenance_records')->where('project_id', $f['project'])->count());
-        $this->assertSame(4, DB::table('jairoads_next.audit_logs')->where('entity_type', 'MaintenanceRecord')->whereNull('recipient_user_id')->count());
+        $this->assertSame(2, DB::table('jairoads_next.maintenance_records')->count());
+        $this->assertSame(2, DB::table('jairoads_next.audit_logs')->where('entity_type', 'MaintenanceRecord')->whereNull('recipient_user_id')->count());
     }
 
     /** @return iterable<string,array{array<string,mixed>,string}> */
@@ -50,7 +45,7 @@ final class MaintenanceBehaviorTest extends PostgresTestCase
         yield 'completion before start' => [['status' => 'Completed', 'complete_date' => '2025-12-31'], 'complete_date'];
         yield 'planned status' => [['status' => 'Planned'], 'status'];
         yield 'manager missing' => [['managing_engineer_id' => null], 'managing_engineer_id'];
-        yield 'start in second half' => [['quarter' => 'Q3', 'start_date' => '2026-07-01'], 'quarter'];
+        yield 'invalid quarter' => [['quarter' => 'Q5'], 'quarter'];
     }
 
     #[DataProvider('invalidRecords')]
@@ -63,72 +58,65 @@ final class MaintenanceBehaviorTest extends PostgresTestCase
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
     }
 
-    #[DataProvider('patterns')]
-    public function test_duplicate_mixed_pattern_and_third_period_are_rejected(string $first, string $second): void
+    public function test_all_four_distinct_quarters_are_allowed_but_each_duplicate_is_rejected(): void
     {
-        $f = $this->fixture();
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], $first))->assertRedirect();
-        $before = DB::table('jairoads_next.audit_logs')->count();
-        foreach (['Q1', 'Q2', 'Q3', 'Q4'] as $quarter) {
-            if ($quarter === $second) {
-                continue;
-            }
-            $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], $quarter))
-                ->assertUnprocessable()->assertJsonValidationErrors('quarter');
+        $f = $this->fixture('Engineer');
+        foreach (['Q4', 'Q1', 'Q2', 'Q3'] as $quarter) {
+            $data = $this->recordData($f['project'], $f['engineer'], $quarter);
+            $this->postJson('/dd-phase3/ops/records', $data)->assertRedirect();
+            $auditCount = DB::table('jairoads_next.audit_logs')->count();
+            $this->postJson('/dd-phase3/ops/records', $data)->assertUnprocessable()->assertJsonValidationErrors('quarter');
+            $this->assertSame($auditCount, DB::table('jairoads_next.audit_logs')->count());
         }
-        $this->assertSame($before, DB::table('jairoads_next.audit_logs')->count());
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], $second))->assertRedirect();
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], $first === 'Q1' ? 'Q4' : 'Q3'))->assertUnprocessable();
-        $this->assertSame(2, DB::table('jairoads_next.maintenance_records')->count());
+        $this->assertSame(4, DB::table('jairoads_next.maintenance_records')->count());
+        $this->assertSame([], $this->summary($f['project'])['years'][0]['available']);
+        $this->assertFalse($this->summary($f['project'])['conflict']);
     }
 
-    public function test_partial_year_and_second_half_without_first_are_distinct(): void
+    public function test_different_projects_can_use_the_same_year_and_quarter(): void
     {
-        $f = $this->fixture();
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer']))->assertRedirect();
-        $this->assertSame(['Q3'], $this->summary($f['project'])['years'][0]['missing']);
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q3', 2027))->assertUnprocessable();
-        $this->assertSame(1, DB::table('jairoads_next.maintenance_records')->count());
+        $first = $this->fixture();
+        $second = $this->fixture();
+        foreach ([$first, $second] as $f) {
+            $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q3'))->assertRedirect();
+        }
+        $this->assertSame(2, DB::table('jairoads_next.maintenance_records')->where('quarter', 'Q3')->count());
     }
 
-    public function test_conflicting_history_is_retained_and_blocks_new_records(): void
+    public function test_mixed_history_is_preserved_and_does_not_block_available_quarters(): void
     {
         $f = $this->fixture();
         foreach (['Q1', 'Q4'] as $quarter) {
             DB::table('jairoads_next.maintenance_records')->insert($this->recordData($f['project'], $f['engineer'], $quarter) + ['created_by' => $f['user']->dd_user_account_id]);
         }
-        $history = DB::table('jairoads_next.maintenance_records')->orderBy('id')->get()->toJson();
-        $this->assertTrue($this->summary($f['project'])['conflict']);
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q1', 2027))->assertUnprocessable();
-        $this->assertSame($history, DB::table('jairoads_next.maintenance_records')->orderBy('id')->get()->toJson());
+        $history = DB::table('jairoads_next.maintenance_records')->orderBy('id')->get();
+        $this->assertFalse($this->summary($f['project'])['conflict']);
+        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q2'))->assertRedirect();
+        $this->assertSame($history->toJson(), DB::table('jairoads_next.maintenance_records')->whereIn('id', $history->pluck('id'))->orderBy('id')->get()->toJson());
     }
 
-    public function test_history_duplicate_is_not_silently_repaired(): void
+    public function test_historical_duplicates_are_flagged_preserved_and_not_duplicated_again(): void
     {
         $f = $this->fixture();
         for ($i = 0; $i < 2; $i++) {
             DB::table('jairoads_next.maintenance_records')->insert($this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->dd_user_account_id]);
         }
         $this->assertTrue($this->summary($f['project'])['conflict']);
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q3'))->assertUnprocessable();
-        $this->assertSame(2, DB::table('jairoads_next.maintenance_records')->count());
+        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer']))->assertUnprocessable();
+        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q3'))->assertRedirect();
+        $this->assertSame(3, DB::table('jairoads_next.maintenance_records')->count());
     }
 
-    public function test_details_expose_complete_schedule_and_next_period(): void
+    public function test_details_expose_existing_and_available_quarters_without_an_enforced_pair(): void
     {
         $f = $this->fixture();
         $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q2'))->assertRedirect();
         $this->get('/dd-phase3/projects?view=show&project='.$f['project'])->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
-            ->component('dd-phase3/Operations')->has('maintenanceHistory', 1)
-            ->where('maintenanceSchedule.pattern', ['Q2', 'Q4'])
-            ->where('maintenanceSchedule.next', ['year' => 2026, 'quarter' => 'Q4']));
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q4'))->assertRedirect();
-        $this->get('/dd-phase3/projects?view=show&project='.$f['project'])->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
-            ->where('maintenanceSchedule.next', ['year' => 2027, 'quarter' => 'Q2'])
-            ->where('maintenanceSchedule.years.0.state', 'complete'));
+            ->has('maintenanceHistory', 1)->where('maintenanceSchedule.years.0.available', ['Q1', 'Q3', 'Q4'])
+            ->missing('maintenanceSchedule.pattern')->missing('maintenanceSchedule.next'));
     }
 
-    public function test_inference_checks_history_beyond_the_general_listing_limit(): void
+    public function test_duplicate_detection_and_details_use_history_beyond_the_listing_limit(): void
     {
         $f = $this->fixture();
         DB::table('jairoads_next.maintenance_records')->insert($this->recordData($f['project'], $f['engineer'], 'Q2', 1900) + ['created_by' => $f['user']->dd_user_account_id]);
@@ -140,9 +128,10 @@ final class MaintenanceBehaviorTest extends PostgresTestCase
         }
         DB::table('jairoads_next.maintenance_records')->insert($rows);
         $this->get('/dd-phase3/projects?view=show&project='.$f['project'])->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
-            ->has('records', 300)->has('maintenanceHistory', 301)->where('maintenanceSchedule.conflict', true));
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q1', 2051))->assertUnprocessable();
-        $this->assertSame(301, DB::table('jairoads_next.maintenance_records')->count());
+            ->has('records', 300)->has('maintenanceHistory', 301)->where('maintenanceSchedule.conflict', false));
+        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q2', 1900))->assertUnprocessable();
+        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q4', 2051))->assertRedirect();
+        $this->assertSame(302, DB::table('jairoads_next.maintenance_records')->count());
     }
 
     public function test_ordinary_detail_edits_preserve_project_manager_and_period(): void

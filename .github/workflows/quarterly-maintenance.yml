@@ -2,7 +2,7 @@ name: JaiROADS focused regressions
 
 on:
   push:
-    branches: ['QuarterlyFeature_Update', 'EngineerProjectAssignment_Update', 'PositionCleanup_Update', 'Quarterly/Role/Assignment_Update']
+    branches: ['QuarterlyFeature_Update', 'EngineerProjectAssignment_Update', 'PositionCleanup_Update', 'Quarterly/Role/Assignment_Update', 'feature/premerge-policy-alignment']
 
 permissions:
   contents: read

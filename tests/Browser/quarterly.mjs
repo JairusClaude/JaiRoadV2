@@ -33,50 +33,107 @@ try {
         `${base}/dd-phase3/projects?view=show&project=${fixture.project}`,
     );
     await page
-        .getByText('No quarterly records scheduled yet.', { exact: true })
+        .getByText('No quarterly records recorded yet.', { exact: true })
         .waitFor();
+    assert.equal(await page.getByLabel('Annual pattern').count(), 0);
+    assert.doesNotMatch(
+        await page.locator('body').innerText(),
+        /Two maintenance periods per year/,
+    );
     await page.getByLabel('Active maintenance year').fill('2026');
-    await page.getByLabel('Annual pattern').selectOption('Q2');
+
+    for (const quarter of ['Q1', 'Q2', 'Q3', 'Q4']) {
+        assert.equal(
+            await page
+                .getByRole('button', {
+                    name: `Create ${quarter} record`,
+                    exact: true,
+                })
+                .count(),
+            1,
+        );
+    }
+
+    for (const [quarter, start] of [
+        ['Q4', '2026-10-01'],
+        ['Q2', '2026-04-01'],
+    ]) {
+        await page
+            .getByRole('button', {
+                name: `Create ${quarter} record`,
+                exact: true,
+            })
+            .click();
+        const form = page
+            .locator('form')
+            .filter({ hasText: `Create maintenance record · 2026 ${quarter}` });
+        await form.getByLabel('Estimated duration (days)').fill('5');
+        await form.getByLabel('Maintenance status').selectOption('Ongoing');
+        await form.getByLabel('Actual start date').fill(start);
+        await form
+            .getByRole('button', {
+                name: 'Save maintenance record',
+                exact: true,
+            })
+            .click();
+        await form.waitFor({ state: 'hidden' });
+        await page
+            .getByRole('cell', { name: `2026 ${quarter}`, exact: true })
+            .waitFor();
+        await page.getByLabel('Active maintenance year').fill('2026');
+        assert.equal(
+            await page
+                .getByRole('button', {
+                    name: `Create ${quarter} record`,
+                    exact: true,
+                })
+                .count(),
+            0,
+        );
+    }
+
     await page
-        .getByRole('button', { name: 'Create Q2 record', exact: true })
+        .getByRole('button', { name: 'Create Q1 record', exact: true })
         .click();
-    const form = page
+    const unsaved = page
         .locator('form')
-        .filter({ hasText: 'Create maintenance record · 2026 Q2' });
-    await form.getByLabel('Estimated duration (days)').fill('5');
-    await form.getByLabel('Maintenance status').selectOption('Completed');
-    await form.getByLabel('Actual start date').fill('2026-04-01');
-    await form.getByLabel('Completion date').fill('2026-04-05');
-    await form
+        .filter({ hasText: 'Create maintenance record · 2026 Q1' });
+    assert.equal(
+        await unsaved.getByLabel('Maintenance status').inputValue(),
+        '',
+    );
+    await unsaved.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await page.reload();
+    assert.equal(
+        await page.getByRole('cell', { name: '2026 Q1', exact: true }).count(),
+        0,
+    );
+    await page.getByLabel('Active maintenance year').fill('2027');
+    await page
+        .getByRole('button', { name: 'Create Q4 record', exact: true })
+        .click();
+    const nextYear = page
+        .locator('form')
+        .filter({ hasText: 'Create maintenance record · 2027 Q4' });
+    assert.match(
+        await nextYear.getByLabel('Actual start date').inputValue(),
+        /^2027-(10|11|12)-\d\d$/,
+    );
+    await nextYear.getByLabel('Estimated duration (days)').fill('5');
+    await nextYear.getByLabel('Maintenance status').selectOption('Ongoing');
+    await nextYear
         .getByRole('button', { name: 'Save maintenance record', exact: true })
         .click();
-    await page
-        .getByText('Maintenance record saved.', { exact: true })
-        .waitFor();
-    await page
-        .getByText('Next expected period: 2026 Q4', { exact: true })
-        .waitFor();
-    await page
-        .getByRole('button', {
-            name: 'Create next quarterly record',
-            exact: true,
-        })
-        .click();
-    const next = page
-        .locator('form')
-        .filter({ hasText: 'Create maintenance record · 2026 Q4' });
-    assert.match(
-        await next.getByLabel('Actual start date').inputValue(),
-        /^2026-(10|11|12)-\d\d$/,
+    await nextYear.waitFor({ state: 'hidden' });
+    await page.getByRole('cell', { name: '2027 Q4', exact: true }).waitFor();
+    assert.equal(
+        await page.getByLabel('Active maintenance year').inputValue(),
+        '2027',
     );
-    assert.equal(await next.getByLabel('Maintenance status').inputValue(), '');
-    await next.getByRole('button', { name: 'Cancel', exact: true }).click();
-    await page.reload();
-    await page
-        .getByText('Expected slot · no activity recorded', { exact: true })
-        .waitFor();
+    await page.getByLabel('Active maintenance year').fill('2026');
     await page
         .getByRole('button', { name: 'Edit details', exact: true })
+        .first()
         .click();
     assert.equal(
         await page
@@ -94,7 +151,7 @@ try {
     }
 
     console.log(
-        'PASS: Project Details, Q2 record save, refreshed Q4 expectation, unsaved future slot, immutable manager; no browser errors.',
+        'PASS: Engineer selects Q4 first then Q2; all quarters available independently; occupied quarters unavailable; no unsaved/future row; next-year reuse; immutable manager.',
     );
 } finally {
     await browser.close();

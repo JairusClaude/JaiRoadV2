@@ -48,6 +48,10 @@ try {
         0,
     );
     assert.equal(await page.getByLabel(/Position/i).count(), 0);
+    assert.doesNotMatch(
+        await page.locator('body').innerText(),
+        /linking is optional|can be created without/i,
+    );
     const typeCells = await page
         .locator('tbody tr td:nth-child(2)')
         .allTextContents();
@@ -80,7 +84,15 @@ try {
         .filter({ has: page.getByLabel(/^Account Type/) });
     const accountType = accountForm.getByLabel(/^Account Type/);
     await accountType.selectOption('Engineer');
-    const engineerSelect = accountForm.getByLabel(/^Engineer/);
+    const engineerSelect = accountForm.getByLabel(/^Linked Engineer/);
+    assert.equal(await engineerSelect.getAttribute('required'), '');
+    await accountType.selectOption('Viewer');
+    assert.equal(await engineerSelect.isDisabled(), true);
+    assert.equal(await engineerSelect.getAttribute('required'), null);
+    await accountType.selectOption('Admin');
+    assert.equal(await engineerSelect.isDisabled(), false);
+    assert.equal(await engineerSelect.getAttribute('required'), '');
+    await accountType.selectOption('Engineer');
     const option = engineerSelect
         .locator('option')
         .filter({ hasText: 'UI Rank Fixture · Engineer III' });
@@ -123,6 +135,10 @@ try {
     await page.goto(`${base}/user-management`);
     await page.waitForURL(`${base}/dd-phase3/users`);
     assert.equal(await page.getByLabel(/Position/i).count(), 0);
+    assert.doesNotMatch(
+        await page.locator('body').innerText(),
+        /linking is optional|can be created without/i,
+    );
     const created = await signIn(
         'ui-type-engineer@example.test',
         'Typed-Disposable!123',
