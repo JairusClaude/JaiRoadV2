@@ -1,5 +1,7 @@
 # Task 1: twice-yearly maintenance
 
+> Historical implementation record. Updated quarterly selection and new-account linkage policies are documented in [pre-merge policy alignment](premerge-policy-alignment.md); those decisions supersede conflicting rules below. Current tests use frozen disposable fixtures and execute no migration files.
+
 Approved business decision: a long-term MaintenanceProject has two maintenance periods per calendar year, using Q1 → Q3 or Q2 → Q4. Synchronize this decision with the official Data Dictionary's previously unresolved quarter-frequency question. Source: `feature/jairoads-map-demo` at `73129e9f9fc357438015e7ccd9430dd8e8dafc51`.
 
 ## Behavior

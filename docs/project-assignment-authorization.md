@@ -1,5 +1,7 @@
 # Task 2: Engineer project creation and maintenance assignments
 
+> Historical implementation record. Updated quarterly selection and new-account linkage policies are documented in [pre-merge policy alignment](premerge-policy-alignment.md); those decisions supersede conflicting rules below. Current tests use frozen disposable fixtures and execute no migration files.
+
 Continues Task 1 at `b712655c14bac8e6ebafc58f319b3ce302dfd45c` on the existing local `Quarterly/Role/Assignment_Update` branch. Task 2 publication destination: `EngineerProjectAssignment_Update`.
 
 ## Project creation
