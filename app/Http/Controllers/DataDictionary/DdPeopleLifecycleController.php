@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\DataDictionary\DataDictionaryIdentityResolver;
 use App\Services\DataDictionary\DdActivityNotifications;
 use App\Services\DataDictionary\DdRoleAccess;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -138,4 +139,58 @@ final class DdPeopleLifecycleController extends Controller
         }
     }
 
+    public function accountDetails(Request $request, DataDictionaryIdentityResolver $resolver, int $id): JsonResponse
+    {
+        $this->admin($request, $resolver);
+        $account = DB::table('jairoads_next.user_accounts')->where('id', $id)
+            ->first(['id', 'username', 'email', 'account_type', 'engineer_id', 'is_active', 'created_at', 'updated_at']);
+        abort_unless($account instanceof stdClass, 404);
+        $engineer = $account->engineer_id === null ? null : DB::table('jairoads_next.engineers')->where('id', $account->engineer_id)
+            ->first(['id', 'first_name', 'middle_name', 'last_name', 'contact_no', 'rank', 'engineer_status']);
+
+        return response()->json(['account' => $account, 'engineer' => $engineer])->header('Cache-Control', 'private, no-store');
+    }
+
+    public function accountStatus(Request $request, DataDictionaryIdentityResolver $resolver, int $id): RedirectResponse
+    {
+        $actor = $this->admin($request, $resolver);
+        $data = $request->validate(['is_active' => ['required', 'boolean'],
+            'account_type' => ['prohibited'], 'engineer_id' => ['prohibited'], 'password' => ['prohibited'],
+            'username' => ['prohibited'], 'email' => ['prohibited'], 'dd_user_account_id' => ['prohibited']]);
+        $active = $this->active($data['is_active']);
+        DB::transaction(function () use ($request, $resolver, $actor, $id, $active): void {
+            $this->currentActor($actor, $request, $resolver);
+            $logins = DB::table('public.users')->where('dd_user_account_id', $id)->orderBy('id')->lockForUpdate()->get(['id', 'email', 'password']);
+            $account = DB::table('jairoads_next.user_accounts')->where('id', $id)->lockForUpdate()->first();
+            abort_unless($account instanceof stdClass, 404);
+            if (! $active && $actor['account_id'] === $id) {
+                throw ValidationException::withMessages(['is_active' => 'You cannot deactivate your own account. Ask another administrator.']);
+            }
+            if ($this->active($account->is_active) === $active) {
+                return;
+            }
+            if (! $active) {
+                $this->protectLastSuperAdmin($account);
+            } else {
+                $valid = DataDictionaryIdentityResolver::roleLinkValid($account->account_type, $account->engineer_id)
+                    && ! ($account->account_type === 'Engineer' && $account->engineer_id === null)
+                    && $logins->count() === 1;
+                $login = $logins->first();
+                $valid = $valid && $login !== null && strcasecmp($login->email, $account->email) === 0
+                    && hash_equals($login->password, $account->password);
+                if ($account->engineer_id !== null) {
+                    $profile = $this->engineer((int) $account->engineer_id);
+                    $valid = $valid && $profile->engineer_status === 'Active'
+                        && ! DB::table('jairoads_next.user_accounts')->where('engineer_id', $account->engineer_id)->where('id', '!=', $id)->exists();
+                }
+                if (! $valid) {
+                    throw ValidationException::withMessages(['is_active' => 'Reactivation requires a valid Fortify link and an eligible active Engineer profile for linked accounts.']);
+                }
+            }
+            DB::table('jairoads_next.user_accounts')->where('id', $id)->update(['is_active' => $active, 'updated_at' => now()]);
+            $this->audit($actor, 'UserAccount', $id, $active ? 'Administrator reactivated account.' : 'Administrator deactivated account.', ['is_active' => ! $active], ['is_active' => $active]);
+        }, 3);
+
+        return back()->with('dd_phase3_status', 'Account status saved.');
+    }
 }

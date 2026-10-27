@@ -27,6 +27,8 @@ Route::middleware(['auth','verified'])->prefix('dd-phase3')->name('jairoads.dd-p
     Route::put('/engineers/{id}', [DdPeopleLifecycleController::class, 'updateEngineer'])->whereNumber('id');
     Route::post('/engineers/{id}/retirement', [DdPeopleLifecycleController::class, 'retireEngineer'])->whereNumber('id');
 
+    Route::get('/accounts/{id}', [DdPeopleLifecycleController::class, 'accountDetails'])->whereNumber('id');
+    Route::patch('/accounts/{id}/status', [DdPeopleLifecycleController::class, 'accountStatus'])->whereNumber('id');
 
     // Explicitly qualified DD module endpoints; never use legacy CRUD routes.
     Route::post('/ops/roads', [DdOperationsController::class,'saveRoad'])->name('operations.roads.store');

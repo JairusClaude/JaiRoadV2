@@ -124,7 +124,7 @@ final class DdPhase3Controller extends Controller
         $userName = $t('user_accounts')->where('id', $actor['account_id'])->value('username');
         return Inertia::render('dd-phase3/Workspace', [
             'section' => $section,
-            'identity' => ['role' => $actor['role'], 'username' => (string) $userName],
+            'identity' => ['role' => $actor['role'], 'username' => (string) $userName, 'accountId' => $actor['account_id']],
             'counts' => $counts,
             'analytics' => $section === 'dashboard' ? app(DdDashboardAnalytics::class)->summary($actor) : null,
             'lgus' => $lgus, 'accounts' => $accounts,

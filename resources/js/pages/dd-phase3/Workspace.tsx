@@ -18,6 +18,7 @@ import { useMemo, useState } from 'react';
 import { DdDashboardAnalytics } from '@/components/dd-dashboard-analytics';
 import type { DdDashboardSummary } from '@/components/dd-dashboard-analytics';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
+import DdAccountLifecycle from '@/pages/dd-phase3/DdAccountLifecycle';
 import DdEngineerLifecycle from '@/pages/dd-phase3/DdEngineerLifecycle';
 import DdLguDirectory from '@/pages/dd-phase3/DdLguDirectory';
 
@@ -311,6 +312,12 @@ export default function DdPhase3Workspace({
                 )}
             </div>
 
+            {section === 'users' && isManager && (
+                <DdAccountLifecycle
+                    accounts={accounts}
+                    actorId={identity.accountId}
+                />
+            )}
             {section === 'users' && isManager && (
                 <DdEngineerLifecycle engineers={engineers} />
             )}
