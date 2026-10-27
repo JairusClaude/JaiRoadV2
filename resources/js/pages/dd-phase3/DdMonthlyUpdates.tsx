@@ -51,6 +51,7 @@ export type MaintenanceRecordOption = {
   status: string;
 };
 export type DdMonthlyUpdatesProps = {
+  removalReview?: ReactNode;
   initialUpdates?: MonthlyUpdate[];
   maintenanceRecords?: MaintenanceRecordOption[];
   schemaNotice?: string | null;
@@ -140,6 +141,7 @@ function Empty({ title, description }: { title: string; description: string }) {
 }
 const pageSize = 8;
 export default function DdMonthlyUpdates({
+  removalReview,
   initialUpdates = [],
   maintenanceRecords = [],
   schemaNotice = null,
@@ -296,6 +298,7 @@ export default function DdMonthlyUpdates({
   }
   return (
     <ProjectWorkspace>
+      {removalReview}
       <div className="jr-page-head">
         <div>
           <h1>Monthly Updates</h1>

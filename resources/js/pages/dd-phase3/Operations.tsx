@@ -5,6 +5,7 @@ import type { ComponentProps } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { useAppearance } from '@/hooks/use-appearance';
 import DdDocuments from '@/pages/dd-phase3/DdDocuments';
+import DdFileRemovalReview from '@/pages/dd-phase3/DdFileRemovalReview';
 import DdMaintenanceProjects from '@/pages/dd-phase3/DdMaintenanceProjects';
 import DdMonthlyUpdates from '@/pages/dd-phase3/DdMonthlyUpdates';
 import DdQuarterlyMaintenance from '@/pages/dd-phase3/DdQuarterlyMaintenance';
@@ -246,6 +247,17 @@ export default function Operations({
                 <Head title="Monthly Updates" />
                 {notice}
                 <DdMonthlyUpdates
+                    removalReview={
+                        canManage ? (
+                            <DdFileRemovalReview
+                                kind="media"
+                                files={media.map((m) => ({
+                                    id: Number(m.id),
+                                    file_name: String(m.file_name),
+                                }))}
+                            />
+                        ) : null
+                    }
                     initialUpdates={updates.map((x) => ({
                         id: Number(x.id),
                         maintenanceRecordId: Number(x.maintenance_id),
@@ -284,6 +296,17 @@ export default function Operations({
                 <Head title="Project Documents" />
                 {notice}
                 <DdDocuments
+                    removalReview={
+                        canManage ? (
+                            <DdFileRemovalReview
+                                kind="document"
+                                files={documents.map((d) => ({
+                                    id: Number(d.id),
+                                    file_name: String(d.file_name),
+                                }))}
+                            />
+                        ) : null
+                    }
                     initialDocuments={documents.map((x) => ({
                         id: Number(x.id),
                         maintenanceRecordId: Number(x.maintenance_id),

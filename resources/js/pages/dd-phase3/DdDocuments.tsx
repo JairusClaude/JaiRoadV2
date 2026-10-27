@@ -46,6 +46,7 @@ export type MaintenanceRecordOption = {
   status: string;
 };
 export type DdDocumentsProps = {
+  removalReview?: ReactNode;
   initialDocuments?: MaintenanceDocumentSummary[];
   maintenanceRecords?: MaintenanceRecordOption[];
   schemaNotice?: string | null;
@@ -163,6 +164,7 @@ function Modal({
   );
 }
 export default function DdDocuments({
+  removalReview,
   initialDocuments = [],
   maintenanceRecords = [],
   schemaNotice = null,
@@ -305,6 +307,7 @@ export default function DdDocuments({
   }
   return (
     <ProjectWorkspace>
+      {removalReview}
       <div className="jr-page-head">
         <div>
           <h1>Project Documents</h1>

@@ -45,6 +45,8 @@ Route::middleware(['auth','verified'])->prefix('dd-phase3')->name('jairoads.dd-p
     Route::post('/ops/documents', [DdOperationsController::class,'uploadDocument'])->middleware('throttle:8,1');
     Route::put('/ops/documents/{id}', [DdOperationsController::class,'updateDocument'])->whereNumber('id')->middleware('throttle:10,1')->name('operations.documents.update');
     Route::post('/ops/media', [DdOperationsController::class,'uploadMedia'])->middleware('throttle:8,1');
+    Route::get('/files/{kind}/{id}/deletion-review', [DdOperationsController::class, 'fileRemovalReview'])
+        ->whereIn('kind', ['document', 'media'])->whereNumber('id');
     Route::get('/files/{kind}/{id}', [DdOperationsController::class,'download'])
         ->whereIn('kind',['document','media'])->whereNumber('id')->name('operations.files.download');
 });

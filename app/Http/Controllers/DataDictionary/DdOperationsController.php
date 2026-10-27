@@ -15,6 +15,7 @@ use App\Services\DataDictionary\RoadCoverageGeometry;
 use App\Services\Documents\PrivateSupabaseStorage;
 use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
 use Illuminate\Database\QueryException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -598,6 +599,29 @@ final class DdOperationsController extends Controller
         });
         $section=match($entity) { 'roads'=>'roads','projects','records'=>'projects','updates'=>'updates' };
         return $this->done($section,'Item deleted.');
+    }
+
+    /** Non-destructive preparation only; there is deliberately no file DELETE endpoint. */
+    public function fileRemovalReview(Request $request, DataDictionaryIdentityResolver $resolver, string $kind, int $id): JsonResponse
+    {
+        $actor = $this->actor($request, $resolver);
+        abort_unless($this->managers($actor), 403);
+        if ($kind === 'document') {
+            $row = $this->t('maintenance_documents')->where('id', $id)->first(['maintenance_id', 'file_name']);
+        } elseif ($kind === 'media') {
+            $row = $this->t('media as m')->join('jairoads_next.monthly_updates as mu', 'mu.id', '=', 'm.monthly_update_id')
+                ->where('m.id', $id)->first(['mu.maintenance_id', 'm.file_name']);
+        } else {
+            abort(404);
+        }
+        abort_unless($row instanceof \stdClass, 404);
+        $this->recordScope($actor, (int) $row->maintenance_id);
+
+        return response()->json(['id' => $id, 'kind' => $kind, 'file_name' => $row->file_name,
+            'maintenance_id' => (int) $row->maintenance_id, 'can_delete' => false,
+            'policy_status' => 'pending_storage_retention',
+            'message' => 'Deletion is disabled until the team approves database-record and private storage-object retention. No record or file has been removed.',
+        ])->header('Cache-Control', 'private, no-store');
     }
 
     public function download(Request $request, DataDictionaryIdentityResolver $resolver, string $kind, int $id, PrivateSupabaseStorage $documents, PrivateMonthlyMediaStorage $media): HttpResponse
