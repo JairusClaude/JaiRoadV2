@@ -51,6 +51,7 @@ final class RoadCoverageGeometry
                 return false;
             }
         }
+
         return true;
     }
 
@@ -64,6 +65,7 @@ final class RoadCoverageGeometry
                 return false;
             }
         }
+
         return true;
     }
 
@@ -85,6 +87,7 @@ final class RoadCoverageGeometry
                 return false;
             }
         }
+
         return true;
     }
 }

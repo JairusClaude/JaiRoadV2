@@ -9,6 +9,7 @@ use App\Services\MaintenanceProjects\VerifiedProjectAccount;
 class EngineerPolicy
 {
     public function __construct(private VerifiedProjectAccount $accounts) {}
+
     /**
      * Determine whether the user can view any models.
      */

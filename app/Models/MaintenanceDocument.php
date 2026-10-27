@@ -27,6 +27,7 @@ class MaintenanceDocument extends Model
     protected $guarded = ['*'];
 
     public const CREATED_AT = 'uploaded_at';
+
     public const UPDATED_AT = 'updated_at';
 
     /** @return BelongsTo<MaintenanceRecord, $this> */

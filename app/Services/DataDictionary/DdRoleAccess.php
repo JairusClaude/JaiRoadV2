@@ -43,10 +43,14 @@ final class DdRoleAccess
     }
 
     /** UI guide only: endpoint guards additionally require a live Engineer identity and active LGU scope. */
+    /**
+     * @return array<string,bool|string>
+     */
     public static function capabilities(string $role, bool $hasAssignment, bool $linkedEngineer): array
     {
         $manager = self::managesBusinessData($role);
         $engineerScoped = $role === 'Engineer' && $hasAssignment && $linkedEngineer;
+
         return [
             'role' => $role,
             'manageAccounts' => $manager,

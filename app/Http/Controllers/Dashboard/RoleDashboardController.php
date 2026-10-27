@@ -28,8 +28,7 @@ final class RoleDashboardController extends Controller
         $role = $access->role($user);
         abort_unless(in_array($role, ['engineer', 'viewer'], true), 403);
 
-        $has = static fn (string $table, array $columns = []): bool =>
-            Schema::hasTable($table) && ($columns === [] || Schema::hasColumns($table, $columns));
+        $has = static fn (string $table, array $columns = []): bool => Schema::hasTable($table) && ($columns === [] || Schema::hasColumns($table, $columns));
 
         $assignedLgus = [];
         $recentRecords = [];
@@ -47,7 +46,7 @@ final class RoleDashboardController extends Controller
 
         if ($role === 'engineer') {
             // The final dictionary requires a linked Active Engineer profile.
-            abort_unless($account->engineers_id, 403);
+            abort_unless($account->engineers_id !== null && $account->engineers_id > 0, 403);
             abort_unless($has('engineers', ['id', 'first_name', 'last_name', 'engineer_status']), 503);
             $profile = DB::table('engineers')->where('id', $account->engineers_id)
                 ->first(['id', 'first_name', 'middle_name', 'last_name', 'rank', 'engineer_status']);
@@ -149,7 +148,7 @@ final class RoleDashboardController extends Controller
             $notifications = DB::table('audit_logs')
                 ->where('recipient_user_id', $account->id)
                 ->whereNotNull('notification_message')
-                ->whereRaw("btrim(notification_message) <> ''")
+                ->whereRaw("trim(notification_message) <> ''")
                 ->orderByDesc('created_at')->orderByDesc('id')
                 ->limit(8)->get(['id', 'notification_message', 'created_at'])
                 ->map(static fn ($notice): array => [

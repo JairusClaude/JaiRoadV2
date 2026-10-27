@@ -18,9 +18,7 @@ use Throwable;
  */
 final class AccountProvisioningRoles
 {
-    public function __construct(private VerifiedProjectAccount $accounts)
-    {
-    }
+    public function __construct(private VerifiedProjectAccount $accounts) {}
 
     /** @return list<'viewer'|'engineer'|'admin'> */
     public function for(User $user): array

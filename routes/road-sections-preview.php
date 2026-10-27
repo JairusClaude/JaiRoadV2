@@ -43,6 +43,7 @@ Route::middleware(['auth', 'verified'])->get('/road-sections-preview', function 
                     $decoded = json_decode($geometry, true);
                     $geometry = is_array($decoded) ? $decoded : null;
                 }
+
                 return [
                     'id' => (int) $road->id,
                     'roadName' => (string) $road->road_name,

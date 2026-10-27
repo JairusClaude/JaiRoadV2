@@ -13,6 +13,7 @@ import {
     Users,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { JaiRoadsNotifications } from '@/components/jairoads-notifications';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -29,7 +30,6 @@ import {
     useSidebar,
 } from '@/components/ui/sidebar';
 import { UserMenuContent } from '@/components/user-menu-content';
-import { JaiRoadsNotifications } from '@/components/jairoads-notifications';
 import { useInitials } from '@/hooks/use-initials';
 import type { User } from '@/types';
 
@@ -44,8 +44,16 @@ const navigation = [
         icon: LayoutDashboard,
     },
     { title: 'User Management', href: '/user-management', icon: Users },
-    { title: 'Monthly Updates', href: '/monthly-updates-preview', icon: CalendarDays },
-    { title: 'Project Documents', href: '/project-documents-preview', icon: FileText },
+    {
+        title: 'Monthly Updates',
+        href: '/monthly-updates-preview',
+        icon: CalendarDays,
+    },
+    {
+        title: 'Project Documents',
+        href: '/project-documents-preview',
+        icon: FileText,
+    },
     { title: 'Road Sections', href: '/road-sections-preview', icon: Map },
     { title: 'LGU', href: '/lgus-preview', icon: Building2 },
     { title: 'Settings', href: '/settings-preview', icon: Settings },
@@ -64,13 +72,28 @@ export function MaintenanceProjectShell({
     const page = usePage();
     const preview = page.props.previewOnly === true;
     const path = page.url.split('?')[0];
-    const pageName = (path.startsWith('/settings-preview') || path.startsWith('/settings/')) ? 'Settings' : path.startsWith('/lgus-preview') ? 'LGU' : path.startsWith('/road-sections-preview') ? 'Road Sections' : path.endsWith('/create')
-        ? 'Add Project'
-        : path.endsWith('/edit')
-          ? 'Edit Project'
-          : /^\/maintenance-projects\/\d+$/.test(path)
-            ? 'Project Details'
-            : path.startsWith('/user-management') ? 'User Management' : path.startsWith('/user-management') ? 'User Management' : path.startsWith('/monthly-updates') ? 'Monthly Updates' : path.startsWith('/project-documents-preview') ? 'Project Documents' : 'Maintenance Projects';
+    const pageName =
+        path.startsWith('/settings-preview') || path.startsWith('/settings/')
+            ? 'Settings'
+            : path.startsWith('/lgus-preview')
+              ? 'LGU'
+              : path.startsWith('/road-sections-preview')
+                ? 'Road Sections'
+                : path.endsWith('/create')
+                  ? 'Add Project'
+                  : path.endsWith('/edit')
+                    ? 'Edit Project'
+                    : /^\/maintenance-projects\/\d+$/.test(path)
+                      ? 'Project Details'
+                      : path.startsWith('/user-management')
+                        ? 'User Management'
+                        : path.startsWith('/user-management')
+                          ? 'User Management'
+                          : path.startsWith('/monthly-updates')
+                            ? 'Monthly Updates'
+                            : path.startsWith('/project-documents-preview')
+                              ? 'Project Documents'
+                              : 'Maintenance Projects';
 
     return (
         <>
@@ -168,9 +191,12 @@ export function MaintenanceProjectShell({
                                             event.preventDefault();
                                         }
                                     }}
-                                    className={`jr-nav-link ${((path === href || path.startsWith(href + '/') || (href === '/settings-preview' && path.startsWith('/settings/')))) ? 'jr-active' : ''}`}
+                                    className={`jr-nav-link ${path === href || path.startsWith(href + '/') || (href === '/settings-preview' && path.startsWith('/settings/')) ? 'jr-active' : ''}`}
                                     aria-current={
-                                        ((path === href || path.startsWith(href + '/') || (href === '/settings-preview' && path.startsWith('/settings/'))))
+                                        path === href ||
+                                        path.startsWith(href + '/') ||
+                                        (href === '/settings-preview' &&
+                                            path.startsWith('/settings/'))
                                             ? 'page'
                                             : undefined
                                     }
@@ -215,10 +241,13 @@ export function MaintenanceProjectShell({
                         )}
                         <span>JaiROADS</span>
                         <ChevronRight className="size-3" />
-                        <strong className="truncate">{path.startsWith('/admin-dashboard') ? 'Dashboard' : pageName}</strong>
+                        <strong className="truncate">
+                            {path.startsWith('/admin-dashboard')
+                                ? 'Dashboard'
+                                : pageName}
+                        </strong>
                     </div>
                     <div className="jr-top-actions">
-                        
                         <JaiRoadsNotifications />
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -256,8 +285,11 @@ export function MaintenanceProjectShell({
                 <main className="jr-content">
                     {preview && (
                         <p className="jr-preview-note" role="note">
-                            Local interface review ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· sample data in this preview
-                            process ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· PostgreSQL is not connected.
+                            Local interface review
+                            ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· sample
+                            data in this preview process
+                            ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â·
+                            PostgreSQL is not connected.
                         </p>
                     )}
                     {children}
@@ -291,8 +323,3 @@ export default function MaintenanceProjectLayout({
         </SidebarProvider>
     );
 }
-
-
-
-
-

@@ -33,6 +33,7 @@ class MaintenanceRecordPolicy
         if ($this->accounts->role($user) !== 'engineer') {
             return true;
         }
+
         return $this->isManagingEngineerInAssignedLgu($user, $maintenanceRecord);
     }
 
@@ -63,6 +64,7 @@ class MaintenanceRecordPolicy
             return false;
         }
         $coverage = $record->maintenanceProject?->roadCoverage;
+
         return $coverage !== null && $this->accounts->assignedTo($account, $coverage);
     }
 

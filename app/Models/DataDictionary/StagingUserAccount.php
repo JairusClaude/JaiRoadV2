@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use LogicException;
 
 /**
+ * @property bool $is_active
+ * @property string $username
+ *
  * Read-only bridge for the NEW Data Dictionary account table.
  * NOT a Fortify login model. Never infer a match from a legacy numeric ID.
  * Do not use for account provisioning until the approved cutover.

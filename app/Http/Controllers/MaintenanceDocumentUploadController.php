@@ -12,6 +12,7 @@ use App\Services\MaintenanceProjects\VerifiedProjectAccount;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
@@ -45,7 +46,7 @@ class MaintenanceDocumentUploadController extends Controller
         Gate::authorize('createForRecord', [MaintenanceDocument::class, $record]);
 
         $file = $request->file('file');
-        if (! $file instanceof \Illuminate\Http\UploadedFile) {
+        if (! $file instanceof UploadedFile) {
             throw ValidationException::withMessages(['file' => 'A document file is required.']);
         }
         $extension = strtolower($file->getClientOriginalExtension());
@@ -151,6 +152,7 @@ class MaintenanceDocumentUploadController extends Controller
         ];
         $type = $types[$extension] ?? 'application/octet-stream';
         $disposition = HeaderUtils::makeDisposition(HeaderUtils::DISPOSITION_ATTACHMENT, $filename, 'document.'.$extension);
+
         return response($remote->body(), 200, [
             'Content-Type' => $type,
             'Content-Disposition' => $disposition,

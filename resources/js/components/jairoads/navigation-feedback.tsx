@@ -8,7 +8,9 @@ import '../../../css/jairoads-navigation-ux.css';
  * this UI never claims a slow request is finished.
  */
 export function JaiRoadsNavigationFeedback() {
-    const [message, setMessage] = useState<'hidden' | 'loading' | 'slow' | 'very-slow'>('hidden');
+    const [message, setMessage] = useState<
+        'hidden' | 'loading' | 'slow' | 'very-slow'
+    >('hidden');
     const delayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const slowRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const verySlowRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -16,9 +18,18 @@ export function JaiRoadsNavigationFeedback() {
     useEffect(() => {
         let pending = false;
         const clearTimers = () => {
-            if (delayRef.current) clearTimeout(delayRef.current);
-            if (slowRef.current) clearTimeout(slowRef.current);
-            if (verySlowRef.current) clearTimeout(verySlowRef.current);
+            if (delayRef.current) {
+                clearTimeout(delayRef.current);
+            }
+
+            if (slowRef.current) {
+                clearTimeout(slowRef.current);
+            }
+
+            if (verySlowRef.current) {
+                clearTimeout(verySlowRef.current);
+            }
+
             delayRef.current = null;
             slowRef.current = null;
             verySlowRef.current = null;
@@ -28,13 +39,19 @@ export function JaiRoadsNavigationFeedback() {
             pending = true;
             setMessage('hidden');
             delayRef.current = setTimeout(() => {
-                if (pending) setMessage('loading');
+                if (pending) {
+                    setMessage('loading');
+                }
             }, 220);
             slowRef.current = setTimeout(() => {
-                if (pending) setMessage('slow');
+                if (pending) {
+                    setMessage('slow');
+                }
             }, 5000);
             verySlowRef.current = setTimeout(() => {
-                if (pending) setMessage('very-slow');
+                if (pending) {
+                    setMessage('very-slow');
+                }
             }, 20000);
         };
         const finish = () => {
@@ -46,6 +63,7 @@ export function JaiRoadsNavigationFeedback() {
         // Inertia returns unsubscribe functions. Strict Mode cleans these up.
         const offStart = router.on('start', start);
         const offFinish = router.on('finish', finish);
+
         return () => {
             pending = false;
             clearTimers();
@@ -54,15 +72,24 @@ export function JaiRoadsNavigationFeedback() {
         };
     }, []);
 
-    if (message === 'hidden') return null;
+    if (message === 'hidden') {
+        return null;
+    }
 
     return (
-        <div className="jr-loading-layer" role="status" aria-live="polite" aria-atomic="true">
+        <div
+            className="jr-loading-layer"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+        >
             <div className="jr-loading-track" aria-hidden="true">
                 <div className="jr-loading-track-stripe" />
             </div>
             <div className="jr-loading-notice">
-                <span className="jr-loading-road" aria-hidden="true"><span /></span>
+                <span className="jr-loading-road" aria-hidden="true">
+                    <span />
+                </span>
                 <span>
                     {message === 'very-slow'
                         ? 'Still waiting for the server. Navigation has not finished.'

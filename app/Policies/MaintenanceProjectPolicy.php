@@ -26,6 +26,7 @@ class MaintenanceProjectPolicy
         }
         $account = $this->accounts->resolve($user);
         $coverage = $project->roadCoverage;
+
         return $account !== null && $coverage !== null
             && $this->accounts->assignedTo($account, $coverage);
     }

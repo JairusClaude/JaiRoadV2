@@ -5,9 +5,10 @@
 // READ-ONLY database integration: NEVER writes DB rows or storage objects.
 // This route does not replace the existing MaintenanceDocumentController CRUD routes.
 
-use App\Services\MaintenanceProjects\VerifiedProjectAccount;
-use App\Services\MaintenanceProjects\SidebarMaintenanceRecordScope;
+use App\Models\User;
 use App\Services\Documents\PrivateSupabaseStorage;
+use App\Services\MaintenanceProjects\SidebarMaintenanceRecordScope;
+use App\Services\MaintenanceProjects\VerifiedProjectAccount;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
@@ -15,7 +16,7 @@ use Inertia\Inertia;
 
 Route::middleware(['auth', 'verified'])->get('/project-documents-preview', function () {
     $user = request()->user();
-    abort_unless($user instanceof \App\Models\User, 401);
+    abort_unless($user instanceof User, 401);
     $accounts = app(VerifiedProjectAccount::class);
     $role = $accounts->role($user);
     $scopedRecords = app(SidebarMaintenanceRecordScope::class);
@@ -61,6 +62,7 @@ Route::middleware(['auth', 'verified'])->get('/project-documents-preview', funct
                     return $candidate;
                 }
             }
+
             return null;
         };
         $recordFk = $pick(['maintenance_records_id', 'maintenance_record_id', 'maintenance_id', 'MaintenanceID']);
@@ -88,8 +90,8 @@ Route::middleware(['auth', 'verified'])->get('/project-documents-preview', funct
             if ($pathField === null) {
                 $missing[] = 'no recognized file-path field';
             }
-            $notice = 'Record-linked documents are unavailable: ' . implode('; ', $missing)
-                . '. Existing project documents have not been reclassified or changed. File uploads remain disabled pending team approval.';
+            $notice = 'Record-linked documents are unavailable: '.implode('; ', $missing)
+                .'. Existing project documents have not been reclassified or changed. File uploads remain disabled pending team approval.';
         } else {
             $fields = array_values(array_unique(array_filter([
                 'id', $recordFk, $titleField, $nameField, $pathField,
@@ -110,6 +112,7 @@ Route::middleware(['auth', 'verified'])->get('/project-documents-preview', funct
             }
             $documents = $rows->map(static function ($row) use ($recordFk, $titleField, $nameField, $descriptionField, $uploadedByField, $uploadedAtField, $uploaders) {
                 $uploaderId = $uploadedByField ? $row->{$uploadedByField} : null;
+
                 return [
                     'id' => (int) $row->id,
                     'maintenanceRecordId' => (int) $row->{$recordFk},
@@ -137,7 +140,7 @@ Route::middleware(['auth', 'verified'])->get('/project-documents-preview', funct
         ? DB::table('engineers')->orderBy('last_name')
         : null;
     if ($engineerOptions !== null && $role === 'engineer') {
-        $engineerOptions->where('id', (int) ($accounts->resolve($user)?->engineers_id ?? 0));
+        $engineerOptions->where('id', (int) ($accounts->resolve($user)->engineers_id ?? 0));
     }
 
     $availableProjects = $projectOptions !== null

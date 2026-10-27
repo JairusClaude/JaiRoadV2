@@ -318,6 +318,7 @@ class MaintenanceRecordController extends Controller
         // workflows are approved. This is an intentional temporary 409.
         abort(409, 'MaintenanceRecord deletion is unavailable pending dependent-table alignment.');
     }
+
     /**
      * Resolve the current authentication identity to its UserAccount.
      *
@@ -333,6 +334,7 @@ class MaintenanceRecordController extends Controller
 
         return app(VerifiedProjectAccount::class)->require($user);
     }
+
     /**
      * Take only the MaintenanceRecord fields intended for audit snapshots.
      *

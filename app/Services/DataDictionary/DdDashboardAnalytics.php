@@ -9,6 +9,10 @@ use Illuminate\Support\Facades\DB;
 /** Read-only summary: source data is the approved jairoads_next business schema. */
 final class DdDashboardAnalytics
 {
+    /**
+     * @param  array{account_id:int,role:string,engineer_id:?int}  $actor
+     * @return array<string,mixed>
+     */
     public function summary(array $actor): array
     {
         $role = (string) $actor['role'];
@@ -89,6 +93,7 @@ final class DdDashboardAnalytics
                     'role' => (string) $v->account_type, 'at' => (string) $v->created_at,
                 ])->all();
         }
+
         return [
             'scope' => match ($role) {
                 'SuperAdmin' => 'System-wide', 'Admin' => 'Operations overview',

@@ -1,10 +1,10 @@
 import { ArrowLeft, Search } from 'lucide-react';
-import { RoadCoverageMap } from '@/components/maintenance-projects/road-coverage-map';
 import { useState } from 'react';
 import {
     IntegrationNotice,
     ProjectWorkspace,
 } from '@/components/maintenance-projects/project-workspace';
+import { RoadCoverageMap } from '@/components/maintenance-projects/road-coverage-map';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -212,10 +212,23 @@ export function ProjectForm({
                         <RoadCoverageMap
                             coverages={coverages}
                             selectedId={selected?.id ?? null}
-                            selectionDisabled={coverageLocked || processing || !integration.ready}
+                            selectionDisabled={
+                                coverageLocked ||
+                                processing ||
+                                !integration.ready
+                            }
                             onSelectCoverage={(id) => {
-                                const coverage = coverages.find((item) => item.id === id);
-                                if (coverage && !coverage.assigned && !coverageLocked && !processing && integration.ready) {
+                                const coverage = coverages.find(
+                                    (item) => item.id === id,
+                                );
+
+                                if (
+                                    coverage &&
+                                    !coverage.assigned &&
+                                    !coverageLocked &&
+                                    !processing &&
+                                    integration.ready
+                                ) {
                                     choose(coverage);
                                 }
                             }}
@@ -308,11 +321,17 @@ export function ProjectForm({
                             </p>
                         </div>
                         <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                            <div className="text-xs font-semibold text-slate-500">Municipality (from Road Coverage)</div>
-                            <div className="mt-2 text-sm font-semibold text-slate-800">
-                                {selected?.municipality ?? 'Select a Road Coverage first'}
+                            <div className="text-xs font-semibold text-slate-500">
+                                Municipality (from Road Coverage)
                             </div>
-                            <p className="mt-1 text-xs text-slate-500">Inherited automatically; not another project field.</p>
+                            <div className="mt-2 text-sm font-semibold text-slate-800">
+                                {selected?.municipality ??
+                                    'Select a Road Coverage first'}
+                            </div>
+                            <p className="mt-1 text-xs text-slate-500">
+                                Inherited automatically; not another project
+                                field.
+                            </p>
                         </div>
                     </div>
                     <div className="mt-5">

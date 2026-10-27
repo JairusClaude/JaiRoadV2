@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\MonthlyUpdates;
 
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
@@ -47,10 +48,11 @@ class PrivateMonthlyMediaStorage
             throw new RuntimeException('Invalid monthly-media storage location.');
         }
         $prefix = $authenticated ? 'object/authenticated' : 'object';
+
         return $this->baseUrl().'/storage/v1/'.$prefix.'/'.$bucket.'/'.$path;
     }
 
-    /** @return \Illuminate\Http\Client\PendingRequest */
+    /** @return PendingRequest */
     private function request()
     {
         if (! $this->configured()) {
@@ -61,6 +63,7 @@ class PrivateMonthlyMediaStorage
         if (! str_starts_with($this->token(), 'sb_secret_')) {
             $request = $request->withToken($this->token());
         }
+
         return $request;
     }
 
@@ -95,6 +98,7 @@ class PrivateMonthlyMediaStorage
         if (! $response->successful()) {
             throw new RuntimeException('Media is unavailable from private storage.');
         }
+
         return $response;
     }
 
