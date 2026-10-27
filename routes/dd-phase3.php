@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\DataDictionary\DdPhase3Controller;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DataDictionary\DdOperationsController;
+use App\Http\Controllers\DataDictionary\DdPeopleLifecycleController;
 
 // Explicit Data Dictionary-only routes. Never share legacy controller/permission paths.
 Route::middleware(['auth','verified'])->prefix('dd-phase3')->name('jairoads.dd-phase3.')->group(function (): void {
@@ -22,6 +23,10 @@ Route::middleware(['auth','verified'])->prefix('dd-phase3')->name('jairoads.dd-p
     Route::post('/engineers', [DdPhase3Controller::class, 'createEngineer'])->middleware('throttle:10,1')->name('engineers.store');
     Route::post('/assignments', [DdPhase3Controller::class, 'setAssignment'])->middleware('throttle:10,1')->name('assignments.store');
     Route::post('/accounts', [DdPhase3Controller::class, 'createAccount'])->middleware('throttle:5,1')->name('accounts.store');
+
+    Route::put('/engineers/{id}', [DdPeopleLifecycleController::class, 'updateEngineer'])->whereNumber('id');
+    Route::post('/engineers/{id}/retirement', [DdPeopleLifecycleController::class, 'retireEngineer'])->whereNumber('id');
+
 
     // Explicitly qualified DD module endpoints; never use legacy CRUD routes.
     Route::post('/ops/roads', [DdOperationsController::class,'saveRoad'])->name('operations.roads.store');

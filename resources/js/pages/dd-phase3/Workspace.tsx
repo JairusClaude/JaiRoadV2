@@ -18,6 +18,7 @@ import { useMemo, useState } from 'react';
 import { DdDashboardAnalytics } from '@/components/dd-dashboard-analytics';
 import type { DdDashboardSummary } from '@/components/dd-dashboard-analytics';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
+import DdEngineerLifecycle from '@/pages/dd-phase3/DdEngineerLifecycle';
 import DdLguDirectory from '@/pages/dd-phase3/DdLguDirectory';
 
 type Role = 'SuperAdmin' | 'Admin' | 'Engineer' | 'Viewer';
@@ -50,7 +51,7 @@ type Lgu = {
 type Assignment = { engineer_id: number; lgu_id: number; is_active: boolean };
 type Props = {
     section: 'dashboard' | 'users' | 'lgus';
-    identity: { role: Role; username: string };
+    identity: { role: Role; username: string; accountId: number };
     counts: {
         lgus: number;
         roadCoverages: number;
@@ -310,6 +311,9 @@ export default function DdPhase3Workspace({
                 )}
             </div>
 
+            {section === 'users' && isManager && (
+                <DdEngineerLifecycle engineers={engineers} />
+            )}
             {section === 'users' && isManager && (
                 <section className="mb-6 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
                     <div
