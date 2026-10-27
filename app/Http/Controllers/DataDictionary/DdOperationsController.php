@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\DataDictionary\DataDictionaryIdentityResolver;
 use App\Services\DataDictionary\DdRoleAccess;
+use App\Services\DataDictionary\LinkedPasswordUpdater;
 use App\Services\DataDictionary\ManagingEngineerEligibility;
 use App\Services\DataDictionary\TwiceYearlyMaintenance;
 use App\Services\DataDictionary\RoadCoverageGeometry;
@@ -452,36 +453,36 @@ final class DdOperationsController extends Controller
         return $this->done('updates','Monthly update saved.');
     }
 
-    public function saveSettings(Request $request, DataDictionaryIdentityResolver $resolver): RedirectResponse
+    public function saveSettings(Request $request, DataDictionaryIdentityResolver $resolver, LinkedPasswordUpdater $passwords): RedirectResponse
     {
-        $actor=$this->actor($request,$resolver);
-        // Final DD grants Engineer/Viewer only Own: R on UserAccount.
-        // Self-service account/password mutation remains a client decision.
+        $actor = $this->actor($request, $resolver);
+        // Preserve the existing manager-only Settings permission.
         abort_unless($this->managers($actor), 403, 'Account changes require administrator authorization.');
-        $v=$request->validate([
-            'username'=>['required','string','min:3','max:100','regex:/\A[a-zA-Z0-9_.-]+\z/'],
-            'current_password'=>['required','string'],
-            'password'=>['nullable','confirmed',Password::min(12)->mixedCase()->numbers()->symbols()],
+        $login = $request->user();
+        abort_unless($login instanceof User, 403);
+        $v = $request->validate([
+            'username' => ['required', 'string', 'min:3', 'max:100', 'regex:/\A[a-zA-Z0-9_.-]+\z/'],
+            'current_password' => ['required', 'string'],
+            'password' => ['nullable', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()],
         ]);
-        $username=strtolower(trim($v['username']));
-        abort_unless(Hash::check($v['current_password'],(string)$request->user()->password),422,'Current password is incorrect.');
-        DB::transaction(function () use ($actor,$username,$v,$request): void {
+        $username = strtolower(trim($v['username']));
+        abort_unless(Hash::check($v['current_password'], $login->password), 422, 'Current password is incorrect.');
+        DB::transaction(function () use ($actor, $username, $v, $login, $passwords): void {
             DB::select('SELECT pg_advisory_xact_lock(1927710963)');
-            $account=$this->t('user_accounts')->where('id',$actor['account_id'])->lockForUpdate()->first(['id','username','password']);
-            abort_unless($account!==null,403);
-            if ($this->t('user_accounts')->whereRaw('LOWER(username) = ?',[$username])->where('id','!=',$actor['account_id'])->exists()) {
-                throw ValidationException::withMessages(['username'=>'Username is already in use.']);
+            if (! empty($v['password'])) {
+                $passwords->change($login, $v['current_password'], $v['password']);
             }
-            $data=['username'=>$username,'updated_at'=>now()];
-            if (!empty($v['password'])) {
-                $hash=Hash::make($v['password']);
-                $data['password']=$hash;
-                DB::table('public.users')->where('id',$request->user()->id)->where('dd_user_account_id',$actor['account_id'])->update(['password'=>$hash,'updated_at'=>now()]);
+            $account = $this->t('user_accounts')->where('id', $actor['account_id'])->lockForUpdate()->first(['id', 'username']);
+            abort_unless($account !== null, 403);
+            if ($this->t('user_accounts')->whereRaw('LOWER(username) = ?', [$username])->where('id', '!=', $actor['account_id'])->exists()) {
+                throw ValidationException::withMessages(['username' => 'Username is already in use.']);
             }
-            $this->t('user_accounts')->where('id',$actor['account_id'])->update($data);
-            $this->audit($actor,'UPDATE','UserAccount',$actor['account_id'],'Account holder updated approved identity credentials; no secrets logged.');
+            $data = ['username' => $username, 'updated_at' => now()];
+            $this->t('user_accounts')->where('id', $actor['account_id'])->update($data);
+            $this->audit($actor, 'UPDATE', 'UserAccount', $actor['account_id'], 'Account holder updated approved identity credentials; no secrets logged.');
         });
-        return $this->done('settings','Settings saved. Sign in again if you changed your password.');
+
+        return $this->done('settings', 'Settings saved. Sign in again if you changed your password.');
     }
 
     /** Update approved MaintenanceDocument metadata; the private file and parent stay unchanged. */
