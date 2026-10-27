@@ -1,0 +1,99 @@
+{
+    "laravel_migration_ledger": [
+        {
+            "migration": "0001_01_01_000000_create_users_table",
+            "batch": 1
+        },
+        {
+            "migration": "0001_01_01_000001_create_cache_table",
+            "batch": 1
+        },
+        {
+            "migration": "0001_01_01_000002_create_jobs_table",
+            "batch": 1
+        },
+        {
+            "migration": "2024_01_01_000000_create_passkeys_table",
+            "batch": 1
+        },
+        {
+            "migration": "2025_08_14_170933_add_two_factor_columns_to_users_table",
+            "batch": 1
+        },
+        {
+            "migration": "2026_09_17_110007_create_lgus_table",
+            "batch": 1
+        },
+        {
+            "migration": "2026_09_17_111059_create_engineers_table",
+            "batch": 1
+        },
+        {
+            "migration": "2026_09_17_111504_create_user_accounts_table",
+            "batch": 1
+        },
+        {
+            "migration": "2026_09_17_111916_create_maintenance_projects_table",
+            "batch": 1
+        },
+        {
+            "migration": "2026_09_17_112244_create_monthly_updates_table",
+            "batch": 1
+        },
+        {
+            "migration": "2026_09_17_112723_create_project_documents_table",
+            "batch": 1
+        },
+        {
+            "migration": "2026_09_17_113109_create_roads_table",
+            "batch": 1
+        },
+        {
+            "migration": "2026_09_17_113508_create_updates_media_table",
+            "batch": 1
+        },
+        {
+            "migration": "2026_10_13_124507_create_audit_logs_table",
+            "batch": 2
+        },
+        {
+            "migration": "2026_10_13_141441_create_maintenance_records_table",
+            "batch": 2
+        },
+        {
+            "migration": "2026_10_15_000001_create_road_coverages_table",
+            "batch": 2
+        },
+        {
+            "migration": "2026_10_15_000002_add_road_coverage_to_maintenance_projects",
+            "batch": 2
+        },
+        {
+            "migration": "2026_10_15_000003_relax_legacy_maintenance_project_fields",
+            "batch": 2
+        },
+        {
+            "migration": "2026_10_15_062850_rename_lgus_id_to_lgu_id_on_road_coverages_table",
+            "batch": 2
+        },
+        {
+            "migration": "2026_10_15_074157_add_user_account_id_to_users_table",
+            "batch": 2
+        },
+        {
+            "migration": "2026_10_17_150000_create_maintenance_documents_table",
+            "batch": 3
+        }
+    ],
+    "supabase_migration_ledger": {
+        "migrations": []
+    },
+    "canonical_functions": [
+        {
+            "schema_name": "jairoads_next",
+            "name": "jairoads_dd_auditlog_deny_mutation",
+            "arguments": "",
+            "security_definer": false
+        }
+    ]
+}
