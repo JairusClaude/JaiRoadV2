@@ -29,6 +29,9 @@ RUN mkdir -p storage/app storage/framework/cache/data storage/framework/sessions
     && chmod -R ug+rwX storage bootstrap/cache
 
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+COPY docker/uploads.ini /usr/local/etc/php/conf.d/jairoads-uploads.ini
+COPY docker/entrypoint.sh /usr/local/bin/jairoads-entrypoint
+ENTRYPOINT ["sh", "/usr/local/bin/jairoads-entrypoint"]
 EXPOSE 10000
 CMD ["sh", "-c", "php-fpm -D && exec nginx -g 'daemon off;'"]
 

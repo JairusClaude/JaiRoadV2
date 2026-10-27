@@ -13,3 +13,5 @@ storage/framework/views/*
 *.zip
 *.sql
 .DS_Store
+
+bootstrap/cache/*.php

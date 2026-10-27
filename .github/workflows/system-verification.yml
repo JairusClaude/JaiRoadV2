@@ -1,0 +1,166 @@
+name: JaiROADS full system verification
+on:
+  push:
+    branches: ['integration/dd-system-completion']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  repository-quality:
+    name: repository / ${{ matrix.check }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [pint, phpstan, eslint, prettier, typescript, build, laravel, routes, composer-audit, npm-audit]
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+      DB_URL: ''
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      PAO_DISABLE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with: { persist-credentials: false }
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with: { php-version: '8.4', extensions: 'pdo_pgsql, pdo_sqlite, mbstring', tools: 'composer:v2', coverage: none }
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with: { node-version: '22', cache: npm }
+      - run: |
+          composer install --no-interaction --prefer-dist
+          npm ci
+          touch .env
+      - name: Run actual repository-wide check
+        env: { CHECK: '${{ matrix.check }}' }
+        run: |
+          case "$CHECK" in
+            pint) composer lint:check ;;
+            phpstan) composer types:check ;;
+            eslint) npm run lint:check -- --max-warnings=0 ;;
+            prettier) npm run format:check ;;
+            typescript) npm run types:check ;;
+            build) npm run build ;;
+            laravel) npm run build && php artisan test ;;
+            routes) php artisan route:list --except-vendor ;;
+            composer-audit) composer audit --locked --no-interaction ;;
+            npm-audit) npm audit --audit-level=high ;;
+          esac
+  feature-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_DB: jairoads_scratch_features, POSTGRES_USER: postgres, POSTGRES_PASSWORD: disposable-ci-only }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d jairoads_scratch_features"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: testing
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DB_DATABASE: jairoads_scratch_features
+      DB_USERNAME: postgres
+      DB_PASSWORD: disposable-ci-only
+      DB_CONNECTION: pgsql
+      DB_URL: ''
+      JAIROADS_SCRATCH_APPROVAL: DISPOSABLE_LOCAL_ONLY
+      PAO_DISABLE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with: { persist-credentials: false }
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with: { php-version: '8.4', extensions: 'pdo_pgsql, mbstring', tools: 'composer:v2', coverage: none }
+      - run: composer install --no-interaction --prefer-dist
+      - run: touch .env
+      - run: php vendor/bin/pest --configuration=phpunit.premerge-feature.xml --fail-on-warning
+  docker:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_DB: jairoads_scratch_system_docker, POSTGRES_USER: postgres, POSTGRES_PASSWORD: disposable-ci-only }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d jairoads_scratch_system_docker"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DB_DATABASE: jairoads_scratch_system_docker
+      DB_USERNAME: postgres
+      DB_PASSWORD: disposable-ci-only
+      DB_URL: ''
+      JAIROADS_SCRATCH_APPROVAL: DISPOSABLE_LOCAL_ONLY
+      PAO_DISABLE: '1'
+      QUARTERLY_BROWSER_FIXTURE: /tmp/jairoads-docker-fixture.json
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with: { persist-credentials: false }
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with: { php-version: '8.4', extensions: 'pdo_pgsql, mbstring', tools: 'composer:v2', coverage: none }
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with: { node-version: '22' }
+      - run: |
+          composer install --no-interaction --prefer-dist
+          touch .env
+          php tests/Browser/prepare-system.php > "$QUARTERLY_BROWSER_FIXTURE"
+      - name: Build production image without database initialization
+        run: docker build --tag jairoads-system-scratch .
+      - name: Missing configuration fails closed
+        run: |
+          set +e
+          docker run --rm jairoads-system-scratch > /tmp/jairoads-missing-env.log 2>&1
+          result=$?
+          set -e
+          test "$result" -eq 64
+          grep -q 'APP_KEY is required' /tmp/jairoads-missing-env.log
+      - name: Missing database configuration fails closed
+        run: |
+          set +e
+          docker run --rm -e APP_KEY jairoads-system-scratch > /tmp/jairoads-missing-db.log 2>&1
+          result=$?
+          set -e
+          test "$result" -eq 64
+          grep -q 'configure DB_URL' /tmp/jairoads-missing-db.log
+      - name: Start against isolated PostgreSQL and local Storage mock
+        run: |
+          docker run -d --name jairoads-system --network host \
+            -e APP_ENV=production -e APP_DEBUG=false -e APP_KEY -e DB_CONNECTION=pgsql \
+            -e 'DB_URL=postgresql://postgres:disposable-ci-only@127.0.0.1:5432/jairoads_scratch_system_docker?sslmode=disable' \
+            -e APP_URL=http://127.0.0.1:10000 -e SESSION_DRIVER=file -e CACHE_STORE=file -e LOG_CHANNEL=stderr \
+            -e SUPABASE_URL=http://127.0.0.1:5799 -e SUPABASE_SECRET_KEY=disposable-storage-only \
+            -e SUPABASE_SERVICE_ROLE_KEY=disposable-storage-only jairoads-system-scratch
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:10000/up >/dev/null; then break; fi
+            sleep 1
+          done
+          node tests/Browser/docker-smoke.mjs
+      - name: Inspect logs and upload transport limits
+        run: |
+          docker logs jairoads-system > /tmp/jairoads-startup.log 2>&1
+          if grep -E 'production.ERROR|Fatal error|Uncaught' /tmp/jairoads-startup.log; then exit 1; fi
+          docker exec jairoads-system php -r 'if (ini_get("upload_max_filesize") !== "20M" || ini_get("post_max_size") !== "21M") { exit(1); }'
+          docker exec jairoads-system test -f /var/www/html/public/build/manifest.json
+      - name: Unreachable database fails safely without initialization
+        run: |
+          docker rm -f jairoads-system
+          docker run -d --name jairoads-system --network host \
+            -e APP_ENV=production -e APP_DEBUG=false -e APP_KEY -e DB_CONNECTION=pgsql \
+            -e 'DB_URL=postgresql://postgres:disposable-ci-only@127.0.0.1:65431/jairoads_scratch_unreachable?sslmode=disable' \
+            -e APP_URL=http://127.0.0.1:10000 -e SESSION_DRIVER=file -e CACHE_STORE=file -e LOG_CHANNEL=stderr jairoads-system-scratch
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:10000/up >/dev/null; then break; fi
+            sleep 1
+          done
+          JAIROADS_EXPECT_DB_FAILURE=1 node tests/Browser/docker-smoke.mjs
+          docker logs jairoads-system 2>&1 | grep -q 'production.ERROR'
+      - name: Cleanup disposable container
+        if: always()
+        run: docker rm -f jairoads-system || true
