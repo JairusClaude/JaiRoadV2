@@ -33,6 +33,7 @@ jobs:
           composer install --no-interaction --prefer-dist
           npm ci
           touch .env
+          php artisan wayfinder:generate --with-form
       - name: Run actual repository-wide check
         env: { CHECK: '${{ matrix.check }}' }
         run: |
@@ -76,6 +77,12 @@ jobs:
         with: { php-version: '8.4', extensions: 'pdo_pgsql, mbstring', tools: 'composer:v2', coverage: none }
       - run: composer install --no-interaction --prefer-dist
       - run: touch .env
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with: { node-version: '22', cache: npm }
+      - name: Build real assets for Feature HTTP rendering
+        run: |
+          npm ci
+          npm run build
       - run: php vendor/bin/pest --configuration=phpunit.premerge-feature.xml --fail-on-warning
   docker:
     runs-on: ubuntu-latest
