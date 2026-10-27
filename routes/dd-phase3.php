@@ -37,6 +37,7 @@ Route::middleware(['auth','verified'])->prefix('dd-phase3')->name('jairoads.dd-p
     Route::put('/ops/projects/{id}', [DdOperationsController::class,'saveProject'])->whereNumber('id');
     Route::post('/ops/records', [DdOperationsController::class,'saveRecord'])->name('operations.records.store');
     Route::put('/ops/records/{id}', [DdOperationsController::class,'saveRecord'])->whereNumber('id');
+    Route::post('/ops/records/{id}/reassignment', [DdOperationsController::class, 'reassignRecord'])->whereNumber('id')->middleware('throttle:10,1');
     Route::post('/ops/updates', [DdOperationsController::class,'saveUpdate'])->name('operations.updates.store');
     Route::put('/ops/updates/{id}', [DdOperationsController::class,'saveUpdate'])->whereNumber('id');
     Route::delete('/ops/{entity}/{id}', [DdOperationsController::class,'deleteEntity'])

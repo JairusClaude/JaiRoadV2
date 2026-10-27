@@ -413,6 +413,47 @@ final class DdOperationsController extends Controller
             ->with('dd_operations_status', 'Maintenance record saved.');
     }
 
+    public function reassignRecord(Request $request, DataDictionaryIdentityResolver $resolver, int $id): RedirectResponse
+    {
+        $actor = $this->actor($request, $resolver);
+        abort_unless($this->managers($actor), 403);
+        $data = $request->validate([
+            'managing_engineer_id' => ['required', 'integer', 'min:1'],
+            'expected_current_manager_id' => ['required', 'integer', 'min:1'],
+        ]);
+        $projectId = $this->t('maintenance_records')->where('id', $id)->value('project_id');
+        abort_unless($projectId !== null, 404);
+        DB::transaction(function () use ($request, $resolver, $actor, $data, $id, $projectId): void {
+            // Same project -> record lock order as ordinary record writes.
+            abort_unless($this->t('maintenance_projects')->where('id', $projectId)->lockForUpdate()->first(['id']) !== null, 404);
+            abort_unless($this->actor($request, $resolver) === $actor, 403);
+            $row = $this->t('maintenance_records')->where('id', $id)->lockForUpdate()->first(['project_id', 'managing_engineer_id']);
+            abort_unless($row instanceof \stdClass && (int) $row->project_id === (int) $projectId, 404);
+            if ((int) $row->managing_engineer_id !== (int) $data['expected_current_manager_id']) {
+                throw ValidationException::withMessages(['expected_current_manager_id' => 'The manager changed while this form was open. Refresh the record before reassigning.']);
+            }
+            $lguId = $this->projectLgu((int) $projectId);
+            abort_unless($lguId !== null, 404);
+            app(ManagingEngineerEligibility::class)->validate($actor, (int) $data['managing_engineer_id'], $lguId);
+            if ((int) $row->managing_engineer_id === (int) $data['managing_engineer_id']) {
+                return;
+            }
+            $oldManager = $this->t('engineers')->where('id', $row->managing_engineer_id)->first(['first_name', 'last_name']);
+            $newManager = $this->t('engineers')->where('id', $data['managing_engineer_id'])->first(['first_name', 'last_name']);
+            abort_unless($oldManager instanceof \stdClass && $newManager instanceof \stdClass, 404);
+            $old = ['managing_engineer_id' => (int) $row->managing_engineer_id,
+                'managing_engineer_name' => trim($oldManager->first_name.' '.$oldManager->last_name)];
+            $new = ['managing_engineer_id' => (int) $data['managing_engineer_id'],
+                'managing_engineer_name' => trim($newManager->first_name.' '.$newManager->last_name)];
+            $this->t('maintenance_records')->where('id', $id)->update(['managing_engineer_id' => $new['managing_engineer_id'], 'updated_at' => now()]);
+            // Reuse existing UPDATE vocabulary/helper; old/new snapshots retain explicit reassignment history.
+            $this->audit($actor, 'UPDATE', 'MaintenanceRecord', $id, 'Administrator explicitly reassigned ManagingEngineer.', $new, $old);
+        }, 3);
+
+        return redirect()->route('jairoads.dd-phase3.show', ['section' => 'projects', 'view' => 'show', 'project' => $projectId])
+            ->with('dd_operations_status', 'ManagingEngineer reassigned.');
+    }
+
     public function saveUpdate(Request $request, DataDictionaryIdentityResolver $resolver, ?int $id = null): RedirectResponse
     {
         $actor=$this->actor($request,$resolver);

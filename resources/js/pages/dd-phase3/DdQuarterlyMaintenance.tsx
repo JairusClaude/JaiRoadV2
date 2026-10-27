@@ -2,6 +2,7 @@ import { router } from '@inertiajs/react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
+import DdManagingEngineerReassignment from '@/pages/dd-phase3/DdManagingEngineerReassignment';
 
 type Quarter = 'Q1' | 'Q2' | 'Q3' | 'Q4';
 type Maintenance = {
@@ -469,6 +470,12 @@ export default function DdQuarterlyMaintenance({
                                     <td className="p-2">{record.status}</td>
                                     <td className="p-2">{record.start_date}</td>
                                     <td className="space-x-2 p-2">
+                                        {canManage && (
+                                            <DdManagingEngineerReassignment
+                                                record={record}
+                                                managers={managers}
+                                            />
+                                        )}
                                         {editable(record) && (
                                             <button
                                                 className={secondary}
