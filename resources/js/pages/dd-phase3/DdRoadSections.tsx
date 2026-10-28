@@ -14,6 +14,7 @@ import { useCallback, useMemo, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { RoadCoverageMap } from '@/components/maintenance-projects/road-coverage-map';
+import DdRoadMunicipalityChange from '@/pages/dd-phase3/DdRoadMunicipalityChange';
 import { requestOperation } from '@/pages/dd-phase3/requests';
 import RoadTraceMap from '@/pages/dd-phase3/RoadTraceMap';
 /** UI name: Road Sections; actual entity: a *whole* RoadCoverage. */
@@ -217,6 +218,9 @@ export default function DdRoadSections({
     const [page, setPage] = useState(1);
     const [showRoadMap, setShowRoadMap] = useState(true);
     const [selected, setSelected] = useState<RoadCoverageSummary | null>(null);
+    const [municipalityRoadId, setMunicipalityRoadId] = useState<number | null>(
+        null,
+    );
     const [addOpen, setAddOpen] = useState(false);
     const [name, setName] = useState('');
     const [lguId, setLguId] = useState('');
@@ -889,7 +893,19 @@ export default function DdRoadSections({
                             </p>
                         </div>
                     </div>
-                    <div className="flex justify-end border-t border-[#E5EBF2] px-6 py-4">
+                    <div className="flex flex-wrap justify-end gap-2 border-t border-[#E5EBF2] px-6 py-4">
+                        {canEdit && (
+                            <button
+                                type="button"
+                                className={button}
+                                onClick={() => {
+                                    setMunicipalityRoadId(selected.id);
+                                    setSelected(null);
+                                }}
+                            >
+                                Change municipality
+                            </button>
+                        )}
                         {canEdit && (
                             <button
                                 type="button"
@@ -960,6 +976,17 @@ export default function DdRoadSections({
                         </button>
                     </div>
                 </Modal>
+            )}
+            {canEdit && municipalityRoadId !== null && (
+                <DdRoadMunicipalityChange
+                    roadId={municipalityRoadId}
+                    lgus={lgus}
+                    onClose={() => setMunicipalityRoadId(null)}
+                    onSuccess={(message) => {
+                        setMunicipalityRoadId(null);
+                        setNotice(message);
+                    }}
+                />
             )}
             {(canCreate || canEdit) && addOpen && (
                 <Modal
@@ -1045,6 +1072,7 @@ export default function DdRoadSections({
                                             setCreatedByEngineerId('');
                                         }}
                                         className={input}
+                                        disabled={editingId !== null}
                                         required
                                     >
                                         <option value="">Select an LGU</option>
@@ -1054,6 +1082,13 @@ export default function DdRoadSections({
                                             </option>
                                         ))}
                                     </select>
+                                    {editingId !== null && (
+                                        <p className="mt-2 text-xs text-[#7186A0]">
+                                            Use Change municipality in road
+                                            details to review the impact and
+                                            confirm it separately.
+                                        </p>
+                                    )}
                                 </div>
                                 {editingId === null && isManagerCreatorFlow && (
                                     <div>

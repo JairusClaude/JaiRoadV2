@@ -12,6 +12,7 @@ use App\Services\DataDictionary\DdRoleAccess;
 use App\Services\DataDictionary\LinkedPasswordUpdater;
 use App\Services\DataDictionary\ManagingEngineerEligibility;
 use App\Services\DataDictionary\RoadCoverageGeometry;
+use App\Services\DataDictionary\RoadMunicipalityChange;
 use App\Services\DataDictionary\TwiceYearlyMaintenance;
 use App\Services\Documents\PrivateSupabaseStorage;
 use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
@@ -133,7 +134,7 @@ final class DdOperationsController extends Controller
      * @param  array<string,mixed>  $meta
      * @param  array<string,mixed>  $oldMeta
      */
-    private function audit(array $actor, string $action, string $entity, ?int $id, string $description, array $meta = [], array $oldMeta = []): void
+    private function audit(array $actor, string $action, string $entity, ?int $id, string $description, array $meta = [], array $oldMeta = [], bool $notify = true): void
     {
         // Only safe identifiers/statuses; no credentials, email, geometry or private paths.
         $this->t('audit_logs')->insert([
@@ -146,8 +147,10 @@ final class DdOperationsController extends Controller
             'recipient_user_id' => null, 'notification_message' => null,
             'created_at' => now(),
         ]);
-        app(DdActivityNotifications::class)
-            ->record($actor, $action, $entity, $id, $description);
+        if ($notify) {
+            app(DdActivityNotifications::class)
+                ->record($actor, $action, $entity, $id, $description);
+        }
     }
 
     private function done(string $section, string $message): RedirectResponse
@@ -335,20 +338,44 @@ final class DdOperationsController extends Controller
                 $row = $this->t('road_coverages')->where('id', $id)->lockForUpdate()->first(['id', 'lgu_id']);
                 abort_unless($row !== null, 404);
                 $this->lguAllowed($actor, (int) $row->lgu_id);
-                $this->t('road_coverages')->where('id', $id)->update($data);
-                // LguID belongs to the road; maintenance history derives LGU
-                // from it. Record the old/new scope whenever an authorized
-                // update changes that relationship, without exposing geometry.
                 if ((int) $row->lgu_id !== (int) $v['lgu_id']) {
-                    $this->audit($actor, 'UPDATE', 'RoadCoverage', $id, 'Authorized RoadCoverage updated.',
-                        ['lgu_id' => (int) $v['lgu_id']], ['lgu_id' => (int) $row->lgu_id]);
-                } else {
-                    $this->audit($actor, 'UPDATE', 'RoadCoverage', $id, 'Authorized RoadCoverage updated.');
+                    throw ValidationException::withMessages([
+                        'lgu_id' => 'Use Change municipality to review affected records and confirm the municipality transition separately.',
+                    ]);
                 }
+                $this->t('road_coverages')->where('id', $id)->update($data);
+                $this->audit($actor, 'UPDATE', 'RoadCoverage', $id, 'Authorized RoadCoverage updated.');
             }
         });
 
         return $this->done('roads', 'Road coverage saved.');
+    }
+
+    public function previewRoadMunicipality(Request $request, DataDictionaryIdentityResolver $resolver, RoadMunicipalityChange $changes, int $id): JsonResponse
+    {
+        $this->writer($this->actor($request, $resolver));
+        $data = $request->validate(['lgu_id' => ['required', 'integer', 'min:1']]);
+        $login = $request->user();
+        abort_unless($login instanceof User, 403);
+
+        return response()->json($changes->preview($login, $id, (int) $data['lgu_id']))
+            ->header('Cache-Control', 'no-store, private');
+    }
+
+    public function confirmRoadMunicipality(Request $request, DataDictionaryIdentityResolver $resolver, RoadMunicipalityChange $changes, int $id): RedirectResponse
+    {
+        $this->writer($this->actor($request, $resolver));
+        $data = $request->validate(['confirmation_token' => ['required', 'string', 'max:20000']]);
+        $login = $request->user();
+        abort_unless($login instanceof User, 403);
+        $impact = $changes->confirm($login, $id, $data['confirmation_token'], function (array $actor, array $impact) use ($id): void {
+            $affected = ['project_ids' => array_column($impact['projects'], 'id'), 'maintenance_record_ids' => $impact['maintenance_record_ids']];
+            $this->audit($actor, 'UPDATE', 'RoadCoverage', $id,
+                'RoadCoverage #'.$id.' municipality changed from '.$impact['previous']['municipality'].' to '.$impact['proposed']['municipality'].' by authorized '.$actor['role'].' DD-UserAccount#'.$actor['account_id'].'.',
+                $impact['proposed'] + $affected, $impact['previous'] + $affected, notify: false);
+        });
+
+        return $this->done('roads', 'Municipality changed from '.$impact['previous']['municipality'].' to '.$impact['proposed']['municipality'].'. Road geometry and maintenance history were preserved.');
     }
 
     public function saveProject(Request $request, DataDictionaryIdentityResolver $resolver, ?int $id = null): RedirectResponse

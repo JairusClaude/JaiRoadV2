@@ -34,6 +34,8 @@ Route::middleware(['auth', 'verified'])->prefix('dd-phase3')->name('jairoads.dd-
     // Explicitly qualified DD module endpoints; never use legacy CRUD routes.
     Route::post('/ops/roads', [DdOperationsController::class, 'saveRoad'])->name('operations.roads.store');
     Route::put('/ops/roads/{id}', [DdOperationsController::class, 'saveRoad'])->whereNumber('id');
+    Route::post('/ops/roads/{id}/municipality/preview', [DdOperationsController::class, 'previewRoadMunicipality'])->whereNumber('id')->name('operations.roads.municipality.preview');
+    Route::post('/ops/roads/{id}/municipality/confirm', [DdOperationsController::class, 'confirmRoadMunicipality'])->whereNumber('id')->name('operations.roads.municipality.confirm');
     Route::post('/ops/projects', [DdOperationsController::class, 'saveProject'])->name('operations.projects.store');
     Route::put('/ops/projects/{id}', [DdOperationsController::class, 'saveProject'])->whereNumber('id');
     Route::post('/ops/records', [DdOperationsController::class, 'saveRecord'])->name('operations.records.store');

@@ -8,6 +8,7 @@ export function requestOperation(
     data: Payload,
     method: 'post' | 'put' | 'delete' = 'post',
     upload = false,
+    options: { preserveState?: boolean } = {},
 ): Promise<void> {
     if (!url.startsWith('/dd-phase3/')) {
         return Promise.reject(new Error('This action is unavailable.'));
@@ -20,6 +21,9 @@ export function requestOperation(
             data,
             forceFormData: upload,
             preserveScroll: true,
+            // A confirmation dialog must survive the validation redirect so
+            // its rejection can be shown and a fresh preview requested.
+            ...options,
             onSuccess: () => {
                 settled = true;
                 resolve();
