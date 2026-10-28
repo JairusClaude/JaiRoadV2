@@ -21,26 +21,31 @@ final class MaintenanceRecord extends ReadOnlyDdModel
         ];
     }
 
+    /** @return BelongsTo<MaintenanceProject, $this> */
     public function project(): BelongsTo
     {
         return $this->belongsTo(MaintenanceProject::class, 'project_id');
     }
 
+    /** @return BelongsTo<Engineer, $this> */
     public function managingEngineer(): BelongsTo
     {
         return $this->belongsTo(Engineer::class, 'managing_engineer_id');
     }
 
+    /** @return BelongsTo<UserAccount, $this> */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(UserAccount::class, 'created_by');
     }
 
+    /** @return HasMany<MonthlyUpdate, $this> */
     public function monthlyUpdates(): HasMany
     {
         return $this->hasMany(MonthlyUpdate::class, 'maintenance_id');
     }
 
+    /** @return HasMany<MaintenanceDocument, $this> */
     public function documents(): HasMany
     {
         return $this->hasMany(MaintenanceDocument::class, 'maintenance_id');

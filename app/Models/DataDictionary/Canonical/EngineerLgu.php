@@ -10,8 +10,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 final class EngineerLgu extends ReadOnlyDdModel
 {
     protected $table = 'jairoads_next.engineer_lgus';
+
     protected $primaryKey = null;
+
     public $incrementing = false;
+
     public $timestamps = false;
 
     protected function casts(): array
@@ -21,11 +24,13 @@ final class EngineerLgu extends ReadOnlyDdModel
         ];
     }
 
+    /** @return BelongsTo<Engineer, $this> */
     public function engineer(): BelongsTo
     {
         return $this->belongsTo(Engineer::class, 'engineer_id');
     }
 
+    /** @return BelongsTo<Lgu, $this> */
     public function lgu(): BelongsTo
     {
         return $this->belongsTo(Lgu::class, 'lgu_id');

@@ -28,11 +28,11 @@ return new class extends Migration
             throw new RuntimeException('STOP: Requires PostgreSQL.');
         }
         $host = (string) $db->getConfig('host');
-        if (!in_array($host, ['127.0.0.1', 'localhost'], true)) {
+        if (! in_array($host, ['127.0.0.1', 'localhost'], true)) {
             throw new RuntimeException('STOP: Only a LOCAL throwaway PostgreSQL host is permitted.');
         }
         $database = (string) $db->selectOne('SELECT current_database() AS database_name')->database_name;
-        if (!preg_match('/^jairoads_scratch_[a-z0-9_]+$/', $database)) {
+        if (! preg_match('/^jairoads_scratch_[a-z0-9_]+$/', $database)) {
             throw new RuntimeException('STOP: Database must be named jairoads_scratch_<suffix>.');
         }
         $existingSchema = (int) $db->selectOne(

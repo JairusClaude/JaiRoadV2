@@ -11,16 +11,19 @@ final class MaintenanceProject extends ReadOnlyDdModel
 {
     protected $table = 'jairoads_next.maintenance_projects';
 
+    /** @return BelongsTo<RoadCoverage, $this> */
     public function roadCoverage(): BelongsTo
     {
         return $this->belongsTo(RoadCoverage::class, 'road_coverage_id');
     }
 
+    /** @return BelongsTo<UserAccount, $this> */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(UserAccount::class, 'created_by');
     }
 
+    /** @return HasMany<MaintenanceRecord, $this> */
     public function maintenanceRecords(): HasMany
     {
         return $this->hasMany(MaintenanceRecord::class, 'project_id');
