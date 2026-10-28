@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
 import { readFile } from 'node:fs/promises';
+import { request as httpRequest } from 'node:http';
 import process from 'node:process';
 import { pdf, startStorageMock } from './private-storage-mock.mjs';
 const base = process.env.JAIROADS_DOCKER_URL || 'http://127.0.0.1:10000';
@@ -10,6 +11,37 @@ const fixture = JSON.parse(
     await readFile(process.env.QUARTERLY_BROWSER_FIXTURE, 'utf8'),
 );
 const mock = await startStorageMock();
+async function assertLoginAssetOrigin(target, host, headers, expected) {
+    const html = await new Promise((resolve, reject) => {
+        const request = httpRequest(
+            new URL(base),
+            { path: target, headers: { Host: host, ...headers } },
+            (response) => {
+                assert.equal(response.statusCode, 200);
+                let body = '';
+                response.setEncoding('utf8');
+                response.on('data', (chunk) => {
+                    body += chunk;
+                });
+                response.on('end', () => resolve(body));
+            },
+        );
+        request.on('error', reject);
+        request.end();
+    });
+    const assets = [
+        ...html.matchAll(/(?:href|src)="([^"]*\/build\/assets\/[^"]+)"/g),
+    ];
+    assert.ok(assets.length >= 2);
+
+    for (const [, asset] of assets) {
+        assert.equal(
+            new URL(asset, base).origin,
+            expected,
+            `Host ${host}; target ${target}: ${asset}`,
+        );
+    }
+}
 async function session() {
     const cookies = new Map();
     async function request(path, options = {}) {
@@ -102,6 +134,7 @@ try {
                 200,
                 `Asset ${asset}: HTTP ${response.status}; Location=${response.headers.get('location')}`,
             );
+
             if (new URL(asset).pathname.endsWith('.css')) {
                 assert.match(
                     response.headers.get('content-type') || '',
@@ -113,7 +146,46 @@ try {
                     /javascript/,
                 );
             }
+
+            assert.ok(
+                (await response.arrayBuffer()).byteLength > 0,
+                `Empty asset: ${asset}`,
+            );
         }
+
+        await assertLoginAssetOrigin(
+            '/login',
+            'roads.example.test',
+            { 'X-Forwarded-Proto': 'https' },
+            'https://roads.example.test',
+        );
+        await assertLoginAssetOrigin(
+            '/login',
+            'roads.example.test:8443',
+            { 'X-Forwarded-Proto': 'https' },
+            'https://roads.example.test:8443',
+        );
+        await assertLoginAssetOrigin(
+            '/login',
+            '[::1]:10000',
+            {},
+            'http://[::1]:10000',
+        );
+        await assertLoginAssetOrigin(
+            'http://target.example.test:10000/login',
+            'spoofed.example.test:1234',
+            {},
+            'http://target.example.test:10000',
+        );
+        await assertLoginAssetOrigin(
+            'http://target.example.test/login',
+            'spoofed.example.test:1234',
+            {},
+            'http://target.example.test',
+        );
+        console.log(
+            'PASS: rendered asset authority preserves ports, HTTPS proxy origins and absolute-form target precedence.',
+        );
 
         for (const [role, email] of [
             ['SuperAdmin', fixture.superadmin_email],

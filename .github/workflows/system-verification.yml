@@ -120,7 +120,7 @@ jobs:
           php tests/Browser/prepare-system.php > "$QUARTERLY_BROWSER_FIXTURE"
       - name: Build production image without database initialization
         run: docker build --tag jairoads-system-scratch .
-      - name: Missing configuration fails closed
+      - name: Missing or invalid application key fails closed
         run: |
           set +e
           docker run --rm jairoads-system-scratch > /tmp/jairoads-missing-env.log 2>&1
@@ -128,6 +128,12 @@ jobs:
           set -e
           test "$result" -eq 64
           grep -q 'APP_KEY is required' /tmp/jairoads-missing-env.log
+          set +e
+          docker run --rm -e APP_KEY=invalid-disposable-key jairoads-system-scratch > /tmp/jairoads-invalid-key.log 2>&1
+          result=$?
+          set -e
+          test "$result" -eq 64
+          grep -q 'valid 32-byte application key' /tmp/jairoads-invalid-key.log
       - name: Missing database configuration fails closed
         run: |
           set +e
