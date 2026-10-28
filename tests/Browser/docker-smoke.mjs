@@ -77,8 +77,42 @@ try {
             'Built manifest must render scripts/styles',
         );
 
-        for (const asset of assets.slice(0, 4)) {
-            assert.equal((await fetch(new URL(asset, base))).status, 200);
+        const assetUrls = [
+            ...new Set(assets.map((asset) => new URL(asset, base).href)),
+        ];
+        console.log('Login HTML asset URLs:', JSON.stringify(assetUrls));
+        assert.ok(
+            assetUrls.some((asset) => new URL(asset).pathname.endsWith('.js')),
+            'Login must include built JavaScript',
+        );
+        assert.ok(
+            assetUrls.some((asset) => new URL(asset).pathname.endsWith('.css')),
+            'Login must include built CSS',
+        );
+
+        for (const asset of assetUrls) {
+            assert.equal(
+                new URL(asset).origin,
+                new URL(base).origin,
+                `Unexpected rendered asset origin: ${asset}`,
+            );
+            const response = await fetch(asset, { redirect: 'manual' });
+            assert.equal(
+                response.status,
+                200,
+                `Asset ${asset}: HTTP ${response.status}; Location=${response.headers.get('location')}`,
+            );
+            if (new URL(asset).pathname.endsWith('.css')) {
+                assert.match(
+                    response.headers.get('content-type') || '',
+                    /text\/css/,
+                );
+            } else if (new URL(asset).pathname.endsWith('.js')) {
+                assert.match(
+                    response.headers.get('content-type') || '',
+                    /javascript/,
+                );
+            }
         }
 
         for (const [role, email] of [
