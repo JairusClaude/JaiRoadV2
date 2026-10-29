@@ -7,6 +7,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import '../../../css/maintenance-project-create.css';
 import type {
     CoverageChoice,
     IntegrationStatus,
@@ -15,6 +16,7 @@ import type {
 
 export type ProjectFormProps = {
     mode?: 'create' | 'edit';
+    backLabel?: string;
     coverageLocked?: boolean;
     coverages: CoverageChoice[];
     integration: IntegrationStatus;
@@ -28,6 +30,7 @@ export type ProjectFormProps = {
 
 export function ProjectForm({
     mode = 'create',
+    backLabel,
     coverageLocked = false,
     coverages,
     integration,
@@ -38,7 +41,9 @@ export function ProjectForm({
     onSave,
     onCancel,
 }: ProjectFormProps) {
+    const create = mode === 'create';
     const [search, setSearch] = useState('');
+    const [showAssigned, setShowAssigned] = useState(false);
     const [titleEdited, setTitleEdited] = useState(
         Boolean(values.project_title),
     );
@@ -48,13 +53,29 @@ export function ProjectForm({
     const selected = coverages.find(
         (coverage) => String(coverage.id) === values.road_coverage_id,
     );
-    const visible = coverages.filter((coverage) =>
-        coverage.road_name
-            .toLocaleLowerCase()
-            .includes(search.toLocaleLowerCase()),
+    const query = search.trim().toLocaleLowerCase();
+    const matches = coverages.filter((coverage) =>
+        create
+            ? `${coverage.road_name} ${coverage.municipality ?? ''}`
+                  .toLocaleLowerCase()
+                  .includes(query)
+            : coverage.road_name
+                  .toLocaleLowerCase()
+                  .includes(search.toLocaleLowerCase()),
     );
+    const visible = create
+        ? matches
+              .filter((coverage) => showAssigned || !coverage.assigned)
+              .sort((a, b) => Number(a.assigned) - Number(b.assigned))
+        : matches;
     const error = (field: keyof ProjectFormValues) =>
-        localErrors[field] ?? errors[field];
+        localErrors[field] ??
+        (create &&
+        field === 'road_coverage_id' &&
+        selected?.assigned &&
+        errors[field]
+            ? `${errors[field]} Choose another available coverage.`
+            : errors[field]);
     const choose = (coverage: CoverageChoice) => {
         if (coverage.assigned || coverageLocked) {
             return;
@@ -74,7 +95,10 @@ export function ProjectForm({
         <ProjectWorkspace>
             <button className="jr-back" onClick={onCancel}>
                 <ArrowLeft className="size-4" />
-                {mode === 'edit' ? 'Project Details' : 'Maintenance Projects'}
+                {backLabel ??
+                    (mode === 'edit'
+                        ? 'Project Details'
+                        : 'Maintenance Projects')}
             </button>
             <div className="jr-page-head">
                 <div>
@@ -89,13 +113,17 @@ export function ProjectForm({
             <IntegrationNotice integration={integration} />
             <form
                 noValidate
+                className={create ? 'jr-project-create' : undefined}
+                aria-busy={processing}
                 onSubmit={(event) => {
                     event.preventDefault();
                     const next: ProjectFormProps['errors'] = {};
 
                     if (!selected || selected.assigned) {
                         next.road_coverage_id =
-                            'Select one available road coverage.';
+                            selected?.assigned && create
+                                ? 'This road coverage is no longer available. Choose another available coverage.'
+                                : 'Select one available road coverage.';
                     }
 
                     if (!values.project_title.trim()) {
@@ -121,7 +149,9 @@ export function ProjectForm({
                 <p className="jr-field-hint" id="coverage-help">
                     {coverageLocked
                         ? 'Road coverage is fixed because this project has maintenance history. You can still update the title and description.'
-                        : 'Select exactly one coverage. Already-assigned coverages are shown for reference and cannot be selected.'}
+                        : create
+                          ? 'Select exactly one available road coverage. Each coverage can be linked to only one maintenance project.'
+                          : 'Select exactly one coverage. Already-assigned coverages are shown for reference and cannot be selected.'}
                 </p>
                 <div className="jr-coverage-layout">
                     <div>
@@ -129,8 +159,16 @@ export function ProjectForm({
                             <Search className="size-[18px]" />
                             <Input
                                 type="search"
-                                placeholder="Search RoadCoverage by name..."
-                                aria-label="Search RoadCoverage by name"
+                                placeholder={
+                                    create
+                                        ? 'Search road coverage by name or municipality...'
+                                        : 'Search RoadCoverage by name...'
+                                }
+                                aria-label={
+                                    create
+                                        ? 'Search road coverage by name or municipality'
+                                        : 'Search RoadCoverage by name'
+                                }
                                 value={search}
                                 onChange={(event) =>
                                     setSearch(event.target.value)
@@ -138,19 +176,50 @@ export function ProjectForm({
                                 disabled={!integration.ready}
                             />
                         </div>
-                        <p className="jr-field-hint my-3" role="status">
-                            {visible.length} coverages ·{' '}
-                            {
-                                visible.filter((coverage) => !coverage.assigned)
-                                    .length
-                            }{' '}
-                            available
-                        </p>
+                        {create ? (
+                            <div className="jr-coverage-info">
+                                <p className="jr-field-hint" role="status">
+                                    {
+                                        matches.filter(
+                                            (coverage) => !coverage.assigned,
+                                        ).length
+                                    }{' '}
+                                    available · {matches.length} total coverages
+                                </p>
+                                <label className="jr-show-assigned">
+                                    <input
+                                        type="checkbox"
+                                        role="switch"
+                                        checked={showAssigned}
+                                        onChange={(event) =>
+                                            setShowAssigned(
+                                                event.target.checked,
+                                            )
+                                        }
+                                        disabled={
+                                            !integration.ready || processing
+                                        }
+                                    />
+                                    <span>Show assigned</span>
+                                </label>
+                            </div>
+                        ) : (
+                            <p className="jr-field-hint my-3" role="status">
+                                {visible.length} coverages ·{' '}
+                                {
+                                    visible.filter(
+                                        (coverage) => !coverage.assigned,
+                                    ).length
+                                }{' '}
+                                available
+                            </p>
+                        )}
                         <div
                             className="jr-coverage-list"
                             role="group"
                             aria-label="Road coverage choices"
                             aria-describedby="coverage-help coverage-error"
+                            aria-invalid={Boolean(error('road_coverage_id'))}
                         >
                             {visible.map((coverage) => (
                                 <label
@@ -180,11 +249,13 @@ export function ProjectForm({
                                             · {coverage.kilometers} km
                                         </small>
                                     </span>
-                                    <span className="jr-availability">
-                                        {coverage.assigned
-                                            ? 'Already assigned'
-                                            : 'Available'}
-                                    </span>
+                                    {(!create || coverage.assigned) && (
+                                        <span className="jr-availability">
+                                            {coverage.assigned
+                                                ? 'Already assigned'
+                                                : 'Available'}
+                                        </span>
+                                    )}
                                 </label>
                             ))}
                             {visible.length === 0 && (
@@ -193,7 +264,9 @@ export function ProjectForm({
                                         {!integration.ready
                                             ? 'Road coverages will appear when integration is available.'
                                             : search
-                                              ? 'No coverages match your search.'
+                                              ? create && !showAssigned
+                                                  ? 'No available coverages match your search. Turn on Show assigned to include unavailable entries.'
+                                                  : 'No coverages match your search.'
                                               : 'No road coverages are available to this account.'}
                                     </p>
                                 </div>
@@ -207,46 +280,86 @@ export function ProjectForm({
                             {error('road_coverage_id')}
                         </p>
                     </div>
-                    <div>
-                        <p className="jr-field-hint mb-3">
-                            Map preview · placeholder
-                        </p>
-                        <div className="jr-map-placeholder">
-                            <Map className="size-12" />
-                            <strong>RoadCoverage map preview</strong>
-                            <span>
-                                Stored geometry will appear here when map
-                                integration is ready.
-                            </span>
-                        </div>
-                        <div className="jr-coverage-summary" aria-live="polite">
-                            <div>
+                    {create ? (
+                        <div className="jr-create-map">
+                            <h3>Map preview</h3>
+                            <div
+                                className="jr-map-placeholder"
+                                aria-live="polite"
+                            >
+                                <Map className="size-12" aria-hidden="true" />
                                 <strong>
-                                    {selected?.road_name ??
-                                        'No RoadCoverage selected'}
-                                </strong>
-                                <p>
                                     {selected
-                                        ? `${selected.municipality ?? 'Municipality unavailable'} · ${selected.kilometers} km`
-                                        : 'Choose an available coverage from the list.'}
-                                </p>
+                                        ? 'Map preview unavailable'
+                                        : 'Select a road coverage'}
+                                </strong>
+                                <span>
+                                    {selected
+                                        ? 'A map preview is not available for this coverage yet.'
+                                        : 'Choose an available coverage from the list to preview its location.'}
+                                </span>
+                                {selected && (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        disabled={processing}
+                                        onClick={() =>
+                                            onChange({
+                                                ...values,
+                                                road_coverage_id: '',
+                                            })
+                                        }
+                                    >
+                                        Clear selection
+                                    </Button>
+                                )}
                             </div>
-                            {selected && !coverageLocked && (
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() =>
-                                        onChange({
-                                            ...values,
-                                            road_coverage_id: '',
-                                        })
-                                    }
-                                >
-                                    Clear
-                                </Button>
-                            )}
                         </div>
-                    </div>
+                    ) : (
+                        <div>
+                            <p className="jr-field-hint mb-3">
+                                Map preview · placeholder
+                            </p>
+                            <div className="jr-map-placeholder">
+                                <Map className="size-12" />
+                                <strong>RoadCoverage map preview</strong>
+                                <span>
+                                    Stored geometry will appear here when map
+                                    integration is ready.
+                                </span>
+                            </div>
+                            <div
+                                className="jr-coverage-summary"
+                                aria-live="polite"
+                            >
+                                <div>
+                                    <strong>
+                                        {selected?.road_name ??
+                                            'No RoadCoverage selected'}
+                                    </strong>
+                                    <p>
+                                        {selected
+                                            ? `${selected.municipality ?? 'Municipality unavailable'} · ${selected.kilometers} km`
+                                            : 'Choose an available coverage from the list.'}
+                                    </p>
+                                </div>
+                                {selected && !coverageLocked && (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() =>
+                                            onChange({
+                                                ...values,
+                                                road_coverage_id: '',
+                                            })
+                                        }
+                                    >
+                                        Clear
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
                 <section className="jr-form-section">
                     <h2>Project Information</h2>
@@ -315,9 +428,15 @@ export function ProjectForm({
                                 className="mt-2"
                                 value={selected?.municipality ?? ''}
                                 readOnly
+                                aria-describedby={
+                                    create ? 'municipality-hint' : undefined
+                                }
                                 placeholder="From selected RoadCoverage"
                             />
-                            <p className="jr-field-hint mt-2">
+                            <p
+                                className="jr-field-hint mt-2"
+                                id={create ? 'municipality-hint' : undefined}
+                            >
                                 Filled automatically from the linked LGU.
                             </p>
                         </div>

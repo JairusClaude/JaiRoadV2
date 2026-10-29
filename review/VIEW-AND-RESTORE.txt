@@ -1,0 +1,15 @@
+Current frontend login preview (Node.js 22.12+)
+
+Extract into a NEW folder. Open PowerShell in the project root and run:
+node .\tools\maintenance-project-preview\server.mjs
+
+Open http://localhost:5179/
+Demo email: demo@example.test
+Demo password: JaiROADS-Demo-2026!
+Successful login opens /maintenance-projects.
+
+Prebuilt assets are included. PHP, Composer, Herd, migrations, PostgreSQL and Supabase are not used by this preview. See ../README.md for rebuilding and limitations. Ctrl+C stops the server. Restarting resets all process-local sample edits and sessions.
+
+The supplied ZIP frontend was preserved; the imported login and temporary preview session are the integration changes. Historical review scripts in this directory predate authentication and may require an authenticated cookie before running. See ../preview-review/ for current screenshots and results.
+
+For restoration, keep the original supplied JaiROADS_Map_First_Review(2).zip separately and extract it into another new folder. Do not overwrite an uncommitted checkout or run git reset/clean on shared work.

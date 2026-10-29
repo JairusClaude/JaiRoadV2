@@ -62,4 +62,3 @@ class MaintenanceRecord extends Model
         );
     }
 }
-

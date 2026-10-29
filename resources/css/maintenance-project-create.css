@@ -1,0 +1,102 @@
+/* Add Project only; shared Edit Project and other workspace styles stay intact. */
+.jr-project-create .jr-coverage-info {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 20px;
+    margin-block: 11px;
+    min-height: 24px;
+}
+
+.jr-project-create .jr-show-assigned {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 24px;
+    color: #475569;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.jr-project-create .jr-show-assigned input {
+    appearance: none;
+    position: relative;
+    width: 32px;
+    height: 18px;
+    flex-shrink: 0;
+    border: 1px solid #94a3b8;
+    border-radius: 999px;
+    background: #64748b;
+    cursor: pointer;
+}
+
+.jr-project-create .jr-show-assigned input::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform 150ms ease;
+}
+
+.jr-project-create .jr-show-assigned input:checked {
+    background: #8b471f;
+    border-color: #8b471f;
+}
+
+.jr-project-create .jr-show-assigned input:checked::before {
+    transform: translateX(14px);
+}
+
+.jr-project-create .jr-show-assigned input:focus-visible {
+    outline: 2px solid #c98a55;
+    outline-offset: 3px;
+}
+
+.jr-project-create .jr-show-assigned input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.jr-project-create .jr-coverage-list {
+    min-height: 228px;
+}
+
+/* An inset stroke preserves row dimensions and the existing continuous list. */
+.jr-project-create .jr-coverage-option[data-chosen='true'] {
+    border-radius: 8px;
+    background: #fbf2e7;
+    box-shadow: inset 0 0 0 1px #bd906b;
+}
+
+.jr-project-create #project-municipality {
+    background: #f5f6f7;
+    color: #475569;
+}
+
+.jr-project-create .jr-create-map {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.jr-project-create .jr-create-map h3 {
+    color: #1e2430;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.jr-project-create .jr-create-map .jr-map-placeholder {
+    flex: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .jr-project-create .jr-show-assigned input::before {
+        transition: none;
+    }
+}

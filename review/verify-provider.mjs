@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import { roadCoverageFormPage, mutateRoadCoverage } from '../tools/maintenance-project-preview/road-coverage-forms.mjs';
+import { routeFeature, validateCoverage } from '../resources/js/lib/road-coverages/geometry.mjs';
+const points=[[125.96,7.60],[125.97,7.61],[125.98,7.62]], geo=routeFeature(points,[[points[0],[125.965,7.606],points[1]],[points[1],[125.974,7.615],points[2]]]);
+const rows=[],lgus=[{id:1,municipality_name:'Test municipality'}],actor={account_type:'Admin'}, engineers=[{id:1}];
+const values={road_name:'Provider test',lgus_id:'1',kilometers:'2.5',pavement_type:'Concrete',state_category:'Good',geojson:geo,length_override:true};
+assert.equal(Object.keys(validateCoverage({...values,kilometers:'0'},lgus)).includes('kilometers'),true);
+assert.equal(mutateRoadCoverage('POST',new URL('http://x/road-coverages'),values,rows,lgus,actor,engineers).errors,undefined);
+assert.equal(rows.length,1);
+const page=roadCoverageFormPage(new URL('http://x/road-coverages/1/edit'),rows,lgus,actor);
+const old=structuredClone(rows[0].geojson); rows[0].geojson.properties.concurrent='retained';
+let result=mutateRoadCoverage('PUT',new URL('http://x/road-coverages/1'),{...values,road_name:'Information only',geojson:undefined,geometry_changed:false},rows,lgus,actor,engineers);
+assert.equal(result.errors,undefined); assert.equal(rows[0].geojson.properties.concurrent,'retained');
+result=mutateRoadCoverage('PUT',new URL('http://x/road-coverages/1'),{...values,geometry_changed:true,geometry_token:page.props.geometryToken,correction_reason:'Correct alignment'},rows,lgus,actor,engineers);
+assert.match(result.errors.geojson,/another session/); assert.equal(rows[0].geojson.properties.concurrent,'retained');
+assert.equal(mutateRoadCoverage('POST',new URL('http://x/road-coverages'),values,rows,lgus,{account_type:'Viewer'},engineers).errors.road_name.includes('permission'),true);
+assert.deepEqual(old.geometry,rows[0].geojson.geometry); assert.equal(rows[0].created_by,1);
+console.log('PASS: positive kilometers, create, info-only concurrent preservation, stale geography rejection, Viewer denial, geometry/attribution preserved. Preview only.');

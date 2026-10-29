@@ -6,6 +6,7 @@ import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import MaintenanceProjectLayout from '@/layouts/maintenance-project-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+import { initializePreviewSessionChecks } from '@/lib/preview-session';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -13,10 +14,16 @@ createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         switch (true) {
+            case name === 'auth/login':
             case name === 'welcome':
                 return null;
             case name.startsWith('auth/'):
                 return AuthLayout;
+            case name.startsWith('RoadCoverages/'):
+            case name.startsWith('LGUs/'):
+            case name.startsWith('MaintenanceDocuments/'):
+            case name.startsWith('MaintenanceRecords/'):
+            case name.startsWith('MonthlyUpdates/'):
             case name.startsWith('MaintenanceProjects/'):
                 return MaintenanceProjectLayout;
             case name.startsWith('settings/'):
@@ -41,3 +48,5 @@ createInertiaApp({
 
 // This will set light / dark mode on load...
 initializeTheme();
+
+initializePreviewSessionChecks();

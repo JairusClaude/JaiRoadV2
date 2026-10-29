@@ -1,0 +1,18 @@
+# Backend approval proposal — not implemented
+
+The rendered editor and temporary Node preview are not a production CRUD integration. No migrations, authentication, policies, production services or database data were modified.
+
+## Compatible frontend geography
+The current Feature/LineString and jairoads_mapping v1 control points and indices are retained. Optional `properties.jairoads_editor = {version:1, manual:[boolean,boolean]}` records per-portion provenance on a changed alignment. The legacy `jairoads_mapping.method='manual'` compatibility value remains; new code uses jairoads_editor.manual to distinguish routed and manually controlled portions. Known SE2 geometry consumers accept additional properties and still read the same LineString. New readers default to manual for older data. Current positional limits remain 1,000; long routing results are rejected, never silently simplified. Exact endpoints are reconciled only within 0.16m, the documented two-point six-decimal serialization bound. Larger mismatches remain unconfirmed and cannot save.
+
+## Proposed database work requiring separate approval
+1. Add an immutable road_coverage_geographic_revisions repository/table: RoadCoverage FK, unique sequential version per coverage, exact current Feature/LineString snapshot, per-portion provenance and waypoint metadata, correction reason, verified authenticated UserAccount actor, created timestamp. Restrict deletion and forbid update/delete of historical versions. Backfill only real existing geometry as a baseline; never fabricate missing B or old actors/timestamps.
+2. Persist non-geographic editing state (notably recorded-length override) separately from geometry, so a measurement-only edit does not rewrite GeoJSON or create a geographic revision. A one-to-one editor-state table is an option, subject to complete Data Dictionary review. The local preview currently stores an optional length_override flag only in its process-local records.
+3. Implement RoadCoverage requests, policy, controller and routes through a verified authenticated identity boundary. Engineer creation/update must check a real active EngineerLGU assignment for the current and target municipality. Do not infer it from matching IDs or the legacy engineers.lgus_id. Original Engineer CreatedBy remains unchanged on edit; revision actor is the authenticated UserAccount. Until active assignments are supplied, this preview fails closed for Engineer writes; Admin/SuperAdmin preview writes remain available and Viewer is read-only.
+4. Use one database transaction with row locking and an expected-current-geography digest. On geometry change, append the immutable revision and update current geometry atomically. Stale alignment updates fail with a conflict while retaining client state. Metadata-only PATCH must never include/reassign geography. Initial creation saves an initial revision atomically. Restoration appends a new revision with reason; no history mutation.
+5. Add read-only history access for every authorized RoadCoverage viewer. No new role, approval workflow, duplicate RoadCoverage rows, or version FKs on MaintenanceRecords/MonthlyUpdates.
+
+## Not claimed
+No production geographic history, restore workflow, authenticated revision attribution, Laravel save, live active-assignment authorization, or PostgreSQL transaction has been implemented or verified. These are actual integration prerequisites, not optional business rules. AuditLog's current implementation cannot substitute for them. Existing geographic corrections in the local preview do NOT constitute recoverable database history.
+
+A Road Coverage Details page does not exist in this source. Saves return to the established directory; no fictional Details route was added.

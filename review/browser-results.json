@@ -1,0 +1,217 @@
+{
+  "checks": [
+    {
+      "name": "Add starts in placement mode; actual rendered shell",
+      "status": "PASS"
+    },
+    {
+      "name": "First click places A",
+      "status": "PASS"
+    },
+    {
+      "name": "B triggers routing without a Generate button; markers retained",
+      "status": "PASS"
+    },
+    {
+      "name": "C triggers second portion; no fourth marker",
+      "status": "PASS"
+    },
+    {
+      "name": "Provider returned no alternatives for selected route",
+      "status": "LIMITATION"
+    },
+    {
+      "name": "Forced routing failure retains all markers and existing geometry",
+      "status": "PASS"
+    },
+    {
+      "name": "Independent collapse states and markers preserved",
+      "status": "PASS"
+    },
+    {
+      "name": "Fullscreen expands map and panel together",
+      "status": "PASS"
+    },
+    {
+      "name": "B–C manual trace independent of A–B",
+      "status": "PASS"
+    },
+    {
+      "name": "A–B manual trace completes both portions",
+      "status": "PASS"
+    },
+    {
+      "name": "Manual marker move preserves other portion and is reversible",
+      "status": "PASS"
+    },
+    {
+      "name": "Temporary editing can cancel with panel collapsed",
+      "status": "PASS"
+    },
+    {
+      "name": "Complete form saves in temporary preview and returns to directory",
+      "status": "PASS"
+    },
+    {
+      "name": "Mouse-wheel zoom does not add waypoints",
+      "status": "PASS"
+    },
+    {
+      "name": "Edit starts in review mode; recorded override retained",
+      "status": "PASS"
+    },
+    {
+      "name": "Information-only edit saves without rerouting",
+      "status": "PASS"
+    },
+    {
+      "name": "Saved RoadCoverage overlay popup displays actual record",
+      "status": "PASS"
+    },
+    {
+      "name": "Live geographic search pans without placing a waypoint",
+      "status": "PASS"
+    },
+    {
+      "name": "Narrow layout has no document horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "Existing Maintenance Projects directory still renders",
+      "status": "PASS"
+    }
+  ],
+  "errors": [
+    "Failed to fetch"
+  ],
+  "routeResponses": [
+    {
+      "url": "https://router.project-osrm.org/route/v1/driving/125.94521040004759,7.621571294111566;125.96066133744466,7.613063966386869?overview=full&geometries=geojson&alternatives=false&steps=false",
+      "status": 200,
+      "code": "Ok",
+      "coordinates": 281
+    },
+    {
+      "url": "https://router.project-osrm.org/route/v1/driving/125.96066133744466,7.613063966386869;125.97954581648548,7.599451890916599?overview=full&geometries=geojson&alternatives=false&steps=false",
+      "status": 200,
+      "code": "Ok",
+      "coordinates": 248
+    },
+    {
+      "url": "https://router.project-osrm.org/route/v1/driving/125.96066133744466,7.613063966386869;125.97954581648548,7.599451890916599?overview=full&geometries=geojson&alternatives=true&steps=false",
+      "status": 200,
+      "code": "Ok",
+      "coordinates": 248
+    }
+  ],
+  "networkFailures": [
+    {
+      "url": "https://router.project-osrm.org/route/v1/driving/125.96066133744466,7.613063966386869;125.97954581648548,7.599451890916599?overview=full&geometries=geojson&alternatives=false&steps=false",
+      "failure": {
+        "errorText": "net::ERR_FAILED"
+      }
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/6962/3921.png",
+      "failure": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/6961/3922.png",
+      "failure": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/6963/3922.png",
+      "failure": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/6962/3923.png",
+      "failure": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/6961/3921.png",
+      "failure": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/6963/3921.png",
+      "failure": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/6961/3923.png",
+      "failure": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/6963/3923.png",
+      "failure": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/6960/3922.png",
+      "failure": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/6964/3922.png",
+      "failure": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/6960/3921.png",
+      "failure": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/6964/3921.png",
+      "failure": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/6960/3923.png",
+      "failure": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/6964/3923.png",
+      "failure": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    },
+    {
+      "url": "https://tile.openstreetmap.org/18/222775/125504.png",
+      "failure": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    },
+    {
+      "url": "https://tile.openstreetmap.org/18/222775/125505.png",
+      "failure": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    },
+    {
+      "url": "https://tile.openstreetmap.org/18/222775/125503.png",
+      "failure": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    }
+  ]
+}

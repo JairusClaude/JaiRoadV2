@@ -1,4 +1,5 @@
 import { Head, router, useForm } from '@inertiajs/react';
+import { useRef } from 'react';
 import { ProjectForm } from '@/components/maintenance-projects/project-form';
 import type {
     CoverageChoice,
@@ -13,6 +14,7 @@ export default function Create({
     coverages: CoverageChoice[];
     integration: IntegrationStatus;
 }) {
+    const saving = useRef(false);
     const form = useForm<ProjectFormValues>({
         road_coverage_id: '',
         project_title: '',
@@ -41,9 +43,19 @@ export default function Create({
 
                     form.setData(values);
                 }}
-                onSave={() =>
-                    form.post('/maintenance-projects', { preserveScroll: true })
-                }
+                onSave={() => {
+                    if (saving.current || form.processing) {
+                        return;
+                    }
+
+                    saving.current = true;
+                    form.post('/maintenance-projects', {
+                        preserveScroll: true,
+                        onFinish: () => {
+                            saving.current = false;
+                        },
+                    });
+                }}
                 onCancel={() => router.visit('/maintenance-projects')}
             />
         </>

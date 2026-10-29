@@ -1,0 +1,11 @@
+vite.config.ts
+tools/maintenance-project-preview/road-coverage-forms.mjs
+resources/css/road-coverage-form.css
+resources/js/types/road-coverages.ts
+resources/js/lib/road-coverages/geometry.mjs
+resources/js/lib/road-coverages/geometry.d.mts
+resources/js/components/road-coverages/coverage-map-editor.tsx
+resources/js/components/road-coverages/coverage-form.tsx
+
+public/build/: regenerated assets.
+review/: reports, checks, test scripts and screenshots.

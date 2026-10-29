@@ -1,0 +1,33 @@
+/* Project Details only. Keep the existing unboxed information, metadata
+   divider, column proportions and separate year/record containers. */
+.jr-project-details .jr-project-map h3 {
+    margin: 0 0 12px;
+    color: #1e2430;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* The map itself remains the single bordered surface, at its existing
+   natural minimum height; its heading wrapper has no card styling. */
+.jr-project-details .jr-detail-grid {
+    align-items: start;
+}
+
+.jr-project-details .jr-history-section {
+    margin-top: 28px;
+    padding-top: 0;
+    border-top: 0;
+}
+
+.jr-project-details .jr-status[data-status='Ongoing'] {
+    background: #e7f0ff;
+    color: #1d4ed8;
+}
+
+/* At narrow widths the long project title and existing actions cannot share
+   one flex row; let the actions wrap instead of widening the document. */
+@media (max-width: 767px) {
+    .jr-project-details .jr-details-heading {
+        flex-wrap: wrap;
+    }
+}

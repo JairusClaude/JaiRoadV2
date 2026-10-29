@@ -1,0 +1,40 @@
+PASS Add starts in placement mode; actual rendered shell
+PASS First click places A
+PASS B triggers routing without a Generate button; markers retained
+PASS C triggers second portion; no fourth marker
+PASS Forced routing failure retains all markers and existing geometry
+PASS Independent collapse states and markers preserved
+PASS Fullscreen expands map and panel together
+PASS B–C manual trace independent of A–B
+PASS A–B manual trace completes both portions
+PASS Manual marker move preserves other portion and is reversible
+PASS Temporary editing can cancel with panel collapsed
+PASS Complete form saves in temporary preview and returns to directory
+PASS Mouse-wheel zoom does not add waypoints
+PASS Edit starts in review mode; recorded override retained
+PASS Information-only edit saves without rerouting
+PASS Saved RoadCoverage overlay popup displays actual record
+PASS Live geographic search pans without placing a waypoint
+PASS Narrow layout has no document horizontal overflow
+PASS Existing Maintenance Projects directory still renders
+ROUTES [
+  {
+    url: 'https://router.project-osrm.org/route/v1/driving/125.94521040004759,7.621571294111566;125.96066133744466,7.613063966386869?overview=full&geometries=geojson&alternatives=false&steps=false',
+    status: 200,
+    code: 'Ok',
+    coordinates: 281
+  },
+  {
+    url: 'https://router.project-osrm.org/route/v1/driving/125.96066133744466,7.613063966386869;125.97954581648548,7.599451890916599?overview=full&geometries=geojson&alternatives=false&steps=false',
+    status: 200,
+    code: 'Ok',
+    coordinates: 248
+  },
+  {
+    url: 'https://router.project-osrm.org/route/v1/driving/125.96066133744466,7.613063966386869;125.97954581648548,7.599451890916599?overview=full&geometries=geojson&alternatives=true&steps=false',
+    status: 200,
+    code: 'Ok',
+    coordinates: 248
+  }
+]
+ERRORS [ 'Failed to fetch' ]
