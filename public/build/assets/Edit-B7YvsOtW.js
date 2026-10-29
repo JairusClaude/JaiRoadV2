@@ -1,1 +1,0 @@
-import{n as e,t}from"./jsx-runtime-CfKhfvOA.js";import{t as n}from"./coverage-form-BrI9uySm.js";var r=e(),i=t();function a(e){let t=(0,r.c)(3),a=e.coverage?.id,o;return t[0]!==e||t[1]!==a?(o=(0,i.jsx)(n,{...e},a),t[0]=e,t[1]=a,t[2]=o):o=t[2],o}export{a as default};

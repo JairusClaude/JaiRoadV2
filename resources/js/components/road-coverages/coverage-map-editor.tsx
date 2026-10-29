@@ -1,3 +1,4 @@
+import * as Dialog from '@radix-ui/react-dialog';
 import L from 'leaflet';
 import {
     Maximize2,
@@ -5,8 +6,18 @@ import {
     PanelRightClose,
     PanelRightOpen,
     Layers,
+    MousePointer2,
+    Pencil,
+    Undo2,
+    Route,
+    RotateCcw,
+    X,
+    Check,
+    ChevronRight,
+    MapPinPlus,
+    Trash2,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,7 +45,6 @@ type Operation = {
     line: Point[];
     choices: Point[][];
     vertex: number | null;
-    insert: boolean;
     undo: Point[][];
 };
 const ll = (p: Point): L.LatLngTuple => [p[1], p[0]];
@@ -42,47 +52,16 @@ const point = (p: L.LatLng): Point => [
     p.wrap().lng,
     Math.max(-85.05112878, Math.min(85.05112878, p.lat)),
 ];
-// OSRM GeoJSON ~6 decimals: two independently rounded points differ by <=0.158m.
-// This 0.16m tolerance reconciles numerical rounding only; never road-network snapping.
+// Manual traces must connect to their selected endpoints. The router's returned
+// road endpoints are handled separately; ordinary network snapping is not an error.
 const connects = (line: Point[], a: Point, b: Point) =>
-    line.length > 1 &&
-    distanceKm([a, line[0]]) * 1000 <= 0.16 &&
-    distanceKm([b, line[line.length - 1]]) * 1000 <= 0.16;
-const automatic = (line: Point[], a: Point, b: Point): Leg =>
-    connects(line, a, b)
-        ? { line: [a, ...line.slice(1, -1), b], manual: false, status: 'Ready' }
-        : {
-              line,
-              manual: false,
-              status: 'Needs correction',
-              message:
-                  'Route endpoints differ from the selected locations. Move a marker or edit the path. Your markers have not moved.',
-          };
-const nearest = (line: Point[], p: Point) => {
-    let best = { index: 0, p: line[0], distance: Infinity };
-    line.slice(1).forEach((b, i) => {
-        const a = line[i],
-            cos = Math.cos((p[1] * Math.PI) / 180),
-            dx = (b[0] - a[0]) * cos,
-            dy = b[1] - a[1];
-        const t = Math.max(
-            0,
-            Math.min(
-                1,
-                ((p[0] - a[0]) * cos * dx + (p[1] - a[1]) * dy) /
-                    (dx * dx + dy * dy || 1),
-            ),
-        );
-        const q: Point = [a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])];
-        const d = distanceKm([q, p]);
-
-        if (d < best.distance) {
-            best = { index: i, p: q, distance: d };
-        }
-    });
-
-    return best;
-};
+    line.length > 1 && samePoint(line[0], a) && samePoint(line.at(-1), b);
+const portionName = (i: number) => (i === 0 ? 'A–B' : 'B–C');
+const notMapped = (): Leg => ({
+    line: [],
+    manual: false,
+    status: 'Not yet mapped',
+});
 let serviceQueue = Promise.resolve();
 let lastRequest = 0;
 async function json(url: string, signal: AbortSignal) {
@@ -145,7 +124,7 @@ export function CoverageMapEditor({
 
         return {
             points: data?.points ?? [],
-            legs: [0, 1].map((i) => ({
+            legs: (data?.legs ?? []).map((_, i) => ({
                 line: data?.legs[i] ?? [],
                 manual:
                     (
@@ -155,7 +134,7 @@ export function CoverageMapEditor({
                             };
                         } | null
                     )?.properties?.jairoads_editor?.manual?.[i] ?? true,
-                status: data ? 'Ready' : 'Awaiting locations',
+                status: 'Complete',
             })),
             legacy: data ? null : lineCoordinates(initial),
             original: initial,
@@ -167,16 +146,34 @@ export function CoverageMapEditor({
         node = useRef<HTMLDivElement>(null),
         map = useRef<L.Map | null>(null),
         active = useRef<L.LayerGroup | null>(null),
-        references = useRef<L.LayerGroup | null>(null);
+        references = useRef<L.LayerGroup | null>(null),
+        operationLine = useRef<L.Polyline | null>(null),
+        suppressMapClick = useRef(false),
+        explicitPlacement = useRef(false),
+        confirmationReturnFocus = useRef<HTMLElement | null>(null);
+    const [portalContainer, setPortalContainer] =
+        useState<HTMLDivElement | null>(null);
+    const workspaceRef = useCallback((element: HTMLDivElement | null) => {
+        root.current = element;
+        setPortalContainer(element);
+    }, []);
     const [tilesReady, setTilesReady] = useState(false);
     const [placing, setPlacing] = useState(!editing),
         [infoOpen, setInfoOpen] = useState(true),
         [hidden, setHidden] = useState(false),
-        [selected, setSelected] = useState(0),
+        [selectedLocation, setSelectedLocation] = useState<number | null>(null),
+        [drawMenu, setDrawMenu] = useState(false),
+        [confirmation, setConfirmation] = useState<{
+            index: number | null;
+            title: string;
+            description: string;
+        } | null>(null),
+        [selected, setSelected] = useState<number | null>(null),
+        [anchor, setAnchor] = useState<Point | null>(null),
+        [popupPosition, setPopupPosition] = useState({ left: 12, top: 120 }),
         [op, setOp] = useState<Operation | null>(null),
         [undo, setUndo] = useState<Draft | null>(null),
         [notice, setNotice] = useState(''),
-        [identify, setIdentify] = useState(false),
         [showRoads, setShowRoads] = useState(true),
         [all, setAll] = useState(false),
         [layers, setLayers] = useState(false),
@@ -188,10 +185,8 @@ export function CoverageMapEditor({
         generations = useRef([0, 0]),
         alternativeRequest = useRef<AbortController | null>(null);
     const apply = (next: Draft) => {
-        current.current = next;
-        setDraft(next);
         const feature =
-            next.changed && next.legs.every((x) => x.status === 'Ready')
+            next.changed && next.legs.every((x) => x.status === 'Complete')
                 ? routeFeature(
                       next.points,
                       next.legs.map((x) => x.line),
@@ -205,16 +200,313 @@ export function CoverageMapEditor({
             };
         }
 
+        if (
+            next.changed &&
+            next.legs.length &&
+            next.legs.every((x) => x.status === 'Complete') &&
+            !feature
+        ) {
+            const affected =
+                next.legs.find(
+                    (leg) =>
+                        leg.line.length > 1000 ||
+                        leg.line
+                            .slice(1)
+                            .some((p, i) => samePoint(p, leg.line[i])),
+                ) ?? next.legs.at(-1)!;
+            affected.status = 'Needs correction';
+            const merged = next.legs.flatMap((leg, i) =>
+                i ? leg.line.slice(1) : leg.line,
+            );
+            const repeated = next.points.findIndex(
+                (p) => merged.filter((q) => samePoint(p, q)).length > 1,
+            );
+            affected.message =
+                repeated >= 0
+                    ? `The road passes Location ${'ABC'[repeated]} more than once. Review or redraw this portion to keep one continuous route.`
+                    : merged.length > 1000
+                      ? 'This road exceeds the 1,000-point limit. Draw it with fewer tracing points.'
+                      : 'The path contains a repeated tracing point or missing connection. Adjust or redraw this portion.';
+        }
+
+        current.current = next;
+        setDraft(next);
         onChange(next.changed ? feature : next.original);
         onWorkingDirty?.(
             next.changed &&
                 (JSON.stringify(next.points) !==
                     JSON.stringify(mappingData(initial)?.points ?? []) ||
                     JSON.stringify(next.legs.map((x) => x.line)) !==
-                        JSON.stringify(mappingData(initial)?.legs ?? [[], []])),
+                        JSON.stringify(mappingData(initial)?.legs ?? [])),
         );
     };
     const remember = () => setUndo(structuredClone(current.current));
+    const abortRouting = () => {
+        controllers.current.forEach((c) => c?.abort());
+        alternativeRequest.current?.abort();
+        generations.current = generations.current.map((x) => x + 1);
+    };
+    const clearSelection = () => {
+        setSelected(null);
+        setSelectedLocation(null);
+        setAnchor(null);
+        setDrawMenu(false);
+    };
+    const activatePlacement = () => {
+        if (
+            disabled ||
+            op ||
+            confirmation ||
+            draft.legacy ||
+            draft.points.length >= 3
+        ) {
+            return;
+        }
+
+        clearSelection();
+        explicitPlacement.current = true;
+        setPlacing(true);
+        setNotice('');
+    };
+    const removeWorkingLocations = (index: number | null) => {
+        if (disabled || op) {
+            return;
+        }
+
+        abortRouting();
+        explicitPlacement.current = false;
+        remember();
+        const next = structuredClone(current.current);
+        const count = next.points.length;
+
+        if (index === null) {
+            next.points = [];
+            next.legs = [];
+            next.legacy = null;
+        } else if (count === 3) {
+            next.points.splice(index, 1);
+
+            if (index === 0) {
+                next.legs = [next.legs[1]];
+            } else if (index === 2) {
+                next.legs = [next.legs[0]];
+            } else {
+                next.legs = [
+                    {
+                        ...notMapped(),
+                        message:
+                            'Locations changed. Select A–B to retry routing or draw the new connection.',
+                    },
+                ];
+            }
+        } else {
+            next.points.splice(index, 1);
+            next.legs = [];
+        }
+
+        next.legs.forEach((leg) => {
+            if (leg.status === 'Calculating route') {
+                leg.status = 'Route unavailable';
+                leg.message =
+                    'Routing was interrupted by a location change. Retry or draw this portion.';
+            }
+        });
+        next.changed = true;
+        apply(next);
+        clearSelection();
+        setPlacing(next.points.length < 2);
+        setNotice(
+            index === null
+                ? 'Locations cleared. Road information was kept. Place Location A to start again.'
+                : 'Location removed. Remaining locations were relabeled in order.',
+        );
+    };
+    const requestRemoval = (index: number | null) => {
+        const count = draft.points.length;
+        const discarded =
+            index === null
+                ? draft.legs
+                : count < 3 || index === 1
+                  ? draft.legs
+                  : [draft.legs[index === 0 ? 0 : 1]];
+        const confirm =
+            index === null
+                ? count > 0 || !!draft.legacy
+                : (count === 3 && index === 1) ||
+                  discarded.some((leg) => leg.line.length > 1);
+
+        if (!confirm) {
+            removeWorkingLocations(index);
+
+            return;
+        }
+
+        confirmationReturnFocus.current = document.activeElement as HTMLElement;
+        setConfirmation({
+            index,
+            title:
+                index === null
+                    ? 'Clear all locations?'
+                    : `Remove Location ${'ABC'[index]}?`,
+            description:
+                index === null
+                    ? 'Clear the working map and start again at A. Road Information will be kept. This does not delete the saved RoadCoverage.'
+                    : count === 3 && index === 1
+                      ? 'Both road portions will be discarded. A and C stay in place as the new A and B. Rebuild their connection using routing or drawing.'
+                      : count === 3 && index === 0
+                        ? 'Remove A and its A–B portion. The former B–C road will be kept as the new A–B, with its existing geometry.'
+                        : count === 3 && index === 2
+                          ? 'Remove C and its B–C portion. The existing A–B road will be kept.'
+                          : 'Remove this location and the road connecting it. The remaining location becomes A. Add a new B to rebuild the road.',
+        });
+    };
+    const focusMap = (coordinates: Point[], location = false) => {
+        const instance = map.current;
+
+        if (!instance || !coordinates.length) {
+            return;
+        }
+
+        instance.invalidateSize({ pan: false });
+
+        if (location) {
+            const zoom = instance.getZoom();
+            instance.setView(
+                ll(coordinates[0]),
+                zoom >= 14 && zoom <= 17 ? zoom : 16,
+                { animate: false },
+            );
+        } else {
+            instance.fitBounds(L.latLngBounds(coordinates.map(ll)), {
+                paddingTopLeft: [48, window.innerWidth <= 480 ? 155 : 112],
+                paddingBottomRight: [48, 68],
+                maxZoom: 16,
+                animate: false,
+            });
+        }
+
+        if (window.innerWidth <= 800) {
+            node.current?.scrollIntoView({
+                block: 'start',
+                behavior: 'smooth',
+            });
+        }
+    };
+    const markerClick = (index: number, navigate = false) => {
+        if (
+            op ||
+            confirmation ||
+            suppressMapClick.current ||
+            !current.current.points[index]
+        ) {
+            return;
+        }
+
+        const location = current.current.points[index];
+        explicitPlacement.current = false;
+        setPlacing(false);
+        setDrawMenu(false);
+        setSelected(null);
+        setSelectedLocation(index);
+        setAnchor(location);
+        setNotice('');
+
+        if (navigate) {
+            focusMap([location], true);
+        }
+    };
+    const selectPortion = (i: number, location?: Point, navigate = false) => {
+        if (op || confirmation) {
+            return;
+        }
+
+        const state = current.current;
+        const line =
+            lineCoordinates({
+                type: 'LineString',
+                coordinates: state.legs[i]?.line,
+            }) ?? [];
+        const endpoints = state.points.slice(i, i + 2);
+
+        if (!line.length && !endpoints.length) {
+            return;
+        }
+
+        explicitPlacement.current = false;
+        setSelectedLocation(null);
+        setDrawMenu(false);
+        alternativeRequest.current?.abort();
+        setPlacing(false);
+        setSelected(i);
+        setAnchor(
+            location ??
+                (line.length
+                    ? line[Math.floor(line.length / 2)]
+                    : endpoints[0]),
+        );
+        setNotice('');
+
+        if (navigate) {
+            focusMap(line.length ? line : endpoints);
+        }
+    };
+    const acceptAutomatic = (next: Draft, i: number, line: Point[]) => {
+        const endPoints = [line[0], line.at(-1)!];
+
+        for (const [j, endpoint] of endPoints.entries()) {
+            const index = i + j;
+            const offset = distanceKm([next.points[index], endpoint]) * 1000;
+            const adjacent = next.legs.find(
+                (leg, k) =>
+                    k !== i &&
+                    (k === index || k + 1 === index) &&
+                    leg.line.length > 1 &&
+                    leg.status === 'Complete',
+            );
+
+            if (offset > 50 || (adjacent && offset > 0.16)) {
+                next.legs[i] = {
+                    line,
+                    manual: false,
+                    status: 'Needs correction',
+                    message:
+                        offset > 50
+                            ? `Location ${'ABC'[index]} is too far from this mapped road. Move it closer or draw the road manually.`
+                            : `Connection missing at Location ${'ABC'[index]}. This route ends on a different road. The adjacent portion was preserved; redraw this portion or move the location deliberately.`,
+                };
+
+                return;
+            }
+        }
+
+        let snapped = false;
+        const result = [...line];
+        endPoints.forEach((endpoint, j) => {
+            const index = i + j;
+            const shared = next.legs.some(
+                (leg, k) =>
+                    k !== i &&
+                    (k === index || k + 1 === index) &&
+                    leg.line.length > 1 &&
+                    leg.status === 'Complete',
+            );
+
+            if (shared) {
+                result[j ? result.length - 1 : 0] = next.points[index];
+            } else {
+                snapped ||=
+                    distanceKm([next.points[index], endpoint]) * 1000 > 0.16;
+                next.points[index] = endpoint;
+            }
+        });
+        next.legs[i] = { line: result, manual: false, status: 'Complete' };
+
+        if (snapped) {
+            setNotice(
+                'Locations aligned to the mapped road. Review the markers before saving.',
+            );
+        }
+    };
     const route = async (
         i: number,
         state = current.current,
@@ -236,7 +528,7 @@ export function CoverageMapEditor({
             const next = structuredClone(current.current);
             next.legs[i] = {
                 ...next.legs[i],
-                status: 'Routing…',
+                status: 'Calculating route',
                 manual: false,
             };
             next.changed = true;
@@ -253,7 +545,7 @@ export function CoverageMapEditor({
             const a = state.points[i],
                 b = state.points[i + 1];
             const response = await json(
-                `${services.routing}/${a.join(',')};${b.join(',')}?overview=full&geometries=geojson&alternatives=${alternatives}&steps=false`,
+                `${services.routing}/${a.join(',')};${b.join(',')}?overview=full&geometries=geojson&alternatives=${alternatives}&steps=false&radiuses=50;50`,
                 c.signal,
             );
 
@@ -286,13 +578,12 @@ export function CoverageMapEditor({
                     line: lines[1],
                     choices: lines.slice(1),
                     vertex: null,
-                    insert: false,
                     undo: [],
                 });
                 setNotice('Preview only. Apply to replace this portion.');
             } else {
                 const next = structuredClone(current.current);
-                next.legs[i] = automatic(lines[0], a, b);
+                acceptAutomatic(next, i, lines[0]);
                 apply(next);
             }
         } catch (e) {
@@ -300,7 +591,9 @@ export function CoverageMapEditor({
                 return;
             }
 
-            const message = e instanceof Error ? e.message : 'Routing failed.';
+            const message =
+                'Automatic route unavailable. Move the locations closer to a mapped road, retry, or draw manually.';
+            void e;
 
             if (alternatives) {
                 setNotice(message);
@@ -308,7 +601,7 @@ export function CoverageMapEditor({
                 const next = structuredClone(current.current);
                 next.legs[i] = {
                     ...next.legs[i],
-                    status: 'Routing unavailable',
+                    status: 'Route unavailable',
                     message,
                 };
                 apply(next);
@@ -317,54 +610,16 @@ export function CoverageMapEditor({
     };
     const changeVertex = (line: Point[], vertex: number | null = null) => {
         if (op) {
+            setNotice('');
             setOp({ ...op, line, vertex, undo: [...op.undo, op.line] });
         }
     };
     const click = (p: Point) => {
-        if (disabled) {
+        if (disabled || confirmation || suppressMapClick.current) {
             return;
         }
 
-        if (identify && draft.legacy) {
-            const line = draft.legacy,
-                hit = nearest(line, p);
-
-            if (
-                samePoint(hit.p, line[0]) ||
-                samePoint(hit.p, line[line.length - 1])
-            ) {
-                setNotice('Choose B between the endpoints.');
-
-                return;
-            }
-
-            const left = line.slice(0, hit.index + 1),
-                right = line.slice(hit.index + 1);
-
-            if (!samePoint(left.at(-1), hit.p)) {
-                left.push(hit.p);
-            }
-
-            if (!samePoint(right[0], hit.p)) {
-                right.unshift(hit.p);
-            }
-
-            remember();
-            apply({
-                ...draft,
-                points: [line[0], hit.p, line[line.length - 1]],
-                legs: [left, right].map((line) => ({
-                    line,
-                    manual: true,
-                    status: 'Ready',
-                })),
-                legacy: null,
-                changed: true,
-            });
-            setIdentify(false);
-
-            return;
-        }
+        setDrawMenu(false);
 
         if (op?.kind === 'trace') {
             if (!samePoint(op.line.at(-1), p)) {
@@ -375,6 +630,10 @@ export function CoverageMapEditor({
         }
 
         if (op || !placing || current.current.points.length === 3) {
+            if (!op) {
+                clearSelection();
+            }
+
             return;
         }
 
@@ -387,21 +646,40 @@ export function CoverageMapEditor({
         remember();
         const next = structuredClone(current.current);
         next.points.push(p);
+
+        if (next.points.length > 1) {
+            next.legs.push(notMapped());
+        }
+
         next.changed = true;
         apply(next);
 
         if (next.points.length > 1) {
-            setSelected(next.points.length - 2);
             void route(next.points.length - 2, next);
         }
 
-        if (next.points.length === 3) {
+        if (
+            next.points.length === 3 ||
+            (next.points.length === 2 && !explicitPlacement.current)
+        ) {
+            explicitPlacement.current = false;
             setPlacing(false);
+            setSelected(null);
+            setAnchor(null);
         }
     };
     const move = (i: number, p: Point) => {
-        if (disabled || op) {
-            return;
+        if (disabled || op || confirmation) {
+            return false;
+        }
+
+        if (current.current.points.some((q, j) => j !== i && samePoint(q, p))) {
+            setNotice(
+                'Choose a location different from the other road locations.',
+            );
+            setDraft(structuredClone(current.current));
+
+            return false;
         }
 
         remember();
@@ -411,11 +689,19 @@ export function CoverageMapEditor({
         next.legs.forEach((leg, j) => {
             if ((i === j || i === j + 1) && next.points[j + 1]) {
                 if (leg.manual) {
-                    leg.status = 'Needs correction';
+                    leg.status = connects(
+                        leg.line,
+                        next.points[j],
+                        next.points[j + 1],
+                    )
+                        ? 'Complete'
+                        : 'Needs correction';
                     leg.message =
-                        'Location moved. Correct this manual connection or undo the move.';
+                        leg.status === 'Complete'
+                            ? undefined
+                            : `Connection missing at Location ${'ABC'[i]}. The manual path was retained. Redraw this portion or undo the location move.`;
                 } else {
-                    leg.status = 'Routing…';
+                    leg.status = 'Calculating route';
                 }
             }
         });
@@ -425,45 +711,59 @@ export function CoverageMapEditor({
                 void route(j, next);
             }
         });
+        setSelectedLocation(null);
+        setAnchor(null);
+        setNotice(
+            `Location ${'ABC'[i]} updated. Review the affected road portions.`,
+        );
+
+        return true;
     };
     const lineClick = (i: number, p: Point) => {
-        if (identify || placing || op?.kind === 'trace') {
+        if (current.current.legacy) {
+            setNotice(
+                'Saved alignment retained. Use saved endpoints in Road Mapping to edit it.',
+            );
+
+            return;
+        }
+
+        if (placing || op?.kind === 'trace') {
             click(p);
 
             return;
         }
 
-        if (op?.kind === 'edit' && op.leg === i) {
-            if (op.insert) {
-                const hit = nearest(op.line, p),
-                    line = [...op.line];
-                line.splice(hit.index + 1, 0, hit.p);
-                changeVertex(line, hit.index + 1);
-            } else {
-                let vertex = 1,
-                    d = Infinity;
-                op.line.slice(1, -1).forEach((q, j) => {
-                    const value = distanceKm([q, p]);
-
-                    if (value < d) {
-                        d = value;
-                        vertex = j + 1;
-                    }
-                });
-
-                if (op.line.length > 2) {
-                    setOp({ ...op, vertex });
-                } else {
-                    setNotice('Use Insert vertex to add a point.');
-                }
-            }
+        if (op?.kind === 'edit' && op.leg === i && op.line.length > 2) {
+            const closest = op.line
+                .slice(1, -1)
+                .reduce(
+                    (best, q, j) =>
+                        distanceKm([q, p]) < distanceKm([op.line[best], p])
+                            ? j + 1
+                            : best,
+                    1,
+                );
+            setOp({ ...op, vertex: closest });
         } else if (!op) {
-            setSelected(i);
+            selectPortion(i, p);
         }
     };
-    const handlers = useRef({ click, move, lineClick, changeVertex });
+    const handlers = useRef({
+        click,
+        move,
+        lineClick,
+        changeVertex,
+        markerClick,
+    });
     useEffect(() => {
-        handlers.current = { click, move, lineClick, changeVertex };
+        handlers.current = {
+            click,
+            move,
+            lineClick,
+            changeVertex,
+            markerClick,
+        };
     });
     useEffect(() => {
         if (!node.current) {
@@ -495,6 +795,7 @@ export function CoverageMapEditor({
             instance.fitBounds(L.latLngBounds(line.map(ll)), {
                 padding: [35, 35],
                 maxZoom: 17,
+                animate: false,
             });
         }
 
@@ -516,8 +817,12 @@ export function CoverageMapEditor({
         };
     }, []);
     useEffect(() => {
-        onPending?.(!!op || draft.legs.some((x) => x.status === 'Routing…'));
-    }, [op, draft, onPending]);
+        onPending?.(
+            !!op ||
+                !!confirmation ||
+                draft.legs.some((x) => x.status === 'Calculating route'),
+        );
+    }, [op, draft, confirmation, onPending]);
     useEffect(() => {
         const layer = active.current;
 
@@ -526,18 +831,25 @@ export function CoverageMapEditor({
         }
 
         layer.clearLayers();
+        operationLine.current = null;
         const draw = (line: Point[], i: number, ready: boolean) => {
             if (line.length > 1) {
-                L.polyline(line.map(ll), {
-                    color: i === selected ? '#843b12' : '#b8784b',
-                    weight: 5,
+                const path = L.polyline(line.map(ll), {
+                    color:
+                        i === selected || op?.leg === i ? '#2563eb' : '#843b12',
+                    weight: i === selected ? 6 : 5,
                     dashArray: ready ? undefined : '7 5',
+                    className: `jr-road-line jr-road-line-${i}`,
                     bubblingMouseEvents: false,
                 })
                     .on('click', (e) =>
                         handlers.current.lineClick(i, point(e.latlng)),
                     )
                     .addTo(layer);
+
+                if (op?.leg === i) {
+                    operationLine.current = path;
+                }
             }
         };
 
@@ -545,51 +857,209 @@ export function CoverageMapEditor({
             draw(draft.legacy, 0, true);
         }
 
-        draft.legs.forEach((leg, i) =>
+        draft.legs.forEach((leg, i) => {
+            if (
+                op?.leg === i &&
+                op.kind !== 'alternatives' &&
+                leg.line.length > 1
+            ) {
+                L.polyline(leg.line.map(ll), {
+                    color: '#94a3b8',
+                    weight: 4,
+                    dashArray: '4 6',
+                    opacity: 0.65,
+                    interactive: false,
+                }).addTo(layer);
+            }
+
             draw(
                 op?.leg === i ? op.line : leg.line,
                 i,
-                op?.leg === i || leg.status === 'Ready',
-            ),
-        );
+                op?.leg !== i && leg.status === 'Complete',
+            );
+        });
         draft.points.forEach((p, i) => {
             const marker = L.marker(ll(p), {
-                draggable: !disabled && !op,
+                draggable: !disabled && !op && !confirmation,
+                bubblingMouseEvents: false,
                 title: `Location ${'ABC'[i]} — drag to move`,
                 icon: L.divIcon({
-                    className: 'jr-control-location',
+                    className: `jr-control-location ${selectedLocation === i ? 'jr-location-selected' : ''}`,
                     html: 'ABC'[i],
                     iconSize: [28, 28],
                     iconAnchor: [14, 14],
                 }),
             }).addTo(layer);
-            marker.on('dragend', () =>
-                handlers.current.move(i, point(marker.getLatLng())),
-            );
+            marker.on('click', () => handlers.current.markerClick(i));
+            marker.on('dragstart', () => {
+                suppressMapClick.current = true;
+            });
+            marker.on('dragend', () => {
+                handlers.current.move(i, point(marker.getLatLng()));
+                setTimeout(() => {
+                    suppressMapClick.current = false;
+                }, 180);
+            });
         });
 
-        if (
-            op?.kind === 'edit' &&
-            op.vertex !== null &&
-            op.vertex > 0 &&
-            op.vertex < op.line.length - 1
-        ) {
-            const i = op.vertex,
-                marker = L.marker(ll(op.line[i]), {
+        if (op && op.kind !== 'alternatives') {
+            (op.kind === 'trace'
+                ? op.line.slice(1)
+                : op.line.slice(1, -1)
+            ).forEach((p, j) => {
+                const i = j + 1;
+
+                if (
+                    op.kind === 'edit' &&
+                    op.line.length > 62 &&
+                    op.vertex !== i
+                ) {
+                    return;
+                }
+
+                const marker = L.marker(ll(p), {
                     draggable: true,
-                    title: 'Selected path vertex',
+                    bubblingMouseEvents: false,
+                    keyboard: true,
+                    title:
+                        op.kind === 'edit'
+                            ? `Tracing point ${i} — drag to adjust`
+                            : `Drawing point ${i} — drag to adjust`,
                     icon: L.divIcon({
                         className: 'jr-trace-vertex',
                         iconSize: [14, 14],
+                        iconAnchor: [7, 7],
                     }),
                 }).addTo(layer);
-            marker.on('dragend', () => {
-                const line = [...op.line];
-                line[i] = point(marker.getLatLng());
-                handlers.current.changeVertex(line, i);
+                marker.on('dragstart', () => {
+                    suppressMapClick.current = true;
+                });
+                marker.on('drag', () => {
+                    const line = [...op.line];
+                    line[i] = point(marker.getLatLng());
+                    operationLine.current?.setLatLngs(line.map(ll));
+                });
+                marker.on('dragend', () => {
+                    const line = [...op.line];
+                    line[i] = point(marker.getLatLng());
+                    handlers.current.changeVertex(line, i);
+                    setTimeout(() => {
+                        suppressMapClick.current = false;
+                    }, 180);
+                });
             });
         }
-    }, [draft, selected, op, disabled]);
+    }, [draft, selected, selectedLocation, op, disabled, confirmation]);
+    useEffect(() => {
+        const instance = map.current;
+
+        if (!instance || !anchor) {
+            return;
+        }
+
+        const position = () => {
+            const pos = instance.latLngToContainerPoint(ll(anchor));
+            const size = instance.getSize();
+            const popup =
+                root.current?.querySelector<HTMLElement>('.jr-road-context');
+            const width = popup?.offsetWidth ?? Math.min(236, size.x - 24);
+            const height = popup?.offsetHeight ?? 180;
+            const minTop = window.innerWidth <= 480 ? 150 : 112;
+            let left = pos.x + 14;
+            let top = pos.y - 30;
+
+            if (left + width > size.x - 12) {
+                left = pos.x - width - 14;
+
+                if (left < 12) {
+                    left = Math.max(
+                        12,
+                        Math.min(pos.x - width / 2, size.x - width - 12),
+                    );
+
+                    if (pos.y - height - 18 >= minTop) {
+                        top = pos.y - height - 18;
+                    } else {
+                        top = pos.y + 22;
+                    }
+                }
+            }
+
+            top = Math.max(minTop, Math.min(top, size.y - height - 24));
+            left = Math.max(
+                Math.min(
+                    top < (window.innerWidth <= 480 ? 220 : 190) ? 56 : 12,
+                    size.x - width - 12,
+                ),
+                Math.min(left, size.x - width - 12),
+            );
+            setPopupPosition({ left, top });
+        };
+        position();
+        instance.on('move zoom resize', position);
+
+        return () => {
+            instance.off('move zoom resize', position);
+        };
+    }, [anchor, hidden, selected, selectedLocation, draft, op]);
+    useEffect(() => {
+        if ((selected === null && selectedLocation === null) || !anchor || op) {
+            return;
+        }
+
+        root.current
+            ?.querySelector<HTMLButtonElement>('.jr-road-context > button')
+            ?.focus({ preventScroll: true });
+    }, [selected, selectedLocation, anchor, op]);
+    useEffect(() => {
+        const escape = (event: KeyboardEvent) => {
+            if (event.key !== 'Escape') {
+                return;
+            }
+
+            if (confirmation) {
+                return;
+            }
+
+            if (drawMenu) {
+                setDrawMenu(false);
+                root.current
+                    ?.querySelector<HTMLButtonElement>('#jr-draw-tool')
+                    ?.focus();
+
+                return;
+            }
+
+            if (op) {
+                setOp(null);
+                setNotice(
+                    'Drawing or editing canceled. Previous path retained.',
+                );
+            } else {
+                clearSelection();
+            }
+        };
+        document.addEventListener('keydown', escape);
+
+        return () => document.removeEventListener('keydown', escape);
+    }, [op, drawMenu, confirmation]);
+    useEffect(() => {
+        if (!drawMenu) {
+            return;
+        }
+
+        root.current
+            ?.querySelector<HTMLButtonElement>('.jr-draw-targets button')
+            ?.focus();
+        const dismiss = (event: PointerEvent) => {
+            if (!(event.target as HTMLElement).closest('.jr-draw-tool')) {
+                setDrawMenu(false);
+            }
+        };
+        document.addEventListener('pointerdown', dismiss);
+
+        return () => document.removeEventListener('pointerdown', dismiss);
+    }, [drawMenu]);
     useEffect(() => {
         const layer = references.current;
 
@@ -629,7 +1099,7 @@ export function CoverageMapEditor({
                 weight: 4,
                 dashArray: '5 5',
                 opacity: 0.65,
-                interactive: !placing && !op && !identify,
+                interactive: !placing && !op && !confirmation,
             })
                 .bindPopup(content)
                 .addTo(layer);
@@ -642,17 +1112,45 @@ export function CoverageMapEditor({
         all,
         placing,
         op,
-        identify,
+        confirmation,
     ]);
-    const start = (kind: 'trace' | 'edit') => {
-        alternativeRequest.current?.abort();
-        controllers.current[selected]?.abort();
-        generations.current[selected]++;
+    const start = (kind: 'trace' | 'edit', target?: number) => {
+        if (disabled || op || confirmation) {
+            return;
+        }
 
-        if (current.current.legs[selected].status === 'Routing…') {
+        const i = target ?? selected ?? (draft.legs.length === 1 ? 0 : null);
+
+        if (i === null || !draft.points[i + 1]) {
+            if (kind === 'trace' && draft.legs.length === 2) {
+                setDrawMenu(true);
+                setPlacing(false);
+                setSelectedLocation(null);
+                setAnchor(null);
+            } else {
+                setNotice('Place at least A and B before drawing.');
+            }
+
+            return;
+        }
+
+        if (kind === 'edit' && !draft.legs[i].manual) {
+            return;
+        }
+
+        explicitPlacement.current = false;
+        setNotice('');
+        setDrawMenu(false);
+        setSelectedLocation(null);
+        setSelected(i);
+        alternativeRequest.current?.abort();
+        controllers.current[i]?.abort();
+        generations.current[i]++;
+
+        if (current.current.legs[i].status === 'Calculating route') {
             const next = structuredClone(current.current);
-            next.legs[selected].status = 'Routing unavailable';
-            next.legs[selected].message =
+            next.legs[i].status = 'Route unavailable';
+            next.legs[i].message =
                 'Routing paused for manual editing. Retry routing if you cancel.';
             apply(next);
         }
@@ -660,14 +1158,13 @@ export function CoverageMapEditor({
         setPlacing(false);
         setOp({
             kind,
-            leg: selected,
+            leg: i,
             line:
                 kind === 'trace'
-                    ? [draft.points[selected]]
-                    : structuredClone(draft.legs[selected].line),
+                    ? [draft.points[i]]
+                    : structuredClone(draft.legs[i].line),
             choices: [],
             vertex: null,
-            insert: false,
             undo: [],
         });
     };
@@ -687,7 +1184,8 @@ export function CoverageMapEditor({
         }
 
         if (
-            !connects(line, draft.points[i], draft.points[i + 1]) ||
+            (op.kind !== 'alternatives' &&
+                !connects(line, draft.points[i], draft.points[i + 1])) ||
             distanceKm(line) <= 0 ||
             line.slice(1).some((p, j) => samePoint(p, line[j]))
         ) {
@@ -698,28 +1196,74 @@ export function CoverageMapEditor({
             return;
         }
 
+        if (op.kind !== 'alternatives') {
+            const repeated = draft.points.findIndex((location, j) =>
+                line.some(
+                    (p, k) =>
+                        samePoint(p, location) &&
+                        !(
+                            (j === i && k === 0) ||
+                            (j === i + 1 && k === line.length - 1)
+                        ),
+                ),
+            );
+
+            if (repeated >= 0) {
+                setNotice(
+                    `The trace crosses Location ${'ABC'[repeated]} again. Adjust or undo this tracing point before finishing.`,
+                );
+
+                return;
+            }
+
+            const total =
+                line.length +
+                draft.legs.reduce(
+                    (n, leg, j) => n + (j === i ? 0 : leg.line.length),
+                    0,
+                ) -
+                (draft.legs.length - 1);
+
+            if (line.length > 1000 || total > 1000) {
+                setNotice(
+                    'This road exceeds the 1,000-point limit. Undo points or redraw with fewer points before finishing.',
+                );
+
+                return;
+            }
+        }
+
         remember();
         const next = structuredClone(current.current);
-        next.legs[i] =
-            op.kind === 'alternatives'
-                ? automatic(line, draft.points[i], draft.points[i + 1])
-                : { line, manual: true, status: 'Ready' };
+
+        if (op.kind === 'alternatives') {
+            acceptAutomatic(next, i, line);
+        } else {
+            next.legs[i] = { line, manual: true, status: 'Complete' };
+        }
+
         next.changed = true;
         apply(next);
         setOp(null);
-        setNotice('Working path updated. Save to retain it.');
+        setNotice(
+            next.legs[i].status === 'Complete'
+                ? 'Road portion complete. Save to retain it.'
+                : (next.legs[i].message ??
+                      'Review this road connection before saving.'),
+        );
     };
-    const instruction = identify
-        ? 'Click the saved road to identify B.'
-        : op?.kind === 'trace'
-          ? `Click along the road. Finish Trace connects to ${'ABC'[op.leg + 1]}.`
-          : op?.kind === 'edit'
-            ? 'Click the path to select a vertex; drag its handle to adjust.'
-            : op?.kind === 'alternatives'
-              ? 'Review the alternative, then Apply or Cancel.'
-              : placing
-                ? `Click the map to place Location ${'ABC'[draft.points.length] ?? 'C'}.`
-                : 'Review the road or select a portion to correct.';
+    const instruction =
+        op?.kind === 'trace'
+            ? `Click along the road. Finish Drawing connects to ${'ABC'[op.leg + 1]}.`
+            : op?.kind === 'edit'
+              ? op.line.length > 62
+                  ? 'Click the path to choose a tracing point, then drag its handle.'
+                  : 'Drag a tracing point to correct this portion. Other portions stay unchanged.'
+              : op?.kind === 'alternatives'
+                ? 'Review the alternative, then Apply or Cancel.'
+                : placing
+                  ? `Click the map to place Location ${'ABC'[draft.points.length] ?? 'C'}.`
+                  : 'Select a road to inspect it, or review its information and length.';
     const actions = op && (
         <div className="jr-map-actions">
             {op.kind !== 'alternatives' && (
@@ -747,17 +1291,21 @@ export function CoverageMapEditor({
                     setNotice('Temporary edits canceled.');
                 }}
             >
-                Cancel editing
+                Cancel
             </Button>
             <Button type="button" className="jr-primary" onClick={finish}>
-                {op.kind === 'trace' ? 'Finish Trace' : 'Apply Changes'}
+                {op.kind === 'trace'
+                    ? 'Finish Drawing'
+                    : op.kind === 'edit'
+                      ? 'Finish Editing'
+                      : 'Use This Route'}
             </Button>
         </div>
     );
 
     return (
         <div
-            ref={root}
+            ref={workspaceRef}
             className={`jr-map-workspace ${hidden ? 'panel-hidden' : ''}`}
         >
             <div className="jr-map-stage">
@@ -767,6 +1315,135 @@ export function CoverageMapEditor({
                     aria-label="Road coverage map"
                     tabIndex={0}
                 />
+                <div
+                    className="jr-map-modebar"
+                    role="group"
+                    aria-label="Map editing modes"
+                >
+                    <button
+                        type="button"
+                        aria-pressed={!placing && op?.kind !== 'trace'}
+                        onClick={() => {
+                            if (op) {
+                                setNotice(
+                                    'Finish or cancel the current drawing first.',
+                                );
+
+                                return;
+                            }
+
+                            explicitPlacement.current = false;
+                            setPlacing(false);
+                            setDrawMenu(false);
+                        }}
+                    >
+                        <MousePointer2 size={16} /> Select
+                    </button>
+                    <button
+                        type="button"
+                        aria-pressed={placing}
+                        disabled={
+                            disabled ||
+                            !!op ||
+                            !!confirmation ||
+                            !!draft.legacy ||
+                            draft.points.length >= 3
+                        }
+                        title={
+                            draft.points.length >= 3
+                                ? 'All three locations are placed'
+                                : `Place Location ${'ABC'[draft.points.length]}`
+                        }
+                        onClick={activatePlacement}
+                    >
+                        <MapPinPlus size={16} /> Add Location
+                    </button>
+                    <div className="jr-draw-tool">
+                        <button
+                            id="jr-draw-tool"
+                            type="button"
+                            aria-pressed={op?.kind === 'trace'}
+                            aria-expanded={drawMenu}
+                            disabled={
+                                disabled ||
+                                !!op ||
+                                !!confirmation ||
+                                !draft.legs.length
+                            }
+                            onClick={() =>
+                                drawMenu ? setDrawMenu(false) : start('trace')
+                            }
+                        >
+                            <Pencil size={16} /> Draw
+                        </button>
+                        {drawMenu && (
+                            <div
+                                className="jr-draw-targets"
+                                role="group"
+                                aria-label="Choose road portion to draw"
+                            >
+                                <strong>
+                                    Which road portion would you like to draw?
+                                </strong>
+                                {draft.legs.map((_, i) => (
+                                    <button
+                                        type="button"
+                                        key={i}
+                                        onClick={() => start('trace', i)}
+                                    >
+                                        <Pencil size={16} /> Draw{' '}
+                                        {portionName(i)}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    {(undo || op) && op?.kind !== 'alternatives' && (
+                        <button
+                            type="button"
+                            disabled={
+                                !!confirmation ||
+                                (op ? !op.undo.length : disabled)
+                            }
+                            onClick={() => {
+                                if (op) {
+                                    setOp({
+                                        ...op,
+                                        line: op.undo.at(-1)!,
+                                        undo: op.undo.slice(0, -1),
+                                        vertex: null,
+                                    });
+
+                                    return;
+                                }
+
+                                controllers.current.forEach((c) => c?.abort());
+                                generations.current = generations.current.map(
+                                    (x) => x + 1,
+                                );
+                                const previous = structuredClone(undo!);
+                                previous.legs.forEach((leg) => {
+                                    if (leg.status === 'Calculating route') {
+                                        leg.status = 'Route unavailable';
+                                        leg.message =
+                                            'Previous routing was interrupted. Retry or draw manually.';
+                                    }
+                                });
+                                apply(previous);
+                                setUndo(null);
+                                explicitPlacement.current = false;
+                                setNotice('Last mapping change undone.');
+                                clearSelection();
+                                setPlacing(
+                                    previous.points.length < 2 &&
+                                        !previous.legacy,
+                                );
+                            }}
+                        >
+                            <Undo2 size={16} /> Undo
+                        </button>
+                    )}
+                </div>
                 <div className="jr-map-search">
                     <input
                         aria-label="Search places"
@@ -826,11 +1503,9 @@ export function CoverageMapEditor({
                                         ? ''
                                         : 'No matching places.',
                                 );
-                            } catch (e) {
+                            } catch {
                                 setSearchNotice(
-                                    e instanceof Error
-                                        ? e.message
-                                        : 'Search unavailable.',
+                                    'Place search is unavailable. Please try again later.',
                                 );
                             }
                         }}
@@ -912,8 +1587,151 @@ export function CoverageMapEditor({
                         </small>
                     )}
                 </div>
-                {hidden && op && (
-                    <div className="jr-map-floating-actions">{actions}</div>
+                {op && (
+                    <div
+                        className="jr-map-floating-actions"
+                        aria-label="Drawing controls"
+                    >
+                        <strong>
+                            {portionName(op.leg)} ·{' '}
+                            {op.kind === 'trace'
+                                ? 'Drawing in progress'
+                                : op.kind === 'edit'
+                                  ? 'Editing path'
+                                  : 'Other routes'}
+                        </strong>
+                        {op.kind === 'alternatives' && (
+                            <div className="jr-route-options">
+                                {op.choices.map((line, i) => (
+                                    <button
+                                        type="button"
+                                        key={i}
+                                        aria-pressed={op.line === line}
+                                        onClick={() => setOp({ ...op, line })}
+                                    >
+                                        Route {i + 1} ·{' '}
+                                        {distanceKm(line).toFixed(2)} km
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                        {actions}
+                    </div>
+                )}
+                {!op &&
+                    selectedLocation !== null &&
+                    anchor &&
+                    draft.points[selectedLocation] && (
+                        <div
+                            className="jr-road-context jr-marker-context"
+                            style={popupPosition}
+                            role="group"
+                            aria-label={`Location ${'ABC'[selectedLocation]} actions`}
+                        >
+                            <div className="jr-road-context-heading">
+                                <strong>
+                                    Location {'ABC'[selectedLocation]}
+                                </strong>
+                                <button
+                                    type="button"
+                                    aria-label="Dismiss location selection"
+                                    onClick={clearSelection}
+                                >
+                                    <X size={16} />
+                                </button>
+                            </div>
+                            <button
+                                type="button"
+                                disabled={disabled}
+                                className="jr-marker-remove"
+                                onClick={() => requestRemoval(selectedLocation)}
+                            >
+                                <Trash2 size={16} /> Remove Location
+                            </button>
+                        </div>
+                    )}
+                {!op && selected !== null && anchor && draft.legs[selected] && (
+                    <div
+                        className="jr-road-context"
+                        style={popupPosition}
+                        role="group"
+                        aria-label={`${portionName(selected)} road actions`}
+                    >
+                        <div className="jr-road-context-heading">
+                            <strong>
+                                {portionName(selected)} ·{' '}
+                                {draft.legs[selected].status}
+                            </strong>
+                            <button
+                                type="button"
+                                aria-label="Dismiss road selection"
+                                onClick={() => {
+                                    setSelected(null);
+                                    setAnchor(null);
+                                }}
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+                        {draft.legs[selected].status === 'Complete' ? (
+                            <>
+                                {draft.legs[selected].manual ? (
+                                    <button
+                                        type="button"
+                                        disabled={disabled}
+                                        onClick={() => start('edit')}
+                                    >
+                                        <Pencil size={16} /> Edit Path
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        disabled={disabled}
+                                        onClick={() => {
+                                            void route(selected, draft, true);
+                                        }}
+                                    >
+                                        <Route size={16} /> Other Routes
+                                    </button>
+                                )}
+                                <button
+                                    type="button"
+                                    disabled={disabled}
+                                    onClick={() => start('trace')}
+                                >
+                                    <Pencil size={16} /> Redraw Road
+                                </button>
+                            </>
+                        ) : draft.legs[selected].status !==
+                          'Calculating route' ? (
+                            <>
+                                <button
+                                    type="button"
+                                    disabled={disabled}
+                                    onClick={() => {
+                                        remember();
+                                        void route(selected);
+                                    }}
+                                >
+                                    <RotateCcw size={16} /> Retry Route
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={disabled}
+                                    onClick={() => start('trace')}
+                                >
+                                    <Pencil size={16} /> Draw Road
+                                </button>
+                            </>
+                        ) : (
+                            <p>Calculating this road portion…</p>
+                        )}
+                        {(draft.legs[selected].message || notice) && (
+                            <p role="status">
+                                {draft.legs[selected].message || notice}
+                            </p>
+                        )}
+                    </div>
                 )}
                 <button
                     type="button"
@@ -952,47 +1770,101 @@ export function CoverageMapEditor({
                     <div hidden={!infoOpen}>{information}</div>
                 </section>
                 <section>
-                    <h2>Mapping</h2>
-                    <p className="jr-field-hint">{instruction}</p>
+                    <h2>Road Mapping</h2>
+                    <p className="jr-field-hint">
+                        {draft.legacy
+                            ? 'Saved alignment retained.'
+                            : draft.points.length < 2
+                              ? 'Place A, then B to map your road.'
+                              : `${draft.points.length} locations · ${draft.legs.filter((x, i) => x.status === 'Complete' && op?.leg !== i).length} of ${draft.legs.length} portions complete`}
+                    </p>
                     <div className="jr-map-location-list">
-                        {'ABC'.split('').map((label, i) => (
+                        {(draft.points.length < 2
+                            ? ['A', 'B']
+                            : draft.points.map((_, i) => 'ABC'[i])
+                        ).map((label, i) => (
                             <div key={label}>
                                 <b>{label}</b>
                                 <span>
-                                    {draft.points[i]
-                                        ? `${draft.points[i][1].toFixed(6)}, ${draft.points[i][0].toFixed(6)}`
-                                        : 'Not placed'}
+                                    <button
+                                        type="button"
+                                        className="jr-location-label"
+                                        aria-pressed={selectedLocation === i}
+                                        disabled={
+                                            !draft.points[i] ||
+                                            !!op ||
+                                            !!confirmation
+                                        }
+                                        onClick={() => markerClick(i, true)}
+                                    >
+                                        Location {label}
+                                    </button>
+                                    <small>
+                                        {draft.points[i]
+                                            ? 'Placed on map'
+                                            : placing &&
+                                                draft.points.length === i
+                                              ? 'Click the map to place'
+                                              : 'Not placed'}
+                                    </small>
                                 </span>
+                                {draft.points[i] && (
+                                    <details>
+                                        <summary
+                                            aria-label={`Coordinates for Location ${label}`}
+                                            aria-disabled={
+                                                !!op || !!confirmation
+                                            }
+                                            onClick={(event) => {
+                                                if (op || confirmation) {
+                                                    event.preventDefault();
+                                                } else {
+                                                    markerClick(i, true);
+                                                }
+                                            }}
+                                        >
+                                            Details
+                                        </summary>
+                                        <span>
+                                            {draft.points[i][1].toFixed(6)},{' '}
+                                            {draft.points[i][0].toFixed(6)}
+                                        </span>
+                                    </details>
+                                )}
                             </div>
                         ))}
                     </div>
                     {draft.legacy && (
                         <>
                             <p className="jr-field-hint">
-                                Saved geometry retained. Identify B only to edit
-                                portions.
+                                Original geography is unchanged. To edit it, use
+                                its saved endpoints as locations.
                             </p>
                             <Button
                                 type="button"
                                 variant="outline"
                                 disabled={disabled}
-                                onClick={() => setIdentify(!identify)}
+                                onClick={() => {
+                                    const line = draft.legacy!;
+                                    remember();
+                                    apply({
+                                        ...draft,
+                                        points: [line[0], line.at(-1)!],
+                                        legs: [
+                                            {
+                                                line,
+                                                manual: true,
+                                                status: 'Complete',
+                                            },
+                                        ],
+                                        legacy: null,
+                                        changed: true,
+                                    });
+                                }}
                             >
-                                {identify
-                                    ? 'Cancel identifying B'
-                                    : 'Identify B on saved road'}
+                                Use saved endpoints
                             </Button>
                         </>
-                    )}
-                    {!draft.legacy && draft.points.length < 3 && (
-                        <Button
-                            type="button"
-                            variant="outline"
-                            disabled={disabled || !!op}
-                            onClick={() => setPlacing(!placing)}
-                        >
-                            {placing ? 'Pause placement' : 'Resume placement'}
-                        </Button>
                     )}
                     <div className="jr-map-portions">
                         {draft.legs.map((leg, i) => (
@@ -1000,160 +1872,127 @@ export function CoverageMapEditor({
                                 type="button"
                                 key={i}
                                 aria-pressed={selected === i}
-                                disabled={!!op}
-                                onClick={() => setSelected(i)}
+                                disabled={!!op || !!confirmation}
+                                onClick={() =>
+                                    selectPortion(i, undefined, true)
+                                }
                             >
-                                <strong>{i === 0 ? 'A–B' : 'B–C'}</strong>
                                 <span>
-                                    {leg.status === 'Ready'
-                                        ? `${leg.manual ? 'Manual' : 'Automatic'} · ${distanceKm(leg.line).toFixed(2)} km`
+                                    <strong>{portionName(i)}</strong>
+                                    <small>
+                                        {leg.line.length > 1
+                                            ? `${distanceKm(leg.line).toFixed(2)} km · ${leg.manual ? 'Manual' : 'Automatic'}`
+                                            : 'No alignment yet'}
+                                    </small>
+                                </span>
+                                <span className="jr-portion-state">
+                                    {op?.leg === i
+                                        ? op.kind === 'trace'
+                                            ? 'Drawing in progress'
+                                            : 'Editing'
                                         : leg.status}
+                                    {leg.status === 'Complete' &&
+                                    op?.leg !== i ? (
+                                        <Check size={14} />
+                                    ) : (
+                                        <ChevronRight size={14} />
+                                    )}
                                 </span>
                             </button>
                         ))}
                     </div>
-                    {!op && draft.points[selected + 1] && (
-                        <div className="jr-map-actions">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                disabled={disabled}
-                                onClick={() => start('trace')}
-                            >
-                                Trace Road
-                            </Button>
-                            {draft.legs[selected].line.length > 1 && (
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    disabled={disabled}
-                                    onClick={() => start('edit')}
-                                >
-                                    Edit Road Path
-                                </Button>
-                            )}
-                            <Button
-                                type="button"
-                                variant="outline"
-                                disabled={disabled}
-                                onClick={() => {
-                                    remember();
-                                    void route(selected);
-                                }}
-                            >
-                                Retry Routing
-                            </Button>
-                            {draft.legs[selected].line.length > 1 && (
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    disabled={disabled}
-                                    onClick={() => {
-                                        setPlacing(false);
-                                        void route(selected, draft, true);
-                                    }}
-                                >
-                                    Other Routes
-                                </Button>
-                            )}
-                        </div>
-                    )}
-                    {op?.kind === 'alternatives' &&
-                        op.choices.map((line, i) => (
-                            <button
-                                type="button"
-                                className="jr-map-choice"
-                                key={i}
-                                aria-pressed={op.line === line}
-                                onClick={() => setOp({ ...op, line })}
-                            >
-                                Route {i + 1} · {distanceKm(line).toFixed(2)} km
-                            </button>
-                        ))}
-                    {op?.kind === 'edit' && (
-                        <div className="jr-map-actions">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() =>
-                                    setOp({
-                                        ...op,
-                                        insert: !op.insert,
-                                        vertex: null,
-                                    })
-                                }
-                            >
-                                {op.insert ? 'Select vertex' : 'Insert vertex'}
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                disabled={op.vertex === null}
-                                onClick={() =>
-                                    changeVertex(
-                                        op.line.filter(
-                                            (_, i) => i !== op.vertex,
-                                        ),
-                                    )
-                                }
-                            >
-                                Remove vertex
-                            </Button>
-                            {!connects(
-                                op.line,
-                                draft.points[op.leg],
-                                draft.points[op.leg + 1],
-                            ) && (
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() =>
-                                        changeVertex([
-                                            draft.points[op.leg],
-                                            ...op.line.slice(1, -1),
-                                            draft.points[op.leg + 1],
-                                        ])
-                                    }
-                                >
-                                    Align endpoints to locations
-                                </Button>
-                            )}
-                        </div>
-                    )}
-                    {actions}
-                    {undo && !op && (
+                    {(draft.points.length > 0 || draft.legacy) && (
                         <button
                             type="button"
-                            className="jr-length-reset"
-                            disabled={disabled}
-                            onClick={() => {
-                                controllers.current.forEach((c) => c?.abort());
-                                generations.current = generations.current.map(
-                                    (x) => x + 1,
-                                );
-                                const previous = structuredClone(undo);
-                                previous.legs.forEach((leg) => {
-                                    if (leg.status === 'Routing…') {
-                                        leg.status = 'Routing unavailable';
-                                        leg.message =
-                                            'Previous routing was interrupted. Retry this portion.';
-                                    }
-                                });
-                                apply(previous);
-                                setUndo(null);
-                            }}
+                            className="jr-start-over"
+                            disabled={disabled || !!op || !!confirmation}
+                            onClick={() => requestRemoval(null)}
                         >
-                            Undo last mapping change
+                            Start Over
                         </button>
                     )}
-                    {(notice || draft.legs[selected].message) && (
+                    {notice && (
                         <p className="jr-map-warning" role="status">
-                            {notice || draft.legs[selected].message}
+                            {notice}
                         </p>
+                    )}
+                    {draft.legs.map(
+                        (leg, i) =>
+                            leg.message && (
+                                <p
+                                    className="jr-map-warning"
+                                    key={i}
+                                    role="status"
+                                >
+                                    <strong>{portionName(i)}: </strong>
+                                    {leg.message} Select this portion for
+                                    recovery actions.
+                                </p>
+                            ),
                     )}
                 </section>
                 <section>{lengthFields}</section>
             </aside>
+            <Dialog.Root
+                open={!!confirmation}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setConfirmation(null);
+                    }
+                }}
+            >
+                <Dialog.Portal container={portalContainer}>
+                    <Dialog.Overlay className="jr-location-confirm-overlay" />
+                    <Dialog.Content
+                        className="jr-app jr-theme jr-delete-dialog jr-location-confirm"
+                        onCloseAutoFocus={(event) => {
+                            event.preventDefault();
+                            (confirmationReturnFocus.current?.isConnected
+                                ? confirmationReturnFocus.current
+                                : root.current?.querySelector<HTMLButtonElement>(
+                                      '.jr-map-modebar button',
+                                  )
+                            )?.focus();
+                        }}
+                    >
+                        <Dialog.Title>{confirmation?.title}</Dialog.Title>
+                        <Dialog.Description>
+                            {confirmation?.description}
+                        </Dialog.Description>
+                        <p className="jr-field-hint">
+                            This changes the working map only. Save Road
+                            Coverage is still required. You can undo this
+                            mapping change.
+                        </p>
+                        <div className="jr-dialog-actions">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setConfirmation(null)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="button"
+                                className="jr-danger"
+                                onClick={() => {
+                                    if (confirmation) {
+                                        removeWorkingLocations(
+                                            confirmation.index,
+                                        );
+                                    }
+
+                                    setConfirmation(null);
+                                }}
+                            >
+                                {confirmation?.index === null
+                                    ? 'Clear Locations'
+                                    : 'Remove Location'}
+                            </Button>
+                        </div>
+                    </Dialog.Content>
+                </Dialog.Portal>
+            </Dialog.Root>
         </div>
     );
 }

@@ -1,4 +1,4 @@
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { MoreHorizontal, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -244,11 +244,28 @@ export default function Index({
                                 <tr
                                     key={coverage.id}
                                     data-road-coverage-id={coverage.id}
+                                    onClick={() =>
+                                        router.visit(
+                                            editUrl(
+                                                `/road-coverages/${coverage.id}`,
+                                                page.url,
+                                            ),
+                                        )
+                                    }
                                 >
                                     <td>
-                                        <div className="jr-project-title">
+                                        <Link
+                                            className="jr-project-title"
+                                            href={editUrl(
+                                                `/road-coverages/${coverage.id}`,
+                                                page.url,
+                                            )}
+                                            onClick={(event) =>
+                                                event.stopPropagation()
+                                            }
+                                        >
                                             {coverage.road_name}
-                                        </div>
+                                        </Link>
                                     </td>
                                     <td>{coverage.lgu.municipality_name}</td>
                                     <td className="whitespace-nowrap">
@@ -265,7 +282,12 @@ export default function Index({
                                             {coverage.state_category}
                                         </span>
                                     </td>
-                                    <td className="text-right">
+                                    <td
+                                        className="text-right"
+                                        onClick={(event) =>
+                                            event.stopPropagation()
+                                        }
+                                    >
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button

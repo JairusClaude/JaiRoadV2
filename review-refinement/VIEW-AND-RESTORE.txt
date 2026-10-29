@@ -1,0 +1,15 @@
+Viewing this preview in Windows PowerShell
+
+1. Extract the new review ZIP into a NEW folder.
+2. Open PowerShell in the extracted source folder (the folder containing package.json).
+3. Run:
+   node .\tools\maintenance-project-preview\server.mjs
+4. Open http://localhost:5179/road-coverages/create
+5. Keep PowerShell open; press Ctrl+C to stop.
+
+Node 22.12 or newer is required. Compiled frontend assets are included. Merely viewing the preview does not require Composer, PHP, npm install, PostgreSQL or running migrations. Map tiles, routing and place search require available internet services.
+
+Preview writes are temporary and reset when the server restarts.
+
+Restoring the previous version
+Extract baseline/JaiROADS_Map_First_Review.zip into a different folder and run its source/tools/maintenance-project-preview/server.mjs. Keep both versions in separate folders. Do not run both on port 5179 at the same time. Do not overwrite a working tree with an older version.

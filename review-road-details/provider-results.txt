@@ -1,0 +1,7 @@
+PASS correct selected road, LGU/Engineer joins, exact geometry and actual project FK
+PASS missing relationship/geography stays unavailable; unknown ID has no invented record
+PASS existing Admin/SuperAdmin preview write rule; Engineer/Viewer/unknown fail closed
+PASS contextual directory back URL rejects external and unrelated origins
+PASS Edit may return only to its own Details or the directory
+PASS metadata edit returns to Details while preserving original creator, geometry and external association
+PASS no unsupported delete or cascade is introduced

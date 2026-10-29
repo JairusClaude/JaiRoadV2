@@ -48,6 +48,7 @@ import {
     deletePreviewRecords,
     dependentCounts,
 } from './records.mjs';
+import { roadCoverageDetailsPage } from './road-coverage-details.mjs';
 import {
     initializeRoadCoveragePreview,
     roadCoverageDirectoryData,
@@ -55,6 +56,7 @@ import {
 import {
     roadCoverageFormPage,
     mutateRoadCoverage,
+    canEditRoadCoverage,
 } from './road-coverage-forms.mjs';
 
 // Explicitly isolated UI fixtures. This server never invokes Laravel, SQL, or
@@ -242,6 +244,22 @@ function pageFor(url, errors = {}, session = {}) {
     } else if (coverageForm) {
         component = coverageForm.component;
         props = coverageForm.props;
+    } else if (/^\/road-coverages\/\d+$/.test(url.pathname)) {
+        const detail = roadCoverageDetailsPage(
+            url,
+            lguReviewContext.relationships.roadCoverages,
+            lguPreviewOptions(),
+            engineers,
+            projects,
+            lguReviewContext.actor,
+        );
+
+        if (!detail) {
+            return null;
+        }
+
+        component = detail.component;
+        props = detail.props;
     } else if (url.pathname === '/road-coverages') {
         component = 'RoadCoverages/Index';
         props = {
@@ -250,9 +268,7 @@ function pageFor(url, errors = {}, session = {}) {
                 lguPreviewOptions(),
                 url,
             ),
-            canEdit: ['Admin', 'SuperAdmin', 'Engineer'].includes(
-                lguReviewContext.actor.account_type,
-            ),
+            canEdit: canEditRoadCoverage(lguReviewContext.actor),
         };
     } else if (url.pathname.startsWith('/lgus')) {
         const result = lguPage(

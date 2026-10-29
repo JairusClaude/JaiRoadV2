@@ -1,0 +1,165 @@
+Exit code: 0
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> build
+> vite build --mode review
+
+vite v8.2.1 building client environment for review...
+[plugin laravel:fonts] Optimized font fallbacks require the optional "fontaine" package. Install it, or set "optimizedFallbacks: false" on your fonts to disable the feature.
+[2Ktransforming...✓ 2391 modules transformed.
+rendering chunks...
+computing gzip size...
+public/build/assets/layers-BWBAp2CZ.png                                   0.69 kB
+public/build/assets/layers-2x-Bpkbi35X.png                                1.25 kB
+public/build/assets/marker-icon-hN30_KVU.png                              1.46 kB
+public/build/assets/maintenance-projects-exploration-road-BOY3rEh7.svg    1.71 kB │ gzip:  0.82 kB
+public/build/fonts-manifest.json                                          5.74 kB │ gzip:  0.71 kB
+public/build/assets/instrument-sans-400-normal-DRC__1Mx.woff2            16.86 kB
+public/build/assets/instrument-sans-500-normal-Dk9ku72i.woff2            17.23 kB
+public/build/assets/instrument-sans-600-normal-B7fBEWYG.woff2            17.40 kB
+public/build/assets/instrument-sans-400-normal-D1W7dsQl.woff             21.24 kB
+public/build/assets/instrument-sans-500-normal-Z6ESRlEs.woff             21.65 kB
+public/build/assets/instrument-sans-600-normal-B9e8oLYv.woff             21.67 kB
+public/build/assets/inter-latin-400-normal-C38fXH4l.woff2                23.66 kB
+public/build/assets/inter-latin-500-normal-Cerq10X2.woff2                24.27 kB
+public/build/assets/inter-latin-700-normal-Yt3aPRUw.woff2                24.35 kB
+public/build/assets/inter-latin-600-normal-LgqL8muc.woff2                24.45 kB
+public/build/manifest.json                                               45.11 kB │ gzip:  4.72 kB
+public/build/assets/Show-BFCBg29I.css                                     0.40 kB │ gzip:  0.24 kB
+public/build/assets/Index-CdBV-ynO.css                                    0.83 kB │ gzip:  0.37 kB
+public/build/assets/road-coverage-directory-C-sFb9uw.css                  1.11 kB │ gzip:  0.46 kB
+public/build/assets/project-form-CmBpRR5i.css                             1.64 kB │ gzip:  0.65 kB
+public/build/assets/Show-COcNwyMQ.css                                     1.66 kB │ gzip:  0.56 kB
+public/build/assets/lgus-BlXfpmTU.css                                     1.76 kB │ gzip:  0.61 kB
+public/build/assets/Show-_BGZGZf0.css                                     2.22 kB │ gzip:  0.79 kB
+public/build/assets/fonts-C9MNnjVw.css                                    2.35 kB │ gzip:  0.38 kB
+public/build/assets/maintenance-projects-espresso-sidebar-Byz1YoCn.css    8.67 kB │ gzip:  2.11 kB
+public/build/assets/leaflet-1DTFk8zz.css                                 10.57 kB │ gzip:  2.63 kB
+public/build/assets/coverage-form-BIVB-IPu.css                           10.72 kB │ gzip:  2.68 kB
+public/build/assets/app-F9NGLF2Y.css                                     40.62 kB │ gzip:  7.96 kB
+public/build/assets/app-Cig73RX2.css                                    100.51 kB │ gzip: 16.37 kB
+public/build/assets/Edit-CkqsR98t.js                                      0.05 kB │ gzip:  0.07 kB
+public/build/assets/Create-C7A4r3aF.js                                    0.06 kB │ gzip:  0.08 kB
+public/build/assets/Edit-C7A4r3aF.js                                      0.06 kB │ gzip:  0.08 kB
+public/build/assets/check-D1KwAPJ0.js                                     0.12 kB │ gzip:  0.14 kB
+public/build/assets/chevron-down-DjL1qb_J.js                              0.12 kB │ gzip:  0.14 kB
+public/build/assets/chevron-left-Dx0qzAwY.js                              0.12 kB │ gzip:  0.14 kB
+public/build/assets/chevron-right-B-ItfVns.js                             0.12 kB │ gzip:  0.14 kB
+public/build/assets/loader-circle-BycPoUMd.js                             0.14 kB │ gzip:  0.15 kB
+public/build/assets/plus-vtuUCvOM.js                                      0.15 kB │ gzip:  0.15 kB
+public/build/assets/x-6elbISao.js                                         0.15 kB │ gzip:  0.15 kB
+public/build/assets/arrow-left-BOFWcjHP.js                                0.16 kB │ gzip:  0.16 kB
+public/build/assets/arrow-right-kgO8Eywu.js                               0.16 kB │ gzip:  0.16 kB
+public/build/assets/chevrons-up-down-CmQd9PxR.js                          0.17 kB │ gzip:  0.16 kB
+public/build/assets/search-IHKuM_eQ.js                                    0.17 kB │ gzip:  0.16 kB
+public/build/assets/Create-A8dDzVlz.js                                    0.22 kB │ gzip:  0.19 kB
+public/build/assets/Edit-Cpubwi7P.js                                      0.24 kB │ gzip:  0.20 kB
+public/build/assets/Create-DkVyahCJ.js                                    0.25 kB │ gzip:  0.21 kB
+public/build/assets/route-Dmjkh7-B.js                                     0.25 kB │ gzip:  0.19 kB
+public/build/assets/eye-8iVKI-px.js                                       0.25 kB │ gzip:  0.20 kB
+public/build/assets/Edit-CTtCe49t.js                                      0.26 kB │ gzip:  0.22 kB
+public/build/assets/file-text-Bd_759RU.js                                 0.33 kB │ gzip:  0.21 kB
+public/build/assets/confirm-Culw9Q-x.js                                   0.36 kB │ gzip:  0.22 kB
+public/build/assets/map-Dz1lwtVk.js                                       0.42 kB │ gzip:  0.26 kB
+public/build/assets/input-error-kVPtrcqH.js                               0.45 kB │ gzip:  0.33 kB
+public/build/assets/image-off-Cw9-pp1V.js                                 0.47 kB │ gzip:  0.29 kB
+public/build/assets/spinner-Cs68DfGQ.js                                   0.47 kB │ gzip:  0.35 kB
+public/build/assets/calendar-days-CIXZBz_v.js                             0.49 kB │ gzip:  0.26 kB
+public/build/assets/security-ZZC6IP8e.js                                  0.50 kB │ gzip:  0.27 kB
+public/build/assets/appearance-B6s7A8vg.js                                0.50 kB │ gzip:  0.27 kB
+public/build/assets/dist-y0ox5QTU.js                                      0.53 kB │ gzip:  0.38 kB
+public/build/assets/trash-2-C1jmUALH.js                                   0.55 kB │ gzip:  0.32 kB
+public/build/assets/rolldown-runtime-CbXtAM7H.js                          0.58 kB │ gzip:  0.36 kB
+public/build/assets/text-link-DBymBIKg.js                                 0.62 kB │ gzip:  0.42 kB
+public/build/assets/heading-CtPXwuNX.js                                   0.63 kB │ gzip:  0.42 kB
+public/build/assets/lgus-jgrn81JC.js                                      0.65 kB │ gzip:  0.33 kB
+public/build/assets/dist-DbMe-mys.js                                      0.68 kB │ gzip:  0.43 kB
+public/build/assets/form-navigation-D0GcSBZu.js                           0.68 kB │ gzip:  0.33 kB
+public/build/assets/dist-CAWg4swi.js                                      0.71 kB │ gzip:  0.48 kB
+public/build/assets/wayfinder-Dp7PqxvV.js                                 0.89 kB │ gzip:  0.53 kB
+public/build/assets/label-Dpl0FxvV.js                                     0.98 kB │ gzip:  0.61 kB
+public/build/assets/input-C6ButdBl.js                                     1.12 kB │ gzip:  0.64 kB
+public/build/assets/Create-ClaCtRWZ.js                                    1.26 kB │ gzip:  0.70 kB
+public/build/assets/separator-CsCg9o4u.js                                 1.26 kB │ gzip:  0.70 kB
+public/build/assets/use-appearance-5FQbX-Fw.js                            1.31 kB │ gzip:  0.66 kB
+public/build/assets/verify-email-DKOcB1q0.js                              1.35 kB │ gzip:  0.72 kB
+public/build/assets/profile-uNtLFEsD.js                                   1.43 kB │ gzip:  0.40 kB
+public/build/assets/monthly-updates-ClT_Ni9N.js                           1.44 kB │ gzip:  0.75 kB
+public/build/assets/verification-BOcn3HIw.js                              1.48 kB │ gzip:  0.52 kB
+public/build/assets/Index-B21QXoK1.js                                     1.56 kB │ gzip:  0.80 kB
+public/build/assets/Edit-WnRiLlxG.js                                      1.60 kB │ gzip:  0.90 kB
+public/build/assets/password-input-C6M6ZA5b.js                            1.74 kB │ gzip:  0.99 kB
+public/build/assets/passkey-verify-C9-PPhBP.js                            1.88 kB │ gzip:  1.05 kB
+public/build/assets/forgot-password-DAOaiNi4.js                           2.01 kB │ gzip:  0.92 kB
+public/build/assets/record-deletion-ClnQk_3s.js                           2.01 kB │ gzip:  1.10 kB
+public/build/assets/routes-BZ4t1sNs.js                                    2.02 kB │ gzip:  0.48 kB
+public/build/assets/maintenance-records-BFzu5XPg.js                       2.03 kB │ gzip:  0.88 kB
+public/build/assets/document-deletion-Bb6jEC0e.js                         2.11 kB │ gzip:  1.06 kB
+public/build/assets/NavigationPreview-BJ25cNZA.js                         2.14 kB │ gzip:  1.08 kB
+public/build/assets/reset-password-BPtnSSSC.js                            2.34 kB │ gzip:  0.94 kB
+public/build/assets/project-workspace-CFAN_Zss.js                         2.36 kB │ gzip:  1.15 kB
+public/build/assets/confirm-password-c9wzZRG0.js                          2.38 kB │ gzip:  1.01 kB
+public/build/assets/project-deletion-B5OJbb0d.js                          2.45 kB │ gzip:  1.30 kB
+public/build/assets/DirectoryAlternative-C0j3M4-S.js                      2.49 kB │ gzip:  1.24 kB
+public/build/assets/dashboard-DIyGCE4A.js                                 2.57 kB │ gzip:  0.91 kB
+public/build/assets/appearance-BJ_5Obfr.js                                2.68 kB │ gzip:  1.29 kB
+public/build/assets/password-CB_NxgQN.js                                  2.73 kB │ gzip:  0.73 kB
+public/build/assets/two-factor-challenge-CL9KsMyA.js                      2.81 kB │ gzip:  1.29 kB
+public/build/assets/register-Cr--NDLG.js                                  2.95 kB │ gzip:  1.13 kB
+public/build/assets/login-CBgKGwEz.js                                     3.00 kB │ gzip:  1.30 kB
+public/build/assets/deletion-dialog-BpQ9LFyb.js                           3.21 kB │ gzip:  1.55 kB
+public/build/assets/lgus-QRge6SMp.js                                      3.41 kB │ gzip:  1.61 kB
+public/build/assets/monthly-update-deletion-A_Iomqit.js                   3.55 kB │ gzip:  1.70 kB
+public/build/assets/project-selector-c_1p67c0.js                          3.86 kB │ gzip:  1.85 kB
+public/build/assets/project-filter-BV6-IfBA.js                            3.99 kB │ gzip:  1.91 kB
+public/build/assets/directory-controls-C3ThEPc-.js                        4.11 kB │ gzip:  1.97 kB
+public/build/assets/dialog-rOGhQlRY.js                                    4.13 kB │ gzip:  1.28 kB
+public/build/assets/lgu-form-C2mf7mQ6.js                                  4.34 kB │ gzip:  2.10 kB
+public/build/assets/maintenance-projects-espresso-sidebar-Cmx8DVi3.js     4.72 kB │ gzip:  1.70 kB
+public/build/assets/dist-CxVsLmsj.js                                      4.87 kB │ gzip:  1.76 kB
+public/build/assets/checkbox-64B27ZZu.js                                  5.02 kB │ gzip:  2.17 kB
+public/build/assets/document-file-DXNb_PrQ.js                             5.20 kB │ gzip:  2.47 kB
+public/build/assets/button-BGtpMs6C.js                                    5.24 kB │ gzip:  2.32 kB
+public/build/assets/dist-BGq6-UsN.js                                      7.02 kB │ gzip:  2.71 kB
+public/build/assets/profile-BgzZ9ZZo.js                                   7.02 kB │ gzip:  2.38 kB
+public/build/assets/Show-PMKY7LoC.js                                      7.07 kB │ gzip:  2.74 kB
+public/build/assets/Show-BKvVWRTB.js                                      8.79 kB │ gzip:  3.47 kB
+public/build/assets/Index-DWKFEbNe.js                                     9.16 kB │ gzip:  3.68 kB
+public/build/assets/Index-8UAqzqSR.js                                     9.48 kB │ gzip:  3.74 kB
+public/build/assets/Show-BOanFBQV.js                                      9.76 kB │ gzip:  3.55 kB
+public/build/assets/tooltip-B-kwf7DI.js                                   9.92 kB │ gzip:  3.68 kB
+public/build/assets/Index-DP8aZF6P.js                                    10.00 kB │ gzip:  3.96 kB
+public/build/assets/record-editor-DzLcmAMh.js                            10.53 kB │ gzip:  3.96 kB
+public/build/assets/project-directory-DYX37QdT.js                        10.62 kB │ gzip:  4.17 kB
+public/build/assets/Form-CpVluOMt.js                                     10.85 kB │ gzip:  4.13 kB
+public/build/assets/Show-BbhUYo07.js                                     12.20 kB │ gzip:  4.81 kB
+public/build/assets/Index-ykCKafMy.js                                    12.70 kB │ gzip:  4.91 kB
+public/build/assets/react-BciLjlYT.js                                    13.90 kB │ gzip:  4.61 kB
+public/build/assets/Index-Hen4nzHi.js                                    13.93 kB │ gzip:  5.56 kB
+public/build/assets/project-form-rFORW-0j.js                             15.01 kB │ gzip:  5.70 kB
+public/build/assets/Show-BiYjQAOW.js                                     15.25 kB │ gzip:  5.67 kB
+public/build/assets/Show-CjtOWyxV.js                                     15.76 kB │ gzip:  5.58 kB
+public/build/assets/use-two-factor-auth-CGXDIKPr.js                      16.76 kB │ gzip:  6.05 kB
+public/build/assets/es2015-DZF49ivS.js                                   23.02 kB │ gzip:  8.23 kB
+public/build/assets/select-DkJiFPAP.js                                   24.85 kB │ gzip:  8.41 kB
+public/build/assets/Create-Dz2ce8Qm.js                                   25.24 kB │ gzip:  9.38 kB
+public/build/assets/popover-DIEv-RjK.js                                  26.01 kB │ gzip:  9.11 kB
+public/build/assets/createLucideIcon-ctUv3_yf.js                         28.29 kB │ gzip:  9.20 kB
+public/build/assets/welcome-DBfscQ-b.js                                  30.65 kB │ gzip:  6.45 kB
+public/build/assets/security-DaQF-Q_n.js                                 31.34 kB │ gzip:  9.77 kB
+public/build/assets/coverage-form-B6v3DU9W.js                            47.96 kB │ gzip: 16.65 kB
+public/build/assets/dropdown-menu-DaoxYe57.js                            53.07 kB │ gzip: 18.47 kB
+public/build/assets/app-DotivbkW.js                                      94.26 kB │ gzip: 27.27 kB
+public/build/assets/leaflet-COqgPsZc.js                                 152.04 kB │ gzip: 44.70 kB
+public/build/assets/jsx-runtime-CfKhfvOA.js                             314.85 kB │ gzip: 98.89 kB
+
+✓ built in 7.77s
+[33m[PLUGIN_TIMINGS] [0mYour build spent 96% of 7.7s inside plugin hooks (7.4s).
+Measured inside the callback, so queue time is excluded and time the callback itself awaited is not:
+  - vite:react-babel transform (86%, 6.7s, 154 calls)
+  - @tailwindcss/vite:generate:build transform (84%, 6.5s, 16 calls)
+Those rows are 100% of the build; the rest of the 96% is below.
+Not measurable — 1 hook whose calls overlap, so elapsed time covers work other calls were doing. Profile with `node --cpu-prof`:
+  - vite:css transform (16 calls)
+See https://rolldown.rs/reference/InputOptions.checks#plugintimings for more details.
+

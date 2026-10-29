@@ -1,6 +1,6 @@
 # JaiROADS Frontend Login Preview
 
-This is the frontend from `JaiROADS_Map_First_Review(2).zip`, with the login design from GitHub's `feature/jairoads-map-demo` branch. It is a standalone interface review with sample data. The Laravel scaffold remains for future integration, but this preview runs on Node.js without PHP, Composer, Herd, database setup, or production accounts.
+This is the frontend from `JaiROADS_Road_Coverage_Details_Review (1)(1).zip`, with the login design from GitHub's `feature/jairoads-map-demo` branch. It is a standalone interface review with sample data. The Laravel scaffold remains for future integration, but this preview runs on Node.js without PHP, Composer, Herd, database setup, or production accounts.
 
 ## Run on Windows
 
@@ -52,7 +52,7 @@ The supplied source has pre-existing repository-wide ESLint failures; see `IMPLE
 
 The Node process owns all sample collections, uploaded preview files, and demonstration sessions. Temporary edits are shared by local preview sessions and may disappear when the server stops or restarts. They are not stored in a database. Restarting also requires logging in again, including when Keep me signed in was selected.
 
-Existing Road Coverage directory/Add/Edit and three-location mapping, Maintenance Project directory/Add/Edit/Details, Maintenance Records, Monthly Updates, Maintenance Documents, LGUs, and design-exploration pages remain available after login. Existing unfinished navigation sections and unavailable actions retain their original behavior. There is no new production dashboard; the entry point is Maintenance Projects. `/maintenance-records` is the records directory; `/maintenance-projects/101/records` is not an implemented directory URL in the supplied frontend.
+Existing Road Coverage directory/Add/Edit/Details and two- or three-location mapping, Maintenance Project directory/Add/Edit/Details, Maintenance Records, Monthly Updates, Maintenance Documents, LGUs, and design-exploration pages remain available after login. Existing unfinished navigation sections and unavailable actions retain their original behavior. There is no new production dashboard; the entry point is Maintenance Projects. `/maintenance-records` is the records directory; `/maintenance-projects/101/records` is not an implemented directory URL in the supplied frontend.
 
 Internet is required for OpenStreetMap tiles, OSRM route calculation, Photon place search, and the two external Unsplash slideshow photos. The first photo is bundled locally, and external-photo errors fall back to it. Map-provider availability is outside this project; provider errors retain the existing manual editing and retry behavior. Routing and geocoding can be configured with `JAIROADS_ROUTING_URL` and `JAIROADS_GEOCODING_URL` as in the supplied preview.
 

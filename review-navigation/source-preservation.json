@@ -1,0 +1,7 @@
+{
+  "modified_application_source": [
+    "resources/css/road-coverage-form.css",
+    "resources/js/components/road-coverages/coverage-map-editor.tsx"
+  ],
+  "unchanged_preexisting_source_files": 377
+}

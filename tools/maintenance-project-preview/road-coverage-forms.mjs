@@ -3,7 +3,7 @@ import {
     lineCoordinates,
     validateCoverage,
 } from '../../resources/js/lib/road-coverages/geometry.mjs';
-const canEdit = (actor) =>
+export const canEditRoadCoverage = (actor) =>
     ['Admin', 'SuperAdmin'].includes(actor?.account_type); // Fail closed until active EngineerLGU assignments are provided.
 const token = (value) =>
     createHash('sha256')
@@ -18,9 +18,14 @@ function returnTo(url) {
 
     try {
         const result = new URL(raw, 'http://jairoads.local');
+        const coverageId = url.pathname.match(
+            /^\/road-coverages\/(\d+)(?:\/edit)?$/,
+        )?.[1];
 
         return result.origin === 'http://jairoads.local' &&
-            result.pathname === '/road-coverages'
+            (result.pathname === '/road-coverages' ||
+                (coverageId &&
+                    result.pathname === `/road-coverages/${coverageId}`))
             ? result.pathname + result.search
             : '/road-coverages';
     } catch {
@@ -50,7 +55,7 @@ export function roadCoverageFormPage(url, records, lgus, actor) {
             referenceCoverages: records.filter(
                 (record) => record.id !== coverage?.id,
             ),
-            canEdit: canEdit(actor),
+            canEdit: canEditRoadCoverage(actor),
             cancelUrl: returnTo(url),
             geometryToken: token(coverage?.geojson),
             mapServices: {
@@ -94,7 +99,7 @@ export function mutateRoadCoverage(
         ? `/road-coverages/${existing.id}/edit${url.search}`
         : `/road-coverages/create${url.search}`;
 
-    if (!canEdit(actor)) {
+    if (!canEditRoadCoverage(actor)) {
         return {
             errors: {
                 road_name: 'You do not have permission to save road coverages.',

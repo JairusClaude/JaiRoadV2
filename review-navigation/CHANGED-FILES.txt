@@ -1,0 +1,5 @@
+resources/css/road-coverage-form.css
+resources/js/components/road-coverages/coverage-map-editor.tsx
+
+Generated: public/build manifest/assets.
+Review artifacts: review-navigation/.

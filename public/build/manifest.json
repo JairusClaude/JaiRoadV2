@@ -92,8 +92,8 @@
       "_wayfinder-Dp7PqxvV.js"
     ]
   },
-  "_coverage-form-BrI9uySm.js": {
-    "file": "assets/coverage-form-BrI9uySm.js",
+  "_coverage-form-B6v3DU9W.js": {
+    "file": "assets/coverage-form-B6v3DU9W.js",
     "name": "coverage-form",
     "imports": [
       "_rolldown-runtime-CbXtAM7H.js",
@@ -102,26 +102,27 @@
       "_createLucideIcon-ctUv3_yf.js",
       "_arrow-left-BOFWcjHP.js",
       "_check-D1KwAPJ0.js",
+      "_chevron-right-B-ItfVns.js",
       "_select-DkJiFPAP.js",
       "_chevrons-up-down-CmQd9PxR.js",
+      "_trash-2-C1jmUALH.js",
       "_project-workspace-CFAN_Zss.js",
+      "_leaflet-COqgPsZc.js",
+      "_route-Dmjkh7-B.js",
       "_search-IHKuM_eQ.js",
+      "_x-6elbISao.js",
       "_input-C6ButdBl.js",
+      "_dist-CxVsLmsj.js",
       "_label-Dpl0FxvV.js",
       "_form-navigation-D0GcSBZu.js"
     ],
     "css": [
-      "assets/coverage-form-WRV_naBF.css"
-    ],
-    "assets": [
-      "assets/layers-BWBAp2CZ.png",
-      "assets/layers-2x-Bpkbi35X.png",
-      "assets/marker-icon-hN30_KVU.png"
+      "assets/coverage-form-BIVB-IPu.css"
     ]
   },
-  "_coverage-form-WRV_naBF.css": {
-    "file": "assets/coverage-form-WRV_naBF.css",
-    "src": "_coverage-form-WRV_naBF.css"
+  "_coverage-form-BIVB-IPu.css": {
+    "file": "assets/coverage-form-BIVB-IPu.css",
+    "src": "_coverage-form-BIVB-IPu.css"
   },
   "_createLucideIcon-ctUv3_yf.js": {
     "file": "assets/createLucideIcon-ctUv3_yf.js",
@@ -348,6 +349,26 @@
       "_jsx-runtime-CfKhfvOA.js",
       "_dist-CAWg4swi.js",
       "_createLucideIcon-ctUv3_yf.js"
+    ]
+  },
+  "_leaflet-1DTFk8zz.css": {
+    "file": "assets/leaflet-1DTFk8zz.css",
+    "src": "_leaflet-1DTFk8zz.css"
+  },
+  "_leaflet-COqgPsZc.js": {
+    "file": "assets/leaflet-COqgPsZc.js",
+    "name": "leaflet",
+    "imports": [
+      "_rolldown-runtime-CbXtAM7H.js",
+      "_createLucideIcon-ctUv3_yf.js"
+    ],
+    "css": [
+      "assets/leaflet-1DTFk8zz.css"
+    ],
+    "assets": [
+      "assets/layers-BWBAp2CZ.png",
+      "assets/layers-2x-Bpkbi35X.png",
+      "assets/marker-icon-hN30_KVU.png"
     ]
   },
   "_lgu-form-C2mf7mQ6.js": {
@@ -614,6 +635,10 @@
       "_maintenance-records-BFzu5XPg.js"
     ]
   },
+  "_road-coverage-directory-C-sFb9uw.css": {
+    "file": "assets/road-coverage-directory-C-sFb9uw.css",
+    "src": "_road-coverage-directory-C-sFb9uw.css"
+  },
   "_rolldown-runtime-CbXtAM7H.js": {
     "file": "assets/rolldown-runtime-CbXtAM7H.js",
     "name": "rolldown-runtime"
@@ -768,7 +793,7 @@
     "src": "node_modules/leaflet/dist/images/marker-icon.png"
   },
   "resources/css/app.css": {
-    "file": "assets/app-BeNKHI9T.css",
+    "file": "assets/app-CXUdnvG-.css",
     "name": "app",
     "names": [
       "app.css"
@@ -797,7 +822,7 @@
     "src": "resources/images/maintenance-projects-exploration-road.svg"
   },
   "resources/js/app.tsx": {
-    "file": "assets/app-BAPRSD8I.js",
+    "file": "assets/app-B466890n.js",
     "name": "app",
     "src": "resources/js/app.tsx",
     "isEntry": true,
@@ -854,6 +879,7 @@
       "resources/js/pages/RoadCoverages/Create.tsx",
       "resources/js/pages/RoadCoverages/Edit.tsx",
       "resources/js/pages/RoadCoverages/Index.tsx",
+      "resources/js/pages/RoadCoverages/Show.tsx",
       "resources/js/pages/auth/confirm-password.tsx",
       "resources/js/pages/auth/forgot-password.tsx",
       "resources/js/pages/auth/login.tsx",
@@ -1233,27 +1259,27 @@
     ]
   },
   "resources/js/pages/RoadCoverages/Create.tsx": {
-    "file": "assets/Create-CyXTLz3B.js",
+    "file": "assets/Create-A8dDzVlz.js",
     "name": "Create",
     "src": "resources/js/pages/RoadCoverages/Create.tsx",
     "isDynamicEntry": true,
     "imports": [
       "_jsx-runtime-CfKhfvOA.js",
-      "_coverage-form-BrI9uySm.js"
+      "_coverage-form-B6v3DU9W.js"
     ]
   },
   "resources/js/pages/RoadCoverages/Edit.tsx": {
-    "file": "assets/Edit-B7YvsOtW.js",
+    "file": "assets/Edit-CTtCe49t.js",
     "name": "Edit",
     "src": "resources/js/pages/RoadCoverages/Edit.tsx",
     "isDynamicEntry": true,
     "imports": [
       "_jsx-runtime-CfKhfvOA.js",
-      "_coverage-form-BrI9uySm.js"
+      "_coverage-form-B6v3DU9W.js"
     ]
   },
   "resources/js/pages/RoadCoverages/Index.tsx": {
-    "file": "assets/Index-C6H8j9tX.js",
+    "file": "assets/Index-8UAqzqSR.js",
     "name": "Index",
     "src": "resources/js/pages/RoadCoverages/Index.tsx",
     "isDynamicEntry": true,
@@ -1271,7 +1297,27 @@
       "_form-navigation-D0GcSBZu.js"
     ],
     "css": [
-      "assets/Index-DwMtd-s5.css"
+      "assets/road-coverage-directory-C-sFb9uw.css"
+    ]
+  },
+  "resources/js/pages/RoadCoverages/Show.tsx": {
+    "file": "assets/Show-BKvVWRTB.js",
+    "name": "Show",
+    "src": "resources/js/pages/RoadCoverages/Show.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-CbXtAM7H.js",
+      "_jsx-runtime-CfKhfvOA.js",
+      "_button-BGtpMs6C.js",
+      "_arrow-left-BOFWcjHP.js",
+      "_project-workspace-CFAN_Zss.js",
+      "_map-Dz1lwtVk.js",
+      "_leaflet-COqgPsZc.js",
+      "_form-navigation-D0GcSBZu.js"
+    ],
+    "css": [
+      "assets/Show-_BGZGZf0.css",
+      "assets/road-coverage-directory-C-sFb9uw.css"
     ]
   },
   "resources/js/pages/auth/confirm-password.tsx": {

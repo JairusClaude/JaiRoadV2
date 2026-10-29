@@ -48,7 +48,7 @@ export function mappingData(value) {
         metadata?.version !== 1 ||
         metadata.method !== 'manual' ||
         !Array.isArray(metadata.control_points) ||
-        metadata.control_points.length !== 3 ||
+        ![2, 3].includes(metadata.control_points.length) ||
         !metadata.control_points.every(coordinate)
     ) {
         return null;
@@ -58,12 +58,11 @@ export function mappingData(value) {
 
     if (
         !Array.isArray(indices) ||
-        indices.length !== 3 ||
+        indices.length !== metadata.control_points.length ||
         !indices.every(Number.isInteger) ||
         indices[0] !== 0 ||
-        indices[1] <= 0 ||
-        indices[1] >= line.length - 1 ||
-        indices[2] !== line.length - 1 ||
+        indices.at(-1) !== line.length - 1 ||
+        indices.some((index, i) => i > 0 && index <= indices[i - 1]) ||
         !indices.every((index, i) =>
             samePoint(line[index], metadata.control_points[i]),
         )
@@ -98,13 +97,13 @@ export function mappingData(value) {
 
     return {
         points: metadata.control_points,
-        legs: [line.slice(0, indices[1] + 1), line.slice(indices[1])],
+        legs: indices.slice(1).map((end, i) => line.slice(indices[i], end + 1)),
     };
 }
 export function routeFeature(points, legs) {
     if (
-        points.length !== 3 ||
-        legs.length !== 2 ||
+        ![2, 3].includes(points.length) ||
+        legs.length !== points.length - 1 ||
         legs.some((leg) => leg.length < 2)
     ) {
         return null;
@@ -119,14 +118,17 @@ export function routeFeature(points, legs) {
                 control_points: points,
                 control_point_indices: [
                     0,
-                    legs[0].length - 1,
-                    legs[0].length + legs[1].length - 2,
+                    ...legs.map((_, i) =>
+                        legs
+                            .slice(0, i + 1)
+                            .reduce((n, leg) => n + leg.length - 1, 0),
+                    ),
                 ],
             },
         },
         geometry: {
             type: 'LineString',
-            coordinates: [...legs[0], ...legs[1].slice(1)],
+            coordinates: legs.flatMap((leg, i) => (i ? leg.slice(1) : leg)),
         },
     };
 
@@ -179,7 +181,7 @@ export function validateCoverage(data, lgus, existing = null) {
 
     if (!mappingData(data.geojson) && !retainLegacy) {
         errors.geojson =
-            'Select exactly three distinct locations and finish a continuous trace from A through B to C.';
+            'Place two or three distinct locations and complete each road portion before saving.';
     }
 
     return errors;

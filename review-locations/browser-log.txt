@@ -1,0 +1,18 @@
+PASS Add opens ready for A; Add Location resumes B without resetting A
+PASS B automatically routes A–B; toolbar Add Location extends C, preserves A–B and prevents a fourth point
+PASS All A/B/C markers open small management popups
+PASS Cancel Replacement retains original marker and both accepted routes
+PASS Unselected three-point Draw asks for target; B–C drawing state excludes old completion
+PASS Intermediate point moves live before Finish Drawing without adding a point
+PASS Drawing Undo reverses drag; Save blocks unfinished trace; Cancel restores prior geometry/status
+PASS Selected Draw targets immediately; Finish accepts trace, updates length and saves without changing A–B
+PASS Replacing manual C preserves both paths and marks only B–C for correction
+PASS Undo replacement restores marker and valid route
+PASS Remove C confirms; cancel keeps it; removal preserves complete A–B; Undo restores C
+PASS Remove A keeps former B/C coordinates, relabels them and preserves the manual B–C path as A–B
+PASS Remove B preserves A/C as sequential A/B, clears both old portions, and permits immediate one-portion Draw rebuilding
+PASS Two-point removal preserves and relabels the remaining location; incomplete road cannot be saved
+PASS Start Over confirms, clears working map only, keeps form fields and saved record; Undo restores work
+PASS Location confirmation remains visible and keyboard-accessible inside fullscreen
+PASS Narrow layout stays within viewport
+PASS No browser runtime errors

@@ -45,3 +45,13 @@ export type RoadCoverageFormProps = {
     canEdit: boolean;
     cancelUrl: string;
 };
+
+export type RoadCoverageDetailsProps = {
+    coverage: RoadCoverage & {
+        lgu: { id: number; municipality_name: string } | null;
+    };
+    createdByName: string | null;
+    associatedProject: { id: number; project_title: string } | null;
+    canEdit: boolean;
+    backUrl: string;
+};

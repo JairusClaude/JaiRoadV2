@@ -1,61 +1,63 @@
-# JaiROADS frontend login preview integration
+# Corrected JaiROADS frontend login preview
 
-## Result and sources
+## Authoritative source and result
 
-The authoritative application is `source/` from the supplied `JaiROADS_Map_First_Review(2).zip`. The instructions refer to revision (1); the newly supplied revision (2) was used. The login design was retrieved from `feature/jairoads-map-demo` in `JairusClaude/JaiRoadV2`. Imported login blob: `2dc27e2dba43eeab44cfe6cb0511d5f2d774dd04`; stylesheet blob: `77a53bdc784db28f6fee71cd0e5cf7baaf66679d`. Its bundled road photograph was retained. Other GitHub application pages and authentication backend changes were not imported.
+This revision rebuilds the preview from `source/` in the corrected attachment, `JaiROADS_Road_Coverage_Details_Review (1)(1).zip` (SHA-256 `55e631ca9971e50e11d9bd4a3d9d1f0fddbbf7b9933918b6ebb90dfc595c5f72`). It replaces the earlier Map First Review base. The newer Road Coverage Details page, map preview, directory navigation, editor return behavior, permission checks, and all other application pages come from the corrected ZIP.
 
-Destination branch: `feature/frontend-only-login-preview`.
+The login remains the GitHub `feature/jairoads-map-demo` design: source login blob `2dc27e2dba43eeab44cfe6cb0511d5f2d774dd04`, stylesheet blob `77a53bdc784db28f6fee71cd0e5cf7baaf66679d`, and the bundled road photograph. The imported login was adapted only for the demonstration session and unavailable backend features. No production backend or database connection was imported.
 
-## Changes
+The existing destination branch is updated with a new commit: `feature/frontend-only-login-preview`. No history is rewritten and other branches are untouched.
 
-- `resources/js/pages/auth/login.tsx`: imported the existing GitHub photographic login/slideshow; added preview-only account details, preserved invalid-email input, and labelled unavailable backend features. No registration UI or newer welcome animation was added.
-- `resources/css/jairoads-login.css` and `public/images/jairoads/road-rehabilitation.jpg`: imported design dependencies.
-- `resources/js/app.tsx`: login owns its full-page layout; installs preview-only session checks.
-- `resources/js/lib/preview-session.ts`: rechecks the Node preview session on history, focus and page restoration so browser navigation cannot restore a logged-out preview screen. It only runs when the standalone preview's page data includes previewOnly.
-- `resources/js/layouts/maintenance-project-layout.tsx`: connected existing preview Sign out to POST /logout and marked unavailable account settings. Existing shell and navigation are preserved.
-- `tools/maintenance-project-preview/server.mjs`: root/login/logout routing, authenticated application/download access, rotated demo-session cookies, session-derived user props, login validation, public local photograph, no-store responses, and Inertia history clearing/encryption. The original sample mutation handlers remain. ESLint/Prettier also normalized this file's layout.
-- `README.md`, `review/VIEW-AND-RESTORE.txt`, this report: standalone launch and rebuild instructions, credentials, limitations and results.
-- `public/build/`: regenerated assets included for launch with Node alone.
-- `preview-review/`: browser results and representative desktop/tablet/mobile/map screenshots.
+## Changed and added files
 
-A byte comparison against the supplied source found only six existing files changed (README, review instructions, app entry, login, application layout, preview server), aside from regenerated build assets. 491 other packaged existing source/review files were byte-identical. Fourteen historical review screenshots were omitted as unnecessary old artifacts. This includes PHP controllers, routes, authentication configuration, models, migrations, seeders, package manifests, the map editor, geometry utilities, and existing application pages. Source file hashes are recorded in `preview-review/source-preservation.json`.
+- `resources/js/pages/auth/login.tsx`: imported photographic login/slideshow, explicit preview credentials, invalid-email retention, no registration UI, unavailable recovery/passkey notice.
+- `resources/css/jairoads-login.css`, `public/images/jairoads/road-rehabilitation.jpg`: login design assets.
+- `resources/js/app.tsx`: full-page login layout and preview-session initialization.
+- `resources/js/lib/preview-session.ts`: preview-only checks on browser Back, page restoration, and focus.
+- `resources/js/layouts/maintenance-project-layout.tsx`: demo sign-out action; preserves the corrected ZIP's Details breadcrumb and layout.
+- `tools/maintenance-project-preview/server.mjs`: isolated demo login/logout/session guard, session-derived users, local login image, history clearing, and protected pages/downloads. Preserves the corrected Details route and its shared permission check. Formatting was normalized in this touched file.
+- `README.md`, `review/VIEW-AND-RESTORE.txt`, this report: corrected-source identity and Node-only Windows instructions.
+- `public/build/`: rebuilt assets for first launch without installing dependencies.
+- `preview-review/`: current browser results, screenshots, and source-preservation hashes.
 
-## Runtime verification
+Only six existing files changed beyond generated build assets: README, review launch instructions, app entry, login page, application layout, and preview server. All other packaged originals are byte-identical to the corrected ZIP, including PHP files, authentication configuration, migrations, models, package manifests, Road Coverage Details/map components, the full map editor, geometry utilities, and application pages. `preview-review/source-preservation.json` records the exact comparison and SHA-256 hashes. Historical screenshots and restoration backups containing obsolete generated builds were omitted; they do not participate in the running application.
 
-Actual Chromium checks passed (14 groups; zero browser JavaScript errors):
+## Verification
 
-1. Guest GET and mutation requests redirect to login.
-2. Root opens login; local image loads; unavailable backend features and preview scope are clear.
-3. Invalid demo credentials show a real server validation error and preserve email.
-4. Slideshow pause/navigation and password visibility work.
-5. Desktop plus 768px, 390px and 320px layouts have no document horizontal overflow.
-6. Reduced motion disables automatic slideshow progression.
-7. Valid demo login and refresh retain the session and open Maintenance Projects.
-8. Existing Road Coverage, project, record, monthly update, document, LGU and exploration pages render.
-9. Map A/B/C placement and routed portions work.
-10. Manual trace, marker dragging and undo work.
-11. Project creation, update and deletion persist for the preview process.
-12. Road save/edit retains saved geometry and renders its three saved markers.
-13. Sign out clears the session; browser Back and protected URLs cannot restore access.
-14. Zero browser runtime exceptions.
+Actual Chromium runtime: **16 passing groups, zero browser JavaScript errors**. The checks cover:
 
-External Unsplash photographs were deliberately blocked to exercise the bundled fallback. Map tiles were blocked and OSRM responses were stubbed with deterministic coordinates during browser interaction checks. These checks verify UI behavior, not the live availability or geographic accuracy of third-party services. Existing map/provider integration code is byte-identical to the supplied ZIP.
+1. Guest page and mutation requests redirect to login.
+2. Root opens the GitHub login design with bundled image and preview notices.
+3. Invalid credentials display a real Node validation error and retain the entered email.
+4. Slideshow pause/navigation and password visibility.
+5. Desktop, 768px, 390px, and 320px login layouts without horizontal overflow.
+6. Reduced-motion slideshow behavior.
+7. Valid login and refresh session persistence.
+8. Existing directories, Add/Edit/Details, records, documents, LGUs, and exploration pages render.
+9. The corrected map editor places A/B, adds C, and routes portions.
+10. Marker dragging, undo, and manual redraw use the corrected editor's actual toolbar.
+11. Temporary project creation/update/deletion.
+12. Temporary road save/edit preserves exact saved geometry and renders its markers.
+13. Road Coverage Details displays the saved three-location map; Edit/Save returns to that Details page and preserves geometry.
+14. Two-location Details, Edit/Cancel return, mobile Details layout, and missing-geometry fallback with the correct associated project.
+15. Sign out clears the session; browser Back and direct protected URLs cannot restore access.
+16. Zero browser runtime exceptions.
 
-## Development checks
+External Unsplash images and map tiles were blocked to verify the local image fallback and isolate map behavior. OSRM replies used deterministic geometry fixtures. These are real browser interaction checks, not a claim about public map-provider availability or geographic accuracy. Provider and editor implementation files are byte-identical to the corrected ZIP.
 
-- `npm ci --prefer-offline`: passed (lockfile installation).
+Development checks:
+
+- `npm ci --prefer-offline`: passed.
 - `npm run types:check`: passed.
 - `npm run format:check`: passed.
 - `npm run build -- --mode review`: passed.
-- ESLint on all changed/new TypeScript files and the preview server: passed.
-- `npm run lint:check`: failed with 489 existing errors in other files. The unmodified supplied ZIP produced 587 errors with the same dependencies; formatting the touched preview server reduced the count. No global lint cleanup was attempted. This is not a claim that repository-wide lint is green.
+- ESLint on changed/new TypeScript files and the Node preview server: passed.
+- Full `npm run lint:check`: fails with **814 pre-existing errors in untouched files**, including historical review scripts. Before omitting obsolete restoration backups, the complete attachment scan reported 62,697 errors because it included historical generated builds. The supplied frontend's remaining lint issues were preserved; global lint is not claimed to pass.
 
-No PHP/backend tests or database operations were required or performed. This branch deliberately uses the Node preview; the preserved Laravel scaffold is not the supported runtime for this demonstration flow.
+No database, migrations, seeders, PHP runtime, or production credentials were used. Prebuilt assets and generated route helpers are included. A freshly extracted archive is checked for Node-only startup, login entry, and bundled image access.
 
-## Limitations
+## Launch and limitations
 
-Demo authentication and sample edits are process-local. Restarting resets sessions and temporary records/uploads. Maps and external photographs still depend on the original public providers; the first photograph works locally. Existing unfinished/disabled navigation remains unchanged. `/maintenance-records` is the existing records directory; `/maintenance-projects/101/records` is an unsupported URL in the original source. Historical review scripts predate the login guard.
+Run `node .\tools\maintenance-project-preview\server.mjs` in the extracted project root, then open `http://localhost:5179/`. Node.js 22.12+ is required. Demo credentials: `demo@example.test` / `JaiROADS-Demo-2026!`.
 
-## Packaging
-
-`JaiROADS_Frontend_Login_Preview.zip` contains the runnable project under one `JaiROADS_Frontend_Login_Preview/` folder. It includes source, local assets, generated route helpers, rebuilt assets, current instructions/report and sample fixtures. It excludes .git, node_modules, real .env files, dependency folders and caches. After fresh extraction, the Node server can start and serve the login without installing packages, running PHP, or connecting a database.
+The account and session are explicitly demonstration-only. Edits/uploads and sessions belong to the Node process and reset on restart; they are not permanent database records. Existing unfinished navigation remains in its supplied state. Password recovery, passkeys and account settings are unavailable in preview. The original map providers require internet; their availability is not guaranteed. Details remains a display-only map; editing continues in the existing editor.

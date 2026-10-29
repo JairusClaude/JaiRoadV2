@@ -1,0 +1,11 @@
+{
+  "checks": [
+    "Keyboard summary selection focuses relevant popup action",
+    "Keyboard Escape closes popup",
+    "Manual trace can follow saved reference; unaffected automatic portion preserved",
+    "Manual marker move shows exact missing connection; scoped Undo restores it without changing adjacent road",
+    "Mouse-wheel zoom preserves all locations",
+    "Narrow summary scrolls to map and popup remains within map boundaries"
+  ],
+  "errors": []
+}

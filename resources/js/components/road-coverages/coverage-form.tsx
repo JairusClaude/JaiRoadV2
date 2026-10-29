@@ -72,6 +72,7 @@ export function CoverageForm({
                         ),
                     )),
     );
+    const [lengthOpen, setLengthOpen] = useState(false);
     const points = lineCoordinates(form.data.geojson),
         calculated = points ? distanceKm(points).toFixed(2) : null;
     const set = <K extends keyof Values>(key: K, value: Values[K]) => {
@@ -96,7 +97,7 @@ export function CoverageForm({
         window.addEventListener('beforeunload', unload);
         const remove = router.on('before', (event) => {
             if (
-                form.isDirty &&
+                (form.isDirty || mappingDirty) &&
                 !saving.current &&
                 !window.confirm('Discard unsaved road coverage changes?')
             ) {
@@ -122,7 +123,9 @@ export function CoverageForm({
                         onClick={cancel}
                     >
                         <ArrowLeft className="size-4" />
-                        Road Coverages
+                        {back.split('?')[0] === '/road-coverages'
+                            ? 'Road Coverages'
+                            : 'Road Coverage Details'}
                     </button>
                     <div className="jr-page-head">
                         <div>
@@ -130,7 +133,7 @@ export function CoverageForm({
                             <p>
                                 {coverage
                                     ? 'Update the road coverage information and its mapped alignment.'
-                                    : 'Place three locations to generate and review one continuous road coverage.'}
+                                    : 'Place A and B to map a road. Add C only when needed.'}
                             </p>
                         </div>
                     </div>
@@ -152,6 +155,7 @@ export function CoverageForm({
 
                             if (
                                 coverage &&
+                                lineCoordinates(form.data.geojson) &&
                                 JSON.stringify(
                                     lineCoordinates(form.data.geojson),
                                 ) !==
@@ -174,6 +178,10 @@ export function CoverageForm({
                             }
 
                             if (Object.keys(errors).length) {
+                                if (errors.kilometers) {
+                                    setLengthOpen(true);
+                                }
+
                                 const toggle =
                                     document.querySelector<HTMLButtonElement>(
                                         '.jr-map-section-toggle',
@@ -399,46 +407,104 @@ export function CoverageForm({
                                 </>
                             }
                             lengthFields={
-                                <>
-                                    <div className="jr-record-field">
-                                        <Label htmlFor="kilometers">
-                                            Recorded length (km){required}
-                                        </Label>
-                                        <Input
-                                            id="kilometers"
-                                            name="kilometers"
-                                            type="number"
-                                            min="0.01"
-                                            max="99999999.99"
-                                            step="0.01"
-                                            placeholder="Calculated from completed route"
-                                            required
-                                            value={form.data.kilometers}
-                                            disabled={
-                                                !enabled || form.processing
-                                            }
-                                            aria-invalid={
-                                                !!form.errors.kilometers
-                                            }
-                                            aria-describedby={`kilometers-hint${form.errors.kilometers ? ' kilometers-error' : ''}`}
-                                            onChange={(e) => {
-                                                set(
-                                                    'kilometers',
-                                                    e.target.value,
-                                                );
-                                                setManualLength(true);
-                                            }}
-                                        />
+                                <div className="jr-coverage-length">
+                                    <h2>Road Length</h2>
+                                    {pending && calculated !== null && (
                                         <p
                                             className="jr-field-hint"
-                                            id="kilometers-hint"
+                                            role="status"
                                         >
-                                            {calculated !== null
-                                                ? `Calculated: ${calculated} km${manualLength ? ' · Manually adjusted' : ''}.`
-                                                : 'Calculated when both trace legs are complete.'}{' '}
-                                            You may adjust this value.
+                                            This measurement reflects the
+                                            previous accepted road. Finish or
+                                            cancel the current map operation
+                                            before saving.
                                         </p>
-                                        {calculated !== null && (
+                                    )}
+                                    <div
+                                        className="jr-calculated-length"
+                                        aria-live="polite"
+                                    >
+                                        {calculated !== null
+                                            ? `${calculated} km`
+                                            : '—'}
+                                    </div>
+                                    <p className="jr-field-hint">
+                                        {calculated !== null
+                                            ? 'Calculated from the mapped road.'
+                                            : 'Calculated when every required road portion is complete.'}
+                                    </p>
+                                    {manualLength && (
+                                        <p className="jr-recorded-measure">
+                                            Recorded:{' '}
+                                            <strong>
+                                                {form.data.kilometers || '—'} km
+                                            </strong>
+                                        </p>
+                                    )}
+                                    {manualLength &&
+                                        calculated !== null &&
+                                        Number(form.data.kilometers) !==
+                                            Number(calculated) && (
+                                            <p className="jr-field-hint">
+                                                Your adjusted recorded length is
+                                                retained. It differs from the
+                                                current mapped length.
+                                            </p>
+                                        )}
+                                    {!lengthOpen && (
+                                        <button
+                                            type="button"
+                                            className="jr-length-reset"
+                                            disabled={
+                                                !enabled ||
+                                                form.processing ||
+                                                calculated === null
+                                            }
+                                            onClick={() => setLengthOpen(true)}
+                                        >
+                                            Adjust Recorded Length
+                                        </button>
+                                    )}
+                                    {lengthOpen && (
+                                        <div className="jr-record-field jr-length-adjustment">
+                                            <Label htmlFor="kilometers">
+                                                Recorded length (km){required}
+                                            </Label>
+                                            <Input
+                                                id="kilometers"
+                                                name="kilometers"
+                                                type="number"
+                                                min="0.01"
+                                                max="99999999.99"
+                                                step="0.01"
+                                                required
+                                                value={form.data.kilometers}
+                                                disabled={
+                                                    !enabled || form.processing
+                                                }
+                                                aria-invalid={
+                                                    !!form.errors.kilometers
+                                                }
+                                                aria-describedby="kilometers-hint"
+                                                onChange={(e) => {
+                                                    set(
+                                                        'kilometers',
+                                                        e.target.value,
+                                                    );
+                                                    setManualLength(true);
+                                                }}
+                                            />
+                                            <p
+                                                className="jr-field-hint"
+                                                id="kilometers-hint"
+                                            >
+                                                Use an official or corrected
+                                                measurement.
+                                            </p>
+                                        </div>
+                                    )}
+                                    {(manualLength || lengthOpen) &&
+                                        calculated !== null && (
                                             <button
                                                 type="button"
                                                 className="jr-length-reset"
@@ -451,14 +517,14 @@ export function CoverageForm({
                                                         calculated,
                                                     );
                                                     setManualLength(false);
+                                                    setLengthOpen(false);
                                                 }}
                                             >
                                                 Use calculated length
                                             </button>
                                         )}
-                                        {error('kilometers')}
-                                    </div>
-                                </>
+                                    {error('kilometers')}
+                                </div>
                             }
                             onChange={(value) => {
                                 const line = lineCoordinates(value);
@@ -476,7 +542,7 @@ export function CoverageForm({
                                 setGeometryNotice(
                                     line
                                         ? ''
-                                        : 'Complete both road portions before saving.',
+                                        : 'Complete each required road portion before saving.',
                                 );
                             }}
                         />

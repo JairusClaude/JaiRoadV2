@@ -1,0 +1,87 @@
+{
+  "checks": [
+    {
+      "name": "Directory full-row navigation opens the correct record; action menu remains independent; filtered directory origin is retained",
+      "status": "PASS"
+    },
+    {
+      "name": "Three saved locations and one exact selected road render from stored GeoJSON with correct LGU, creator and project relationship",
+      "status": "PASS"
+    },
+    {
+      "name": "Established details header/actions, two-column proportions, 420px map, badges, length and metadata are used without exposing RoadCoverage ID",
+      "status": "PASS"
+    },
+    {
+      "name": "Editor, overlays and unsupported Delete action are absent; map and markers are read-only",
+      "status": "PASS"
+    },
+    {
+      "name": "Standard zoom controls, mouse-wheel zoom and panning work",
+      "status": "PASS"
+    },
+    {
+      "name": "Established bottom-right fullscreen enters/exits and map resizes",
+      "status": "PASS"
+    },
+    {
+      "name": "View Project opens the actual associated Maintenance Project Details",
+      "status": "PASS"
+    },
+    {
+      "name": "Two-location geometry displays only A/B, with the unassigned-project empty state and no assignment actions",
+      "status": "PASS"
+    },
+    {
+      "name": "Edit loads the selected saved road; Cancel returns to its Details without geometry changes",
+      "status": "PASS"
+    },
+    {
+      "name": "Information-only Edit saves back to Details, preserving exact GeoJSON, original attribution and creation timestamp without routing",
+      "status": "PASS"
+    },
+    {
+      "name": "Existing record without geography displays the neutral map placeholder while retaining information and real project association",
+      "status": "PASS"
+    },
+    {
+      "name": "Invalid-geometry response and missing metadata safely show placeholder/Unavailable; no invented geography, creator or timestamps",
+      "status": "PASS"
+    },
+    {
+      "name": "Legacy valid LineString without waypoint metadata renders saved road only, with no fabricated location markers",
+      "status": "PASS"
+    },
+    {
+      "name": "Sidebar active state/collapse work with the new Details route",
+      "status": "PASS"
+    },
+    {
+      "name": "390px and 320px layouts stack information over map, wrap metadata/actions and avoid horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "Existing Add Road Coverage toolbar, Add Project and Maintenance Project Details/Maintenance History remain available",
+      "status": "PASS"
+    },
+    {
+      "name": "Unsupported delete remains unavailable; rejected request changes neither road nor project relationship",
+      "status": "PASS"
+    },
+    {
+      "name": "All Details/navigation/edit-load checks send zero routing requests and raise zero runtime errors",
+      "status": "PASS"
+    }
+  ],
+  "errors": [],
+  "routing": [],
+  "fixtures": {
+    "notice": "Process-local development records, not production data. Geometry is actual OSRM output captured during the prior mapping review.",
+    "two": 204,
+    "three": 205,
+    "project": 115
+  },
+  "loadedBasemapTiles": false,
+  "finalDesktopBasemapLoaded": true,
+  "supplementalNote": "Invalid and legacy geometry cases used explicit browser response fixtures; saved two/three-point cases used actual process-local creation workflows. No permanent fixtures were changed."
+}

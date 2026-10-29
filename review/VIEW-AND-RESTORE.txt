@@ -12,4 +12,4 @@ Prebuilt assets are included. PHP, Composer, Herd, migrations, PostgreSQL and Su
 
 The supplied ZIP frontend was preserved; the imported login and temporary preview session are the integration changes. Historical review scripts in this directory predate authentication and may require an authenticated cookie before running. See ../preview-review/ for current screenshots and results.
 
-For restoration, keep the original supplied JaiROADS_Map_First_Review(2).zip separately and extract it into another new folder. Do not overwrite an uncommitted checkout or run git reset/clean on shared work.
+For restoration, keep the original supplied JaiROADS_Road_Coverage_Details_Review (1)(1).zip separately and extract it into another new folder. Do not overwrite an uncommitted checkout or run git reset/clean on shared work.

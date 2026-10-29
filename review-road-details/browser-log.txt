@@ -1,0 +1,18 @@
+PASS Directory full-row navigation opens the correct record; action menu remains independent; filtered directory origin is retained
+PASS Three saved locations and one exact selected road render from stored GeoJSON with correct LGU, creator and project relationship
+PASS Established details header/actions, two-column proportions, 420px map, badges, length and metadata are used without exposing RoadCoverage ID
+PASS Editor, overlays and unsupported Delete action are absent; map and markers are read-only
+PASS Standard zoom controls, mouse-wheel zoom and panning work
+PASS Established bottom-right fullscreen enters/exits and map resizes
+PASS View Project opens the actual associated Maintenance Project Details
+PASS Two-location geometry displays only A/B, with the unassigned-project empty state and no assignment actions
+PASS Edit loads the selected saved road; Cancel returns to its Details without geometry changes
+PASS Information-only Edit saves back to Details, preserving exact GeoJSON, original attribution and creation timestamp without routing
+PASS Existing record without geography displays the neutral map placeholder while retaining information and real project association
+PASS Invalid-geometry response and missing metadata safely show placeholder/Unavailable; no invented geography, creator or timestamps
+PASS Legacy valid LineString without waypoint metadata renders saved road only, with no fabricated location markers
+PASS Sidebar active state/collapse work with the new Details route
+PASS 390px and 320px layouts stack information over map, wrap metadata/actions and avoid horizontal overflow
+PASS Existing Add Road Coverage toolbar, Add Project and Maintenance Project Details/Maintenance History remain available
+PASS Unsupported delete remains unavailable; rejected request changes neither road nor project relationship
+PASS All Details/navigation/edit-load checks send zero routing requests and raise zero runtime errors

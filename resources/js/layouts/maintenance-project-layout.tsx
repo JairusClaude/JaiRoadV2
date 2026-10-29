@@ -100,7 +100,9 @@ export function MaintenanceProjectShell({
                 ? 'Add Road Coverage'
                 : path.endsWith('/edit')
                   ? 'Edit Road Coverage'
-                  : 'Road Coverages'
+                  : /^\/road-coverages\/\d+$/.test(path)
+                    ? 'Road Coverage Details'
+                    : 'Road Coverages'
             : undefined) ??
         lguPageName ??
         documentPageName ??
