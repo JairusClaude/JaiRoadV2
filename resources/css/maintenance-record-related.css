@@ -1,0 +1,89 @@
+/* Only embedded related lists; reuse History's border, radius and row states. */
+.jr-record-related-columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 24px;
+    margin-top: 28px;
+    align-items: start;
+}
+.jr-record-related-columns > section {
+    min-width: 0;
+}
+.jr-record-related-columns .jr-section-title-row {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.jr-related-list {
+    margin: 0;
+    list-style: none;
+}
+.jr-related-list .jr-related-row {
+    grid-template-columns: 20px minmax(0, 1fr) 104px 32px;
+    min-height: 74px;
+    padding-block: 12px;
+}
+.jr-related-list .jr-related-document-row {
+    grid-template-columns: 20px minmax(0, 1fr) 32px;
+}
+.jr-related-row-copy {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.jr-related-row-title {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+    color: #1e2430;
+}
+.jr-related-row-copy .jr-project-id {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin: 0;
+}
+.jr-related-row-title:focus-visible {
+    outline: 2px solid #c98a55;
+    outline-offset: 3px;
+    border-radius: 2px;
+}
+.jr-related-monthly-row .jr-project-id {
+    white-space: normal;
+}
+.jr-related-monthly-progress .jr-monthly-progress {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+}
+.jr-related-monthly-progress .jr-monthly-progress > span {
+    text-align: right;
+}
+.jr-related-monthly-progress .jr-monthly-progress-track {
+    flex: none;
+    width: 100%;
+}
+.jr-record-related-columns .jr-related-empty {
+    margin-top: 0;
+}
+@media (max-width: 1279px) {
+    .jr-record-related-columns {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+@media (max-width: 600px) {
+    .jr-related-list .jr-related-row {
+        padding-inline: 12px;
+        gap: 8px;
+    }
+    .jr-related-list .jr-related-monthly-row {
+        grid-template-columns: 20px minmax(0, 1fr) 72px 32px;
+    }
+    .jr-related-list .jr-related-document-row {
+        grid-template-columns: 20px minmax(0, 1fr) 32px;
+    }
+}

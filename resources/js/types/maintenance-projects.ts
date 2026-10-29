@@ -1,5 +1,12 @@
 export type IntegrationStatus = { ready: boolean; message: string | null };
+export type DependentCounts = {
+    maintenance_records: number;
+    monthly_updates: number;
+    media: number;
+    maintenance_documents: number;
+};
 export type ProjectSummary = {
+    deletion_counts?: DependentCounts;
     id: number;
     project_title: string;
     description: string | null;

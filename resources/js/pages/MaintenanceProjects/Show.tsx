@@ -1,29 +1,17 @@
-import { Head, Link, router } from '@inertiajs/react';
-import {
-    ArrowLeft,
-    ChevronRight,
-    Map,
-    MoreHorizontal,
-    Pencil,
-    Plus,
-} from 'lucide-react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { ArrowLeft, Map, Pencil, Trash2 } from 'lucide-react';
+import { MaintenanceHistory } from '@/components/maintenance-projects/maintenance-history';
 import {
     ProjectDeletionDialog,
     useProjectDeletion,
 } from '@/components/maintenance-projects/project-deletion';
-import {
-    ProjectActions,
-    ProjectWorkspace,
-} from '@/components/maintenance-projects/project-workspace';
+import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { Button } from '@/components/ui/button';
+import { editUrl } from '@/lib/form-navigation';
 import type { ProjectSummary } from '@/types/maintenance-projects';
+import type { MaintenanceRecordSummary } from '@/types/maintenance-records';
+import '../../../css/maintenance-project-details.css';
 
-type RecordSummary = {
-    id: number;
-    year: number;
-    quarter: string;
-    status: string;
-};
 const date = (value: string | null) =>
     value
         ? new Intl.DateTimeFormat('en-PH', {
@@ -35,18 +23,23 @@ const date = (value: string | null) =>
 export default function Show({
     project,
     records,
+    recordCreateUrl,
+    expandedYear,
 }: {
     project: ProjectSummary;
-    records: RecordSummary[];
+    records: MaintenanceRecordSummary[];
+    recordCreateUrl?: string;
+    expandedYear?: number;
 }) {
-    const years = [...new Set(records.map((record) => record.year))].sort(
-        (a, b) => b - a,
-    );
     const deletion = useProjectDeletion();
-    const edit = () => router.visit(`/maintenance-projects/${project.id}/edit`);
+    const page = usePage();
+    const edit = () =>
+        router.visit(
+            editUrl(`/maintenance-projects/${project.id}/edit`, page.url),
+        );
 
     return (
-        <>
+        <div className="jr-project-details">
             <Head title={project.project_title} />
             <ProjectWorkspace>
                 <Link href="/maintenance-projects" className="jr-back">
@@ -60,23 +53,26 @@ export default function Show({
                             history
                         </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="jr-header-actions">
                         {project.can_edit && (
                             <Button variant="outline" onClick={edit}>
                                 <Pencil /> Edit Project
                             </Button>
                         )}
-                        <ProjectActions
-                            project={project}
-                            onEdit={edit}
-                            onDelete={() => deletion.open([project])}
-                        />
+                        {project.can_delete && (
+                            <Button
+                                className="jr-danger"
+                                onClick={() => deletion.open([project])}
+                            >
+                                <Trash2 /> Delete Project
+                            </Button>
+                        )}
                     </div>
                 </div>
                 <section className="jr-detail-section">
-                    <h2>Project Information</h2>
                     <div className="jr-detail-grid">
-                        <div>
+                        <div className="jr-project-information">
+                            <h2>Project Information</h2>
                             <dl className="jr-detail-fields">
                                 <div>
                                     <dt>Road Coverage</dt>
@@ -120,87 +116,29 @@ export default function Show({
                                 </div>
                             </dl>
                         </div>
-                        <div className="jr-map-placeholder jr-detail-map">
-                            <Map className="size-[18px]" />
-                            <strong>RoadCoverage map preview</strong>
-                            <span>Stored GeoJSON will appear here.</span>
+                        <div className="jr-project-map">
+                            <h3>Road Coverage Map</h3>
+                            <div className="jr-map-placeholder jr-detail-map">
+                                <Map
+                                    className="size-[18px]"
+                                    aria-hidden="true"
+                                />
+                                <strong>Map preview unavailable</strong>
+                                <span>
+                                    A geographic preview is not available for
+                                    this road coverage yet.
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </section>
-                <section className="jr-detail-section jr-history-section">
-                    <div className="jr-section-title-row">
-                        <div>
-                            <h2>Maintenance History</h2>
-                            <p>Records grouped by year and quarter</p>
-                        </div>
-                        <Button className="jr-primary" type="button">
-                            <Plus /> Add Record
-                        </Button>
-                    </div>
-                    {records.length === 0 ? (
-                        <div className="jr-history-empty">
-                            No maintenance records yet.
-                        </div>
-                    ) : (
-                        <div className="jr-history">
-                            {years.map((year) => (
-                                <details key={year}>
-                                    <summary>
-                                        <span className="jr-year-title">
-                                            <ChevronRight />
-                                            <strong>{year}</strong>
-                                        </span>
-                                        <small>
-                                            {
-                                                records.filter(
-                                                    (record) =>
-                                                        record.year === year,
-                                                ).length
-                                            }{' '}
-                                            records
-                                        </small>
-                                    </summary>
-                                    <div className="jr-year-contents">
-                                        {records
-                                            .filter(
-                                                (record) =>
-                                                    record.year === year,
-                                            )
-                                            .map((record) => (
-                                                <div
-                                                    key={record.id}
-                                                    className="jr-record-row"
-                                                >
-                                                    <span>
-                                                        {record.quarter}
-                                                    </span>
-                                                    <span
-                                                        className="jr-status"
-                                                        data-status={
-                                                            record.status
-                                                        }
-                                                    >
-                                                        {record.status}
-                                                    </span>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        type="button"
-                                                        className="jr-action-trigger ml-auto"
-                                                        aria-label={`${record.quarter} ${year} record actions`}
-                                                    >
-                                                        <MoreHorizontal />
-                                                    </Button>
-                                                </div>
-                                            ))}
-                                    </div>
-                                </details>
-                            ))}
-                        </div>
-                    )}
-                </section>
+                <MaintenanceHistory
+                    records={records}
+                    recordCreateUrl={recordCreateUrl}
+                    expandedYear={expandedYear}
+                />
             </ProjectWorkspace>
             <ProjectDeletionDialog deletion={deletion} />
-        </>
+        </div>
     );
 }

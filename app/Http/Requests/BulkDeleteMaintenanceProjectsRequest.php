@@ -12,6 +12,7 @@ class BulkDeleteMaintenanceProjectsRequest extends FormRequest
         return $this->user()?->can('deleteAny', MaintenanceProject::class) ?? false;
     }
 
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [

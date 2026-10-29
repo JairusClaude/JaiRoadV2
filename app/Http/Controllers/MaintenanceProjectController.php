@@ -12,6 +12,7 @@ use App\Services\MaintenanceProjects\ProjectMutations;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
@@ -127,6 +128,7 @@ class MaintenanceProjectController extends Controller
         return to_route('maintenance-projects.index');
     }
 
+    /** @return Builder<MaintenanceProject> */
     private function projects(): Builder
     {
         return MaintenanceProject::query()->withCount('maintenanceRecords')->with([
@@ -134,7 +136,8 @@ class MaintenanceProjectController extends Controller
         ]);
     }
 
-    private function coverageChoices(?MaintenanceProject $current = null)
+    /** @return Collection<int, array<string, mixed>> */
+    private function coverageChoices(?MaintenanceProject $current = null): Collection
     {
         return RoadCoverage::query()->select(['id', 'road_name', 'lgus_id', 'kilometers'])
             ->with(['lgu:id,municipality_name', 'maintenanceProject:id,road_coverage_id'])->orderBy('road_name')->get()
@@ -147,7 +150,11 @@ class MaintenanceProjectController extends Controller
             ])->values();
     }
 
-    /** Unlinked users never query protected tables or receive fixture data. */
+    /**
+     * Unlinked users never query protected tables or receive fixture data.
+     *
+     * @return array{ready: bool, message: string|null}
+     */
     private function integration(string $ability): array
     {
         if (! Gate::allows($ability, MaintenanceProject::class)) {
@@ -161,6 +168,7 @@ class MaintenanceProjectController extends Controller
         return ['ready' => true, 'message' => null];
     }
 
+    /** @return array<string, mixed> */
     private function projectData(MaintenanceProject $project): array
     {
         return [

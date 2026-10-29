@@ -1,11 +1,10 @@
-import {
-    CheckSquare,
-    ChevronLeft,
-    ChevronRight,
-    Plus,
-    Search,
-} from 'lucide-react';
+import { usePage } from '@inertiajs/react';
+import { Plus, Search } from 'lucide-react';
 import { useState } from 'react';
+import {
+    DirectoryPagination,
+    DirectorySelectionToolbar,
+} from '@/components/directory-controls';
 import {
     ProjectActions,
     IntegrationNotice,
@@ -21,6 +20,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { editUrl } from '@/lib/form-navigation';
 import type {
     IntegrationStatus,
     Pagination,
@@ -36,6 +36,7 @@ export type DirectoryProps = {
     canCreate: boolean;
     canBulkDelete: boolean;
     onDelete: (projects: ProjectSummary[], bulk?: boolean) => void;
+    onSearch?: (search: string) => void;
     onFilters: (filters: ProjectFilters) => void;
     onNavigate: (url: string) => void;
     busy?: boolean;
@@ -49,13 +50,26 @@ export function ProjectDirectory({
     canCreate,
     canBulkDelete,
     onDelete,
+    onSearch,
     onFilters,
     onNavigate,
     busy = false,
 }: DirectoryProps) {
+    const page = usePage();
     const [search, setSearch] = useState(filters.search);
     const [selecting, setSelecting] = useState(false);
     const [selected, setSelected] = useState<Set<number>>(new Set());
+    const selectionScope = `${projects.current_page}:${filters.municipality}:${filters.sort}:${projects.data.map((project) => project.id).join(',')}`;
+    const [previousScope, setPreviousScope] = useState(selectionScope);
+
+    // Reset only selection when the returned scope changes. Keep the directory
+    // and search input mounted so browser focus and caret position survive.
+    if (previousScope !== selectionScope) {
+        setPreviousScope(selectionScope);
+        setSelecting(false);
+        setSelected(new Set());
+    }
+
     const allSelected =
         projects.data.length > 0 &&
         projects.data.every((project) => selected.has(project.id));
@@ -77,17 +91,6 @@ export function ProjectDirectory({
         clearSelection();
         onFilters(next);
     };
-    const pages = Array.from(
-        { length: Math.min(5, projects.last_page) },
-        (_, offset) => {
-            const first = Math.max(
-                1,
-                Math.min(projects.current_page - 2, projects.last_page - 4),
-            );
-
-            return first + offset;
-        },
-    );
     const pageUrl = (page: number) => {
         const query = new URLSearchParams({
             search: filters.search,
@@ -131,7 +134,11 @@ export function ProjectDirectory({
                         aria-label="Search project titles"
                         placeholder="Search project titles..."
                         value={search}
-                        onChange={(event) => setSearch(event.target.value)}
+                        onChange={(event) => {
+                            setSearch(event.target.value);
+                            clearSelection();
+                            onSearch?.(event.target.value);
+                        }}
                         disabled={!integration.ready || busy}
                     />
                 </div>
@@ -192,56 +199,31 @@ export function ProjectDirectory({
                     </Select>
                 </div>
                 <span className="sr-only">
-                    Press Enter to search project titles.
+                    Search results update automatically while typing.
                 </span>
             </form>
-            <div className="jr-table-toolbar">
-                <span role="status">
-                    {selecting
-                        ? `${selected.size} selected`
-                        : `${projects.total} ${projects.total === 1 ? 'project' : 'projects'} found`}
-                </span>
-                {selecting ? (
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            onClick={() => {
-                                setSelecting(false);
-                                clearSelection();
-                            }}
-                        >
-                            Cancel selection
-                        </Button>
-                        {canBulkDelete && (
-                            <Button
-                                className="jr-danger"
-                                disabled={selected.size === 0 || busy}
-                                onClick={() =>
-                                    onDelete(
-                                        projects.data.filter((project) =>
-                                            selected.has(project.id),
-                                        ),
-                                        true,
-                                    )
-                                }
-                            >
-                                Delete selected
-                            </Button>
-                        )}
-                    </div>
-                ) : (
-                    <Button
-                        variant="outline"
-                        disabled={
-                            !integration.ready || projects.data.length === 0
-                        }
-                        onClick={() => setSelecting(true)}
-                    >
-                        <CheckSquare />
-                        Select projects
-                    </Button>
-                )}
-            </div>
+            <DirectorySelectionToolbar
+                selecting={selecting}
+                selectedCount={selected.size}
+                total={projects.total}
+                singular="project"
+                plural="projects"
+                canDelete={canBulkDelete}
+                disabled={!integration.ready || busy}
+                onSelect={() => setSelecting(true)}
+                onCancel={() => {
+                    setSelecting(false);
+                    clearSelection();
+                }}
+                onDelete={() =>
+                    onDelete(
+                        projects.data.filter((project) =>
+                            selected.has(project.id),
+                        ),
+                        true,
+                    )
+                }
+            />
             <div className="jr-table-wrap" aria-busy={busy}>
                 <table className="jr-table">
                     <colgroup>
@@ -370,7 +352,10 @@ export function ProjectDirectory({
                                             project={project}
                                             onEdit={() =>
                                                 onNavigate(
-                                                    `/maintenance-projects/${project.id}/edit`,
+                                                    editUrl(
+                                                        `/maintenance-projects/${project.id}/edit`,
+                                                        page.url,
+                                                    ),
                                                 )
                                             }
                                             onDelete={() => onDelete([project])}
@@ -416,58 +401,19 @@ export function ProjectDirectory({
                     </div>
                 )}
             </div>
-            <footer className="jr-table-footer">
-                <span>
-                    {projects.total > 0
-                        ? `Showing ${projects.from}–${projects.to} of ${projects.total} projects`
-                        : '0 projects'}
-                    {!canCreate && integration.ready
-                        ? ' · Read-only access'
-                        : ''}
-                </span>
-                <nav aria-label="Project pagination" className="flex gap-1">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Previous page"
-                        disabled={busy || projects.current_page <= 1}
-                        onClick={() => pageUrl(projects.current_page - 1)}
-                    >
-                        <ChevronLeft />
-                    </Button>
-                    {pages.map((page) => (
-                        <Button
-                            key={page}
-                            variant={
-                                page === projects.current_page
-                                    ? 'secondary'
-                                    : 'ghost'
-                            }
-                            size="icon"
-                            aria-current={
-                                page === projects.current_page
-                                    ? 'page'
-                                    : undefined
-                            }
-                            disabled={busy || !integration.ready}
-                            onClick={() => pageUrl(page)}
-                        >
-                            {page}
-                        </Button>
-                    ))}
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Next page"
-                        disabled={
-                            busy || projects.current_page >= projects.last_page
-                        }
-                        onClick={() => pageUrl(projects.current_page + 1)}
-                    >
-                        <ChevronRight />
-                    </Button>
-                </nav>
-            </footer>
+            <DirectoryPagination
+                total={projects.total}
+                from={projects.from}
+                to={projects.to}
+                currentPage={projects.current_page}
+                lastPage={projects.last_page}
+                plural="projects"
+                label="Project pagination"
+                ready={integration.ready}
+                busy={busy}
+                readOnly={!canCreate}
+                onPage={pageUrl}
+            />
         </ProjectWorkspace>
     );
 }

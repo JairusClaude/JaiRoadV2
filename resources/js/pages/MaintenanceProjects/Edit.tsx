@@ -1,5 +1,6 @@
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { ProjectForm } from '@/components/maintenance-projects/project-form';
+import { formReturn, returnLabel, editUrl } from '@/lib/form-navigation';
 import type {
     CoverageChoice,
     IntegrationStatus,
@@ -16,6 +17,10 @@ export default function Edit({
     coverages: CoverageChoice[];
     integration: IntegrationStatus;
 }) {
+    const page = usePage();
+    const cancel = formReturn(page.url, `/maintenance-projects/${project.id}`, [
+        '/maintenance-projects',
+    ]);
     const form = useForm<ProjectFormValues>({
         road_coverage_id: String(project.road_coverage_id ?? ''),
         project_title: project.project_title,
@@ -27,6 +32,7 @@ export default function Edit({
             <Head title="Edit Project" />
             <ProjectForm
                 mode="edit"
+                backLabel={returnLabel(cancel, 'Project Details')}
                 coverageLocked={project.maintenance_records_count > 0}
                 coverages={coverages}
                 integration={integration}
@@ -38,13 +44,14 @@ export default function Edit({
                     form.setData(values);
                 }}
                 onSave={() =>
-                    form.put(`/maintenance-projects/${project.id}`, {
-                        preserveScroll: true,
-                    })
+                    form.put(
+                        editUrl(`/maintenance-projects/${project.id}`, cancel),
+                        {
+                            preserveScroll: true,
+                        },
+                    )
                 }
-                onCancel={() =>
-                    router.visit(`/maintenance-projects/${project.id}`)
-                }
+                onCancel={() => router.visit(cancel)}
             />
         </>
     );

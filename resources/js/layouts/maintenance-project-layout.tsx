@@ -1,4 +1,4 @@
-import { Link, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import {
     Bell,
     Building2,
@@ -7,13 +7,17 @@ import {
     ChevronRight,
     FileText,
     House,
-    Map,
+    Route,
     LayoutDashboard,
     PanelLeftOpen,
     Settings,
     Users,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
+import {
+    AlternativeNavigation,
+    isAlternativeNavigation,
+} from '@/components/maintenance-projects/alternative-navigation';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -33,6 +37,10 @@ import { UserMenuContent } from '@/components/user-menu-content';
 import { useInitials } from '@/hooks/use-initials';
 import type { User } from '@/types';
 import '../../css/maintenance-projects.css';
+import '../../css/maintenance-documents.css';
+import '../../css/maintenance-projects-exploration.css';
+import '../../css/maintenance-projects-espresso-sidebar.css';
+import '../../css/maintenance-projects-main-design.css';
 
 const navigation = [
     { title: 'Dashboard', href: '/dashboard', icon: House },
@@ -43,8 +51,12 @@ const navigation = [
     },
     { title: 'User Management', href: '/user-accounts', icon: Users },
     { title: 'Monthly Updates', href: '/monthly-updates', icon: CalendarDays },
-    { title: 'Project Documents', href: '/project-documents', icon: FileText },
-    { title: 'Road Sections', href: '/roads', icon: Map },
+    {
+        title: 'Maintenance Documents',
+        href: '/maintenance-documents',
+        icon: FileText,
+    },
+    { title: 'Road Coverages', href: '/road-coverages', icon: Route },
     { title: 'LGU', href: '/lgus', icon: Building2 },
     { title: 'Settings', href: '/settings/profile', icon: Settings },
 ];
@@ -62,13 +74,65 @@ export function MaintenanceProjectShell({
     const page = usePage();
     const preview = page.props.previewOnly === true;
     const path = page.url.split('?')[0];
-    const pageName = path.endsWith('/create')
-        ? 'Add Project'
-        : path.endsWith('/edit')
-          ? 'Edit Project'
-          : /^\/maintenance-projects\/\d+$/.test(path)
-            ? 'Project Details'
-            : 'Maintenance Projects';
+    const alternativeNavigation = isAlternativeNavigation(page.component);
+    const documentPageName = path.startsWith('/maintenance-documents')
+        ? path.endsWith('/create')
+            ? 'Upload Document'
+            : path.endsWith('/edit')
+              ? 'Edit Maintenance Document'
+              : /^\/maintenance-documents\/\d+$/.test(path)
+                ? 'Maintenance Document Details'
+                : 'Maintenance Documents'
+        : undefined;
+    const lguPageName =
+        path === '/lgus'
+            ? 'LGU'
+            : path === '/lgus/create'
+              ? 'Add LGU'
+              : /^\/lgus\/\d+\/edit$/.test(path)
+                ? 'Edit LGU'
+                : /^\/lgus\/\d+$/.test(path)
+                  ? 'LGU Details'
+                  : undefined;
+    const pageName =
+        (path.startsWith('/road-coverages')
+            ? path.endsWith('/create')
+                ? 'Add Road Coverage'
+                : path.endsWith('/edit')
+                  ? 'Edit Road Coverage'
+                  : /^\/road-coverages\/\d+$/.test(path)
+                    ? 'Road Coverage Details'
+                    : 'Road Coverages'
+            : undefined) ??
+        lguPageName ??
+        documentPageName ??
+        (typeof page.props.navigationTitle === 'string' && alternativeNavigation
+            ? page.props.navigationTitle
+            : path === '/maintenance-records/create'
+              ? 'Add Maintenance Record'
+              : /^\/monthly-updates\/\d+\/edit$/.test(path)
+                ? 'Edit Monthly Update'
+                : path === '/maintenance-records'
+                  ? 'Maintenance Records'
+                  : path === '/monthly-updates/create'
+                    ? 'Add Monthly Update'
+                    : /^\/monthly-updates\/\d+$/.test(path)
+                      ? 'Monthly Update Details'
+                      : path === '/monthly-updates'
+                        ? 'Monthly Updates'
+                        : /\/records\/create$/.test(path)
+                          ? 'Add Maintenance Record'
+                          : /\/records\/\d+\/edit$/.test(path)
+                            ? 'Edit Maintenance Record'
+                            : /\/records\/\d+$/.test(path)
+                              ? 'Maintenance Record Details'
+                              : path.endsWith('/create')
+                                ? 'Add Project'
+                                : path.endsWith('/edit')
+                                  ? 'Edit Project'
+                                  : /^\/maintenance-projects\/\d+$/.test(path)
+                                    ? 'Project Details'
+                                    : 'Maintenance Projects');
 
     return (
         <>
@@ -153,36 +217,11 @@ export function MaintenanceProjectShell({
                     </SidebarHeader>
                     <SidebarContent className="jr-nav-content">
                         <div className="jr-nav-caption">Workspace</div>
-                        <nav id="jr-sidebar-nav" aria-label="Main navigation">
-                            {navigation.map(({ title, href, icon: Icon }) => (
-                                <Link
-                                    key={href}
-                                    href={href}
-                                    onClick={(event) => {
-                                        if (
-                                            preview &&
-                                            href !== '/maintenance-projects'
-                                        ) {
-                                            event.preventDefault();
-                                        }
-                                    }}
-                                    className={`jr-nav-link ${href === '/maintenance-projects' ? 'jr-active' : ''}`}
-                                    aria-current={
-                                        href === '/maintenance-projects'
-                                            ? 'page'
-                                            : undefined
-                                    }
-                                    title={
-                                        state === 'collapsed'
-                                            ? title
-                                            : undefined
-                                    }
-                                >
-                                    <Icon className="size-[18px]" />
-                                    <span>{title}</span>
-                                </Link>
-                            ))}
-                        </nav>
+                        <AlternativeNavigation
+                            items={navigation}
+                            expanded={expanded}
+                            mainNavigation={!alternativeNavigation}
+                        />
                     </SidebarContent>
                     <SidebarFooter className="jr-sidebar-footer">
                         <div
@@ -275,12 +314,18 @@ export default function MaintenanceProjectLayout({
 }: {
     children: ReactNode;
 }) {
-    const { auth, sidebarOpen } = usePage().props;
+    const page = usePage();
+    const { auth, sidebarOpen } = page.props;
+    const mainDesign = !isAlternativeNavigation(page.component);
 
     return (
         <SidebarProvider
             defaultOpen={sidebarOpen}
-            className="jr-app jr-theme"
+            className={
+                mainDesign
+                    ? 'jr-app jr-theme jr-main-design jr-espresso-exploration'
+                    : 'jr-app jr-theme'
+            }
             style={
                 {
                     '--sidebar-width': '244px',

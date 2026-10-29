@@ -198,6 +198,43 @@ it('blocks deletion when a legacy document depends on the project', function ():
     expect(MaintenanceProject::count())->toBe(2)->and(DB::table('project_documents')->count())->toBe(1);
 });
 
+it('blocks deletion when a legacy monthly update depends directly on the project', function (): void {
+    Schema::create('monthly_updates', function (Blueprint $table): void {
+        $table->id();
+        $table->foreignId('maintenance_projects_id')->constrained('maintenance_projects')->restrictOnDelete();
+    });
+    $project = jrProject();
+    DB::table('monthly_updates')->insert(['maintenance_projects_id' => $project->id]);
+
+    $this->deleteJson('/maintenance-projects/'.$project->id)->assertUnprocessable()->assertJsonValidationErrors('project_ids');
+
+    expect(MaintenanceProject::count())->toBe(1)->and(DB::table('monthly_updates')->count())->toBe(1);
+});
+
+it('supports record-scoped updates while retaining history and atomic deletion', function (): void {
+    Schema::create('monthly_updates', function (Blueprint $table): void {
+        $table->id();
+        $table->foreignId('maintenance_records_id')->constrained('maintenance_records')->restrictOnDelete();
+    });
+    $eligible = jrProject();
+    $protected = jrProject(402);
+    jrHistory($protected);
+    DB::table('monthly_updates')->insert([
+        'maintenance_records_id' => DB::table('maintenance_records')->where('maintenance_projects_id', $protected->id)->value('id'),
+    ]);
+
+    $this->deleteJson('/maintenance-projects/bulk', ['project_ids' => [$eligible->id, $protected->id]])
+        ->assertUnprocessable()->assertJsonValidationErrors('project_ids');
+    expect(MaintenanceProject::count())->toBe(2)->and(DB::table('monthly_updates')->count())->toBe(1);
+
+    $this->delete('/maintenance-projects/'.$eligible->id)->assertRedirect('/maintenance-projects');
+    expect(MaintenanceProject::find($eligible->id))->toBeNull()
+        ->and($protected->fresh())->not->toBeNull()
+        ->and(DB::table('maintenance_records')->count())->toBe(1)
+        ->and(DB::table('monthly_updates')->count())->toBe(1)
+        ->and(RoadCoverage::count())->toBe(4);
+});
+
 it('rechecks new history introduced after selection and before deletion', function (): void {
     $one = jrProject();
     $two = jrProject(402);

@@ -1,0 +1,237 @@
+/* Only the explicitly mounted exploration page activates these styles.
+   :has also reaches the existing shell and its portalled mobile navigation;
+   loading this stylesheet cannot recolor the original directory or other pages. */
+.jr-app:has(.jr-directory-exploration) {
+    --sidebar: #f7f7f4;
+    --color-sidebar: #f7f7f4;
+    background: #f7f7f5;
+}
+
+.jr-app:has(.jr-directory-exploration) .jr-global-header {
+    padding-inline: 28px;
+}
+
+.jr-app:has(.jr-directory-exploration) .jr-content {
+    display: flex;
+    flex-direction: column;
+    max-width: none;
+    padding: 0 0 16px;
+}
+
+/* Keep the fixture disclosure visible below the review, without separating
+   the application header from the title band. */
+.jr-app:has(.jr-directory-exploration) .jr-preview-note {
+    order: 1;
+    margin: 0;
+    padding: 8px 28px 0;
+}
+
+body:has(.jr-directory-exploration) .jr-mobile-shell {
+    background: #f7f7f4;
+}
+
+.jr-app:has(.jr-directory-exploration) .jr-nav-link.jr-active,
+body:has(.jr-directory-exploration) .jr-mobile-shell .jr-nav-link.jr-active {
+    background: #fffefd;
+    box-shadow:
+        0 4px 12px -2px #342b1d0d,
+        0 1px 2px #342b1d09;
+}
+
+.jr-directory-exploration {
+    --jr-exploration-gutter: 28px;
+}
+
+.jr-directory-exploration .jr-workspace {
+    padding: 0 var(--jr-exploration-gutter) 20px;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.jr-directory-exploration .jr-page-head {
+    position: relative;
+    isolation: isolate;
+    min-height: 136px;
+    align-items: center;
+    margin: 0 calc(-1 * var(--jr-exploration-gutter));
+    padding: 24px var(--jr-exploration-gutter) 34px;
+    border: 0;
+    border-radius: 0;
+    background: #fffdf9;
+}
+
+.jr-directory-exploration .jr-page-head::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: url('../images/maintenance-projects-exploration-road.svg') right
+        bottom / auto 100% no-repeat;
+    /* Fade the artwork itself so its intrinsic left edge cannot form a seam
+       against the title background on wider screens. */
+    mask-image: linear-gradient(to left, #000 220px, transparent 680px);
+    opacity: 0.72;
+}
+
+.jr-directory-exploration .jr-page-head h1 {
+    font-size: 30px;
+    line-height: 1.2;
+    letter-spacing: -0.9px;
+}
+
+.jr-directory-exploration .jr-page-head p {
+    margin-top: 7px;
+    line-height: 1.5;
+}
+
+.jr-directory-exploration .jr-page-head .jr-primary {
+    flex-shrink: 0;
+}
+
+.jr-directory-exploration .jr-filters {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin: -14px calc(-1 * var(--jr-exploration-gutter)) 0;
+    padding: 20px var(--jr-exploration-gutter) 16px;
+    border-radius: 20px 20px 0 0;
+    background: #fff;
+}
+
+.jr-directory-exploration .jr-search {
+    flex: 1 1 240px;
+    min-width: 0;
+}
+
+.jr-directory-exploration .jr-filter-row {
+    flex-wrap: nowrap;
+    gap: 10px;
+    margin-top: 0;
+}
+
+.jr-directory-exploration .jr-filter-row [data-slot='select-trigger'] {
+    height: 41px;
+    border-radius: 11px;
+}
+
+.jr-directory-exploration .jr-municipality-filter {
+    min-width: 184px;
+}
+
+.jr-directory-exploration .jr-sort-filter {
+    min-width: 148px;
+}
+
+.jr-directory-exploration .jr-table-wrap {
+    border: 0;
+    border-radius: 0;
+}
+
+.jr-directory-exploration .jr-table th {
+    padding-block: 11px;
+    border-radius: 0;
+    background: #f5f6f6;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.jr-directory-exploration .jr-table th:first-child {
+    border-top-left-radius: 12px;
+}
+
+.jr-directory-exploration .jr-table th:last-child {
+    border-top-right-radius: 12px;
+}
+
+.jr-directory-exploration .jr-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.jr-directory-exploration .jr-exploration-version {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px 16px;
+    margin: 12px var(--jr-exploration-gutter) 0;
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.jr-directory-exploration .jr-exploration-version a {
+    color: #8b471f;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+@media (max-width: 1000px) {
+    .jr-directory-exploration {
+        --jr-exploration-gutter: 22px;
+    }
+
+    .jr-app:has(.jr-directory-exploration) .jr-global-header,
+    .jr-app:has(.jr-directory-exploration) .jr-preview-note {
+        padding-inline: 22px;
+    }
+}
+
+@media (max-width: 767px) {
+    .jr-directory-exploration {
+        --jr-exploration-gutter: 16px;
+    }
+
+    .jr-app:has(.jr-directory-exploration) .jr-global-header,
+    .jr-app:has(.jr-directory-exploration) .jr-preview-note {
+        padding-inline: 16px;
+    }
+
+    .jr-directory-exploration .jr-page-head {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 16px;
+        padding: 24px var(--jr-exploration-gutter) 30px;
+    }
+
+    .jr-directory-exploration .jr-page-head::before {
+        opacity: 0.3;
+    }
+
+    .jr-directory-exploration .jr-page-head h1 {
+        font-size: 26px;
+    }
+
+    .jr-directory-exploration .jr-filters {
+        margin-top: -12px;
+        padding-top: 18px;
+        padding-bottom: 14px;
+        border-radius: 16px 16px 0 0;
+    }
+
+    .jr-directory-exploration .jr-search {
+        flex-basis: 100%;
+    }
+
+    .jr-directory-exploration .jr-filter-row {
+        width: 100%;
+    }
+
+    .jr-directory-exploration .jr-filter-row [data-slot='select-trigger'] {
+        flex: 1;
+        min-width: 0;
+    }
+}
+
+@media (max-width: 380px) {
+    .jr-directory-exploration .jr-filter-row {
+        flex-wrap: wrap;
+    }
+
+    .jr-directory-exploration .jr-filter-row [data-slot='select-trigger'] {
+        flex-basis: 100%;
+    }
+}

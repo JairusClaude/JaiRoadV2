@@ -16,6 +16,7 @@ class ProjectMutations
 {
     public function __construct(private VerifiedProjectAccount $accounts) {}
 
+    /** @param  array<string, mixed>  $data */
     public function create(User $user, array $data): MaintenanceProject
     {
         Gate::forUser($user)->authorize('create', MaintenanceProject::class);
@@ -33,6 +34,7 @@ class ProjectMutations
         }));
     }
 
+    /** @param  array<string, mixed>  $data */
     public function update(User $user, int $id, array $data): MaintenanceProject
     {
         return $this->coverageConflict(fn () => DB::transaction(function () use ($user, $id, $data) {
@@ -55,7 +57,11 @@ class ProjectMutations
         }));
     }
 
-    /** Individual and bulk deletion share the same atomic implementation. */
+    /**
+     * Individual and bulk deletion share the same atomic implementation.
+     *
+     * @param  array<int, int|string>  $ids
+     */
     public function delete(User $user, array $ids): void
     {
         Gate::forUser($user)->authorize('deleteAny', MaintenanceProject::class);
@@ -76,12 +82,15 @@ class ProjectMutations
                     Gate::forUser($user)->authorize('delete', $project);
                 }
                 $blocked = [];
-                $documentsExist = Schema::hasTable('project_documents');
-                $updatesExist = Schema::hasTable('monthly_updates');
+                // Retain direct-project legacy guards only where those columns
+                // actually exist. The revised design attaches updates and
+                // documents to MaintenanceRecords, which already block deletion.
+                $legacyDocumentsExist = Schema::hasColumn('project_documents', 'maintenance_projects_id');
+                $legacyUpdatesExist = Schema::hasColumn('monthly_updates', 'maintenance_projects_id');
                 foreach ($projects as $project) {
                     $reason = $project->maintenanceRecords()->exists() ? 'maintenance history' : null;
-                    if (! $reason && (($documentsExist && $project->projectDocuments()->exists())
-                        || ($updatesExist && $project->monthlyUpdates()->exists()))) {
+                    if (! $reason && (($legacyDocumentsExist && $project->projectDocuments()->exists())
+                        || ($legacyUpdatesExist && $project->monthlyUpdates()->exists()))) {
                         $reason = 'related historical information';
                     }
                     if ($reason) {
@@ -116,6 +125,7 @@ class ProjectMutations
         }
     }
 
+    /** @param  callable(): MaintenanceProject  $action */
     private function coverageConflict(callable $action): MaintenanceProject
     {
         try {

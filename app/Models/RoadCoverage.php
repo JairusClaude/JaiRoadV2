@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 #[Fillable(['road_name', 'lgus_id', 'kilometers', 'pavement_type', 'state_category', 'geojson', 'created_by'])]
 class RoadCoverage extends Model
 {
+    /** @return array<string, string> */
     protected function casts(): array
     {
         return ['geojson' => 'array', 'kilometers' => 'decimal:2'];

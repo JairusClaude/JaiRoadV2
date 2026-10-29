@@ -12,7 +12,7 @@ class LguSeeder extends Seeder
      */
     public function run(): void
     {
-        $lgu = [
+        $lgus = [
             [
                 'municipality_name' => 'Compostela',
                 'province' => 'Davao del Norte',
@@ -21,7 +21,6 @@ class LguSeeder extends Seeder
                 'mayor_first_name' => 'Henry',
                 'mayor_middle_name' => 'Naull',
                 'mayor_last_name' => 'Burgos',
-                'created_by' => 1,
             ],
             [
                 'municipality_name' => 'Nabunturan',
@@ -31,7 +30,6 @@ class LguSeeder extends Seeder
                 'mayor_first_name' => 'Dominic',
                 'mayor_middle_name' => 'Argo',
                 'mayor_last_name' => 'Santiago',
-                'created_by' => 2,
             ],
             [
                 'municipality_name' => 'Laak',
@@ -41,7 +39,6 @@ class LguSeeder extends Seeder
                 'mayor_first_name' => 'Mark',
                 'mayor_middle_name' => 'Norma',
                 'mayor_last_name' => 'Nanol',
-                'created_by' => 3,
             ],
             [
                 'municipality_name' => 'Maco',
@@ -51,11 +48,14 @@ class LguSeeder extends Seeder
                 'mayor_first_name' => 'Prestino',
                 'mayor_middle_name' => 'Karpinte',
                 'mayor_last_name' => 'Ybanes',
-                'created_by' => 4,
             ],
         ];
-        foreach ($lgu as $lguData) {
-            Lgu::create($lguData);
+
+        foreach ($lgus as $lguData) {
+            Lgu::updateOrCreate(
+                ['municipality_name' => $lguData['municipality_name']],
+                $lguData
+            );
         }
     }
 }

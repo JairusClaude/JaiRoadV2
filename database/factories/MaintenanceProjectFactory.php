@@ -3,9 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Engineer;
-use App\Models\Lgu;
 use App\Models\MaintenanceProject;
-use App\Models\UserAccount;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -35,13 +33,11 @@ class MaintenanceProjectFactory extends Factory
             'start_date' => $startDate->format('Y-m-d'),
             'end_date' => $endDate->format('Y-m-d'),
             'gravelled_road_in_km' => fake()->numberBetween(1, 50),
-            'lgus_id' => Lgu::factory(),
             'engineers_id' => Engineer::factory(),
-
-            'lgus_id' => fn (array $attributes): int =>
-                Engineer::query()
-                ->findOrFail($attributes['engineers_id'])
-                ->lgus_id,
+            'lgus_id' => fn (array $attributes): int => (int) Engineer::query()
+                ->whereKey((int) $attributes['engineers_id'])
+                ->firstOrFail()
+                ->getAttribute('lgus_id'),
         ];
     }
 }
