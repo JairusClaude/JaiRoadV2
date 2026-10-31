@@ -149,6 +149,13 @@ try {
         await page
             .getByRole('heading', { name: 'Road Coverages', exact: true })
             .waitFor();
+        assert.equal(
+            await page
+                .getByRole('link', { name: 'Road Coverages', exact: true })
+                .first()
+                .getAttribute('aria-current'),
+            'page',
+        );
     }
 
     console.log(
@@ -257,6 +264,28 @@ try {
     assert.equal(history.records.length, 1);
     assert.equal(history.records[0].quarter, 'Q2');
     const record = history.records[0];
+    const expand = engineer.getByRole('button', {
+        name: 'Expand Maintenance Projects submenu',
+        exact: true,
+    });
+
+    if (await expand.count()) {
+        await expand.click();
+    }
+
+    await engineer
+        .getByRole('link', { name: 'Maintenance Records', exact: true })
+        .click();
+    await engineer.waitForURL(`${ui}/maintenance-records`);
+    await engineer
+        .getByRole('heading', { name: 'Maintenance Records', exact: true })
+        .waitFor();
+    assert.equal(
+        await engineer
+            .getByRole('link', { name: 'Maintenance Records', exact: true })
+            .getAttribute('aria-current'),
+        'page',
+    );
     assert.equal(
         (
             await csrfPost(

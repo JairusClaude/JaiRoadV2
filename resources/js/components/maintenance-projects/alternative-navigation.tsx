@@ -30,6 +30,7 @@ export function AlternativeNavigation({
     mainNavigation?: boolean;
 }) {
     const page = usePage();
+    const canonical = page.props.canonicalFrontend === true;
     const directoryUrl = alternativeDirectoryFor(page.props.sidebarTheme);
     const path = page.url.split('?')[0];
     const section = mainNavigation
@@ -78,8 +79,17 @@ export function AlternativeNavigation({
             aria-label="Main navigation"
         >
             {items.map(({ title, href, icon: Icon }) => {
+                const moduleHref = href.replace(/^\/dd-phase3\/ui(?=\/)/, '');
                 const key =
-                    href === '/settings/profile' ? 'settings' : href.slice(1);
+                    (
+                        {
+                            '/settings/profile': 'settings',
+                            '/dd-phase3/dashboard': 'dashboard',
+                            '/dd-phase3/users': 'user-accounts',
+                            '/dd-phase3/lgus': 'lgus',
+                            '/dd-phase3/settings': 'settings',
+                        } as Record<string, string>
+                    )[moduleHref] ?? moduleHref.slice(1);
                 const parent = key === 'maintenance-projects';
                 const active = section === key;
                 const link = (
@@ -169,7 +179,8 @@ export function AlternativeNavigation({
                             <div className="jr-alternative-submenu-clip">
                                 <div className="jr-alternative-submenu">
                                     {mainNavigation &&
-                                    page.props.previewOnly !== true ? (
+                                    page.props.previewOnly !== true &&
+                                    !canonical ? (
                                         <button
                                             type="button"
                                             disabled
@@ -231,7 +242,8 @@ export function AlternativeNavigation({
                     <div key={href}>
                         {mainNavigation &&
                         key === 'road-coverages' &&
-                        page.props.previewOnly !== true ? (
+                        page.props.previewOnly !== true &&
+                        !canonical ? (
                             <button
                                 type="button"
                                 disabled
