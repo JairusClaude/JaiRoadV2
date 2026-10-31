@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { editUrl } from '@/lib/form-navigation';
+import { workspaceHref } from '@/lib/workspace-navigation';
 import type {
     RoadCoverageDirectoryProps,
     RoadCoverageFilters,
@@ -54,7 +55,7 @@ export default function Index({
         clearTimeout(timer.current);
         request.current?.cancel();
         router.get(
-            '/road-coverages',
+            workspaceHref('/road-coverages'),
             { ...next, page: current },
             {
                 preserveState: true,
@@ -92,7 +93,10 @@ export default function Index({
                         disabled={!canEdit}
                         onClick={() =>
                             router.visit(
-                                editUrl('/road-coverages/create', page.url),
+                                editUrl(
+                                    workspaceHref('/road-coverages/create'),
+                                    page.url,
+                                ),
                             )
                         }
                     >
@@ -247,7 +251,9 @@ export default function Index({
                                     onClick={() =>
                                         router.visit(
                                             editUrl(
-                                                `/road-coverages/${coverage.id}`,
+                                                workspaceHref(
+                                                    `/road-coverages/${coverage.id}`,
+                                                ),
                                                 page.url,
                                             ),
                                         )
@@ -257,7 +263,9 @@ export default function Index({
                                         <Link
                                             className="jr-project-title"
                                             href={editUrl(
-                                                `/road-coverages/${coverage.id}`,
+                                                workspaceHref(
+                                                    `/road-coverages/${coverage.id}`,
+                                                ),
                                                 page.url,
                                             )}
                                             onClick={(event) =>
@@ -308,7 +316,9 @@ export default function Index({
                                                     onSelect={() =>
                                                         router.visit(
                                                             editUrl(
-                                                                `/road-coverages/${coverage.id}/edit`,
+                                                                workspaceHref(
+                                                                    `/road-coverages/${coverage.id}/edit`,
+                                                                ),
                                                                 page.url,
                                                             ),
                                                         )

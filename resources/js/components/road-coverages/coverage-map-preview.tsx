@@ -1,18 +1,15 @@
 import L from 'leaflet';
 import { Map, Maximize2, Minimize2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import {
-    distanceKm,
-    lineCoordinates,
-    mappingData,
-} from '@/lib/road-coverages/geometry.mjs';
+import { mappingData } from '@/lib/road-coverages/geometry.mjs';
+import { savedRoadLines } from '@/lib/road-coverages/saved-lines';
 import 'leaflet/dist/leaflet.css';
 
 // A display-only map: never initialize the editor, call routing, or change data.
 export function CoverageMapPreview({ geojson }: { geojson: object | null }) {
-    const line = lineCoordinates(geojson);
+    const lines = savedRoadLines(geojson);
 
-    if (!line || distanceKm(line) <= 0) {
+    if (!lines.length) {
         return (
             <div className="jr-map-placeholder jr-detail-map jr-coverage-map-empty">
                 <Map className="size-[18px]" aria-hidden="true" />
@@ -35,9 +32,9 @@ function SavedCoverageMap({ geojson }: { geojson: object }) {
     const [notice, setNotice] = useState('');
 
     useEffect(() => {
-        const line = lineCoordinates(geojson);
+        const lines = savedRoadLines(geojson);
 
-        if (!node.current || !line) {
+        if (!node.current || !lines.length) {
             return;
         }
 
@@ -48,7 +45,9 @@ function SavedCoverageMap({ geojson }: { geojson: object }) {
         }).addTo(map);
         L.control.scale({ imperial: false }).addTo(map);
         L.polyline(
-            line.map(([lng, lat]) => [lat, lng]),
+            lines.map((line) =>
+                line.map(([lng, lat]) => [lat, lng] as L.LatLngTuple),
+            ),
             {
                 color: '#843b12',
                 weight: 5,
@@ -74,11 +73,16 @@ function SavedCoverageMap({ geojson }: { geojson: object }) {
                 title: `Location ${label}`,
             }).addTo(map);
         });
-        map.fitBounds(L.latLngBounds(line.map(([lng, lat]) => [lat, lng])), {
-            padding: [35, 35],
-            maxZoom: 17,
-            animate: false,
-        });
+        map.fitBounds(
+            L.latLngBounds(
+                lines.flat().map(([lng, lat]) => [lat, lng] as L.LatLngTuple),
+            ),
+            {
+                padding: [35, 35],
+                maxZoom: 17,
+                animate: false,
+            },
+        );
         const resize = new ResizeObserver(() =>
             map.invalidateSize({ pan: false }),
         );

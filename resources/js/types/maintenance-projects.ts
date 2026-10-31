@@ -6,6 +6,7 @@ export type DependentCounts = {
     maintenance_documents: number;
 };
 export type ProjectSummary = {
+    geojson?: object | null;
     deletion_counts?: DependentCounts;
     id: number;
     project_title: string;
@@ -40,6 +41,7 @@ export type CoverageChoice = {
     municipality: string | null;
     kilometers: string;
     assigned: boolean;
+    geojson: unknown | null;
 };
 export type ProjectFormValues = {
     road_coverage_id: string;

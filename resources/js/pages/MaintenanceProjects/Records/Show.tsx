@@ -10,6 +10,8 @@ import type { RelatedMonthlyUpdate } from '@/components/maintenance-projects/rec
 import { Button } from '@/components/ui/button';
 import { editUrl } from '@/lib/form-navigation';
 import { engineerName, validRecordDate } from '@/lib/maintenance-records';
+import { workspaceHref } from '@/lib/workspace-navigation';
+import DdManagingEngineerReassignment from '@/pages/dd-phase3/DdManagingEngineerReassignment';
 import type { DocumentSummary } from '@/types/maintenance-documents';
 import type { ProjectSummary } from '@/types/maintenance-projects';
 import type { MaintenanceRecordDetail } from '@/types/maintenance-records';
@@ -35,12 +37,16 @@ export default function ShowRecord({
     monthlyUpdateCreateUrl,
     documents = [],
     updates = [],
+    canReassign = false,
+    managerChoices = [],
 }: {
     project: ProjectSummary;
     record: MaintenanceRecordDetail;
     monthlyUpdateCreateUrl?: string;
     documents?: DocumentSummary[];
     updates?: RelatedMonthlyUpdate[];
+    canReassign?: boolean;
+    managerChoices?: { id: number; first_name: string; last_name: string }[];
 }) {
     const page = usePage();
     const deletion = useRecordDeletion();
@@ -52,7 +58,9 @@ export default function ShowRecord({
             />
             <ProjectWorkspace>
                 <Link
-                    href={`/maintenance-projects/${project.id}?record_year=${record.year}`}
+                    href={workspaceHref(
+                        `/maintenance-projects/${project.id}?record_year=${record.year}`,
+                    )}
                     className="jr-back"
                 >
                     <ArrowLeft className="size-4" /> Project Details
@@ -88,12 +96,26 @@ export default function ShowRecord({
                         </Button>
                     </div>
                 </div>
+                {canReassign && (
+                    <DdManagingEngineerReassignment
+                        record={{
+                            id: record.id,
+                            managing_engineer_id: record.engineers_id!,
+                            maintenance_year: record.year,
+                            quarter: record.quarter,
+                        }}
+                        managers={managerChoices}
+                        submitUrl={`/dd-phase3/ui/maintenance-projects/${project.id}/records/${record.id}/reassignment`}
+                    />
+                )}
                 <div className="jr-record-context">
                     <span className="jr-record-context-label">
                         Maintenance Project
                     </span>
                     <Link
-                        href={`/maintenance-projects/${project.id}`}
+                        href={workspaceHref(
+                            `/maintenance-projects/${project.id}`,
+                        )}
                         className="jr-related-title"
                     >
                         <strong>{project.project_title}</strong>

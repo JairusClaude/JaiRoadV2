@@ -1,17 +1,29 @@
 import assert from 'node:assert/strict';
+import {routeFeature} from '../resources/js/lib/road-coverages/geometry.mjs';
 import {roadCoverageDetailsPage} from '../tools/maintenance-project-preview/road-coverage-details.mjs';
 import {roadCoverageFormPage,mutateRoadCoverage,canEditRoadCoverage} from '../tools/maintenance-project-preview/road-coverage-forms.mjs';
-import {routeFeature} from '../resources/js/lib/road-coverages/geometry.mjs';
 const feature=routeFeature([[125,7],[125.01,7.01]],[[[125,7],[125.005,7.005],[125.01,7.01]]]);
 const roads=[{id:1,road_name:'Existing road',lgus_id:5,created_by:8,created_at:null,updated_at:null,kilometers:'1.25',pavement_type:'Concrete',state_category:'Good',geojson:feature},{id:2,road_name:'Unmapped',lgus_id:99,created_by:99,geojson:null}],lgus=[{id:5,municipality_name:'Existing municipality'}],engineers=[{id:8,first_name:'Original',last_name:'Creator'},{id:1,first_name:'Preview',last_name:'Creator'}],projects=[{id:21,road_coverage_id:1,project_title:'Associated project'},{id:22,road_coverage_id:4,project_title:'Unrelated project'}];
 const origin='http://jairoads.local',admin={account_type:'Admin'},detail=(path,actor=admin)=>roadCoverageDetailsPage(new URL(path,origin),roads,lgus,engineers,projects,actor);
 let d=detail('/road-coverages/1');assert.equal(d.component,'RoadCoverages/Show');assert.equal(d.props.coverage.lgu.municipality_name,'Existing municipality');assert.equal(d.props.createdByName,'Original Creator');assert.deepEqual(d.props.associatedProject,{id:21,project_title:'Associated project'});assert.strictEqual(d.props.coverage.geojson,feature);assert.equal(d.props.canEdit,true);console.log('PASS correct selected road, LGU/Engineer joins, exact geometry and actual project FK');
 d=detail('/road-coverages/2');assert.equal(d.props.coverage.lgu,null);assert.equal(d.props.createdByName,null);assert.equal(d.props.associatedProject,null);assert.equal(d.props.coverage.geojson,null);assert.equal(detail('/road-coverages/999'),null);assert.equal(detail('/road-coverages/1/edit'),null);console.log('PASS missing relationship/geography stays unavailable; unknown ID has no invented record');
-for(const role of ['Admin','SuperAdmin'])assert.equal(detail('/road-coverages/1',{account_type:role}).props.canEdit,true);
-for(const role of ['Engineer','Viewer','Unknown'])assert.equal(detail('/road-coverages/1',{account_type:role}).props.canEdit,false);
+
+for(const role of ['Admin','SuperAdmin']){
+assert.equal(detail('/road-coverages/1',{account_type:role}).props.canEdit,true);
+}
+
+for(const role of ['Engineer','Viewer','Unknown']){
+assert.equal(detail('/road-coverages/1',{account_type:role}).props.canEdit,false);
+}
+
 assert.equal(canEditRoadCoverage(null),false);console.log('PASS existing Admin/SuperAdmin preview write rule; Engineer/Viewer/unknown fail closed');
 assert.equal(detail('/road-coverages/1?return_to='+encodeURIComponent('/road-coverages?condition=Good&page=2')).props.backUrl,'/road-coverages?condition=Good&page=2');
-for(const dest of ['//evil.test/road-coverages','https://evil.test/road-coverages','/maintenance-projects','/road-coverages/2','/\\evil.test/road-coverages'])assert.equal(detail('/road-coverages/1?return_to='+encodeURIComponent(dest)).props.backUrl,'/road-coverages');console.log('PASS contextual directory back URL rejects external and unrelated origins');
+
+for(const dest of ['//evil.test/road-coverages','https://evil.test/road-coverages','/maintenance-projects','/road-coverages/2','/\\evil.test/road-coverages']){
+assert.equal(detail('/road-coverages/1?return_to='+encodeURIComponent(dest)).props.backUrl,'/road-coverages');
+}
+
+console.log('PASS contextual directory back URL rejects external and unrelated origins');
 const form=url=>roadCoverageFormPage(new URL(url,origin),roads,lgus,admin);
 const editUrl='/road-coverages/1/edit?return_to='+encodeURIComponent('/road-coverages/1?return_to=%2Froad-coverages%3Fpage%3D2');
 assert.equal(form(editUrl).props.cancelUrl,'/road-coverages/1?return_to=%2Froad-coverages%3Fpage%3D2');assert.equal(form('/road-coverages/1/edit?return_to=/road-coverages/2').props.cancelUrl,'/road-coverages');console.log('PASS Edit may return only to its own Details or the directory');

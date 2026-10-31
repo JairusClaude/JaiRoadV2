@@ -1,6 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { alternativeDirectoryFor } from '@/components/maintenance-projects/alternative-navigation';
 import { Button } from '@/components/ui/button';
+import { workspaceHref } from '@/lib/workspace-navigation';
 import '../../../css/maintenance-projects-exploration.css';
 import '../../../css/maintenance-projects-espresso-sidebar.css';
 
@@ -46,7 +47,7 @@ export default function NavigationPreview({
                     </Button>
                     {navigationSection === 'monthly-updates' && (
                         <p>
-                            <Link href="/monthly-updates">
+                            <Link href={workspaceHref('/monthly-updates')}>
                                 Open the existing Monthly Updates directory
                             </Link>
                         </p>

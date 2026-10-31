@@ -25,10 +25,6 @@ import { request } from '@/routes/password';
 type Props = {
     status?: string;
     canResetPassword: boolean;
-    previewOnly?: boolean;
-    demoEmail?: string;
-    demoPassword?: string;
-    oldEmail?: string;
 };
 
 // Photographs are illustrative. This application does not claim to be an official DPWH website.
@@ -60,14 +56,7 @@ const slides = [
     },
 ] as const;
 
-export default function Login({
-    status,
-    canResetPassword,
-    previewOnly,
-    demoEmail,
-    demoPassword,
-    oldEmail,
-}: Props) {
+export default function Login({ status, canResetPassword }: Props) {
     const [activeSlide, setActiveSlide] = useState(0);
     const [playing, setPlaying] = useState(true);
     const [reducedMotion, setReducedMotion] = useState(false);
@@ -309,15 +298,6 @@ export default function Login({
                                 </p>
                             )}
 
-                            {previewOnly && (
-                                <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-900">
-                                    Frontend preview only · sample account
-                                    <br />
-                                    Email: {demoEmail}
-                                    <br />
-                                    Password: {demoPassword}
-                                </p>
-                            )}
                             <Form
                                 {...store.form()}
                                 resetOnSuccess={['password']}
@@ -334,7 +314,6 @@ export default function Login({
                                             </Label>
                                             <Input
                                                 id="email"
-                                                defaultValue={oldEmail}
                                                 type="email"
                                                 name="email"
                                                 required
@@ -420,14 +399,7 @@ export default function Login({
                             </Form>
 
                             <div className="mt-5 border-t border-[#edf0f4] pt-5 [&>div:last-child]:hidden">
-                                {previewOnly ? (
-                                    <p className="text-xs leading-5 text-[#738398]">
-                                        Password recovery and passkey sign-in
-                                        are unavailable in this preview.
-                                    </p>
-                                ) : (
-                                    <PasskeyVerify label="Sign in with a passkey" />
-                                )}
+                                <PasskeyVerify label="Sign in with a passkey" />
                             </div>
 
                             <div className="mt-5">

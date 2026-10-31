@@ -1,8 +1,10 @@
+import process from 'node:process';
 // Server-owned preview configuration, never accepted from query/body data.
 // This is a review-role simulation, not production authentication.
 export function createLguReviewContext(env = process.env) {
     const actor = { account_type: env.JAIROADS_LGU_REVIEW_ROLE ?? 'Admin' };
     const relationships = { roadCoverages: [], engineerLgus: [], engineers: [] };
+
     if (env.JAIROADS_LGU_REVIEW_SCENARIO === 'dependencies') {
         relationships.fixture_notice = 'Development dependency fixtures are enabled for LGU deletion review. These are not actual LGU records.';
         relationships.roadCoverages.push(
@@ -18,5 +20,6 @@ export function createLguReviewContext(env = process.env) {
             { engineer_id: 9002, lgus_id: 1, is_active: false },
         );
     }
+
     return { actor, relationships };
 }

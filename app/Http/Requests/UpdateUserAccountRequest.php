@@ -2,46 +2,129 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Models\Engineer;
+use App\Models\UserAccount;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateUserAccountRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Only authorized account managers may update user accounts.
      */
     public function authorize(): bool
     {
-        return true;
+        $userAccount = $this->route('user_account')
+            ?? $this->route('userAccount');
+
+        return $userAccount instanceof UserAccount
+            && (
+                $this->user()?->can('update', $userAccount)
+                ?? false
+            );
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Get the validation rules for updating a user account.
      *
-     * @return array<string, ValidationRule|array<mixed>|string>
+     * @return array<string, mixed>
      */
     public function rules(): array
     {
-        $userAccount = $this->route('user_account');
+        $userAccount = $this->route('user_account')
+            ?? $this->route('userAccount');
+
+        if (! $userAccount instanceof UserAccount) {
+            return [];
+        }
+
+        $account = new UserAccount;
+        $engineer = new Engineer;
 
         return [
             'username' => [
                 'required',
                 'string',
-                'max:255',
-                Rule::unique('user_accounts', 'username')->ignore($userAccount),
+                'max:100',
+                Rule::unique(
+                    $account->getTable(),
+                    'username'
+                )->ignore(
+                    $userAccount->getKey(),
+                    $userAccount->getKeyName()
+                ),
             ],
-            'password' => ['nullable', 'string', 'min:8'],
-            'accountType' => ['required', 'string', 'in:viewer,user,admin'],
-            'is_active' => ['required', 'boolean'],
-            'engineers_id' => [
+
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique(
+                    $account->getTable(),
+                    'email'
+                )->ignore(
+                    $userAccount->getKey(),
+                    $userAccount->getKeyName()
+                ),
+            ],
+
+            'password' => [
+                'nullable',
+                'string',
+                'min:8',
+                'max:255',
+            ],
+
+            'accountType' => [
+                'required',
+                'string',
+                Rule::in([
+                    'SuperAdmin',
+                    'Admin',
+                    'Engineer',
+                    'Viewer',
+                ]),
+            ],
+
+            'engineer_id' => [
+                Rule::requiredIf(
+                    fn () => in_array(
+                        $this->input('accountType'),
+                        ['Admin', 'Engineer'],
+                        true
+                    )
+                ),
+
+                Rule::prohibitedIf(
+                    fn () => in_array(
+                        $this->input('accountType'),
+                        ['SuperAdmin', 'Viewer'],
+                        true
+                    )
+                ),
+
                 'nullable',
                 'integer',
-                'exists:engineers,id',
-                Rule::unique('user_accounts', 'engineers_id')->ignore($userAccount),
+
+                Rule::exists(
+                    $engineer->getTable(),
+                    $engineer->getKeyName()
+                ),
+
+                Rule::unique(
+                    $account->getTable(),
+                    'engineer_id'
+                )->ignore(
+                    $userAccount->getKey(),
+                    $userAccount->getKeyName()
+                ),
             ],
-            'created_by' => ['nullable', 'integer', 'exists:user_accounts,id'],
+
+            'is_active' => [
+                'required',
+                'boolean',
+            ],
         ];
     }
 }

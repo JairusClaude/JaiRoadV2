@@ -4,6 +4,7 @@ import {
     DeletionCounts,
     DeletionDialog,
 } from '@/components/maintenance-projects/deletion-dialog';
+import { workspaceHref } from '@/lib/workspace-navigation';
 import type { ProjectSummary } from '@/types/maintenance-projects';
 
 export function useProjectDeletion(onDeleted?: () => void) {
@@ -31,8 +32,8 @@ export function useProjectDeletion(onDeleted?: () => void) {
         setError('');
         router.delete(
             bulk
-                ? '/maintenance-projects/bulk'
-                : `/maintenance-projects/${projects[0].id}`,
+                ? workspaceHref('/maintenance-projects/bulk')
+                : workspaceHref(`/maintenance-projects/${projects[0].id}`),
             {
                 data: bulk
                     ? { project_ids: projects.map((project) => project.id) }

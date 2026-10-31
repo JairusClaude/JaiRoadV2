@@ -21,6 +21,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { editUrl } from '@/lib/form-navigation';
+import { workspaceHref } from '@/lib/workspace-navigation';
 import type {
     IntegrationStatus,
     Pagination,
@@ -99,7 +100,7 @@ export function ProjectDirectory({
             page: String(page),
         });
         clearSelection();
-        onNavigate(`/maintenance-projects?${query.toString()}`);
+        onNavigate(workspaceHref(`/maintenance-projects?${query.toString()}`));
     };
 
     return (
@@ -112,7 +113,11 @@ export function ProjectDirectory({
                 <Button
                     className="jr-primary"
                     disabled={integration.ready && !canCreate}
-                    onClick={() => onNavigate('/maintenance-projects/create')}
+                    onClick={() =>
+                        onNavigate(
+                            workspaceHref('/maintenance-projects/create'),
+                        )
+                    }
                 >
                     <Plus />
                     Add Project
@@ -275,7 +280,9 @@ export function ProjectDirectory({
                                     selecting
                                         ? toggle(project.id)
                                         : onNavigate(
-                                              `/maintenance-projects/${project.id}`,
+                                              workspaceHref(
+                                                  `/maintenance-projects/${project.id}`,
+                                              ),
                                           )
                                 }
                             >
@@ -309,7 +316,9 @@ export function ProjectDirectory({
                                             ) : (
                                                 <a
                                                     className="jr-project-title"
-                                                    href={`/maintenance-projects/${project.id}`}
+                                                    href={workspaceHref(
+                                                        `/maintenance-projects/${project.id}`,
+                                                    )}
                                                     onClick={(event) => {
                                                         if (
                                                             !event.ctrlKey &&
@@ -320,7 +329,9 @@ export function ProjectDirectory({
                                                             event.preventDefault();
                                                             event.stopPropagation();
                                                             onNavigate(
-                                                                `/maintenance-projects/${project.id}`,
+                                                                workspaceHref(
+                                                                    `/maintenance-projects/${project.id}`,
+                                                                ),
                                                             );
                                                         } else {
                                                             event.stopPropagation();
@@ -353,7 +364,9 @@ export function ProjectDirectory({
                                             onEdit={() =>
                                                 onNavigate(
                                                     editUrl(
-                                                        `/maintenance-projects/${project.id}/edit`,
+                                                        workspaceHref(
+                                                            `/maintenance-projects/${project.id}/edit`,
+                                                        ),
                                                         page.url,
                                                     ),
                                                 )

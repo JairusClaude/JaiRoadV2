@@ -1,0 +1,226 @@
+[
+    {
+        "schema_name": "jairoads_next",
+        "table_name": "audit_logs",
+        "index_name": "audit_logs_pkey",
+        "is_unique": true,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "jairoads_next",
+        "table_name": "audit_logs",
+        "index_name": "audit_logs_recipient_created_idx",
+        "is_unique": false,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "jairoads_next",
+        "table_name": "engineer_lgus",
+        "index_name": "engineer_lgus_lgu_idx",
+        "is_unique": false,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "jairoads_next",
+        "table_name": "engineer_lgus",
+        "index_name": "engineer_lgus_pkey",
+        "is_unique": true,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "jairoads_next",
+        "table_name": "engineers",
+        "index_name": "engineers_pkey",
+        "is_unique": true,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "jairoads_next",
+        "table_name": "lgus",
+        "index_name": "lgus_pkey",
+        "is_unique": true,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "jairoads_next",
+        "table_name": "maintenance_documents",
+        "index_name": "maintenance_documents_pkey",
+        "is_unique": true,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "jairoads_next",
+        "table_name": "maintenance_documents",
+        "index_name": "maintenance_documents_record_idx",
+        "is_unique": false,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "jairoads_next",
+        "table_name": "maintenance_projects",
+        "index_name": "maintenance_projects_pkey",
+        "is_unique": true,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "jairoads_next",
+        "table_name": "maintenance_projects",
+        "index_name": "maintenance_projects_road_coverage_id_key",
+        "is_unique": true,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "jairoads_next",
+        "table_name": "maintenance_records",
+        "index_name": "maintenance_records_engineer_idx",
+        "is_unique": false,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "jairoads_next",
+        "table_name": "maintenance_records",
+        "index_name": "maintenance_records_pkey",
+        "is_unique": true,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "jairoads_next",
+        "table_name": "maintenance_records",
+        "index_name": "maintenance_records_project_idx",
+        "is_unique": false,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "jairoads_next",
+        "table_name": "media",
+        "index_name": "media_monthly_update_idx",
+        "is_unique": false,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "jairoads_next",
+        "table_name": "media",
+        "index_name": "media_pkey",
+        "is_unique": true,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "jairoads_next",
+        "table_name": "monthly_updates",
+        "index_name": "monthly_updates_created_by_idx",
+        "is_unique": false,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "jairoads_next",
+        "table_name": "monthly_updates",
+        "index_name": "monthly_updates_maintenance_id_update_month_key",
+        "is_unique": true,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "jairoads_next",
+        "table_name": "monthly_updates",
+        "index_name": "monthly_updates_pkey",
+        "is_unique": true,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "jairoads_next",
+        "table_name": "road_coverages",
+        "index_name": "road_coverages_lgu_idx",
+        "is_unique": false,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "jairoads_next",
+        "table_name": "road_coverages",
+        "index_name": "road_coverages_pkey",
+        "is_unique": true,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "jairoads_next",
+        "table_name": "user_accounts",
+        "index_name": "user_accounts_email_key",
+        "is_unique": true,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "jairoads_next",
+        "table_name": "user_accounts",
+        "index_name": "user_accounts_engineer_id_key",
+        "is_unique": true,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "jairoads_next",
+        "table_name": "user_accounts",
+        "index_name": "user_accounts_pkey",
+        "is_unique": true,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "jairoads_next",
+        "table_name": "user_accounts",
+        "index_name": "user_accounts_username_key",
+        "is_unique": true,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "public",
+        "table_name": "users",
+        "index_name": "users_dd_user_account_id_unique",
+        "is_unique": true,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "public",
+        "table_name": "users",
+        "index_name": "users_email_unique",
+        "is_unique": true,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "public",
+        "table_name": "users",
+        "index_name": "users_pkey",
+        "is_unique": true,
+        "is_valid": true,
+        "is_ready": true
+    },
+    {
+        "schema_name": "public",
+        "table_name": "users",
+        "index_name": "users_user_account_id_unique",
+        "is_unique": true,
+        "is_valid": true,
+        "is_ready": true
+    }
+]

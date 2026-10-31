@@ -2,6 +2,7 @@ import { router, usePage } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialog';
 import { updateMonth } from '@/lib/monthly-updates';
+import { workspaceHref } from '@/lib/workspace-navigation';
 import type { MonthlyUpdateSummary } from '@/types/monthly-updates';
 
 export function useMonthlyDeletion(query: string) {
@@ -43,7 +44,9 @@ export function useMonthlyDeletion(query: string) {
         setProcessing(true);
         setError('');
         router.delete(
-            `/monthly-updates/${bulk ? 'bulk' : selected[0].id}?${query}`,
+            workspaceHref(
+                `/monthly-updates/${bulk ? 'bulk' : selected[0].id}?${query}`,
+            ),
             {
                 data: bulk
                     ? { update_ids: selected.map((item) => item.id) }

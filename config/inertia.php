@@ -2,6 +2,9 @@
 
 return [
 
+    // Clearing history on real Fortify logout invalidates cached protected pages.
+    'history' => ['encrypt' => true],
+
     /*
     |--------------------------------------------------------------------------
     | Server Side Rendering

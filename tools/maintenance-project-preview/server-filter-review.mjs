@@ -1,10 +1,14 @@
-import { recordDirectoryData, recordDirectoryReturn } from './record-directory.mjs';
+import { Buffer } from 'node:buffer';
 import { randomUUID } from 'node:crypto';
 import { readFile, stat } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
+import { pruneMediaBytes, servePreviewMedia, uploadBodyLimit } from './media.mjs';
+import { initializeMonthlyPreview, monthlyDirectoryData, monthlyDetailData, deleteMonthlyPreview, createMonthlyPreview } from './monthly-updates.mjs';
+
+import { recordDirectoryData, recordDirectoryReturn } from './record-directory.mjs';
 import {
     engineers,
     monthlyUpdates,
@@ -14,9 +18,6 @@ import {
     deletePreviewRecords,
     dependentCounts,
 } from './records.mjs';
-import { initializeMonthlyPreview, monthlyDirectoryData, monthlyDetailData, deleteMonthlyPreview, createMonthlyPreview } from './monthly-updates.mjs';
-
-import { pruneMediaBytes, servePreviewMedia, uploadBodyLimit } from './media.mjs';
 
 // Explicitly isolated UI fixtures. This server never invokes Laravel, SQL, or
 // production authentication. Sample edits live only for this Node process.
@@ -160,10 +161,15 @@ function pageFor(url, errors = {}) {
         settings: 'Settings',
         'maintenance-records': 'Maintenance Records',
     };
+
     if (navigationPreview) {
         const navigationSection = navigationPreview[1];
         const navigationTitle = navigationTitles[navigationSection];
-        if (!navigationTitle) return null;
+
+        if (!navigationTitle) {
+return null;
+}
+
         component = 'MaintenanceProjects/NavigationPreview';
         props = { navigationSection, navigationTitle };
     } else if (url.pathname === '/maintenance-records') {
@@ -172,11 +178,19 @@ function pageFor(url, errors = {}) {
     } else if (url.pathname === '/monthly-updates/create') {
         const contextId = url.searchParams.get('record');
         const record = contextId ? records.find((item) => String(item.id) === contextId) : undefined;
-        if (contextId && (!record || !projects.some((item) => item.id === record.project_id))) return null;
+
+        if (contextId && (!record || !projects.some((item) => item.id === record.project_id))) {
+return null;
+}
+
         const suffix = record ? `?record=${record.id}` : '';
         component = 'MonthlyUpdates/Create';
         props = {
-            projects: projects.map((item) => { const p = summary(item); return { id: p.id, project_title: p.project_title, municipality: p.municipality }; }),
+            projects: projects.map((item) => {
+ const p = summary(item);
+
+ return { id: p.id, project_title: p.project_title, municipality: p.municipality };
+}),
             records: records.map(({ id, project_id, year, quarter }) => ({ id, project_id, year, quarter })),
             existingUpdates: monthlyUpdates.map(({ maintenance_id, update_month }) => ({ maintenance_id, update_month })),
             contextRecordId: record?.id,
@@ -186,7 +200,10 @@ function pageFor(url, errors = {}) {
     } else if (/^\/monthly-updates\/\d+$/.test(url.pathname)) {
         component = 'MonthlyUpdates/Show';
         props = monthlyDetailData(projects, url);
-        if (!props) return null;
+
+        if (!props) {
+return null;
+}
     } else if (url.pathname === '/monthly-updates') {
         component = 'MonthlyUpdates/Index';
         props = monthlyDirectoryData(projects, url);
@@ -201,11 +218,16 @@ function pageFor(url, errors = {}) {
         }
 
         const recordMatch = match[2]?.match(/^\/records\/(\d+)(\/edit)?$/);
+
         if (recordMatch) {
             const record = recordSummaries(project.id).find(
                 (item) => item.id === Number(recordMatch[1]),
             );
-            if (!record) return null;
+
+            if (!record) {
+return null;
+}
+
             component = recordMatch[2]
                 ? 'MaintenanceProjects/Records/Edit'
                 : 'MaintenanceProjects/Records/Show';
@@ -250,10 +272,14 @@ function pageFor(url, errors = {}) {
     } else {
         const alternative =
             ['/maintenance-projects/design-exploration', '/maintenance-projects/design-exploration/espresso'].includes(url.pathname);
+
         if (url.pathname !== '/maintenance-projects' && !alternative) {
             return null;
         }
-        if (alternative) component = 'MaintenanceProjects/DirectoryAlternative';
+
+        if (alternative) {
+component = 'MaintenanceProjects/DirectoryAlternative';
+}
 
         const filters = {
             search: url.searchParams.get('search') || '',
@@ -315,21 +341,26 @@ function pageFor(url, errors = {}) {
 async function mutate(method, url, data, files = []) {
     if (method === 'POST' && url.pathname === '/monthly-updates') {
         const result = await createMonthlyPreview(projects, data, files, url.searchParams.get('record'));
+
         return result.errors ? { ...result, location: `/monthly-updates/create${url.search}` } : result;
     }
+
     const updateMatch = url.pathname.match(/^\/monthly-updates\/(bulk|\d+)$/);
+
     if (method === 'DELETE' && updateMatch) {
         const ids = updateMatch[1] === 'bulk' ? data.update_ids : [Number(updateMatch[1])];
         const errors = deleteMonthlyPreview(ids);
         const page = monthlyDirectoryData(projects, url).updates.current_page;
         const query = new URLSearchParams(url.searchParams);
         query.set('page', String(page));
+
         return { location: `/monthly-updates?${query}`, ...(errors ? { errors } : {}) };
     }
 
     const recordMatch = url.pathname.match(
         /^\/maintenance-projects\/(\d+)\/records\/(\d+)$/,
     );
+
     if (recordMatch) {
         const projectId = Number(recordMatch[1]);
         const record = records.find(
@@ -337,19 +368,27 @@ async function mutate(method, url, data, files = []) {
                 item.id === Number(recordMatch[2]) &&
                 item.project_id === projectId,
         );
-        if (!record || !projects.some((item) => item.id === projectId))
-            return null;
-        if (method === 'PUT')
-            return createPreviewRecord(projectId, data, record);
+
+        if (!record || !projects.some((item) => item.id === projectId)) {
+return null;
+}
+
+        if (method === 'PUT') {
+return createPreviewRecord(projectId, data, record);
+}
+
         if (method === 'DELETE') {
             const year = record.year;
             deletePreviewRecords([record.id]);
+
             return {
                 location: recordDirectoryReturn(url) ?? `/maintenance-projects/${projectId}?record_year=${year}`,
             };
         }
+
         return null;
     }
+
     const recordProject = url.pathname.match(
         /^\/maintenance-projects\/(\d+)\/records$/,
     );
@@ -407,6 +446,7 @@ async function mutate(method, url, data, files = []) {
                 .filter((record) => selectedIds.has(record.project_id))
                 .map((record) => record.id),
         );
+
         for (const project of selected) {
             projects.splice(projects.indexOf(project), 1);
         }
@@ -568,8 +608,10 @@ export const server = createServer(async (request, response) => {
         }
 
         const mediaMatch = url.pathname.match(/^\/preview-media\/(\d+)$/);
+
         if (mediaMatch && ['GET', 'HEAD'].includes(request.method)) {
             servePreviewMedia(request, response, Number(mediaMatch[1]));
+
             return;
         }
 
@@ -607,27 +649,50 @@ export const server = createServer(async (request, response) => {
             const chunks = [];
             let length = 0;
             let tooLarge = false;
+
             for await (const chunk of request) {
                 length += chunk.length;
-                if (length > (monthlyCreate ? uploadBodyLimit : 100000)) { tooLarge = true; chunks.length = 0; }
-                if (!tooLarge) chunks.push(chunk);
+
+                if (length > (monthlyCreate ? uploadBodyLimit : 100000)) {
+ tooLarge = true; chunks.length = 0;
+}
+
+                if (!tooLarge) {
+chunks.push(chunk);
+}
             }
+
             if (tooLarge) {
-                if (!monthlyCreate) throw new Error('Request too large');
+                if (!monthlyCreate) {
+throw new Error('Request too large');
+}
+
                 session.errors = { attachments: 'This local preview accepts requests up to 64 MiB including form data. Remove files and retry. This is a temporary technical safeguard, not a JaiROADS attachment policy.' };
                 response.writeHead(303, { Location: `/monthly-updates/create${url.search}` }).end();
+
                 return;
             }
+
             const body = Buffer.concat(chunks);
             let data, files = [];
+
             if (monthlyCreate && request.headers['content-type']?.includes('multipart/form-data')) {
                 const form = await new Request('http://localhost/monthly-updates', { method: 'POST', headers: { 'Content-Type': request.headers['content-type'] }, body }).formData();
                 data = {};
+
                 for (const [key, value] of form.entries()) {
-                    if (/^attachments(?:\[\d*\])?$/.test(key)) { if (typeof value !== 'string') files.push(value); }
-                    else if (typeof value === 'string') data[key] = value;
+                    if (/^attachments(?:\[\d*\])?$/.test(key)) {
+ if (typeof value !== 'string') {
+files.push(value);
+}
+} else if (typeof value === 'string') {
+data[key] = value;
+}
                 }
-            } else data = request.headers['content-type']?.includes('application/json') ? JSON.parse(body.toString() || '{}') : Object.fromEntries(new URLSearchParams(body.toString()));
+            } else {
+data = request.headers['content-type']?.includes('application/json') ? JSON.parse(body.toString() || '{}') : Object.fromEntries(new URLSearchParams(body.toString()));
+}
+
             const action = await mutate(request.method, url, data, files);
             pruneMediaBytes();
 

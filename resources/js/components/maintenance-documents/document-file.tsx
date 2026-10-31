@@ -1,3 +1,4 @@
+import { usePage } from '@inertiajs/react';
 import {
     FileSpreadsheet,
     FileText,
@@ -43,6 +44,7 @@ export function DocumentAttachment({
     error?: string;
     onChange: (file: File | null) => void;
 }) {
+    const canonical = usePage().props.canonicalFrontend === true;
     const input = useRef<HTMLInputElement>(null);
     const [feedback, setFeedback] = useState('');
     const [dragging, setDragging] = useState(false);
@@ -119,8 +121,9 @@ export function DocumentAttachment({
                 </p>
             </div>
             <p className="jr-field-hint mt-2">
-                Local preview: requests up to 64 MiB including form data. Files
-                are retained only until the preview restarts.
+                {canonical
+                    ? 'Maximum 20 MB per file. Downloads require current authorization.'
+                    : 'Local preview: requests up to 64 MiB including form data. Files are retained only until the preview restarts.'}
             </p>
             {(feedback || error) && (
                 <p

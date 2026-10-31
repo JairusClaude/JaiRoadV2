@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import process from 'node:process';
 import {
     lineCoordinates,
     validateCoverage,
@@ -114,21 +115,26 @@ export function mutateRoadCoverage(
         geojson: changing ? data.geojson : existing.geojson,
     };
     const errors = validateCoverage(candidate, lgus, existing);
-    if (existing && changing && data.geometry_token !== token(existing.geojson))
-        errors.geojson =
+
+    if (existing && changing && data.geometry_token !== token(existing.geojson)) {
+errors.geojson =
             'This road geometry changed in another session. Your work is retained; compare the latest alignment before saving.';
+}
 
     const geometryChanged =
         existing &&
         JSON.stringify(lineCoordinates(candidate.geojson)) !==
             JSON.stringify(lineCoordinates(existing.geojson));
+
     if (
         geometryChanged &&
         (!data.correction_reason?.trim() ||
             data.correction_reason.trim().length > 255)
-    )
-        errors.correction_reason =
+    ) {
+errors.correction_reason =
             'Enter a correction reason (1–255 characters).';
+}
+
     if (!engineers.some((engineer) => engineer.id === 1)) {
         errors.road_name = 'A valid preview creator is required.';
     }

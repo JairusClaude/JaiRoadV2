@@ -6,6 +6,7 @@ import {
 } from '@/components/maintenance-projects/record-deletion';
 import { RecordDirectory } from '@/components/maintenance-records/record-directory';
 import { editUrl } from '@/lib/form-navigation';
+import { workspaceHref } from '@/lib/workspace-navigation';
 import type {
     RecordDirectoryFilters,
     RecordDirectoryProps,
@@ -30,7 +31,7 @@ export default function Index(props: RecordDirectoryProps) {
     const visit = (filters: RecordDirectoryFilters, page = 1) => {
         cancelSearch();
         router.get(
-            '/maintenance-records',
+            workspaceHref('/maintenance-records'),
             { ...filters, page },
             {
                 preserveState: true,
@@ -42,7 +43,9 @@ export default function Index(props: RecordDirectoryProps) {
             },
         );
     };
-    const returnUrl = `/maintenance-records?${new URLSearchParams({ ...props.filters, page: String(props.records.current_page) })}`;
+    const returnUrl = workspaceHref(
+        `/maintenance-records?${new URLSearchParams({ ...props.filters, page: String(props.records.current_page) })}`,
+    );
     const deletion = useRecordDeletion(returnUrl);
     const addButton = useRef<HTMLButtonElement>(null);
     const navigate = (url: string) => {
@@ -70,7 +73,12 @@ export default function Index(props: RecordDirectoryProps) {
                 }
                 onNavigate={navigate}
                 onAdd={() =>
-                    navigate(editUrl('/maintenance-records/create', page.url))
+                    navigate(
+                        editUrl(
+                            workspaceHref('/maintenance-records/create'),
+                            page.url,
+                        ),
+                    )
                 }
                 onDelete={(record) => {
                     cancelSearch();

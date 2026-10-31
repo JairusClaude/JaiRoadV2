@@ -19,14 +19,17 @@ import { Button } from '@/components/ui/button';
 import { editUrl } from '@/lib/form-navigation';
 import { documentType } from '@/lib/maintenance-documents';
 import { updateTimestamp } from '@/lib/monthly-updates';
+import { workspaceHref } from '@/lib/workspace-navigation';
 import type { DocumentSummary } from '@/types/maintenance-documents';
 export default function Show({ document: doc }: { document: DocumentSummary }) {
     const page = usePage();
-    const enabled = page.props.previewOnly === true;
+    const enabled =
+        page.props.previewOnly === true ||
+        (page.props.canonicalFrontend === true && page.props.canWrite === true);
     const deletion = useDocumentDeletion();
     const [viewer, setViewer] = useState(false);
     const viewerFocus = useRef<HTMLElement | null>(null);
-    const projectUrl = `/maintenance-projects/${doc.project.id}`;
+    const projectUrl = workspaceHref(`/maintenance-projects/${doc.project.id}`);
     const recordUrl = `${projectUrl}/records/${doc.maintenance_id}`;
 
     return (
@@ -34,7 +37,10 @@ export default function Show({ document: doc }: { document: DocumentSummary }) {
             <Head title={doc.document_title} />
             <ProjectWorkspace>
                 <article className="jr-monthly-report">
-                    <Link href="/maintenance-documents" className="jr-back">
+                    <Link
+                        href={workspaceHref('/maintenance-documents')}
+                        className="jr-back"
+                    >
                         <ArrowLeft className="size-4" />
                         Maintenance Documents
                     </Link>
@@ -50,7 +56,9 @@ export default function Show({ document: doc }: { document: DocumentSummary }) {
                                 onClick={() =>
                                     router.visit(
                                         editUrl(
-                                            `/maintenance-documents/${doc.id}/edit`,
+                                            workspaceHref(
+                                                `/maintenance-documents/${doc.id}/edit`,
+                                            ),
                                             page.url,
                                         ),
                                     )
@@ -61,7 +69,10 @@ export default function Show({ document: doc }: { document: DocumentSummary }) {
                             </Button>
                             <Button
                                 className="jr-danger"
-                                disabled={!enabled}
+                                disabled={
+                                    page.props.canonicalFrontend === true ||
+                                    !enabled
+                                }
                                 onClick={() => deletion.open([doc])}
                             >
                                 <Trash2 />
@@ -156,7 +167,9 @@ export default function Show({ document: doc }: { document: DocumentSummary }) {
                                     <a
                                         href={
                                             doc.available
-                                                ? `/preview-documents/${doc.id}?download`
+                                                ? workspaceHref(
+                                                      `/preview-documents/${doc.id}?download`,
+                                                  )
                                                 : undefined
                                         }
                                         download={doc.file_name}
@@ -170,8 +183,8 @@ export default function Show({ document: doc }: { document: DocumentSummary }) {
                         </div>
                         {!doc.available && (
                             <p className="jr-field-error" role="status">
-                                This file is unavailable in the current preview
-                                session.
+                                This private file is currently unavailable.
+                                Contact your administrator.
                             </p>
                         )}
                     </section>

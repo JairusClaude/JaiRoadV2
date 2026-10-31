@@ -14,6 +14,7 @@ import {
     Users,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { DdNotificationBell } from '@/components/dd-notification-bell';
 import {
     AlternativeNavigation,
     isAlternativeNavigation,
@@ -35,6 +36,7 @@ import {
 } from '@/components/ui/sidebar';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { useInitials } from '@/hooks/use-initials';
+import { workspaceHref } from '@/lib/workspace-navigation';
 import type { User } from '@/types';
 import '../../css/maintenance-projects.css';
 import '../../css/maintenance-documents.css';
@@ -73,7 +75,8 @@ export function MaintenanceProjectShell({
     const initials = useInitials()(user.name);
     const page = usePage();
     const preview = page.props.previewOnly === true;
-    const path = page.url.split('?')[0];
+    const canonical = page.props.canonicalFrontend === true;
+    const path = page.url.split('?')[0].replace(/^\/dd-phase3\/ui/, '');
     const alternativeNavigation = isAlternativeNavigation(page.component);
     const documentPageName = path.startsWith('/maintenance-documents')
         ? path.endsWith('/create')
@@ -186,7 +189,11 @@ export function MaintenanceProjectShell({
                             </button>
                             <span className="jr-brand-copy">
                                 <strong>JaiROADS</strong>
-                                <small>Admin Console</small>
+                                <small>
+                                    {canonical
+                                        ? `${String((page.props.jairoadsIdentity as { role?: string } | undefined)?.role ?? 'User')} Workspace`
+                                        : 'Admin Console'}
+                                </small>
                             </span>
                         </div>
                         <button
@@ -218,7 +225,37 @@ export function MaintenanceProjectShell({
                     <SidebarContent className="jr-nav-content">
                         <div className="jr-nav-caption">Workspace</div>
                         <AlternativeNavigation
-                            items={navigation}
+                            items={navigation
+                                .filter(
+                                    (item) =>
+                                        !canonical ||
+                                        item.title !== 'User Management' ||
+                                        ['admin', 'superadmin'].includes(
+                                            String(
+                                                (
+                                                    page.props
+                                                        .jairoadsIdentity as
+                                                        | { role?: string }
+                                                        | undefined
+                                                )?.role,
+                                            ),
+                                        ),
+                                )
+                                .map((item) => ({
+                                    ...item,
+                                    href: canonical
+                                        ? ({
+                                              '/dashboard':
+                                                  '/dd-phase3/dashboard',
+                                              '/user-accounts':
+                                                  '/dd-phase3/users',
+                                              '/lgus': '/dd-phase3/lgus',
+                                              '/settings/profile':
+                                                  '/dd-phase3/settings',
+                                          }[item.href] ??
+                                          workspaceHref(item.href))
+                                        : item.href,
+                                }))}
                             expanded={expanded}
                             mainNavigation={!alternativeNavigation}
                         />
@@ -255,13 +292,17 @@ export function MaintenanceProjectShell({
                         <strong className="truncate">{pageName}</strong>
                     </div>
                     <div className="jr-top-actions">
-                        <button
-                            type="button"
-                            className="jr-icon-button"
-                            aria-label="Notifications"
-                        >
-                            <Bell className="size-[18px]" />
-                        </button>
+                        {canonical ? (
+                            <DdNotificationBell />
+                        ) : (
+                            <button
+                                type="button"
+                                className="jr-icon-button"
+                                aria-label="Notifications"
+                            >
+                                <Bell className="size-[18px]" />
+                            </button>
+                        )}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button
@@ -295,7 +336,14 @@ export function MaintenanceProjectShell({
                                         </DropdownMenuItem>
                                     </>
                                 ) : (
-                                    <UserMenuContent user={user} />
+                                    <UserMenuContent
+                                        user={user}
+                                        settingsHref={
+                                            canonical
+                                                ? '/dd-phase3/settings'
+                                                : undefined
+                                        }
+                                    />
                                 )}
                             </DropdownMenuContent>
                         </DropdownMenu>
@@ -308,6 +356,15 @@ export function MaintenanceProjectShell({
                             process · PostgreSQL is not connected.
                         </p>
                     )}
+                    {typeof page.props.status === 'string' &&
+                        page.props.status && (
+                            <p
+                                role="status"
+                                className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"
+                            >
+                                {page.props.status}
+                            </p>
+                        )}
                     {children}
                 </main>
             </div>

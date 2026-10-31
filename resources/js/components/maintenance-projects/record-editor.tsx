@@ -5,6 +5,7 @@ import { ProjectSelector } from '@/components/monthly-updates/project-selector';
 import { Label } from '@/components/ui/label';
 import { formReturn, returnLabel, editUrl } from '@/lib/form-navigation';
 import { recordPayload, validateRecord } from '@/lib/maintenance-records';
+import { workspaceHref } from '@/lib/workspace-navigation';
 import type { ProjectSummary } from '@/types/maintenance-projects';
 import type {
     EngineerOption,
@@ -21,7 +22,9 @@ export function RecordEditor({
     record,
     cancelUrl,
     projects = [],
+    managerChoicesByProject,
 }: {
+    managerChoicesByProject?: Record<string, EngineerOption[]>;
     project?: ProjectSummary;
     projects?: ProjectSummary[];
     engineers: EngineerOption[];
@@ -39,14 +42,20 @@ export function RecordEditor({
     const fallback =
         record?.details_url ??
         (project
-            ? `/maintenance-projects/${project.id}`
-            : '/maintenance-records');
+            ? workspaceHref(`/maintenance-projects/${project.id}`)
+            : workspaceHref('/maintenance-records'));
     const cancel = formReturn(page.url, cancelUrl ?? fallback, [
-        '/maintenance-records',
-        ...(project ? [`/maintenance-projects/${project.id}`] : []),
+        workspaceHref('/maintenance-records'),
+        ...(project
+            ? [workspaceHref(`/maintenance-projects/${project.id}`)]
+            : []),
     ]);
     const submitting = useRef(false);
-    const enabled = preview && Boolean(submitUrl || projects.length);
+    const enabled =
+        (preview ||
+            (page.props.canonicalFrontend === true &&
+                page.props.canWrite === true)) &&
+        Boolean(submitUrl || projects.length);
     const form = useForm<MaintenanceRecordValues>({
         maintenance_year: record ? String(record.year).padStart(4, '0') : '',
         quarter: record?.quarter ?? '',
@@ -60,6 +69,9 @@ export function RecordEditor({
             record?.status === 'Completed' ? (record.complete_date ?? '') : '',
         description: record?.description ?? '',
     });
+    const eligibleEngineers = selectedProject
+        ? (managerChoicesByProject?.[String(selectedProject.id)] ?? engineers)
+        : engineers;
     const save = () => {
         if (!enabled || submitting.current || form.processing) {
             return;
@@ -81,7 +93,7 @@ export function RecordEditor({
                     !('project_id' in item) ||
                     item.project_id === selectedProject.id,
             ),
-            engineers,
+            eligibleEngineers,
             record?.id,
         );
 
@@ -96,7 +108,9 @@ export function RecordEditor({
         submitting.current = true;
         const url =
             submitUrl ??
-            `/maintenance-projects/${selectedProject.id}/records?from=records`;
+            workspaceHref(
+                `/maintenance-projects/${selectedProject.id}/records?from=records`,
+            );
         form.submit(record ? 'put' : 'post', editUrl(url, cancel), {
             preserveScroll: true,
             onFinish: () => {
@@ -163,7 +177,7 @@ export function RecordEditor({
                         </div>
                     ) : undefined
                 }
-                engineers={engineers}
+                engineers={eligibleEngineers}
                 values={form.data}
                 errors={form.errors}
                 processing={form.processing}

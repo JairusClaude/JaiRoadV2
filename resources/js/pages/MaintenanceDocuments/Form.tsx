@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/select';
 import { formReturn } from '@/lib/form-navigation';
 import { documentFileError } from '@/lib/maintenance-documents';
+import { workspaceHref } from '@/lib/workspace-navigation';
 import type { DocumentParents } from '@/types/maintenance-documents';
 
 type Values = {
@@ -27,14 +28,18 @@ type Values = {
 };
 export default function Form(parents: DocumentParents) {
     const page = usePage();
-    const enabled = page.props.previewOnly === true;
+    const enabled =
+        page.props.previewOnly === true ||
+        (page.props.canonicalFrontend === true && page.props.canWrite === true);
     const doc = parents.document;
     const fixed = parents.records.find((r) => r.id === parents.contextRecordId);
     const back = formReturn(page.url, parents.cancelUrl, [
-        '/maintenance-documents',
+        workspaceHref('/maintenance-documents'),
         ...(doc
             ? [
-                  `/maintenance-projects/${doc.project.id}/records/${doc.maintenance_id}`,
+                  workspaceHref(
+                      `/maintenance-projects/${doc.project.id}/records/${doc.maintenance_id}`,
+                  ),
               ]
             : []),
     ]);
@@ -89,9 +94,13 @@ export default function Form(parents: DocumentParents) {
                         onClick={cancel}
                     >
                         <ArrowLeft className="size-4" />
-                        {back.startsWith('/maintenance-documents/')
+                        {back.startsWith(
+                            workspaceHref('/maintenance-documents/'),
+                        )
                             ? 'Document Details'
-                            : back.startsWith('/maintenance-projects/')
+                            : back.startsWith(
+                                    workspaceHref('/maintenance-projects/'),
+                                )
                               ? 'Record Details'
                               : 'Maintenance Documents'}
                     </button>
@@ -335,13 +344,17 @@ export default function Form(parents: DocumentParents) {
                             <h2>Document Attachment</h2>
                             <p className="jr-field-hint mb-4">
                                 {doc
-                                    ? 'Keep the existing document or select one replacement file.'
+                                    ? 'The existing private file is retained. Edit its metadata below.'
                                     : 'Upload one supporting document.'}
                             </p>
                             <DocumentAttachment
                                 file={form.data.attachment}
                                 savedName={doc?.file_name}
-                                disabled={disabled}
+                                disabled={
+                                    disabled ||
+                                    (page.props.canonicalFrontend === true &&
+                                        !!doc)
+                                }
                                 error={form.errors.attachment}
                                 onChange={(file) => {
                                     form.clearErrors('attachment');
@@ -351,8 +364,9 @@ export default function Form(parents: DocumentParents) {
                         </section>
                         <footer className="jr-form-footer">
                             <p>
-                                Local preview only · files and changes reset on
-                                restart.
+                                {page.props.canonicalFrontend === true
+                                    ? 'Files remain private. File replacement and deletion are unavailable pending retention policy approval.'
+                                    : 'Local preview only · files and changes reset on restart.'}
                             </p>
                             <div className="flex gap-2">
                                 <Button

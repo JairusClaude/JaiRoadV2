@@ -1,3 +1,4 @@
+import { usePage } from '@inertiajs/react';
 import { MoreHorizontal, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import {
@@ -60,6 +61,9 @@ export function MonthlyUpdateDirectory({
         update?: MonthlyUpdateSummary,
     ) => void;
 }) {
+    const page = usePage();
+    const canonical = page.props.canonicalFrontend === true;
+    const canWrite = !canonical || page.props.canWrite === true;
     const [search, setSearch] = useState(filters.search);
     const [selecting, setSelecting] = useState(false);
     const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -113,6 +117,7 @@ export function MonthlyUpdateDirectory({
                     </div>
                     <Button
                         className="jr-primary"
+                        disabled={!canWrite}
                         onClick={() => onAction('Add')}
                     >
                         <Plus />
@@ -209,7 +214,7 @@ export function MonthlyUpdateDirectory({
                     total={updates.total}
                     singular="update"
                     plural="updates"
-                    canDelete
+                    canDelete={!canonical}
                     disabled={busy}
                     onSelect={() => setSelecting(true)}
                     onCancel={() => {
@@ -368,6 +373,11 @@ export function MonthlyUpdateDirectory({
                                                     align="end"
                                                 >
                                                     <DropdownMenuItem
+                                                        disabled={
+                                                            !canWrite ||
+                                                            item.can_edit ===
+                                                                false
+                                                        }
                                                         onSelect={() =>
                                                             onAction(
                                                                 'Edit',
@@ -379,6 +389,7 @@ export function MonthlyUpdateDirectory({
                                                         Edit Monthly Update
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem
+                                                        disabled={canonical}
                                                         onSelect={() =>
                                                             onDelete(
                                                                 [item],

@@ -7,6 +7,7 @@ import {
 import { MonthlyUpdateDirectory } from '@/components/monthly-updates/monthly-update-directory';
 import type { MonthlyDirectoryProps } from '@/components/monthly-updates/monthly-update-directory';
 import { editUrl } from '@/lib/form-navigation';
+import { workspaceHref } from '@/lib/workspace-navigation';
 import type { MonthlyUpdateFilters } from '@/types/monthly-updates';
 
 export default function Index(props: MonthlyDirectoryProps) {
@@ -26,7 +27,7 @@ export default function Index(props: MonthlyDirectoryProps) {
     const visit = (filters: MonthlyUpdateFilters, page = 1) => {
         cancelSearch();
         router.get(
-            '/monthly-updates',
+            workspaceHref('/monthly-updates'),
             { ...filters, page },
             {
                 preserveState: true,
@@ -69,7 +70,7 @@ export default function Index(props: MonthlyDirectoryProps) {
                 onAction={(action, update) => {
                     if (action === 'Add') {
                         cancelSearch();
-                        router.visit('/monthly-updates/create');
+                        router.visit(workspaceHref('/monthly-updates/create'));
 
                         return;
                     }
@@ -80,17 +81,25 @@ export default function Index(props: MonthlyDirectoryProps) {
                             ...props.filters,
                             page: String(props.updates.current_page),
                         });
-                        router.visit(`/monthly-updates/${update.id}?${query}`);
+                        router.visit(
+                            workspaceHref(
+                                `/monthly-updates/${update.id}?${query}`,
+                            ),
+                        );
 
                         return;
                     }
 
                     if (action === 'Edit' && update) {
                         cancelSearch();
-                        const origin = `/monthly-updates?${new URLSearchParams({ ...props.filters, page: String(props.updates.current_page) })}`;
+                        const origin = workspaceHref(
+                            `/monthly-updates?${new URLSearchParams({ ...props.filters, page: String(props.updates.current_page) })}`,
+                        );
                         router.visit(
                             editUrl(
-                                `/monthly-updates/${update.id}/edit`,
+                                workspaceHref(
+                                    `/monthly-updates/${update.id}/edit`,
+                                ),
                                 origin,
                             ),
                         );

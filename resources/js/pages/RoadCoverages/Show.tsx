@@ -1,9 +1,12 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ArrowLeft, Pencil } from 'lucide-react';
+import { useState } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { CoverageMapPreview } from '@/components/road-coverages/coverage-map-preview';
 import { Button } from '@/components/ui/button';
 import { editUrl } from '@/lib/form-navigation';
+import { workspaceHref } from '@/lib/workspace-navigation';
+import DdRoadMunicipalityChange from '@/pages/dd-phase3/DdRoadMunicipalityChange';
 import type { RoadCoverageDetailsProps } from '@/types/road-coverages';
 import '../../../css/road-coverage-directory.css';
 import '../../../css/road-coverage-details.css';
@@ -26,8 +29,10 @@ export default function Show({
     associatedProject,
     canEdit,
     backUrl,
+    municipalities = [],
 }: RoadCoverageDetailsProps) {
     const page = usePage();
+    const [municipalityOpen, setMunicipalityOpen] = useState(false);
 
     return (
         <div className="jr-road-coverage-details">
@@ -42,13 +47,23 @@ export default function Show({
                         <p>Road information and geographic coverage.</p>
                     </div>
                     <div className="jr-header-actions">
+                        {canEdit && page.props.canonicalFrontend === true && (
+                            <Button
+                                variant="outline"
+                                onClick={() => setMunicipalityOpen(true)}
+                            >
+                                Change Municipality
+                            </Button>
+                        )}
                         {canEdit && (
                             <Button
                                 variant="outline"
                                 onClick={() =>
                                     router.visit(
                                         editUrl(
-                                            `/road-coverages/${coverage.id}/edit`,
+                                            workspaceHref(
+                                                `/road-coverages/${coverage.id}/edit`,
+                                            ),
                                             page.url,
                                         ),
                                     )
@@ -134,13 +149,17 @@ export default function Show({
                             <div className="jr-record-row">
                                 <Link
                                     className="jr-project-title"
-                                    href={`/maintenance-projects/${associatedProject.id}`}
+                                    href={workspaceHref(
+                                        `/maintenance-projects/${associatedProject.id}`,
+                                    )}
                                 >
                                     {associatedProject.project_title}
                                 </Link>
                                 <Button variant="outline" asChild>
                                     <Link
-                                        href={`/maintenance-projects/${associatedProject.id}`}
+                                        href={workspaceHref(
+                                            `/maintenance-projects/${associatedProject.id}`,
+                                        )}
                                     >
                                         View Project
                                     </Link>
@@ -154,6 +173,18 @@ export default function Show({
                     )}
                 </section>
             </ProjectWorkspace>
+            {municipalityOpen && (
+                <DdRoadMunicipalityChange
+                    roadId={coverage.id}
+                    lgus={municipalities.map((l) => ({
+                        id: l.id,
+                        name: l.municipality_name,
+                    }))}
+                    returnUrl={`/dd-phase3/ui/road-coverages/${coverage.id}`}
+                    onClose={() => setMunicipalityOpen(false)}
+                    onSuccess={() => setMunicipalityOpen(false)}
+                />
+            )}
         </div>
     );
 }

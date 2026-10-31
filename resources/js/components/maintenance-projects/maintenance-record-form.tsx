@@ -106,7 +106,14 @@ export function MaintenanceRecordForm({
         <Select
             value={values[name]}
             onValueChange={(value) => onChange(name, value)}
-            disabled={!enabled || processing}
+            disabled={
+                !enabled ||
+                processing ||
+                (mode === 'edit' &&
+                    ['engineers_id', 'maintenance_year', 'quarter'].includes(
+                        name,
+                    ))
+            }
             required
         >
             <SelectTrigger
@@ -290,7 +297,7 @@ export function MaintenanceRecordForm({
                                         value: String(engineer.id),
                                         label: engineerName(engineer),
                                     })),
-                                    preview,
+                                    preview || mode === 'create',
                                 ),
                                 preview
                                     ? mode === 'edit' &&
@@ -406,7 +413,7 @@ export function MaintenanceRecordForm({
                         <p>
                             {preview
                                 ? 'Sample data only · restarting the preview resets maintenance records.'
-                                : 'Saving requires the Maintenance Record backend integration.'}
+                                : 'Saved to the canonical MaintenanceRecord; assignment changes use the separate reassignment action.'}
                         </p>
                         <div className="flex gap-2">
                             <Button

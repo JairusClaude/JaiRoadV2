@@ -1,13 +1,15 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { ArrowLeft, Map, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 import { MaintenanceHistory } from '@/components/maintenance-projects/maintenance-history';
 import {
     ProjectDeletionDialog,
     useProjectDeletion,
 } from '@/components/maintenance-projects/project-deletion';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
+import { CoverageMapPreview } from '@/components/road-coverages/coverage-map-preview';
 import { Button } from '@/components/ui/button';
 import { editUrl } from '@/lib/form-navigation';
+import { workspaceHref } from '@/lib/workspace-navigation';
 import type { ProjectSummary } from '@/types/maintenance-projects';
 import type { MaintenanceRecordSummary } from '@/types/maintenance-records';
 import '../../../css/maintenance-project-details.css';
@@ -35,14 +37,20 @@ export default function Show({
     const page = usePage();
     const edit = () =>
         router.visit(
-            editUrl(`/maintenance-projects/${project.id}/edit`, page.url),
+            editUrl(
+                workspaceHref(`/maintenance-projects/${project.id}/edit`),
+                page.url,
+            ),
         );
 
     return (
         <div className="jr-project-details">
             <Head title={project.project_title} />
             <ProjectWorkspace>
-                <Link href="/maintenance-projects" className="jr-back">
+                <Link
+                    href={workspaceHref('/maintenance-projects')}
+                    className="jr-back"
+                >
                     <ArrowLeft className="size-4" /> Maintenance Projects
                 </Link>
                 <div className="jr-page-head jr-details-heading">
@@ -118,17 +126,9 @@ export default function Show({
                         </div>
                         <div className="jr-project-map">
                             <h3>Road Coverage Map</h3>
-                            <div className="jr-map-placeholder jr-detail-map">
-                                <Map
-                                    className="size-[18px]"
-                                    aria-hidden="true"
-                                />
-                                <strong>Map preview unavailable</strong>
-                                <span>
-                                    A geographic preview is not available for
-                                    this road coverage yet.
-                                </span>
-                            </div>
+                            <CoverageMapPreview
+                                geojson={project.geojson ?? null}
+                            />
                         </div>
                     </div>
                 </section>

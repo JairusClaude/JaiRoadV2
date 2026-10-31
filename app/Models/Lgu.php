@@ -39,4 +39,10 @@ class Lgu extends Model
     {
         return $this->hasMany(MaintenanceProject::class, 'lgus_id');
     }
+
+    /** @return HasMany<RoadCoverage, $this> */
+    public function roadCoverages(): HasMany
+    {
+        return $this->hasMany(RoadCoverage::class, 'lgu_id');
+    }
 }

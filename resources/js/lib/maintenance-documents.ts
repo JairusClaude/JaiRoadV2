@@ -36,6 +36,10 @@ export function documentFileError(file: File) {
         return 'Choose a document that is not empty.';
     }
 
+    if (file.size > 20 * 1024 * 1024) {
+        return 'Choose a document no larger than 20 MB.';
+    }
+
     return '';
 }
 

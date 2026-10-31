@@ -2,10 +2,12 @@ import { Link, usePage } from '@inertiajs/react';
 import { ChevronDown } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useId, useState } from 'react';
+import { workspaceHref } from '@/lib/workspace-navigation';
 import '../../../css/maintenance-projects-alternative-navigation.css';
 
-export const alternativeDirectoryUrl =
-    '/maintenance-projects/design-exploration';
+export const alternativeDirectoryUrl = workspaceHref(
+    '/maintenance-projects/design-exploration',
+);
 
 export function alternativeDirectoryFor(theme: unknown) {
     return alternativeDirectoryUrl + (theme === 'espresso' ? '/espresso' : '');
@@ -31,15 +33,16 @@ export function AlternativeNavigation({
     const directoryUrl = alternativeDirectoryFor(page.props.sidebarTheme);
     const path = page.url.split('?')[0];
     const section = mainNavigation
-        ? path.startsWith('/maintenance-records') || path.includes('/records/')
+        ? path.startsWith(workspaceHref('/maintenance-records')) ||
+          path.includes('/records/')
             ? 'maintenance-records'
-            : path.startsWith('/road-coverages')
+            : path.startsWith(workspaceHref('/road-coverages'))
               ? 'road-coverages'
               : path.startsWith('/lgus')
                 ? 'lgus'
-                : path.startsWith('/maintenance-documents')
+                : path.startsWith(workspaceHref('/maintenance-documents'))
                   ? 'maintenance-documents'
-                  : path.startsWith('/monthly-updates')
+                  : path.startsWith(workspaceHref('/monthly-updates'))
                     ? 'monthly-updates'
                     : 'maintenance-projects'
         : typeof page.props.navigationSection === 'string'
@@ -87,7 +90,7 @@ export function AlternativeNavigation({
                                 : parent
                                   ? directoryUrl
                                   : key === 'road-coverages'
-                                    ? '/road-coverages'
+                                    ? workspaceHref('/road-coverages')
                                     : `${directoryUrl}/navigation/${key}`
                         }
                         onClick={(event) => {
@@ -95,11 +98,11 @@ export function AlternativeNavigation({
                                 mainNavigation &&
                                 page.props.previewOnly === true &&
                                 ![
-                                    '/maintenance-projects',
-                                    '/monthly-updates',
-                                    '/maintenance-documents',
+                                    workspaceHref('/maintenance-projects'),
+                                    workspaceHref('/monthly-updates'),
+                                    workspaceHref('/maintenance-documents'),
                                     '/lgus',
-                                    '/road-coverages',
+                                    workspaceHref('/road-coverages'),
                                 ].includes(href)
                             ) {
                                 event.preventDefault();
@@ -192,7 +195,9 @@ export function AlternativeNavigation({
                                         <Link
                                             href={
                                                 mainNavigation
-                                                    ? '/maintenance-records'
+                                                    ? workspaceHref(
+                                                          '/maintenance-records',
+                                                      )
                                                     : `${directoryUrl}/navigation/maintenance-records`
                                             }
                                             className={`jr-nav-link ${recordsActive ? 'jr-active' : ''}`}

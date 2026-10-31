@@ -3,6 +3,7 @@ import { useRef } from 'react';
 import { MonthlyUpdateForm } from '@/components/monthly-updates/monthly-update-form';
 import { formReturn, returnLabel } from '@/lib/form-navigation';
 import { validateMonthlyUpdate } from '@/lib/monthly-updates';
+import { workspaceHref } from '@/lib/workspace-navigation';
 import type {
     MonthlyCreateProps,
     MonthlyUpdateValues,
@@ -10,12 +11,16 @@ import type {
 
 export default function Create(parents: MonthlyCreateProps) {
     const page = usePage();
-    const preview = page.props.previewOnly === true;
+    const preview =
+        page.props.previewOnly === true ||
+        (page.props.canonicalFrontend === true && page.props.canWrite === true);
     const update = parents.update;
     const cancel = update
-        ? formReturn(page.url, `/monthly-updates/${update.id}`, [
-              '/monthly-updates',
-              `/maintenance-projects/${update.project.id}/records/${update.maintenance_id}`,
+        ? formReturn(page.url, workspaceHref(`/monthly-updates/${update.id}`), [
+              workspaceHref('/monthly-updates'),
+              workspaceHref(
+                  `/maintenance-projects/${update.project.id}/records/${update.maintenance_id}`,
+              ),
           ])
         : parents.cancelUrl;
     const fixed = parents.records.find(
@@ -43,7 +48,9 @@ export default function Create(parents: MonthlyCreateProps) {
                     update
                         ? returnLabel(
                               cancel,
-                              cancel.startsWith('/maintenance-projects/')
+                              cancel.startsWith(
+                                  workspaceHref('/maintenance-projects/'),
+                              )
                                   ? 'Record Details'
                                   : 'Monthly Update Details',
                           )
@@ -108,6 +115,15 @@ export default function Create(parents: MonthlyCreateProps) {
                     }
 
                     submitting.current = true;
+
+                    if (page.props.canonicalFrontend === true) {
+                        form.transform((data) => ({
+                            ...data,
+                            attachments: undefined,
+                            removed_media_ids: undefined,
+                        }));
+                    }
+
                     form.submit(update ? 'put' : 'post', parents.submitUrl, {
                         forceFormData: true,
                         preserveScroll: true,

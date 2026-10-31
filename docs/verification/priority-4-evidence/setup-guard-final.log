@@ -1,0 +1,20 @@
+
+   PASS  Tests\Unit\LocalSetupGuardTest
+  ✓ refuses unsafe setup before any connection with data set "missing approval"
+  ✓ refuses unsafe setup before any connection with data set "production"
+  ✓ refuses unsafe setup before any connection with data set " render"
+  ✓ refuses unsafe setup before any connection with data set "remote database"
+  ✓ refuses unsafe setup before any connection with data set "shared name on localhost"
+  ✓ refuses unsafe setup before any connection with data set " u r l overrides safe host"
+  ✓ refuses unsafe setup before any connection with data set " u r l overrides scratch name"
+  ✓ refuses unsafe setup before any connection with data set "query overrides host"
+  ✓ refuses unsafe setup before any connection with data set "query overrides database"
+  ✓ refuses unsafe setup before any connection with data set "unsupported u r l"
+  ✓ refuses unsafe setup before any connection with data set "unsupported driver"
+  ✓ refuses unsafe setup before any connection with data set "persistent s q lite"
+  ✓ composer initialization checks target before migrations or key replacement
+  ✓ allows only explicit disposable postgres or memory sqlite
+
+  Tests:    14 passed (21 assertions)
+  Duration: 0.08s
+

@@ -10,6 +10,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { editUrl } from '@/lib/form-navigation';
 import { updateMonth, updateTimestamp } from '@/lib/monthly-updates';
+import { workspaceHref } from '@/lib/workspace-navigation';
+import DdMediaUpload from '@/pages/dd-phase3/DdMediaUpload';
 import type { MonthlyDetailProps } from '@/types/monthly-updates';
 
 export default function Show({
@@ -20,7 +22,9 @@ export default function Show({
     directoryUrl,
 }: MonthlyDetailProps) {
     const page = usePage();
-    const preview = page.props.previewOnly === true;
+    const preview =
+        page.props.previewOnly === true ||
+        (page.props.canonicalFrontend === true && page.props.canWrite === true);
     const deletion = useMonthlyDeletion(directoryUrl.split('?')[1] ?? '');
     const photos = media.filter((file) =>
         file.mime_type?.startsWith('image/'),
@@ -59,7 +63,9 @@ export default function Show({
                                 onClick={() =>
                                     router.visit(
                                         editUrl(
-                                            `/monthly-updates/${update.id}/edit`,
+                                            workspaceHref(
+                                                `/monthly-updates/${update.id}/edit`,
+                                            ),
                                             page.url,
                                         ),
                                     )
@@ -69,7 +75,10 @@ export default function Show({
                             </Button>
                             <Button
                                 className="jr-danger"
-                                disabled={!preview}
+                                disabled={
+                                    page.props.canonicalFrontend === true ||
+                                    !preview
+                                }
                                 onClick={() => deletion.open([update])}
                             >
                                 <Trash2 /> Delete Update
@@ -87,7 +96,9 @@ export default function Show({
                                     Maintenance Project
                                 </span>
                                 <Link
-                                    href={`/maintenance-projects/${update.project.id}`}
+                                    href={workspaceHref(
+                                        `/maintenance-projects/${update.project.id}`,
+                                    )}
                                     className="jr-report-context-link"
                                 >
                                     <strong>
@@ -110,7 +121,9 @@ export default function Show({
                                     Maintenance Record
                                 </span>
                                 <Link
-                                    href={`/maintenance-projects/${update.project.id}/records/${update.maintenance_id}`}
+                                    href={workspaceHref(
+                                        `/maintenance-projects/${update.project.id}/records/${update.maintenance_id}`,
+                                    )}
                                     className="jr-report-context-link"
                                 >
                                     <strong>
@@ -132,6 +145,12 @@ export default function Show({
                             </div>
                         </div>
                     </section>
+                    {page.props.canonicalFrontend === true && (
+                        <DdMediaUpload
+                            updateId={update.id}
+                            enabled={page.props.canUploadMedia === true}
+                        />
+                    )}
                     <dl
                         className="jr-report-overview"
                         aria-label="Report overview"

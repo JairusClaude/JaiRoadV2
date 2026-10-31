@@ -24,6 +24,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { editUrl } from '@/lib/form-navigation';
 import { documentDate } from '@/lib/maintenance-documents';
+import { workspaceHref } from '@/lib/workspace-navigation';
 import type {
     DocumentDirectoryProps,
     DocumentFilters,
@@ -34,7 +35,9 @@ export default function Index({
     filters,
 }: DocumentDirectoryProps) {
     const page = usePage();
-    const enabled = page.props.previewOnly === true;
+    const enabled =
+        page.props.previewOnly === true ||
+        (page.props.canonicalFrontend === true && page.props.canWrite === true);
     const deletion = useDocumentDeletion();
     const [search, setSearch] = useState(filters.search);
     const [selecting, setSelecting] = useState(false);
@@ -65,7 +68,7 @@ export default function Index({
         clearTimeout(timer.current);
         request.current?.cancel();
         router.get(
-            '/maintenance-documents',
+            workspaceHref('/maintenance-documents'),
             { ...next, page: current },
             {
                 preserveState: true,
@@ -108,7 +111,9 @@ export default function Index({
                         onClick={() =>
                             router.visit(
                                 editUrl(
-                                    '/maintenance-documents/create',
+                                    workspaceHref(
+                                        '/maintenance-documents/create',
+                                    ),
                                     page.url,
                                 ),
                             )
@@ -175,7 +180,7 @@ export default function Index({
                     total={documents.total}
                     singular="document"
                     plural="documents"
-                    canDelete={enabled}
+                    canDelete={page.props.canonicalFrontend !== true && enabled}
                     disabled={deletion.processing || !enabled}
                     onSelect={() => setSelecting(true)}
                     onCancel={() => {
@@ -251,7 +256,9 @@ export default function Index({
                                         selecting
                                             ? toggle(doc.id)
                                             : router.visit(
-                                                  `/maintenance-documents/${doc.id}`,
+                                                  workspaceHref(
+                                                      `/maintenance-documents/${doc.id}`,
+                                                  ),
                                               )
                                     }
                                 >
@@ -277,7 +284,9 @@ export default function Index({
                                             <div className="min-w-0">
                                                 <Link
                                                     className="jr-project-title jr-document-title"
-                                                    href={`/maintenance-documents/${doc.id}`}
+                                                    href={workspaceHref(
+                                                        `/maintenance-documents/${doc.id}`,
+                                                    )}
                                                     title={doc.document_title}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
@@ -326,11 +335,17 @@ export default function Index({
                                                     className="jr-theme jr-menu"
                                                 >
                                                     <DropdownMenuItem
-                                                        disabled={!enabled}
+                                                        disabled={
+                                                            !enabled ||
+                                                            doc.can_edit ===
+                                                                false
+                                                        }
                                                         onSelect={() =>
                                                             router.visit(
                                                                 editUrl(
-                                                                    `/maintenance-documents/${doc.id}/edit`,
+                                                                    workspaceHref(
+                                                                        `/maintenance-documents/${doc.id}/edit`,
+                                                                    ),
                                                                     page.url,
                                                                 ),
                                                             )
@@ -341,7 +356,11 @@ export default function Index({
                                                         Document
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem
-                                                        disabled={!enabled}
+                                                        disabled={
+                                                            page.props
+                                                                .canonicalFrontend ===
+                                                                true || !enabled
+                                                        }
                                                         onSelect={() =>
                                                             deletion.open([doc])
                                                         }

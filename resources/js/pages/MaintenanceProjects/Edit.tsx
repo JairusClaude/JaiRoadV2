@@ -1,6 +1,7 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { ProjectForm } from '@/components/maintenance-projects/project-form';
 import { formReturn, returnLabel, editUrl } from '@/lib/form-navigation';
+import { workspaceHref } from '@/lib/workspace-navigation';
 import type {
     CoverageChoice,
     IntegrationStatus,
@@ -18,9 +19,11 @@ export default function Edit({
     integration: IntegrationStatus;
 }) {
     const page = usePage();
-    const cancel = formReturn(page.url, `/maintenance-projects/${project.id}`, [
-        '/maintenance-projects',
-    ]);
+    const cancel = formReturn(
+        page.url,
+        workspaceHref(`/maintenance-projects/${project.id}`),
+        [workspaceHref('/maintenance-projects')],
+    );
     const form = useForm<ProjectFormValues>({
         road_coverage_id: String(project.road_coverage_id ?? ''),
         project_title: project.project_title,
@@ -45,7 +48,12 @@ export default function Edit({
                 }}
                 onSave={() =>
                     form.put(
-                        editUrl(`/maintenance-projects/${project.id}`, cancel),
+                        editUrl(
+                            workspaceHref(
+                                `/maintenance-projects/${project.id}`,
+                            ),
+                            cancel,
+                        ),
                         {
                             preserveScroll: true,
                         },

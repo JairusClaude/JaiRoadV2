@@ -4,15 +4,18 @@ namespace App\Policies;
 
 use App\Models\Engineer;
 use App\Models\User;
+use App\Services\MaintenanceProjects\VerifiedProjectAccount;
 
 class EngineerPolicy
 {
+    public function __construct(private VerifiedProjectAccount $accounts) {}
+
     /**
      * Determine whether the user can view any models.
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return $this->accounts->role($user) !== null;
     }
 
     /**
@@ -20,7 +23,7 @@ class EngineerPolicy
      */
     public function view(User $user, Engineer $engineer): bool
     {
-        return false;
+        return $this->viewAny($user);
     }
 
     /**

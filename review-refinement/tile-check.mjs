@@ -1,2 +1,21 @@
 import {chromium} from '/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs';import {spawn} from 'node:child_process';import{writeFile}from'node:fs/promises';
-const s=spawn('node',['tools/maintenance-project-preview/server.mjs'],{stdio:['ignore','pipe','pipe']});let b;try{await new Promise(r=>s.stdout.on('data',d=>{if(String(d).includes('5179'))r()}));b=await chromium.launch({executablePath:'/workspace/scratch/40cc43c72aeb/browser-runtime/chrome-headless-shell-linux64/chrome-headless-shell',headless:true,args:['--no-sandbox'],proxy:{server:process.env.HTTPS_PROXY,bypass:'localhost,127.0.0.1'}});const p=await b.newPage({ignoreHTTPSErrors:true});const logs=[];p.on('response',r=>{if(r.url().includes('tile.openstreetmap.org'))logs.push({url:r.url(),status:r.status()})});p.on('requestfailed',r=>{if(r.url().includes('tile.openstreetmap.org'))logs.push({url:r.url(),failure:r.failure()})});await p.goto('http://127.0.0.1:5179/road-coverages/create');await p.waitForTimeout(10000);console.log(logs);console.log(await p.locator('.leaflet-tile').evaluateAll(els=>els.map(e=>({src:e.src,complete:e.complete,width:e.naturalWidth}))));await writeFile('review-refinement/tile-results.json',JSON.stringify(logs,null,2));}finally{await b?.close();s.kill()}
+import process from 'node:process';
+const s=spawn('node',['tools/maintenance-project-preview/server.mjs'],{stdio:['ignore','pipe','pipe']});let b;
+
+try{
+await new Promise(r=>s.stdout.on('data',d=>{
+if(String(d).includes('5179')){
+r()
+}
+}));b=await chromium.launch({executablePath:'/workspace/scratch/40cc43c72aeb/browser-runtime/chrome-headless-shell-linux64/chrome-headless-shell',headless:true,args:['--no-sandbox'],proxy:{server:process.env.HTTPS_PROXY,bypass:'localhost,127.0.0.1'}});const p=await b.newPage({ignoreHTTPSErrors:true});const logs=[];p.on('response',r=>{
+if(r.url().includes('tile.openstreetmap.org')){
+logs.push({url:r.url(),status:r.status()})
+}
+});p.on('requestfailed',r=>{
+if(r.url().includes('tile.openstreetmap.org')){
+logs.push({url:r.url(),failure:r.failure()})
+}
+});await p.goto('http://127.0.0.1:5179/road-coverages/create');await p.waitForTimeout(10000);console.log(logs);console.log(await p.locator('.leaflet-tile').evaluateAll(els=>els.map(e=>({src:e.src,complete:e.complete,width:e.naturalWidth}))));await writeFile('review-refinement/tile-results.json',JSON.stringify(logs,null,2));
+}finally{
+await b?.close();s.kill()
+}

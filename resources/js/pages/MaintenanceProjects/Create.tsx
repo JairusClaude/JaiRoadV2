@@ -1,6 +1,7 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { useRef } from 'react';
 import { ProjectForm } from '@/components/maintenance-projects/project-form';
+import { workspaceHref } from '@/lib/workspace-navigation';
 import type {
     CoverageChoice,
     IntegrationStatus,
@@ -49,14 +50,16 @@ export default function Create({
                     }
 
                     saving.current = true;
-                    form.post('/maintenance-projects', {
+                    form.post(workspaceHref('/maintenance-projects'), {
                         preserveScroll: true,
                         onFinish: () => {
                             saving.current = false;
                         },
                     });
                 }}
-                onCancel={() => router.visit('/maintenance-projects')}
+                onCancel={() =>
+                    router.visit(workspaceHref('/maintenance-projects'))
+                }
             />
         </>
     );

@@ -6,6 +6,7 @@ import {
 } from '@/components/maintenance-projects/project-deletion';
 import { ProjectDirectory } from '@/components/maintenance-projects/project-directory';
 import type { DirectoryProps } from '@/components/maintenance-projects/project-directory';
+import { workspaceHref } from '@/lib/workspace-navigation';
 import type { ProjectFilters } from '@/types/maintenance-projects';
 
 export default function Index(
@@ -31,7 +32,7 @@ export default function Index(
     const filter = (filters: ProjectFilters) => {
         cancel();
         router.get(
-            '/maintenance-projects',
+            workspaceHref('/maintenance-projects'),
             { ...filters, page: 1 },
             {
                 preserveState: true,

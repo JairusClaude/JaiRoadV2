@@ -7,19 +7,30 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['road_name', 'lgus_id', 'kilometers', 'pavement_type', 'state_category', 'geojson', 'created_by'])]
+#[Fillable([
+    'road_name',
+    'lgu_id',
+    'kilometers',
+    'pavement_type',
+    'state_category',
+    'geojson',
+    'created_by',
+])]
 class RoadCoverage extends Model
 {
     /** @return array<string, string> */
     protected function casts(): array
     {
-        return ['geojson' => 'array', 'kilometers' => 'decimal:2'];
+        return [
+            'geojson' => 'array',
+            'kilometers' => 'decimal:2',
+        ];
     }
 
     /** @return BelongsTo<Lgu, $this> */
     public function lgu(): BelongsTo
     {
-        return $this->belongsTo(Lgu::class, 'lgus_id');
+        return $this->belongsTo(Lgu::class, 'lgu_id');
     }
 
     /** @return BelongsTo<Engineer, $this> */
@@ -31,6 +42,9 @@ class RoadCoverage extends Model
     /** @return HasOne<MaintenanceProject, $this> */
     public function maintenanceProject(): HasOne
     {
-        return $this->hasOne(MaintenanceProject::class, 'road_coverage_id');
+        return $this->hasOne(
+            MaintenanceProject::class,
+            'road_coverage_id'
+        );
     }
 }

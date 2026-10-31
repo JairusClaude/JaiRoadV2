@@ -14,8 +14,12 @@ export function initializeMonthlyPreview() {
             start_date: start,
             estimated_duration_days: 90,
         });
-        if (result.errors) throw new Error('Invalid Monthly Updates preview parent.');
+
+        if (result.errors) {
+throw new Error('Invalid Monthly Updates preview parent.');
+}
     }
+
     const first = records.find((record) => record.project_id === 103);
     const second = records.find((record) => record.project_id === 104);
     const examples = [
@@ -40,6 +44,7 @@ export function initializeMonthlyPreview() {
         [second.id, '2025-11', 15, 'Maintenance planning and site inspection.'],
         [second.id, '2024-12', 0, 'Baseline condition assessment.'],
     ];
+
     for (const [i, [maintenanceId, month, progress, summary]] of examples.entries()) {
         monthlyUpdates.push({
             id: 501 + i,
@@ -53,9 +58,13 @@ export function initializeMonthlyPreview() {
             updated_at: i === 11 ? '2026-10-19T09:00:00Z' : `${month}-15T08:00:00Z`,
         });
     }
+
     media.push({ id: 9001, monthly_update_id: 501 }, { id: 9002, monthly_update_id: 501 }, { id: 9003, monthly_update_id: 513 });
     const keys = monthlyUpdates.map((update) => `${update.maintenance_id}:${update.update_month}`);
-    if (new Set(keys).size !== keys.length) throw new Error('Duplicate preview reporting month.');
+
+    if (new Set(keys).size !== keys.length) {
+throw new Error('Duplicate preview reporting month.');
+}
 }
 
 export function monthlyDirectoryData(projects, url) {
@@ -63,7 +72,11 @@ export function monthlyDirectoryData(projects, url) {
     const joined = monthlyUpdates.flatMap((update) => {
         const record = records.find((item) => item.id === update.maintenance_id);
         const project = record && projectMap.get(record.project_id);
-        if (!project || (!/^\d{4}-(0[1-9]|1[0-2])$/.test(update.update_month ?? '') || Number(update.update_month.slice(0, 4)) < 1)) return [];
+
+        if (!project || (!/^\d{4}-(0[1-9]|1[0-2])$/.test(update.update_month ?? '') || Number(update.update_month.slice(0, 4)) < 1)) {
+return [];
+}
+
         return [{ ...update,
             project: { id: project.id, project_title: project.project_title },
             record: { id: record.id, year: record.year, quarter: record.quarter },
@@ -83,13 +96,18 @@ export function monthlyDirectoryData(projects, url) {
         `${update.project.project_title} ${update.summary_of_text_reports ?? ''}`.toLocaleLowerCase().includes(query),
     );
     rows.sort((a, b) => {
-        if (filters.sort === 'modified') return b.updated_at.localeCompare(a.updated_at) || b.id - a.id;
+        if (filters.sort === 'modified') {
+return b.updated_at.localeCompare(a.updated_at) || b.id - a.id;
+}
+
         const monthOrder = a.update_month.localeCompare(b.update_month);
+
         return (filters.sort === 'oldest' ? monthOrder : -monthOrder) || b.id - a.id;
     });
     const lastPage = Math.max(1, Math.ceil(rows.length / 10));
     const requestedPage = Number(url.searchParams.get('page'));
     const page = Number.isFinite(requestedPage) ? Math.max(1, Math.min(lastPage, Math.floor(requestedPage))) : 1;
+
     return {
         updates: { data: rows.slice((page - 1) * 10, page * 10), total: rows.length, current_page: page, last_page: lastPage, from: rows.length ? (page - 1) * 10 + 1 : null, to: Math.min(page * 10, rows.length) },
         projects: projects.map(({ id, project_title }) => ({ id, project_title })),
@@ -105,12 +123,17 @@ export function monthlyDetailData(projects, url) {
     const update = monthlyUpdates.find(item => item.id === id);
     const record = update && records.find(item => item.id === update.maintenance_id);
     const project = record && projects.find(item => item.id === record.project_id);
-    if (!project || !/^\d{4}-(0[1-9]|1[0-2])$/.test(update.update_month ?? '') || Number(update.update_month.slice(0, 4)) < 1) return null;
+
+    if (!project || !/^\d{4}-(0[1-9]|1[0-2])$/.test(update.update_month ?? '') || Number(update.update_month.slice(0, 4)) < 1) {
+return null;
+}
+
     const directory = monthlyDirectoryData(projects, url);
     const query = new URLSearchParams({ ...directory.filters, page: String(directory.updates.current_page) });
     const directoryUrl = `/monthly-updates?${query}`;
     const fromRecord = url.searchParams.get('record') === String(record.id);
     const attachments = monthlyMediaPreview(update.id);
+
     return {
         update: { ...update, project: { id: project.id, project_title: project.project_title }, record: { id: record.id, year: record.year, quarter: record.quarter }, media_count: attachments.length },
         media: attachments,
@@ -124,13 +147,21 @@ export function deleteMonthlyPreview(ids) {
     if (!Array.isArray(ids) || ids.length === 0 || ids.some((id) => !Number.isSafeInteger(id) || !monthlyUpdates.some((item) => item.id === id))) {
         return { update_ids: 'Nothing was deleted. Select existing monthly updates and try again.' };
     }
+
     const selected = new Set(ids);
+
     for (let i = media.length - 1; i >= 0; i--) {
-        if (selected.has(media[i].monthly_update_id)) media.splice(i, 1);
+        if (selected.has(media[i].monthly_update_id)) {
+media.splice(i, 1);
+}
     }
+
     for (let i = monthlyUpdates.length - 1; i >= 0; i--) {
-        if (selected.has(monthlyUpdates[i].id)) monthlyUpdates.splice(i, 1);
+        if (selected.has(monthlyUpdates[i].id)) {
+monthlyUpdates.splice(i, 1);
+}
     }
+
     return null;
 }
 
@@ -138,40 +169,86 @@ let nextUpdateId = 521;
 export async function createMonthlyPreview(projects, data, files, contextRecordId, currentId) {
     const prepared = await prepareMedia(files);
     const current = currentId ? monthlyUpdates.find(item => item.id === currentId) : null;
-    if (currentId && !current) return null;
+
+    if (currentId && !current) {
+return null;
+}
+
     const errors = {};
     const record = records.find((item) => String(item.id) === String(data.maintenance_id));
     const project = record && projects.find((item) => item.id === record.project_id);
-    if (!projects.some((item) => String(item.id) === String(data.project_id))) errors.project_id = 'Select an existing Maintenance Project.';
-    if (!record || !project || String(project.id) !== String(data.project_id) || (contextRecordId && String(record.id) !== contextRecordId)) errors.maintenance_id = 'Select a Maintenance Record belonging to this project.';
-    if (current && String(current.maintenance_id) !== String(data.maintenance_id)) errors.maintenance_id = 'The existing Maintenance Record association cannot be changed.';
+
+    if (!projects.some((item) => String(item.id) === String(data.project_id))) {
+errors.project_id = 'Select an existing Maintenance Project.';
+}
+
+    if (!record || !project || String(project.id) !== String(data.project_id) || (contextRecordId && String(record.id) !== contextRecordId)) {
+errors.maintenance_id = 'Select a Maintenance Record belonging to this project.';
+}
+
+    if (current && String(current.maintenance_id) !== String(data.maintenance_id)) {
+errors.maintenance_id = 'The existing Maintenance Record association cannot be changed.';
+}
+
     const removed = data.removed_media_ids ?? [];
-    if (!Array.isArray(removed) || removed.some(id => !Number.isSafeInteger(Number(id)) || !media.some(item => item.id === Number(id) && item.monthly_update_id === current?.id))) errors.attachments = 'Select attachments belonging to this Monthly Update.';
+
+    if (!Array.isArray(removed) || removed.some(id => !Number.isSafeInteger(Number(id)) || !media.some(item => item.id === Number(id) && item.monthly_update_id === current?.id))) {
+errors.attachments = 'Select attachments belonging to this Monthly Update.';
+}
+
     const month = String(data.update_month ?? '');
-    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month) || Number(month.slice(0, 4)) < 1) errors.update_month = 'Enter a valid reporting month and four-digit year.';
-    else if (record && monthlyUpdates.some((item) => item.id !== current?.id && item.maintenance_id === record.id && item.update_month === month)) errors.update_month = 'This Maintenance Record already has an update for this reporting month.';
+
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month) || Number(month.slice(0, 4)) < 1) {
+errors.update_month = 'Enter a valid reporting month and four-digit year.';
+} else if (record && monthlyUpdates.some((item) => item.id !== current?.id && item.maintenance_id === record.id && item.update_month === month)) {
+errors.update_month = 'This Maintenance Record already has an update for this reporting month.';
+}
+
     const progress = String(data.progress_percentage ?? '');
-    if (!/^\d+(?:\.\d{1,2})?$/.test(progress) || !Number.isFinite(Number(progress)) || Number(progress) > 100) errors.progress_percentage = 'Enter progress from 0 to 100 with up to two decimal places.';
-    if (prepared.error) errors.attachments = prepared.error;
-    if (Object.keys(errors).length) return { errors };
+
+    if (!/^\d+(?:\.\d{1,2})?$/.test(progress) || !Number.isFinite(Number(progress)) || Number(progress) > 100) {
+errors.progress_percentage = 'Enter progress from 0 to 100 with up to two decimal places.';
+}
+
+    if (prepared.error) {
+errors.attachments = prepared.error;
+}
+
+    if (Object.keys(errors).length) {
+return { errors };
+}
+
     // All checks complete before mutating the shared graph. No async work between
     // the uniqueness check and commit, including when uploads arrive together.
     const now = new Date().toISOString();
     const values = { id: current?.id ?? nextUpdateId++, maintenance_id: record.id, update_month: month, progress_percentage: Number(progress), summary_of_text_reports: String(data.summary_of_text_reports ?? '').trim() || null, created_by: current?.created_by ?? 'demoAdmin', created_at: current?.created_at ?? now, updated_at: now };
     const update = current ? Object.assign(current, values) : values;
-    if (!current) monthlyUpdates.push(update);
+
+    if (!current) {
+monthlyUpdates.push(update);
+}
+
     removeMonthlyMedia(update.id, removed.map(Number));
     attachMedia(update.id, prepared.prepared);
-    if (current) return { location: `/monthly-updates/${current.id}` };
+
+    if (current) {
+return { location: `/monthly-updates/${current.id}` };
+}
+
     return { location: `/monthly-updates?${new URLSearchParams({ project: String(project.id), year: month.slice(0, 4), sort: 'modified', page: '1' })}` };
 }
 
 export function monthlyUpdatesForRecord(projects, recordId) {
     return monthlyUpdates.filter(update => update.maintenance_id === recordId).map(update => {
         const detail = monthlyDetailData(projects, new URL(`http://localhost/monthly-updates/${update.id}`));
-        if (!detail) return null;
+
+        if (!detail) {
+return null;
+}
+
         const photos = detail.media.filter(file => file.mime_type?.startsWith('image/')).length;
         const videos = detail.media.filter(file => file.mime_type?.startsWith('video/')).length;
+
         return { ...detail.update, photo_count: photos, video_count: videos, other_count: detail.media.length - photos - videos };
     }).filter(Boolean);
 }

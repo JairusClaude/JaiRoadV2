@@ -1,69 +1,50 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Policies;
 
 use App\Models\User;
 use App\Models\UserAccount;
+use App\Services\MaintenanceProjects\VerifiedProjectAccount;
 
-class UserAccountPolicy
+/** Only creation is authorized for verified administrators. All other mutations remain denied. */
+final class UserAccountPolicy
 {
-    /**
-     * Determine whether the user can view any models.
-     */
+    public function __construct(private VerifiedProjectAccount $accounts) {}
+
     public function viewAny(User $user): bool
     {
         return false;
     }
 
-    /**
-     * Determine whether the user can view the model.
-     */
     public function view(User $user, UserAccount $userAccount): bool
     {
         return false;
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
     public function create(User $user): bool
     {
-        return false;
+        return in_array($this->accounts->role($user), ['admin', 'superadmin'], true);
     }
 
-    /**
-     * Determine whether the user can update the model.
-     */
     public function update(User $user, UserAccount $userAccount): bool
     {
         return false;
     }
 
-    /**
-     * Determine whether the user can delete the model.
-     */
     public function delete(User $user, UserAccount $userAccount): bool
     {
         return false;
     }
 
-    /**
-     * Determine whether the user can restore the model.
-     */
     public function restore(User $user, UserAccount $userAccount): bool
     {
         return false;
     }
 
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete(
-        User $user,
-        UserAccount $userAccount
-    ): bool {
+    public function forceDelete(User $user, UserAccount $userAccount): bool
+    {
         return false;
     }
 }
-
-// Authorization policy definitions.

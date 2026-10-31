@@ -10,6 +10,7 @@ import {
 } from '@/components/maintenance-projects/project-deletion';
 import { ProjectDirectory } from '@/components/maintenance-projects/project-directory';
 import type { DirectoryProps } from '@/components/maintenance-projects/project-directory';
+import { workspaceHref } from '@/lib/workspace-navigation';
 import type { ProjectFilters } from '@/types/maintenance-projects';
 import '../../../css/maintenance-projects-exploration.css';
 
@@ -100,7 +101,7 @@ export default function DirectoryAlternative(
                         Return to preserved light alternative
                     </Link>
                 )}
-                <Link href="/maintenance-projects">
+                <Link href={workspaceHref('/maintenance-projects')}>
                     View original directory
                 </Link>
             </p>

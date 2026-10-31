@@ -2,13 +2,12 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreAuditLogRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Prevent manual creation of audit log records.
      */
     public function authorize(): bool
     {
@@ -16,14 +15,13 @@ class StoreAuditLogRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * No validation rules are required because
+     * manual audit log creation is not permitted.
      *
-     * @return array<string, ValidationRule|array<mixed>|string>
+     * @return array<string, mixed>
      */
     public function rules(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 }

@@ -37,6 +37,13 @@ export type RoadCoverageDirectoryProps = {
 };
 
 export type RoadCoverageFormProps = {
+    requiresCreator?: boolean;
+    roadCreatorChoices?: {
+        id: number;
+        lgu_id: number;
+        first_name: string;
+        last_name: string;
+    }[];
     mapServices?: { routing: string; geocoding: string };
     geometryToken?: string;
     coverage?: RoadCoverage;
@@ -47,6 +54,7 @@ export type RoadCoverageFormProps = {
 };
 
 export type RoadCoverageDetailsProps = {
+    municipalities?: { id: number; municipality_name: string }[];
     coverage: RoadCoverage & {
         lgu: { id: number; municipality_name: string } | null;
     };

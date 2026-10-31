@@ -9,7 +9,9 @@ export type MaintenanceDocument = {
     document_title: string;
     description: string | null;
     file_name: string;
-    file_path: string;
+    file_path?: string;
+    download_url?: string;
+    can_edit?: boolean;
     uploaded_by: string;
     uploaded_at: string;
     updated_at: string;

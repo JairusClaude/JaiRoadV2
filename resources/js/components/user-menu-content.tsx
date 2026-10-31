@@ -14,13 +14,15 @@ import type { User } from '@/types';
 
 type Props = {
     user: User;
+    settingsHref?: string;
 };
 
-export function UserMenuContent({ user }: Props) {
+export function UserMenuContent({ user, settingsHref }: Props) {
     const cleanup = useMobileNavigation();
 
     const handleLogout = () => {
         cleanup();
+        router.clearHistory();
         router.flushAll();
     };
 
@@ -36,7 +38,7 @@ export function UserMenuContent({ user }: Props) {
                 <DropdownMenuItem asChild>
                     <Link
                         className="block w-full cursor-pointer"
-                        href={edit()}
+                        href={settingsHref ?? edit()}
                         prefetch
                         onClick={cleanup}
                     >

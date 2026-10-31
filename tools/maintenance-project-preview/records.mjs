@@ -37,17 +37,20 @@ export const monthlyUpdates = [];
 export const media = [];
 export const maintenanceDocuments = [];
 let nextRecordId = Math.max(0, ...records.map((record) => record.id)) + 1;
+
 for (const record of records) {
     record.created_by = 'demoAdmin';
     record.created_at = `${record.start_date}T08:00:00Z`;
     record.updated_at = record.created_at;
 }
+
 export function dependentCounts(recordIds) {
     const ids = new Set(recordIds);
     const updates = monthlyUpdates.filter((item) =>
         ids.has(item.maintenance_id),
     );
     const updateIds = new Set(updates.map((item) => item.id));
+
     return {
         maintenance_records: ids.size,
         monthly_updates: updates.length,
@@ -66,8 +69,11 @@ export function deletePreviewRecords(recordIds) {
             .map((item) => item.id),
     );
     const remove = (items, match) => {
-        for (let i = items.length - 1; i >= 0; i--)
-            if (match(items[i])) items.splice(i, 1);
+        for (let i = items.length - 1; i >= 0; i--) {
+if (match(items[i])) {
+items.splice(i, 1);
+}
+}
     };
     remove(media, (item) => updates.has(item.monthly_update_id));
     remove(maintenanceDocuments, (item) => ids.has(item.maintenance_id));
@@ -183,8 +189,12 @@ export function createPreviewRecord(projectId, data, current) {
         created_at: current?.created_at ?? now,
         updated_at: now,
     };
-    if (current) Object.assign(current, values);
-    else records.push(values);
+
+    if (current) {
+Object.assign(current, values);
+} else {
+records.push(values);
+}
 
     return {
         record_id: values.id,

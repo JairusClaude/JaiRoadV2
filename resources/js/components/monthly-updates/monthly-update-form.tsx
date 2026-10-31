@@ -1,3 +1,4 @@
+import { usePage } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
@@ -54,6 +55,7 @@ export function MonthlyUpdateForm({
     onSave: () => void;
     onCancel: () => void;
 }) {
+    const canonical = usePage().props.canonicalFrontend === true;
     const disabled = !enabled || processing;
     const project = parents.projects.find(
         (item) => String(item.id) === values.project_id,
@@ -135,8 +137,7 @@ export function MonthlyUpdateForm({
                 </div>
                 {!enabled && (
                     <p className="jr-notice" role="status">
-                        Saving is available only in the standalone frontend
-                        preview. Laravel integration is pending.
+                        Your account cannot change this maintenance report.
                     </p>
                 )}
                 <form
@@ -325,19 +326,28 @@ export function MonthlyUpdateForm({
                         <p className="jr-field-hint mb-4">
                             Add supporting evidence for this monthly update.
                         </p>
-                        <MediaAttachments
-                            files={values.attachments}
-                            existing={savedMedia}
-                            onRemoveExisting={onRemoveSaved}
-                            disabled={disabled}
-                            error={errors.attachments}
-                            onChange={onFiles}
-                        />
+                        {canonical ? (
+                            <p className="jr-field-hint">
+                                Save this report first. Add Media from its
+                                Details page using the private upload workflow;
+                                existing files are retained.
+                            </p>
+                        ) : (
+                            <MediaAttachments
+                                files={values.attachments}
+                                existing={savedMedia}
+                                onRemoveExisting={onRemoveSaved}
+                                disabled={disabled}
+                                error={errors.attachments}
+                                onChange={onFiles}
+                            />
+                        )}
                     </section>
                     <footer className="jr-form-footer">
                         <p>
-                            Sample data only · changes reset when the preview
-                            server restarts.
+                            {canonical
+                                ? 'Saving persists this MonthlyUpdate to the database. File removal remains unavailable pending retention policy approval.'
+                                : 'Sample data only · changes reset when the preview server restarts.'}
                         </p>
                         <div className="flex gap-2">
                             <Button

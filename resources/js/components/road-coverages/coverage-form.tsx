@@ -18,6 +18,7 @@ import {
     lineCoordinates,
     validateCoverage,
 } from '@/lib/road-coverages/geometry.mjs';
+import { workspaceHref } from '@/lib/workspace-navigation';
 import type { RoadCoverageFormProps } from '@/types/road-coverages';
 import { CoverageMapEditor } from './coverage-map-editor';
 import { MunicipalitySelector } from './municipality-selector';
@@ -31,6 +32,7 @@ type Values = {
     kilometers: string;
     geojson: object | null;
     correction_reason: string;
+    created_by_engineer_id: string;
 };
 export function CoverageForm({
     coverage,
@@ -40,11 +42,16 @@ export function CoverageForm({
     cancelUrl,
     mapServices,
     geometryToken,
+    requiresCreator = false,
+    roadCreatorChoices = [],
 }: RoadCoverageFormProps) {
     const page = usePage(),
-        back = formReturn(page.url, cancelUrl, ['/road-coverages']);
+        back = formReturn(page.url, cancelUrl, [
+            workspaceHref('/road-coverages'),
+        ]);
     const title = coverage ? 'Edit Road Coverage' : 'Add Road Coverage';
-    const enabled = page.props.previewOnly === true && canEdit;
+    const canonical = page.props.canonicalFrontend === true;
+    const enabled = (page.props.previewOnly === true || canonical) && canEdit;
     const form = useForm<Values>({
         road_name: coverage?.road_name ?? '',
         lgus_id: coverage ? String(coverage.lgus_id) : '',
@@ -56,6 +63,7 @@ export function CoverageForm({
                 : String(coverage.kilometers),
         geojson: coverage?.geojson ?? null,
         correction_reason: '',
+        created_by_engineer_id: '',
     });
     const saving = useRef(false);
     const [mappingDirty, setMappingDirty] = useState(false);
@@ -123,7 +131,7 @@ export function CoverageForm({
                         onClick={cancel}
                     >
                         <ArrowLeft className="size-4" />
-                        {back.split('?')[0] === '/road-coverages'
+                        {back.split('?')[0] === workspaceHref('/road-coverages')
                             ? 'Road Coverages'
                             : 'Road Coverage Details'}
                     </button>
@@ -152,6 +160,31 @@ export function CoverageForm({
                                 municipalities,
                                 coverage,
                             );
+
+                            if (
+                                coverage &&
+                                JSON.stringify(form.data.geojson) ===
+                                    JSON.stringify(coverage.geojson)
+                            ) {
+                                delete errors.geojson;
+                            }
+
+                            if (
+                                requiresCreator &&
+                                !roadCreatorChoices.some(
+                                    (e) =>
+                                        String(e.id) ===
+                                            form.data.created_by_engineer_id &&
+                                        String(e.lgu_id) === form.data.lgus_id,
+                                )
+                            ) {
+                                form.setError(
+                                    'created_by_engineer_id',
+                                    'Select an active mapping Engineer assigned to this municipality.',
+                                );
+
+                                return;
+                            }
 
                             if (
                                 coverage &&
@@ -210,6 +243,9 @@ export function CoverageForm({
                             saving.current = true;
                             form.transform((data) => ({
                                 ...data,
+                                ...(!requiresCreator
+                                    ? { created_by_engineer_id: undefined }
+                                    : {}),
                                 geometry_changed:
                                     !coverage ||
                                     JSON.stringify(data.geojson) !==
@@ -226,8 +262,10 @@ export function CoverageForm({
                                 coverage ? 'put' : 'post',
                                 editUrl(
                                     coverage
-                                        ? `/road-coverages/${coverage.id}`
-                                        : '/road-coverages',
+                                        ? workspaceHref(
+                                              `/road-coverages/${coverage.id}`,
+                                          )
+                                        : workspaceHref('/road-coverages'),
                                     back,
                                 ),
                                 {
@@ -266,7 +304,9 @@ export function CoverageForm({
                                                     value={form.data.road_name}
                                                     disabled={
                                                         !enabled ||
-                                                        form.processing
+                                                        form.processing ||
+                                                        (canonical &&
+                                                            !!coverage)
                                                     }
                                                     aria-invalid={
                                                         !!form.errors.road_name
@@ -304,8 +344,64 @@ export function CoverageForm({
                                                     }
                                                 />
                                                 {error('lgus_id')}
+                                                {canonical && coverage && (
+                                                    <p className="jr-field-hint">
+                                                        Use Change Municipality
+                                                        in Road Coverage Details
+                                                        for the impact review
+                                                        and final confirmation.
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
+                                        {requiresCreator && (
+                                            <div className="jr-record-field">
+                                                <Label htmlFor="created_by_engineer_id">
+                                                    Mapping Engineer *
+                                                </Label>
+                                                <select
+                                                    id="created_by_engineer_id"
+                                                    required
+                                                    className="jr-record-input"
+                                                    value={
+                                                        form.data
+                                                            .created_by_engineer_id
+                                                    }
+                                                    onChange={(e) =>
+                                                        set(
+                                                            'created_by_engineer_id',
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                >
+                                                    <option value="">
+                                                        Select active assigned
+                                                        Engineer
+                                                    </option>
+                                                    {roadCreatorChoices
+                                                        .filter(
+                                                            (e) =>
+                                                                String(
+                                                                    e.lgu_id,
+                                                                ) ===
+                                                                form.data
+                                                                    .lgus_id,
+                                                        )
+                                                        .map((e) => (
+                                                            <option
+                                                                key={e.id}
+                                                                value={e.id}
+                                                            >
+                                                                {e.first_name}{' '}
+                                                                {e.last_name}
+                                                            </option>
+                                                        ))}
+                                                </select>
+                                                {error(
+                                                    'created_by_engineer_id',
+                                                )}
+                                            </div>
+                                        )}
                                         <div className="jr-record-fields jr-coverage-attributes">
                                             {(
                                                 [
@@ -586,8 +682,10 @@ export function CoverageForm({
                             )}
                         <footer className="jr-form-footer jr-map-savebar">
                             <p>
-                                {form.isDirty ? 'Unsaved changes · ' : ''}Local
-                                preview · changes reset on restart.
+                                {form.isDirty ? 'Unsaved changes · ' : ''}
+                                {canonical
+                                    ? 'Saved to the canonical road coverage after server validation.'
+                                    : 'Local preview · changes reset on restart.'}
                             </p>
                             <div className="flex gap-2">
                                 <Button

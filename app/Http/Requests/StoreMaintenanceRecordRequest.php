@@ -2,75 +2,114 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Models\Engineer;
+use App\Models\MaintenanceProject;
+use App\Models\MaintenanceRecord;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 class StoreMaintenanceRecordRequest extends FormRequest
 {
+    /**
+     * Only users authorized by the MaintenanceRecord policy
+     * may create maintenance records.
+     */
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can(
+            'create',
+            MaintenanceRecord::class
+        ) ?? false;
     }
 
     /**
-     * @return array<string, ValidationRule|array<mixed>|string>
+     * Get the validation rules for creating a maintenance record.
+     *
+     * @return array<string, mixed>
      */
     public function rules(): array
     {
+        $project = new MaintenanceProject;
+        $engineer = new Engineer;
+
         return [
-            'maintenance_projects_id' => [
+            'project_id' => [
                 'required',
                 'integer',
-                'exists:maintenance_projects,id',
+                Rule::exists(
+                    $project->getTable(),
+                    $project->getKeyName()
+                ),
             ],
-            'engineers_id' => [
+
+            'managing_engineer_id' => [
                 'required',
                 'integer',
-                'exists:engineers,id',
+                Rule::exists(
+                    $engineer->getTable(),
+                    $engineer->getKeyName()
+                ),
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (! Schema::hasColumn('engineers', 'engineer_status')) {
+                        $fail('MaintenanceRecord creation is unavailable until EngineerStatus is deployed and approved.');
+
+                        return;
+                    }
+
+                    if (! Engineer::query()->whereKey($value)->where('engineer_status', 'Active')->exists()) {
+                        $fail('The managing Engineer must have Active status.');
+                    }
+                },
             ],
+
             'maintenance_year' => [
                 'required',
                 'integer',
-                'min:2000',
-                'max:2100',
+                'min:1',
+                'max:9999',
             ],
+
             'quarter' => [
                 'required',
+                'string',
+                'size:2',
                 Rule::in(['Q1', 'Q2', 'Q3', 'Q4']),
             ],
+
             'start_date' => [
                 'required',
                 'date',
             ],
+
             'estimated_duration_days' => [
                 'required',
                 'integer',
                 'min:1',
             ],
+
             'complete_date' => [
+                Rule::requiredIf(
+                    fn () => $this->input('status') === 'Completed'
+                ),
+                Rule::prohibitedIf(
+                    fn () => $this->input('status') === 'Ongoing'
+                ),
                 'nullable',
                 'date',
                 'after_or_equal:start_date',
             ],
+
             'status' => [
                 'required',
                 'string',
-                Rule::in([
-                    'Pending',
-                    'Ongoing',
-                    'Completed',
-                    'Suspended',
-                ]),
+                'max:20',
+                Rule::in(['Ongoing', 'Completed']),
             ],
+
             'description' => [
-                'required',
+                'nullable',
                 'string',
-            ],
-            'created_by' => [
-                'required',
-                'integer',
-                'exists:user_accounts,id',
             ],
         ];
     }

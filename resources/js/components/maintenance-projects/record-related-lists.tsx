@@ -28,6 +28,7 @@ import {
 import { editUrl } from '@/lib/form-navigation';
 import { documentDate } from '@/lib/maintenance-documents';
 import { updateMonth } from '@/lib/monthly-updates';
+import { workspaceHref } from '@/lib/workspace-navigation';
 import type { DocumentSummary } from '@/types/maintenance-documents';
 import type { MonthlyUpdateSummary } from '@/types/monthly-updates';
 import '../../../css/maintenance-record-related.css';
@@ -48,6 +49,8 @@ function RelatedActions({
     onEdit: () => void;
     onDelete: () => void;
 }) {
+    const canonical = usePage().props.canonicalFrontend === true;
+
     return (
         <div onClick={(e) => e.stopPropagation()}>
             <DropdownMenu>
@@ -69,7 +72,10 @@ function RelatedActions({
                             ? 'Monthly Update'
                             : 'Maintenance Document'}
                     </DropdownMenuItem>
-                    <DropdownMenuItem disabled={!enabled} onSelect={onDelete}>
+                    <DropdownMenuItem
+                        disabled={!enabled || canonical}
+                        onSelect={onDelete}
+                    >
                         <Trash2 />
                         Delete{' '}
                         {label.startsWith('Monthly')
@@ -116,7 +122,9 @@ export function RecordRelatedLists({
     documents: DocumentSummary[];
 }) {
     const page = usePage();
-    const enabled = page.props.previewOnly === true;
+    const enabled =
+        page.props.previewOnly === true ||
+        (page.props.canonicalFrontend === true && page.props.canWrite === true);
     const monthlyDeletion = useMonthlyDeletion(`record=${recordId}`);
     const documentDeletion = useDocumentDeletion(recordId);
     const orderedUpdates = [...updates].sort(
@@ -161,7 +169,9 @@ export function RecordRelatedLists({
                                     data-clickable="true"
                                     onClick={() =>
                                         router.visit(
-                                            `/monthly-updates/${update.id}?record=${recordId}`,
+                                            workspaceHref(
+                                                `/monthly-updates/${update.id}?record=${recordId}`,
+                                            ),
                                         )
                                     }
                                 >
@@ -171,7 +181,9 @@ export function RecordRelatedLists({
                                     />
                                     <div className="jr-related-row-copy">
                                         <Link
-                                            href={`/monthly-updates/${update.id}?record=${recordId}`}
+                                            href={workspaceHref(
+                                                `/monthly-updates/${update.id}?record=${recordId}`,
+                                            )}
                                             className="jr-related-row-title"
                                             onClick={(e) => e.stopPropagation()}
                                         >
@@ -193,7 +205,9 @@ export function RecordRelatedLists({
                                         onEdit={() =>
                                             router.visit(
                                                 editUrl(
-                                                    `/monthly-updates/${update.id}/edit`,
+                                                    workspaceHref(
+                                                        `/monthly-updates/${update.id}/edit`,
+                                                    ),
                                                     page.url,
                                                 ),
                                             )
@@ -234,7 +248,9 @@ export function RecordRelatedLists({
                             disabled={!enabled}
                             onClick={() =>
                                 router.visit(
-                                    `/maintenance-documents/create?record=${recordId}`,
+                                    workspaceHref(
+                                        `/maintenance-documents/create?record=${recordId}`,
+                                    ),
                                 )
                             }
                         >
@@ -252,7 +268,9 @@ export function RecordRelatedLists({
                                     data-clickable="true"
                                     onClick={() =>
                                         router.visit(
-                                            `/maintenance-documents/${doc.id}`,
+                                            workspaceHref(
+                                                `/maintenance-documents/${doc.id}`,
+                                            ),
                                         )
                                     }
                                 >
@@ -260,7 +278,9 @@ export function RecordRelatedLists({
                                     <div className="jr-related-row-copy">
                                         <Link
                                             className="jr-related-row-title"
-                                            href={`/maintenance-documents/${doc.id}`}
+                                            href={workspaceHref(
+                                                `/maintenance-documents/${doc.id}`,
+                                            )}
                                             title={doc.document_title}
                                             onClick={(e) => e.stopPropagation()}
                                         >
@@ -286,7 +306,9 @@ export function RecordRelatedLists({
                                         onEdit={() =>
                                             router.visit(
                                                 editUrl(
-                                                    `/maintenance-documents/${doc.id}/edit`,
+                                                    workspaceHref(
+                                                        `/maintenance-documents/${doc.id}/edit`,
+                                                    ),
                                                     page.url,
                                                 ),
                                             )

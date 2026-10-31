@@ -3,45 +3,80 @@
 namespace App\Http\Requests;
 
 use App\Models\MaintenanceProject;
+use App\Models\RoadCoverage;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Validator;
 
-class UpdateMaintenanceProjectRequest extends StoreMaintenanceProjectRequest
+class UpdateMaintenanceProjectRequest extends FormRequest
 {
+    /**
+     * Only authorized users may update a maintenance project.
+     */
     public function authorize(): bool
     {
-        $project = $this->route('maintenance_project');
+        $maintenanceProject = $this->route('maintenanceProject')
+            ?? $this->route('maintenance_project');
 
-        return $project instanceof MaintenanceProject && ($this->user()?->can('update', $project) ?? false);
+        return $maintenanceProject instanceof MaintenanceProject
+            && (
+                $this->user()?->can(
+                    'update',
+                    $maintenanceProject
+                ) ?? false
+            );
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * Validate the maintenance-project update form.
+     *
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
-        $project = $this->route('maintenance_project');
+        $maintenanceProject = $this->route('maintenanceProject')
+            ?? $this->route('maintenance_project');
+
+        if (! $maintenanceProject instanceof MaintenanceProject) {
+            return [];
+        }
+
+        $project = new MaintenanceProject;
+        $roadCoverage = new RoadCoverage;
 
         return [
-            'project_title' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'road_coverage_id' => ['bail', 'required', 'integer', 'exists:road_coverages,id', Rule::unique('maintenance_projects', 'road_coverage_id')->ignore($project instanceof MaintenanceProject ? $project->getKey() : null)],
+            'project_title' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+
+            'road_coverage_id' => [
+                'required',
+                'integer',
+
+                Rule::exists(
+                    $roadCoverage->getTable(),
+                    $roadCoverage->getKeyName()
+                ),
+
+                Rule::unique(
+                    $project->getTable(),
+                    'road_coverage_id'
+                )->ignore(
+                    $maintenanceProject->getKey(),
+                    $maintenanceProject->getKeyName()
+                ),
+            ],
+
+            'description' => [
+                'nullable',
+                'string',
+            ],
+
+            // Do not allow the client to override protected fields.
             'created_by' => ['prohibited'],
             'created_at' => ['prohibited'],
             'updated_at' => ['prohibited'],
         ];
-    }
-
-    public function withValidator(Validator $validator): void
-    {
-        $validator->after(function (Validator $validator): void {
-            if ($validator->errors()->has('road_coverage_id')) {
-                return;
-            }
-            $project = $this->route('maintenance_project');
-            if ($project instanceof MaintenanceProject
-                && (string) $this->input('road_coverage_id') !== (string) $project->road_coverage_id
-                && $project->maintenanceRecords()->exists()) {
-                $validator->errors()->add('road_coverage_id', 'Road coverage cannot be changed after maintenance history exists.');
-            }
-        });
     }
 }

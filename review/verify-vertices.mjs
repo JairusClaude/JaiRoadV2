@@ -1,13 +1,26 @@
 import {chromium} from '/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs';
-import {spawn} from 'node:child_process';import assert from 'node:assert/strict';import{readFile,writeFile}from'node:fs/promises';import{routeFeature,mappingData}from'../resources/js/lib/road-coverages/geometry.mjs';
+import assert from 'node:assert/strict';
+import {spawn} from 'node:child_process';import{readFile,writeFile}from'node:fs/promises';import process from 'node:process';
+import{routeFeature,mappingData}from'../resources/js/lib/road-coverages/geometry.mjs';
 const s=spawn('node',['tools/maintenance-project-preview/server.mjs'],{stdio:['ignore','pipe','pipe']});let browser;
+
 try{
-await new Promise(r=>s.stdout.on('data',d=>{if(d.toString().includes('5179'))r();}));browser=await chromium.launch({executablePath:'/workspace/scratch/40cc43c72aeb/browser-runtime/chrome-headless-shell-linux64/chrome-headless-shell',headless:true,args:['--no-sandbox'],proxy:{server:process.env.HTTPS_PROXY,bypass:'localhost,127.0.0.1'}});const c=await browser.newContext({viewport:{width:1536,height:1080},ignoreHTTPSErrors:true});const p=await c.newPage();const errors=[];p.on('pageerror',e=>errors.push(e.message));
+await new Promise(r=>s.stdout.on('data',d=>{
+if(d.toString().includes('5179')){
+r();
+}
+}));browser=await chromium.launch({executablePath:'/workspace/scratch/40cc43c72aeb/browser-runtime/chrome-headless-shell-linux64/chrome-headless-shell',headless:true,args:['--no-sandbox'],proxy:{server:process.env.HTTPS_PROXY,bypass:'localhost,127.0.0.1'}});const c=await browser.newContext({viewport:{width:1536,height:1080},ignoreHTTPSErrors:true});const p=await c.newPage();const errors=[];p.on('pageerror',e=>errors.push(e.message));
 const line=JSON.parse(await readFile('review/live-route.json','utf8')).routes[0].geometry.coordinates;const mid=Math.floor(line.length/2),geo=routeFeature([line[0],line[mid],line.at(-1)],[line.slice(0,mid+1),line.slice(mid)]);assert.ok(geo);
 await c.request.post('http://127.0.0.1:5179/road-coverages',{data:{road_name:'Development vertex verification',lgus_id:'1',pavement_type:'Concrete',state_category:'Good',kilometers:'1.78',geojson:geo}});
 const dir=await(await c.request.get('http://127.0.0.1:5179/road-coverages',{headers:{'X-Inertia':'true'}})).json();const row=dir.props.coverages.data.find(x=>x.road_name==='Development vertex verification');assert.ok(row);
 await p.goto(`http://127.0.0.1:5179/road-coverages/${row.id}/edit`);await p.waitForSelector('.jr-map-workspace');await p.getByRole('button',{name:'Edit Road Path',exact:true}).click();await p.getByRole('button',{name:'Insert vertex',exact:true}).click();
-const path=p.locator('.leaflet-overlay-pane path').first();const hit=await path.evaluate(el=>{const v=el.getPointAtLength(el.getTotalLength()/3);const q=new DOMPoint(v.x,v.y).matrixTransform(el.getScreenCTM());return{x:q.x,y:q.y};});await path.dispatchEvent("click",{bubbles:true,clientX:hit.x,clientY:hit.y});await p.waitForSelector('.jr-trace-vertex',{timeout:5000});assert.equal(await p.locator('.jr-trace-vertex').count(),1);await p.getByRole('button',{name:'Remove vertex',exact:true}).click();assert.equal(await p.locator('.jr-trace-vertex').count(),0);
+const path=p.locator('.leaflet-overlay-pane path').first();const hit=await path.evaluate(el=>{
+const v=el.getPointAtLength(el.getTotalLength()/3);const q=new DOMPoint(v.x,v.y).matrixTransform(el.getScreenCTM());
+
+return{x:q.x,y:q.y};
+});await path.dispatchEvent("click",{bubbles:true,clientX:hit.x,clientY:hit.y});await p.waitForSelector('.jr-trace-vertex',{timeout:5000});assert.equal(await p.locator('.jr-trace-vertex').count(),1);await p.getByRole('button',{name:'Remove vertex',exact:true}).click();assert.equal(await p.locator('.jr-trace-vertex').count(),0);
 await p.getByRole('button',{name:'Select vertex',exact:true}).click();await path.dispatchEvent("click",{bubbles:true,clientX:hit.x,clientY:hit.y});await p.waitForSelector('.jr-trace-vertex',{timeout:5000});const box=await p.locator('.jr-trace-vertex').boundingBox();await p.mouse.move(box.x+7,box.y+7);await p.mouse.down();await p.mouse.move(box.x+15,box.y+11,{steps:8});await p.mouse.up();await p.screenshot({path:'review/screenshots/12-selected-vertex-edit.png',fullPage:true});await p.getByRole('button',{name:'Apply Changes',exact:true}).click();await p.locator('#correction_reason').fill('Development verification: adjust selected vertex');await p.getByRole('button',{name:'Save Changes',exact:true}).click();await p.waitForURL('**/road-coverages');
 const updated=(await(await c.request.get(`http://127.0.0.1:5179/road-coverages/${row.id}/edit`,{headers:{'X-Inertia':'true'}})).json()).props.coverage.geojson;assert.deepEqual(mappingData(updated).legs[1],mappingData(geo).legs[1]);assert.notDeepEqual(mappingData(updated).legs[0],mappingData(geo).legs[0]);assert.equal(errors.length,0);await writeFile('review/vertex-results.txt','PASS: inserted and removed an intermediate vertex, exposed only one edit handle, moved a vertex, applied/saved with correction reason; B–C retained exactly and A–B changed; zero browser runtime errors. Real OSRM line used as temporary test input.');console.log('PASS vertex editing');
-}finally{await browser?.close();s.kill();}
+}finally{
+await browser?.close();s.kill();
+}

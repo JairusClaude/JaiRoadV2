@@ -6,6 +6,7 @@ export type MonthlyUpdateFilters = {
 };
 
 export type MonthlyUpdateSummary = {
+    can_edit?: boolean;
     id: number;
     maintenance_id: number;
     update_month: string;

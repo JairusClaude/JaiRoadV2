@@ -9,6 +9,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { documentExtension } from '@/lib/maintenance-documents';
+import { workspaceHref } from '@/lib/workspace-navigation';
 import type { DocumentSummary } from '@/types/maintenance-documents';
 export function DocumentViewer({
     document: doc,
@@ -33,7 +34,9 @@ export function DocumentViewer({
 
         const abort = new AbortController();
         let objectUrl = '';
-        fetch(`/preview-documents/${doc.id}`, { signal: abort.signal })
+        fetch(workspaceHref(`/preview-documents/${doc.id}`), {
+            signal: abort.signal,
+        })
             .then(async (response) => {
                 if (!response.ok) {
                     throw new Error('unavailable');
@@ -120,7 +123,9 @@ export function DocumentViewer({
                     </Button>
                     <Button className="jr-primary" asChild>
                         <a
-                            href={`/preview-documents/${doc.id}?download`}
+                            href={workspaceHref(
+                                `/preview-documents/${doc.id}?download`,
+                            )}
                             download={doc.file_name}
                         >
                             Download

@@ -1,105 +1,114 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreMonthlyUpdateRequest;
-use App\Http\Requests\UpdateMonthlyUpdateRequest;
-use App\Models\MaintenanceProject;
 use App\Models\MonthlyUpdate;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
-use Inertia\Inertia;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Response;
 
+/**
+ * Temporary, fail-closed compatibility controller.
+ *
+ * Existing resource routes stay registered, but no operation can read,
+ * mutate or upload business data. Existing policy checks remain in place.
+ * The prior full implementation is backed up by the installer.
+ *
+ * Blocked: the data-dictionary maintenance record mapping is not deployed.
+ * Do not activate CRUD until the shared schema, policies, and file retention
+ * rules have been agreed and implemented.
+ */
 class MonthlyUpdateController extends Controller
 {
+    /**
+     * Temporarily unavailable while the MonthlyUpdate integration is incomplete.
+     * Resource route parameters intentionally remain strings, preventing
+     * implicit Eloquent binding before this guard can run.
+     */
     public function index(): Response
     {
-        $search = trim((string) request()->query('search', ''));
-        $sortField = (string) request()->query('sort_field', 'created_at');
-        $sortDirection = strtolower((string) request()->query('sort_direction', 'desc'));
+        Gate::authorize('viewAny', MonthlyUpdate::class);
 
-        $allowedSortFields = [
-            'update_month',
-            'progress_percentage',
-            'created_at',
-        ];
-
-        if (! in_array($sortField, $allowedSortFields, true)) {
-            $sortField = 'created_at';
-        }
-
-        if (! in_array($sortDirection, ['asc', 'desc'], true)) {
-            $sortDirection = 'desc';
-        }
-
-        $query = MonthlyUpdate::query();
-
-        if ($search !== '') {
-            $query->where(function (Builder $query) use ($search): void {
-                $like = '%'.$search.'%';
-
-                $query->where('update_month', 'like', $like)
-                    ->orWhere('summary_of_text_reports', 'like', $like);
-            });
-        }
-
-        $model = $query
-            ->orderBy($sortField, $sortDirection)
-            ->paginate(5)
-            ->withQueryString();
-
-        return Inertia::render('MonthlyUpdates/Index', [
-            'model' => $model,
-            'maintenanceProjects' => MaintenanceProject::query()
-                ->orderBy('project_title')
-                ->pluck('id', 'project_title'),
-            'queryParams' => request()->query(),
-        ]);
+        $this->unavailable();
     }
 
-    public function create(): void
+    /**
+     * Temporarily unavailable while the MonthlyUpdate integration is incomplete.
+     * Resource route parameters intentionally remain strings, preventing
+     * implicit Eloquent binding before this guard can run.
+     */
+    public function create(): Response
     {
-        //
+        Gate::authorize('viewAny', MonthlyUpdate::class);
+
+        $this->unavailable();
     }
 
-    public function store(
-        StoreMonthlyUpdateRequest $request
-    ): RedirectResponse {
-        MonthlyUpdate::create($request->validated());
-
-        return to_route('monthly-updates.index')
-            ->with('message', 'Successfully created a monthly update');
-    }
-
-    public function show(MonthlyUpdate $monthlyUpdate): void
+    /**
+     * Temporarily unavailable while the MonthlyUpdate integration is incomplete.
+     * Resource route parameters intentionally remain strings, preventing
+     * implicit Eloquent binding before this guard can run.
+     */
+    public function store(Request $request): RedirectResponse
     {
-        //
+        Gate::authorize('viewAny', MonthlyUpdate::class);
+
+        $this->unavailable();
     }
 
-    public function edit(MonthlyUpdate $monthlyUpdate): void
+    /**
+     * Temporarily unavailable while the MonthlyUpdate integration is incomplete.
+     * Resource route parameters intentionally remain strings, preventing
+     * implicit Eloquent binding before this guard can run.
+     */
+    public function show(string $monthlyUpdate): Response
     {
-        //
+        Gate::authorize('viewAny', MonthlyUpdate::class);
+
+        $this->unavailable();
     }
 
-    public function update(
-        UpdateMonthlyUpdateRequest $request,
-        MonthlyUpdate $monthlyUpdate
-    ): RedirectResponse {
-        $monthlyUpdate->update($request->validated());
-
-        return to_route('monthly-updates.index', $request->query())
-            ->with(
-                'message',
-                'Successfully updated a monthly update'
-            );
-    }
-
-    public function destroy(MonthlyUpdate $monthlyUpdate): RedirectResponse
+    /**
+     * Temporarily unavailable while the MonthlyUpdate integration is incomplete.
+     * Resource route parameters intentionally remain strings, preventing
+     * implicit Eloquent binding before this guard can run.
+     */
+    public function edit(string $monthlyUpdate): Response
     {
-        $monthlyUpdate->delete();
+        Gate::authorize('viewAny', MonthlyUpdate::class);
 
-        return to_route('monthly-updates.index')
-            ->with('message', 'Successfully deleted a monthly update');
+        $this->unavailable();
+    }
+
+    /**
+     * Temporarily unavailable while the MonthlyUpdate integration is incomplete.
+     * Resource route parameters intentionally remain strings, preventing
+     * implicit Eloquent binding before this guard can run.
+     */
+    public function update(Request $request, string $monthlyUpdate): RedirectResponse
+    {
+        Gate::authorize('viewAny', MonthlyUpdate::class);
+
+        $this->unavailable();
+    }
+
+    /**
+     * Temporarily unavailable while the MonthlyUpdate integration is incomplete.
+     * Resource route parameters intentionally remain strings, preventing
+     * implicit Eloquent binding before this guard can run.
+     */
+    public function destroy(string $monthlyUpdate): RedirectResponse
+    {
+        Gate::authorize('viewAny', MonthlyUpdate::class);
+
+        $this->unavailable();
+    }
+
+    private function unavailable(): never
+    {
+        abort(503, 'This module is temporarily unavailable pending approved schema and authorization alignment.');
     }
 }
