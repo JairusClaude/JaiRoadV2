@@ -21,15 +21,15 @@ beforeEach(function (): void {
             'created_at' => '2026-01-01 00:00:00', 'updated_at' => $modified,
         ]);
     };
-    $this->december = ($this->report)('2027-12', '2028-01-01 00:00:00');
-    $this->january = ($this->report)('2026-01', '2028-02-01 00:00:00');
+    $this->december = ($this->report)('2027-12', '2028-02-01 00:00:00');
+    $this->january = ($this->report)('2026-01', '2028-01-01 00:00:00');
 });
 
 it('uses reporting months or modification time regardless of insertion order', function (string $sort, string $expected): void {
     $this->get('/dd-phase3/ui/monthly-updates?sort='.$sort)->assertOk()
         ->assertInertia(fn (Assert $page) => $page->where('filters.sort', $sort)
             ->where('updates.data.0.id', $this->$expected)->has('updates.data', 2));
-})->with([['newest', 'december'], ['oldest', 'january'], ['modified', 'january']]);
+})->with([['newest', 'december'], ['oldest', 'january'], ['modified', 'december']]);
 
 it('moves an older report first after a subsequent modification', function (): void {
     DB::table('jairoads_next.monthly_updates')->where('id', $this->january)->update(['updated_at' => '2028-03-01 00:00:00']);
