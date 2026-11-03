@@ -356,6 +356,83 @@ try {
     console.log(
         'PASS: Leaflet search and 2/3-point road persisted; canonical project/Q2/monthly/media/document writes; duplicate rejection; private download.',
     );
+
+    // Repair 1: use real persisted reports and the visible directory controls.
+    for (const month of ['2027-12', '2026-01']) {
+        const savedReport = await csrfPost(
+            engineer,
+            '/dd-phase3/ui/monthly-updates',
+            {
+                maintenance_id: record.id,
+                update_month: month,
+                progress_percentage: 15,
+            },
+        );
+        assert.equal(savedReport.status, 200);
+    }
+
+    await engineer.goto(`${ui}/monthly-updates`);
+    const reports = (await props(engineer, '/monthly-updates')).updates.data;
+    const january = reports.find((item) => item.update_month === '2026-01');
+    assert.ok(january);
+    await engineer.goto(`${ui}/monthly-updates/${january.id}/edit`);
+    await engineer.getByLabel(/^Progress Percentage/).fill('16');
+    await engineer
+        .getByRole('button', { name: /Save Changes|Save Update/ })
+        .click();
+    await engineer.waitForURL(`${ui}/monthly-updates/${january.id}`);
+    await engineer.goto(`${ui}/monthly-updates?project=${project.id}`);
+    const firstMonth = () =>
+        engineer
+            .locator('.jr-monthly-table tbody tr')
+            .first()
+            .locator('td')
+            .first()
+            .innerText();
+
+    for (const [label, mode, month] of [
+        ['Oldest Month First', 'oldest', 'January 2026'],
+        ['Newest Month First', 'newest', 'December 2027'],
+        ['Recently Modified', 'modified', 'January 2026'],
+    ]) {
+        await choose(engineer, 'Sort monthly updates', label);
+        await engineer.waitForURL(
+            (url) => url.searchParams.get('sort') === mode,
+        );
+        await engineer
+            .getByLabel('Sort monthly updates')
+            .getByText(label, { exact: true })
+            .waitFor();
+        assert.match(await firstMonth(), new RegExp(month));
+        await engineer.reload();
+        await engineer
+            .getByLabel('Sort monthly updates')
+            .getByText(label, { exact: true })
+            .waitFor();
+        assert.match(await firstMonth(), new RegExp(month));
+    }
+
+    await choose(engineer, 'Reporting Year filter', '2027');
+    await engineer.waitForURL((url) => url.searchParams.get('year') === '2027');
+    await engineer
+        .getByLabel('Reporting Year filter')
+        .getByText('2027', { exact: true })
+        .waitFor();
+    assert.equal(
+        await engineer.locator('.jr-monthly-table tbody tr').count(),
+        1,
+    );
+    assert.match(await firstMonth(), /December 2027/);
+    assert.equal(new URL(engineer.url()).searchParams.get('sort'), 'modified');
+    await engineer.reload();
+    await engineer
+        .getByLabel('Reporting Year filter')
+        .getByText('2027', { exact: true })
+        .waitFor();
+    assert.match(await firstMonth(), /December 2027/);
+    console.log(
+        'PASS: all three visible monthly sort modes, reporting-year selection, accurate URLs, and filter/order persistence after reload.',
+    );
     // Both confirmations use the unchanged server-side impact service and its signed snapshot.
     await engineer.goto(`${ui}/road-coverages/${road.id}`);
     await engineer

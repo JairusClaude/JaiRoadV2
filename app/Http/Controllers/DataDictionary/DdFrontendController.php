@@ -439,20 +439,34 @@ final class DdFrontendController extends Controller
     public function updateIndex(Request $request): Response
     {
         $actor = $this->actor($request);
+        $sort = $request->query('sort');
+        $year = $request->string('year', 'all')->toString();
+        $year = ctype_digit($year) && strlen($year) <= 4 ? (string) (int) $year : 'all';
         $filters = ['search' => $request->string('search')->toString(), 'project' => $request->string('project', 'all')->toString(),
-            'year' => $request->string('year', 'all')->toString(), 'sort' => $request->query('sort') === 'oldest' ? 'oldest' : 'newest'];
-        $q = $this->updateQuery($actor)->when($filters['search'] !== '', fn (Builder $q) => $q->where('p.project_title', 'ilike', '%'.substr($filters['search'], 0, 255).'%'));
+            'year' => $year,
+            'sort' => is_string($sort) && in_array($sort, ['newest', 'oldest', 'modified'], true) ? $sort : 'newest'];
+        $authorized = $this->updateQuery($actor);
+        $q = (clone $authorized)->when($filters['search'] !== '', fn (Builder $q) => $q->where('p.project_title', 'ilike', '%'.substr($filters['search'], 0, 255).'%'));
         if (ctype_digit($filters['project'])) {
             $q->where('p.id', $filters['project']);
         }
-        if (ctype_digit($filters['year'])) {
-            $q->where('m.maintenance_year', $filters['year']);
+        if ($filters['year'] !== 'all') {
+            // update_month is checked, zero-padded varchar(7), not a date.
+            // Keep the column bare in predicates so a suitable B-tree can use the bounds.
+            $bound = str_pad($filters['year'], 4, '0', STR_PAD_LEFT);
+            $q->where('u.update_month', '>=', $bound.'-01')
+                ->where('u.update_month', '<=', $bound.'-12');
         }
+        $direction = $filters['sort'] === 'oldest' ? 'asc' : 'desc';
+        $q->orderBy($filters['sort'] === 'modified' ? 'u.updated_at' : 'u.update_month', $direction)
+            ->orderBy('u.id', $direction);
 
         return $this->render('MonthlyUpdates/Index', $request, [
-            'updates' => $q->orderBy('u.id', $filters['sort'] === 'oldest' ? 'asc' : 'desc')->paginate(12)->withQueryString()->through(fn (\stdClass $u): array => $this->updateData($u, $actor)),
+            'updates' => $q->paginate(12)->withQueryString()->through(fn (\stdClass $u): array => $this->updateData($u, $actor)),
             'projects' => $this->projects($actor)->orderBy('p.project_title')->get()->map(fn (\stdClass $p): array => $this->projectData($p, $actor)),
-            'years' => $this->records($actor)->reorder()->distinct()->orderByDesc('m.maintenance_year')->pluck('m.maintenance_year'),
+            // Choice projection only; filtering above does not apply a function to the column.
+            'years' => (clone $authorized)->select([])->selectRaw('substring(u.update_month, 1, 4)::integer as reporting_year')
+                ->distinct()->orderByDesc('reporting_year')->pluck('reporting_year'),
             'filters' => $filters, 'canWrite' => $this->writable($actor),
         ]);
     }
