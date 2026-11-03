@@ -559,11 +559,15 @@ final class DdOperationsController extends Controller
             'progress_percentage' => ['required', 'numeric', 'between:0,100'],
             'summary_of_text_reports' => ['nullable', 'string', 'max:20000'],
         ]);
-        $this->recordScope($actor, (int) $v['maintenance_id'], true);
-        DB::transaction(function () use ($actor, $v, $id): void {
-            // Serialize monthly report changes on the parent record so concurrent
-            // submissions receive validation errors rather than duplicate inserts.
-            $this->t('maintenance_records')->where('id', $v['maintenance_id'])->lockForUpdate()->first(['id']);
+        $parent = $this->recordScope($actor, (int) $v['maintenance_id'], true);
+        DB::transaction(function () use ($request, $resolver, $actor, $parent, $v, $id): void {
+            // Match reassignment's project -> record lock order. Authorization
+            // checked before a lock wait is not authority to save after it.
+            abort_unless($this->t('maintenance_projects')->where('id', $parent->project_id)->lockForUpdate()->first(['id']) !== null, 404);
+            $record = $this->t('maintenance_records')->where('id', $v['maintenance_id'])->lockForUpdate()->first(['id', 'project_id']);
+            abort_unless($record !== null && (int) $record->project_id === (int) $parent->project_id, 404);
+            abort_unless($this->actor($request, $resolver) === $actor, 403);
+            $this->recordScope($actor, (int) $record->id, true);
             $duplicate = $this->t('monthly_updates')->where('maintenance_id', $v['maintenance_id'])->where('update_month', $v['update_month']);
             if ($id !== null) {
                 $duplicate->where('id', '!=', $id);

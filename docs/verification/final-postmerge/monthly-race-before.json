@@ -1,0 +1,11 @@
+{
+  "application_commit": "e7a4c609980808959780fdf61388f4c82365cddf",
+  "controller_sha256": "191a6ac38cd65bb5057d46c72185efd1f62f1c620a2836d36994a47156afab3d",
+  "observations": [
+    "POST deactivated; report_changed=yes; audit_changed=yes; blocked SQL: select \"id\" from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+    "POST unassigned; report_changed=yes; audit_changed=yes; blocked SQL: select \"id\" from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+    "POST reassigned; report_changed=yes; audit_changed=yes; blocked SQL: select \"id\" from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+    "PUT deactivated; report_changed=yes; audit_changed=yes; blocked SQL: select \"id\" from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update"
+  ],
+  "note": "Before any authorization correction. Two disposable connections, blocker holds project then record locks. Four unsafe successes (three creates and deactivated edit); four other outcomes fail the required project-lock assertion. No shared database or real accounts."
+}
