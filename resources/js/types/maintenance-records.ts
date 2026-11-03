@@ -51,3 +51,8 @@ export type MaintenanceRecordDetail = MaintenanceRecordSummary & {
     created_at: string | null;
     updated_at: string | null;
 };
+
+export type MaintenancePeriodChoice = Pick<
+    MaintenanceRecordSummary,
+    'id' | 'year' | 'quarter'
+> & { project_id?: number };

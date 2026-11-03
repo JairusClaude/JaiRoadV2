@@ -15,7 +15,7 @@ import {
     engineerName,
     validateMaintenanceYear,
 } from '@/lib/maintenance-records';
-import type { ProjectSummary } from '@/types/maintenance-projects';
+import type { ProjectChoice } from '@/types/maintenance-projects';
 import type {
     EngineerOption,
     MaintenanceRecordValues,
@@ -41,7 +41,7 @@ export function MaintenanceRecordForm({
 }: {
     mode?: 'create' | 'edit';
     originalEngineerId?: number;
-    project?: ProjectSummary;
+    project?: ProjectChoice;
     projectSelector?: ReactNode;
     backLabel?: string;
     engineers: EngineerOption[];

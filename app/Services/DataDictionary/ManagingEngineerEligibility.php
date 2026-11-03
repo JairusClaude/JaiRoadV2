@@ -14,13 +14,21 @@ final class ManagingEngineerEligibility
     /** @param array{account_id:int, role:string, engineer_id:?int} $actor */
     public function choices(array $actor, int $lguId): Builder
     {
+        return $this->choicesForLgus($actor, [$lguId])->select(['e.id', 'e.first_name', 'e.last_name']);
+    }
+
+    /** @param array{account_id:int, role:string, engineer_id:?int} $actor
+     * @param  list<int>  $lguIds
+     */
+    public function choicesForLgus(array $actor, array $lguIds): Builder
+    {
         return DB::table('jairoads_next.engineers as e')
             ->join('jairoads_next.user_accounts as ua', 'ua.engineer_id', '=', 'e.id')
             ->join('jairoads_next.engineer_lgus as el', 'el.engineer_id', '=', 'e.id')
             ->where('e.engineer_status', 'Active')
             ->where('ua.is_active', true)
             ->where('el.is_active', true)
-            ->where('el.lgu_id', $lguId)
+            ->whereIn('el.lgu_id', $lguIds)
             ->where(function (Builder $query) use ($actor): void {
                 $query->where('ua.account_type', 'Engineer');
                 // The approved Admin exception is self-management, not assigning other Admins.
@@ -29,7 +37,7 @@ final class ManagingEngineerEligibility
                 }
             })
             ->when($actor['role'] === 'Engineer', fn (Builder $query) => $query->where('ua.id', $actor['account_id']))
-            ->select(['e.id', 'e.first_name', 'e.last_name'])
+            ->select(['e.id', 'e.first_name', 'e.last_name', 'el.lgu_id'])
             ->orderBy('e.last_name')->orderBy('e.first_name')->orderBy('e.id');
     }
 

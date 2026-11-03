@@ -6,11 +6,11 @@ import { Label } from '@/components/ui/label';
 import { formReturn, returnLabel, editUrl } from '@/lib/form-navigation';
 import { recordPayload, validateRecord } from '@/lib/maintenance-records';
 import { workspaceHref } from '@/lib/workspace-navigation';
-import type { ProjectSummary } from '@/types/maintenance-projects';
+import type { ProjectChoice } from '@/types/maintenance-projects';
 import type {
     EngineerOption,
     MaintenanceRecordDetail,
-    MaintenanceRecordSummary,
+    MaintenancePeriodChoice,
     MaintenanceRecordValues,
 } from '@/types/maintenance-records';
 
@@ -25,10 +25,10 @@ export function RecordEditor({
     managerChoicesByProject,
 }: {
     managerChoicesByProject?: Record<string, EngineerOption[]>;
-    project?: ProjectSummary;
-    projects?: ProjectSummary[];
+    project?: ProjectChoice;
+    projects?: ProjectChoice[];
     engineers: EngineerOption[];
-    records: MaintenanceRecordSummary[];
+    records: MaintenancePeriodChoice[];
     submitUrl?: string;
     record?: MaintenanceRecordDetail;
     cancelUrl?: string;

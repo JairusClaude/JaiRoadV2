@@ -1,6 +1,6 @@
 import type {
     EngineerOption,
-    MaintenanceRecordSummary,
+    MaintenancePeriodChoice,
     MaintenanceRecordValues,
     RecordErrors,
 } from '@/types/maintenance-records';
@@ -42,7 +42,7 @@ export function validateMaintenanceYear(value: string): string | undefined {
 
 export function validateRecord(
     values: MaintenanceRecordValues,
-    records: MaintenanceRecordSummary[],
+    records: MaintenancePeriodChoice[],
     engineers: EngineerOption[],
     currentRecordId?: number,
 ): RecordErrors {

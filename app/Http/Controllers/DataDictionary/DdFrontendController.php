@@ -223,13 +223,13 @@ final class DdFrontendController extends Controller
     }
 
     /** @param Actor $actor */
-    private function projects(array $actor): Builder
+    private function projects(array $actor, bool $geometry = true): Builder
     {
         return $this->scope(DB::table('jairoads_next.maintenance_projects as p')
             ->join('jairoads_next.road_coverages as rc', 'rc.id', '=', 'p.road_coverage_id')
             ->join('jairoads_next.lgus as l', 'l.id', '=', 'rc.lgu_id')
             ->join('jairoads_next.user_accounts as a', 'a.id', '=', 'p.created_by'), $actor)
-            ->select(['p.*', 'rc.road_name', 'rc.lgu_id', 'rc.geojson', 'l.municipality_name', 'a.username as creator_name'])
+            ->select(['p.*', 'rc.road_name', 'rc.lgu_id', 'l.municipality_name', 'a.username as creator_name', ...($geometry ? ['rc.geojson'] : [])])
             ->selectSub(DB::table('jairoads_next.maintenance_records as c')->selectRaw('count(*)')->whereColumn('c.project_id', 'p.id'), 'record_count');
     }
 
@@ -242,14 +242,33 @@ final class DdFrontendController extends Controller
             'road_coverage_id' => (int) $p->road_coverage_id, 'road_name' => $p->road_name, 'municipality' => $p->municipality_name,
             'created_by' => $p->creator_name, 'created_at' => $p->created_at, 'updated_at' => $p->updated_at,
             'maintenance_records_count' => (int) $p->record_count, 'can_edit' => $this->writable($actor), 'can_delete' => false,
-            'geojson' => json_decode($p->geojson, true, 512, JSON_THROW_ON_ERROR)];
+            ...(isset($p->geojson) ? ['geojson' => json_decode($p->geojson, true, 512, JSON_THROW_ON_ERROR)] : [])];
+    }
+
+    /** @param Actor $actor */
+    private function projectChoices(array $actor): Builder
+    {
+        return $this->projects($actor, false)->select(['p.id', 'p.project_title', 'p.road_coverage_id', 'rc.road_name', 'rc.lgu_id', 'l.municipality_name']);
+    }
+
+    /** @return array<string,mixed> */
+    private function projectChoiceData(\stdClass $p): array
+    {
+        return ['id' => (int) $p->id, 'project_title' => $p->project_title, 'municipality' => $p->municipality_name,
+            'road_coverage_id' => (int) $p->road_coverage_id, 'road_name' => $p->road_name];
+    }
+
+    /** @return array{id:int,project_id:int,year:int,quarter:string} */
+    private function periodChoiceData(\stdClass $r): array
+    {
+        return ['id' => (int) $r->id, 'project_id' => (int) $r->project_id, 'year' => (int) $r->maintenance_year, 'quarter' => $r->quarter];
     }
 
     public function projectIndex(Request $request): Response
     {
         $actor = $this->actor($request);
         $filters = ['search' => $request->string('search')->toString(), 'municipality' => $request->string('municipality', 'all')->toString(), 'sort' => $request->query('sort') === 'oldest' ? 'oldest' : 'newest'];
-        $q = $this->projects($actor)->when($filters['search'] !== '', fn (Builder $q) => $q->where('p.project_title', 'ilike', '%'.substr($filters['search'], 0, 255).'%'));
+        $q = $this->projects($actor, false)->when($filters['search'] !== '', fn (Builder $q) => $q->where('p.project_title', 'ilike', '%'.substr($filters['search'], 0, 255).'%'));
         if (ctype_digit($filters['municipality'])) {
             $q->where('rc.lgu_id', $filters['municipality']);
         }
@@ -319,6 +338,20 @@ final class DdFrontendController extends Controller
             'project' => ['id' => (int) $r->project_id, 'project_title' => $r->project_title, 'municipality' => $r->municipality_name]];
     }
 
+    /** @param Actor $actor
+     * @return array<string,mixed>
+     */
+    private function historyData(\stdClass $r, array $actor): array
+    {
+        $url = self::BASE.'/maintenance-projects/'.$r->project_id.'/records/'.$r->id;
+
+        return ['id' => (int) $r->id, 'year' => (int) $r->maintenance_year, 'quarter' => $r->quarter, 'status' => $r->status,
+            'engineers_id' => (int) $r->managing_engineer_id,
+            'managing_engineer' => ['id' => (int) $r->managing_engineer_id, 'first_name' => $r->first_name, 'last_name' => $r->last_name],
+            'start_date' => $r->start_date, 'details_url' => $url,
+            'edit_url' => $this->canWriteRecord($r, $actor) ? $url.'/edit' : null, 'delete_url' => null];
+    }
+
     public function projectShow(Request $request, int $id): Response
     {
         $actor = $this->actor($request);
@@ -326,7 +359,9 @@ final class DdFrontendController extends Controller
         abort_unless($p !== null, 404);
 
         return $this->render('MaintenanceProjects/Show', $request, ['project' => $this->projectData($p, $actor),
-            'records' => $this->records($actor)->where('m.project_id', $id)->orderByDesc('m.maintenance_year')->orderByDesc('m.quarter')->get()->map(fn (\stdClass $r): array => $this->recordData($r, $actor)),
+            'records' => $this->records($actor)->where('m.project_id', $id)->orderByDesc('m.maintenance_year')->orderByDesc('m.quarter')
+                ->get(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter', 'm.status', 'm.managing_engineer_id', 'm.start_date', 'e.first_name', 'e.last_name'])
+                ->map(fn (\stdClass $r): array => $this->historyData($r, $actor)),
             'recordCreateUrl' => $this->writable($actor) ? self::BASE.'/maintenance-projects/'.$id.'/records/create' : null,
             'expandedYear' => $request->integer('record_year', (int) date('Y'))]);
     }
@@ -335,7 +370,7 @@ final class DdFrontendController extends Controller
     {
         $actor = $this->actor($request);
         $this->writer($actor);
-        $p = $this->projects($actor)->where('p.id', $project)->first();
+        $p = $this->projectChoices($actor)->where('p.id', $project)->first();
         abort_unless($p !== null, 404);
         $record = $id === null ? null : $this->records($actor)->where('m.project_id', $project)->where('m.id', $id)->first();
         abort_if($id !== null && $record === null, 404);
@@ -346,8 +381,8 @@ final class DdFrontendController extends Controller
         }
 
         return $this->render('MaintenanceProjects/Records/'.($id === null ? 'Create' : 'Edit'), $request, [
-            'project' => $this->projectData($p, $actor), 'engineers' => $engineers,
-            'records' => $this->records($actor)->where('m.project_id', $project)->get()->map(fn (\stdClass $r): array => $this->recordData($r, $actor)),
+            'project' => $this->projectChoiceData($p), 'engineers' => $engineers,
+            'records' => $this->records($actor)->where('m.project_id', $project)->get(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter'])->map(fn (\stdClass $r): array => $this->periodChoiceData($r)),
             'record' => $record === null ? null : $this->recordData($record, $actor), 'canWrite' => true,
             'submitUrl' => self::BASE.'/maintenance-projects/'.$project.'/records'.($id === null ? '' : '/'.$id),
             'cancelUrl' => self::BASE.'/maintenance-projects/'.$project.($id === null ? '' : '/records/'.$id),
@@ -407,7 +442,7 @@ final class DdFrontendController extends Controller
 
         return $this->render('MaintenanceRecords/Index', $request, [
             'records' => $q->orderBy('m.id', $filters['sort'] === 'oldest' ? 'asc' : 'desc')->paginate(12)->withQueryString()->through(fn (\stdClass $r): array => $this->recordData($r, $actor)),
-            'projects' => $this->projects($actor)->orderBy('p.project_title')->get()->map(fn (\stdClass $p): array => $this->projectData($p, $actor)),
+            'projects' => $this->projectChoices($actor)->orderBy('p.project_title')->get()->map(fn (\stdClass $p): array => $this->projectChoiceData($p)),
             'municipalities' => $this->municipalities($actor)->map(fn (\stdClass $l): array => ['value' => (string) $l->id, 'label' => $l->municipality_name]),
             'years' => $this->records($actor)->reorder()->distinct()->orderByDesc('m.maintenance_year')->pluck('m.maintenance_year'),
             'filters' => $filters, 'canCreate' => $this->writable($actor), 'integration' => ['ready' => true, 'message' => null],
@@ -418,20 +453,17 @@ final class DdFrontendController extends Controller
     {
         $actor = $this->actor($request);
         $this->writer($actor);
-        $projects = $this->projects($actor)->orderBy('p.project_title')->get();
-        $choices = [];
-        foreach ($projects->pluck('lgu_id')->unique() as $lgu) {
-            $choices[(int) $lgu] = $this->eligibility->choices($actor, (int) $lgu)->get()->all();
-        }
+        $projects = $this->projectChoices($actor)->orderBy('p.project_title')->get();
+        $choices = $this->eligibility->choicesForLgus($actor, array_values($projects->pluck('lgu_id')->unique()->map(fn ($id): int => (int) $id)->all()))->get()->groupBy('lgu_id');
         $byProject = [];
         foreach ($projects as $p) {
-            $byProject[(int) $p->id] = $choices[(int) $p->lgu_id];
+            $byProject[(int) $p->id] = $choices->get((int) $p->lgu_id, collect())->map(fn (\stdClass $e): array => ['id' => (int) $e->id, 'first_name' => $e->first_name, 'last_name' => $e->last_name])->all();
         }
 
         return $this->render('MaintenanceProjects/Records/Create', $request, [
-            'projects' => $projects->map(fn (\stdClass $p): array => $this->projectData($p, $actor)), 'engineers' => [],
+            'projects' => $projects->map(fn (\stdClass $p): array => $this->projectChoiceData($p)), 'engineers' => [],
             'managerChoicesByProject' => $byProject,
-            'records' => $this->records($actor)->get()->map(fn (\stdClass $r): array => $this->recordData($r, $actor)),
+            'records' => $this->records($actor)->get(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter'])->map(fn (\stdClass $r): array => $this->periodChoiceData($r)),
             'canWrite' => true, 'cancelUrl' => self::BASE.'/maintenance-records',
         ]);
     }
@@ -491,7 +523,7 @@ final class DdFrontendController extends Controller
 
         return $this->render('MonthlyUpdates/Index', $request, [
             'updates' => $q->paginate(12)->withQueryString()->appends($filters)->through(fn (\stdClass $u): array => $this->updateData($u, $actor)),
-            'projects' => $this->projects($actor)->orderBy('p.project_title')->get()->map(fn (\stdClass $p): array => $this->projectData($p, $actor)),
+            'projects' => $this->projectChoices($actor)->orderBy('p.project_title')->get()->map(fn (\stdClass $p): array => $this->projectChoiceData($p)),
             // Choice projection only; filtering above does not apply a function to the column.
             'years' => (clone $authorized)->select([])->selectRaw('substring(u.update_month, 1, 4)::integer as reporting_year')
                 ->distinct()->orderByDesc('reporting_year')->pluck('reporting_year'),
@@ -504,14 +536,15 @@ final class DdFrontendController extends Controller
      */
     private function parents(array $actor, Request $request, ?int $fixedRecord = null): array
     {
-        $records = $this->records($actor)->orderByDesc('m.maintenance_year')->get()
-            ->filter(fn (\stdClass $r): bool => $this->canWriteRecord($r, $actor));
         $context = $fixedRecord ?? ($request->integer('maintenance_id') ?: null);
+        $records = $this->records($actor)->when($context !== null, fn (Builder $q) => $q->where('m.id', $context))
+            ->orderByDesc('m.maintenance_year')->get(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter', 'm.managing_engineer_id'])
+            ->filter(fn (\stdClass $r): bool => $this->canWriteRecord($r, $actor));
         abort_if($context !== null && ! $records->contains('id', $context), 403);
 
-        return ['projects' => $this->projects($actor)->whereIn('p.id', $records->pluck('project_id'))->orderBy('p.project_title')->get()
-            ->map(fn (\stdClass $p): array => $this->projectData($p, $actor)),
-            'records' => $records->map(fn (\stdClass $r): array => ['id' => (int) $r->id, 'project_id' => (int) $r->project_id, 'year' => (int) $r->maintenance_year, 'quarter' => $r->quarter])->values(),
+        return ['projects' => $this->projectChoices($actor)->whereIn('p.id', $records->pluck('project_id'))->orderBy('p.project_title')->get()
+            ->map(fn (\stdClass $p): array => $this->projectChoiceData($p)),
+            'records' => $records->map(fn (\stdClass $r): array => $this->periodChoiceData($r))->values(),
             'contextRecordId' => $context, 'canWrite' => true];
     }
 
@@ -523,9 +556,11 @@ final class DdFrontendController extends Controller
         abort_if($id !== null && $u === null, 404);
         abort_if($u !== null && ! $this->canWriteRecord($u, $actor), 403);
 
-        return $this->render('MonthlyUpdates/Create', $request, $this->parents($actor, $request, $u === null ? null : (int) $u->maintenance_id) + [
+        $parents = $this->parents($actor, $request, $u === null ? null : (int) $u->maintenance_id);
+
+        return $this->render('MonthlyUpdates/Create', $request, $parents + [
             'update' => $u === null ? null : $this->updateData($u, $actor), 'media' => $id === null ? [] : $this->mediaData($id),
-            'existingUpdates' => $this->updateQuery($actor)->get(['u.id', 'u.maintenance_id', 'u.update_month']),
+            'existingUpdates' => $this->updateQuery($actor)->when($parents['contextRecordId'] !== null, fn (Builder $q) => $q->where('u.maintenance_id', $parents['contextRecordId']))->get(['u.id', 'u.maintenance_id', 'u.update_month']),
             'submitUrl' => self::BASE.'/monthly-updates'.($id === null ? '' : '/'.$id),
             'cancelUrl' => self::BASE.'/monthly-updates'.($id === null ? '' : '/'.$id),
         ]);
@@ -617,7 +652,7 @@ final class DdFrontendController extends Controller
 
         return $this->render('MaintenanceDocuments/Index', $request, [
             'documents' => $q->orderBy('d.id', $filters['sort'] === 'oldest' ? 'asc' : 'desc')->paginate(12)->withQueryString()->through(fn (\stdClass $d): array => $this->documentData($d, $actor)),
-            'projects' => $this->projects($actor)->orderBy('p.project_title')->get()->map(fn (\stdClass $p): array => $this->projectData($p, $actor)),
+            'projects' => $this->projectChoices($actor)->orderBy('p.project_title')->get()->map(fn (\stdClass $p): array => $this->projectChoiceData($p)),
             'filters' => $filters, 'canWrite' => $this->writable($actor),
         ]);
     }

@@ -49,3 +49,8 @@ export type ProjectFormValues = {
     project_title: string;
     description: string;
 };
+
+export type ProjectChoice = Pick<
+    ProjectSummary,
+    'id' | 'project_title' | 'municipality' | 'road_coverage_id' | 'road_name'
+>;
