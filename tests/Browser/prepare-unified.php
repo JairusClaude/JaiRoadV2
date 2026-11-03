@@ -53,7 +53,7 @@ final class UnifiedFrontendBrowserFixture extends PostgresTestCase
             ])];
         }
         DB::commit();
-        echo json_encode(['admin_email' => $admin->email, 'superadmin_email' => $super->email,
+        echo json_encode(['session_cookie_name' => config('session.cookie'), 'admin_email' => $admin->email, 'superadmin_email' => $super->email,
             'engineer_email' => $f['user']->email, 'viewer_email' => $viewer->email, 'rogue_email' => $rogueLogin->email,
             'geometry_roads' => $geometryRoads, 'road_id' => $f['road'], 'destination_id' => (int) $destination, 'engineer_id' => $f['engineer'], 'viewer_id' => $viewer->dd_user_account_id,
             'lgu_id' => (int) $lgu, 'project_id' => $f['project'], 'record_id' => (int) $record,

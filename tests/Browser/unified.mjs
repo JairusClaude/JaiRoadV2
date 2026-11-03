@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import process from 'node:process';
+import { verifyAuthenticatedHistory } from './authenticated-history.mjs';
 import { pdf, png, startStorageMock } from './private-storage-mock.mjs';
 import { verifyDirectoryLayouts } from './responsive-directories.mjs';
 const { chromium } = await import(
@@ -623,30 +624,11 @@ try {
             .getAttribute('href'),
         '/dd-phase3/settings',
     );
-    await engineer.locator('[data-test=logout-button]').click();
-    await engineer.waitForURL(/\/login|\/$/);
-    await engineer.goBack();
-    await engineer.getByLabel('Email address').waitFor();
-    assert.equal(
-        await engineer
-            .getByRole('heading', {
-                name: 'Unified browser project',
-                exact: true,
-            })
-            .count(),
-        0,
-    );
-    console.log(
-        'Back-navigation login view at',
-        new URL(engineer.url()).pathname,
-    );
-    assert.equal(
-        (
-            await engineer.request.get(`${ui}/maintenance-projects`, {
-                maxRedirects: 0,
-            })
-        ).status(),
-        302,
+    await verifyAuthenticatedHistory(
+        engineer,
+        ui,
+        f.engineer_email,
+        f.session_cookie_name,
     );
     assert.deepEqual(errors, []);
     console.log(
