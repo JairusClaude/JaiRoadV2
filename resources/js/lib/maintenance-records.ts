@@ -123,9 +123,12 @@ export function validateRecord(
 export function recordPayload(
     values: MaintenanceRecordValues,
     projectId: number,
+    mode: 'canonical' | 'preview' | 'legacy' = 'legacy',
 ) {
     return {
-        maintenance_projects_id: projectId,
+        ...(mode === 'canonical'
+            ? { project_id: projectId }
+            : { maintenance_projects_id: projectId }),
         maintenance_year: Number(values.maintenance_year),
         quarter: values.quarter,
         engineers_id: Number(values.engineers_id),

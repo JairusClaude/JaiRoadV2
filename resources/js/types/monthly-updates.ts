@@ -1,6 +1,7 @@
 export type MonthlyUpdateFilters = {
     search: string;
     project: string;
+    // Directory query only: reporting year derived from update_month.
     year: string;
     sort: 'newest' | 'oldest' | 'modified';
 };
@@ -9,9 +10,11 @@ export type MonthlyUpdateSummary = {
     can_edit?: boolean;
     id: number;
     maintenance_id: number;
+    // Canonical YYYY-MM reporting month, independent of record.year.
     update_month: string;
     progress_percentage: number;
     summary_of_text_reports: string | null;
+    // Display username; the stored creator ID is server-controlled.
     created_by: string;
     created_at: string;
     updated_at: string;
@@ -70,6 +73,7 @@ export type MonthlyCreateProps = {
 export type MonthlyMedia = {
     id: number;
     file_name: string;
+    // Read-only presentation alias of canonical Media.file_type.
     mime_type: string | null;
     size: number | null;
     preview_url: string | null;

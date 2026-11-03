@@ -226,6 +226,7 @@ jobs:
           touch .env
           npm run build
           node --experimental-strip-types tests/Browser/saved-geometry.mjs
+          node --experimental-strip-types tests/Browser/field-contracts.mjs
           php tests/Browser/prepare-unified.php > "$QUARTERLY_BROWSER_FIXTURE"
           npm install --prefix "$RUNNER_TEMP/jairoads-browser" playwright@1.62.1
           "$RUNNER_TEMP/jairoads-browser/node_modules/.bin/playwright" install --with-deps chromium

@@ -185,7 +185,7 @@ final class DdFrontendController extends Controller
     public function saveRoad(Request $request, ?int $id = null): RedirectResponse
     {
         $this->writer($this->actor($request));
-        $request->merge(['lgu_id' => $request->input('lgus_id')]);
+        $this->inputAlias($request, 'lgus_id', 'lgu_id');
         if ($request->exists('geojson')) {
             $geometry = $request->input('geojson');
             $request->merge(['geojson' => is_array($geometry) ? json_encode($geometry, JSON_THROW_ON_ERROR) : $geometry]);
@@ -335,7 +335,8 @@ final class DdFrontendController extends Controller
         if ($id !== null) {
             abort_unless($this->records($actor)->where('m.project_id', $project)->where('m.id', $id)->exists(), 404);
         }
-        $request->merge(['project_id' => $project, 'managing_engineer_id' => $request->input('engineers_id')]);
+        $request->merge(['project_id' => $project]);
+        $this->inputAlias($request, 'engineers_id', 'managing_engineer_id');
         $this->write(fn () => $this->operations->saveRecord($request, $this->identities, $id), ['managing_engineer_id' => 'engineers_id']);
 
         return redirect(self::BASE.'/maintenance-projects/'.$project)->with('dd_operations_status', 'MaintenanceRecord saved to the database.');
@@ -622,6 +623,8 @@ final class DdFrontendController extends Controller
     {
         $this->writer($this->actor($request));
         if ($id === null) {
+            // Validate the form alias before Symfony's FileBag receives it.
+            $request->validate(['attachment' => ['required', 'file']]);
             $upload = Request::createFrom($request);
             $upload->files->set('file', $request->file('attachment'));
             $this->write(fn () => $this->operations->uploadDocument($upload, $this->identities, $this->documents), ['file' => 'attachment']);
@@ -641,6 +644,23 @@ final class DdFrontendController extends Controller
         $this->operations->reassignRecord($request, $this->identities, $id);
 
         return redirect(self::BASE.'/maintenance-projects/'.$project.'/records/'.$id)->with('dd_operations_status', 'ManagingEngineer reassigned.');
+    }
+
+    /**
+     * Existing form-only ID aliases stay at this boundary. A repeated canonical
+     * ID may agree (integer or identical decimal string), but never override the
+     * visible selection. Canonical operations routes do not use this adapter.
+     */
+    private function inputAlias(Request $request, string $frontend, string $canonical): void
+    {
+        $value = $request->input($frontend);
+        if ($request->exists($canonical)) {
+            $other = $request->input($canonical);
+            if ((! is_int($value) && ! is_string($value)) || (! is_int($other) && ! is_string($other)) || (string) $value !== (string) $other) {
+                throw ValidationException::withMessages([$frontend => 'Conflicting values were supplied for this field. Refresh the form and try again.']);
+            }
+        }
+        $request->merge([$canonical => $value]);
     }
 
     /** @param \Closure():mixed $operation

@@ -2,11 +2,13 @@ export type RoadCoverage = {
     length_override?: boolean;
     id: number;
     road_name: string;
+    // Compatibility response/form alias of canonical lgu_id; Municipality association, not an LGU name.
     lgus_id: number;
     kilometers: string | number | null;
     pavement_type: 'Concrete' | 'Asphalt' | 'Gravel' | 'Earth';
     state_category: 'Good' | 'Fair' | 'Bad';
     geojson: object | null;
+    // Read-only canonical Engineer ID (RoadCoverage attribution exception).
     created_by: number;
     created_at: string;
     updated_at: string;

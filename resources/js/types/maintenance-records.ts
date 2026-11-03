@@ -14,9 +14,11 @@ export type MaintenanceRecordSummary = {
     delete_url?: string | null;
     deletion_counts?: DependentCounts;
     id: number;
+    // Display alias of maintenance_year; never the MonthlyUpdate reporting year.
     year: number;
     quarter: string;
     status: string;
+    // Compatibility alias of managing_engineer_id, distinct from the creator.
     engineers_id?: number;
     managing_engineer?: EngineerOption | null;
     start_date?: string | null;
@@ -24,6 +26,7 @@ export type MaintenanceRecordSummary = {
 };
 
 export type MaintenanceRecordValues = {
+    // Form writes use the canonical year name; response summaries retain year.
     maintenance_year: string;
     quarter: string;
     engineers_id: string;
@@ -43,6 +46,7 @@ export type MaintenanceRecordDetail = MaintenanceRecordSummary & {
     estimated_duration_days: number;
     complete_date: string | null;
     description: string | null;
+    // Display username supplied by the adapter, not a writable UserAccount ID.
     created_by: string | null;
     created_at: string | null;
     updated_at: string | null;

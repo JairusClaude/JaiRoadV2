@@ -14,6 +14,7 @@ export type ProjectSummary = {
     road_coverage_id: number | null;
     road_name: string | null;
     municipality: string | null;
+    // Display username; stored created_by is a server-assigned UserAccount ID.
     created_by: string | null;
     created_at: string | null;
     updated_at: string | null;

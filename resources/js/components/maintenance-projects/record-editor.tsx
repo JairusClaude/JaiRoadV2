@@ -104,7 +104,17 @@ export function RecordEditor({
             return;
         }
 
-        form.transform((values) => recordPayload(values, selectedProject.id));
+        form.transform((values) =>
+            recordPayload(
+                values,
+                selectedProject.id,
+                page.props.canonicalFrontend === true
+                    ? 'canonical'
+                    : preview
+                      ? 'preview'
+                      : 'legacy',
+            ),
+        );
         submitting.current = true;
         const url =
             submitUrl ??
