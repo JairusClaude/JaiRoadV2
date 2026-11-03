@@ -39,7 +39,8 @@ it('moves an older report first after a subsequent modification', function (): v
 
 it('falls back to newest for unsupported or structured sort input', function (mixed $sort): void {
     $this->get('/dd-phase3/ui/monthly-updates?'.http_build_query(['sort' => $sort]))
-        ->assertOk()->assertInertia(fn (Assert $page) => $page->where('filters.sort', 'newest')->where('updates.data.0.id', $this->december));
+        ->assertOk()->assertInertia(fn (Assert $page) => $page->where('filters.sort', 'newest')->where('updates.data.0.id', $this->december)
+        ->where('updates.first_page_url', fn (string $url): bool => str_contains($url, 'sort=newest')));
 })->with(['unsupported' => ['unexpected'], 'structured' => [['newest']]]);
 
 it('uses the real varchar reporting month for year choices and filtering', function (string $year, string $expected): void {

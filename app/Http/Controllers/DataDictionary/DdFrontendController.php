@@ -462,7 +462,7 @@ final class DdFrontendController extends Controller
             ->orderBy('u.id', $direction);
 
         return $this->render('MonthlyUpdates/Index', $request, [
-            'updates' => $q->paginate(12)->withQueryString()->through(fn (\stdClass $u): array => $this->updateData($u, $actor)),
+            'updates' => $q->paginate(12)->withQueryString()->appends($filters)->through(fn (\stdClass $u): array => $this->updateData($u, $actor)),
             'projects' => $this->projects($actor)->orderBy('p.project_title')->get()->map(fn (\stdClass $p): array => $this->projectData($p, $actor)),
             // Choice projection only; filtering above does not apply a function to the column.
             'years' => (clone $authorized)->select([])->selectRaw('substring(u.update_month, 1, 4)::integer as reporting_year')
