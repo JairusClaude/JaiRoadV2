@@ -15,6 +15,10 @@ export type RouteFeature = {
 export function coordinate(value: unknown): value is Point;
 export function samePoint(a: unknown, b: unknown): boolean;
 export function lineCoordinates(value: unknown): Point[] | null;
+export function validRoadGeometry(value: unknown, depth?: number): boolean;
+export function geometryEditingMode(
+    value: unknown,
+): 'editable' | 'readonly' | 'invalid';
 export function distanceKm(points: Point[]): number;
 export function mappingData(
     value: unknown,

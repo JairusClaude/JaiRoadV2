@@ -734,3 +734,16 @@
         top: 149px;
     }
 }
+
+/* Saved formats outside the manual editor retain their display-only map. */
+.jr-map-readonly .jr-map-stage {
+    display: flex;
+    flex-direction: column;
+}
+.jr-map-readonly .jr-coverage-map-preview {
+    flex: 1;
+    min-height: 300px;
+}
+.jr-map-readonly .jr-map-warning {
+    margin: 16px;
+}

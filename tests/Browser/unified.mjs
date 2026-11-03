@@ -164,6 +164,109 @@ try {
     await engineer.goto(`${ui}/road-coverages/${f.road_id}`);
     await engineer.locator('.jr-saved-coverage-line').waitFor();
     await engineer.getByText('Test project', { exact: true }).first().waitFor();
+
+    for (const saved of f.geometry_roads) {
+        const path = `/road-coverages/${saved.id}`;
+        const before = (await props(engineer, path)).coverage;
+        await engineer.goto(`${ui}${path}/edit`);
+
+        if (saved.format === 'mapped') {
+            await engineer.locator('.jr-control-location').nth(1).waitFor();
+            assert.equal(
+                await engineer.locator('.jr-control-location').count(),
+                2,
+            );
+        } else if (['legacy', 'feature'].includes(saved.format)) {
+            await engineer
+                .getByText('Saved alignment retained.', { exact: true })
+                .waitFor();
+            assert.equal(
+                await engineer
+                    .getByRole('button', {
+                        name: 'Use saved endpoints',
+                        exact: true,
+                    })
+                    .count(),
+                1,
+            );
+        } else {
+            const mode = saved.format === 'invalid' ? 'invalid' : 'readonly';
+            await engineer.locator(`[data-geometry-mode="${mode}"]`).waitFor();
+            assert.equal(
+                await engineer
+                    .locator('.jr-control-location, .jr-map-location-list')
+                    .count(),
+                0,
+            );
+            assert.equal(
+                await engineer
+                    .getByRole('button', {
+                        name: /Use saved endpoints|Start Over|Redraw Road|Draw Road/,
+                    })
+                    .count(),
+                0,
+            );
+
+            if (mode === 'invalid') {
+                await engineer
+                    .getByRole('alert')
+                    .filter({ hasText: 'requires administrator review' })
+                    .waitFor();
+                await engineer
+                    .getByRole('button', { name: 'Save Changes', exact: true })
+                    .click();
+                await engineer
+                    .getByText(
+                        'The saved geometry requires administrator review before this form can be saved.',
+                        { exact: true },
+                    )
+                    .waitFor();
+                assert.deepEqual(
+                    (await props(engineer, path)).coverage,
+                    before,
+                );
+                continue;
+            }
+
+            await engineer.locator('.jr-saved-coverage-line').waitFor();
+            await engineer
+                .getByText('This road uses a geometry format', { exact: false })
+                .waitFor();
+        }
+
+        await choose(engineer, /^Road Condition/, 'Fair');
+        const savedResponse = engineer.waitForResponse(
+            (r) =>
+                r.request().method() === 'PUT' &&
+                new URL(r.url()).pathname === `/dd-phase3/ui${path}`,
+        );
+        await engineer
+            .getByRole('button', { name: 'Save Changes', exact: true })
+            .click();
+        const response = await savedResponse;
+        assert.ok(response.status() < 400);
+        assert.equal(
+            Object.hasOwn(response.request().postDataJSON(), 'geojson'),
+            false,
+            'Metadata request must omit stored geometry',
+        );
+        await engineer.waitForURL(`${ui}${path}`);
+        const after = (await props(engineer, path)).coverage;
+        assert.deepEqual(after.geojson, before.geojson);
+        assert.equal(after.kilometers, before.kilometers);
+        assert.equal(after.state_category, 'Fair');
+        await engineer.goto(`${ui}${path}/edit`);
+        await choose(engineer, /^Road Condition/, 'Bad');
+        await engineer
+            .getByRole('button', { name: 'Cancel', exact: true })
+            .click();
+        await engineer.waitForURL(`${ui}${path}`);
+        assert.deepEqual((await props(engineer, path)).coverage, after);
+    }
+
+    console.log(
+        'PASS: legacy lines edit safely; multi-lines, collections and higher dimensions use read-only geometry; invalid geometry requires review; metadata save and Cancel preserve stored shapes.',
+    );
     await engineer.goto(`${ui}/road-coverages/create`);
     const information = engineer.getByRole('button', {
         name: 'Road Information',

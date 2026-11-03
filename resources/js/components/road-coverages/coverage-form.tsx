@@ -15,6 +15,7 @@ import {
 import { editUrl, formReturn } from '@/lib/form-navigation';
 import {
     distanceKm,
+    geometryEditingMode,
     lineCoordinates,
     validateCoverage,
 } from '@/lib/road-coverages/geometry.mjs';
@@ -65,20 +66,23 @@ export function CoverageForm({
         correction_reason: '',
         created_by_engineer_id: '',
     });
+    const geometryLocked =
+        !!coverage && geometryEditingMode(coverage.geojson) !== 'editable';
     const saving = useRef(false);
     const [mappingDirty, setMappingDirty] = useState(false);
     const [pending, setPending] = useState(false);
     const [geometryNotice, setGeometryNotice] = useState('');
     const [manualLength, setManualLength] = useState(
-        coverage?.length_override ??
-            (!!coverage &&
-                !!lineCoordinates(coverage.geojson) &&
-                Number(coverage.kilometers) !==
-                    Number(
-                        distanceKm(lineCoordinates(coverage.geojson)!).toFixed(
-                            2,
-                        ),
-                    )),
+        geometryLocked ||
+            (coverage?.length_override ??
+                (!!coverage &&
+                    !!lineCoordinates(coverage.geojson) &&
+                    Number(coverage.kilometers) !==
+                        Number(
+                            distanceKm(
+                                lineCoordinates(coverage.geojson)!,
+                            ).toFixed(2),
+                        ))),
     );
     const [lengthOpen, setLengthOpen] = useState(false);
     const points = lineCoordinates(form.data.geojson),
@@ -163,10 +167,11 @@ export function CoverageForm({
 
                             if (
                                 coverage &&
-                                JSON.stringify(form.data.geojson) ===
-                                    JSON.stringify(coverage.geojson)
+                                geometryEditingMode(coverage.geojson) ===
+                                    'invalid'
                             ) {
-                                delete errors.geojson;
+                                errors.geojson =
+                                    'The saved geometry requires administrator review before this form can be saved.';
                             }
 
                             if (
@@ -525,9 +530,11 @@ export function CoverageForm({
                                             : '—'}
                                     </div>
                                     <p className="jr-field-hint">
-                                        {calculated !== null
-                                            ? 'Calculated from the mapped road.'
-                                            : 'Calculated when every required road portion is complete.'}
+                                        {geometryLocked
+                                            ? 'Saved geometry is retained; recorded length is not recalculated.'
+                                            : calculated !== null
+                                              ? 'Calculated from the mapped road.'
+                                              : 'Calculated when every required road portion is complete.'}
                                     </p>
                                     {manualLength && (
                                         <p className="jr-recorded-measure">
@@ -554,7 +561,8 @@ export function CoverageForm({
                                             disabled={
                                                 !enabled ||
                                                 form.processing ||
-                                                calculated === null
+                                                (calculated === null &&
+                                                    !geometryLocked)
                                             }
                                             onClick={() => setLengthOpen(true)}
                                         >

@@ -297,7 +297,7 @@ final class DdOperationsController extends Controller
         if (array_key_exists('geojson', $v)) {
             $data['geojson'] = json_encode($geometry, JSON_THROW_ON_ERROR);
         }
-        DB::transaction(function () use ($actor, $data, $id, $v, $request): void {
+        DB::transaction(function () use ($actor, $data, $id, $v, $request, $geometry): void {
             if ($id === null) {
                 // RoadCoverage.CreatedBy is an Engineer FK. Manager-initiated
                 // entries require a named, active, LGU-assigned mapping Engineer.
@@ -339,13 +339,18 @@ final class DdOperationsController extends Controller
                     'lgu_id' => (int) $v['lgu_id'],
                 ]);
             } else {
-                $row = $this->t('road_coverages')->where('id', $id)->lockForUpdate()->first(['id', 'lgu_id']);
+                $row = $this->t('road_coverages')->where('id', $id)->lockForUpdate()->first(['id', 'lgu_id', 'geojson']);
                 abort_unless($row !== null, 404);
                 $this->lguAllowed($actor, (int) $row->lgu_id);
                 if ((int) $row->lgu_id !== (int) $v['lgu_id']) {
                     throw ValidationException::withMessages([
                         'lgu_id' => 'Use Change municipality to review affected records and confirm the municipality transition separately.',
                     ]);
+                }
+                // Compare actual persisted values under the lock; never trust an
+                // 'unchanged' flag. Omitted or identical geometry is not rewritten.
+                if (array_key_exists('geojson', $data) && json_decode($row->geojson, true) === $geometry) {
+                    unset($data['geojson']);
                 }
                 $this->t('road_coverages')->where('id', $id)->update($data);
                 $this->audit($actor, 'UPDATE', 'RoadCoverage', $id, 'Authorized RoadCoverage updated.',

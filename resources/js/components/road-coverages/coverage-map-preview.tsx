@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { mappingData } from '@/lib/road-coverages/geometry.mjs';
 import { savedRoadLines } from '@/lib/road-coverages/saved-lines';
 import 'leaflet/dist/leaflet.css';
+import '../../../css/road-coverage-details.css';
 
 // A display-only map: never initialize the editor, call routing, or change data.
 export function CoverageMapPreview({ geojson }: { geojson: object | null }) {

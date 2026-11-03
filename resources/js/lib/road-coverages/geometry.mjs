@@ -22,6 +22,72 @@ export function lineCoordinates(value) {
         ? points
         : null;
 }
+// Mirrors RoadCoverageGeometry's accepted road-line contract, independently of
+// the stricter two-dimensional manual editor. Never convert saved coordinates.
+export function validRoadGeometry(value, depth = 0) {
+    if (
+        depth > 12 ||
+        !value ||
+        typeof value !== 'object' ||
+        Array.isArray(value)
+    ) {
+        return false;
+    }
+
+    const line = (points) =>
+        Array.isArray(points) &&
+        points.length >= 2 &&
+        points.every(
+            (p) =>
+                Array.isArray(p) &&
+                p.length >= 2 &&
+                p.every((n) => typeof n === 'number' && Number.isFinite(n)) &&
+                Math.abs(p[0]) <= 180 &&
+                Math.abs(p[1]) <= 90,
+        );
+
+    switch (value.type) {
+        case 'LineString':
+            return line(value.coordinates);
+        case 'MultiLineString':
+            return (
+                Array.isArray(value.coordinates) &&
+                value.coordinates.length > 0 &&
+                value.coordinates.every(line)
+            );
+        case 'Feature':
+            return validRoadGeometry(value.geometry, depth + 1);
+        case 'FeatureCollection':
+            return (
+                Array.isArray(value.features) &&
+                value.features.length > 0 &&
+                value.features.every(
+                    (feature) =>
+                        feature?.type === 'Feature' &&
+                        validRoadGeometry(feature, depth + 1),
+                )
+            );
+        case 'GeometryCollection':
+            return (
+                Array.isArray(value.geometries) &&
+                value.geometries.length > 0 &&
+                value.geometries.every((geometry) =>
+                    validRoadGeometry(geometry, depth + 1),
+                )
+            );
+        default:
+            return false;
+    }
+}
+
+export function geometryEditingMode(value) {
+    if (!validRoadGeometry(value)) {
+        return 'invalid';
+    }
+
+    return lineCoordinates(value) ? 'editable' : 'readonly';
+}
+
 export function distanceKm(points) {
     const rad = (x) => (x * Math.PI) / 180;
 
@@ -172,14 +238,14 @@ export function validateCoverage(data, lgus, existing = null) {
             'Enter a positive length with up to two decimal places.';
     }
 
-    // An unmigrated but valid legacy line may be retained unchanged for metadata edits.
-    const retainLegacy =
+    // Metadata edits retain every valid saved format without converting it to
+    // the manual editor's Feature representation. Invalid saved data needs review.
+    const retainSaved =
         existing &&
-        lineCoordinates(existing.geojson) &&
-        !mappingData(existing.geojson) &&
+        validRoadGeometry(existing.geojson) &&
         JSON.stringify(data.geojson) === JSON.stringify(existing.geojson);
 
-    if (!mappingData(data.geojson) && !retainLegacy) {
+    if (!mappingData(data.geojson) && !retainSaved) {
         errors.geojson =
             'Place two or three distinct locations and complete each road portion before saving.';
     }

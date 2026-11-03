@@ -27,10 +27,28 @@ final class UnifiedFrontendBrowserFixture extends PostgresTestCase
         $media = DB::table('jairoads_next.media')->insertGetId(['monthly_update_id' => $monthly, 'file_name' => 'seed.png', 'file_type' => 'image/png', 'file_path' => 'monthly-updates/'.$monthly.'/00000000-0000-4000-8000-000000000001.png', 'uploaded_by' => $f['user']->dd_user_account_id]);
         $destination = DB::table('jairoads_next.lgus')->insertGetId(['municipality_name' => 'Destination town', 'province' => 'Test', 'region' => 'Test', 'mayor_first_name' => 'Test', 'mayor_last_name' => 'Mayor']);
         DB::table('jairoads_next.engineer_lgus')->insert(['engineer_id' => $f['engineer'], 'lgu_id' => $destination, 'is_active' => true]);
+        $line = ['type' => 'LineString', 'coordinates' => [[125.95, 7.59], [125.96, 7.60], [125.97, 7.61]]];
+        $geometryRoads = [];
+        foreach ([
+            'mapped' => ['type' => 'Feature', 'properties' => ['jairoads_mapping' => ['version' => 1, 'method' => 'manual', 'control_points' => [$line['coordinates'][0], $line['coordinates'][2]], 'control_point_indices' => [0, 2]]], 'geometry' => $line],
+            'legacy' => $line,
+            'feature' => ['type' => 'Feature', 'properties' => ['historical' => true], 'geometry' => $line],
+            'multi' => ['type' => 'MultiLineString', 'coordinates' => [$line['coordinates'], [[126, 8], [126.1, 8.1]]]],
+            'collection' => ['type' => 'GeometryCollection', 'geometries' => [$line, $line]],
+            'features' => ['type' => 'FeatureCollection', 'features' => [['type' => 'Feature', 'properties' => [], 'geometry' => $line]]],
+            'dimensions' => ['type' => 'LineString', 'coordinates' => [[125, 7, 12, 99], [125.1, 7.1, 13, 98]]],
+            'invalid' => ['type' => 'Point', 'coordinates' => [125, 7]],
+        ] as $format => $geometry) {
+            $geometryRoads[] = ['format' => $format, 'id' => (int) DB::table('jairoads_next.road_coverages')->insertGetId([
+                'road_name' => 'Saved geometry '.$format, 'lgu_id' => $lgu, 'kilometers' => '2.50',
+                'pavement_type' => 'Concrete', 'state_category' => 'Good', 'created_by' => $f['engineer'],
+                'geojson' => json_encode($geometry, JSON_THROW_ON_ERROR),
+            ])];
+        }
         DB::commit();
         echo json_encode(['admin_email' => $admin->email, 'superadmin_email' => $super->email,
             'engineer_email' => $f['user']->email, 'viewer_email' => $viewer->email, 'rogue_email' => $rogueLogin->email,
-            'road_id' => $f['road'], 'destination_id' => (int) $destination, 'engineer_id' => $f['engineer'], 'viewer_id' => $viewer->dd_user_account_id,
+            'geometry_roads' => $geometryRoads, 'road_id' => $f['road'], 'destination_id' => (int) $destination, 'engineer_id' => $f['engineer'], 'viewer_id' => $viewer->dd_user_account_id,
             'lgu_id' => (int) $lgu, 'project_id' => $f['project'], 'record_id' => (int) $record,
             'document_id' => (int) $document, 'media_id' => (int) $media], JSON_THROW_ON_ERROR);
     }

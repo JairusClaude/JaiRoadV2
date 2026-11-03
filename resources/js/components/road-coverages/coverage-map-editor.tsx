@@ -22,6 +22,7 @@ import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     distanceKm,
+    geometryEditingMode,
     lineCoordinates,
     mappingData,
     routeFeature,
@@ -29,6 +30,7 @@ import {
 } from '@/lib/road-coverages/geometry.mjs';
 import type { Point } from '@/lib/road-coverages/geometry.mjs';
 import type { RoadCoverage } from '@/types/road-coverages';
+import { CoverageMapPreview } from './coverage-map-preview';
 import 'leaflet/dist/leaflet.css';
 
 type Leg = { line: Point[]; manual: boolean; status: string; message?: string };
@@ -92,20 +94,7 @@ async function json(url: string, signal: AbortSignal) {
 
     return task;
 }
-export function CoverageMapEditor({
-    initial,
-    referenceCoverages,
-    disabled,
-    onChange,
-    information,
-    lengthFields,
-    municipality,
-    municipalities,
-    editing,
-    onPending,
-    onWorkingDirty,
-    services,
-}: {
+type CoverageMapEditorProps = {
     initial: object | null;
     referenceCoverages: RoadCoverage[];
     disabled: boolean;
@@ -118,7 +107,58 @@ export function CoverageMapEditor({
     onPending?: (pending: boolean) => void;
     onWorkingDirty?: (dirty: boolean) => void;
     services?: { routing: string; geocoding: string };
-}) {
+};
+
+export function CoverageMapEditor(props: CoverageMapEditorProps) {
+    const mode = geometryEditingMode(props.initial);
+
+    if (!props.editing || mode === 'editable') {
+        return <EditableCoverageMapEditor {...props} />;
+    }
+
+    return (
+        <div
+            className="jr-map-workspace jr-map-readonly"
+            data-geometry-mode={mode}
+        >
+            <div className="jr-map-stage">
+                {mode === 'readonly' ? (
+                    <CoverageMapPreview geojson={props.initial} />
+                ) : null}
+                <p
+                    className="jr-map-warning"
+                    role={mode === 'invalid' ? 'alert' : 'status'}
+                >
+                    {mode === 'invalid'
+                        ? 'This road has invalid saved geometry and requires administrator review. No replacement points have been created.'
+                        : 'This road uses a geometry format that the current editor cannot modify safely. Road information can still be edited without changing its map geometry.'}
+                </p>
+            </div>
+            <aside className="jr-map-panel" aria-label="Road information">
+                <section>
+                    <h2>Road Information</h2>
+                    {props.information}
+                </section>
+                <section>{props.lengthFields}</section>
+            </aside>
+        </div>
+    );
+}
+
+function EditableCoverageMapEditor({
+    initial,
+    referenceCoverages,
+    disabled,
+    onChange,
+    information,
+    lengthFields,
+    municipality,
+    municipalities,
+    editing,
+    onPending,
+    onWorkingDirty,
+    services,
+}: CoverageMapEditorProps) {
     const [draft, setDraft] = useState<Draft>(() => {
         const data = mappingData(initial);
 

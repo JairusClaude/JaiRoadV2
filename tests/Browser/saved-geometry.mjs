@@ -1,4 +1,9 @@
 import assert from 'node:assert/strict';
+import {
+    geometryEditingMode,
+    validRoadGeometry,
+    validateCoverage,
+} from '../../resources/js/lib/road-coverages/geometry.mjs';
 import { savedRoadLines } from '../../resources/js/lib/road-coverages/saved-lines.ts';
 const a = [
     [125, 7, 12],
@@ -45,4 +50,70 @@ assert.deepEqual(
 );
 console.log(
     'PASS: eight saved-geometry assertions; all accepted line collections render without connecting separate lines or mutating stored coordinates.',
+);
+
+const plain = { type: 'LineString', coordinates: b };
+
+for (const value of [
+    plain,
+    { type: 'Feature', properties: {}, geometry: plain },
+]) {
+    assert.equal(geometryEditingMode(value), 'editable');
+}
+
+for (const value of [
+    line,
+    multi,
+    feature,
+    collection,
+    nested,
+    {
+        type: 'LineString',
+        coordinates: [
+            [125, 86],
+            [125, 87],
+        ],
+    },
+]) {
+    assert.equal(geometryEditingMode(value), 'readonly');
+    const snapshot = JSON.stringify(value);
+    assert.equal(
+        validateCoverage(
+            {
+                road_name: 'Saved road',
+                lgus_id: 1,
+                pavement_type: 'Concrete',
+                state_category: 'Fair',
+                kilometers: '2.50',
+                geojson: value,
+            },
+            [{ id: 1 }],
+            { geojson: value },
+        ).geojson,
+        undefined,
+    );
+    assert.equal(JSON.stringify(value), snapshot);
+}
+
+for (const value of [
+    null,
+    {},
+    { type: 'Point', coordinates: [125, 7] },
+    {
+        type: 'LineString',
+        coordinates: [
+            [125, 7, 'bad'],
+            [125, 7, 2],
+        ],
+    },
+    { type: 'FeatureCollection', features: [plain] },
+    { type: 'MultiLineString', coordinates: [] },
+    { type: 'GeometryCollection', geometries: [plain, null] },
+]) {
+    assert.equal(validRoadGeometry(value), false);
+    assert.equal(geometryEditingMode(value), 'invalid');
+}
+
+console.log(
+    'PASS: saved geometry capability classification and metadata preservation match the canonical road-line contract.',
 );
