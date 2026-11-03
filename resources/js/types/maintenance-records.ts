@@ -54,5 +54,14 @@ export type MaintenanceRecordDetail = MaintenanceRecordSummary & {
 
 export type MaintenancePeriodChoice = Pick<
     MaintenanceRecordSummary,
-    'id' | 'year' | 'quarter'
+    'id' | 'year' | 'quarter' | 'details_url'
 > & { project_id?: number };
+
+export type DuplicatePeriod = {
+    project_id: number;
+    project_title: string;
+    maintenance_year: number;
+    quarter: string;
+    // Supplied only by an authorized server projection, never inferred from IDs.
+    details_url?: string | null;
+};

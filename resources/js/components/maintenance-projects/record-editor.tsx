@@ -1,5 +1,6 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useRef, useState } from 'react';
+import { DuplicatePeriodWarning } from '@/components/maintenance-projects/duplicate-period-warning';
 import { MaintenanceRecordForm } from '@/components/maintenance-projects/maintenance-record-form';
 import { ProjectSelector } from '@/components/monthly-updates/project-selector';
 import { Label } from '@/components/ui/label';
@@ -8,6 +9,7 @@ import { recordPayload, validateRecord } from '@/lib/maintenance-records';
 import { workspaceHref } from '@/lib/workspace-navigation';
 import type { ProjectChoice } from '@/types/maintenance-projects';
 import type {
+    DuplicatePeriod,
     EngineerOption,
     MaintenanceRecordDetail,
     MaintenancePeriodChoice,
@@ -35,6 +37,20 @@ export function RecordEditor({
 }) {
     const page = usePage();
     const preview = page.props.previewOnly === true;
+    const serverConflict = (page.props.duplicatePeriod ??
+        null) as DuplicatePeriod | null;
+    const [localConflict, setLocalConflict] = useState<DuplicatePeriod | null>(
+        null,
+    );
+    const [dismissedConflict, setDismissedConflict] =
+        useState<DuplicatePeriod | null>(null);
+    const conflict =
+        localConflict ??
+        (serverConflict !== dismissedConflict ? serverConflict : null);
+    const closeConflict = () => {
+        setLocalConflict(null);
+        setDismissedConflict(serverConflict);
+    };
     const [projectId, setProjectId] = useState('');
     const [projectError, setProjectError] = useState('');
     const selectedProject =
@@ -72,6 +88,17 @@ export function RecordEditor({
     const eligibleEngineers = selectedProject
         ? (managerChoicesByProject?.[String(selectedProject.id)] ?? engineers)
         : engineers;
+    const projectRecords = records.filter(
+        (item) =>
+            !('project_id' in item) || item.project_id === selectedProject?.id,
+    );
+    const unavailableQuarters = record
+        ? []
+        : projectRecords
+              .filter(
+                  (item) => item.year === Number(form.data.maintenance_year),
+              )
+              .map((item) => item.quarter);
     const save = () => {
         if (!enabled || submitting.current || form.processing) {
             return;
@@ -86,13 +113,33 @@ export function RecordEditor({
             return;
         }
 
+        const occupied =
+            !record &&
+            projectRecords.find(
+                (item) =>
+                    item.year === Number(form.data.maintenance_year) &&
+                    item.quarter === form.data.quarter,
+            );
+
+        if (occupied) {
+            setLocalConflict({
+                project_id: selectedProject.id,
+                project_title: selectedProject.project_title,
+                maintenance_year: occupied.year,
+                quarter: occupied.quarter,
+                details_url: occupied.details_url,
+            });
+            form.setError(
+                'quarter',
+                'This maintenance period is already occupied. Choose another quarter or year.',
+            );
+
+            return;
+        }
+
         const errors = validateRecord(
             form.data,
-            records.filter(
-                (item) =>
-                    !('project_id' in item) ||
-                    item.project_id === selectedProject.id,
-            ),
+            projectRecords,
             eligibleEngineers,
             record?.id,
         );
@@ -141,6 +188,7 @@ export function RecordEditor({
             <MaintenanceRecordForm
                 mode={record ? 'edit' : 'create'}
                 originalEngineerId={record?.engineers_id}
+                unavailableQuarters={unavailableQuarters}
                 project={selectedProject}
                 backLabel={returnLabel(
                     cancel,
@@ -227,6 +275,15 @@ export function RecordEditor({
                 }}
                 onSave={save}
                 onCancel={() => router.visit(cancel)}
+            />
+            <DuplicatePeriodWarning
+                conflict={record ? null : conflict}
+                onClose={closeConflict}
+                onChooseQuarter={() => {
+                    closeConflict();
+                    form.setData('quarter', '');
+                    form.clearErrors('quarter');
+                }}
             />
         </>
     );

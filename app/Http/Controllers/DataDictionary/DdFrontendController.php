@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\DataDictionary\DataDictionaryIdentityResolver;
 use App\Services\DataDictionary\DdRoleAccess;
+use App\Services\DataDictionary\DuplicateMaintenancePeriod;
 use App\Services\DataDictionary\ManagingEngineerEligibility;
 use App\Services\DataDictionary\RoadReferenceBounds;
 use App\Services\Documents\PrivateSupabaseStorage;
@@ -258,10 +259,11 @@ final class DdFrontendController extends Controller
             'road_coverage_id' => (int) $p->road_coverage_id, 'road_name' => $p->road_name];
     }
 
-    /** @return array{id:int,project_id:int,year:int,quarter:string} */
+    /** @return array{id:int,project_id:int,year:int,quarter:string,details_url:string} */
     private function periodChoiceData(\stdClass $r): array
     {
-        return ['id' => (int) $r->id, 'project_id' => (int) $r->project_id, 'year' => (int) $r->maintenance_year, 'quarter' => $r->quarter];
+        return ['id' => (int) $r->id, 'project_id' => (int) $r->project_id, 'year' => (int) $r->maintenance_year, 'quarter' => $r->quarter,
+            'details_url' => self::BASE.'/maintenance-projects/'.$r->project_id.'/records/'.$r->id];
     }
 
     public function projectIndex(Request $request): Response
@@ -366,6 +368,27 @@ final class DdFrontendController extends Controller
             'expandedYear' => $request->integer('record_year', (int) date('Y'))]);
     }
 
+    /** @param Actor $actor
+     * @return array<string,mixed>|null
+     */
+    private function duplicatePeriod(Request $request, array $actor): ?array
+    {
+        $period = $request->session()->get('dd_duplicate_period');
+        if (! is_array($period)) {
+            return null;
+        }
+        $project = $this->projectChoices($actor)->where('p.id', $period['project_id'])->first();
+        if ($project === null) {
+            return null;
+        }
+        $existing = $this->records($actor)->where('m.project_id', $project->id)
+            ->where('m.maintenance_year', $period['maintenance_year'])->where('m.quarter', $period['quarter'])->orderBy('m.id')->first(['m.id']);
+
+        return ['project_id' => (int) $project->id, 'project_title' => $project->project_title,
+            'maintenance_year' => (int) $period['maintenance_year'], 'quarter' => $period['quarter'],
+            'details_url' => $existing === null ? null : self::BASE.'/maintenance-projects/'.$project->id.'/records/'.$existing->id];
+    }
+
     public function recordForm(Request $request, int $project, ?int $id = null): Response
     {
         $actor = $this->actor($request);
@@ -381,6 +404,7 @@ final class DdFrontendController extends Controller
         }
 
         return $this->render('MaintenanceProjects/Records/'.($id === null ? 'Create' : 'Edit'), $request, [
+            'duplicatePeriod' => $this->duplicatePeriod($request, $actor),
             'project' => $this->projectChoiceData($p), 'engineers' => $engineers,
             'records' => $this->records($actor)->where('m.project_id', $project)->get(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter'])->map(fn (\stdClass $r): array => $this->periodChoiceData($r)),
             'record' => $record === null ? null : $this->recordData($record, $actor), 'canWrite' => true,
@@ -399,7 +423,16 @@ final class DdFrontendController extends Controller
         }
         $request->merge(['project_id' => $project]);
         $this->inputAlias($request, 'engineers_id', 'managing_engineer_id');
-        $this->write(fn () => $this->operations->saveRecord($request, $this->identities, $id), ['managing_engineer_id' => 'engineers_id']);
+        $this->write(function () use ($request, $id): void {
+            try {
+                $this->operations->saveRecord($request, $this->identities, $id);
+            } catch (DuplicateMaintenancePeriod $error) {
+                if (! $request->expectsJson()) {
+                    $request->session()->flash('dd_duplicate_period', $request->only(['project_id', 'maintenance_year', 'quarter']));
+                }
+                throw $error;
+            }
+        }, ['managing_engineer_id' => 'engineers_id']);
 
         return redirect(self::BASE.'/maintenance-projects/'.$project)->with('dd_operations_status', 'MaintenanceRecord saved to the database.');
     }
@@ -461,6 +494,7 @@ final class DdFrontendController extends Controller
         }
 
         return $this->render('MaintenanceProjects/Records/Create', $request, [
+            'duplicatePeriod' => $this->duplicatePeriod($request, $actor),
             'projects' => $projects->map(fn (\stdClass $p): array => $this->projectChoiceData($p)), 'engineers' => [],
             'managerChoicesByProject' => $byProject,
             'records' => $this->records($actor)->get(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter'])->map(fn (\stdClass $r): array => $this->periodChoiceData($r)),

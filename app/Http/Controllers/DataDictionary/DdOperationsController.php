@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\DataDictionary\DataDictionaryIdentityResolver;
 use App\Services\DataDictionary\DdActivityNotifications;
 use App\Services\DataDictionary\DdRoleAccess;
+use App\Services\DataDictionary\DuplicateMaintenancePeriod;
 use App\Services\DataDictionary\LinkedPasswordUpdater;
 use App\Services\DataDictionary\ManagingEngineerEligibility;
 use App\Services\DataDictionary\RoadCoverageGeometry;
@@ -464,37 +465,44 @@ final class DdOperationsController extends Controller
         if ($actor['role'] === 'Engineer' && (int) $v['managing_engineer_id'] !== (int) $actor['engineer_id']) {
             abort(403, 'Engineer cannot assign another managing Engineer.');
         }
-        DB::transaction(function () use ($actor, $v, $id): void {
-            // Serialize all period writes for a project before inspecting complete history.
-            $project = $this->t('maintenance_projects')->where('id', $v['project_id'])->lockForUpdate()->first();
-            abort_unless($project !== null, 404);
-            $lgu = $this->projectLgu((int) $project->id);
-            abort_unless($lgu !== null, 404);
-            $this->lguAllowed($actor, $lgu);
-            abort_unless($this->t('engineers')->where('id', $v['managing_engineer_id'])->where('engineer_status', 'Active')->exists(), 422, 'Managing Engineer must be active.');
-            $data = array_intersect_key($v, array_flip(['project_id', 'managing_engineer_id', 'maintenance_year', 'quarter', 'start_date', 'estimated_duration_days', 'complete_date', 'status', 'description']));
-            $data['complete_date'] = $v['complete_date'] ?? null;
-            $data['description'] = $v['description'] ?? null;
-            $data['updated_at'] = now();
-            if ($id === null) {
-                app(ManagingEngineerEligibility::class)->validate($actor, (int) $v['managing_engineer_id'], $lgu);
-                $history = $this->t('maintenance_records')->where('project_id', $project->id)->get(['maintenance_year', 'quarter']);
-                app(TwiceYearlyMaintenance::class)->validateCreation($history, (int) $v['maintenance_year'], $v['quarter']);
-                $rid = (int) $this->t('maintenance_records')->insertGetId($data + ['created_by' => $actor['account_id'], 'created_at' => now()]);
-                $this->audit($actor, 'CREATE', 'MaintenanceRecord', $rid, 'Authorized maintenance record created.');
-            } else {
-                $row = $this->recordScope($actor, $id, true);
-                $period = $this->t('maintenance_records')->where('id', $id)->lockForUpdate()->first(['maintenance_year', 'quarter']);
-                if ((int) $row->project_id !== (int) $v['project_id'] || (int) $row->managing_engineer_id !== (int) $v['managing_engineer_id']) {
-                    throw ValidationException::withMessages(['project_id' => 'Changing project or managing Engineer requires separately approved reassignment.']);
+        try {
+            DB::transaction(function () use ($actor, $v, $id): void {
+                // Serialize all period writes for a project before inspecting complete history.
+                $project = $this->t('maintenance_projects')->where('id', $v['project_id'])->lockForUpdate()->first();
+                abort_unless($project !== null, 404);
+                $lgu = $this->projectLgu((int) $project->id);
+                abort_unless($lgu !== null, 404);
+                $this->lguAllowed($actor, $lgu);
+                abort_unless($this->t('engineers')->where('id', $v['managing_engineer_id'])->where('engineer_status', 'Active')->exists(), 422, 'Managing Engineer must be active.');
+                $data = array_intersect_key($v, array_flip(['project_id', 'managing_engineer_id', 'maintenance_year', 'quarter', 'start_date', 'estimated_duration_days', 'complete_date', 'status', 'description']));
+                $data['complete_date'] = $v['complete_date'] ?? null;
+                $data['description'] = $v['description'] ?? null;
+                $data['updated_at'] = now();
+                if ($id === null) {
+                    app(ManagingEngineerEligibility::class)->validate($actor, (int) $v['managing_engineer_id'], $lgu);
+                    $history = $this->t('maintenance_records')->where('project_id', $project->id)->get(['maintenance_year', 'quarter']);
+                    app(TwiceYearlyMaintenance::class)->validateCreation($history, (int) $v['maintenance_year'], $v['quarter']);
+                    $rid = (int) $this->t('maintenance_records')->insertGetId($data + ['created_by' => $actor['account_id'], 'created_at' => now()]);
+                    $this->audit($actor, 'CREATE', 'MaintenanceRecord', $rid, 'Authorized maintenance record created.');
+                } else {
+                    $row = $this->recordScope($actor, $id, true);
+                    $period = $this->t('maintenance_records')->where('id', $id)->lockForUpdate()->first(['maintenance_year', 'quarter']);
+                    if ((int) $row->project_id !== (int) $v['project_id'] || (int) $row->managing_engineer_id !== (int) $v['managing_engineer_id']) {
+                        throw ValidationException::withMessages(['project_id' => 'Changing project or managing Engineer requires separately approved reassignment.']);
+                    }
+                    if ((int) $period->maintenance_year !== (int) $v['maintenance_year'] || $period->quarter !== $v['quarter']) {
+                        throw ValidationException::withMessages(['quarter' => 'The recorded maintenance year and quarter are fixed. Historical schedule corrections require separate review.']);
+                    }
+                    $this->t('maintenance_records')->where('id', $id)->update($data);
+                    $this->audit($actor, 'UPDATE', 'MaintenanceRecord', $id, 'Authorized maintenance record updated.');
                 }
-                if ((int) $period->maintenance_year !== (int) $v['maintenance_year'] || $period->quarter !== $v['quarter']) {
-                    throw ValidationException::withMessages(['quarter' => 'The recorded maintenance year and quarter are fixed. Historical schedule corrections require separate review.']);
-                }
-                $this->t('maintenance_records')->where('id', $id)->update($data);
-                $this->audit($actor, 'UPDATE', 'MaintenanceRecord', $id, 'Authorized maintenance record updated.');
+            });
+        } catch (QueryException $error) {
+            if ($id === null && DuplicateMaintenancePeriod::matchesDatabaseConstraint($error)) {
+                throw DuplicateMaintenancePeriod::detected();
             }
-        });
+            throw $error;
+        }
 
         return redirect()->route('jairoads.dd-phase3.show', ['section' => 'projects', 'view' => 'show', 'project' => $v['project_id']])
             ->with('dd_operations_status', 'Maintenance record saved.');

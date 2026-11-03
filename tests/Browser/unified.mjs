@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import process from 'node:process';
 import { verifyAuthenticatedHistory } from './authenticated-history.mjs';
+import { verifyDuplicatePeriod } from './duplicate-period.mjs';
 import { pdf, png, startStorageMock } from './private-storage-mock.mjs';
 import { verifyDirectoryLayouts } from './responsive-directories.mjs';
 const { chromium } = await import(
@@ -406,6 +407,17 @@ try {
         ).status,
         422,
     );
+    await verifyDuplicatePeriod({
+        engineer,
+        admin,
+        ui,
+        project,
+        period,
+        record,
+        choose,
+        csrfPost,
+        props,
+    });
     await engineer.goto(
         `${ui}/monthly-updates/create?maintenance_id=${record.id}`,
     );

@@ -25,6 +25,7 @@ import type {
 export function MaintenanceRecordForm({
     mode = 'create',
     originalEngineerId,
+    unavailableQuarters = [],
     project,
     projectSelector,
     backLabel,
@@ -41,6 +42,7 @@ export function MaintenanceRecordForm({
 }: {
     mode?: 'create' | 'edit';
     originalEngineerId?: number;
+    unavailableQuarters?: string[];
     project?: ProjectChoice;
     projectSelector?: ReactNode;
     backLabel?: string;
@@ -283,9 +285,16 @@ export function MaintenanceRecordForm({
                                     'Select quarter',
                                     ['Q1', 'Q2', 'Q3', 'Q4'].map((value) => ({
                                         value,
-                                        label: value,
+                                        label: unavailableQuarters.includes(
+                                            value,
+                                        )
+                                            ? `${value} (unavailable)`
+                                            : value,
                                     })),
                                 ),
+                                unavailableQuarters.length
+                                    ? `Occupied in ${values.maintenance_year}: ${[...new Set(unavailableQuarters)].join(', ')}. Choose another quarter or year.`
+                                    : undefined,
                             )}
                             {field(
                                 'engineers_id',

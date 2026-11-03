@@ -42,7 +42,7 @@ final class TwiceYearlyMaintenance
     {
         foreach ($records as $record) {
             if ((int) $record->maintenance_year === $year && $record->quarter === $quarter) {
-                throw ValidationException::withMessages(['quarter' => 'This project already has a maintenance record for that year and quarter.']);
+                throw DuplicateMaintenancePeriod::detected();
             }
         }
     }
