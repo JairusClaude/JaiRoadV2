@@ -48,6 +48,7 @@ export type RoadCoverageFormProps = {
     }[];
     mapServices?: { routing: string; geocoding: string };
     geometryToken?: string;
+    referenceUrl?: string;
     coverage?: RoadCoverage;
     municipalities: { id: number; municipality_name: string }[];
     referenceCoverages: RoadCoverage[];
@@ -65,3 +66,14 @@ export type RoadCoverageDetailsProps = {
     canEdit: boolean;
     backUrl: string;
 };
+
+export type RoadCoverageReference = Pick<
+    RoadCoverage,
+    | 'id'
+    | 'road_name'
+    | 'lgus_id'
+    | 'kilometers'
+    | 'pavement_type'
+    | 'state_category'
+    | 'geojson'
+>;

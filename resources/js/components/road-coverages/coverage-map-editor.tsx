@@ -29,7 +29,8 @@ import {
     samePoint,
 } from '@/lib/road-coverages/geometry.mjs';
 import type { Point } from '@/lib/road-coverages/geometry.mjs';
-import type { RoadCoverage } from '@/types/road-coverages';
+import { savedRoadLines } from '@/lib/road-coverages/saved-lines';
+import type { RoadCoverageReference } from '@/types/road-coverages';
 import { CoverageMapPreview } from './coverage-map-preview';
 import 'leaflet/dist/leaflet.css';
 
@@ -96,7 +97,8 @@ async function json(url: string, signal: AbortSignal) {
 }
 type CoverageMapEditorProps = {
     initial: object | null;
-    referenceCoverages: RoadCoverage[];
+    referenceCoverages: RoadCoverageReference[];
+    referenceUrl?: string;
     disabled: boolean;
     onChange: (value: object | null) => void;
     information?: ReactNode;
@@ -148,6 +150,7 @@ export function CoverageMapEditor(props: CoverageMapEditorProps) {
 function EditableCoverageMapEditor({
     initial,
     referenceCoverages,
+    referenceUrl,
     disabled,
     onChange,
     information,
@@ -159,6 +162,11 @@ function EditableCoverageMapEditor({
     onWorkingDirty,
     services,
 }: CoverageMapEditorProps) {
+    const [loadedReferences, setLoadedReferences] = useState<
+        RoadCoverageReference[]
+    >([]);
+    const [referenceState, setReferenceState] = useState('idle');
+    const [referenceNotice, setReferenceNotice] = useState('');
     const [draft, setDraft] = useState<Draft>(() => {
         const data = mappingData(initial);
 
@@ -1101,6 +1109,95 @@ function EditableCoverageMapEditor({
         return () => document.removeEventListener('pointerdown', dismiss);
     }, [drawMenu]);
     useEffect(() => {
+        const instance = map.current;
+
+        if (!referenceUrl || !instance || !showRoads) {
+            return;
+        }
+
+        let controller = new AbortController();
+        let timer: ReturnType<typeof setTimeout>;
+        const refresh = () => {
+            controller.abort();
+            clearTimeout(timer);
+            controller = new AbortController();
+            const signal = controller.signal;
+            setLoadedReferences([]);
+            setReferenceState('loading');
+            setReferenceNotice('Loading reference roads for this view…');
+            timer = setTimeout(async () => {
+                const bounds = instance.getBounds();
+                const wraps = bounds.getWest() < -180 || bounds.getEast() > 180;
+                const params = new URLSearchParams({
+                    west: String(wraps ? -180 : bounds.getWest()),
+                    east: String(wraps ? 180 : bounds.getEast()),
+                    south: String(Math.max(-90, bounds.getSouth())),
+                    north: String(Math.min(90, bounds.getNorth())),
+                });
+
+                if (municipality && !all) {
+                    params.set('lgu_id', municipality);
+                }
+
+                const roads: RoadCoverageReference[] = [];
+
+                try {
+                    let cursor: number | null = null;
+
+                    do {
+                        if (cursor !== null) {
+                            params.set('after', String(cursor));
+                        }
+
+                        const response = await fetch(
+                            `${referenceUrl}?${params}`,
+                            { signal, headers: { Accept: 'application/json' } },
+                        );
+
+                        if (!response.ok) {
+                            throw new Error(
+                                'Reference roads could not be loaded. Pan the map to retry.',
+                            );
+                        }
+
+                        const page: {
+                            data: RoadCoverageReference[];
+                            next_cursor: number | null;
+                        } = await response.json();
+                        roads.push(...page.data);
+                        cursor = page.next_cursor;
+                    } while (cursor !== null && !signal.aborted);
+
+                    if (!signal.aborted) {
+                        setLoadedReferences(roads);
+                        setReferenceState('ready');
+                        setReferenceNotice(
+                            `${roads.length} reference roads loaded for this view.`,
+                        );
+                    }
+                } catch (error) {
+                    if (!signal.aborted) {
+                        setReferenceState('error');
+                        setReferenceNotice(
+                            error instanceof Error
+                                ? error.message
+                                : 'Reference roads unavailable.',
+                        );
+                    }
+                }
+            }, 250);
+        };
+        instance.on('moveend', refresh);
+        refresh();
+
+        return () => {
+            controller.abort();
+            clearTimeout(timer);
+            instance.off('moveend', refresh);
+        };
+    }, [referenceUrl, municipality, all, showRoads]);
+
+    useEffect(() => {
         const layer = references.current;
 
         if (!layer) {
@@ -1113,39 +1210,50 @@ function EditableCoverageMapEditor({
             return;
         }
 
-        referenceCoverages.forEach((road) => {
-            const line = lineCoordinates(road.geojson);
+        (referenceUrl ? loadedReferences : referenceCoverages).forEach(
+            (road) => {
+                const lines = savedRoadLines(road.geojson);
 
-            if (
-                !line ||
-                (municipality && !all && String(road.lgus_id) !== municipality)
-            ) {
-                return;
-            }
+                if (
+                    !lines.length ||
+                    (municipality &&
+                        !all &&
+                        String(road.lgus_id) !== municipality)
+                ) {
+                    return;
+                }
 
-            const content = document.createElement('div');
-            [
-                road.road_name,
-                municipalities?.find((x) => x.id === road.lgus_id)
-                    ?.municipality_name ?? 'Municipality unavailable',
-                `${road.kilometers} km · ${road.pavement_type} · ${road.state_category}`,
-            ].forEach((value) => {
-                const row = document.createElement('div');
-                row.textContent = value;
-                content.append(row);
-            });
-            L.polyline(line.map(ll), {
-                color: '#71818b',
-                weight: 4,
-                dashArray: '5 5',
-                opacity: 0.65,
-                interactive: !placing && !op && !confirmation,
-            })
-                .bindPopup(content)
-                .addTo(layer);
-        });
+                const content = document.createElement('div');
+                [
+                    road.road_name,
+                    municipalities?.find((x) => x.id === road.lgus_id)
+                        ?.municipality_name ?? 'Municipality unavailable',
+                    `${road.kilometers} km · ${road.pavement_type} · ${road.state_category}`,
+                ].forEach((value) => {
+                    const row = document.createElement('div');
+                    row.textContent = value;
+                    content.append(row);
+                });
+                L.polyline(
+                    lines.map((line) => line.map(ll)),
+                    {
+                        className: 'jr-reference-road-line',
+                        smoothFactor: 0,
+                        color: '#71818b',
+                        weight: 4,
+                        dashArray: '5 5',
+                        opacity: 0.65,
+                        interactive: !placing && !op && !confirmation,
+                    },
+                )
+                    .bindPopup(content)
+                    .addTo(layer);
+            },
+        );
     }, [
         referenceCoverages,
+        referenceUrl,
+        loadedReferences,
         municipality,
         municipalities,
         showRoads,
@@ -1797,6 +1905,15 @@ function EditableCoverageMapEditor({
                 </button>
             </div>
             <aside hidden={hidden} className="jr-map-panel">
+                {referenceUrl && (
+                    <p
+                        className="jr-field-hint"
+                        role="status"
+                        data-reference-state={referenceState}
+                    >
+                        {referenceNotice}
+                    </p>
+                )}
                 <section>
                     <button
                         type="button"

@@ -43,6 +43,7 @@ export function CoverageForm({
     cancelUrl,
     mapServices,
     geometryToken,
+    referenceUrl,
     requiresCreator = false,
     roadCreatorChoices = [],
 }: RoadCoverageFormProps) {
@@ -285,6 +286,7 @@ export function CoverageForm({
                         <CoverageMapEditor
                             initial={coverage?.geojson ?? null}
                             referenceCoverages={referenceCoverages}
+                            referenceUrl={referenceUrl}
                             disabled={!enabled || form.processing}
                             services={mapServices}
                             editing={!!coverage}

@@ -286,6 +286,11 @@ try {
     await choose(engineer, /^Pavement Type/, 'Concrete');
     await choose(engineer, /^Road Condition|^Condition/, 'Good');
     const editor = engineer.locator('.jr-map-workspace');
+    await editor.locator('[data-reference-state=ready]').waitFor();
+    assert.ok(
+        (await editor.locator('.jr-reference-road-line').count()) >= 5,
+        'Authorized line/collection references render after viewport loading',
+    );
     await editor
         .getByLabel('Search places', { exact: true })
         .fill('Compostela');

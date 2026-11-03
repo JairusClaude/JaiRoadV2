@@ -9,9 +9,11 @@ use App\Models\User;
 use App\Services\DataDictionary\DataDictionaryIdentityResolver;
 use App\Services\DataDictionary\DdRoleAccess;
 use App\Services\DataDictionary\ManagingEngineerEligibility;
+use App\Services\DataDictionary\RoadReferenceBounds;
 use App\Services\Documents\PrivateSupabaseStorage;
 use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -176,10 +178,35 @@ final class DdFrontendController extends Controller
             'coverage' => $road === null ? null : $this->roadData($road),
             'municipalities' => $this->municipalities($actor), 'roadCreatorChoices' => $creators,
             'requiresCreator' => $id === null && DdRoleAccess::managesBusinessData($actor['role']),
-            'referenceCoverages' => $this->roads($actor)->orderByDesc('rc.id')->get()->map(fn (\stdClass $r): array => $this->roadData($r)),
+            'referenceCoverages' => [], 'referenceUrl' => self::BASE.'/map/roads',
             'mapServices' => ['routing' => config('jairoads_maps.routing'), 'geocoding' => config('jairoads_maps.geocoding')],
             'canEdit' => true, 'cancelUrl' => self::BASE.'/road-coverages'.($id === null ? '' : '/'.$id),
         ]);
+    }
+
+    public function roadReferences(Request $request): JsonResponse
+    {
+        $actor = $this->actor($request);
+        $this->writer($actor);
+        $v = $request->validate([
+            'west' => ['required', 'numeric', 'between:-180,180'], 'east' => ['required', 'numeric', 'between:-180,180', 'gte:west'],
+            'south' => ['required', 'numeric', 'between:-90,90'], 'north' => ['required', 'numeric', 'between:-90,90', 'gte:south'],
+            'lgu_id' => ['nullable', 'integer', 'min:1'], 'q' => ['nullable', 'string', 'max:255'], 'after' => ['nullable', 'integer', 'min:0'],
+        ]);
+        $q = $this->scope(DB::table('jairoads_next.road_coverages as rc'), $actor)
+            ->when(isset($v['lgu_id']), fn (Builder $q) => $q->where('rc.lgu_id', $v['lgu_id']))
+            ->when(! empty($v['q']), fn (Builder $q) => $q->where('rc.road_name', 'ilike', '%'.$v['q'].'%'))
+            ->where('rc.id', '>', $v['after'] ?? 0);
+        RoadReferenceBounds::apply($q, (float) $v['west'], (float) $v['south'], (float) $v['east'], (float) $v['north']);
+        $rows = $q->orderBy('rc.id')->limit(101)->get(['rc.id', 'rc.road_name', 'rc.lgu_id', 'rc.kilometers', 'rc.pavement_type', 'rc.state_category', 'rc.geojson']);
+        $page = $rows->take(100);
+
+        return response()->json(['data' => $page->map(fn (\stdClass $r): array => [
+            'id' => (int) $r->id, 'road_name' => $r->road_name, 'lgus_id' => (int) $r->lgu_id,
+            'kilometers' => $r->kilometers, 'pavement_type' => $r->pavement_type, 'state_category' => $r->state_category,
+            'geojson' => json_decode($r->geojson, true, 512, JSON_THROW_ON_ERROR),
+        ])->values(), 'next_cursor' => $rows->count() > 100 ? (int) $page->last()->id : null])
+            ->header('Cache-Control', 'private, no-store');
     }
 
     public function saveRoad(Request $request, ?int $id = null): RedirectResponse
