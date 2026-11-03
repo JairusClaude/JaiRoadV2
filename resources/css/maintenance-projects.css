@@ -1634,6 +1634,13 @@
 
 /* Monthly Updates uses the existing directory surfaces, controls and table.
    Only its additional column content and filter widths need local rules. */
+/* Monthly Updates has three controls: the shared nowrap row otherwise has a
+   615px intrinsic width beside the desktop sidebar at tablet widths. */
+.jr-directory-exploration .jr-monthly-directory .jr-filter-row {
+    min-width: 0;
+    max-width: 100%;
+    flex-wrap: wrap;
+}
 .jr-monthly-directory .jr-monthly-project-filter {
     width: 280px;
     max-width: 100%;

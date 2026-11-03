@@ -24,6 +24,13 @@ final class UnifiedFrontendBrowserFixture extends PostgresTestCase
         $record = DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer'], 'Q4') + ['created_by' => $f['user']->dd_user_account_id]);
         $document = DB::table('jairoads_next.maintenance_documents')->insertGetId(['maintenance_id' => $record, 'document_title' => 'Seeded private document', 'file_name' => 'seed.pdf', 'file_path' => 'maintenance-records/'.$record.'/00000000-0000-4000-8000-000000000001.pdf', 'uploaded_by' => $f['user']->dd_user_account_id]);
         $monthly = DB::table('jairoads_next.monthly_updates')->insertGetId(['maintenance_id' => $record, 'update_month' => '2026-10', 'progress_percentage' => 20, 'created_by' => $f['user']->dd_user_account_id]);
+        // Enough authorized reporting months to exercise real responsive pagination.
+        for ($month = 1; $month <= 13; $month++) {
+            DB::table('jairoads_next.monthly_updates')->insert([
+                'maintenance_id' => $record, 'update_month' => $month <= 12 ? sprintf('2025-%02d', $month) : '2026-02',
+                'progress_percentage' => 20, 'created_by' => $f['user']->dd_user_account_id,
+            ]);
+        }
         $media = DB::table('jairoads_next.media')->insertGetId(['monthly_update_id' => $monthly, 'file_name' => 'seed.png', 'file_type' => 'image/png', 'file_path' => 'monthly-updates/'.$monthly.'/00000000-0000-4000-8000-000000000001.png', 'uploaded_by' => $f['user']->dd_user_account_id]);
         $destination = DB::table('jairoads_next.lgus')->insertGetId(['municipality_name' => 'Destination town', 'province' => 'Test', 'region' => 'Test', 'mayor_first_name' => 'Test', 'mayor_last_name' => 'Mayor']);
         DB::table('jairoads_next.engineer_lgus')->insert(['engineer_id' => $f['engineer'], 'lgu_id' => $destination, 'is_active' => true]);

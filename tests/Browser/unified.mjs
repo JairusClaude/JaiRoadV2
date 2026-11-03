@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import process from 'node:process';
 import { pdf, png, startStorageMock } from './private-storage-mock.mjs';
+import { verifyDirectoryLayouts } from './responsive-directories.mjs';
 const { chromium } = await import(
     process.env.PLAYWRIGHT_MODULE || 'playwright'
 );
@@ -608,42 +609,7 @@ try {
 
     lastPage = admin;
 
-    for (const path of [
-        '/road-coverages',
-        '/maintenance-projects',
-        '/monthly-updates',
-        '/maintenance-documents',
-    ]) {
-        await admin.setViewportSize({ width: 390, height: 844 });
-        await admin.goto(`${ui}${path}`);
-        await admin.getByRole('heading', { level: 1 }).first().waitFor();
-        console.log(
-            'Mobile dimensions',
-            path,
-            await admin.evaluate(() => ({
-                width: innerWidth,
-                scroll: document.documentElement.scrollWidth,
-                overflow: [...document.querySelectorAll('body *')]
-                    .filter(
-                        (e) =>
-                            e.getBoundingClientRect().right > innerWidth + 3 &&
-                            e.getBoundingClientRect().width > innerWidth,
-                    )
-                    .slice(0, 12)
-                    .map((e) => [
-                        e.tagName,
-                        e.className,
-                        e.getBoundingClientRect().width,
-                    ]),
-            })),
-        );
-        assert.ok(
-            await admin.evaluate(
-                () => document.documentElement.scrollWidth <= innerWidth + 2,
-            ),
-            `${path} mobile overflow`,
-        );
-    }
+    await verifyDirectoryLayouts(admin, ui);
 
     lastPage = engineer;
     await engineer.goto(`${ui}/maintenance-projects/${project.id}`);
