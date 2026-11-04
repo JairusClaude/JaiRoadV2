@@ -144,6 +144,10 @@ export function RecordEditor({
             record?.id,
         );
 
+        if (record?.engineers_id === null && form.data.engineers_id === '') {
+            delete errors.engineers_id; // Existing NULL may be preserved, never introduced by this form.
+        }
+
         if (Object.keys(errors).length) {
             form.setError(errors);
             document.getElementById(Object.keys(errors)[0])?.focus();

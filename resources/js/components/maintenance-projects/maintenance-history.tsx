@@ -167,7 +167,7 @@ export function MaintenanceHistory({
                                                                 ? engineerName(
                                                                       record.managing_engineer,
                                                                   )
-                                                                : 'Unavailable'}
+                                                                : 'NULL (unassigned)'}
                                                         </strong>
                                                         <small>
                                                             Managing Engineer

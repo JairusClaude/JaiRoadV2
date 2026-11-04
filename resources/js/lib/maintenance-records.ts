@@ -131,7 +131,10 @@ export function recordPayload(
             : { maintenance_projects_id: projectId }),
         maintenance_year: Number(values.maintenance_year),
         quarter: values.quarter,
-        engineers_id: Number(values.engineers_id),
+        engineers_id:
+            mode === 'canonical' && values.engineers_id === ''
+                ? null
+                : Number(values.engineers_id),
         status: values.status,
         start_date: values.start_date,
         estimated_duration_days: Number(values.estimated_duration_days),

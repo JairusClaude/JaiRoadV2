@@ -393,7 +393,7 @@ export function RecordDirectory({
                                 <td>
                                     {record.managing_engineer
                                         ? engineerName(record.managing_engineer)
-                                        : 'Unavailable'}
+                                        : 'NULL (unassigned)'}
                                 </td>
                                 <td>
                                     <span>{date(record.start_date)}</span>

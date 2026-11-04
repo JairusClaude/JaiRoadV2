@@ -1,0 +1,133 @@
+{
+  "observed_date": "2026-11-04",
+  "source_commit": "c5ad04f6edfd84558f6b2bb86d5d015fbe5cdb44",
+  "method": "Read-only pg_catalog SELECT; no business rows, paths or credentials",
+  "foreign_keys": [
+    {
+      "source_table": "audit_logs",
+      "source_column": "recipient_user_id",
+      "nullable": true,
+      "target_table": "user_accounts",
+      "definition": "FOREIGN KEY (recipient_user_id) REFERENCES jairoads_next.user_accounts(id) ON DELETE RESTRICT"
+    },
+    {
+      "source_table": "audit_logs",
+      "source_column": "user_id",
+      "nullable": false,
+      "target_table": "user_accounts",
+      "definition": "FOREIGN KEY (user_id) REFERENCES jairoads_next.user_accounts(id) ON DELETE RESTRICT"
+    },
+    {
+      "source_table": "engineer_lgus",
+      "source_column": "engineer_id",
+      "nullable": false,
+      "target_table": "engineers",
+      "definition": "FOREIGN KEY (engineer_id) REFERENCES jairoads_next.engineers(id) ON DELETE RESTRICT"
+    },
+    {
+      "source_table": "engineer_lgus",
+      "source_column": "lgu_id",
+      "nullable": false,
+      "target_table": "lgus",
+      "definition": "FOREIGN KEY (lgu_id) REFERENCES jairoads_next.lgus(id) ON DELETE RESTRICT"
+    },
+    {
+      "source_table": "maintenance_documents",
+      "source_column": "maintenance_id",
+      "nullable": false,
+      "target_table": "maintenance_records",
+      "definition": "FOREIGN KEY (maintenance_id) REFERENCES jairoads_next.maintenance_records(id) ON DELETE RESTRICT"
+    },
+    {
+      "source_table": "maintenance_documents",
+      "source_column": "uploaded_by",
+      "nullable": false,
+      "target_table": "user_accounts",
+      "definition": "FOREIGN KEY (uploaded_by) REFERENCES jairoads_next.user_accounts(id) ON DELETE RESTRICT"
+    },
+    {
+      "source_table": "maintenance_projects",
+      "source_column": "created_by",
+      "nullable": false,
+      "target_table": "user_accounts",
+      "definition": "FOREIGN KEY (created_by) REFERENCES jairoads_next.user_accounts(id) ON DELETE RESTRICT"
+    },
+    {
+      "source_table": "maintenance_projects",
+      "source_column": "road_coverage_id",
+      "nullable": false,
+      "target_table": "road_coverages",
+      "definition": "FOREIGN KEY (road_coverage_id) REFERENCES jairoads_next.road_coverages(id) ON DELETE RESTRICT"
+    },
+    {
+      "source_table": "maintenance_records",
+      "source_column": "created_by",
+      "nullable": false,
+      "target_table": "user_accounts",
+      "definition": "FOREIGN KEY (created_by) REFERENCES jairoads_next.user_accounts(id) ON DELETE RESTRICT"
+    },
+    {
+      "source_table": "maintenance_records",
+      "source_column": "managing_engineer_id",
+      "nullable": false,
+      "target_table": "engineers",
+      "definition": "FOREIGN KEY (managing_engineer_id) REFERENCES jairoads_next.engineers(id) ON DELETE RESTRICT"
+    },
+    {
+      "source_table": "maintenance_records",
+      "source_column": "project_id",
+      "nullable": false,
+      "target_table": "maintenance_projects",
+      "definition": "FOREIGN KEY (project_id) REFERENCES jairoads_next.maintenance_projects(id) ON DELETE RESTRICT"
+    },
+    {
+      "source_table": "media",
+      "source_column": "monthly_update_id",
+      "nullable": false,
+      "target_table": "monthly_updates",
+      "definition": "FOREIGN KEY (monthly_update_id) REFERENCES jairoads_next.monthly_updates(id) ON DELETE RESTRICT"
+    },
+    {
+      "source_table": "media",
+      "source_column": "uploaded_by",
+      "nullable": false,
+      "target_table": "user_accounts",
+      "definition": "FOREIGN KEY (uploaded_by) REFERENCES jairoads_next.user_accounts(id) ON DELETE RESTRICT"
+    },
+    {
+      "source_table": "monthly_updates",
+      "source_column": "created_by",
+      "nullable": false,
+      "target_table": "user_accounts",
+      "definition": "FOREIGN KEY (created_by) REFERENCES jairoads_next.user_accounts(id) ON DELETE RESTRICT"
+    },
+    {
+      "source_table": "monthly_updates",
+      "source_column": "maintenance_id",
+      "nullable": false,
+      "target_table": "maintenance_records",
+      "definition": "FOREIGN KEY (maintenance_id) REFERENCES jairoads_next.maintenance_records(id) ON DELETE RESTRICT"
+    },
+    {
+      "source_table": "road_coverages",
+      "source_column": "created_by",
+      "nullable": false,
+      "target_table": "engineers",
+      "definition": "FOREIGN KEY (created_by) REFERENCES jairoads_next.engineers(id) ON DELETE RESTRICT"
+    },
+    {
+      "source_table": "road_coverages",
+      "source_column": "lgu_id",
+      "nullable": false,
+      "target_table": "lgus",
+      "definition": "FOREIGN KEY (lgu_id) REFERENCES jairoads_next.lgus(id) ON DELETE RESTRICT"
+    },
+    {
+      "source_table": "user_accounts",
+      "source_column": "engineer_id",
+      "nullable": true,
+      "target_table": "engineers",
+      "definition": "FOREIGN KEY (engineer_id) REFERENCES jairoads_next.engineers(id) ON DELETE RESTRICT"
+    }
+  ]
+}

@@ -38,6 +38,7 @@ export default function ShowRecord({
     documents = [],
     updates = [],
     canReassign = false,
+    canUnassign = false,
     managerChoices = [],
 }: {
     project: ProjectSummary;
@@ -46,6 +47,7 @@ export default function ShowRecord({
     documents?: DocumentSummary[];
     updates?: RelatedMonthlyUpdate[];
     canReassign?: boolean;
+    canUnassign?: boolean;
     managerChoices?: { id: number; first_name: string; last_name: string }[];
 }) {
     const page = usePage();
@@ -98,9 +100,10 @@ export default function ShowRecord({
                 </div>
                 {canReassign && (
                     <DdManagingEngineerReassignment
+                        canUnassign={canUnassign}
                         record={{
                             id: record.id,
-                            managing_engineer_id: record.engineers_id!,
+                            managing_engineer_id: record.engineers_id ?? null,
                             maintenance_year: record.year,
                             quarter: record.quarter,
                         }}
@@ -152,7 +155,7 @@ export default function ShowRecord({
                             <dd>
                                 {record.managing_engineer
                                     ? engineerName(record.managing_engineer)
-                                    : 'Unavailable'}
+                                    : 'NULL (unassigned)'}
                             </dd>
                         </div>
                         <div>

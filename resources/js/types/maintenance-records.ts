@@ -19,7 +19,7 @@ export type MaintenanceRecordSummary = {
     quarter: string;
     status: string;
     // Compatibility alias of managing_engineer_id, distinct from the creator.
-    engineers_id?: number;
+    engineers_id?: number | null;
     managing_engineer?: EngineerOption | null;
     start_date?: string | null;
     details_url?: string | null;

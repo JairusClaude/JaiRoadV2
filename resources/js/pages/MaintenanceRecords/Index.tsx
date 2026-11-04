@@ -1,4 +1,4 @@
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
 import {
     RecordDeletionDialog,
@@ -56,6 +56,14 @@ export default function Index(props: RecordDirectoryProps) {
     return (
         <div className="jr-directory-exploration jr-record-directory">
             <Head title="Maintenance Records" />
+            {props.historyUrl && (
+                <Link
+                    className="m-4 inline-block underline"
+                    href={props.historyUrl}
+                >
+                    Preserved project history (Admin only)
+                </Link>
+            )}
             <RecordDirectory
                 {...props}
                 busy={deletion.processing}

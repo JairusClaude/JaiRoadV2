@@ -24,7 +24,7 @@ type Review = {
     };
     managers: {
         maintenance_record_id: number;
-        engineer_id: number;
+        engineer_id: number | null;
         name: string;
         eligible: boolean;
     }[];
@@ -289,7 +289,7 @@ export default function DdRoadMunicipalityChange({
                                     MaintenanceRecord #
                                     {manager.maintenance_record_id} —{' '}
                                     {manager.name} (Engineer #
-                                    {manager.engineer_id}):{' '}
+                                    {manager.engineer_id ?? 'NULL'}):{' '}
                                     {manager.eligible
                                         ? 'eligible for destination'
                                         : 'authorization conflict'}

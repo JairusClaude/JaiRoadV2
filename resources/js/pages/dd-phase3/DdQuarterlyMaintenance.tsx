@@ -8,7 +8,7 @@ type Quarter = 'Q1' | 'Q2' | 'Q3' | 'Q4';
 type Maintenance = {
     id: number;
     project_id: number;
-    managing_engineer_id: number;
+    managing_engineer_id: number | null;
     maintenance_year: number;
     quarter: Quarter;
     start_date: string;
@@ -16,8 +16,8 @@ type Maintenance = {
     complete_date: string | null;
     status: 'Ongoing' | 'Completed';
     description: string | null;
-    manager_first_name: string;
-    manager_last_name: string;
+    manager_first_name: string | null;
+    manager_last_name: string | null;
 };
 export type QuarterlyProps = {
     project: { id: number; project_title: string };
@@ -38,6 +38,7 @@ export type QuarterlyProps = {
     }[];
     canCreate: boolean;
     canManage: boolean;
+    canUnassign?: boolean;
     canEdit: boolean;
     engineerId: number | null;
 };
@@ -74,6 +75,7 @@ export default function DdQuarterlyMaintenance({
     managers,
     canCreate,
     canManage,
+    canUnassign = false,
     canEdit,
     engineerId,
 }: QuarterlyProps) {
@@ -110,7 +112,10 @@ export default function DdQuarterlyMaintenance({
         setErrors({});
         setForm({
             project_id: String(project.id),
-            managing_engineer_id: String(record.managing_engineer_id),
+            managing_engineer_id:
+                record.managing_engineer_id === null
+                    ? ''
+                    : String(record.managing_engineer_id),
             maintenance_year: String(record.maintenance_year),
             quarter: record.quarter,
             start_date: record.start_date,
@@ -223,8 +228,10 @@ export default function DdQuarterlyMaintenance({
                                     recorded.map((record) => (
                                         <p key={record.id}>
                                             {record.status} ·{' '}
-                                            {record.manager_first_name}{' '}
-                                            {record.manager_last_name}
+                                            {record.managing_engineer_id ===
+                                            null
+                                                ? 'NULL (unassigned)'
+                                                : `${record.manager_first_name} ${record.manager_last_name}`}
                                         </p>
                                     ))
                                 ) : (
@@ -464,8 +471,9 @@ export default function DdQuarterlyMaintenance({
                                         {record.quarter}
                                     </td>
                                     <td className="p-2">
-                                        {record.manager_first_name}{' '}
-                                        {record.manager_last_name}
+                                        {record.managing_engineer_id === null
+                                            ? 'NULL (unassigned)'
+                                            : `${record.manager_first_name} ${record.manager_last_name}`}
                                     </td>
                                     <td className="p-2">{record.status}</td>
                                     <td className="p-2">{record.start_date}</td>
@@ -473,6 +481,7 @@ export default function DdQuarterlyMaintenance({
                                         {canManage && (
                                             <DdManagingEngineerReassignment
                                                 record={record}
+                                                canUnassign={canUnassign}
                                                 managers={managers}
                                             />
                                         )}

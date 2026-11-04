@@ -1,5 +1,6 @@
 import { router, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { toast } from 'sonner';
 import {
     DeletionCounts,
     DeletionDialog,
@@ -13,18 +14,130 @@ export function useProjectDeletion(onDeleted?: () => void) {
     const [bulk, setBulk] = useState(false);
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState('');
+    const [impact, setImpact] = useState<{
+        project: { id: number; project_title: string };
+        road: { id: number; road_name: string };
+        counts: {
+            maintenance_records: number;
+            monthly_updates: number;
+            maintenance_documents: number;
+            media: number;
+        };
+        confirmation_token: string;
+    } | null>(null);
+    const pending = useRef(false);
+    const generation = useRef(0);
     const close = () => {
         if (!processing) {
+            generation.current++;
             setProjects(null);
         }
     };
-    const open = (selected: ProjectSummary[], multiple = false) => {
+    const open = async (selected: ProjectSummary[], multiple = false) => {
+        if (pending.current) {
+            return;
+        }
+
+        const request = ++generation.current;
+        setImpact(null);
         setError('');
         setBulk(multiple);
         setProjects(selected);
+
+        if (!preview) {
+            if (selected.length !== 1 || multiple) {
+                setError(
+                    'Only one project may be reviewed and deleted at a time.',
+                );
+
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    `/dd-phase3/ui/maintenance-projects/${selected[0].id}/deletion-preview`,
+                    {
+                        headers: { Accept: 'application/json' },
+                        cache: 'no-store',
+                    },
+                );
+
+                if (!response.ok) {
+                    throw new Error();
+                }
+
+                const data = await response.json();
+
+                if (request === generation.current) {
+                    setImpact(data);
+                }
+            } catch {
+                if (request === generation.current) {
+                    setError(
+                        'Deletion preview is unavailable. Check your authorization and schema-owner setup.',
+                    );
+                }
+            }
+        }
     };
-    const confirm = () => {
+    const confirm = async () => {
         if (!projects?.length || processing) {
+            return;
+        }
+
+        if (!preview) {
+            if (!impact || pending.current) {
+                return;
+            }
+
+            pending.current = true;
+            setProcessing(true);
+            setError('');
+
+            try {
+                const cookie = document.cookie
+                    .split('; ')
+                    .find((v) => v.startsWith('XSRF-TOKEN='));
+                const response = await fetch(
+                    `/dd-phase3/ui/maintenance-projects/${impact.project.id}`,
+                    {
+                        method: 'DELETE',
+                        headers: {
+                            Accept: 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-XSRF-TOKEN': cookie
+                                ? decodeURIComponent(cookie.slice(11))
+                                : '',
+                        },
+                        body: JSON.stringify({
+                            confirmation_token: impact.confirmation_token,
+                        }),
+                    },
+                );
+                const data = await response.json();
+
+                if (!response.ok || data.state !== 'completed') {
+                    setError(
+                        data.errors?.confirmation_token?.[0] ??
+                            'Project deletion was not confirmed. Refresh the preview or contact an administrator.',
+                    );
+
+                    return;
+                }
+
+                setProjects(null);
+                toast.success(data.message);
+                onDeleted?.();
+                router.visit(workspaceHref('/maintenance-projects'));
+            } catch {
+                setError(
+                    'Project deletion was not confirmed. Refresh the directory before trying again.',
+                );
+            } finally {
+                pending.current = false;
+                setProcessing(false);
+            }
+
             return;
         }
 
@@ -52,14 +165,24 @@ export function useProjectDeletion(onDeleted?: () => void) {
         );
     };
 
-    return { projects, preview, processing, error, open, close, confirm };
+    return {
+        projects,
+        preview,
+        processing,
+        error,
+        impact,
+        open,
+        close,
+        confirm,
+    };
 }
 export function ProjectDeletionDialog({
     deletion,
 }: {
     deletion: ReturnType<typeof useProjectDeletion>;
 }) {
-    const { projects, preview, processing, error, close, confirm } = deletion;
+    const { projects, preview, processing, error, impact, close, confirm } =
+        deletion;
     const count = projects?.length ?? 0;
 
     return (
@@ -71,16 +194,39 @@ export function ProjectDeletionDialog({
             description={
                 preview
                     ? `You selected ${count} ${count === 1 ? 'project' : 'projects'}. Its maintenance records, monthly updates, media and maintenance documents will also be deleted. This cannot be undone within the preview. RoadCoverage, LGUs, Engineers and UserAccounts are preserved.`
-                    : 'Delete the selected projects? Dependent maintenance data handling is subject to backend validation. This action cannot be undone.'
+                    : 'Permanently delete only this project? Its MaintenanceRecords, MonthlyUpdates, documents, media and private Storage objects will be preserved. Current project_id references will become NULL. This cannot be undone.'
             }
+            confirmDisabled={!preview && !impact}
             processing={processing}
             error={error}
             onClose={close}
             onConfirm={confirm}
             confirmLabel={
-                count === 1 ? 'Delete Project' : 'Delete Selected Projects'
+                preview
+                    ? count === 1
+                        ? 'Delete Project'
+                        : 'Delete Selected Projects'
+                    : 'Delete'
             }
         >
+            {!preview && impact && (
+                <section aria-label="Project deletion impact">
+                    <p>
+                        Selected project: #{impact.project.id} ·{' '}
+                        {impact.project.project_title}
+                    </p>
+                    <p>
+                        RoadCoverage: #{impact.road.id} ·{' '}
+                        {impact.road.road_name} (preserved)
+                    </p>
+                    <DeletionCounts counts={impact.counts} preserve />
+                    <p>
+                        Records retain their creators, uploaders and historical
+                        audit entries. Detached history is available only to
+                        Admin/SuperAdmin.
+                    </p>
+                </section>
+            )}
             <ul className="jr-delete-list">
                 {(projects ?? []).map((project) => (
                     <li key={project.id}>

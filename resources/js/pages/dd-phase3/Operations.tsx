@@ -45,6 +45,7 @@ type Props = {
     maintenanceHistory: QuarterlyProps['records'];
     maintenanceSchedule: QuarterlyProps['schedule'];
     managerChoices: QuarterlyProps['managers'];
+    canUnassign?: boolean;
     roadCreatorChoices: {
         id: number;
         lgu_id: number;
@@ -54,7 +55,7 @@ type Props = {
     roads: ProjectInputs['roads'];
     projects: ProjectInputs['projects'];
     records: (ProjectInputs['records'][number] & {
-        managing_engineer_id: number;
+        managing_engineer_id: number | null;
         start_date: string;
         estimated_duration_days: number;
         complete_date: string | null;
@@ -93,6 +94,7 @@ export default function Operations({
     maintenanceHistory,
     maintenanceSchedule,
     managerChoices,
+    canUnassign = false,
     roadCreatorChoices,
     roads,
     projects,
@@ -357,6 +359,7 @@ export default function Operations({
                         records={maintenanceHistory}
                         schedule={maintenanceSchedule}
                         managers={managerChoices}
+                        canUnassign={canUnassign}
                         canCreate={capabilities.createProjects}
                         canManage={canManage}
                         engineerId={engineerId}

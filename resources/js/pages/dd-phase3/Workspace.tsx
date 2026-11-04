@@ -51,6 +51,7 @@ type Lgu = {
 };
 type Assignment = { engineer_id: number; lgu_id: number; is_active: boolean };
 type Props = {
+    historyUrl?: string | null;
     section: 'dashboard' | 'users' | 'lgus';
     identity: { role: Role; username: string; accountId: number };
     counts: {
@@ -146,6 +147,7 @@ export default function DdPhase3Workspace({
     canCreateRoles,
     status,
     analytics,
+    historyUrl,
 }: Props) {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
@@ -494,6 +496,15 @@ export default function DdPhase3Workspace({
                         </ul>
                     )}
                 </div>
+            )}
+            {section === 'dashboard' && historyUrl && (
+                <p className="my-4">
+                    <a className="underline" href={historyUrl}>
+                        Preserved project history
+                    </a>{' '}
+                    · Administrative totals include retained records. Detached
+                    history remains restricted to Admin/SuperAdmin.
+                </p>
             )}
             {section === 'dashboard' && identity.role === 'Admin' && (
                 <div className="space-y-6">

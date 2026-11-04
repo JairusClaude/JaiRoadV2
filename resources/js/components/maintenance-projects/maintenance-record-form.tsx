@@ -41,7 +41,7 @@ export function MaintenanceRecordForm({
     onCancel,
 }: {
     mode?: 'create' | 'edit';
-    originalEngineerId?: number;
+    originalEngineerId?: number | null;
     unavailableQuarters?: string[];
     project?: ProjectChoice;
     projectSelector?: ReactNode;
@@ -71,7 +71,12 @@ export function MaintenanceRecordForm({
         <div className="jr-record-field">
             <Label htmlFor={name}>
                 {label}{' '}
-                {name !== 'complete_date' || values.status === 'Completed'
+                {(name !== 'complete_date' || values.status === 'Completed') &&
+                !(
+                    name === 'engineers_id' &&
+                    mode === 'edit' &&
+                    originalEngineerId === null
+                )
                     ? required
                     : null}
             </Label>
@@ -301,7 +306,10 @@ export function MaintenanceRecordForm({
                                 'Managing Engineer',
                                 select(
                                     'engineers_id',
-                                    'Select engineer',
+                                    mode === 'edit' &&
+                                        originalEngineerId === null
+                                        ? 'NULL (unassigned)'
+                                        : 'Select engineer',
                                     engineers.map((engineer) => ({
                                         value: String(engineer.id),
                                         label: engineerName(engineer),

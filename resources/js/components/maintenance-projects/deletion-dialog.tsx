@@ -6,9 +6,11 @@ import type { DependentCounts } from '@/types/maintenance-projects';
 export function DeletionCounts({
     counts,
     includeRecords = true,
+    preserve = false,
 }: {
     counts?: DependentCounts;
     includeRecords?: boolean;
+    preserve?: boolean;
 }) {
     if (!counts) {
         return null;
@@ -26,7 +28,7 @@ export function DeletionCounts({
         { label: 'Monthly updates', count: counts.monthly_updates },
         { label: 'Media', count: counts.media },
         { label: 'Maintenance documents', count: counts.maintenance_documents },
-    ].filter((item) => item.count > 0);
+    ].filter((item) => preserve || item.count > 0);
 
     if (affected.length === 0) {
         return (
@@ -35,7 +37,14 @@ export function DeletionCounts({
     }
 
     return (
-        <dl className="jr-delete-counts" aria-label="Dependent data to delete">
+        <dl
+            className="jr-delete-counts"
+            aria-label={
+                preserve
+                    ? 'Related data to preserve'
+                    : 'Dependent data to delete'
+            }
+        >
             {affected.map(({ label, count }) => (
                 <div key={label}>
                     <dt>{label}</dt>
@@ -121,6 +130,7 @@ export function DeletionDialog({
                         <Button
                             type="button"
                             className="jr-danger"
+                            variant="destructive"
                             disabled={processing || confirmDisabled}
                             onClick={onConfirm}
                         >

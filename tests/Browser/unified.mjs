@@ -5,6 +5,7 @@ import process from 'node:process';
 import { verifyAuthenticatedHistory } from './authenticated-history.mjs';
 import { verifyDuplicatePeriod } from './duplicate-period.mjs';
 import { verifyPermanentFileDeletion } from './permanent-file-deletion.mjs';
+import { verifyPreservedRelationships } from './preserved-relationships.mjs';
 import { pdf, png, startStorageMock } from './private-storage-mock.mjs';
 import { verifyDirectoryLayouts } from './responsive-directories.mjs';
 const { chromium } = await import(
@@ -643,6 +644,19 @@ try {
         record,
         storage,
         props,
+    });
+
+    await verifyPreservedRelationships({
+        admin,
+        superadmin,
+        engineer,
+        viewer,
+        rogue,
+        ui,
+        base,
+        fixture: f,
+        props,
+        storage,
     });
 
     lastPage = engineer;

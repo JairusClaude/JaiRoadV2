@@ -18,6 +18,7 @@ export type RecordDirectoryFilters = {
     sort: 'newest' | 'oldest';
 };
 export type RecordDirectoryProps = {
+    historyUrl?: string | null;
     records: Omit<Pagination, 'data'> & { data: RecordDirectoryRow[] };
     municipalities: { value: string; label: string }[];
     years: number[];
