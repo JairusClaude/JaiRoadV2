@@ -32,7 +32,7 @@ final class FileRemovalPreparationTest extends PostgresTestCase
             $this->app->instance($service, $mock);
         }
         $history = DB::table('jairoads_next.audit_logs')->get()->toJson();
-        $this->getJson('/dd-phase3/files/'.$kind.'/'.$id.'/deletion-review')->assertOk()->assertJsonPath('can_delete', false)->assertJsonPath('policy_status', 'pending_storage_retention')->assertJsonMissingPath('file_path');
+        $this->getJson('/dd-phase3/files/'.$kind.'/'.$id.'/deletion-review')->assertOk()->assertJsonPath('can_delete', false)->assertJsonPath('policy_status', 'pending_schema_owner')->assertJsonMissingPath('file_path');
         $response = $this->deleteJson('/dd-phase3/ops/'.($kind === 'document' ? 'documents' : 'media').'/'.$id);
         $this->assertContains($response->status(), [404, 405]);
         $this->assertSame(1, DB::table('jairoads_next.maintenance_documents')->count());

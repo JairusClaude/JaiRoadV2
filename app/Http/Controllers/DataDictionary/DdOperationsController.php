@@ -7,7 +7,7 @@ namespace App\Http\Controllers\DataDictionary;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\DataDictionary\DataDictionaryIdentityResolver;
-use App\Services\DataDictionary\DdActivityNotifications;
+use App\Services\DataDictionary\DdOperationAudit;
 use App\Services\DataDictionary\DdRoleAccess;
 use App\Services\DataDictionary\DuplicateMaintenancePeriod;
 use App\Services\DataDictionary\LinkedPasswordUpdater;
@@ -16,6 +16,7 @@ use App\Services\DataDictionary\RoadCoverageGeometry;
 use App\Services\DataDictionary\RoadMunicipalityChange;
 use App\Services\DataDictionary\TwiceYearlyMaintenance;
 use App\Services\Documents\PrivateSupabaseStorage;
+use App\Services\Files\PermanentFileDeletion;
 use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\QueryException;
@@ -137,21 +138,7 @@ final class DdOperationsController extends Controller
      */
     private function audit(array $actor, string $action, string $entity, ?int $id, string $description, array $meta = [], array $oldMeta = [], bool $notify = true): void
     {
-        // Only safe identifiers/statuses; no credentials, email, geometry or private paths.
-        $this->t('audit_logs')->insert([
-            'user_id' => $actor['account_id'],
-            'actor_identifier' => 'DD-UserAccount#'.$actor['account_id'],
-            'action' => $action, 'entity_type' => $entity, 'entity_id' => $id,
-            'description' => $description,
-            'old_value' => $oldMeta === [] ? null : json_encode($oldMeta, JSON_THROW_ON_ERROR),
-            'new_value' => $meta === [] ? null : json_encode($meta, JSON_THROW_ON_ERROR),
-            'recipient_user_id' => null, 'notification_message' => null,
-            'created_at' => now(),
-        ]);
-        if ($notify) {
-            app(DdActivityNotifications::class)
-                ->record($actor, $action, $entity, $id, $description);
-        }
+        app(DdOperationAudit::class)->record($actor, $action, $entity, $id, $description, $meta, $oldMeta, $notify);
     }
 
     private function done(string $section, string $message): RedirectResponse
@@ -644,6 +631,7 @@ final class DdOperationsController extends Controller
             abort_unless($document !== null, 404);
             // Engineer must be the ManagingEngineer with an active LGU assignment.
             $this->recordScope($actor, (int) $document->maintenance_id, true);
+            app(PermanentFileDeletion::class)->assertNotPending('document', $id);
             $this->t('maintenance_documents')->where('id', $id)->update([
                 'document_title' => $v['document_title'],
                 'description' => $v['description'] ?? null,
@@ -784,27 +772,27 @@ final class DdOperationsController extends Controller
         return $this->done($section, 'Item deleted.');
     }
 
-    /** Non-destructive preparation only; there is deliberately no file DELETE endpoint. */
-    public function fileRemovalReview(Request $request, DataDictionaryIdentityResolver $resolver, string $kind, int $id): JsonResponse
+    public function fileRemovalReview(Request $request, PermanentFileDeletion $deletions, string $kind, int $id): JsonResponse
     {
-        $actor = $this->actor($request, $resolver);
-        abort_unless($this->managers($actor), 403);
-        if ($kind === 'document') {
-            $row = $this->t('maintenance_documents')->where('id', $id)->first(['maintenance_id', 'file_name']);
-        } elseif ($kind === 'media') {
-            $row = $this->t('media as m')->join('jairoads_next.monthly_updates as mu', 'mu.id', '=', 'm.monthly_update_id')
-                ->where('m.id', $id)->first(['mu.maintenance_id', 'm.file_name']);
-        } else {
-            abort(404);
-        }
-        abort_unless($row instanceof \stdClass, 404);
-        $this->recordScope($actor, (int) $row->maintenance_id);
+        $login = $request->user();
+        abort_unless($login instanceof User, 403);
 
-        return response()->json(['id' => $id, 'kind' => $kind, 'file_name' => $row->file_name,
-            'maintenance_id' => (int) $row->maintenance_id, 'can_delete' => false,
-            'policy_status' => 'pending_storage_retention',
-            'message' => 'Deletion is disabled until the team approves database-record and private storage-object retention. No record or file has been removed.',
-        ])->header('Cache-Control', 'private, no-store');
+        return response()->json($deletions->review($login, $kind, $id))->header('Cache-Control', 'private, no-store');
+    }
+
+    public function deleteFile(Request $request, DataDictionaryIdentityResolver $resolver, PermanentFileDeletion $deletions, string $kind, int $id): JsonResponse
+    {
+        abort_unless($this->managers($this->actor($request, $resolver)), 403);
+        $request->validate(array_fill_keys(['file_path', 'file_name', 'bucket', 'storage_origin', 'role', 'lgu_id'], ['prohibited']));
+        $login = $request->user();
+        abort_unless($login instanceof User, 403);
+        try {
+            $result = $deletions->delete($login, $kind, $id);
+        } catch (QueryException) {
+            return response()->json(['state' => 'unconfirmed', 'message' => 'Deletion could not be started or confirmed. Retry or contact an administrator.'], 503)->header('Cache-Control', 'private, no-store');
+        }
+
+        return response()->json($result, $result['state'] === 'completed' ? 200 : 202)->header('Cache-Control', 'private, no-store');
     }
 
     public function download(Request $request, DataDictionaryIdentityResolver $resolver, string $kind, int $id, PrivateSupabaseStorage $documents, PrivateMonthlyMediaStorage $media): HttpResponse
@@ -815,6 +803,7 @@ final class DdOperationsController extends Controller
             $row = $this->t('maintenance_documents')->where('id', $id)->first(['maintenance_id', 'file_name', 'file_path']);
             abort_unless($row !== null, 404);
             $this->recordScope($actor, (int) $row->maintenance_id);
+            app(PermanentFileDeletion::class)->assertNotPending('document', $id);
             $result = $documents->fetch((string) $row->file_path);
             $mime = match (strtolower(pathinfo($row->file_name, PATHINFO_EXTENSION))) {
                 'pdf' => 'application/pdf','docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -827,6 +816,7 @@ final class DdOperationsController extends Controller
                 ->where('m.id', $id)->first(['mu.maintenance_id', 'm.file_name', 'm.file_path', 'm.file_type']);
             abort_unless($row !== null, 404);
             $this->recordScope($actor, (int) $row->maintenance_id);
+            app(PermanentFileDeletion::class)->assertNotPending('media', $id);
             $result = $media->fetch((string) $row->file_path);
             $mime = (string) $row->file_type;
         }

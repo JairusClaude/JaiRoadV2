@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Documents;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\UploadedFile;
@@ -32,7 +33,7 @@ class PrivateSupabaseStorage
     private function objectUrl(string $path, bool $authenticated = false): string
     {
         $bucket = (string) config('jairoads_documents.bucket', 'jairoads-maintenance-documents');
-        if (! preg_match('/^[a-zA-Z0-9_-]+$/', $bucket) || ! preg_match('#^maintenance-records/[0-9]+/[0-9a-f-]+\.(pdf|docx|xlsx|pptx)$#', $path)) {
+        if (! preg_match('/^[a-zA-Z0-9_-]+$/D', $bucket) || ! preg_match('#^maintenance-records/[0-9]+/[0-9a-f-]+\.(pdf|docx|xlsx|pptx)$#D', $path)) {
             throw new RuntimeException('Invalid document storage location.');
         }
         $prefix = $authenticated ? 'object/authenticated' : 'object';
@@ -88,6 +89,52 @@ class PrivateSupabaseStorage
         }
 
         return $response;
+    }
+
+    /** @return array{origin:string,bucket:string} */
+    public function permanentLocation(string $path, int $parentId): array
+    {
+        $this->objectUrl($path); // Existing exact-object allowlist; never a folder/prefix.
+        if (! str_starts_with($path, 'maintenance-records/'.$parentId.'/')) {
+            throw new RuntimeException('Invalid permanent deletion target.');
+        }
+
+        return ['origin' => $this->baseUrl(), 'bucket' => (string) config('jairoads_documents.bucket')];
+    }
+
+    /** Delete one verified object; credentials/URLs never leave this service. */
+    public function removePermanently(string $path): void
+    {
+        $parts = explode('.', $this->token());
+        $claims = count($parts) === 3 ? json_decode((string) base64_decode(strtr($parts[1], '-_', '+/')), true) : null;
+        $localMock = app()->environment('testing') && getenv('JAIROADS_SCRATCH_APPROVAL') === 'DISPOSABLE_LOCAL_ONLY'
+            && in_array(parse_url($this->baseUrl(), PHP_URL_HOST), ['127.0.0.1', 'localhost'], true);
+        if (! str_starts_with($this->token(), 'sb_secret_') && (! is_array($claims) || ($claims['role'] ?? null) !== 'service_role') && ! $localMock) {
+            throw new RuntimeException('A server-only Storage credential is required for permanent removal.');
+        }
+        $objectUrl = $this->objectUrl($path);
+        try {
+            // Versioned buckets can create a delete marker while retaining bytes.
+            // Never report that as permanent removal; no version-purge policy is
+            // authorized here. Legacy servers omit the versioning column.
+            $bucket = (string) config('jairoads_documents.bucket');
+            $details = $this->request()->get($this->baseUrl().'/storage/v1/bucket/'.$bucket);
+            $metadata = $details->json();
+            if (! $details->successful() || ! is_array($metadata) || ($metadata['id'] ?? null) !== $bucket
+                || ($metadata['public'] ?? null) !== false
+                || (array_key_exists('versioning_status', $metadata) && $metadata['versioning_status'] !== 'DISABLED')) {
+                throw new RuntimeException('Private unversioned bucket removal could not be verified.');
+            }
+            $response = $this->request()->delete($objectUrl);
+        } catch (ConnectionException) {
+            throw new RuntimeException('Private object removal is not confirmed.');
+        }
+        $code = $response->json('code');
+        // A missing bucket/tenant/route, generic 404 or denial is NOT proof that
+        // this object was removed. Only the provider's exact object-missing code.
+        if (! (($response->status() === 200 && $response->json('message') === 'Successfully deleted') || $response->status() === 204 || ($response->status() === 404 && $code === 'NoSuchKey'))) {
+            throw new RuntimeException('Private object removal is not confirmed.');
+        }
     }
 
     public function removeAfterFailure(string $path): void

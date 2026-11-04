@@ -12,6 +12,7 @@ use App\Services\DataDictionary\DuplicateMaintenancePeriod;
 use App\Services\DataDictionary\ManagingEngineerEligibility;
 use App\Services\DataDictionary\RoadReferenceBounds;
 use App\Services\Documents\PrivateSupabaseStorage;
+use App\Services\Files\PermanentFileDeletion;
 use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
@@ -43,6 +44,7 @@ final class DdFrontendController extends Controller
         private ManagingEngineerEligibility $eligibility,
         private PrivateSupabaseStorage $documents,
         private PrivateMonthlyMediaStorage $media,
+        private PermanentFileDeletion $fileDeletions,
     ) {}
 
     /** @return Actor */
@@ -593,7 +595,7 @@ final class DdFrontendController extends Controller
         $parents = $this->parents($actor, $request, $u === null ? null : (int) $u->maintenance_id);
 
         return $this->render('MonthlyUpdates/Create', $request, $parents + [
-            'update' => $u === null ? null : $this->updateData($u, $actor), 'media' => $id === null ? [] : $this->mediaData($id),
+            'update' => $u === null ? null : $this->updateData($u, $actor), 'media' => $id === null ? [] : $this->mediaData($id, $actor),
             'existingUpdates' => $this->updateQuery($actor)->when($parents['contextRecordId'] !== null, fn (Builder $q) => $q->where('u.maintenance_id', $parents['contextRecordId']))->get(['u.id', 'u.maintenance_id', 'u.update_month']),
             'submitUrl' => self::BASE.'/monthly-updates'.($id === null ? '' : '/'.$id),
             'cancelUrl' => self::BASE.'/monthly-updates'.($id === null ? '' : '/'.$id),
@@ -613,13 +615,17 @@ final class DdFrontendController extends Controller
         return redirect(self::BASE.'/monthly-updates/'.$id)->with('dd_operations_status', 'MonthlyUpdate saved. Media can be uploaded separately below.');
     }
 
-    /** @return array<int,array{id:int,file_name:string,mime_type:string,size:null,available:bool,preview_url:?string}> */
-    private function mediaData(int $update): array
+    /** @param Actor $actor
+     * @return array<int,array<string,mixed>>
+     */
+    private function mediaData(int $update, array $actor): array
     {
         return DB::table('jairoads_next.media')->where('monthly_update_id', $update)->orderBy('id')
             ->get(['id', 'file_name', 'file_type'])->map(fn (\stdClass $m): array => [
                 'id' => (int) $m->id, 'file_name' => (string) $m->file_name, 'mime_type' => (string) $m->file_type, 'size' => null,
                 'available' => $this->media->configured(), 'preview_url' => $this->media->configured() ? '/dd-phase3/files/media/'.$m->id : null,
+                'delete_url' => DdRoleAccess::managesBusinessData($actor['role']) && $this->fileDeletions->available() ? '/dd-phase3/files/media/'.$m->id : null,
+                'parent_label' => 'MonthlyUpdate #'.$update,
             ])->all();
     }
 
@@ -630,7 +636,7 @@ final class DdFrontendController extends Controller
         abort_unless($u !== null, 404);
 
         return $this->render('MonthlyUpdates/Show', $request, [
-            'update' => $this->updateData($u, $actor), 'media' => $this->mediaData($id), 'canWrite' => $this->canWriteRecord($u, $actor),
+            'update' => $this->updateData($u, $actor), 'media' => $this->mediaData($id, $actor), 'canWrite' => $this->canWriteRecord($u, $actor),
             'canUploadMedia' => $this->canWriteRecord($u, $actor) && $this->media->configured(),
             'backUrl' => self::BASE.'/monthly-updates', 'backLabel' => 'Monthly Updates', 'directoryUrl' => self::BASE.'/monthly-updates',
         ]);
@@ -669,6 +675,7 @@ final class DdFrontendController extends Controller
         return ['id' => (int) $d->id, 'maintenance_id' => (int) $d->maintenance_id, 'document_title' => $d->document_title,
             'description' => $d->description, 'file_name' => $d->file_name, 'uploaded_by' => $d->uploader_name,
             'uploaded_at' => $d->uploaded_at, 'updated_at' => $d->updated_at, 'available' => $this->documents->configured(),
+            'delete_url' => DdRoleAccess::managesBusinessData($actor['role']) && $this->fileDeletions->available() ? '/dd-phase3/files/document/'.$d->id : null,
             'download_url' => '/dd-phase3/files/document/'.$d->id, 'can_edit' => $this->canWriteRecord($d, $actor),
             'project' => ['id' => (int) $d->project_id, 'project_title' => $d->project_title, 'municipality' => $d->municipality_name],
             'record' => ['id' => (int) $d->maintenance_id, 'project_id' => (int) $d->project_id, 'year' => (int) $d->maintenance_year, 'quarter' => $d->quarter]];
