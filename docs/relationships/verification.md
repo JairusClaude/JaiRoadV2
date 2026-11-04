@@ -21,6 +21,10 @@
 
 The focused count includes 30 new Repair B cases and nine existing reassignment cases; it is a subset of the full canonical total. Existing disabled Fortify registration tests remain skips, not passes. No test or assertion was removed, weakened or newly skipped.
 
+## CI harness correction after initial publication
+
+The first published Repair B run passed the full canonical/password/Feature/quality/audit and real browser checks. Docker built and returned a correct retained-history Inertia payload, but the new HTTP-only smoke assertion incorrectly searched the unhydrated HTML shell for React's uppercase `NULL` label. The correction parses the embedded Inertia JSON and asserts actual null project/manager fields, former project ID/snapshot and all three preserved child counts. Existing byte-preservation and role-denial assertions remain in place. The real browser separately verifies the visible NULL labels. Both complete workflows must pass on the subsequent correction SHA; an earlier failed Docker run is not treated as success.
+
 ## Requested coverage
 
 - Admin/SuperAdmin project deletion preserves every dependent row and creator/uploader field; only actual project_id becomes NULL. Other projects/records, road GeoJSON, historical AuditLog snapshots and private file bytes remain intact. The deletion itself makes zero Storage requests.
