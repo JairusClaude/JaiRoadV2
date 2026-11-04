@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\DataDictionary\DdFrontendController;
+use App\Http\Controllers\DataDictionary\DdPreservedHistoryController;
 use Illuminate\Support\Facades\Route;
 
 // These URLs are canonical DD projections. Legacy public.* route quarantine stays intact.
@@ -18,6 +19,8 @@ Route::middleware(['auth', 'verified'])->prefix('dd-phase3/ui')->name('jairoads.
     Route::get('/maintenance-projects/create', [DdFrontendController::class, 'projectForm'])->name('projects.create');
     Route::get('/maintenance-projects/{id}', [DdFrontendController::class, 'projectShow'])->whereNumber('id')->name('projects.show');
     Route::get('/maintenance-projects/{id}/edit', [DdFrontendController::class, 'projectForm'])->whereNumber('id')->name('projects.edit');
+    Route::get('/maintenance-projects/{id}/deletion-preview', [DdPreservedHistoryController::class, 'preview'])->whereNumber('id');
+    Route::delete('/maintenance-projects/{id}', [DdPreservedHistoryController::class, 'delete'])->whereNumber('id')->middleware('throttle:6,1');
     Route::post('/maintenance-projects', [DdFrontendController::class, 'saveProject'])->name('projects.store');
     Route::put('/maintenance-projects/{id}', [DdFrontendController::class, 'saveProject'])->whereNumber('id')->name('projects.update');
     Route::get('/maintenance-projects/{project}/records/create', [DdFrontendController::class, 'recordForm'])->whereNumber('project')->name('records.create');

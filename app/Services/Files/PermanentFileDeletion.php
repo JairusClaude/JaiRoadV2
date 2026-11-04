@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\DataDictionary\DataDictionaryIdentityResolver;
 use App\Services\DataDictionary\DdOperationAudit;
 use App\Services\DataDictionary\DdRoleAccess;
+use App\Services\DataDictionary\PreservedProjectDeletion;
 use App\Services\Documents\PrivateSupabaseStorage;
 use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
 use Illuminate\Database\Query\Builder;
@@ -68,6 +69,12 @@ final class PermanentFileDeletion
     {
         // Managers have the same global business scope as existing recordScope;
         // Engineers are rejected above, never upgraded by supplying an LGU/role.
+        $record = DB::table('jairoads_next.maintenance_records')->where('id', $id)->first(['project_id']);
+        if ($record !== null && $record->project_id === null) {
+            abort_unless(app(PreservedProjectDeletion::class)->available() && DB::table(PreservedProjectDeletion::CONTEXT)->where('maintenance_id', $id)->exists(), 404);
+
+            return; // Caller has already verified Admin/SuperAdmin; history stays private.
+        }
         abort_unless(DB::table('jairoads_next.maintenance_records as m')->join('jairoads_next.maintenance_projects as p', 'p.id', '=', 'm.project_id')
             ->join('jairoads_next.road_coverages as r', 'r.id', '=', 'p.road_coverage_id')->where('m.id', $id)->exists(), 404);
     }

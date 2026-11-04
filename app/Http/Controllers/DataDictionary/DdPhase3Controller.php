@@ -10,6 +10,7 @@ use App\Services\DataDictionary\DataDictionaryIdentityResolver;
 use App\Services\DataDictionary\DdActivityNotifications;
 use App\Services\DataDictionary\DdDashboardAnalytics;
 use App\Services\DataDictionary\DdRoleAccess;
+use App\Services\DataDictionary\PreservedProjectDeletion;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -140,6 +141,7 @@ final class DdPhase3Controller extends Controller
             'section' => $section,
             'identity' => ['role' => $actor['role'], 'username' => (string) $userName, 'accountId' => $actor['account_id']],
             'counts' => $counts,
+            'historyUrl' => $allowedManager && app(PreservedProjectDeletion::class)->available() ? '/dd-phase3/history/records' : null,
             'analytics' => $section === 'dashboard' ? app(DdDashboardAnalytics::class)->summary($actor) : null,
             'lgus' => $lgus, 'accounts' => $accounts,
             'engineers' => $engineers,

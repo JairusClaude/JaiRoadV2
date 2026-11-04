@@ -144,6 +144,11 @@ final class RoadMunicipalityChange
         $managers = [];
         $conflicts = [];
         foreach ($records as $record) {
+            if ($record->managing_engineer_id === null) {
+                $managers[] = ['maintenance_record_id' => (int) $record->id, 'engineer_id' => null, 'name' => 'NULL (unassigned)', 'eligible' => true];
+
+                continue;
+            }
             $engineer = $engineers->firstWhere('id', $record->managing_engineer_id);
             $account = $accounts->firstWhere('engineer_id', $record->managing_engineer_id);
             // An existing linked Admin manager retains their approved self-management

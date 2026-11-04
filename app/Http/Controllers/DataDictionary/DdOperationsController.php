@@ -12,6 +12,7 @@ use App\Services\DataDictionary\DdRoleAccess;
 use App\Services\DataDictionary\DuplicateMaintenancePeriod;
 use App\Services\DataDictionary\LinkedPasswordUpdater;
 use App\Services\DataDictionary\ManagingEngineerEligibility;
+use App\Services\DataDictionary\PreservedProjectDeletion;
 use App\Services\DataDictionary\RoadCoverageGeometry;
 use App\Services\DataDictionary\RoadMunicipalityChange;
 use App\Services\DataDictionary\TwiceYearlyMaintenance;
@@ -115,11 +116,15 @@ final class DdOperationsController extends Controller
     private function recordScope(array $actor, int $recordId, bool $write = false): \stdClass
     {
         $row = $this->t('maintenance_records as mr')
-            ->join('jairoads_next.maintenance_projects as p', 'p.id', '=', 'mr.project_id')
-            ->join('jairoads_next.road_coverages as r', 'r.id', '=', 'p.road_coverage_id')
+            ->leftJoin('jairoads_next.maintenance_projects as p', 'p.id', '=', 'mr.project_id')
+            ->leftJoin('jairoads_next.road_coverages as r', 'r.id', '=', 'p.road_coverage_id')
             ->where('mr.id', $recordId)->first(['mr.id', 'mr.project_id', 'mr.managing_engineer_id', 'r.lgu_id']);
         abort_unless($row !== null, 404);
-        if ($actor['role'] === 'Engineer') {
+        if ($row->project_id === null) {
+            abort_unless($this->managers($actor) && app(PreservedProjectDeletion::class)->available()
+                && DB::table(PreservedProjectDeletion::CONTEXT)->where('maintenance_id', $recordId)->exists(), 403);
+            abort_if($write, 409, 'Detached project history is read-only.');
+        } elseif ($actor['role'] === 'Engineer') {
             $this->lguAllowed($actor, (int) $row->lgu_id);
             if ($write) {
                 abort_unless((int) $row->managing_engineer_id === (int) $actor['engineer_id'], 403, 'Current managing Engineer required.');
@@ -209,7 +214,7 @@ final class DdOperationsController extends Controller
             $projects->where('p.id', $projectId);
             $roads->where('id', $this->t('maintenance_projects')->where('id', $projectId)->value('road_coverage_id'));
             $maintenanceHistory = $this->t('maintenance_records as mr')
-                ->join('jairoads_next.engineers as e', 'e.id', '=', 'mr.managing_engineer_id')
+                ->leftJoin('jairoads_next.engineers as e', 'e.id', '=', 'mr.managing_engineer_id')
                 ->where('mr.project_id', $projectId)->orderBy('mr.maintenance_year')->orderBy('mr.quarter')->orderBy('mr.id')
                 ->get(['mr.id', 'mr.project_id', 'mr.managing_engineer_id', 'mr.maintenance_year', 'mr.quarter',
                     'mr.start_date', 'mr.estimated_duration_days', 'mr.complete_date', 'mr.status', 'mr.description',
@@ -223,6 +228,7 @@ final class DdOperationsController extends Controller
 
         return Inertia::render('dd-phase3/Operations', [
             'managerChoices' => $managerChoices,
+            'canUnassign' => $this->managers($actor) && app(PreservedProjectDeletion::class)->available(),
             'maintenanceHistory' => $maintenanceHistory, 'maintenanceSchedule' => $maintenanceSchedule,
             'section' => $section, 'role' => $actor['role'], 'canManage' => $this->managers($actor),
             'engineerId' => $actor['engineer_id'], 'hasAssignment' => count($activeLgus) > 0,
@@ -436,7 +442,7 @@ final class DdOperationsController extends Controller
         $this->writer($actor);
         $v = $request->validate([
             'project_id' => ['required', 'integer', 'min:1'],
-            'managing_engineer_id' => ['required', 'integer', 'min:1'],
+            'managing_engineer_id' => [$id === null ? 'required' : 'present', $id === null ? 'required' : 'nullable', 'integer', 'min:1'],
             'maintenance_year' => ['required', 'integer', 'between:1900,2100'],
             'quarter' => ['required', Rule::in(['Q1', 'Q2', 'Q3', 'Q4'])],
             'start_date' => ['required', 'date_format:Y-m-d'],
@@ -460,7 +466,7 @@ final class DdOperationsController extends Controller
                 $lgu = $this->projectLgu((int) $project->id);
                 abort_unless($lgu !== null, 404);
                 $this->lguAllowed($actor, $lgu);
-                abort_unless($this->t('engineers')->where('id', $v['managing_engineer_id'])->where('engineer_status', 'Active')->exists(), 422, 'Managing Engineer must be active.');
+                abort_unless($v['managing_engineer_id'] === null || $this->t('engineers')->where('id', $v['managing_engineer_id'])->where('engineer_status', 'Active')->exists(), 422, 'Managing Engineer must be active.');
                 $data = array_intersect_key($v, array_flip(['project_id', 'managing_engineer_id', 'maintenance_year', 'quarter', 'start_date', 'estimated_duration_days', 'complete_date', 'status', 'description']));
                 $data['complete_date'] = $v['complete_date'] ?? null;
                 $data['description'] = $v['description'] ?? null;
@@ -474,7 +480,7 @@ final class DdOperationsController extends Controller
                 } else {
                     $row = $this->recordScope($actor, $id, true);
                     $period = $this->t('maintenance_records')->where('id', $id)->lockForUpdate()->first(['maintenance_year', 'quarter']);
-                    if ((int) $row->project_id !== (int) $v['project_id'] || (int) $row->managing_engineer_id !== (int) $v['managing_engineer_id']) {
+                    if ((int) $row->project_id !== (int) $v['project_id'] || ($row->managing_engineer_id === null ? null : (int) $row->managing_engineer_id) !== ($v['managing_engineer_id'] === null ? null : (int) $v['managing_engineer_id'])) {
                         throw ValidationException::withMessages(['project_id' => 'Changing project or managing Engineer requires separately approved reassignment.']);
                     }
                     if ((int) $period->maintenance_year !== (int) $v['maintenance_year'] || $period->quarter !== $v['quarter']) {
@@ -501,17 +507,22 @@ final class DdOperationsController extends Controller
         abort_unless($this->managers($actor), 403);
         $data = $request->validate([
             'managing_engineer_id' => ['required', 'integer', 'min:1'],
-            'expected_current_manager_id' => ['required', 'integer', 'min:1'],
+            'expected_current_manager_id' => ['present', 'nullable', 'integer', 'min:1'],
         ]);
         $projectId = $this->t('maintenance_records')->where('id', $id)->value('project_id');
         abort_unless($projectId !== null, 404);
         DB::transaction(function () use ($request, $resolver, $actor, $data, $id, $projectId): void {
+            DB::select('SELECT pg_advisory_xact_lock_shared(1927710916)');
             // Same project -> record lock order as ordinary record writes.
             abort_unless($this->t('maintenance_projects')->where('id', $projectId)->lockForUpdate()->first(['id']) !== null, 404);
+            $account = $this->t('user_accounts')->where('id', $actor['account_id'])->sharedLock()->first(['engineer_id']);
+            if ($account?->engineer_id !== null) {
+                $this->t('engineers')->where('id', $account->engineer_id)->sharedLock()->first(['id']);
+            }
             abort_unless($this->actor($request, $resolver) === $actor, 403);
             $row = $this->t('maintenance_records')->where('id', $id)->lockForUpdate()->first(['project_id', 'managing_engineer_id']);
             abort_unless($row instanceof \stdClass && (int) $row->project_id === (int) $projectId, 404);
-            if ((int) $row->managing_engineer_id !== (int) $data['expected_current_manager_id']) {
+            if (($row->managing_engineer_id === null ? null : (int) $row->managing_engineer_id) !== ($data['expected_current_manager_id'] === null ? null : (int) $data['expected_current_manager_id'])) {
                 throw ValidationException::withMessages(['expected_current_manager_id' => 'The manager changed while this form was open. Refresh the record before reassigning.']);
             }
             $lguId = $this->projectLgu((int) $projectId);
@@ -522,9 +533,9 @@ final class DdOperationsController extends Controller
             }
             $oldManager = $this->t('engineers')->where('id', $row->managing_engineer_id)->first(['first_name', 'last_name']);
             $newManager = $this->t('engineers')->where('id', $data['managing_engineer_id'])->first(['first_name', 'last_name']);
-            abort_unless($oldManager instanceof \stdClass && $newManager instanceof \stdClass, 404);
-            $old = ['managing_engineer_id' => (int) $row->managing_engineer_id,
-                'managing_engineer_name' => trim($oldManager->first_name.' '.$oldManager->last_name)];
+            abort_unless(($row->managing_engineer_id === null || $oldManager instanceof \stdClass) && $newManager instanceof \stdClass, 404);
+            $old = ['managing_engineer_id' => $row->managing_engineer_id === null ? null : (int) $row->managing_engineer_id,
+                'managing_engineer_name' => $oldManager === null ? null : trim($oldManager->first_name.' '.$oldManager->last_name)];
             $new = ['managing_engineer_id' => (int) $data['managing_engineer_id'],
                 'managing_engineer_name' => trim($newManager->first_name.' '.$newManager->last_name)];
             $this->t('maintenance_records')->where('id', $id)->update(['managing_engineer_id' => $new['managing_engineer_id'], 'updated_at' => now()]);
@@ -534,6 +545,40 @@ final class DdOperationsController extends Controller
 
         return redirect()->route('jairoads.dd-phase3.show', ['section' => 'projects', 'view' => 'show', 'project' => $projectId])
             ->with('dd_operations_status', 'ManagingEngineer reassigned.');
+    }
+
+    public function unassignRecord(Request $request, DataDictionaryIdentityResolver $resolver, int $id): RedirectResponse
+    {
+        $actor = $this->actor($request, $resolver);
+        abort_unless($this->managers($actor), 403);
+        abort_unless(app(PreservedProjectDeletion::class)->available(), 503, 'Schema-owner setup is required for unassignment.');
+        $data = $request->validate(['expected_current_manager_id' => ['present', 'nullable', 'integer', 'min:1']]);
+        $projectId = $this->t('maintenance_records')->where('id', $id)->value('project_id');
+        abort_unless($projectId !== null, 409, 'Detached history cannot change assignments.');
+        DB::transaction(function () use ($request, $resolver, $actor, $data, $id, $projectId): void {
+            DB::select('SELECT pg_advisory_xact_lock_shared(1927710916)');
+            abort_unless($this->t('maintenance_projects')->where('id', $projectId)->lockForUpdate()->first(['id']) !== null, 404);
+            $row = $this->t('maintenance_records')->where('id', $id)->lockForUpdate()->first(['project_id', 'managing_engineer_id']);
+            abort_unless($row !== null && $row->project_id === $projectId, 409);
+            $account = $this->t('user_accounts')->where('id', $actor['account_id'])->sharedLock()->first(['engineer_id']);
+            if ($account?->engineer_id !== null) {
+                $this->t('engineers')->where('id', $account->engineer_id)->sharedLock()->first(['id']);
+            }
+            abort_unless($this->actor($request, $resolver) === $actor, 403);
+            $old = $row->managing_engineer_id === null ? null : (int) $row->managing_engineer_id;
+            if ($old !== ($data['expected_current_manager_id'] === null ? null : (int) $data['expected_current_manager_id'])) {
+                throw ValidationException::withMessages(['expected_current_manager_id' => 'Manager changed. Refresh before unassigning.']);
+            }
+            if ($old === null) {
+                return;
+            }
+            $this->t('maintenance_records')->where('id', $id)->update(['managing_engineer_id' => null, 'updated_at' => now()]);
+            $this->audit($actor, 'UPDATE', 'MaintenanceRecord', $id,
+                'MaintenanceRecord #'.$id.' ManagingEngineer changed from Engineer #'.$old.' to NULL.',
+                ['managing_engineer_id' => null], ['managing_engineer_id' => $old], notify: false);
+        }, 3);
+
+        return back()->with('dd_operations_status', 'ManagingEngineer is NULL (unassigned).');
     }
 
     public function saveUpdate(Request $request, DataDictionaryIdentityResolver $resolver, ?int $id = null): RedirectResponse
@@ -625,10 +670,12 @@ final class DdOperationsController extends Controller
             'document_title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:5000'],
         ]);
-        DB::transaction(function () use ($actor, $id, $v): void {
-            $document = $this->t('maintenance_documents')->where('id', $id)
-                ->lockForUpdate()->first(['id', 'maintenance_id']);
-            abort_unless($document !== null, 404);
+        DB::transaction(function () use ($actor, $id, $v, $request, $resolver): void {
+            $parent = $this->t('maintenance_documents')->where('id', $id)->first(['maintenance_id']);
+            abort_unless($parent !== null, 404);
+            $this->lockUploadAuthorization($request, $resolver, $actor, (int) $parent->maintenance_id);
+            $document = $this->t('maintenance_documents')->where('id', $id)->lockForUpdate()->first(['id', 'maintenance_id']);
+            abort_unless($document !== null && $document->maintenance_id === $parent->maintenance_id, 409);
             // Engineer must be the ManagingEngineer with an active LGU assignment.
             $this->recordScope($actor, (int) $document->maintenance_id, true);
             app(PermanentFileDeletion::class)->assertNotPending('document', $id);
@@ -749,6 +796,14 @@ final class DdOperationsController extends Controller
     {
         $actor = $this->actor($request, $resolver);
         abort_unless($this->managers($actor), 403, 'Only Admin/SuperAdmin may delete approved entities.');
+        if ($entity === 'projects') {
+            $v = $request->validate(['confirmation_token' => ['required', 'string']]);
+            $login = $request->user();
+            abort_unless($login instanceof User, 403);
+            app(PreservedProjectDeletion::class)->confirm($login, $id, $v['confirmation_token']);
+
+            return $this->done('projects', 'Project deleted; maintenance history and files preserved.');
+        }
         $allowed = ['roads' => ['road_coverages', 'RoadCoverage'],
             'projects' => ['maintenance_projects', 'MaintenanceProject'],
             'records' => ['maintenance_records', 'MaintenanceRecord'],

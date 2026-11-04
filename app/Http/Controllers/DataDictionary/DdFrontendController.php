@@ -10,6 +10,7 @@ use App\Services\DataDictionary\DataDictionaryIdentityResolver;
 use App\Services\DataDictionary\DdRoleAccess;
 use App\Services\DataDictionary\DuplicateMaintenancePeriod;
 use App\Services\DataDictionary\ManagingEngineerEligibility;
+use App\Services\DataDictionary\PreservedProjectDeletion;
 use App\Services\DataDictionary\RoadReferenceBounds;
 use App\Services\Documents\PrivateSupabaseStorage;
 use App\Services\Files\PermanentFileDeletion;
@@ -244,7 +245,7 @@ final class DdFrontendController extends Controller
         return ['id' => (int) $p->id, 'project_title' => $p->project_title, 'description' => $p->description,
             'road_coverage_id' => (int) $p->road_coverage_id, 'road_name' => $p->road_name, 'municipality' => $p->municipality_name,
             'created_by' => $p->creator_name, 'created_at' => $p->created_at, 'updated_at' => $p->updated_at,
-            'maintenance_records_count' => (int) $p->record_count, 'can_edit' => $this->writable($actor), 'can_delete' => false,
+            'maintenance_records_count' => (int) $p->record_count, 'can_edit' => $this->writable($actor), 'can_delete' => DdRoleAccess::managesBusinessData($actor['role']) && app(PreservedProjectDeletion::class)->available(),
             ...(isset($p->geojson) ? ['geojson' => json_decode($p->geojson, true, 512, JSON_THROW_ON_ERROR)] : [])];
     }
 
@@ -315,7 +316,7 @@ final class DdFrontendController extends Controller
             ->join('jairoads_next.maintenance_projects as p', 'p.id', '=', 'm.project_id')
             ->join('jairoads_next.road_coverages as rc', 'rc.id', '=', 'p.road_coverage_id')
             ->join('jairoads_next.lgus as l', 'l.id', '=', 'rc.lgu_id')
-            ->join('jairoads_next.engineers as e', 'e.id', '=', 'm.managing_engineer_id')
+            ->leftJoin('jairoads_next.engineers as e', 'e.id', '=', 'm.managing_engineer_id')
             ->join('jairoads_next.user_accounts as a', 'a.id', '=', 'm.created_by'), $actor)
             ->select(['m.*', 'p.project_title', 'rc.lgu_id', 'l.municipality_name', 'e.first_name', 'e.last_name', 'a.username as creator_name']);
     }
@@ -334,8 +335,8 @@ final class DdFrontendController extends Controller
         $url = self::BASE.'/maintenance-projects/'.$r->project_id.'/records/'.$r->id;
 
         return ['id' => (int) $r->id, 'project_id' => (int) $r->project_id, 'year' => (int) $r->maintenance_year,
-            'quarter' => $r->quarter, 'status' => $r->status, 'engineers_id' => (int) $r->managing_engineer_id,
-            'managing_engineer' => ['id' => (int) $r->managing_engineer_id, 'first_name' => $r->first_name, 'last_name' => $r->last_name],
+            'quarter' => $r->quarter, 'status' => $r->status, 'engineers_id' => $r->managing_engineer_id === null ? null : (int) $r->managing_engineer_id,
+            'managing_engineer' => $r->managing_engineer_id === null ? null : ['id' => (int) $r->managing_engineer_id, 'first_name' => $r->first_name, 'last_name' => $r->last_name],
             'start_date' => $r->start_date, 'estimated_duration_days' => (int) $r->estimated_duration_days, 'complete_date' => $r->complete_date,
             'description' => $r->description, 'created_by' => $r->creator_name, 'created_at' => $r->created_at, 'updated_at' => $r->updated_at,
             'details_url' => $url, 'edit_url' => $this->canWriteRecord($r, $actor) ? $url.'/edit' : null, 'delete_url' => null,
@@ -350,8 +351,8 @@ final class DdFrontendController extends Controller
         $url = self::BASE.'/maintenance-projects/'.$r->project_id.'/records/'.$r->id;
 
         return ['id' => (int) $r->id, 'year' => (int) $r->maintenance_year, 'quarter' => $r->quarter, 'status' => $r->status,
-            'engineers_id' => (int) $r->managing_engineer_id,
-            'managing_engineer' => ['id' => (int) $r->managing_engineer_id, 'first_name' => $r->first_name, 'last_name' => $r->last_name],
+            'engineers_id' => $r->managing_engineer_id === null ? null : (int) $r->managing_engineer_id,
+            'managing_engineer' => $r->managing_engineer_id === null ? null : ['id' => (int) $r->managing_engineer_id, 'first_name' => $r->first_name, 'last_name' => $r->last_name],
             'start_date' => $r->start_date, 'details_url' => $url,
             'edit_url' => $this->canWriteRecord($r, $actor) ? $url.'/edit' : null, 'delete_url' => null];
     }
@@ -401,7 +402,7 @@ final class DdFrontendController extends Controller
         abort_if($id !== null && $record === null, 404);
         abort_if($record !== null && ! $this->canWriteRecord($record, $actor), 403);
         $engineers = $this->eligibility->choices($actor, (int) $p->lgu_id)->get();
-        if ($record !== null && ! $engineers->contains('id', $record->managing_engineer_id)) {
+        if ($record !== null && $record->managing_engineer_id !== null && ! $engineers->contains('id', $record->managing_engineer_id)) {
             $engineers->push((object) ['id' => (int) $record->managing_engineer_id, 'first_name' => $record->first_name, 'last_name' => $record->last_name]);
         }
 
@@ -454,6 +455,7 @@ final class DdFrontendController extends Controller
             'updates' => $this->updateQuery($actor)->where('u.maintenance_id', $id)->orderByDesc('u.update_month')->get()->map(fn (\stdClass $u): array => $this->updateData($u, $actor)),
             'canWrite' => $this->canWriteRecord($r, $actor),
             'canReassign' => DdRoleAccess::managesBusinessData($actor['role']),
+            'canUnassign' => DdRoleAccess::managesBusinessData($actor['role']) && app(PreservedProjectDeletion::class)->available(),
             'managerChoices' => DdRoleAccess::managesBusinessData($actor['role']) ? $this->eligibility->choices($actor, (int) $r->lgu_id)->get() : [],
         ]);
     }
@@ -480,6 +482,7 @@ final class DdFrontendController extends Controller
             'projects' => $this->projectChoices($actor)->orderBy('p.project_title')->get()->map(fn (\stdClass $p): array => $this->projectChoiceData($p)),
             'municipalities' => $this->municipalities($actor)->map(fn (\stdClass $l): array => ['value' => (string) $l->id, 'label' => $l->municipality_name]),
             'years' => $this->records($actor)->reorder()->distinct()->orderByDesc('m.maintenance_year')->pluck('m.maintenance_year'),
+            'historyUrl' => DdRoleAccess::managesBusinessData($actor['role']) && app(PreservedProjectDeletion::class)->available() ? '/dd-phase3/history/records' : null,
             'filters' => $filters, 'canCreate' => $this->writable($actor), 'integration' => ['ready' => true, 'message' => null],
         ]);
     }
@@ -759,7 +762,7 @@ final class DdFrontendController extends Controller
         $value = $request->input($frontend);
         if ($request->exists($canonical)) {
             $other = $request->input($canonical);
-            if ((! is_int($value) && ! is_string($value)) || (! is_int($other) && ! is_string($other)) || (string) $value !== (string) $other) {
+            if (($value !== null || $other !== null) && ((! is_int($value) && ! is_string($value)) || (! is_int($other) && ! is_string($other)) || (string) $value !== (string) $other)) {
                 throw ValidationException::withMessages([$frontend => 'Conflicting values were supplied for this field. Refresh the form and try again.']);
             }
         }

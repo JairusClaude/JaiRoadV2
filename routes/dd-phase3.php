@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\DataDictionary\DdOperationsController;
 use App\Http\Controllers\DataDictionary\DdPeopleLifecycleController;
 use App\Http\Controllers\DataDictionary\DdPhase3Controller;
+use App\Http\Controllers\DataDictionary\DdPreservedHistoryController;
 use App\Http\Controllers\DataDictionary\DdSectionController;
 use Illuminate\Support\Facades\Route;
 
@@ -30,6 +31,11 @@ Route::middleware(['auth', 'verified'])->prefix('dd-phase3')->name('jairoads.dd-
 
     Route::get('/accounts/{id}', [DdPeopleLifecycleController::class, 'accountDetails'])->whereNumber('id');
     Route::patch('/accounts/{id}/status', [DdPeopleLifecycleController::class, 'accountStatus'])->whereNumber('id');
+
+    Route::get('/history/records', [DdPreservedHistoryController::class, 'index'])->name('history.index');
+    Route::get('/history/records/{id}', [DdPreservedHistoryController::class, 'show'])->whereNumber('id')->name('history.show');
+    Route::get('/ops/projects/{id}/deletion-preview', [DdPreservedHistoryController::class, 'preview'])->whereNumber('id');
+    Route::post('/ops/records/{id}/unassignment', [DdOperationsController::class, 'unassignRecord'])->whereNumber('id')->middleware('throttle:10,1');
 
     // Explicitly qualified DD module endpoints; never use legacy CRUD routes.
     Route::post('/ops/roads', [DdOperationsController::class, 'saveRoad'])->name('operations.roads.store');

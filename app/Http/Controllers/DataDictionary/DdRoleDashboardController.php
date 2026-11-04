@@ -80,8 +80,8 @@ final class DdRoleDashboardController extends Controller
                 ])->all();
         } elseif ($actor['role'] === 'Viewer') {
             $stats['projects'] = (int) DB::table('jairoads_next.maintenance_projects')->count();
-            $stats['managedRecords'] = (int) DB::table('jairoads_next.maintenance_records')->count();
-            $stats['ongoingRecords'] = (int) DB::table('jairoads_next.maintenance_records')
+            $stats['managedRecords'] = (int) DB::table('jairoads_next.maintenance_records')->whereNotNull('project_id')->count();
+            $stats['ongoingRecords'] = (int) DB::table('jairoads_next.maintenance_records')->whereNotNull('project_id')
                 ->where('status', 'Ongoing')->count();
             $stats['roadCoverages'] = (int) DB::table('jairoads_next.road_coverages')->count();
             $stats['lgus'] = (int) DB::table('jairoads_next.lgus')->count();

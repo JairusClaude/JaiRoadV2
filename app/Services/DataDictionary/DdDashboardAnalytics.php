@@ -31,6 +31,12 @@ final class DdDashboardAnalytics
                 ->join('jairoads_next.road_coverages as r', 'r.id', '=', 'p.road_coverage_id')
                 ->where('mr.managing_engineer_id', $engineerId ?? -1)->whereIn('r.lgu_id', $lgus);
         }
+        if ($role === 'Viewer') {
+            // Read-only inventory excludes detached Admin-only historical context.
+            $scope = DB::table('jairoads_next.maintenance_records as mr')
+                ->join('jairoads_next.maintenance_projects as p', 'p.id', '=', 'mr.project_id')
+                ->join('jairoads_next.road_coverages as r', 'r.id', '=', 'p.road_coverage_id');
+        }
         $records = $scope ?? DB::table('jairoads_next.maintenance_records');
         $recordIds = $scope ? (clone $scope)->select('mr.id') : null;
         $updated = DB::table('jairoads_next.monthly_updates');
