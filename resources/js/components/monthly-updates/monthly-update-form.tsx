@@ -346,7 +346,7 @@ export function MonthlyUpdateForm({
                     <footer className="jr-form-footer">
                         <p>
                             {canonical
-                                ? 'Saving persists this MonthlyUpdate to the database. File removal remains unavailable pending retention policy approval.'
+                                ? 'Saving persists this MonthlyUpdate to the database. Individual file deletion uses a separate administrator confirmation on the report details page.'
                                 : 'Sample data only · changes reset when the preview server restarts.'}
                         </p>
                         <div className="flex gap-2">

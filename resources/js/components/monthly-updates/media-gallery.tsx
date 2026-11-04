@@ -1,6 +1,10 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { CirclePlay, ImageOff, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import {
+    PermanentFileDeletionDialog,
+    usePermanentFileDeletion,
+} from '@/components/files/permanent-file-deletion';
 import { Button } from '@/components/ui/button';
 import {
     Tooltip,
@@ -143,6 +147,7 @@ function GalleryVideo({
 // Uses the same Radix viewer conventions and styles as the approved Add uploader.
 // URLs point to its existing process-local media endpoint; no second byte store.
 export function MediaGallery({ media }: { media: MonthlyMedia[] }) {
+    const deletion = usePermanentFileDeletion();
     const [preview, setPreview] = useState<MonthlyMedia | null>(null);
     const [failed, setFailed] = useState<Set<number>>(new Set());
     const opener = useRef<HTMLButtonElement | null>(null);
@@ -226,11 +231,33 @@ export function MediaGallery({ media }: { media: MonthlyMedia[] }) {
                                         {contents}
                                     </div>
                                 )}
+                                {file.delete_url && (
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        className="jr-danger"
+                                        aria-label={`Delete ${file.file_name}`}
+                                        onClick={() =>
+                                            deletion.open({
+                                                id: file.id,
+                                                kind: 'media',
+                                                file_name: file.file_name,
+                                                parent_label:
+                                                    file.parent_label ??
+                                                    'MonthlyUpdate',
+                                                delete_url: file.delete_url!,
+                                            })
+                                        }
+                                    >
+                                        Delete
+                                    </Button>
+                                )}
                             </li>
                         );
                     })}
                 </ul>
             </TooltipProvider>
+            <PermanentFileDeletionDialog deletion={deletion} />
             <Dialog.Root
                 open={preview !== null}
                 onOpenChange={(open) => {

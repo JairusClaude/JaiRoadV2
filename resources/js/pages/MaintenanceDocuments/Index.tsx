@@ -7,6 +7,10 @@ import {
     DirectorySelectionToolbar,
 } from '@/components/directory-controls';
 import {
+    PermanentFileDeletionDialog,
+    usePermanentFileDeletion,
+} from '@/components/files/permanent-file-deletion';
+import {
     DocumentDeletionDialog,
     useDocumentDeletion,
 } from '@/components/maintenance-documents/document-deletion';
@@ -39,6 +43,9 @@ export default function Index({
         page.props.previewOnly === true ||
         (page.props.canonicalFrontend === true && page.props.canWrite === true);
     const deletion = useDocumentDeletion();
+    const permanent = usePermanentFileDeletion(() =>
+        router.reload({ only: ['documents'] }),
+    );
     const [search, setSearch] = useState(filters.search);
     const [selecting, setSelecting] = useState(false);
     const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -359,10 +366,29 @@ export default function Index({
                                                         disabled={
                                                             page.props
                                                                 .canonicalFrontend ===
-                                                                true || !enabled
+                                                            true
+                                                                ? !doc.delete_url
+                                                                : !enabled
                                                         }
                                                         onSelect={() =>
-                                                            deletion.open([doc])
+                                                            page.props
+                                                                .canonicalFrontend ===
+                                                                true &&
+                                                            doc.delete_url
+                                                                ? permanent.open(
+                                                                      {
+                                                                          id: doc.id,
+                                                                          kind: 'document',
+                                                                          file_name:
+                                                                              doc.file_name,
+                                                                          parent_label: `MaintenanceRecord #${doc.maintenance_id}`,
+                                                                          delete_url:
+                                                                              doc.delete_url,
+                                                                      },
+                                                                  )
+                                                                : deletion.open(
+                                                                      [doc],
+                                                                  )
                                                         }
                                                     >
                                                         <Trash2 />
@@ -419,6 +445,7 @@ export default function Index({
                 />
             </ProjectWorkspace>
             <DocumentDeletionDialog deletion={deletion} />
+            <PermanentFileDeletionDialog deletion={permanent} />
         </div>
     );
 }

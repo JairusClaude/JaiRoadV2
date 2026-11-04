@@ -9,6 +9,10 @@ import {
 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import {
+    PermanentFileDeletionDialog,
+    usePermanentFileDeletion,
+} from '@/components/files/permanent-file-deletion';
+import {
     DocumentDeletionDialog,
     useDocumentDeletion,
 } from '@/components/maintenance-documents/document-deletion';
@@ -27,6 +31,9 @@ export default function Show({ document: doc }: { document: DocumentSummary }) {
         page.props.previewOnly === true ||
         (page.props.canonicalFrontend === true && page.props.canWrite === true);
     const deletion = useDocumentDeletion();
+    const permanent = usePermanentFileDeletion(() =>
+        router.visit(workspaceHref('/maintenance-documents')),
+    );
     const [viewer, setViewer] = useState(false);
     const viewerFocus = useRef<HTMLElement | null>(null);
     const projectUrl = workspaceHref(`/maintenance-projects/${doc.project.id}`);
@@ -70,10 +77,22 @@ export default function Show({ document: doc }: { document: DocumentSummary }) {
                             <Button
                                 className="jr-danger"
                                 disabled={
-                                    page.props.canonicalFrontend === true ||
-                                    !enabled
+                                    page.props.canonicalFrontend === true
+                                        ? !doc.delete_url
+                                        : !enabled
                                 }
-                                onClick={() => deletion.open([doc])}
+                                onClick={() =>
+                                    page.props.canonicalFrontend === true &&
+                                    doc.delete_url
+                                        ? permanent.open({
+                                              id: doc.id,
+                                              kind: 'document',
+                                              file_name: doc.file_name,
+                                              parent_label: `MaintenanceRecord #${doc.maintenance_id}`,
+                                              delete_url: doc.delete_url,
+                                          })
+                                        : deletion.open([doc])
+                                }
                             >
                                 <Trash2 />
                                 Delete Document
@@ -214,6 +233,7 @@ export default function Show({ document: doc }: { document: DocumentSummary }) {
                 onOpenChange={setViewer}
             />
             <DocumentDeletionDialog deletion={deletion} />
+            <PermanentFileDeletionDialog deletion={permanent} />
         </>
     );
 }

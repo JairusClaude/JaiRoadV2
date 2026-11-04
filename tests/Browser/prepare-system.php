@@ -11,6 +11,7 @@ final class SystemBrowserFixture extends PostgresTestCase
     public function prepare(): void
     {
         $this->setUp();
+        (require base_path('database/proposals/create_file_deletions.php'))->up(); // Disposable schema-owner rehearsal only.
         $f = $this->fixture('Engineer');
         $lgu = DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->value('lgu_id');
         DB::table('jairoads_next.lgus')->where('id', $lgu)->update(['municipality_name' => 'Compostela']);

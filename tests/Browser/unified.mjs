@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import process from 'node:process';
 import { verifyAuthenticatedHistory } from './authenticated-history.mjs';
 import { verifyDuplicatePeriod } from './duplicate-period.mjs';
+import { verifyPermanentFileDeletion } from './permanent-file-deletion.mjs';
 import { pdf, png, startStorageMock } from './private-storage-mock.mjs';
 import { verifyDirectoryLayouts } from './responsive-directories.mjs';
 const { chromium } = await import(
@@ -628,6 +629,21 @@ try {
     lastPage = admin;
 
     await verifyDirectoryLayouts(admin, ui);
+
+    await verifyPermanentFileDeletion({
+        admin,
+        superadmin,
+        engineer,
+        viewer,
+        rogue,
+        ui,
+        base,
+        doc,
+        report,
+        record,
+        storage,
+        props,
+    });
 
     lastPage = engineer;
     await engineer.goto(`${ui}/maintenance-projects/${project.id}`);

@@ -1,6 +1,10 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import { useRef } from 'react';
+import {
+    PermanentFileDeletionDialog,
+    usePermanentFileDeletion,
+} from '@/components/files/permanent-file-deletion';
 import { DocumentAttachment } from '@/components/maintenance-documents/document-file';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { ProjectSelector } from '@/components/monthly-updates/project-selector';
@@ -32,6 +36,9 @@ export default function Form(parents: DocumentParents) {
         page.props.previewOnly === true ||
         (page.props.canonicalFrontend === true && page.props.canWrite === true);
     const doc = parents.document;
+    const deletion = usePermanentFileDeletion(() =>
+        router.visit(workspaceHref('/maintenance-documents')),
+    );
     const fixed = parents.records.find((r) => r.id === parents.contextRecordId);
     const back = formReturn(page.url, parents.cancelUrl, [
         workspaceHref('/maintenance-documents'),
@@ -365,10 +372,34 @@ export default function Form(parents: DocumentParents) {
                         <footer className="jr-form-footer">
                             <p>
                                 {page.props.canonicalFrontend === true
-                                    ? 'Files remain private. File replacement and deletion are unavailable pending retention policy approval.'
+                                    ? 'Files remain private. File replacement is unavailable. Permanent deletion removes only the selected file.'
                                     : 'Local preview only · files and changes reset on restart.'}
                             </p>
                             <div className="flex gap-2">
+                                {doc?.delete_url && (
+                                    <>
+                                        <Button
+                                            type="button"
+                                            variant="destructive"
+                                            className="jr-danger"
+                                            onClick={() =>
+                                                deletion.open({
+                                                    id: doc.id,
+                                                    kind: 'document',
+                                                    file_name: doc.file_name,
+                                                    parent_label: `MaintenanceRecord #${doc.maintenance_id}`,
+                                                    delete_url: doc.delete_url!,
+                                                })
+                                            }
+                                        >
+                                            Delete File
+                                        </Button>
+                                        <PermanentFileDeletionDialog
+                                            deletion={deletion}
+                                        />
+                                    </>
+                                )}
+
                                 <Button
                                     type="button"
                                     variant="outline"

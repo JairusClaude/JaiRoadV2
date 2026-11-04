@@ -148,8 +148,8 @@ jobs:
             -e APP_ENV=production -e APP_DEBUG=false -e APP_KEY -e DB_CONNECTION=pgsql \
             -e 'DB_URL=postgresql://postgres:disposable-ci-only@127.0.0.1:5432/jairoads_scratch_system_docker?sslmode=disable' \
             -e APP_URL=http://127.0.0.1:10000 -e SESSION_DRIVER=file -e CACHE_STORE=file -e LOG_CHANNEL=stderr \
-            -e SUPABASE_URL=http://127.0.0.1:5799 -e SUPABASE_SECRET_KEY=disposable-storage-only \
-            -e SUPABASE_SERVICE_ROLE_KEY=disposable-storage-only jairoads-system-scratch
+            -e SUPABASE_URL=http://127.0.0.1:5799 -e SUPABASE_SECRET_KEY=sb_secret_disposable \
+            -e SUPABASE_SERVICE_ROLE_KEY=sb_secret_disposable jairoads-system-scratch
           for attempt in $(seq 1 30); do
             if curl -fsS http://127.0.0.1:10000/up >/dev/null; then break; fi
             sleep 1

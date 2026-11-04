@@ -372,7 +372,7 @@ export default function MaintenanceDocumentsPage({
                 <Notice>
                     Documents are tied to Maintenance Records and stored in a
                     private Supabase Storage bucket. Files are downloaded only
-                    through authorized Laravel endpoints. Deletes remain
+                    through authorized Laravel endpoints. Bulk deletes remain
                     disabled pending the file-retention decision.
                 </Notice>
                 {success && (

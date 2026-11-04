@@ -78,7 +78,20 @@ async function session() {
     }
     await request('/login');
 
-    return { request, post };
+    async function remove(path) {
+        return request(path, {
+            method: 'DELETE',
+            headers: {
+                Accept: 'application/json',
+                Origin: base,
+                'X-XSRF-TOKEN': decodeURIComponent(
+                    cookies.get('XSRF-TOKEN') || '',
+                ),
+            },
+        });
+    }
+
+    return { request, post, remove };
 }
 
 try {
@@ -251,6 +264,42 @@ try {
             403,
         );
         assert.equal(mock.counts.downloads, before);
+
+        for (const [email, kind, id] of [
+            [fixture.admin_email, 'document', fixture.document_id],
+            [fixture.superadmin_email, 'media', fixture.media_id],
+        ]) {
+            const client = await session();
+            await client.post('/login', {
+                email,
+                password: 'Disposable-Test!123',
+            });
+            const result = await client.remove(
+                `/dd-phase3/files/${kind}/${id}`,
+            );
+            assert.equal(result.status, 200, `${kind} deletion status`);
+            assert.equal((await result.json()).state, 'completed');
+            const repeated = await client.remove(
+                `/dd-phase3/files/${kind}/${id}`,
+            );
+            assert.equal(repeated.status, 200);
+            assert.equal(
+                (await client.request(`/dd-phase3/files/${kind}/${id}`)).status,
+                404,
+            );
+            assert.equal(
+                (
+                    await client.request(
+                        `/dd-phase3/ui/maintenance-projects/${fixture.project_id}`,
+                    )
+                ).status,
+                200,
+            );
+        }
+
+        console.log(
+            'PASS: production Docker Admin document and SuperAdmin media permanent deletion through exact-object Storage mocks, idempotent retry and retained parent project.',
+        );
         console.log(
             'PASS: Docker Laravel health/startup, built assets, PostgreSQL-backed four-role authentication/routing, Viewer direct-HTTP denial, private Storage mock download and cross-LGU denial.',
         );

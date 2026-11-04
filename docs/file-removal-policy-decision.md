@@ -1,5 +1,7 @@
 # MaintenanceDocument and Media retention decision
 
+> Historical checkpoint. On 4 November 2026 the team approved permanent deletion of one selected MaintenanceDocument or Media, including its exact private object. See [the approved implementation and operational handoff](permanent-individual-file-deletion.md). The older undecided text below is retained as history, not current individual-deletion policy. Shared activation remains gated by schema-owner setup. Parent/bulk/cascade deletion is not approved by this decision.
+
 Deletion is NOT enabled. Admin/SuperAdmin may open a non-mutating, parent-authorized deletion review. Engineers/Viewers cannot access that review. There is no document/media DELETE route and no storage deletion call. Existing downloads/uploads/private buckets are unchanged. Preparing a review does not write an AuditLog successful-change event.
 
 Team/client and the storage/schema owners must choose one behavior before destructive endpoints can be implemented:

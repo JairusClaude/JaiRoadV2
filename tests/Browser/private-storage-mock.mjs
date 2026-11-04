@@ -14,10 +14,32 @@ export async function startStorageMock(port = 5799) {
         'DISPOSABLE_LOCAL_ONLY',
     );
     const objects = new Map();
+    const removed = new Set();
+    let nextDeleteFailure = null;
+    let nextDeleteDelay = 0;
     const counts = { uploads: 0, downloads: 0, compensations: 0 };
     const server = http.createServer(async (request, response) => {
-        if (request.headers.apikey !== 'disposable-storage-only') {
+        if (
+            !['disposable-storage-only', 'sb_secret_disposable'].includes(
+                request.headers.apikey,
+            )
+        ) {
             response.writeHead(403).end('Missing disposable test key');
+
+            return;
+        }
+
+        if (
+            request.method === 'GET' &&
+            request.url.startsWith('/storage/v1/bucket/')
+        ) {
+            response.writeHead(200, { 'Content-Type': 'application/json' }).end(
+                JSON.stringify({
+                    id: request.url.split('/').at(-1),
+                    public: false,
+                    versioning_status: 'DISABLED',
+                }),
+            );
 
             return;
         }
@@ -40,15 +62,36 @@ export async function startStorageMock(port = 5799) {
                 .writeHead(200, { 'Content-Type': 'application/json' })
                 .end('{"Key":"disposable"}');
         } else if (request.method === 'DELETE') {
+            if (nextDeleteFailure !== null) {
+                const status = nextDeleteFailure;
+                nextDeleteFailure = null;
+                response
+                    .writeHead(status, { 'Content-Type': 'application/json' })
+                    .end(JSON.stringify({ code: 'InternalError' }));
+
+                return;
+            }
+
+            const delay = nextDeleteDelay;
+            nextDeleteDelay = 0;
+
+            if (delay) {
+                await new Promise((resolve) => setTimeout(resolve, delay));
+            }
+
             objects.delete(path);
+            removed.add(path);
             counts.compensations++;
-            response.writeHead(200).end('{}');
+            response
+                .writeHead(200, { 'Content-Type': 'application/json' })
+                .end('{"message":"Successfully deleted"}');
         } else if (request.method === 'GET') {
             counts.downloads++;
             const seed = path.includes('00000000-0000-4000-8000-000000000001');
-            const bytes =
-                objects.get(path) ||
-                (seed ? (path.endsWith('.pdf') ? pdf : png) : null);
+            const bytes = removed.has(path)
+                ? null
+                : objects.get(path) ||
+                  (seed ? (path.endsWith('.pdf') ? pdf : png) : null);
 
             if (!bytes) {
                 response.writeHead(404).end('Missing test object');
@@ -71,6 +114,12 @@ export async function startStorageMock(port = 5799) {
 
     return {
         counts,
+        failNextDelete: (status) => {
+            nextDeleteFailure = status;
+        },
+        delayNextDelete: (ms) => {
+            nextDeleteDelay = ms;
+        },
         close: () => new Promise((resolve) => server.close(resolve)),
     };
 }

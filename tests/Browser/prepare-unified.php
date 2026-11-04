@@ -11,6 +11,7 @@ final class UnifiedFrontendBrowserFixture extends PostgresTestCase
     public function prepare(): void
     {
         $this->setUp();
+        (require base_path('database/proposals/create_file_deletions.php'))->up(); // Guarded disposable rehearsal, never shared.
         $f = $this->fixture('Engineer');
         $lgu = DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->value('lgu_id');
         DB::table('jairoads_next.lgus')->where('id', $lgu)->update(['municipality_name' => 'Compostela']);

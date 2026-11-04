@@ -71,6 +71,8 @@ export type MonthlyCreateProps = {
 };
 
 export type MonthlyMedia = {
+    delete_url?: string | null;
+    parent_label?: string;
     id: number;
     file_name: string;
     // Read-only presentation alias of canonical Media.file_type.

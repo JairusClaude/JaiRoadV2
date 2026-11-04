@@ -11,6 +11,7 @@ export type MaintenanceDocument = {
     file_name: string;
     file_path?: string;
     download_url?: string;
+    delete_url?: string | null;
     can_edit?: boolean;
     // Display username; stored uploaded_by is the verified uploader UserAccount ID.
     uploaded_by: string;
