@@ -4,78 +4,60 @@ declare(strict_types=1);
 
 namespace App\Services\DataDictionary;
 
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
-/**
- * Recipient-specific AuditLog notifications; no new tables, no global feed,
- * and no read/unread state (not approved by the final Data Dictionary).
- */
+/** Linked immutable deliveries, never event copies or read/dismiss state. */
 final class DdActivityNotifications
 {
-    /**
-     * @return list<string>
-     */
+    public const TABLE = 'jairoads_next.audit_notification_recipients';
+
+    /** @return list<string> */
     public static function recipientsFor(string $actorRole): array
     {
-        return match ($actorRole) {
-            'SuperAdmin' => [],
-            'Admin' => ['SuperAdmin'],
-            'Engineer', 'Viewer' => ['Admin', 'SuperAdmin'],
-            default => [],
-        };
+        return in_array($actorRole, ['Admin', 'SuperAdmin', 'Engineer'], true) ? ['Admin', 'SuperAdmin'] : [];
     }
 
-    /**
-     * Call inside the SAME transaction as the business AuditLog insert.
-     * The actor receives their own event; higher roles receive lower-role activity.
-     * No other engineer/viewer gets another account's notifications.
-     */
-    /**
-     * @param  array{account_id:int,role:string,engineer_id:?int}  $actor
-     */
-    public function record(array $actor, string $action, string $entity, ?int $entityId, string $description): void
+    public function available(): bool
     {
-        $role = (string) $actor['role'];
-        $actorId = (int) $actor['account_id'];
-        $targets = DB::table('jairoads_next.user_accounts')
-            ->where('is_active', true)
-            ->where(function ($q) use ($actorId, $role): void {
-                $q->where('id', $actorId);
-                $parents = self::recipientsFor($role);
-                if ($parents !== []) {
-                    $q->orWhereIn('account_type', $parents);
-                }
-            })->pluck('id')->map(static fn ($id): int => (int) $id)->all();
-        $actorType = match ($role) {
-            'SuperAdmin', 'Admin', 'Engineer', 'Viewer' => $role,
-            default => 'User',
+        return DB::selectOne('SELECT to_regclass(?) IS NOT NULL AS available', [self::TABLE])->available === true;
+    }
+
+    /** @param array{account_id:int,role:string,engineer_id:?int} $actor */
+    public function deliver(int $eventId, array $actor, string $action, string $entity, ?int $id): void
+    {
+        abort_unless(DB::transactionLevel() > 0 && $this->available(), 503, 'Business auditing requires schema-owner notification setup.');
+        $verb = match ($action) {
+            'CREATE' => 'created', 'UPDATE' => 'updated', 'DELETE' => 'deleted', default => throw new \InvalidArgumentException('Unsupported business action.')
         };
-        $safeAction = substr(str_replace('_', ' ', strtoupper($action)), 0, 40);
-        $safeEntity = substr((string) $entity, 0, 80);
-        $msg = $actorType.' · '.$safeAction.' · '.$safeEntity;
-        if ($entityId !== null) {
-            $msg .= ' #'.$entityId;
+        $message = $actor['role'].' '.$verb.' '.$entity.($id === null ? '' : ' #'.$id).'.';
+        $audience = app(DataDictionaryIdentityResolver::class)->notificationRecipients($actor['role'] === 'Engineer' ? $actor['account_id'] : null)
+            ->selectRaw('?::bigint AS audit_log_id, account.id AS recipient_user_id, ?::text AS notification_message, ?::timestamp AS created_at', [$eventId, $message, now()]);
+        DB::table(self::TABLE)->insertUsing(['audit_log_id', 'recipient_user_id', 'notification_message', 'created_at'], $audience);
+    }
+
+    /** IDs remain canonical AuditLog IDs, not delivery sequence IDs.
+     * @return list<array{id:int,notification_message:string,created_at:string}>
+     */
+    public function feed(int $recipient, int $limit = 20): array
+    {
+        $legacy = DB::table('jairoads_next.audit_logs as old')
+            ->where('old.recipient_user_id', $recipient)->whereNotNull('old.notification_message')
+            ->whereRaw("btrim(old.notification_message) <> ''")
+            ->select(['old.id', 'old.notification_message', 'old.created_at']);
+        $query = $legacy;
+        if ($this->available()) {
+            $legacy->whereNotExists(static fn (Builder $q) => $q->selectRaw('1')->from(self::TABLE.' as delivery')
+                ->whereColumn('delivery.audit_log_id', 'old.id')->where('delivery.recipient_user_id', $recipient));
+            $current = DB::table(self::TABLE)->where('recipient_user_id', $recipient)
+                ->select(['audit_log_id as id', 'notification_message', 'created_at']);
+            $query = $current->unionAll($legacy);
         }
-        // Log in each recipient's own AuditLog notification row, with source
-        // identity but no email, password, IP, private file path or raw payload.
-        $rows = [];
-        foreach ($targets as $targetId) {
-            $rows[] = [
-                'user_id' => $actorId,
-                'actor_identifier' => 'DD-UserAccount#'.$actorId,
-                'action' => $action,
-                'entity_type' => $entity,
-                'entity_id' => $entityId,
-                'description' => 'Recipient notification: '.$description,
-                'old_value' => null,
-                'new_value' => null,
-                'recipient_user_id' => $targetId,
-                'notification_message' => $msg,
-                'created_at' => now(),
-            ];
-        }
-        foreach (array_chunk($rows, 100) as $batch) {
-            DB::table('jairoads_next.audit_logs')->insert($batch);
-        }
+
+        return array_values(DB::query()->fromSub($query, 'notifications')->orderByDesc('created_at')->orderByDesc('id')
+            ->limit(min(20, max(1, $limit)))->get()->map(static fn ($r): array => [
+                'id' => (int) $r->id, 'notification_message' => (string) $r->notification_message,
+                'created_at' => (string) $r->created_at,
+            ])->all());
     }
 }

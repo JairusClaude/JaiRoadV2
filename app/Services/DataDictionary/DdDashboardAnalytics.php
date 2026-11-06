@@ -79,25 +79,15 @@ final class DdDashboardAnalytics
         if ($manager) {
             $audit = DB::table('jairoads_next.audit_logs as l')
                 ->join('jairoads_next.user_accounts as u', 'u.id', '=', 'l.user_id')
-                ->whereNull('l.recipient_user_id'); // exclude fan-out notification copies
-            if ($role === 'Admin') {
-                $audit->where(function ($q) use ($accountId): void {
-                    $q->where('l.user_id', $accountId)->orWhereIn('u.account_type', ['Engineer', 'Viewer']);
-                });
-            }
+                ->whereNull('l.recipient_user_id')->whereNotIn('l.action', ['LOGIN', 'LOGOUT']); // business events only
             $activity = (clone $audit)->orderByDesc('l.created_at')->orderByDesc('l.id')->limit(7)
-                ->get(['l.id', 'l.action', 'l.entity_type', 'l.created_at', 'u.username', 'u.account_type'])
+                ->get(['l.id', 'l.action', 'l.entity_type', 'l.created_at', 'l.actor_identifier', 'u.account_type'])
                 ->map(static fn ($v): array => [
                     'id' => (int) $v->id, 'action' => (string) $v->action,
-                    'entity' => (string) $v->entity_type, 'username' => (string) $v->username,
+                    'entity' => (string) $v->entity_type, 'username' => (string) $v->actor_identifier,
                     'role' => (string) $v->account_type, 'at' => (string) $v->created_at,
                 ])->all();
-            $loginActivity = (clone $audit)->where('l.action', 'LOGIN')->orderByDesc('l.created_at')->limit(8)
-                ->get(['l.id', 'l.created_at', 'u.username', 'u.account_type'])
-                ->map(static fn ($v): array => [
-                    'id' => (int) $v->id, 'username' => (string) $v->username,
-                    'role' => (string) $v->account_type, 'at' => (string) $v->created_at,
-                ])->all();
+
         }
 
         return [
@@ -119,7 +109,7 @@ final class DdDashboardAnalytics
             'trend' => array_map(static fn ($month, $count): array => ['month' => $month, 'count' => $count], array_keys($months), array_values($months)),
             'activity' => $activity,
             'logins' => $loginActivity,
-            'trackingNote' => 'Sign-in history begins when login auditing is enabled. It is not a live online-users count.',
+            'trackingNote' => 'Sign-in history is not collected in the business AuditLog. Historical sign-in entries remain in administrator audit history.',
         ];
     }
 }

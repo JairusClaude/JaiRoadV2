@@ -196,6 +196,7 @@ final class PermanentFileDeletion
                     throw new \RuntimeException('storage_configuration_changed');
                 }
                 $this->exclusiveObject($intent->kind, (int) $intent->entity_id, $intent->object_path);
+                $old = $row === null ? ['id' => (int) $intent->entity_id, 'file_name' => $intent->file_name, 'maintenance_id' => (int) $intent->maintenance_id, 'monthly_update_id' => $intent->monthly_update_id] : (array) $row;
                 $stage = 'storage';
                 $storage->removePermanently($intent->object_path);
                 $stage = 'finalize';
@@ -206,7 +207,7 @@ final class PermanentFileDeletion
                 $this->audit->record($actor,
                     'DELETE', $intent->kind === 'document' ? 'MaintenanceDocument' : 'Media', (int) $intent->entity_id,
                     'Selected file permanently removed from private Storage and canonical metadata.', [],
-                    ['file_name' => $intent->file_name, 'initiated_by' => (int) $intent->initiated_by, 'maintenance_id' => (int) $intent->maintenance_id, 'monthly_update_id' => $intent->monthly_update_id], notify: false);
+                    $old + ['initiated_by' => (int) $intent->initiated_by]);
                 DB::table(self::TABLE)->where('id', $operation)->update(['state' => 'completed', 'completed_at' => now(),
                     'attempts' => DB::raw('attempts + 1'), 'last_error_code' => null, 'object_path' => null, 'storage_origin' => null, 'bucket' => null]);
 

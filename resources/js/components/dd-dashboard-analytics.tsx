@@ -7,7 +7,7 @@ import {
     FolderKanban,
     MapPinned,
 } from 'lucide-react';
-import { useState } from 'react';
+import { Link } from '@inertiajs/react';
 
 export type DdDashboardSummary = {
     scope: string;
@@ -53,7 +53,6 @@ export function DdDashboardAnalytics({
     data: DdDashboardSummary;
     compact?: boolean;
 }) {
-    const [tab, setTab] = useState<'activity' | 'logins'>('activity');
     const max = Math.max(1, ...data.trend.map((item) => item.count));
     const cards = [
         {
@@ -83,7 +82,7 @@ export function DdDashboardAnalytics({
         },
         { label: 'Road coverages', value: data.metrics.roads, icon: MapPinned },
     ];
-    const items = tab === 'activity' ? data.activity : data.logins;
+    const items = data.activity;
 
     return (
         <section aria-label={`${data.scope} analytics`} className="space-y-5">
@@ -181,40 +180,25 @@ export function DdDashboardAnalytics({
                         <h3 className="text-base font-bold text-slate-900">
                             Account activity
                         </h3>
-                        <div
-                            role="tablist"
-                            aria-label="Activity type"
-                            className="inline-flex rounded-xl bg-slate-100 p-1 text-xs"
-                        >
-                            <button
-                                role="tab"
-                                aria-selected={tab === 'activity'}
-                                onClick={() => setTab('activity')}
-                                className={`rounded-lg px-2 py-1.5 ${tab === 'activity' ? 'bg-white font-bold text-amber-800 shadow-sm' : 'text-slate-500'}`}
+                        {(data.scope === 'System-wide' ||
+                            data.scope === 'Operations overview') && (
+                            <Link
+                                href="/dd-phase3/audit-logs"
+                                className="text-sm underline"
                             >
-                                Audit
-                            </button>
-                            <button
-                                role="tab"
-                                aria-selected={tab === 'logins'}
-                                onClick={() => setTab('logins')}
-                                className={`rounded-lg px-2 py-1.5 ${tab === 'logins' ? 'bg-white font-bold text-amber-800 shadow-sm' : 'text-slate-500'}`}
-                            >
-                                Sign-ins
-                            </button>
-                        </div>
+                                Full audit history
+                            </Link>
+                        )}
                     </div>
                     <p className="mt-2 text-xs text-slate-500">
                         {data.scope === 'My assigned work' ||
                         data.scope === 'Read-only inventory'
                             ? 'Personal activity notices are available from the header bell. Full audit logs remain restricted to administrators.'
-                            : 'Events filtered by Account Type. Only users within your permitted audit scope appear.'}
+                            : 'Recent business events. Full audit history includes retained legacy entries.'}
                     </p>
                     {items.length === 0 ? (
                         <div className="mt-5 rounded-xl bg-slate-50 px-4 py-6 text-sm text-slate-500">
-                            {tab === 'logins'
-                                ? 'No recorded sign-ins in your authorized scope yet.'
-                                : 'No authorized audit events to display.'}
+                            No authorized business events to display.
                         </div>
                     ) : (
                         <ul className="mt-3 max-h-[230px] divide-y divide-slate-100 overflow-y-auto">
@@ -231,9 +215,7 @@ export function DdDashboardAnalytics({
                                             ({e.role})
                                         </span>
                                         <div className="mt-0.5 text-xs text-slate-600">
-                                            {'action' in e && 'entity' in e
-                                                ? `${e.action} · ${e.entity}`
-                                                : 'Successful sign-in'}
+                                            {`${e.action} · ${e.entity}`}
                                         </div>
                                     </div>
                                     <time className="shrink-0 text-right text-[11px] text-slate-500">

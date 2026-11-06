@@ -7,7 +7,7 @@ namespace App\Http\Controllers\DataDictionary;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\DataDictionary\DataDictionaryIdentityResolver;
-use App\Services\DataDictionary\DdActivityNotifications;
+use App\Services\DataDictionary\DdOperationAudit;
 use App\Services\DataDictionary\DdRoleAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -56,13 +56,7 @@ final class DdPeopleLifecycleController extends Controller
      */
     private function audit(array $actor, string $entity, int $id, string $description, array $old, array $new): void
     {
-        DB::table('jairoads_next.audit_logs')->insert([
-            'user_id' => $actor['account_id'], 'actor_identifier' => 'DD-UserAccount#'.$actor['account_id'],
-            'action' => 'UPDATE', 'entity_type' => $entity, 'entity_id' => $id, 'description' => $description,
-            'old_value' => json_encode($old, JSON_THROW_ON_ERROR), 'new_value' => json_encode($new, JSON_THROW_ON_ERROR),
-            'recipient_user_id' => null, 'notification_message' => null, 'created_at' => now(),
-        ]);
-        app(DdActivityNotifications::class)->record($actor, 'UPDATE', $entity, $id, $description);
+        app(DdOperationAudit::class)->record($actor, 'UPDATE', $entity, $id, $description, $new, $old);
     }
 
     public function updateEngineer(Request $request, DataDictionaryIdentityResolver $resolver, int $id): RedirectResponse

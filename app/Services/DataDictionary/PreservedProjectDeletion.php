@@ -111,10 +111,15 @@ final class PreservedProjectDeletion
                 $ids[] = (int) $record->id;
             }
             DB::table('jairoads_next.maintenance_records')->where('project_id', $id)->update(['project_id' => null]);
+            foreach ($impact['records'] as $record) {
+                $this->audit->record($actor, 'UPDATE', 'MaintenanceRecord', (int) $record->id,
+                    'Parent project removed; maintenance history retained with project_id = NULL.',
+                    ['project_id' => null], ['project_id' => $id]);
+            }
             abort_unless(DB::table('jairoads_next.maintenance_projects')->where('id', $id)->delete() === 1, 409);
             $this->audit->record($actor, 'DELETE', 'MaintenanceProject', $id,
                 'MaintenanceProject #'.$id.' deleted; related maintenance history and files preserved with project_id = NULL.',
-                ['project_id' => null, 'preserved_record_ids' => $ids], ['project_id' => $id, 'project_title' => $impact['project']->project_title], notify: false);
+                [], (array) $impact['project'] + ['preserved_record_ids' => $ids]);
         }, 3);
     }
 

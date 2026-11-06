@@ -72,6 +72,7 @@ abstract class PasswordSyncTestCase extends TestCase
             );
             SQL);
         DB::unprepared(file_get_contents(base_path('database/proposals/canonical_account_provisioning.sql')));
+        DB::unprepared(file_get_contents(base_path('database/proposals/audit_notification_recipients.sql')));
         // This suite deliberately corrupts targets to exercise missing-link recovery.
         DB::statement('ALTER TABLE jairoads_security.account_provisioning DROP CONSTRAINT account_provisioning_user_account_id_fkey');
         // Missing/ambiguous-link cases deliberately use fixtures without the production FK/unique link constraint.

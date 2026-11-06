@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Services\DataDictionary\DataDictionaryIdentityResolver;
+use App\Services\DataDictionary\DdActivityNotifications;
 use App\Services\MaintenanceProjects\VerifiedProjectAccount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,8 +29,8 @@ final class JaiRoadsNotificationsController extends Controller
         if ($user->getAttribute('dd_user_account_id') !== null) {
             $identity = app(DataDictionaryIdentityResolver::class)->resolve($user);
             abort_unless($identity !== null, 403);
-            $table = 'jairoads_next.audit_logs';
-            $recipientId = (int) $identity['account_id'];
+
+            return response()->json(['notifications' => app(DdActivityNotifications::class)->feed((int) $identity['account_id'])])->header('Cache-Control', 'private, no-store');
         } else {
             $account = $accounts->require($user);
             $role = strtolower((string) $account->accountType);
