@@ -1,6 +1,7 @@
 // Real WebAuthn signatures via a Chromium virtual authenticator, real Fortify
 // sessions and guarded local PostgreSQL. Never real accounts or credentials.
 import assert from 'node:assert/strict';
+import { Buffer } from 'node:buffer';
 import { execFileSync } from 'node:child_process';
 import { createHash, createPrivateKey, sign } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
@@ -41,6 +42,7 @@ async function request(page, path, data, method = 'POST') {
                 body: JSON.stringify(data),
             });
             const text = await response.text();
+
             return {
                 status: response.status,
                 body: text ? JSON.parse(text) : null,
@@ -61,11 +63,13 @@ async function assertion(page, path = '/passkeys/login/options') {
         const credential = await navigator.credentials.get({
             publicKey: PublicKeyCredential.parseRequestOptionsFromJSON(options),
         });
+
         return credential.toJSON();
     }, path);
 }
 async function guest(page) {
     await page.goto(base + '/login');
+
     for (const path of [
         '/dashboard',
         '/settings/security',
@@ -82,8 +86,10 @@ async function guest(page) {
         );
     }
 }
+
 try {
     const sessions = [];
+
     for (const user of fixture.users) {
         const context = await browser.newContext();
         const page = await context.newPage();
@@ -125,6 +131,7 @@ try {
                 headers: { Accept: 'application/json' },
             });
             const { options } = await response.json();
+
             return (
                 await navigator.credentials.create({
                     publicKey:
@@ -148,10 +155,12 @@ try {
             200,
             `Valid ${user.role} passkey login`,
         );
+
         if (user.role !== 'Legacy') {
             const response = await page.request.get(base + '/dashboard');
             assert.equal(response.status(), 200);
             state(user, 'inactive');
+
             for (const path of [
                 '/settings/security',
                 '/user/passkeys/options',
@@ -178,12 +187,17 @@ try {
                 403,
             );
         }
+
         assert.equal(
             (await request(page, '/logout', {})).status,
             204,
             'Revoked sessions may still log out',
         );
-        if (user.role !== 'Legacy') state(user, 'reset');
+
+        if (user.role !== 'Legacy') {
+            state(user, 'reset');
+        }
+
         await page.goto(base + '/login');
         assert.equal(
             (await request(page, '/passkeys/login', { credential })).status,
@@ -196,8 +210,10 @@ try {
             `PASS: real ${user.role} passkey registration/authentication, NULL verification, logout and replay rejection.`,
         );
     }
+
     const engineer = sessions.find((s) => s.user.role === 'Engineer');
     const { user, page, cdp, authenticatorId, keyIds } = engineer;
+
     for (const action of [
         'inactive',
         'retired',
@@ -231,6 +247,7 @@ try {
         );
         state(user, 'reset');
     }
+
     // A valid virtual key signs a wrong-origin assertion. This reaches server
     // origin validation rather than relying only on a browser SecurityError.
     await page.goto(base + '/login');
@@ -312,7 +329,10 @@ try {
     console.log(
         'PASS: signed wrong-origin assertion and foreign credential confirmation rejected; legacy compatibility retained.',
     );
-    for (const session of sessions) await session.context.close();
+
+    for (const session of sessions) {
+        await session.context.close();
+    }
 } finally {
     await browser.close();
 }
