@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AuthenticateEligibleAccount;
 use Laravel\Fortify\Features;
 
 return [
@@ -16,6 +17,8 @@ return [
     */
 
     'guard' => 'web',
+
+    'auth_middleware' => AuthenticateEligibleAccount::class,
 
     /*
     |--------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 name: JaiROADS full system verification
 on:
   push:
-    branches: ['integration/dd-system-completion', 'Oct10_Front&BackEnd_Merge_Integration']
+    branches: ['integration/dd-system-completion', 'Oct10_Front&BackEnd_Merge_Integration', 'fix/security-auth-revocation-passkey-dependencies']
   workflow_dispatch:
 permissions:
   contents: read
@@ -240,3 +240,62 @@ jobs:
             sleep 1
           done
           PLAYWRIGHT_MODULE="$RUNNER_TEMP/jairoads-browser/node_modules/playwright/index.mjs" node tests/Browser/unified.mjs
+
+  passkey-browser:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_DB: jairoads_scratch_passkey_browser, POSTGRES_USER: postgres, POSTGRES_PASSWORD: disposable-ci-only }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d jairoads_scratch_passkey_browser"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+      APP_KEY: base64:MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
+      APP_URL: http://localhost:8013
+      DB_CONNECTION: pgsql
+      DB_URL: ''
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DB_DATABASE: jairoads_scratch_passkey_browser
+      DB_USERNAME: postgres
+      DB_PASSWORD: disposable-ci-only
+      DB_SSLMODE: disable
+      SESSION_DRIVER: file
+      CACHE_STORE: array
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: array
+      BCRYPT_ROUNDS: '4'
+      JAIROADS_SCRATCH_APPROVAL: DISPOSABLE_LOCAL_ONLY
+      PAO_DISABLE: '1'
+      QUARTERLY_BROWSER_URL: http://localhost:8013
+      PASSKEY_BROWSER_FIXTURE: /tmp/jairoads-passkey-fixture.json
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with: { persist-credentials: false }
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with: { php-version: '8.4', extensions: 'pdo_pgsql, mbstring', tools: 'composer:v2', coverage: none }
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with: { node-version: '22', cache: npm }
+      - name: Build real application and prepare guarded disposable fixture
+        run: |
+          composer install --no-interaction --prefer-dist
+          npm ci
+          touch .env
+          npm run build
+          php tests/Browser/prepare-passkey-lifecycle.php > "$PASSKEY_BROWSER_FIXTURE"
+          npm install --prefix "$RUNNER_TEMP/jairoads-browser" playwright@1.62.1
+          "$RUNNER_TEMP/jairoads-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Real WebAuthn signatures and canonical account lifecycle
+        run: |
+          php artisan serve --host=127.0.0.1 --port=8013 --no-reload > /tmp/jairoads-passkey-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -fsS "$APP_URL/up" >/dev/null; then break; fi
+            sleep 1
+          done
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/jairoads-browser/node_modules/playwright/index.mjs" node tests/Browser/passkey-lifecycle.mjs

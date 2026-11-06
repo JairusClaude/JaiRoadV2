@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
+use Webauthn\Exception\AuthenticatorResponseVerificationException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -32,6 +33,18 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->render(function (AuthenticatorResponseVerificationException $exception, Request $request): ?Response {
+            if (! $request->routeIs('passkey.*')) {
+                return null;
+            }
+            // Expected invalid WebAuthn proof is a credential error, never a
+            // successful login or a response exposing verification internals.
+            $errors = ['credential' => ['Unable to verify this passkey. Please try again.']];
+
+            return $request->expectsJson()
+                ? response()->json(['message' => $errors['credential'][0], 'errors' => $errors], 422)
+                : back()->withErrors($errors);
+        });
         $exceptions->render(function (AuthenticationException $exception, Request $request): ?Response {
             if ($request->isMethod('GET') && $request->header('X-Inertia') && ! $request->expectsJson() && ! $request->is('api/*')) {
                 // A missing encrypted history entry can resolve to an identical
