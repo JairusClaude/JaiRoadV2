@@ -1,8 +1,10 @@
 <?php
 
 // CLI-only synthetic fixture mutation. Never exposed as an application route.
+use App\Models\User;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Password;
 
 require __DIR__.'/../../vendor/autoload.php';
 $app = require __DIR__.'/../../bootstrap/app.php';
@@ -21,8 +23,13 @@ if ($server->name !== config('database.connections.pgsql.database') || $server->
 $fixture = json_decode(file_get_contents(getenv('PASSKEY_BROWSER_FIXTURE')), true, flags: JSON_THROW_ON_ERROR);
 $user = collect($fixture['users'])->firstWhere('id', (int) ($argv[1] ?? 0));
 $action = $argv[2] ?? '';
-if (! $user || ! in_array($action, ['reset', 'inactive', 'retired', 'hash', 'email', 'missing', 'invalid-link', 'snapshot'], true)) {
+if (! $user || ! in_array($action, ['reset', 'inactive', 'retired', 'hash', 'email', 'missing', 'invalid-link', 'snapshot', 'recovery-token'], true)) {
     throw new RuntimeException('Unknown disposable passkey fixture.');
+}
+if ($action === 'recovery-token') {
+    // Kept in the caller's memory only; never written to reports or HTTP logs.
+    echo Password::broker()->createToken(User::findOrFail($user['id']));
+    exit;
 }
 if ($action === 'snapshot') {
     echo json_encode(DB::table('public.passkeys')->where('user_id', $user['id'])->orderBy('id')->get(['id', 'user_id', 'credential_id'])->all(), JSON_THROW_ON_ERROR);

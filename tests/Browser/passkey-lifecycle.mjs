@@ -326,6 +326,43 @@ try {
         422,
     );
     await request(page, '/logout', {});
+    const token = state(user, 'recovery-token').trim();
+    const password = 'Recovered-Disposable!123';
+    await page.goto(base + '/login');
+    assert.equal(
+        (
+            await request(page, '/reset-password', {
+                email: user.email,
+                token,
+                password,
+                password_confirmation: password,
+            })
+        ).status,
+        200,
+    );
+    const recovered = await assertion(page);
+    assert.equal(
+        (await request(page, '/passkeys/login', { credential: recovered }))
+            .status,
+        200,
+        'Registered passkey still authenticates after actual Fortify password recovery',
+    );
+    await request(page, '/logout', {});
+    assert.equal(
+        (
+            await request(page, '/login', {
+                email: user.email,
+                password: 'Disposable-Test!123',
+            })
+        ).status,
+        422,
+    );
+    assert.equal(
+        (await request(page, '/login', { email: user.email, password })).status,
+        200,
+    );
+    assert.equal((await page.request.get(base + '/dashboard')).status(), 200);
+    assert.equal(state(user, 'snapshot'), keyIds);
     console.log(
         'PASS: signed wrong-origin assertion and foreign credential confirmation rejected; legacy compatibility retained.',
     );

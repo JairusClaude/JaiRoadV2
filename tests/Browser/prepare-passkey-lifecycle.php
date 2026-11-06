@@ -8,7 +8,7 @@ use Tests\Quarterly\PostgresTestCase;
 require __DIR__.'/../../vendor/autoload.php';
 
 /** Synthetic accounts only; the existing empty-local-PG17 guard runs before any DDL. */
-final class PasskeyLifecycleFixture extends PostgresTestCase
+(new class('prepare') extends PostgresTestCase
 {
     public function prepare(): void
     {
@@ -27,6 +27,4 @@ final class PasskeyLifecycleFixture extends PostgresTestCase
         DB::commit();
         echo json_encode(['users' => $users], JSON_THROW_ON_ERROR);
     }
-}
-
-(new PasskeyLifecycleFixture('prepare'))->prepare();
+})->prepare();

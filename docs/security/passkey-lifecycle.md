@@ -26,11 +26,19 @@ that precise WebAuthn verification exception to a generic credential-validation
 
 `tests/Browser/passkey-lifecycle.mjs` performs real registration, signature-based
 authentication, replay denial, invalid canonical account/password parity,
-signed wrong-origin rejection, and foreign-account confirmation denial. It
+signed wrong-origin/wrong-RP rejection, and foreign-account confirmation denial. It
 verifies rejected authentication remains guest for dashboard, Security Settings
 and passkey registration options; credential ownership/IDs are unchanged.
 All four roles have NULL email verification timestamps. The legacy fixture may
 authenticate but cannot enter the canonical business workspace.
+
+The recovered final test also performs an actual Fortify password reset with a
+broker-issued synthetic token, then authenticates with the already-registered
+WebAuthn credential. It verifies the old password is rejected, the new password
+works, and credential IDs/ownership remain unchanged. The token is held only in
+the test process and is not written to the test report or console log. The
+fixture generator uses an anonymous class to avoid introducing a new Composer
+PSR-4 fixture-class warning.
 
 Chromium requires a domain RP, so this isolated test uses `http://localhost`
 with a loopback-only PHP server and disposable PostgreSQL 17. The fixture-state
