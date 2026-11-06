@@ -308,4 +308,127 @@ final class OrdinaryMutationRaceTest extends PostgresTestCase
             $this->cleanupWorkers([$worker, $revocation]);
         }
     }
+
+    public static function commitWindows(): iterable
+    {
+        yield ['project'];
+        yield ['record'];
+        yield ['monthly'];
+    }
+
+    #[DataProvider('commitWindows')]
+    public function test_lgu_authority_is_pinned_during_final_notification_wait(string $case): void
+    {
+        $f = $this->fixture('Engineer');
+        $revoker = $this->account('SuperAdmin');
+        $road = $case === 'project' ? $this->road($f['engineer']) : $f['road'];
+        $lgu = (int) DB::table('jairoads_next.road_coverages')->where('id', $road)->value('lgu_id');
+        $record = (int) DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->dd_user_account_id]);
+        $method = $case === 'record' ? 'PUT' : 'POST';
+        $url = match ($case) {
+            'project' => '/dd-phase3/ops/projects', 'record' => '/dd-phase3/ops/records/'.$record, default => '/dd-phase3/ops/updates'
+        };
+        $data = match ($case) {
+            'project' => ['project_title' => 'Commit-safe project', 'road_coverage_id' => $road],
+            'record' => array_replace($this->recordData($f['project'], $f['engineer']), ['description' => 'Commit-safe edit']),
+            default => ['maintenance_id' => $record, 'update_month' => '2026-01', 'progress_percentage' => 40],
+        };
+        DB::commit();
+        $worker = $revocation = null;
+        try {
+            DB::beginTransaction();
+            // Hold a recipient FK, after the victim has finalized business authority.
+            DB::table('jairoads_next.user_accounts')->where('id', $revoker->dd_user_account_id)->lockForUpdate()->first();
+            $worker = $this->worker($f['user'], $method, $url, $data);
+            $wait = $this->waiting($worker, 'ordinary_victim', ['audit_notification_recipients']);
+            $revocation = $this->worker($revoker, 'POST', '/dd-phase3/assignments', ['engineer_id' => $f['engineer'], 'lgu_id' => $lgu, 'is_active' => false], 'ordinary_revoker');
+            $wait['revocation_wait'] = $this->waiting($revocation, 'ordinary_revoker', ['engineers'], (int) $wait['pid']);
+            $this->assertTrue(DB::table('jairoads_next.engineer_lgus')->where('engineer_id', $f['engineer'])->where('lgu_id', $lgu)->value('is_active'));
+            DB::commit();
+            $this->assertSame(302, $this->workerStatus($worker));
+            $this->assertSame(302, $this->workerStatus($revocation));
+            $this->assertFalse(DB::table('jairoads_next.engineer_lgus')->where('engineer_id', $f['engineer'])->where('lgu_id', $lgu)->value('is_active'));
+            $events = DB::table('jairoads_next.audit_logs')->orderBy('id')->get();
+            $this->assertSame($case === 'project' ? 'MaintenanceProject' : ($case === 'record' ? 'MaintenanceRecord' : 'MonthlyUpdate'), $events[0]->entity_type);
+            $this->assertSame('EngineerLGU', $events[1]->entity_type);
+            $this->assertCount(2, $events);
+            if ($case === 'project') {
+                $this->assertDatabaseHas('jairoads_next.maintenance_projects', ['project_title' => 'Commit-safe project']);
+            } elseif ($case === 'record') {
+                $this->assertDatabaseHas('jairoads_next.maintenance_records', ['id' => $record, 'description' => 'Commit-safe edit']);
+            } else {
+                $this->assertDatabaseHas('jairoads_next.monthly_updates', ['maintenance_id' => $record, 'progress_percentage' => 40]);
+            }
+            $this->evidence($case.' commit window', 'revocation_serialized_after_commit', $wait, 302, true, true, true);
+        } finally {
+            $this->cleanupWorkers([$worker, $revocation]);
+        }
+    }
+
+    public static function busyPaths(): iterable
+    {
+        yield ['record'];
+        yield ['monthly'];
+    }
+
+    #[DataProvider('busyPaths')]
+    public function test_busy_lifecycle_does_not_create_an_inverse_parent_lock_wait(string $case): void
+    {
+        $f = $this->fixture('Engineer');
+        $record = (int) DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->dd_user_account_id]);
+        $method = $case === 'record' ? 'PUT' : 'POST';
+        $url = $case === 'record' ? '/dd-phase3/ops/records/'.$record : '/dd-phase3/ops/updates';
+        $data = $case === 'record' ? array_replace($this->recordData($f['project'], $f['engineer']), ['description' => 'Allowed after retry']) : ['maintenance_id' => $record, 'update_month' => '2026-01', 'progress_percentage' => 40];
+        DB::commit();
+        $worker = null;
+        try {
+            DB::beginTransaction();
+            DB::select('SELECT pg_advisory_xact_lock(1927710916)');
+            $before = $this->snapshot($case === 'record' ? 'maintenance_records' : 'monthly_updates');
+            $worker = $this->worker($f['user'], $method, $url, $data);
+            $worker->setTimeout(5);
+            $this->assertSame(409, $this->workerStatus($worker)); // Must finish while exclusivity is still held.
+            $this->assertSame($before, $this->snapshot($case === 'record' ? 'maintenance_records' : 'monthly_updates'));
+            $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
+            $this->assertSame(0, DB::table('jairoads_next.audit_notification_recipients')->count());
+            DB::commit();
+            $this->withSession(['password_hash_web' => null])->actingAs($f['user'])->json($method, $url, $data)->assertRedirect();
+            $this->assertSame(1, DB::table('jairoads_next.audit_logs')->count());
+        } finally {
+            $this->cleanupWorkers([$worker]);
+        }
+    }
+
+    #[DataProvider('busyPaths')]
+    public function test_failed_audit_rolls_back_and_releases_record_authority(string $case): void
+    {
+        $f = $this->fixture('Engineer');
+        $revoker = $this->account('SuperAdmin');
+        $record = (int) DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->dd_user_account_id]);
+        $lgu = (int) DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->value('lgu_id');
+        $method = $case === 'record' ? 'PUT' : 'POST';
+        $url = $case === 'record' ? '/dd-phase3/ops/records/'.$record : '/dd-phase3/ops/updates';
+        $data = $case === 'record' ? array_replace($this->recordData($f['project'], $f['engineer']), ['description' => 'Must roll back']) : ['maintenance_id' => $record, 'update_month' => '2026-01', 'progress_percentage' => 40];
+        $before = $this->snapshot($case === 'record' ? 'maintenance_records' : 'monthly_updates');
+        DB::commit();
+        $worker = null;
+        try {
+            DB::unprepared("CREATE FUNCTION jairoads_next.ordinary_race_fail_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.entity_type IN ('MaintenanceRecord', 'MonthlyUpdate') THEN RAISE EXCEPTION 'Disposable audit failure'; END IF; RETURN NEW; END $$; CREATE TRIGGER ordinary_race_fail_audit BEFORE INSERT ON jairoads_next.audit_logs FOR EACH ROW EXECUTE FUNCTION jairoads_next.ordinary_race_fail_audit()");
+            $this->json($method, $url, $data)->assertServerError();
+            $this->assertSame($before, $this->snapshot($case === 'record' ? 'maintenance_records' : 'monthly_updates'));
+            $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
+            $this->assertSame(0, DB::table('jairoads_next.audit_notification_recipients')->count());
+            $worker = $this->worker($revoker, 'POST', '/dd-phase3/assignments', ['engineer_id' => $f['engineer'], 'lgu_id' => $lgu, 'is_active' => false], 'ordinary_revoker');
+            $worker->setTimeout(5); // A leaked lifecycle/profile/membership lock would time out.
+            $this->assertSame(302, $this->workerStatus($worker));
+            $this->assertSame('EngineerLGU', DB::table('jairoads_next.audit_logs')->sole()->entity_type);
+        } finally {
+            $worker?->stop();
+            while (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
+            DB::unprepared('DROP TRIGGER IF EXISTS ordinary_race_fail_audit ON jairoads_next.audit_logs; DROP FUNCTION IF EXISTS jairoads_next.ordinary_race_fail_audit()');
+            PostgresTestSchema::clearCommittedFixtures();
+        }
+    }
 }

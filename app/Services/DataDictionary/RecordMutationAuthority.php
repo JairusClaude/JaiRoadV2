@@ -37,7 +37,7 @@ final class RecordMutationAuthority
         }
         $membership = $expected['role'] === 'Engineer' ? DB::table('jairoads_next.engineer_lgus')
             ->where('engineer_id', $account->engineer_id)->where('lgu_id', $lguId)->sharedLock()->first(['is_active']) : null;
-        abort_unless($this->identities->resolve($login) === $expected, 403, 'Your current account is unavailable.');
+        abort_unless($this->identities->resolve($login) === $expected && DdRoleAccess::canWriteOperations($expected['role']), 403, 'Your current account is unavailable.');
         if ($expected['role'] === 'Engineer') {
             abort_unless($membership?->is_active === true, 403, 'Current EngineerLGU authorization is required.');
         }
