@@ -291,7 +291,29 @@ final class DdOperationsController extends Controller
         if (array_key_exists('geojson', $v)) {
             $data['geojson'] = json_encode($geometry, JSON_THROW_ON_ERROR);
         }
-        DB::transaction(function () use ($actor, $data, $id, $v, $request, $geometry): void {
+        DB::transaction(function () use ($actor, $data, $id, $v, $request, $geometry, $resolver): void {
+            // Obtain the road before lifecycle authority: a request waiting for
+            // this row must not block deactivation by holding a lifecycle lock.
+            $row = $id === null ? null : $this->t('road_coverages')->where('id', $id)
+                ->lockForUpdate()->first(['id', 'lgu_id', 'geojson']);
+            abort_if($id !== null && $row === null, 404);
+            DB::select('SELECT pg_advisory_xact_lock_shared(1927710916)');
+            // Freeze the bridge/credentials in password-updater lock order.
+            DB::table('public.users')->where('id', $request->user()->getAuthIdentifier())->sharedLock()->first(['id']);
+            $account = $this->t('user_accounts')->where('id', $actor['account_id'])->sharedLock()->first(['engineer_id']);
+            abort_unless($account !== null, 403);
+            if ($account->engineer_id !== null) {
+                $this->t('engineers')->where('id', $account->engineer_id)->sharedLock()->first(['id']);
+            }
+            // Assignment administration locks profile then membership; keep the
+            // same order and protect the relevant LGU authorization until commit.
+            if ($actor['role'] === 'Engineer') {
+                $this->t('engineer_lgus')->where('engineer_id', $account->engineer_id)
+                    ->where('lgu_id', $data['lgu_id'])->sharedLock()->first(['is_active']);
+            }
+            abort_unless($this->actor($request, $resolver) === $actor, 403);
+            $this->writer($actor);
+            $this->lguAllowed($actor, (int) $data['lgu_id']);
             if ($id === null) {
                 // RoadCoverage.CreatedBy is an Engineer FK. Manager-initiated
                 // entries require a named, active, LGU-assigned mapping Engineer.
@@ -333,8 +355,6 @@ final class DdOperationsController extends Controller
                     'lgu_id' => (int) $v['lgu_id'],
                 ]);
             } else {
-                $row = $this->t('road_coverages')->where('id', $id)->lockForUpdate()->first(['id', 'lgu_id', 'geojson']);
-                abort_unless($row !== null, 404);
                 $this->lguAllowed($actor, (int) $row->lgu_id);
                 if ((int) $row->lgu_id !== (int) $v['lgu_id']) {
                     throw ValidationException::withMessages([
