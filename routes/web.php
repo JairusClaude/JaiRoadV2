@@ -20,7 +20,7 @@ use Inertia\Inertia;
 
 Route::redirect('/', '/login')->name('home');
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     // Fortify's /dashboard entry now resolves role-specific JaiROADS dashboards.
     // Never use Laravel's default starter dashboard for authorized Engineer/Viewer roles.
     Route::get('dashboard', function (): RedirectResponse {
@@ -160,7 +160,7 @@ Inertia::share('jairoadsIdentity', static function (): ?array {
 
 // Dedicated read-only landing for the first DD-linked SuperAdmin. This does NOT
 // grant legacy CRUD access or replace the existing command center.
-Route::middleware(['auth', 'verified'])
+Route::middleware(['auth'])
     ->get('/dd-superadmin-landing', DdSuperAdminLandingController::class)
     ->name('jairoads.dd-superadmin-landing');
 

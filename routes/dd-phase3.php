@@ -10,7 +10,7 @@ use App\Http\Controllers\DataDictionary\DdSectionController;
 use Illuminate\Support\Facades\Route;
 
 // Explicit Data Dictionary-only routes. Never share legacy controller/permission paths.
-Route::middleware(['auth', 'verified'])->prefix('dd-phase3')->name('jairoads.dd-phase3.')->group(function (): void {
+Route::middleware(['auth'])->prefix('dd-phase3')->name('jairoads.dd-phase3.')->group(function (): void {
     // A single GET section router: registration of two /{section} routes
     // previously replaced the named dashboard route and caused routing failures.
     Route::get('/ops/{section}', DdSectionController::class)

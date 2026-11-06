@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\DataDictionary\StagingUserAccount;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -17,6 +16,9 @@ use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
 /**
+ * Administrator-provisioned accounts do not require email activation. Fortify
+ * may confirm email ownership optionally; MustVerifyEmail is intentionally not implemented.
+ *
  * @property int $id
  * @property string $name
  * @property string $email

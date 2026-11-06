@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 
-Route::middleware(['auth', 'verified'])->get('/project-documents-preview', function () {
+Route::middleware(['auth'])->get('/project-documents-preview', function () {
     $user = request()->user();
     abort_unless($user instanceof User, 401);
     $accounts = app(VerifiedProjectAccount::class);

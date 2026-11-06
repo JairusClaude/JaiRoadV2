@@ -7,11 +7,11 @@ use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use Inertia\Response;
 
-// Official JaiROADS Admin Dashboard: authenticated, verified, admin-only, read-only.
+// Official JaiROADS Admin Dashboard: authenticated, active-account, admin-only, read-only.
 // This route intentionally does not replace or weaken the existing /dashboard route.
 // No migration, account mutation, or storage write is performed here.
 
-Route::middleware(['auth', 'verified'])
+Route::middleware(['auth'])
     ->get('/admin-dashboard', function (): Response {
         $user = request()->user();
         $role = strtolower((string) app(VerifiedProjectAccount::class)->role($user));

@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 
-Route::middleware(['auth', 'verified'])->get('/settings-preview', function () {
+Route::middleware(['auth'])->get('/settings-preview', function () {
     $user = request()->user();
     $account = null;
     $engineer = null;

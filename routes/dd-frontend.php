@@ -7,7 +7,7 @@ use App\Http\Controllers\DataDictionary\DdPreservedHistoryController;
 use Illuminate\Support\Facades\Route;
 
 // These URLs are canonical DD projections. Legacy public.* route quarantine stays intact.
-Route::middleware(['auth', 'verified'])->prefix('dd-phase3/ui')->name('jairoads.ui.')->group(function (): void {
+Route::middleware(['auth'])->prefix('dd-phase3/ui')->name('jairoads.ui.')->group(function (): void {
     Route::get('/map/roads', [DdFrontendController::class, 'roadReferences'])->name('roads.references');
     Route::get('/road-coverages', [DdFrontendController::class, 'roadIndex'])->name('roads.index');
     Route::get('/road-coverages/create', [DdFrontendController::class, 'roadForm'])->name('roads.create');

@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 
-Route::middleware(['auth', 'verified'])->get('/lgus-preview', function () {
+Route::middleware(['auth'])->get('/lgus-preview', function () {
     // Final JaiROADS Data Dictionary: all active roles may READ LGU master data.
     // Engineer/Viewer receive no LGU create/update/delete endpoint via this preview.
     $role = app(VerifiedProjectAccount::class)->role(request()->user());

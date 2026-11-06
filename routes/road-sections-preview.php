@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 
-Route::middleware(['auth', 'verified'])->get('/road-sections-preview', function () {
+Route::middleware(['auth'])->get('/road-sections-preview', function () {
     $role = app(VerifiedProjectAccount::class)->role(request()->user());
     // Read permission is granted to every recognized active JaiROADS role.
     // This is a read-only preview endpoint, not an Engineer write endpoint.

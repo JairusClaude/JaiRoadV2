@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 
 // Explicitly linked Admin / SuperAdmin only. Read operations remain unchanged.
-Route::middleware(['auth', 'verified'])->group(function (): void {
+Route::middleware(['auth'])->group(function (): void {
     Route::get('/user-management', function () {
         $role = app(VerifiedProjectAccount::class)->role(request()->user());
         abort_unless(in_array($role, ['admin', 'superadmin'], true), 403);
