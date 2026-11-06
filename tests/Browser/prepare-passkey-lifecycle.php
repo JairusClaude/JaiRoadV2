@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\User;
+use App\Services\DataDictionary\TrustedSuperAdminBootstrap;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Tests\Quarterly\PostgresTestCase;
 
 require __DIR__.'/../../vendor/autoload.php';
@@ -15,15 +15,23 @@ require __DIR__.'/../../vendor/autoload.php';
         $this->setUp();
         $users = [];
         foreach (['SuperAdmin', 'Admin', 'Engineer', 'Viewer'] as $role) {
-            $engineer = in_array($role, ['Admin', 'Engineer'], true) ? $this->engineer() : null;
-            $user = $this->account($role, $engineer);
+            $engineer = $role !== 'SuperAdmin' ? $this->engineer() : null;
+            if ($role === 'SuperAdmin') {
+                $id = app(TrustedSuperAdminBootstrap::class)->create('passkey-root', 'passkey-root@example.test', 'Bootstrap root', 'Disposable-Test!123');
+                $user = User::where('dd_user_account_id', $id)->firstOrFail();
+            } else {
+                $user = $this->account($role, $engineer);
+            }
             $user->forceFill(['email_verified_at' => null])->save();
             $users[] = ['id' => (int) $user->id, 'email' => $user->email, 'role' => $role,
                 'account_id' => (int) $user->dd_user_account_id, 'engineer_id' => $engineer];
         }
-        // Existing legacy-only Eloquent login behavior is intentionally preserved.
-        $legacy = User::forceCreate(['name' => 'Disposable legacy', 'email' => 'legacy-passkey@example.test', 'password' => Hash::make('Disposable-Test!123')]);
-        $users[] = ['id' => (int) $legacy->id, 'email' => $legacy->email, 'role' => 'Legacy', 'account_id' => null, 'engineer_id' => null];
+        // Register a real key while eligible, then detach only this synthetic
+        // bridge to test a fully signed legacy-only assertion without a bypass.
+        $legacy = $this->account('Viewer');
+        $legacyAccount = DB::table('jairoads_next.user_accounts')->where('id', $legacy->dd_user_account_id)->first();
+        $users[] = ['id' => (int) $legacy->id, 'email' => $legacy->email, 'role' => 'Legacy',
+            'account_id' => (int) $legacy->dd_user_account_id, 'engineer_id' => (int) $legacyAccount->engineer_id];
         DB::commit();
         echo json_encode(['users' => $users], JSON_THROW_ON_ERROR);
     }
