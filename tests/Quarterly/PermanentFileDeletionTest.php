@@ -104,7 +104,8 @@ final class PermanentFileDeletionTest extends PostgresTestCase
         $this->assertSame($id, (int) $event->entity_id);
         $this->assertSame((int) $f['user']->dd_user_account_id, (int) $event->user_id);
         $this->assertStringNotContainsString($path, json_encode($event));
-        $this->assertNull($event->recipient_user_id); // No new notification policy/fan-out.
+        $this->assertNull($event->recipient_user_id); // Delivery fan-out is linked separately; never duplicate this event.
+        $this->assertSame($role === 'Admin' ? 2 : 1, DB::table('jairoads_next.audit_notification_recipients')->where('audit_log_id', $event->id)->count());
         $this->assertDatabaseHas('jairoads_next.file_deletions', ['kind' => $kind, 'entity_id' => $id, 'state' => 'completed', 'object_path' => null]);
     }
 
@@ -203,6 +204,39 @@ final class PermanentFileDeletionTest extends PostgresTestCase
         $this->deleteJson($url)->assertOk();
         $this->assertDatabaseMissing('jairoads_next.media', ['id' => $f['media'][0]]);
         $this->assertSame(1, DB::table('jairoads_next.audit_logs')->where('action', 'DELETE')->count());
+    }
+
+    public static function deliveryKinds(): iterable
+    {
+        yield ['document'];
+        yield ['media'];
+    }
+
+    #[DataProvider('deliveryKinds')]
+    public function test_notification_failure_after_storage_removal_stays_pending_and_retries_once(string $kind): void
+    {
+        $f = $this->files();
+        $id = $f[$kind === 'document' ? 'documents' : 'media'][0];
+        $table = 'jairoads_next.'.($kind === 'document' ? 'maintenance_documents' : 'media');
+        $url = '/dd-phase3/files/'.$kind.'/'.$id;
+        $history = $this->history();
+        Http::fake(['*/storage/v1/object/*' => fn () => Http::response(['message' => 'Successfully deleted'])]);
+        DB::unprepared("CREATE FUNCTION jairoads_next.fail_deletion_delivery() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'Disposable notification failure'; END $$; CREATE TRIGGER fail_deletion_delivery BEFORE INSERT ON jairoads_next.audit_notification_recipients FOR EACH ROW EXECUTE FUNCTION jairoads_next.fail_deletion_delivery()");
+        $this->deleteJson($url)->assertStatus(202)->assertJsonPath('state', 'pending');
+        $this->assertDatabaseHas($table, ['id' => $id]);
+        $this->assertSame(0, DB::table('jairoads_next.audit_logs')->where('action', 'DELETE')->count());
+        $this->assertSame(0, DB::table('jairoads_next.audit_notification_recipients')->count());
+        $this->assertDatabaseHas('jairoads_next.file_deletions', ['state' => 'pending', 'last_error_code' => 'database_finalize_failed']);
+        DB::statement('DROP TRIGGER fail_deletion_delivery ON jairoads_next.audit_notification_recipients');
+        Http::fake(['*/storage/v1/object/*' => fn () => Http::response(['code' => 'NoSuchKey'], 404)]);
+        $this->artisan('jairoads:resume-file-deletions')->assertSuccessful();
+        $this->deleteJson($url)->assertOk()->assertJsonPath('state', 'completed');
+        $this->assertDatabaseMissing($table, ['id' => $id]);
+        $event = DB::table('jairoads_next.audit_logs')->where('action', 'DELETE')->sole();
+        $deliveries = DB::table('jairoads_next.audit_notification_recipients')->where('audit_log_id', $event->id)->pluck('recipient_user_id')->all();
+        $this->assertCount(2, $deliveries); // Admin actor and eligible fixture bootstrap root.
+        $this->assertSame(count($deliveries), count(array_unique($deliveries)));
+        $this->assertSame($history, $this->history());
     }
 
     public function test_invalid_paths_other_parent_paths_shared_objects_and_browser_paths_are_rejected(): void

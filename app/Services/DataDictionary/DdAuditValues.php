@@ -47,7 +47,13 @@ final class DdAuditValues
         $extra = ['municipality_name', 'municipality', 'managing_engineer_name', 'correction_reason', 'geometry_sha256', 'created_by_engineer_id', 'initiated_by'];
         foreach (array_intersect_key($values, array_flip([...self::fields($entity), ...$extra])) as $key => $value) {
             if ($key === 'geojson') {
-                $result['geometry_sha256'] = hash('sha256', is_string($value) ? $value : json_encode($value, JSON_THROW_ON_ERROR));
+                try {
+                    $result['geometry_sha256'] = $this->geometryDigest($value);
+                } catch (\JsonException) {
+                    // An old audit payload can be malformed without poisoning history reads.
+                    // Real road writes still pass their existing geometry validation first.
+                    $result['geometry_sha256'] = hash('sha256', is_string($value) ? $value : 'unparseable-geometry');
+                }
             } elseif ($value === null) {
                 $result[$key] = null;
             } elseif ($key === 'is_active') {
@@ -88,5 +94,28 @@ final class DdAuditValues
         }
 
         return [array_intersect_key($old, $changed), array_intersect_key($new, $changed)];
+    }
+
+    /** JSON objects are unordered; coordinate/list order and dimensions remain meaningful. */
+    public function geometryDigest(mixed $value): string
+    {
+        $decoded = is_string($value) ? json_decode($value, false, 512, JSON_THROW_ON_ERROR) : json_decode(json_encode($value, JSON_THROW_ON_ERROR), false, 512, JSON_THROW_ON_ERROR);
+
+        return hash('sha256', json_encode($this->ordered($decoded), JSON_THROW_ON_ERROR));
+    }
+
+    private function ordered(mixed $value): mixed
+    {
+        if ($value instanceof \stdClass) {
+            $fields = get_object_vars($value);
+            ksort($fields);
+
+            return (object) array_map(fn (mixed $item): mixed => $this->ordered($item), $fields);
+        }
+        if (is_array($value)) {
+            return array_map(fn (mixed $item): mixed => $this->ordered($item), $value);
+        }
+
+        return $value;
     }
 }

@@ -23,7 +23,7 @@ final class DdAuditHistoryController extends Controller
         $actor = $user instanceof User ? $resolver->resolve($user) : null;
         abort_unless($actor !== null && DdRoleAccess::managesBusinessData($actor['role']), 403);
         $events = DB::table('jairoads_next.audit_logs')->orderByDesc('created_at')->orderByDesc('id')
-            ->paginate(25, ['id', 'user_id', 'actor_identifier', 'action', 'entity_type', 'entity_id', 'description', 'old_value', 'new_value', 'recipient_user_id', 'created_at'])
+            ->paginate(25, ['id', 'user_id', 'actor_identifier', 'action', 'entity_type', 'entity_id', 'description', 'old_value', 'new_value', 'recipient_user_id', 'notification_message', 'created_at'])
             ->withQueryString()->through(function (\stdClass $row): array {
                 foreach (['old_value', 'new_value'] as $field) {
                     $payload = $row->$field === null ? null : json_decode($row->$field, true);

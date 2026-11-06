@@ -96,6 +96,40 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
         $this->assertNotSame($event->actor_identifier, $deleted->actor_identifier);
     }
 
+    public function test_road_lgu_document_and_account_unchanged_saves_preserve_exact_data(): void
+    {
+        $f = $this->fixture();
+        $road = DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->first();
+        $this->put('/dd-phase3/ops/roads/'.$f['road'], ['road_name' => $road->road_name, 'lgu_id' => (string) $road->lgu_id,
+            'kilometers' => '1.000', 'pavement_type' => $road->pavement_type, 'state_category' => $road->state_category,
+            'geojson' => '{"coordinates":[[123.0,10.0],[123.1,10.1]],"type":"LineString"}'])->assertRedirect();
+        $this->assertEquals($road, DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->first());
+        $lgu = (array) DB::table('jairoads_next.lgus')->where('id', $road->lgu_id)->first();
+        $this->put('/dd-phase3/lgus/'.$road->lgu_id, $lgu)->assertRedirect();
+        $record = (int) DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->dd_user_account_id]);
+        $document = (int) DB::table('jairoads_next.maintenance_documents')->insertGetId(['maintenance_id' => $record, 'document_title' => 'Same title', 'file_name' => 'same.pdf', 'file_path' => 'private-never-audited', 'uploaded_by' => $f['user']->dd_user_account_id]);
+        $this->put('/dd-phase3/ops/documents/'.$document, ['document_title' => 'Same title', 'description' => ''])->assertRedirect();
+        $username = DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->value('username');
+        $this->put('/dd-phase3/ops/settings', ['username' => $username, 'current_password' => 'Disposable-Test!123'])->assertRedirect();
+        $this->patch('/dd-phase3/accounts/'.$f['user']->dd_user_account_id.'/status', ['is_active' => '1'])->assertRedirect();
+        $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
+        $this->assertSame(0, DB::table(self::DELIVERIES)->count());
+    }
+
+    public function test_structured_normalization_preserves_coordinate_order_dimensions_and_real_changes(): void
+    {
+        $values = app(DdAuditValues::class);
+        $this->assertSame(64, strlen($values->safe('RoadCoverage', ['geojson' => 'Malformed historical geometry'])['geometry_sha256']));
+        $a = '{"type":"LineString","coordinates":[[125.0,7],[126,8]],"properties":{"x":1,"y":2}}';
+        $b = '{"properties":{"y":2,"x":1},"coordinates":[[125,7],[126,8]],"type":"LineString"}';
+        $this->assertSame($values->geometryDigest($a), $values->geometryDigest($b));
+        foreach (['{"type":"LineString","coordinates":[[126,8],[125,7]],"properties":{"x":1,"y":2}}',
+            '{"type":"LineString","coordinates":[[125,7,1],[126,8,2]],"properties":{"x":1,"y":2}}',
+            '{"type":"LineString","coordinates":[[125,7],[126,8]],"properties":{"x":"1","y":2}}'] as $changed) {
+            $this->assertNotSame($values->geometryDigest($a), $values->geometryDigest($changed));
+        }
+    }
+
     public function test_delivery_failure_rolls_back_the_mutation_and_event(): void
     {
         $f = $this->fixture();
@@ -217,5 +251,61 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
         $this->assertSame(0, DB::table('jairoads_next.maintenance_records')->count());
         $this->getJson('/jairoads/notifications')->assertOk()->assertExactJson(['notifications' => []]);
+    }
+
+    public function test_unauthorized_invalid_fk_failure_and_late_rollback_create_no_success_deliveries(): void
+    {
+        $f = $this->fixture();
+        $data = $this->recordData($f['project'], $f['engineer']);
+        $this->postJson('/dd-phase3/ops/records', array_replace($data, ['start_date' => '2027-01-01']))->assertUnprocessable();
+        $this->withSession(['password_hash_web' => null])->actingAs($this->account('Viewer'))->postJson('/dd-phase3/ops/records', $data)->assertForbidden();
+        $this->withSession(['password_hash_web' => null])->actingAs($f['user']);
+        $record = (int) DB::table('jairoads_next.maintenance_records')->insertGetId($data + ['created_by' => $f['user']->dd_user_account_id]);
+        DB::table('jairoads_next.monthly_updates')->insert(['maintenance_id' => $record, 'update_month' => '2026-01', 'progress_percentage' => 10, 'created_by' => $f['user']->dd_user_account_id]);
+        $this->deleteJson('/dd-phase3/ops/records/'.$record)->assertUnprocessable();
+        $this->assertDatabaseHas('jairoads_next.maintenance_records', ['id' => $record]);
+        $actor = app(DataDictionaryIdentityResolver::class)->resolve($f['user']);
+        try {
+            DB::transaction(function () use ($actor, $record): void {
+                DB::table('jairoads_next.maintenance_records')->where('id', $record)->update(['description' => 'Must roll back']);
+                app(DdOperationAudit::class)->record($actor, 'UPDATE', 'MaintenanceRecord', $record, 'Late transaction test.', ['description' => 'Must roll back'], ['description' => null]);
+                throw new \RuntimeException('Disposable late failure');
+            });
+            $this->fail('Late failure was swallowed.');
+        } catch (\RuntimeException $e) {
+            $this->assertSame('Disposable late failure', $e->getMessage());
+        }
+        $this->assertNull(DB::table('jairoads_next.maintenance_records')->where('id', $record)->value('description'));
+        $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
+        $this->assertSame(0, DB::table(self::DELIVERIES)->count());
+    }
+
+    public function test_auxiliary_table_requires_explicit_privileges_and_rls_policy(): void
+    {
+        $f = $this->fixture();
+        $this->post('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer']))->assertRedirect();
+        DB::statement('CREATE ROLE jairoads_delivery_rehearsal NOLOGIN');
+        DB::statement('GRANT USAGE ON SCHEMA jairoads_next TO jairoads_delivery_rehearsal');
+        try {
+            DB::transaction(function (): void {
+                DB::statement('SET LOCAL ROLE jairoads_delivery_rehearsal');
+                DB::table(self::DELIVERIES)->count();
+            });
+            $this->fail('Unprivileged SQL access allowed.');
+        } catch (QueryException $e) {
+            $this->assertSame('42501', $e->errorInfo[0]);
+        }
+        DB::statement('GRANT SELECT ON '.self::DELIVERIES.' TO jairoads_delivery_rehearsal');
+        DB::transaction(function (): void {
+            DB::statement('SET LOCAL ROLE jairoads_delivery_rehearsal');
+            $this->assertSame(0, DB::table(self::DELIVERIES)->count()); // Grant alone does not bypass RLS.
+            DB::statement('RESET ROLE');
+        });
+        DB::statement('CREATE POLICY delivery_rehearsal_read ON '.self::DELIVERIES.' FOR SELECT TO jairoads_delivery_rehearsal USING (true)');
+        DB::transaction(function (): void {
+            DB::statement('SET LOCAL ROLE jairoads_delivery_rehearsal');
+            $this->assertSame(2, DB::table(self::DELIVERIES)->count());
+            DB::statement('RESET ROLE');
+        });
     }
 }

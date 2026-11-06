@@ -84,13 +84,21 @@ final class PreservedRelationshipsTest extends PostgresTestCase
         foreach ($snapshots as $table => $before) {
             $q = DB::table('jairoads_next.'.$table)->orderBy('id');
             if ($table === 'audit_logs') {
-                $q->where('action', '!=', 'DELETE');
+                $q->whereIn('id', array_column(json_decode($before, true), 'id'));
             }
             $this->assertSame($before, $q->get()->toJson());
         }
         $event = DB::table('jairoads_next.audit_logs')->where('action', 'DELETE')->sole();
         $this->assertSame((int) $f['user']->dd_user_account_id, (int) $event->user_id);
-        $this->assertSame(['project_id' => null, 'preserved_record_ids' => $f['records']], json_decode($event->new_value, true));
+        $this->assertNull($event->new_value);
+        $this->assertSame($f['records'], json_decode($event->old_value, true)['preserved_record_ids']);
+        $this->assertSame($f['project'], json_decode($event->old_value, true)['id']);
+        $changes = DB::table('jairoads_next.audit_logs')->where('entity_type', 'MaintenanceRecord')->where('action', 'UPDATE')->orderBy('entity_id')->get();
+        $this->assertSame($f['records'], $changes->pluck('entity_id')->all());
+        foreach ($changes as $change) {
+            $this->assertSame(['project_id' => $f['project']], json_decode($change->old_value, true));
+            $this->assertSame(['project_id' => null], json_decode($change->new_value, true));
+        }
         $this->assertNull($event->recipient_user_id);
         $context = DB::table(PreservedProjectDeletion::CONTEXT)->where('maintenance_id', $f['records'][0])->sole();
         $this->assertSame($f['project'], json_decode($context->snapshot, true)['previous_project']['id']);

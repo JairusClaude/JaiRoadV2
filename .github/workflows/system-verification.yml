@@ -1,7 +1,7 @@
 name: JaiROADS full system verification
 on:
   push:
-    branches: ['integration/dd-system-completion', 'Oct10_Front&BackEnd_Merge_Integration', 'fix/security-auth-revocation-passkey-dependencies', 'fix/canonical-only-provisioned-auth']
+    branches: ['integration/dd-system-completion', 'Oct10_Front&BackEnd_Merge_Integration', 'fix/security-auth-revocation-passkey-dependencies', 'fix/canonical-only-provisioned-auth', 'fix/audit-multirecipient-consistency']
   workflow_dispatch:
 permissions:
   contents: read

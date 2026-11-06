@@ -48,7 +48,7 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
         $this->assertSame(2, DB::table('jairoads_next.audit_logs')->count());
         $event = DB::table('jairoads_next.audit_logs')->orderByDesc('id')->first();
         $this->assertSame((int) $f['user']->dd_user_account_id, (int) $event->user_id);
-        $this->assertSame('DD-UserAccount#'.$f['user']->dd_user_account_id, $event->actor_identifier);
+        $this->assertSame('DD-UserAccount#'.$f['user']->dd_user_account_id.' ('.DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->value('username').')', $event->actor_identifier);
         $this->assertSame('UPDATE', $event->action);
         $this->assertSame('RoadCoverage', $event->entity_type);
         $this->assertSame($f['road'], (int) $event->entity_id);

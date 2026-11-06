@@ -1,3 +1,4 @@
+import { Link } from '@inertiajs/react';
 import {
     Activity,
     BarChart3,
@@ -7,7 +8,6 @@ import {
     FolderKanban,
     MapPinned,
 } from 'lucide-react';
-import { Link } from '@inertiajs/react';
 
 export type DdDashboardSummary = {
     scope: string;

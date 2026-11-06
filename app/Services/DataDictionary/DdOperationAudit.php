@@ -33,6 +33,11 @@ final class DdOperationAudit
             if ($old === [] && $new === []) {
                 return;
             }
+            if ($entity === 'EngineerLGU') {
+                foreach (['engineer_id', 'lgu_id'] as $key) {
+                    $old[$key] = $new[$key] = (int) $meta[$key];
+                }
+            }
             foreach (['project_ids', 'maintenance_record_ids'] as $context) {
                 if (isset($meta[$context])) {
                     $old[$context] = $new[$context] = $values->safe($entity, [$context => $meta[$context]])[$context];

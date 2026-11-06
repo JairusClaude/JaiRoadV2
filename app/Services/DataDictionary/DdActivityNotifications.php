@@ -12,10 +12,12 @@ final class DdActivityNotifications
 {
     public const TABLE = 'jairoads_next.audit_notification_recipients';
 
+    public const ADMINISTRATIVE_AUDIENCE = ['Admin', 'SuperAdmin'];
+
     /** @return list<string> */
     public static function recipientsFor(string $actorRole): array
     {
-        return in_array($actorRole, ['Admin', 'SuperAdmin', 'Engineer'], true) ? ['Admin', 'SuperAdmin'] : [];
+        return in_array($actorRole, ['Admin', 'SuperAdmin', 'Engineer'], true) ? self::ADMINISTRATIVE_AUDIENCE : [];
     }
 
     public function available(): bool

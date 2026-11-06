@@ -126,7 +126,7 @@ final class IntegrationCompatibilityTest extends PostgresTestCase
         $this->assertSame(['CREATE', 'UPDATE', 'CREATE'], $events->pluck('action')->all());
         foreach ($events as $event) {
             $this->assertSame((int) $f['user']->dd_user_account_id, (int) $event->user_id);
-            $this->assertSame('DD-UserAccount#'.$f['user']->dd_user_account_id, $event->actor_identifier);
+            $this->assertSame('DD-UserAccount#'.$f['user']->dd_user_account_id.' ('.DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->value('username').')', $event->actor_identifier);
         }
     }
 

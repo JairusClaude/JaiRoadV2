@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import process from 'node:process';
+import { verifyAuditNotifications } from './audit-notifications.mjs';
 import { verifyAuthenticatedHistory } from './authenticated-history.mjs';
 import { verifyDuplicatePeriod } from './duplicate-period.mjs';
 import { verifyPermanentFileDeletion } from './permanent-file-deletion.mjs';
@@ -630,6 +631,17 @@ try {
     lastPage = admin;
 
     await verifyDirectoryLayouts(admin, ui);
+
+    await verifyAuditNotifications({
+        admin,
+        superadmin,
+        engineer,
+        viewer,
+        base,
+        report,
+        record,
+        fixture: f,
+    });
 
     await verifyPermanentFileDeletion({
         admin,

@@ -11,6 +11,7 @@ type Event = {
     old_value: Record<string, unknown> | null;
     new_value: Record<string, unknown> | null;
     recipient_user_id: number | null;
+    notification_message: string | null;
     created_at: string;
 };
 
@@ -61,6 +62,11 @@ export default function AuditHistory({
                                 <p className="text-sm">
                                     Historical notification copy for account #
                                     {event.recipient_user_id}
+                                </p>
+                            )}
+                            {event.notification_message !== null && (
+                                <p className="text-sm">
+                                    {event.notification_message}
                                 </p>
                             )}
                             {(event.action === 'LOGIN' ||

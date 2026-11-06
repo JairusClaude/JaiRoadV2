@@ -373,7 +373,8 @@ final class DdOperationsController extends Controller
                 }
                 // Compare actual persisted values under the lock; never trust an
                 // 'unchanged' flag. Omitted or identical geometry is not rewritten.
-                if (array_key_exists('geojson', $data) && json_decode($row->geojson, true) === $geometry) {
+                if (array_key_exists('geojson', $data) && (json_decode($row->geojson, true) === $geometry
+                    || app(DdAuditValues::class)->geometryDigest($row->geojson) === app(DdAuditValues::class)->geometryDigest($data['geojson']))) {
                     unset($data['geojson']);
                 }
                 if (! $this->changed('RoadCoverage', $row, $data)) {

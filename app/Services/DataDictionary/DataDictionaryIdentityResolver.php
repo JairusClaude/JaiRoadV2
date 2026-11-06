@@ -72,7 +72,7 @@ final class DataDictionaryIdentityResolver
     public function notificationRecipients(?int $engineerActor): Builder
     {
         return $this->eligibleLinks(false)->where(function (Builder $query) use ($engineerActor): void {
-            $query->whereIn('account.account_type', ['Admin', 'SuperAdmin']);
+            $query->whereIn('account.account_type', DdActivityNotifications::ADMINISTRATIVE_AUDIENCE);
             if ($engineerActor !== null) {
                 $query->orWhere(function (Builder $engineer) use ($engineerActor): void {
                     $engineer->where('account.account_type', 'Engineer')->where('account.id', $engineerActor);

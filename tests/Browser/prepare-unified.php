@@ -54,8 +54,14 @@ final class UnifiedFrontendBrowserFixture extends PostgresTestCase
                 'geojson' => json_encode($geometry, JSON_THROW_ON_ERROR),
             ])];
         }
+        $auditHistory = [];
+        for ($i = 0; $i < 26; $i++) {
+            $auditHistory[] = (int) DB::table('jairoads_next.audit_logs')->insertGetId(['user_id' => $super->dd_user_account_id,
+                'actor_identifier' => 'Historical browser fixture', 'action' => 'LOGIN', 'entity_type' => 'UserAccount',
+                'entity_id' => $super->dd_user_account_id, 'description' => 'Retained historical authentication entry', 'created_at' => '2020-01-01 00:00:00']);
+        }
         DB::commit();
-        echo json_encode(['session_cookie_name' => config('session.cookie'), 'admin_email' => $admin->email, 'superadmin_email' => $super->email,
+        echo json_encode(['audit_history_ids' => $auditHistory, 'session_cookie_name' => config('session.cookie'), 'admin_email' => $admin->email, 'superadmin_email' => $super->email,
             'engineer_email' => $f['user']->email, 'viewer_email' => $viewer->email, 'rogue_email' => $rogueLogin->email,
             'geometry_roads' => $geometryRoads, 'road_id' => $f['road'], 'destination_id' => (int) $destination, 'engineer_id' => $f['engineer'], 'viewer_id' => $viewer->dd_user_account_id,
             'lgu_id' => (int) $lgu, 'project_id' => $f['project'], 'record_id' => (int) $record,
