@@ -14,6 +14,7 @@ use App\Services\DataDictionary\DuplicateMaintenancePeriod;
 use App\Services\DataDictionary\LinkedPasswordUpdater;
 use App\Services\DataDictionary\ManagingEngineerEligibility;
 use App\Services\DataDictionary\PreservedProjectDeletion;
+use App\Services\DataDictionary\RecordMutationAuthority;
 use App\Services\DataDictionary\RoadCoverageGeometry;
 use App\Services\DataDictionary\RoadMunicipalityChange;
 use App\Services\DataDictionary\TwiceYearlyMaintenance;
@@ -496,7 +497,7 @@ final class DdOperationsController extends Controller
             abort(403, 'Engineer cannot assign another managing Engineer.');
         }
         try {
-            DB::transaction(function () use ($actor, $v, $id): void {
+            DB::transaction(function () use ($actor, $v, $id, $request): void {
                 // Serialize all period writes for a project before inspecting complete history.
                 $project = $this->t('maintenance_projects')->where('id', $v['project_id'])->lockForUpdate()->first();
                 abort_unless($project !== null, 404);
@@ -515,8 +516,16 @@ final class DdOperationsController extends Controller
                     $rid = (int) $this->t('maintenance_records')->insertGetId($data + ['created_by' => $actor['account_id'], 'created_at' => now()]);
                     $this->audit($actor, 'CREATE', 'MaintenanceRecord', $rid, 'Authorized maintenance record created.');
                 } else {
-                    $row = $this->recordScope($actor, $id, true);
                     $period = $this->t('maintenance_records')->where('id', $id)->lockForUpdate()->first();
+                    abort_unless($period !== null, 404);
+                    $login = $request->user();
+                    abort_unless($login instanceof User, 403);
+                    app(RecordMutationAuthority::class)->lock($login, $actor, $lgu);
+                    // Scope must come from the locked state, not a pre-wait read.
+                    $row = $this->recordScope($actor, $id, true);
+                    $manager = $period->managing_engineer_id === null ? null : $this->t('engineers')
+                        ->where('id', $period->managing_engineer_id)->sharedLock()->first(['engineer_status']);
+                    abort_unless($period->managing_engineer_id === null || $manager?->engineer_status === 'Active', 422, 'Managing Engineer must be active.');
                     if ((int) $row->project_id !== (int) $v['project_id'] || ($row->managing_engineer_id === null ? null : (int) $row->managing_engineer_id) !== ($v['managing_engineer_id'] === null ? null : (int) $v['managing_engineer_id'])) {
                         throw ValidationException::withMessages(['project_id' => 'Changing project or managing Engineer requires separately approved reassignment.']);
                     }
@@ -638,6 +647,11 @@ final class DdOperationsController extends Controller
             abort_unless($this->t('maintenance_projects')->where('id', $parent->project_id)->lockForUpdate()->first(['id']) !== null, 404);
             $record = $this->t('maintenance_records')->where('id', $v['maintenance_id'])->lockForUpdate()->first(['id', 'project_id']);
             abort_unless($record !== null && (int) $record->project_id === (int) $parent->project_id, 404);
+            $lgu = $this->projectLgu((int) $record->project_id);
+            abort_unless($lgu !== null, 404);
+            $login = $request->user();
+            abort_unless($login instanceof User, 403);
+            app(RecordMutationAuthority::class)->lock($login, $actor, $lgu);
             abort_unless($this->actor($request, $resolver) === $actor, 403);
             $this->recordScope($actor, (int) $record->id, true);
             $duplicate = $this->t('monthly_updates')->where('maintenance_id', $v['maintenance_id'])->where('update_month', $v['update_month']);
