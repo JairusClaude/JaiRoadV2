@@ -30,10 +30,10 @@ final class PasskeyEligibilityTest extends PostgresTestCase
         $this->assertTrue(Passkeys::allowsLogin(Request::create('/passkeys/login'), $passkey));
         DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->update(['is_active' => false]);
         $this->assertFalse(Passkeys::allowsLogin(Request::create('/passkeys/login'), $passkey));
-        foreach (['/user/passkeys/options', '/passkeys/confirm/options', '/settings/security'] as $path) {
-            $this->getJson($path)->assertForbidden();
+        foreach (['/user/passkeys/options', '/passkeys/confirm/options', '/settings/security'] as $i => $path) {
+            $this->getJson($path)->assertStatus($i === 0 ? 403 : 401);
         }
-        $this->postJson('/logout')->assertNoContent();
+        $this->postJson('/logout')->assertUnauthorized();
         $this->assertGuest();
     }
 }

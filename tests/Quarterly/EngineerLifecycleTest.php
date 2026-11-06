@@ -51,8 +51,8 @@ final class EngineerLifecycleTest extends PostgresTestCase
         $this->postJson('/dd-phase3/engineers/'.$f['engineer'].'/retirement')->assertRedirect();
         $this->assertSame($count, DB::table('jairoads_next.audit_logs')->count());
         $this->withSession(['password_hash_web' => null])->actingAs($f['user'])->getJson('/dd-phase3/dashboard')->assertForbidden();
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q1'))->assertForbidden();
-        $this->putJson('/dd-phase3/ops/records/'.$id, $this->recordData($f['project'], $f['engineer'], 'Q4'))->assertForbidden();
+        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q1'))->assertUnauthorized();
+        $this->putJson('/dd-phase3/ops/records/'.$id, $this->recordData($f['project'], $f['engineer'], 'Q4'))->assertUnauthorized();
     }
 
     public function test_linked_admin_retirement_is_atomic_and_self_retirement_is_blocked(): void

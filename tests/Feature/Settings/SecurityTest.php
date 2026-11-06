@@ -16,7 +16,7 @@ test('security page is displayed', function () {
         'confirmPassword' => true,
     ]);
 
-    $user = User::factory()->create();
+    $user = $this->canonicalUser(User::factory()->create());
 
     $this->actingAs($user)
         ->withSession(['auth.password_confirmed_at' => time()])
@@ -33,7 +33,7 @@ test('security page is displayed', function () {
 test('security page requires password confirmation when enabled', function () {
     $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
 
-    $user = User::factory()->create();
+    $user = $this->canonicalUser(User::factory()->create());
 
     Features::twoFactorAuthentication([
         'confirm' => true,
@@ -51,7 +51,7 @@ test('security page renders without two factor when feature is disabled', functi
 
     config(['fortify.features' => []]);
 
-    $user = User::factory()->create();
+    $user = $this->canonicalUser(User::factory()->create());
 
     $this->actingAs($user)
         ->withSession(['auth.password_confirmed_at' => time()])
@@ -68,37 +68,39 @@ test('security page renders without two factor when feature is disabled', functi
 });
 
 test('password can be updated', function () {
-    $user = User::factory()->create();
+    $user = $this->canonicalUser(User::factory()->create());
 
     $response = $this
         ->actingAs($user)
         ->from(route('security.edit'))
-        ->put(route('user-password.update'), [
+        ->put('/dd-phase3/ops/settings', [
+            'username' => 'safe-settings-user',
             'current_password' => 'password',
-            'password' => 'new-password',
-            'password_confirmation' => 'new-password',
+            'password' => 'New-Password!123',
+            'password_confirmation' => 'New-Password!123',
         ]);
 
     $response
         ->assertSessionHasNoErrors()
-        ->assertRedirect(route('security.edit'));
+        ->assertRedirect('/dd-phase3/settings');
 
-    expect(Hash::check('new-password', $user->refresh()->password))->toBeTrue();
+    expect(Hash::check('New-Password!123', $user->refresh()->password))->toBeTrue();
 });
 
 test('correct password must be provided to update password', function () {
-    $user = User::factory()->create();
+    $user = $this->canonicalUser(User::factory()->create());
 
     $response = $this
         ->actingAs($user)
         ->from(route('security.edit'))
-        ->put(route('user-password.update'), [
+        ->put('/dd-phase3/ops/settings', [
+            'username' => 'safe-settings-user',
             'current_password' => 'wrong-password',
-            'password' => 'new-password',
-            'password_confirmation' => 'new-password',
+            'password' => 'New-Password!123',
+            'password_confirmation' => 'New-Password!123',
         ]);
 
-    $response
-        ->assertSessionHasErrors('current_password')
-        ->assertRedirect(route('security.edit'));
+    $response->assertStatus(422);
+    expect(Hash::check('password', $user->fresh()->password))->toBeTrue();
+    expect(Hash::check('New-Password!123', $user->fresh()->password))->toBeFalse();
 });

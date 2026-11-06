@@ -25,7 +25,7 @@ test('the navigation response does not change unauthenticated mutation handling'
 });
 
 test('real Fortify logout invalidates the session before subsequent history requests', function () {
-    $user = User::factory()->create();
+    $user = $this->canonicalUser(User::factory()->create());
     $this->post(route('login.store'), ['email' => $user->email, 'password' => 'password'])->assertRedirect();
     $this->assertAuthenticatedAs($user);
     $session = session()->getId();

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Quarterly;
 
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -65,7 +66,7 @@ final class AccountLifecycleTest extends PostgresTestCase
     public function test_self_lockout_last_superadmin_and_privilege_changes_are_blocked(): void
     {
         $admin = $this->account();
-        $super = $this->account('SuperAdmin');
+        $super = User::where('dd_user_account_id', DB::table('jairoads_next.user_accounts')->where('account_type', 'SuperAdmin')->value('id'))->firstOrFail();
         $this->withSession(['password_hash_web' => null])->actingAs($admin);
         $this->patchJson('/dd-phase3/accounts/'.$admin->dd_user_account_id.'/status', ['is_active' => false])->assertUnprocessable();
         $this->patchJson('/dd-phase3/accounts/'.$super->dd_user_account_id.'/status', ['is_active' => false])->assertUnprocessable();
@@ -86,7 +87,10 @@ final class AccountLifecycleTest extends PostgresTestCase
     public function test_ineligible_reactivation_fails_without_changing_credentials(string $case): void
     {
         $engineer = $this->engineer($case === 'retired' ? 'Retired' : 'Active');
-        $target = $this->account($case === 'invalid_viewer' ? 'Viewer' : 'Engineer', $case === 'unlinked_engineer' ? null : $engineer, false);
+        $target = $this->account($case === 'invalid_viewer' ? 'Viewer' : 'Engineer', $case === 'unlinked_engineer' ? null : $engineer, false, linked: $case !== 'unlinked_engineer');
+        if ($case === 'invalid_viewer') {
+            DB::table('jairoads_next.user_accounts')->where('id', $target->dd_user_account_id)->update(['engineer_id' => null]);
+        }
         if ($case === 'mismatched_hash') {
             DB::table('jairoads_next.user_accounts')->where('id', $target->dd_user_account_id)->update(['password' => Hash::make('Different-Disposable!123')]);
         }
@@ -104,7 +108,7 @@ final class AccountLifecycleTest extends PostgresTestCase
         $admin = $this->account();
         $this->withSession(['password_hash_web' => null])->actingAs($admin)->patchJson('/dd-phase3/accounts/'.$f['user']->dd_user_account_id.'/status', ['is_active' => false])->assertRedirect();
         $this->withSession(['password_hash_web' => null])->actingAs($f['user'])->getJson('/dd-phase3/dashboard')->assertForbidden();
-        $this->postJson('/dd-phase3/ops/projects', ['project_title' => 'Denied', 'road_coverage_id' => $f['road']])->assertForbidden();
+        $this->postJson('/dd-phase3/ops/projects', ['project_title' => 'Denied', 'road_coverage_id' => $f['road']])->assertUnauthorized();
         foreach (['Engineer', 'Viewer'] as $type) {
             $this->withSession(['password_hash_web' => null])->actingAs($this->account($type, $type === 'Engineer' ? $this->engineer() : null));
             $this->getJson('/dd-phase3/accounts/'.$admin->dd_user_account_id)->assertForbidden();

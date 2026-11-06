@@ -34,8 +34,18 @@ abstract class PostgresTestCase extends TestCase
         ]);
     }
 
-    protected function account(string $type = 'Admin', ?int $engineerId = null, bool $active = true): User
+    protected function account(string $type = 'Admin', ?int $engineerId = null, bool $active = true, bool $linked = true): User
     {
+        $provisioner = null;
+        if ($type !== 'SuperAdmin') {
+            $provisioner = DB::table('jairoads_next.user_accounts')->where('account_type', 'SuperAdmin')->value('id');
+            if ($provisioner === null) {
+                $provisioner = $this->account('SuperAdmin')->getAttribute('dd_user_account_id');
+            }
+            if ($linked) {
+                $engineerId ??= $this->engineer();
+            }
+        }
         $email = 'fixture-'.bin2hex(random_bytes(8)).'@example.test';
         $hash = Hash::make('Disposable-Test!123');
         $id = DB::table('jairoads_next.user_accounts')->insertGetId([
@@ -43,8 +53,21 @@ abstract class PostgresTestCase extends TestCase
             'account_type' => $type, 'engineer_id' => $engineerId, 'is_active' => $active,
         ]);
 
-        return User::forceCreate(['name' => 'Test account', 'email' => $email, 'email_verified_at' => now(),
+        $login = User::forceCreate(['name' => 'Test account', 'email' => $email, 'email_verified_at' => now(),
             'password' => $hash, 'dd_user_account_id' => $id]);
+        if ($type !== 'SuperAdmin' && $linked && $engineerId !== null) {
+            // Evidence was acquired while eligible; retirement/deactivation comes later.
+            $profileStatus = DB::table('jairoads_next.engineers')->where('id', $engineerId)->value('engineer_status');
+            DB::table('jairoads_next.engineers')->where('id', $engineerId)->update(['engineer_status' => 'Active']);
+            DB::table('jairoads_next.user_accounts')->where('id', $id)->update(['is_active' => true]);
+            DB::table('jairoads_security.account_provisioning')->insert(['user_account_id' => $id,
+                'provisioned_by' => $provisioner, 'provisioner_role' => 'SuperAdmin', 'provisioned_role' => $type,
+                'engineer_id' => $engineerId, 'method' => 'administrator']);
+            DB::table('jairoads_next.user_accounts')->where('id', $id)->update(['is_active' => $active]);
+            DB::table('jairoads_next.engineers')->where('id', $engineerId)->update(['engineer_status' => $profileStatus]);
+        }
+
+        return $login;
     }
 
     protected function road(?int $engineer = null): int

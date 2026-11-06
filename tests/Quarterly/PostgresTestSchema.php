@@ -11,6 +11,15 @@ final class PostgresTestSchema
 {
     private static bool $initialized = false;
 
+    /** Reset only committed concurrency fixtures in the positively guarded local DB. */
+    public static function clearCommittedFixtures(): void
+    {
+        self::prepare();
+        DB::unprepared('DROP SCHEMA jairoads_security CASCADE');
+        DB::unprepared('TRUNCATE public.users, jairoads_next.user_accounts, jairoads_next.engineers, jairoads_next.lgus CASCADE');
+        DB::unprepared(file_get_contents(base_path('database/proposals/canonical_account_provisioning.sql')));
+    }
+
     public static function prepare(): void
     {
         $db = DB::connection();
@@ -54,6 +63,7 @@ CREATE TABLE public.passkeys (
 );
 SQL);
         });
+        $db->unprepared(file_get_contents(base_path('database/proposals/canonical_account_provisioning.sql')));
         self::$initialized = true;
     }
 }

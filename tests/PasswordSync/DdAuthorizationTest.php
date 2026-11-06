@@ -46,7 +46,7 @@ it('revokes protected dashboard and mutation access for existing inactive sessio
     $this->actingAs($login)->get('/dashboard')->assertRedirect();
     DB::table('jairoads_next.user_accounts')->where('id', $login->dd_user_account_id)->update(['is_active' => false]);
     $this->get('/dashboard')->assertForbidden();
-    $this->postJson('/dd-phase3/ops/projects', [])->assertForbidden();
+    $this->postJson('/dd-phase3/ops/projects', [])->assertUnauthorized();
     $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
 })->with(['SuperAdmin', 'Admin', 'Engineer', 'Viewer']);
 

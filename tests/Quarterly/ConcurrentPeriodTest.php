@@ -55,7 +55,7 @@ final class ConcurrentPeriodTest extends PostgresTestCase
                 DB::rollBack();
             }
             // Guarded disposable test DB only; no real account/history is present here.
-            DB::unprepared('TRUNCATE public.users, jairoads_next.user_accounts, jairoads_next.engineers, jairoads_next.lgus CASCADE');
+            PostgresTestSchema::clearCommittedFixtures();
         }
     }
 }

@@ -399,7 +399,9 @@ final class PreservedRelationshipsTest extends PostgresTestCase
                 DB::rollBack();
             }
             // Only this already-guarded disposable cluster: restore shared fixture shape.
-            DB::unprepared('DROP TRIGGER require_maintenance_record_context ON jairoads_next.maintenance_records; DROP FUNCTION jairoads_next.require_maintenance_record_context(); DROP TABLE jairoads_next.maintenance_record_contexts; DROP FUNCTION jairoads_next.protect_maintenance_record_context(); TRUNCATE public.users, jairoads_next.user_accounts, jairoads_next.engineers, jairoads_next.lgus CASCADE; ALTER TABLE jairoads_next.maintenance_records ALTER COLUMN project_id SET NOT NULL, ALTER COLUMN managing_engineer_id SET NOT NULL');
+            DB::unprepared('DROP TRIGGER require_maintenance_record_context ON jairoads_next.maintenance_records; DROP FUNCTION jairoads_next.require_maintenance_record_context(); DROP TABLE jairoads_next.maintenance_record_contexts; DROP FUNCTION jairoads_next.protect_maintenance_record_context()');
+            PostgresTestSchema::clearCommittedFixtures();
+            DB::unprepared('ALTER TABLE jairoads_next.maintenance_records ALTER COLUMN project_id SET NOT NULL, ALTER COLUMN managing_engineer_id SET NOT NULL');
         }
     }
 

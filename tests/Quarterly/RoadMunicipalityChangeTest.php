@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Quarterly;
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
@@ -83,10 +84,12 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
             'missing_source' => DB::table('jairoads_next.engineer_lgus')->where('engineer_id', $f['engineer'])->where('lgu_id', '!=', $f['destination'])->delete(),
             'inactive_account' => DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->update(['is_active' => false]),
             'retired' => DB::table('jairoads_next.engineers')->where('id', $f['engineer'])->update(['engineer_status' => 'Retired']),
-            'unlinked' => $this->withSession(['password_hash_web' => null])->actingAs($this->account('Engineer')),
+            'unlinked' => $this->withSession(['password_hash_web' => null])->actingAs($this->account('Engineer', linked: false)),
         };
         $before = $this->history();
+        $actor = Auth::user();
         $this->preview($f)->assertForbidden();
+        $this->actingAs($actor);
         $this->confirm($f, $token)->assertForbidden();
         $this->assertSame($before, $this->history());
         $this->assertSame(1, DB::table('jairoads_next.audit_logs')->count());
@@ -354,7 +357,7 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
             while (DB::transactionLevel() > 0) {
                 DB::rollBack();
             }
-            DB::unprepared('TRUNCATE public.users, jairoads_next.user_accounts, jairoads_next.engineers, jairoads_next.lgus CASCADE');
+            PostgresTestSchema::clearCommittedFixtures();
         }
     }
 

@@ -124,8 +124,8 @@ final class PermanentFileDeletionTest extends PostgresTestCase
         }
         Http::fake();
         foreach (['document' => $f['documents'][0], 'media' => $f['media'][0]] as $kind => $id) {
-            $this->deleteJson('/dd-phase3/files/'.$kind.'/'.$id)->assertForbidden();
-            $this->getJson('/dd-phase3/files/'.$kind.'/'.$id.'/deletion-review')->assertForbidden();
+            $this->actingAs($f['user'])->deleteJson('/dd-phase3/files/'.$kind.'/'.$id)->assertForbidden();
+            $this->actingAs($f['user'])->getJson('/dd-phase3/files/'.$kind.'/'.$id.'/deletion-review')->assertForbidden();
         }
         $this->assertSame(0, DB::table('jairoads_next.file_deletions')->count());
         Http::assertNothingSent();
@@ -355,7 +355,7 @@ final class PermanentFileDeletionTest extends PostgresTestCase
             }
             unlink($marker);
             DB::statement('DROP TABLE jairoads_next.file_deletions');
-            DB::unprepared('TRUNCATE public.users, jairoads_next.user_accounts, jairoads_next.engineers, jairoads_next.lgus CASCADE');
+            PostgresTestSchema::clearCommittedFixtures();
         }
     }
 
@@ -429,7 +429,7 @@ final class PermanentFileDeletionTest extends PostgresTestCase
             }
             unlink($marker);
             DB::statement('DROP TABLE jairoads_next.file_deletions'); // Guarded disposable fixture only.
-            DB::unprepared('TRUNCATE public.users, jairoads_next.user_accounts, jairoads_next.engineers, jairoads_next.lgus CASCADE');
+            PostgresTestSchema::clearCommittedFixtures();
         }
     }
 }

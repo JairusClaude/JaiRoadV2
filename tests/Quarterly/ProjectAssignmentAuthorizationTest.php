@@ -130,12 +130,12 @@ final class ProjectAssignmentAuthorizationTest extends PostgresTestCase
         $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q3'))->assertUnprocessable();
     }
 
-    public function test_unlinked_admin_retains_administrative_access_without_invented_self_identity(): void
+    public function test_unlinked_admin_is_denied_without_invented_self_identity(): void
     {
         $f = $this->fixture();
-        $this->assertNull(app(DataDictionaryIdentityResolver::class)->resolve($f['user'])['engineer_id']);
-        $this->get('/dd-phase3/projects?view=show&project='.$f['project'])->assertOk()
-            ->assertInertia(fn (AssertableInertia $page) => $page->has('managerChoices', 1)->where('managerChoices.0.id', $f['engineer']));
+        DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->update(['engineer_id' => null]);
+        $this->assertNull(app(DataDictionaryIdentityResolver::class)->resolve($f['user']));
+        $this->get('/dd-phase3/projects?view=show&project='.$f['project'])->assertForbidden();
         $this->assertNull(DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->value('engineer_id'));
     }
 
@@ -211,6 +211,7 @@ final class ProjectAssignmentAuthorizationTest extends PostgresTestCase
         $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer']))->assertForbidden();
         DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->update(['is_active' => true]);
         DB::table('jairoads_next.engineers')->where('id', $f['engineer'])->update(['engineer_status' => 'Retired']);
+        $this->actingAs($f['user']);
         $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer']))->assertForbidden();
         $this->assertSame(0, DB::table('jairoads_next.maintenance_records')->count());
     }
