@@ -1,0 +1,1717 @@
+{
+    "source_commit": "4a8ec0cc26d203bafafcc738c3eff49d97528bd9",
+    "database": "disposable PostgreSQL 17",
+    "before": [
+        {
+            "case": "project_create",
+            "change": "unchanged",
+            "wait": {
+                "pid": 45,
+                "query": "select \"lgu_id\" from \"jairoads_next\".\"road_coverages\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{43}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "project_create",
+            "change": "deactivated",
+            "wait": {
+                "pid": 49,
+                "query": "select \"lgu_id\" from \"jairoads_next\".\"road_coverages\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{47}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "project_update",
+            "change": "unchanged",
+            "wait": {
+                "pid": 53,
+                "query": "select * from \"jairoads_next\".\"maintenance_projects\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{51}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "project_update",
+            "change": "deactivated",
+            "wait": {
+                "pid": 57,
+                "query": "select * from \"jairoads_next\".\"maintenance_projects\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{55}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "record_create",
+            "change": "unchanged",
+            "wait": {
+                "pid": 61,
+                "query": "select * from \"jairoads_next\".\"maintenance_projects\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{59}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "record_create",
+            "change": "deactivated",
+            "wait": {
+                "pid": 65,
+                "query": "select * from \"jairoads_next\".\"maintenance_projects\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{63}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "record_update",
+            "change": "unchanged",
+            "wait": {
+                "pid": 69,
+                "query": "select * from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{67}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "record_update",
+            "change": "deactivated",
+            "wait": {
+                "pid": 73,
+                "query": "select * from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{71}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "delete_road",
+            "change": "unchanged",
+            "wait": {
+                "pid": 77,
+                "query": "select * from \"jairoads_next\".\"road_coverages\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{75}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "delete_road",
+            "change": "deactivated",
+            "wait": {
+                "pid": 81,
+                "query": "select * from \"jairoads_next\".\"road_coverages\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{79}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "delete_record",
+            "change": "unchanged",
+            "wait": {
+                "pid": 85,
+                "query": "select * from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{83}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "delete_record",
+            "change": "deactivated",
+            "wait": {
+                "pid": 89,
+                "query": "select * from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{87}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "delete_update",
+            "change": "unchanged",
+            "wait": {
+                "pid": 93,
+                "query": "select * from \"jairoads_next\".\"monthly_updates\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{91}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "delete_update",
+            "change": "deactivated",
+            "wait": {
+                "pid": 97,
+                "query": "select * from \"jairoads_next\".\"monthly_updates\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{95}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "lgu_create",
+            "change": "unchanged",
+            "wait": {
+                "pid": 101,
+                "query": "insert into \"jairoads_next\".\"lgus\" (\"municipality_name\", \"province\", \"region\", \"mayor_first_name\", \"mayor_middle_name\", \"mayor_last_name\") values ($1, $2, $3, $4, $5, $6) returning \"id\"",
+                "wait_event_type": "Lock",
+                "wait_event": "relation",
+                "blockers": "{99}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "lgu_create",
+            "change": "deactivated",
+            "wait": {
+                "pid": 105,
+                "query": "insert into \"jairoads_next\".\"lgus\" (\"municipality_name\", \"province\", \"region\", \"mayor_first_name\", \"mayor_middle_name\", \"mayor_last_name\") values ($1, $2, $3, $4, $5, $6) returning \"id\"",
+                "wait_event_type": "Lock",
+                "wait_event": "relation",
+                "blockers": "{103}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "lgu_update",
+            "change": "unchanged",
+            "wait": {
+                "pid": 109,
+                "query": "select * from \"jairoads_next\".\"lgus\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{107}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "lgu_update",
+            "change": "deactivated",
+            "wait": {
+                "pid": 113,
+                "query": "select * from \"jairoads_next\".\"lgus\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{111}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "lgu_delete",
+            "change": "unchanged",
+            "wait": {
+                "pid": 117,
+                "query": "select * from \"jairoads_next\".\"lgus\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{115}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "lgu_delete",
+            "change": "deactivated",
+            "wait": {
+                "pid": 121,
+                "query": "select * from \"jairoads_next\".\"lgus\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{119}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "engineer_create",
+            "change": "unchanged",
+            "wait": {
+                "pid": 125,
+                "query": "insert into \"jairoads_next\".\"engineers\" (\"first_name\", \"middle_name\", \"last_name\", \"contact_no\", \"rank\", \"engineer_status\") values ($1, $2, $3, $4, $5, $6) returning \"id\"",
+                "wait_event_type": "Lock",
+                "wait_event": "relation",
+                "blockers": "{123}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "engineer_create",
+            "change": "deactivated",
+            "wait": {
+                "pid": 129,
+                "query": "insert into \"jairoads_next\".\"engineers\" (\"first_name\", \"middle_name\", \"last_name\", \"contact_no\", \"rank\", \"engineer_status\") values ($1, $2, $3, $4, $5, $6) returning \"id\"",
+                "wait_event_type": "Lock",
+                "wait_event": "relation",
+                "blockers": "{127}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "assignment",
+            "change": "unchanged",
+            "wait": {
+                "pid": 133,
+                "query": "SELECT pg_advisory_xact_lock(1927710915)",
+                "wait_event_type": "Lock",
+                "wait_event": "advisory",
+                "blockers": "{131}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "assignment",
+            "change": "deactivated",
+            "wait": {
+                "pid": 137,
+                "query": "SELECT pg_advisory_xact_lock(1927710915)",
+                "wait_event_type": "Lock",
+                "wait_event": "advisory",
+                "blockers": "{135}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "settings",
+            "change": "unchanged",
+            "wait": {
+                "pid": 141,
+                "query": "SELECT pg_advisory_xact_lock(1927710963)",
+                "wait_event_type": "Lock",
+                "wait_event": "advisory",
+                "blockers": "{139}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "settings",
+            "change": "deactivated",
+            "wait": {
+                "pid": 145,
+                "query": "SELECT pg_advisory_xact_lock(1927710963)",
+                "wait_event_type": "Lock",
+                "wait_event": "advisory",
+                "blockers": "{143}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "record_update late",
+            "change": "unchanged",
+            "wait": {
+                "pid": 149,
+                "query": "select * from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{147}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "record_update late",
+            "change": "unassigned",
+            "wait": {
+                "pid": 153,
+                "query": "select * from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{151}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "record_retired_manager late",
+            "change": "unchanged",
+            "wait": {
+                "pid": 157,
+                "query": "select * from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{155}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "record_retired_manager late",
+            "change": "unassigned",
+            "wait": {
+                "pid": 161,
+                "query": "select * from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{159}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "monthly_create late",
+            "change": "unchanged",
+            "wait": {
+                "pid": 165,
+                "query": "insert into \"jairoads_next\".\"monthly_updates\" (\"maintenance_id\", \"update_month\", \"progress_percentage\", \"summary_of_text_reports\", \"updated_at\", \"created_by\", \"created_at\") values ($1, $2, $3, $4, $5, $6, $7) returning \"id\"",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{163}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "monthly_create late",
+            "change": "unassigned",
+            "wait": {
+                "pid": 169,
+                "query": "insert into \"jairoads_next\".\"monthly_updates\" (\"maintenance_id\", \"update_month\", \"progress_percentage\", \"summary_of_text_reports\", \"updated_at\", \"created_by\", \"created_at\") values ($1, $2, $3, $4, $5, $6, $7) returning \"id\"",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{167}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "monthly_update late",
+            "change": "unchanged",
+            "wait": {
+                "pid": 173,
+                "query": "insert into \"jairoads_next\".\"audit_logs\" (\"user_id\", \"actor_identifier\", \"action\", \"entity_type\", \"entity_id\", \"description\", \"old_value\", \"new_value\", \"recipient_user_id\", \"notification_message\", \"created_at\") values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) returning \"id\"",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{171}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "monthly_update late",
+            "change": "unassigned",
+            "wait": {
+                "pid": 177,
+                "query": "insert into \"jairoads_next\".\"audit_logs\" (\"user_id\", \"actor_identifier\", \"action\", \"entity_type\", \"entity_id\", \"description\", \"old_value\", \"new_value\", \"recipient_user_id\", \"notification_message\", \"created_at\") values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) returning \"id\"",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{175}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "account_provisioning",
+            "change": "unchanged",
+            "wait": {
+                "pid": 181,
+                "query": "SELECT pg_advisory_xact_lock(1927710914)",
+                "wait_event_type": "Lock",
+                "wait_event": "advisory",
+                "blockers": "{179}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "account_provisioning",
+            "change": "revocation_serialized_after_commit",
+            "wait": {
+                "pid": 185,
+                "query": "SELECT pg_advisory_xact_lock(1927710914)",
+                "wait_event_type": "Lock",
+                "wait_event": "advisory",
+                "blockers": "{183}",
+                "revocation_wait": {
+                    "pid": 187,
+                    "query": "SELECT pg_advisory_xact_lock(1927710916)",
+                    "wait_event_type": "Lock",
+                    "wait_event": "advisory",
+                    "blockers": "{185}"
+                }
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        }
+    ],
+    "after_same_schedules": [
+        {
+            "case": "project_create",
+            "change": "unchanged",
+            "wait": {
+                "pid": 45,
+                "query": "select \"lgu_id\" from \"jairoads_next\".\"road_coverages\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{43}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "project_create",
+            "change": "deactivated",
+            "wait": {
+                "pid": 49,
+                "query": "select \"lgu_id\" from \"jairoads_next\".\"road_coverages\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{47}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "project_update",
+            "change": "unchanged",
+            "wait": {
+                "pid": 53,
+                "query": "select * from \"jairoads_next\".\"maintenance_projects\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{51}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "project_update",
+            "change": "deactivated",
+            "wait": {
+                "pid": 57,
+                "query": "select * from \"jairoads_next\".\"maintenance_projects\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{55}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "record_create",
+            "change": "unchanged",
+            "wait": {
+                "pid": 61,
+                "query": "select * from \"jairoads_next\".\"maintenance_projects\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{59}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "record_create",
+            "change": "deactivated",
+            "wait": {
+                "pid": 65,
+                "query": "select * from \"jairoads_next\".\"maintenance_projects\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{63}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "record_update",
+            "change": "unchanged",
+            "wait": {
+                "pid": 69,
+                "query": "select * from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{67}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "record_update",
+            "change": "deactivated",
+            "wait": {
+                "pid": 73,
+                "query": "select * from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{71}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "delete_road",
+            "change": "unchanged",
+            "wait": {
+                "pid": 77,
+                "query": "select * from \"jairoads_next\".\"road_coverages\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{75}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "delete_road",
+            "change": "deactivated",
+            "wait": {
+                "pid": 81,
+                "query": "select * from \"jairoads_next\".\"road_coverages\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{79}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "delete_record",
+            "change": "unchanged",
+            "wait": {
+                "pid": 85,
+                "query": "select * from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{83}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "delete_record",
+            "change": "deactivated",
+            "wait": {
+                "pid": 89,
+                "query": "select * from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{87}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "delete_update",
+            "change": "unchanged",
+            "wait": {
+                "pid": 93,
+                "query": "select * from \"jairoads_next\".\"monthly_updates\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{91}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "delete_update",
+            "change": "deactivated",
+            "wait": {
+                "pid": 97,
+                "query": "select * from \"jairoads_next\".\"monthly_updates\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{95}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "lgu_create",
+            "change": "unchanged",
+            "wait": {
+                "pid": 101,
+                "query": "insert into \"jairoads_next\".\"lgus\" (\"municipality_name\", \"province\", \"region\", \"mayor_first_name\", \"mayor_middle_name\", \"mayor_last_name\") values ($1, $2, $3, $4, $5, $6) returning \"id\"",
+                "wait_event_type": "Lock",
+                "wait_event": "relation",
+                "blockers": "{99}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "lgu_create",
+            "change": "deactivated",
+            "wait": {
+                "pid": 105,
+                "query": "insert into \"jairoads_next\".\"lgus\" (\"municipality_name\", \"province\", \"region\", \"mayor_first_name\", \"mayor_middle_name\", \"mayor_last_name\") values ($1, $2, $3, $4, $5, $6) returning \"id\"",
+                "wait_event_type": "Lock",
+                "wait_event": "relation",
+                "blockers": "{103}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "lgu_update",
+            "change": "unchanged",
+            "wait": {
+                "pid": 109,
+                "query": "select * from \"jairoads_next\".\"lgus\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{107}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "lgu_update",
+            "change": "deactivated",
+            "wait": {
+                "pid": 113,
+                "query": "select * from \"jairoads_next\".\"lgus\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{111}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "lgu_delete",
+            "change": "unchanged",
+            "wait": {
+                "pid": 117,
+                "query": "select * from \"jairoads_next\".\"lgus\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{115}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "lgu_delete",
+            "change": "deactivated",
+            "wait": {
+                "pid": 121,
+                "query": "select * from \"jairoads_next\".\"lgus\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{119}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "engineer_create",
+            "change": "unchanged",
+            "wait": {
+                "pid": 125,
+                "query": "insert into \"jairoads_next\".\"engineers\" (\"first_name\", \"middle_name\", \"last_name\", \"contact_no\", \"rank\", \"engineer_status\") values ($1, $2, $3, $4, $5, $6) returning \"id\"",
+                "wait_event_type": "Lock",
+                "wait_event": "relation",
+                "blockers": "{123}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "engineer_create",
+            "change": "deactivated",
+            "wait": {
+                "pid": 129,
+                "query": "insert into \"jairoads_next\".\"engineers\" (\"first_name\", \"middle_name\", \"last_name\", \"contact_no\", \"rank\", \"engineer_status\") values ($1, $2, $3, $4, $5, $6) returning \"id\"",
+                "wait_event_type": "Lock",
+                "wait_event": "relation",
+                "blockers": "{127}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "assignment",
+            "change": "unchanged",
+            "wait": {
+                "pid": 133,
+                "query": "SELECT pg_advisory_xact_lock(1927710915)",
+                "wait_event_type": "Lock",
+                "wait_event": "advisory",
+                "blockers": "{131}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "assignment",
+            "change": "deactivated",
+            "wait": {
+                "pid": 137,
+                "query": "SELECT pg_advisory_xact_lock(1927710915)",
+                "wait_event_type": "Lock",
+                "wait_event": "advisory",
+                "blockers": "{135}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "settings",
+            "change": "unchanged",
+            "wait": {
+                "pid": 141,
+                "query": "SELECT pg_advisory_xact_lock(1927710963)",
+                "wait_event_type": "Lock",
+                "wait_event": "advisory",
+                "blockers": "{139}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "settings",
+            "change": "deactivated",
+            "wait": {
+                "pid": 145,
+                "query": "SELECT pg_advisory_xact_lock(1927710963)",
+                "wait_event_type": "Lock",
+                "wait_event": "advisory",
+                "blockers": "{143}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "record_update late",
+            "change": "unchanged",
+            "wait": {
+                "pid": 149,
+                "query": "select * from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{147}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "record_update late",
+            "change": "unassigned",
+            "wait": {
+                "pid": 153,
+                "query": "select * from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{151}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "record_retired_manager late",
+            "change": "unchanged",
+            "wait": {
+                "pid": 157,
+                "query": "select * from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{155}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "record_retired_manager late",
+            "change": "unassigned",
+            "wait": {
+                "pid": 161,
+                "query": "select * from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{159}"
+            },
+            "status": 422,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "monthly_create late",
+            "change": "unchanged",
+            "wait": {
+                "pid": 165,
+                "query": "select \"engineer_id\" from \"jairoads_next\".\"user_accounts\" where \"id\" = $1 limit 1 for share",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{163}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "monthly_create late",
+            "change": "unassigned",
+            "wait": {
+                "pid": 169,
+                "query": "select \"engineer_id\" from \"jairoads_next\".\"user_accounts\" where \"id\" = $1 limit 1 for share",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{167}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "monthly_update late",
+            "change": "unchanged",
+            "wait": {
+                "pid": 173,
+                "query": "select \"engineer_id\" from \"jairoads_next\".\"user_accounts\" where \"id\" = $1 limit 1 for share",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{171}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "monthly_update late",
+            "change": "unassigned",
+            "wait": {
+                "pid": 177,
+                "query": "select \"engineer_id\" from \"jairoads_next\".\"user_accounts\" where \"id\" = $1 limit 1 for share",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{175}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "account_provisioning",
+            "change": "unchanged",
+            "wait": {
+                "pid": 181,
+                "query": "SELECT pg_advisory_xact_lock(1927710914)",
+                "wait_event_type": "Lock",
+                "wait_event": "advisory",
+                "blockers": "{179}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "account_provisioning",
+            "change": "revocation_serialized_after_commit",
+            "wait": {
+                "pid": 185,
+                "query": "SELECT pg_advisory_xact_lock(1927710914)",
+                "wait_event_type": "Lock",
+                "wait_event": "advisory",
+                "blockers": "{183}",
+                "revocation_wait": {
+                    "pid": 187,
+                    "query": "SELECT pg_advisory_xact_lock(1927710916)",
+                    "wait_event_type": "Lock",
+                    "wait_event": "advisory",
+                    "blockers": "{185}"
+                }
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        }
+    ],
+    "final_expanded": [
+        {
+            "case": "project_create",
+            "change": "unchanged",
+            "wait": {
+                "pid": 45,
+                "query": "select \"lgu_id\" from \"jairoads_next\".\"road_coverages\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{43}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "project_create",
+            "change": "deactivated",
+            "wait": {
+                "pid": 49,
+                "query": "select \"lgu_id\" from \"jairoads_next\".\"road_coverages\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{47}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "project_update",
+            "change": "unchanged",
+            "wait": {
+                "pid": 53,
+                "query": "select * from \"jairoads_next\".\"maintenance_projects\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{51}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "project_update",
+            "change": "deactivated",
+            "wait": {
+                "pid": 57,
+                "query": "select * from \"jairoads_next\".\"maintenance_projects\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{55}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "record_create",
+            "change": "unchanged",
+            "wait": {
+                "pid": 61,
+                "query": "select * from \"jairoads_next\".\"maintenance_projects\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{59}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "record_create",
+            "change": "deactivated",
+            "wait": {
+                "pid": 65,
+                "query": "select * from \"jairoads_next\".\"maintenance_projects\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{63}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "record_update",
+            "change": "unchanged",
+            "wait": {
+                "pid": 69,
+                "query": "select * from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{67}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "record_update",
+            "change": "deactivated",
+            "wait": {
+                "pid": 73,
+                "query": "select * from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{71}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "delete_road",
+            "change": "unchanged",
+            "wait": {
+                "pid": 77,
+                "query": "select * from \"jairoads_next\".\"road_coverages\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{75}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "delete_road",
+            "change": "deactivated",
+            "wait": {
+                "pid": 81,
+                "query": "select * from \"jairoads_next\".\"road_coverages\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{79}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "delete_record",
+            "change": "unchanged",
+            "wait": {
+                "pid": 85,
+                "query": "select * from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{83}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "delete_record",
+            "change": "deactivated",
+            "wait": {
+                "pid": 89,
+                "query": "select * from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{87}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "delete_update",
+            "change": "unchanged",
+            "wait": {
+                "pid": 93,
+                "query": "select * from \"jairoads_next\".\"monthly_updates\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{91}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "delete_update",
+            "change": "deactivated",
+            "wait": {
+                "pid": 97,
+                "query": "select * from \"jairoads_next\".\"monthly_updates\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{95}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "lgu_create",
+            "change": "unchanged",
+            "wait": {
+                "pid": 101,
+                "query": "insert into \"jairoads_next\".\"lgus\" (\"municipality_name\", \"province\", \"region\", \"mayor_first_name\", \"mayor_middle_name\", \"mayor_last_name\") values ($1, $2, $3, $4, $5, $6) returning \"id\"",
+                "wait_event_type": "Lock",
+                "wait_event": "relation",
+                "blockers": "{99}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "lgu_create",
+            "change": "deactivated",
+            "wait": {
+                "pid": 105,
+                "query": "insert into \"jairoads_next\".\"lgus\" (\"municipality_name\", \"province\", \"region\", \"mayor_first_name\", \"mayor_middle_name\", \"mayor_last_name\") values ($1, $2, $3, $4, $5, $6) returning \"id\"",
+                "wait_event_type": "Lock",
+                "wait_event": "relation",
+                "blockers": "{103}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "lgu_update",
+            "change": "unchanged",
+            "wait": {
+                "pid": 109,
+                "query": "select * from \"jairoads_next\".\"lgus\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{107}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "lgu_update",
+            "change": "deactivated",
+            "wait": {
+                "pid": 113,
+                "query": "select * from \"jairoads_next\".\"lgus\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{111}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "lgu_delete",
+            "change": "unchanged",
+            "wait": {
+                "pid": 117,
+                "query": "select * from \"jairoads_next\".\"lgus\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{115}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "lgu_delete",
+            "change": "deactivated",
+            "wait": {
+                "pid": 121,
+                "query": "select * from \"jairoads_next\".\"lgus\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{119}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "engineer_create",
+            "change": "unchanged",
+            "wait": {
+                "pid": 125,
+                "query": "insert into \"jairoads_next\".\"engineers\" (\"first_name\", \"middle_name\", \"last_name\", \"contact_no\", \"rank\", \"engineer_status\") values ($1, $2, $3, $4, $5, $6) returning \"id\"",
+                "wait_event_type": "Lock",
+                "wait_event": "relation",
+                "blockers": "{123}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "engineer_create",
+            "change": "deactivated",
+            "wait": {
+                "pid": 129,
+                "query": "insert into \"jairoads_next\".\"engineers\" (\"first_name\", \"middle_name\", \"last_name\", \"contact_no\", \"rank\", \"engineer_status\") values ($1, $2, $3, $4, $5, $6) returning \"id\"",
+                "wait_event_type": "Lock",
+                "wait_event": "relation",
+                "blockers": "{127}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "assignment",
+            "change": "unchanged",
+            "wait": {
+                "pid": 133,
+                "query": "SELECT pg_advisory_xact_lock(1927710915)",
+                "wait_event_type": "Lock",
+                "wait_event": "advisory",
+                "blockers": "{131}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "assignment",
+            "change": "deactivated",
+            "wait": {
+                "pid": 137,
+                "query": "SELECT pg_advisory_xact_lock(1927710915)",
+                "wait_event_type": "Lock",
+                "wait_event": "advisory",
+                "blockers": "{135}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "settings",
+            "change": "unchanged",
+            "wait": {
+                "pid": 141,
+                "query": "SELECT pg_advisory_xact_lock(1927710963)",
+                "wait_event_type": "Lock",
+                "wait_event": "advisory",
+                "blockers": "{139}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "settings",
+            "change": "deactivated",
+            "wait": {
+                "pid": 145,
+                "query": "SELECT pg_advisory_xact_lock(1927710963)",
+                "wait_event_type": "Lock",
+                "wait_event": "advisory",
+                "blockers": "{143}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "record_update late",
+            "change": "unchanged",
+            "wait": {
+                "pid": 149,
+                "query": "select * from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{147}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "record_update late",
+            "change": "unassigned",
+            "wait": {
+                "pid": 153,
+                "query": "select * from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{151}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "record_retired_manager late",
+            "change": "unchanged",
+            "wait": {
+                "pid": 157,
+                "query": "select * from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{155}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "record_retired_manager late",
+            "change": "unassigned",
+            "wait": {
+                "pid": 161,
+                "query": "select * from \"jairoads_next\".\"maintenance_records\" where \"id\" = $1 limit 1 for update",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{159}"
+            },
+            "status": 422,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "monthly_create late",
+            "change": "unchanged",
+            "wait": {
+                "pid": 165,
+                "query": "select \"engineer_id\" from \"jairoads_next\".\"user_accounts\" where \"id\" = $1 limit 1 for share",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{163}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "monthly_create late",
+            "change": "unassigned",
+            "wait": {
+                "pid": 169,
+                "query": "select \"engineer_id\" from \"jairoads_next\".\"user_accounts\" where \"id\" = $1 limit 1 for share",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{167}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "monthly_update late",
+            "change": "unchanged",
+            "wait": {
+                "pid": 173,
+                "query": "select \"engineer_id\" from \"jairoads_next\".\"user_accounts\" where \"id\" = $1 limit 1 for share",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{171}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "monthly_update late",
+            "change": "unassigned",
+            "wait": {
+                "pid": 177,
+                "query": "select \"engineer_id\" from \"jairoads_next\".\"user_accounts\" where \"id\" = $1 limit 1 for share",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{175}"
+            },
+            "status": 403,
+            "business_changed": false,
+            "audit_changed": false,
+            "delivery_changed": false
+        },
+        {
+            "case": "account_provisioning",
+            "change": "unchanged",
+            "wait": {
+                "pid": 181,
+                "query": "SELECT pg_advisory_xact_lock(1927710914)",
+                "wait_event_type": "Lock",
+                "wait_event": "advisory",
+                "blockers": "{179}"
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "account_provisioning",
+            "change": "revocation_serialized_after_commit",
+            "wait": {
+                "pid": 185,
+                "query": "SELECT pg_advisory_xact_lock(1927710914)",
+                "wait_event_type": "Lock",
+                "wait_event": "advisory",
+                "blockers": "{183}",
+                "revocation_wait": {
+                    "pid": 187,
+                    "query": "SELECT pg_advisory_xact_lock(1927710916)",
+                    "wait_event_type": "Lock",
+                    "wait_event": "advisory",
+                    "blockers": "{185}"
+                }
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "project commit window",
+            "change": "revocation_serialized_after_commit",
+            "wait": {
+                "pid": 191,
+                "query": "insert into \"jairoads_next\".\"audit_notification_recipients\" (\"audit_log_id\", \"recipient_user_id\", \"notification_message\", \"created_at\") select $1::bigint AS audit_log_id, account.id AS recipient_user_id, $2::text AS notification_message, $3::timestamp AS created_at from \"public\".\"users\" as \"login\" inner join \"jairoads_next\".\"user_accounts\" as \"account\" on \"login\".\"dd_user_account_id\" = \"account\".\"id\" left join \"jairoads_next\".\"engineers\" as \"engineer\" on \"account\".\"engineer_id\" = \"engineer\".\"id\" left join \"jairoads_security\".\"account_provisioning\" as \"provenance\" on \"provenance\".\"user_account_id\" = \"account\".\"id\" where \"account\".\"account_type\" in ($4, $5, $6, $7) and LOWER(account.email) = LOWER(login.email) and (SELECT count(*) FROM public.users AS bridge WHERE bridge.dd_user_account_id = account.id) = 1 and ((\"account\".\"account_type\" = $8 and \"account\".\"engineer_id\" is null) or (\"account\".\"engineer_id\" > $9 and \"engineer\".\"engineer_status\" = $10)) and \"account\".\"is_active\" = $11 and login.password = accoun",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{189}",
+                "revocation_wait": {
+                    "pid": 193,
+                    "query": "select \"id\", \"engineer_status\" from \"jairoads_next\".\"engineers\" where \"id\" = $1 limit 1 for update",
+                    "wait_event_type": "Lock",
+                    "wait_event": "transactionid",
+                    "blockers": "{191}"
+                }
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "record commit window",
+            "change": "revocation_serialized_after_commit",
+            "wait": {
+                "pid": 197,
+                "query": "insert into \"jairoads_next\".\"audit_notification_recipients\" (\"audit_log_id\", \"recipient_user_id\", \"notification_message\", \"created_at\") select $1::bigint AS audit_log_id, account.id AS recipient_user_id, $2::text AS notification_message, $3::timestamp AS created_at from \"public\".\"users\" as \"login\" inner join \"jairoads_next\".\"user_accounts\" as \"account\" on \"login\".\"dd_user_account_id\" = \"account\".\"id\" left join \"jairoads_next\".\"engineers\" as \"engineer\" on \"account\".\"engineer_id\" = \"engineer\".\"id\" left join \"jairoads_security\".\"account_provisioning\" as \"provenance\" on \"provenance\".\"user_account_id\" = \"account\".\"id\" where \"account\".\"account_type\" in ($4, $5, $6, $7) and LOWER(account.email) = LOWER(login.email) and (SELECT count(*) FROM public.users AS bridge WHERE bridge.dd_user_account_id = account.id) = 1 and ((\"account\".\"account_type\" = $8 and \"account\".\"engineer_id\" is null) or (\"account\".\"engineer_id\" > $9 and \"engineer\".\"engineer_status\" = $10)) and \"account\".\"is_active\" = $11 and login.password = accoun",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{195}",
+                "revocation_wait": {
+                    "pid": 199,
+                    "query": "select \"id\", \"engineer_status\" from \"jairoads_next\".\"engineers\" where \"id\" = $1 limit 1 for update",
+                    "wait_event_type": "Lock",
+                    "wait_event": "transactionid",
+                    "blockers": "{197}"
+                }
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        },
+        {
+            "case": "monthly commit window",
+            "change": "revocation_serialized_after_commit",
+            "wait": {
+                "pid": 203,
+                "query": "insert into \"jairoads_next\".\"audit_notification_recipients\" (\"audit_log_id\", \"recipient_user_id\", \"notification_message\", \"created_at\") select $1::bigint AS audit_log_id, account.id AS recipient_user_id, $2::text AS notification_message, $3::timestamp AS created_at from \"public\".\"users\" as \"login\" inner join \"jairoads_next\".\"user_accounts\" as \"account\" on \"login\".\"dd_user_account_id\" = \"account\".\"id\" left join \"jairoads_next\".\"engineers\" as \"engineer\" on \"account\".\"engineer_id\" = \"engineer\".\"id\" left join \"jairoads_security\".\"account_provisioning\" as \"provenance\" on \"provenance\".\"user_account_id\" = \"account\".\"id\" where \"account\".\"account_type\" in ($4, $5, $6, $7) and LOWER(account.email) = LOWER(login.email) and (SELECT count(*) FROM public.users AS bridge WHERE bridge.dd_user_account_id = account.id) = 1 and ((\"account\".\"account_type\" = $8 and \"account\".\"engineer_id\" is null) or (\"account\".\"engineer_id\" > $9 and \"engineer\".\"engineer_status\" = $10)) and \"account\".\"is_active\" = $11 and login.password = accoun",
+                "wait_event_type": "Lock",
+                "wait_event": "transactionid",
+                "blockers": "{201}",
+                "revocation_wait": {
+                    "pid": 205,
+                    "query": "select \"id\", \"engineer_status\" from \"jairoads_next\".\"engineers\" where \"id\" = $1 limit 1 for update",
+                    "wait_event_type": "Lock",
+                    "wait_event": "transactionid",
+                    "blockers": "{203}"
+                }
+            },
+            "status": 302,
+            "business_changed": true,
+            "audit_changed": true,
+            "delivery_changed": true
+        }
+    ]
+}
