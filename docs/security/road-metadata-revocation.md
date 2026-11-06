@@ -10,8 +10,11 @@ vulnerable requests returned 302 instead of the required 403.
 
 The repair obtains an existing road row **before** taking lifecycle authority.
 A request waiting on that row must allow a lifecycle revocation to finish.
-After the road wait it takes the existing shared lifecycle advisory key
-1927710916, freezes the login/account bridge in password-updater order, then
+After the road wait it tries the existing shared lifecycle advisory key
+1927710916 **without waiting**. If lifecycle work is busy, it rolls back with
+a retryable HTTP 409 instead of introducing an inverse road/lifecycle lock wait
+against existing lifecycle-first workflows. After acquiring authority, it
+freezes the login/account bridge in password-updater order, then
 the linked profile and relevant EngineerLGU membership. Fresh canonical identity,
 role and LGU permission checks run after these waits. The locks remain until
 the metadata/audit transaction commits. Account lifecycle uses the exclusive
@@ -21,6 +24,10 @@ No municipality reassociation bypass, geometry conversion, new audit policy,
 schema change or neighboring project/record workflow is introduced. Existing
 road geometry, municipality and assignment tests plus the new race suite passed:
 97 tests, 1,035 assertions on disposable PostgreSQL 17 before later repairs.
+An additional regression holds the exclusive lifecycle guard on another
+connection and requires the road request to return 409 before that guard is
+released, with identical road/audit snapshots. This protects the lock-order
+interaction without editing held project-history methods.
 
 Other ordinary mutation methods that capture actors before locks require their
 own investigation. This change does not claim to fix those adjacent paths.

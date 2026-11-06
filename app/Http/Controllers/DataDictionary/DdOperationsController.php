@@ -297,7 +297,10 @@ final class DdOperationsController extends Controller
             $row = $id === null ? null : $this->t('road_coverages')->where('id', $id)
                 ->lockForUpdate()->first(['id', 'lgu_id', 'geojson']);
             abort_if($id !== null && $row === null, 404);
-            DB::select('SELECT pg_advisory_xact_lock_shared(1927710916)');
+            // Other existing workflows take lifecycle before road locks. Never
+            // wait in the inverse order: busy lifecycle work must finish first.
+            $authority = DB::selectOne('SELECT pg_try_advisory_xact_lock_shared(1927710916) AS acquired');
+            abort_unless($authority->acquired === true, 409, 'Account authorization is changing. Retry the road edit.');
             // Freeze the bridge/credentials in password-updater lock order.
             DB::table('public.users')->where('id', $request->user()->getAuthIdentifier())->sharedLock()->first(['id']);
             $account = $this->t('user_accounts')->where('id', $actor['account_id'])->sharedLock()->first(['engineer_id']);

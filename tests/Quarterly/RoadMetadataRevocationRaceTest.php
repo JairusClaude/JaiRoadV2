@@ -10,6 +10,38 @@ use Symfony\Component\Process\Process;
 
 final class RoadMetadataRevocationRaceTest extends PostgresTestCase
 {
+    public function test_busy_lifecycle_authority_returns_conflict_without_an_inverse_lock_wait(): void
+    {
+        $f = $this->fixture();
+        $before = DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->first();
+        $audit = DB::table('jairoads_next.audit_logs')->get()->toJson();
+        DB::commit();
+        $worker = null;
+        try {
+            DB::beginTransaction();
+            DB::select('SELECT pg_advisory_xact_lock(1927710916)');
+            $worker = new Process([PHP_BINARY, __DIR__.'/monthly-concurrency-request.php', (string) $f['user']->id,
+                'PUT', '/dd-phase3/ops/roads/'.$f['road'], json_encode([
+                    'road_name' => 'Must not commit', 'lgu_id' => $before->lgu_id, 'kilometers' => $before->kilometers,
+                    'pavement_type' => $before->pavement_type, 'state_category' => $before->state_category,
+                ], JSON_THROW_ON_ERROR)]);
+            $worker->setTimeout(5);
+            // Must complete while the exclusive lifecycle guard is STILL held.
+            // A blocking shared acquisition would time out/deadlock here.
+            $worker->run();
+            $this->assertTrue($worker->isSuccessful(), $worker->getErrorOutput());
+            $this->assertSame(409, json_decode($worker->getOutput(), true, flags: JSON_THROW_ON_ERROR)['status']);
+            $this->assertEquals($before, DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->first());
+            $this->assertSame($audit, DB::table('jairoads_next.audit_logs')->get()->toJson());
+        } finally {
+            $worker?->stop();
+            while (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
+            DB::unprepared('TRUNCATE public.users, jairoads_next.user_accounts, jairoads_next.engineers, jairoads_next.lgus CASCADE');
+        }
+    }
+
     /** @return iterable<string,array{string,string}> */
     public static function cases(): iterable
     {
