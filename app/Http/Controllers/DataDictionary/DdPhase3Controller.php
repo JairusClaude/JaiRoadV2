@@ -6,6 +6,7 @@ namespace App\Http\Controllers\DataDictionary;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\DataDictionary\AccountProvisioning;
 use App\Services\DataDictionary\DataDictionaryIdentityResolver;
 use App\Services\DataDictionary\DdActivityNotifications;
 use App\Services\DataDictionary\DdDashboardAnalytics;
@@ -276,21 +277,19 @@ final class DdPhase3Controller extends Controller
             'email' => ['required', 'email:rfc', 'max:255'],
             'name' => ['required', 'string', 'max:255'],
             'account_type' => ['required', Rule::in($allowed)],
-            'engineer_id' => ['required_if:account_type,Admin,Engineer', 'nullable', 'integer', 'min:1'],
+            'engineer_id' => ['required', 'integer', 'min:1'],
             'password' => ['required', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()],
         ]);
         $username = strtolower(trim((string) $v['username']));
         $email = strtolower(trim((string) $v['email']));
         $role = $v['account_type'];
         $engineerId = ! empty($v['engineer_id']) ? (int) $v['engineer_id'] : null;
-        // New Admin/Engineer identities require an explicit active profile.
-        // Existing unlinked Admin identities remain compatible in the resolver.
-        if ($role === 'Viewer' && $engineerId !== null) {
-            throw ValidationException::withMessages(['engineer_id' => 'Viewer accounts cannot be linked to an Engineer.']);
-        }
         try {
-            DB::transaction(function () use ($actor, $v, $username, $email, $role, $engineerId): void {
+            DB::transaction(function () use ($request, $resolver, $actor, $v, $username, $email, $role, $engineerId): void {
+                DB::select('SELECT pg_advisory_xact_lock_shared(1927710916)');
                 DB::select('SELECT pg_advisory_xact_lock(1927710914)');
+                abort_unless($this->admin($request, $resolver) === $actor, 403);
+                abort_unless(app(AccountProvisioning::class)->available(), 503, 'Account provisioning is unavailable pending schema-owner setup.');
                 if (DB::table('public.users')->whereRaw('LOWER(email) = ?', [$email])->exists()
                     || DB::table('jairoads_next.user_accounts')->whereRaw('LOWER(email) = ?', [$email])->exists()) {
                     throw ValidationException::withMessages(['email' => 'Email already exists.']);
@@ -318,6 +317,7 @@ final class DdPhase3Controller extends Controller
                     'dd_user_account_id' => $ddId,
                     'email_verified_at' => null, 'created_at' => now(), 'updated_at' => now(),
                 ]);
+                app(AccountProvisioning::class)->record($request->user(), $ddId);
                 $this->audit($actor, 'CREATE', 'UserAccount', $ddId, 'Administrator provisioned a DD account with an explicit Fortify link.', [
                     'account_type' => $role, 'engineer_id' => $engineerId, 'is_active' => true,
                 ]);

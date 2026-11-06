@@ -17,8 +17,8 @@ final class AuthenticateEligibleAccount extends Authenticate
         parent::authenticate($request, $guards);
         $user = $request->user();
         // A revoked user must still be able to invalidate their real session.
-        if (! $request->routeIs('logout') && $user instanceof User && $user->getAttribute('dd_user_account_id') !== null) {
-            abort_unless(app(DataDictionaryIdentityResolver::class)->resolve($user) !== null, 403);
+        if (! $request->routeIs('logout')) {
+            abort_unless($user instanceof User && app(DataDictionaryIdentityResolver::class)->resolve($user) !== null, 403);
         }
     }
 }

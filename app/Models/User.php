@@ -61,8 +61,8 @@ class User extends Authenticatable implements PasskeyUser
 
     /**
      * Separate, explicit bridge to the NEW Data Dictionary account.
-     * The legacy userAccount() relation remains authoritative for login
-     * until the coordinated, tested role/auth cutover.
+     * Only ddUserAccount() provides canonical business identity. The legacy
+     * userAccount() relation is retained for historical compatibility, not login authority.
      * Never map legacy numeric user_account_id to this relation.
      *
      * @return BelongsTo<StagingUserAccount, $this>

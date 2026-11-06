@@ -42,10 +42,7 @@ class FortifyServiceProvider extends ServiceProvider
                 return false;
             }
 
-            // Preserve legacy-only authentication; canonical authority is never
-            // inferred from email or coincident IDs. Same gate as password login.
-            return $user->getAttribute('dd_user_account_id') === null
-                || app(DataDictionaryIdentityResolver::class)->resolve($user) !== null;
+            return app(DataDictionaryIdentityResolver::class)->resolve($user) !== null;
         });
     }
 
