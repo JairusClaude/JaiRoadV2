@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "warning": "UNAPPROVED TEMPLATE. No release permission or real acceptance is supplied by this file.",
+  "target_project_ref": "aeaaxwyytsagbacysvvx",
+  "candidate_sha": null,
+  "approved_image_digest": null,
+  "schema_owner_approval_reference": null,
+  "data_dictionary_approval_reference": null,
+  "production_migration_change_ticket": null,
+  "production_release_authorization_reference": null,
+  "backup_and_restore_evidence_reference": null,
+  "private_storage_reconciliation_reference": null,
+  "actual_superadmin_recovery_reference": null,
+  "verified_admin_engineer_transition_reference": null,
+  "isolated_staging_acceptance_reference": null,
+  "oncall_and_monitoring_reference": null,
+  "approved_change_window_reference": null,
+  "deploy_authorized": false
+}
