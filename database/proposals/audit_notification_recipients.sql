@@ -45,7 +45,7 @@ CREATE TRIGGER audit_notification_recipients_no_truncate
 -- Preserve them without installing duplicate audit_log triggers. The guarded
 -- fallback is needed for genuinely empty disposable PostgreSQL fixtures.
 -- Schema owner must inspect trigger functions and adapt for other deployments.
-DO $
+DO $audit_guard$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM pg_trigger
@@ -73,7 +73,7 @@ BEGIN
             FOR EACH STATEMENT EXECUTE FUNCTION jairoads_next.reject_audit_history_mutation();
     END IF;
 END;
-$;
+$audit_guard$;
 
 -- No Data API grants. Use a dedicated Laravel DB role, SELECT/INSERT + sequence
 -- USAGE and targeted RLS; never UPDATE/DELETE/TRUNCATE/ownership or public policy.
