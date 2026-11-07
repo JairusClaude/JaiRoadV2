@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "source": "read_only_postgresql_catalog",
+  "checks": {
+    "postgres17": false,
+    "audit_mutation_and_truncate_guards": false,
+    "provenance_table_present": false,
+    "notification_recipients_present": false,
+    "file_deletion_intents_present": false,
+    "maintenance_history_contexts_present": false,
+    "project_and_manager_nullable": false,
+    "quarterly_unique_constraint_present": false,
+    "restricted_runtime_login_present": false,
+    "active_superadmin_exists": false,
+    "no_active_admin_missing_engineer": false
+  },
+  "notes": [
+    "UNAPPROVED TEMPLATE. Do not enter live credentials, secrets, raw identity records or Storage paths."
+  ]
+}
