@@ -6,6 +6,7 @@ on:
     branches:
       - fix/disposable-staging-rehearsal
       - fix/staging-restricted-runtime-role
+      - fix/superadmin-recovery-readiness
   workflow_dispatch:
 
 permissions:
@@ -169,3 +170,56 @@ jobs:
             exit 1
           fi
           echo "PASS: one audited business event and $recipients eligible deliveries committed with restricted DB access"
+
+  superadmin-recovery:
+    name: staging / SuperAdmin recovery and last-root guard
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: jairoads_scratch_superadmin_recovery
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d jairoads_scratch_superadmin_recovery"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+      APP_KEY: base64:MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
+      APP_URL: http://localhost
+      DB_CONNECTION: pgsql
+      DB_URL: ''
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DB_DATABASE: jairoads_scratch_superadmin_recovery
+      DB_USERNAME: postgres
+      DB_PASSWORD: disposable-ci-only
+      DB_SSLMODE: disable
+      SESSION_DRIVER: array
+      CACHE_STORE: array
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: array
+      BCRYPT_ROUNDS: '4'
+      PAO_DISABLE: '1'
+      JAIROADS_SCRATCH_APPROVAL: DISPOSABLE_LOCAL_ONLY
+    steps:
+      - name: Checkout review branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with:
+          php-version: '8.4'
+          extensions: 'pdo_pgsql, mbstring'
+          tools: composer:v2
+          coverage: none
+      - name: Install dependencies without shared migrations
+        run: |
+          composer install --no-interaction --prefer-dist
+          touch .env
+      - name: Test recovery, last eligible root, MFA and passkey revocation on disposable PostgreSQL
+        run: php artisan test tests/Quarterly/SuperAdminRecoveryReadinessTest.php --stop-on-failure
