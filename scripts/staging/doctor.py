@@ -58,6 +58,9 @@ def main() -> int:
                ready and docker_endpoint.startswith(("unix://", "npipe://")))
         compose_ok, _ = command([docker, "compose", "version"])
         report("Docker Compose v2", compose_ok)
+        if ready and docker_endpoint.startswith(("unix://", "npipe://")):
+            daemon_ok, _ = command([docker, "info", "--format", "{{.ServerVersion}}"])
+            report("Local Docker daemon is running", daemon_ok)
 
     php = shutil.which("php")
     report("Host PHP available", php is not None)
@@ -71,6 +74,8 @@ def main() -> int:
 
     report("Composer development autoload available",
            (ROOT / "vendor" / "autoload.php").is_file())
+    report("curl for localhost HTTP smoke available",
+           shutil.which("curl") is not None)
 
     openssl = shutil.which("openssl")
     report("OpenSSL CLI available", openssl is not None)
