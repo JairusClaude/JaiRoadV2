@@ -30,6 +30,8 @@ $oldIdentifiers = [
     'DdOperationAudit',
     'DdRoleAccess',
     'ReadOnlyDdModel',
+    'DenyLegacyBusinessRoutesForDd',
+    'DdWorkspaceNavigationTest',
 ];
 $oldNamespaces = [
     'App\\Http\\Controllers\\DataDictionary\\',
