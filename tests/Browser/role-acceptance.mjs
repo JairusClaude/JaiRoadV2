@@ -89,9 +89,11 @@ export async function verifyRoleAcceptanceMatrix({
             const csrfCookie = document.cookie
                 .split('; ')
                 .find((cookie) => cookie.startsWith('XSRF-TOKEN='));
+
             if (!csrfCookie) {
                 throw new Error('Missing real Fortify CSRF session');
             }
+
             const response = await fetch(target, {
                 method: 'POST',
                 headers: {
