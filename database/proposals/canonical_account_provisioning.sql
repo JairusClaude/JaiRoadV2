@@ -24,7 +24,7 @@ REVOKE ALL ON jairoads_security.account_provisioning FROM PUBLIC;
 -- Supabase API roles do not need provenance access, even if other default
 -- privileges or schema grants are later modified. This is defense in depth,
 -- not a substitute for keeping jairoads_security out of exposed API schemas.
-DO $
+DO $api_acl$
 DECLARE api_role text;
 BEGIN
     FOREACH api_role IN ARRAY ARRAY['anon', 'authenticated', 'service_role'] LOOP
@@ -34,7 +34,7 @@ BEGIN
         END IF;
     END LOOP;
 END;
-$;
+$api_acl$;
 
 CREATE FUNCTION jairoads_security.protect_provisioning() RETURNS trigger
 LANGUAGE plpgsql SET search_path = pg_catalog AS $$
