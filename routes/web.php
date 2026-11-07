@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Dashboard\DdSuperAdminLandingController;
+use App\Http\Controllers\Dashboard\SuperAdminLandingController;
 use App\Http\Controllers\EngineerController;
 use App\Http\Controllers\LguController;
 use App\Http\Controllers\MaintenanceDocumentController;
@@ -10,9 +10,9 @@ use App\Http\Controllers\MediaController;
 use App\Http\Controllers\MonthlyUpdateController;
 use App\Http\Controllers\RoadCoverageController;
 use App\Http\Controllers\UserAccountController;
-use App\Models\DataDictionary\StagingUserAccount;
+use App\Models\StagingUserAccount;
 use App\Models\User;
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
+use App\Services\AccountIdentityResolver;
 use App\Services\MaintenanceProjects\VerifiedProjectAccount;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Route;
@@ -28,7 +28,7 @@ Route::middleware(['auth'])->group(function () {
         if ($user instanceof User && $user->getAttribute('dd_user_account_id') !== null) {
             // DD-linked login is resolved exclusively through the approved DD identity.
             // Never fall back to legacy roles when a DD link is invalid.
-            $identity = app(DataDictionaryIdentityResolver::class)->resolve($user);
+            $identity = app(AccountIdentityResolver::class)->resolve($user);
             abort_unless($identity !== null, 403, 'An active linked Data Dictionary UserAccount is required.');
 
             return match ($identity['role']) {
@@ -124,7 +124,7 @@ Inertia::share('jairoadsIdentity', static function (): ?array {
     try {
         // Never infer DD authority from an old user_account_id or legacy role.
         if ($user->getAttribute('dd_user_account_id') !== null) {
-            $identity = app(DataDictionaryIdentityResolver::class)->resolve($user);
+            $identity = app(AccountIdentityResolver::class)->resolve($user);
             if ($identity === null) {
                 return null;
             }
@@ -161,7 +161,7 @@ Inertia::share('jairoadsIdentity', static function (): ?array {
 // Dedicated read-only landing for the first DD-linked SuperAdmin. This does NOT
 // grant legacy CRUD access or replace the existing command center.
 Route::middleware(['auth'])
-    ->get('/dd-superadmin-landing', DdSuperAdminLandingController::class)
+    ->get('/dd-superadmin-landing', SuperAdminLandingController::class)
     ->name('jairoads.dd-superadmin-landing');
 
 require __DIR__.'/role-dashboard.php';
