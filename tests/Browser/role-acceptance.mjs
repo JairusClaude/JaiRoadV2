@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import process from 'node:process';
 
 /**
  * Real browser sessions, actual Fortify CSRF and canonical route guards.
@@ -74,7 +75,6 @@ export async function verifyRoleAcceptanceMatrix({
         for (const [index, [role, page]] of Object.entries(roles).entries()) {
             const response = await page.request.get(`${base}${path}`, {
                 headers: { Accept: 'application/json' },
-                maxRedirects: 0,
             });
             assert.equal(
                 response.status(),
