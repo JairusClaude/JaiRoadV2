@@ -1,0 +1,62 @@
+# Free, persistent LOCAL rehearsal only. Never points to official Supabase.
+# Start via: bash scripts/staging/free-local.sh up
+# All containers are localhost-bound; credentials are generated locally and ignored.
+name: jairoads-free-local
+
+services:
+  db:
+    image: postgres:17
+    restart: "no"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: jairoads_scratch_staging_app
+      POSTGRES_PASSWORD: ${JAIROADS_FREE_DB_PASSWORD:?Run scripts/staging/free-local.sh up first}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - pg17_synthetic:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d jairoads_scratch_staging_app"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_ENV: testing
+      APP_DEBUG: "false"
+      APP_KEY: ${JAIROADS_FREE_APP_KEY:?Run scripts/staging/free-local.sh up first}
+      APP_URL: "http://127.0.0.1:10015"
+      DB_CONNECTION: pgsql
+      DB_URL: ""
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_DATABASE: jairoads_scratch_staging_app
+      DB_USERNAME: jairoads_app_runtime
+      DB_PASSWORD: ${JAIROADS_FREE_RUNTIME_PASSWORD:?Run scripts/staging/free-local.sh up first}
+      DB_SSLMODE: disable
+      SESSION_DRIVER: file
+      CACHE_STORE: file
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: array
+      LOG_CHANNEL: stderr
+      PAO_DISABLE: "1"
+      JAIROADS_SCRATCH_APPROVAL: DISPOSABLE_LOCAL_ONLY
+      SUPABASE_URL: ""
+      SUPABASE_SECRET_KEY: ""
+      SUPABASE_SERVICE_ROLE_KEY: ""
+      SUPABASE_DOCUMENTS_BUCKET: ""
+      SUPABASE_MONTHLY_MEDIA_BUCKET: ""
+    ports:
+      - "127.0.0.1:10015:10000"
+
+volumes:
+  pg17_synthetic:
