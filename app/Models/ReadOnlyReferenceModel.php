@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Models\DataDictionary\Canonical;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use LogicException;
@@ -12,7 +12,7 @@ use LogicException;
  * Not an authorization boundary: Eloquent bulk update/delete queries bypass save/delete.
  * Not used by existing routes/controllers; never enable writes without approved guards.
  */
-abstract class ReadOnlyDdModel extends Model
+abstract class ReadOnlyReferenceModel extends Model
 {
     protected $guarded = ['*'];
 

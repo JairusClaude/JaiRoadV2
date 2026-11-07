@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Models\DataDictionary\Canonical;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** Junction has a composite PK (engineer_id, lgu_id). Eloquent has no native composite-key writes. READ ONLY. */
-final class EngineerLgu extends ReadOnlyDdModel
+final class EngineerLguReference extends ReadOnlyReferenceModel
 {
     protected $table = 'jairoads_next.engineer_lgus';
 
@@ -24,15 +24,15 @@ final class EngineerLgu extends ReadOnlyDdModel
         ];
     }
 
-    /** @return BelongsTo<Engineer, $this> */
+    /** @return BelongsTo<EngineerReference, $this> */
     public function engineer(): BelongsTo
     {
-        return $this->belongsTo(Engineer::class, 'engineer_id');
+        return $this->belongsTo(EngineerReference::class, 'engineer_id');
     }
 
-    /** @return BelongsTo<Lgu, $this> */
+    /** @return BelongsTo<LguReference, $this> */
     public function lgu(): BelongsTo
     {
-        return $this->belongsTo(Lgu::class, 'lgu_id');
+        return $this->belongsTo(LguReference::class, 'lgu_id');
     }
 }

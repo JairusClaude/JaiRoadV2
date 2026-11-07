@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Models\DataDictionary\Canonical;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-final class AuditLog extends ReadOnlyDdModel
+final class AuditLogReference extends ReadOnlyReferenceModel
 {
     protected $table = 'jairoads_next.audit_logs';
 
@@ -20,15 +20,15 @@ final class AuditLog extends ReadOnlyDdModel
         ];
     }
 
-    /** @return BelongsTo<UserAccount, $this> */
+    /** @return BelongsTo<UserAccountReference, $this> */
     public function actor(): BelongsTo
     {
-        return $this->belongsTo(UserAccount::class, 'user_id');
+        return $this->belongsTo(UserAccountReference::class, 'user_id');
     }
 
-    /** @return BelongsTo<UserAccount, $this> */
+    /** @return BelongsTo<UserAccountReference, $this> */
     public function recipient(): BelongsTo
     {
-        return $this->belongsTo(UserAccount::class, 'recipient_user_id');
+        return $this->belongsTo(UserAccountReference::class, 'recipient_user_id');
     }
 }
