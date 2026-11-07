@@ -25,6 +25,14 @@
 
 ## Start and verify
 
+You can first check the safety invariants **offline** (no Docker, internet or CI needed):
+
+```bash
+python3 -m unittest discover -s tests/Local -p 'test_*.py' -v
+```
+
+This inspects loopback ports, absent cloud credentials, fixed scratch database, ignore rules and explicit destruction confirmation. It does **not** start containers or prove a live system is reachable.
+
 ```bash
 git checkout docs/free-local-staging-no-cloud-cost
 composer install --no-interaction --prefer-dist
