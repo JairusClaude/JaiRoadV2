@@ -64,7 +64,7 @@ final class IntegrationDeploymentReadiness
 
         return [
             'checks' => $checks,
-            'ready_for_live_probes' => ! in_array(false, $checks, true),
+            'ready_for_live_probes' => in_array(false, $checks, true) === false,
             'network_probes_performed' => false,
             'manual_gates' => [
                 'verify_both_storage_buckets_private_and_unversioned',
@@ -84,10 +84,9 @@ final class IntegrationDeploymentReadiness
             && is_array($parts)
             && strtolower((string) ($parts['scheme'] ?? '')) === 'https'
             && ($parts['host'] ?? '') !== ''
-            && ! isset($parts['user'], $parts['pass'])
-            && ! array_key_exists('user', $parts)
-            && ! array_key_exists('query', $parts)
-            && ! array_key_exists('fragment', $parts);
+            && array_key_exists('user', $parts) === false
+            && array_key_exists('query', $parts) === false
+            && array_key_exists('fragment', $parts) === false;
     }
 
     private static function bucketName(string $bucket): bool
