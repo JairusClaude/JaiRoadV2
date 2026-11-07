@@ -37,3 +37,6 @@ storage/jairoads-installer-backups/
 *.backup-*
 *.original
 configured())
+
+# Local-only synthetic PostgreSQL and Laravel staging secrets/fixtures.
+/.free-staging/
