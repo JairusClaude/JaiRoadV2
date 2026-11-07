@@ -4,17 +4,18 @@ declare(strict_types=1);
 
 use App\Http\Controllers\OperationsFrontendController;
 use App\Http\Controllers\PreservedHistoryController;
+use App\Http\Controllers\RoadCoveragePageController;
 use Illuminate\Support\Facades\Route;
 
 // These URLs are canonical DD projections. Legacy public.* route quarantine stays intact.
 Route::middleware(['auth'])->prefix('dd-phase3/ui')->name('jairoads.ui.')->group(function (): void {
-    Route::get('/map/roads', [OperationsFrontendController::class, 'roadReferences'])->name('roads.references');
-    Route::get('/road-coverages', [OperationsFrontendController::class, 'roadIndex'])->name('roads.index');
-    Route::get('/road-coverages/create', [OperationsFrontendController::class, 'roadForm'])->name('roads.create');
-    Route::get('/road-coverages/{id}', [OperationsFrontendController::class, 'roadShow'])->whereNumber('id')->name('roads.show');
-    Route::get('/road-coverages/{id}/edit', [OperationsFrontendController::class, 'roadForm'])->whereNumber('id')->name('roads.edit');
-    Route::post('/road-coverages', [OperationsFrontendController::class, 'saveRoad'])->name('roads.store');
-    Route::put('/road-coverages/{id}', [OperationsFrontendController::class, 'saveRoad'])->whereNumber('id')->name('roads.update');
+    Route::get('/map/roads', [RoadCoveragePageController::class, 'roadReferences'])->name('roads.references');
+    Route::get('/road-coverages', [RoadCoveragePageController::class, 'roadIndex'])->name('roads.index');
+    Route::get('/road-coverages/create', [RoadCoveragePageController::class, 'roadForm'])->name('roads.create');
+    Route::get('/road-coverages/{id}', [RoadCoveragePageController::class, 'roadShow'])->whereNumber('id')->name('roads.show');
+    Route::get('/road-coverages/{id}/edit', [RoadCoveragePageController::class, 'roadForm'])->whereNumber('id')->name('roads.edit');
+    Route::post('/road-coverages', [RoadCoveragePageController::class, 'saveRoad'])->name('roads.store');
+    Route::put('/road-coverages/{id}', [RoadCoveragePageController::class, 'saveRoad'])->whereNumber('id')->name('roads.update');
     Route::get('/maintenance-projects', [OperationsFrontendController::class, 'projectIndex'])->name('projects.index');
     Route::get('/maintenance-projects/create', [OperationsFrontendController::class, 'projectForm'])->name('projects.create');
     Route::get('/maintenance-projects/{id}', [OperationsFrontendController::class, 'projectShow'])->whereNumber('id')->name('projects.show');
