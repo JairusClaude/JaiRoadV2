@@ -50,6 +50,13 @@ jobs:
           fi
       - name: Rehearse fresh and pre-protected canonical AuditLog schemas
         run: bash tests/Staging/rehearse-auxiliary.sh
+      - name: Verify automatic RLS remains active after revoking public function EXECUTE
+        run: |
+          set -euo pipefail
+          export PGHOST="$DB_HOST" PGPORT="$DB_PORT" PGUSER="$DB_USERNAME"
+          export PGPASSWORD="$DB_PASSWORD" PGSSLMODE=disable
+          psql -X -v ON_ERROR_STOP=1 -d "$DB_DATABASE" -f tests/Staging/auto-rls-public-execute-probe.sql >/dev/null
+          echo "PASS: API roles cannot execute auto-RLS callback; event trigger still enables RLS"
 
   application-smoke:
     name: staging / disposable Laravel HTTP smoke
