@@ -44,12 +44,15 @@ def main() -> int:
                "RENDER", "CI", "GITHUB_ACTIONS", "VERCEL", "RAILWAY_ENVIRONMENT"
            )))
     db_context = os.environ.get("DOCKER_HOST", "")
-    report("No remote Docker override",
-           not db_context or db_context.startswith(("unix://", "npipe://")))
+    local_override = (not db_context
+                      or db_context.startswith(("unix://", "npipe://")))
+    report("No remote Docker override", local_override)
 
     docker = shutil.which("docker")
     report("Local Docker executable", docker is not None)
-    if docker:
+    # Never call even "docker info" when DOCKER_HOST points to a remote
+    # daemon; it could connect to a billable cloud Docker endpoint.
+    if docker and local_override:
         ready, docker_endpoint = command([
             docker, "context", "inspect",
             "--format", '{{(index .Endpoints "docker").Host}}'
