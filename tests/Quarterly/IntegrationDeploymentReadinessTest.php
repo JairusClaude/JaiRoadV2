@@ -111,8 +111,7 @@ final class IntegrationDeploymentReadinessTest extends PostgresTestCase
         $this->assertSame('%PDF-1.4 synthetic', $document->body());
         $this->assertSame('synthetic-image', $media->body());
         Http::assertSentCount(2);
-        Http::assertSent(fn ($request): bool =>
-            $request->hasHeader('apikey')
+        Http::assertSent(fn ($request): bool => $request->hasHeader('apikey')
             && $request->header('apikey')[0] === 'sb_secret_DISPOSABLE_ONLY'
             && ! $request->hasHeader('Authorization')
             && ! str_contains($request->url(), 'sb_secret_')
