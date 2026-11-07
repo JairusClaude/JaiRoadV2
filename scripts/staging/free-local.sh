@@ -42,7 +42,12 @@ init_secrets() {
   tmp="$(mktemp "$ROOT/.free-staging/.secrets.XXXXXXXX")"
   printf 'JAIROADS_FREE_DB_PASSWORD=%s\n' "$(openssl rand -hex 24)" > "$tmp"
   printf 'JAIROADS_FREE_RUNTIME_PASSWORD=%s\n' "$(openssl rand -hex 24)" >> "$tmp"
-  printf 'JAIROADS_FREE_APP_KEY=base64:%s\n' "$(openssl rand -base64 -A 32)" >> "$tmp"
+  local app_key_b64
+  app_key_b64="$(openssl rand -base64 32 | tr -d '\\n')" ||
+    refuse 'Could not generate a valid random Laravel application key'
+  [[ "${#app_key_b64}" == "44" ]] ||
+    refuse 'Expected 32 bytes of secure key material encoded as base64'
+  printf 'JAIROADS_FREE_APP_KEY=base64:%s\n' "$app_key_b64" >> "$tmp"
   chmod 600 "$tmp"
   mv -n "$tmp" "$SECRETS"
   if [[ -f "$tmp" ]]; then rm -f "$tmp"; fi
