@@ -33,6 +33,7 @@ The current schema state is incompatible with automatically deploying the strict
 - `docs/release/release-manifest-template.json`, `release-inventory-template.json`, and `docs/qa/uat-evidence-template.json` deliberately contain no approvals. They **MUST fail closed** in CI.
 - `tests/Release/test_release_readiness.py` uses fictional in-memory evidence only to check decision branches; no reviewer or fake approval is checked in as a real signature. CI and branch test code never handle official Supabase credentials.
 - `tests/Staging/rehearse-backup-restore.sh` on Task 12 tests a full custom-format `pg_dump` + `pg_restore` with synthetic records, RLS, immutable history and grants on PostgreSQL 17. That does **not** constitute an authorized production backup or point-in-time restore.
+- `tests/Release/readonly-http-cutover-smoke.py` checks a **localhost-only** Laravel health route, real Fortify login page, and five protected guest JSON endpoints for expected 401 under the restricted staging runtime role. It is invoked by the disposable application-smoke job. It **cannot** execute against official Supabase or count as a real postdeployment smoke.
 
 To inspect structural prerequisites in a **private operator workspace**, not CI:
 
