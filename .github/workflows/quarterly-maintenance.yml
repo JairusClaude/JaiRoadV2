@@ -2,7 +2,7 @@ name: JaiROADS focused regressions
 
 on:
   push:
-    branches: ['QuarterlyFeature_Update', 'EngineerProjectAssignment_Update', 'PositionCleanup_Update', 'Quarterly/Role/Assignment_Update', 'feature/premerge-policy-alignment', 'integration/dd-system-completion', 'Oct10_Front&BackEnd_Merge_Integration', 'fix/security-auth-revocation-passkey-dependencies', 'fix/canonical-only-provisioned-auth', 'fix/audit-multirecipient-consistency', 'fix/ordinary-mutation-authorization-races', 'integration/combined-review-candidate-2026-11-07', 'fix/full-system-role-acceptance', 'fix/uat-defect-and-recovery-gates']
+    branches: ['QuarterlyFeature_Update', 'EngineerProjectAssignment_Update', 'PositionCleanup_Update', 'Quarterly/Role/Assignment_Update', 'feature/premerge-policy-alignment', 'integration/dd-system-completion', 'Oct10_Front&BackEnd_Merge_Integration', 'fix/security-auth-revocation-passkey-dependencies', 'fix/canonical-only-provisioned-auth', 'fix/audit-multirecipient-consistency', 'fix/ordinary-mutation-authorization-races', 'integration/combined-review-candidate-2026-11-07', 'fix/full-system-role-acceptance', 'fix/uat-defect-and-recovery-gates', 'fix/controlled-release-readiness']
 
 permissions:
   contents: read
