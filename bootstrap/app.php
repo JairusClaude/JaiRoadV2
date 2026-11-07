@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Middleware\DenyLegacyBusinessRoutesForDd;
+use App\Http\Middleware\GuardLegacyRoutesForCanonicalAccounts;
 use App\Http\Middleware\EnforceCanonicalSession;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -32,7 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
             EnforceCanonicalSession::class,
             AuthenticateSession::class,
             HandleInertiaRequests::class,
-            DenyLegacyBusinessRoutesForDd::class,
+            GuardLegacyRoutesForCanonicalAccounts::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
     })
