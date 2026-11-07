@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Quarterly;
 
-use App\Services\DataDictionary\TwiceYearlyMaintenance;
+use App\Services\TwiceYearlyMaintenance;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
 use PHPUnit\Framework\Attributes\DataProvider;

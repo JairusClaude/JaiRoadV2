@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Quarterly;
 
 use App\Models\User;
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
+use App\Services\AccountIdentityResolver;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -152,6 +152,6 @@ final class IntegrationCompatibilityTest extends PostgresTestCase
         $canonical = DB::table('jairoads_next.user_accounts')->where('id', $user->dd_user_account_id)->first();
         $this->assertTrue(Hash::check($password, $user->password));
         $this->assertTrue(hash_equals($canonical->password, $user->password));
-        $this->assertSame((int) $user->dd_user_account_id, app(DataDictionaryIdentityResolver::class)->resolve($user)['account_id']);
+        $this->assertSame((int) $user->dd_user_account_id, app(AccountIdentityResolver::class)->resolve($user)['account_id']);
     }
 }

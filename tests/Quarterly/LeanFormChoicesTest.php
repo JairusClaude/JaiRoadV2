@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
-use App\Services\DataDictionary\ManagingEngineerEligibility;
+use App\Services\AccountIdentityResolver;
+use App\Services\ManagingEngineerEligibility;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\Quarterly\PostgresTestCase;
@@ -51,7 +51,7 @@ it('batches manager choices with exactly the same eligibility as individual LGU 
     $f = $this->fixture($role, $role === 'Admin');
     $otherRoad = $this->road($f['engineer']);
     $lgus = DB::table('jairoads_next.road_coverages')->whereIn('id', [$f['road'], $otherRoad])->pluck('lgu_id')->map(fn ($id): int => (int) $id)->all();
-    $actor = app(DataDictionaryIdentityResolver::class)->resolve($f['user']);
+    $actor = app(AccountIdentityResolver::class)->resolve($f['user']);
     $service = app(ManagingEngineerEligibility::class);
     $batch = $service->choicesForLgus($actor, $lgus)->get()->groupBy('lgu_id');
     foreach ($lgus as $lgu) {
