@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Models\User;
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
+use App\Services\AccountIdentityResolver;
 use Illuminate\Auth\Middleware\Authenticate;
 
 /** Fortify credential management must not retain revoked canonical authority. */
@@ -18,7 +18,7 @@ final class AuthenticateEligibleAccount extends Authenticate
         $user = $request->user();
         // A revoked user must still be able to invalidate their real session.
         if (! $request->routeIs('logout')) {
-            abort_unless($user instanceof User && app(DataDictionaryIdentityResolver::class)->resolve($user) !== null, 403);
+            abort_unless($user instanceof User && app(AccountIdentityResolver::class)->resolve($user) !== null, 403);
         }
     }
 }

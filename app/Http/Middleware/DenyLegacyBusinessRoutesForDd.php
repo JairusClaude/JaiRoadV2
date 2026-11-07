@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Models\User;
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
+use App\Services\AccountIdentityResolver;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -36,7 +36,7 @@ final class DenyLegacyBusinessRoutesForDd
             ];
             $section = $directories[$request->path()] ?? null;
             if (($request->isMethod('GET') || $request->isMethod('HEAD')) && $section !== null) {
-                $identity = app(DataDictionaryIdentityResolver::class)->resolve($user);
+                $identity = app(AccountIdentityResolver::class)->resolve($user);
                 abort_unless($identity !== null, 403, 'Your account is unavailable. Please contact your administrator.');
 
                 return redirect()->route('jairoads.dd-phase3.show', ['section' => $section]);
