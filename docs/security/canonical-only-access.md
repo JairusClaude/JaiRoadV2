@@ -42,6 +42,9 @@ writers/notification policy remain unchanged.
 
 ## Schema-owner dependency: do not deploy before review
 
+For the live PostgreSQL 17.6 review, explicit policy change record, restricted-role grant template, and schema-owner rehearsal gates, see [the Data Dictionary amendment request](../governance/dd-policy-alignment-review-2026-11-07.md) and [the schema-owner activation runbook](schema-owner-activation-runbook.md). These are proposals, **not** an owner-approved live migration.
+
+
 `database/proposals/canonical_account_provisioning.sql` is a **review proposal**,
 not an applied migration. No teammate migration/model was changed. Tests load this
 proposal only after the empty local PostgreSQL 17 guard. The shared development
