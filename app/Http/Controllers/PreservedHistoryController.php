@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers\DataDictionary;
+namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
-use App\Services\DataDictionary\DdRoleAccess;
-use App\Services\DataDictionary\PreservedProjectDeletion;
+use App\Services\AccountIdentityResolver;
+use App\Services\RoleAccess;
+use App\Services\PreservedProjectDeletion;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -17,16 +17,16 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
-final class DdPreservedHistoryController extends Controller
+final class PreservedHistoryController extends Controller
 {
-    public function __construct(private DataDictionaryIdentityResolver $identities, private PreservedProjectDeletion $deletions) {}
+    public function __construct(private AccountIdentityResolver $identities, private PreservedProjectDeletion $deletions) {}
 
     private function login(Request $request): User
     {
         $login = $request->user();
         abort_unless($login instanceof User, 403);
         $actor = $this->identities->resolve($login);
-        abort_unless($actor !== null && DdRoleAccess::managesBusinessData($actor['role']), 403);
+        abort_unless($actor !== null && RoleAccess::managesBusinessData($actor['role']), 403);
 
         return $login;
     }

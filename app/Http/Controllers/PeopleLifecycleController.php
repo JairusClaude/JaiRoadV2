@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers\DataDictionary;
+namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
-use App\Services\DataDictionary\DdOperationAudit;
-use App\Services\DataDictionary\DdRoleAccess;
+use App\Services\AccountIdentityResolver;
+use App\Services\OperationAudit;
+use App\Services\RoleAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,21 +17,21 @@ use Illuminate\Validation\ValidationException;
 use stdClass;
 
 /** Canonical lifecycle operations; retained rows and the current transactional audit writer. */
-final class DdPeopleLifecycleController extends Controller
+final class PeopleLifecycleController extends Controller
 {
     /** @return array{account_id:int,role:string,engineer_id:?int} */
-    private function admin(Request $request, DataDictionaryIdentityResolver $resolver): array
+    private function admin(Request $request, AccountIdentityResolver $resolver): array
     {
         $login = $request->user();
         abort_unless($login instanceof User, 403);
         $actor = $resolver->resolve($login);
-        abort_unless($actor !== null && DdRoleAccess::canManageAccounts($actor['role']), 403);
+        abort_unless($actor !== null && RoleAccess::canManageAccounts($actor['role']), 403);
 
         return $actor;
     }
 
     /** @param array{account_id:int,role:string,engineer_id:?int} $actor */
-    private function currentActor(array $actor, Request $request, DataDictionaryIdentityResolver $resolver): void
+    private function currentActor(array $actor, Request $request, AccountIdentityResolver $resolver): void
     {
         DB::select('SELECT pg_advisory_xact_lock(1927710916)');
         abort_unless($this->admin($request, $resolver) === $actor, 403);
@@ -56,10 +56,10 @@ final class DdPeopleLifecycleController extends Controller
      */
     private function audit(array $actor, string $entity, int $id, string $description, array $old, array $new): void
     {
-        app(DdOperationAudit::class)->record($actor, 'UPDATE', $entity, $id, $description, $new, $old);
+        app(OperationAudit::class)->record($actor, 'UPDATE', $entity, $id, $description, $new, $old);
     }
 
-    public function updateEngineer(Request $request, DataDictionaryIdentityResolver $resolver, int $id): RedirectResponse
+    public function updateEngineer(Request $request, AccountIdentityResolver $resolver, int $id): RedirectResponse
     {
         $actor = $this->admin($request, $resolver);
         $data = $request->validate([
@@ -88,7 +88,7 @@ final class DdPeopleLifecycleController extends Controller
         return back()->with('dd_phase3_status', 'Engineer profile saved.');
     }
 
-    public function retireEngineer(Request $request, DataDictionaryIdentityResolver $resolver, int $id): RedirectResponse
+    public function retireEngineer(Request $request, AccountIdentityResolver $resolver, int $id): RedirectResponse
     {
         $actor = $this->admin($request, $resolver);
         DB::transaction(function () use ($request, $resolver, $actor, $id): void {
@@ -132,13 +132,13 @@ final class DdPeopleLifecycleController extends Controller
         }
         $candidates = User::whereIn('dd_user_account_id', DB::table('jairoads_next.user_accounts')
             ->where('account_type', 'SuperAdmin')->where('is_active', true)->where('id', '!=', $account->id)->select('id'))->get();
-        $resolver = app(DataDictionaryIdentityResolver::class);
+        $resolver = app(AccountIdentityResolver::class);
         if (! $candidates->contains(fn (User $login): bool => $resolver->resolve($login) !== null)) {
             throw ValidationException::withMessages(['is_active' => 'Keep at least one eligible active SuperAdmin account.']);
         }
     }
 
-    public function accountDetails(Request $request, DataDictionaryIdentityResolver $resolver, int $id): JsonResponse
+    public function accountDetails(Request $request, AccountIdentityResolver $resolver, int $id): JsonResponse
     {
         $this->admin($request, $resolver);
         $account = DB::table('jairoads_next.user_accounts')->where('id', $id)
@@ -150,7 +150,7 @@ final class DdPeopleLifecycleController extends Controller
         return response()->json(['account' => $account, 'engineer' => $engineer])->header('Cache-Control', 'private, no-store');
     }
 
-    public function accountStatus(Request $request, DataDictionaryIdentityResolver $resolver, int $id): RedirectResponse
+    public function accountStatus(Request $request, AccountIdentityResolver $resolver, int $id): RedirectResponse
     {
         $actor = $this->admin($request, $resolver);
         $data = $request->validate(['is_active' => ['required', 'boolean'],
@@ -171,7 +171,7 @@ final class DdPeopleLifecycleController extends Controller
             if (! $active) {
                 $this->protectLastSuperAdmin($account);
             } else {
-                $valid = DataDictionaryIdentityResolver::roleLinkValid($account->account_type, $account->engineer_id)
+                $valid = AccountIdentityResolver::roleLinkValid($account->account_type, $account->engineer_id)
                     && ! ($account->account_type === 'Engineer' && $account->engineer_id === null)
                     && $logins->count() === 1;
                 $login = $logins->first();

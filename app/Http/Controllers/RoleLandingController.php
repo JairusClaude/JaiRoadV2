@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers\DataDictionary;
+namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
-use App\Services\DataDictionary\DdActivityNotifications;
-use App\Services\DataDictionary\DdDashboardAnalytics;
+use App\Services\AccountIdentityResolver;
+use App\Services\ActivityNotifications;
+use App\Services\DashboardAnalytics;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -18,9 +18,9 @@ use Inertia\Response;
  * Original JaiROADS Engineer/Viewer dashboard design, backed exclusively by
  * the 11 approved jairoads_next business entities.  No public business reads.
  */
-final class DdRoleDashboardController extends Controller
+final class RoleLandingController extends Controller
 {
-    public function show(Request $request, DataDictionaryIdentityResolver $resolver): Response
+    public function show(Request $request, AccountIdentityResolver $resolver): Response
     {
         $user = $request->user();
         abort_unless($user instanceof User && $user->getAttribute('dd_user_account_id') !== null, 403);
@@ -93,7 +93,7 @@ final class DdRoleDashboardController extends Controller
                 ])->all();
         }
 
-        $notifications = array_map(static fn (array $n): array => ['id' => $n['id'], 'message' => $n['notification_message'], 'createdAt' => $n['created_at']], app(DdActivityNotifications::class)->feed($actor['account_id'], 8));
+        $notifications = array_map(static fn (array $n): array => ['id' => $n['id'], 'message' => $n['notification_message'], 'createdAt' => $n['created_at']], app(ActivityNotifications::class)->feed($actor['account_id'], 8));
 
         $username = DB::table('jairoads_next.user_accounts')
             ->where('id', $actor['account_id'])->value('username');
@@ -106,7 +106,7 @@ final class DdRoleDashboardController extends Controller
             'assignedLgus' => $assigned,
             'limitedAccess' => $actor['role'] === 'Engineer' && $assigned === [],
             'stats' => $stats,
-            'analytics' => app(DdDashboardAnalytics::class)->summary($actor),
+            'analytics' => app(DashboardAnalytics::class)->summary($actor),
             'records' => $records,
             'notifications' => $notifications,
         ]);

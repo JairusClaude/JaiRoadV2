@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Models\DataDictionary\StagingUserAccount;
+use App\Models\StagingUserAccount;
 use App\Models\User;
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
-use App\Services\DataDictionary\DdDashboardAnalytics;
+use App\Services\AccountIdentityResolver;
+use App\Services\DashboardAnalytics;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -19,9 +19,9 @@ use Inertia\Response;
  * backed ONLY by the approved 11 jairoads_next entities.
  * No legacy business CRUD or account mutations are authorized by this endpoint.
  */
-final class DdSuperAdminLandingController extends Controller
+final class SuperAdminLandingController extends Controller
 {
-    public function __invoke(Request $request, DataDictionaryIdentityResolver $identities): Response
+    public function __invoke(Request $request, AccountIdentityResolver $identities): Response
     {
         $login = $request->user();
         abort_unless($login instanceof User, 403);
@@ -95,7 +95,7 @@ final class DdSuperAdminLandingController extends Controller
         return Inertia::render('dd-superadmin-command-center/Index', [
             'username' => (string) $account->username,
             'counts' => $counts,
-            'analytics' => app(DdDashboardAnalytics::class)->summary($identity),
+            'analytics' => app(DashboardAnalytics::class)->summary($identity),
             'privilegedAccounts' => $privilegedAccounts,
             'recentEvents' => $recentEvents,
             // Do not advertise unaudited / unmigrated operations as enabled.

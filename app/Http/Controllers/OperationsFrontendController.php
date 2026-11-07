@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers\DataDictionary;
+namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
-use App\Services\DataDictionary\DdRoleAccess;
-use App\Services\DataDictionary\DuplicateMaintenancePeriod;
-use App\Services\DataDictionary\ManagingEngineerEligibility;
-use App\Services\DataDictionary\PreservedProjectDeletion;
-use App\Services\DataDictionary\RoadReferenceBounds;
+use App\Services\AccountIdentityResolver;
+use App\Services\RoleAccess;
+use App\Services\DuplicateMaintenancePeriod;
+use App\Services\ManagingEngineerEligibility;
+use App\Services\PreservedProjectDeletion;
+use App\Services\RoadReferenceBounds;
 use App\Services\Documents\PrivateSupabaseStorage;
 use App\Services\Files\PermanentFileDeletion;
 use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
@@ -32,7 +32,7 @@ use Inertia\Response;
  *
  * @phpstan-type Actor array{account_id:int,role:string,engineer_id:?int}
  */
-final class DdFrontendController extends Controller
+final class OperationsFrontendController extends Controller
 {
     private const BASE = '/dd-phase3/ui';
 
@@ -40,8 +40,8 @@ final class DdFrontendController extends Controller
     private array $writeAccess = [];
 
     public function __construct(
-        private DataDictionaryIdentityResolver $identities,
-        private DdOperationsController $operations,
+        private AccountIdentityResolver $identities,
+        private OperationsController $operations,
         private ManagingEngineerEligibility $eligibility,
         private PrivateSupabaseStorage $documents,
         private PrivateMonthlyMediaStorage $media,
@@ -73,7 +73,7 @@ final class DdFrontendController extends Controller
     /** @param Actor $actor */
     private function writable(array $actor): bool
     {
-        return $this->writeAccess[$actor['account_id']] ??= DdRoleAccess::managesBusinessData($actor['role'])
+        return $this->writeAccess[$actor['account_id']] ??= RoleAccess::managesBusinessData($actor['role'])
             || ($actor['role'] === 'Engineer' && $actor['engineer_id'] !== null
                 && DB::table('jairoads_next.engineer_lgus')->where('engineer_id', $actor['engineer_id'])->where('is_active', true)->exists());
     }
@@ -181,7 +181,7 @@ final class DdFrontendController extends Controller
         return $this->render('RoadCoverages/'.($id === null ? 'Create' : 'Edit'), $request, [
             'coverage' => $road === null ? null : $this->roadData($road),
             'municipalities' => $this->municipalities($actor), 'roadCreatorChoices' => $creators,
-            'requiresCreator' => $id === null && DdRoleAccess::managesBusinessData($actor['role']),
+            'requiresCreator' => $id === null && RoleAccess::managesBusinessData($actor['role']),
             'referenceCoverages' => [], 'referenceUrl' => self::BASE.'/map/roads',
             'mapServices' => ['routing' => config('jairoads_maps.routing'), 'geocoding' => config('jairoads_maps.geocoding')],
             'canEdit' => true, 'cancelUrl' => self::BASE.'/road-coverages'.($id === null ? '' : '/'.$id),
@@ -245,7 +245,7 @@ final class DdFrontendController extends Controller
         return ['id' => (int) $p->id, 'project_title' => $p->project_title, 'description' => $p->description,
             'road_coverage_id' => (int) $p->road_coverage_id, 'road_name' => $p->road_name, 'municipality' => $p->municipality_name,
             'created_by' => $p->creator_name, 'created_at' => $p->created_at, 'updated_at' => $p->updated_at,
-            'maintenance_records_count' => (int) $p->record_count, 'can_edit' => $this->writable($actor), 'can_delete' => DdRoleAccess::managesBusinessData($actor['role']) && app(PreservedProjectDeletion::class)->available(),
+            'maintenance_records_count' => (int) $p->record_count, 'can_edit' => $this->writable($actor), 'can_delete' => RoleAccess::managesBusinessData($actor['role']) && app(PreservedProjectDeletion::class)->available(),
             ...(isset($p->geojson) ? ['geojson' => json_decode($p->geojson, true, 512, JSON_THROW_ON_ERROR)] : [])];
     }
 
@@ -454,9 +454,9 @@ final class DdFrontendController extends Controller
             'documents' => $this->documentQuery($actor)->where('d.maintenance_id', $id)->orderByDesc('d.id')->get()->map(fn (\stdClass $d): array => $this->documentData($d, $actor)),
             'updates' => $this->updateQuery($actor)->where('u.maintenance_id', $id)->orderByDesc('u.update_month')->get()->map(fn (\stdClass $u): array => $this->updateData($u, $actor)),
             'canWrite' => $this->canWriteRecord($r, $actor),
-            'canReassign' => DdRoleAccess::managesBusinessData($actor['role']),
-            'canUnassign' => DdRoleAccess::managesBusinessData($actor['role']) && app(PreservedProjectDeletion::class)->available(),
-            'managerChoices' => DdRoleAccess::managesBusinessData($actor['role']) ? $this->eligibility->choices($actor, (int) $r->lgu_id)->get() : [],
+            'canReassign' => RoleAccess::managesBusinessData($actor['role']),
+            'canUnassign' => RoleAccess::managesBusinessData($actor['role']) && app(PreservedProjectDeletion::class)->available(),
+            'managerChoices' => RoleAccess::managesBusinessData($actor['role']) ? $this->eligibility->choices($actor, (int) $r->lgu_id)->get() : [],
         ]);
     }
 
@@ -482,7 +482,7 @@ final class DdFrontendController extends Controller
             'projects' => $this->projectChoices($actor)->orderBy('p.project_title')->get()->map(fn (\stdClass $p): array => $this->projectChoiceData($p)),
             'municipalities' => $this->municipalities($actor)->map(fn (\stdClass $l): array => ['value' => (string) $l->id, 'label' => $l->municipality_name]),
             'years' => $this->records($actor)->reorder()->distinct()->orderByDesc('m.maintenance_year')->pluck('m.maintenance_year'),
-            'historyUrl' => DdRoleAccess::managesBusinessData($actor['role']) && app(PreservedProjectDeletion::class)->available() ? '/dd-phase3/history/records' : null,
+            'historyUrl' => RoleAccess::managesBusinessData($actor['role']) && app(PreservedProjectDeletion::class)->available() ? '/dd-phase3/history/records' : null,
             'filters' => $filters, 'canCreate' => $this->writable($actor), 'integration' => ['ready' => true, 'message' => null],
         ]);
     }
@@ -627,7 +627,7 @@ final class DdFrontendController extends Controller
             ->get(['id', 'file_name', 'file_type'])->map(fn (\stdClass $m): array => [
                 'id' => (int) $m->id, 'file_name' => (string) $m->file_name, 'mime_type' => (string) $m->file_type, 'size' => null,
                 'available' => $this->media->configured(), 'preview_url' => $this->media->configured() ? '/dd-phase3/files/media/'.$m->id : null,
-                'delete_url' => DdRoleAccess::managesBusinessData($actor['role']) && $this->fileDeletions->available() ? '/dd-phase3/files/media/'.$m->id : null,
+                'delete_url' => RoleAccess::managesBusinessData($actor['role']) && $this->fileDeletions->available() ? '/dd-phase3/files/media/'.$m->id : null,
                 'parent_label' => 'MonthlyUpdate #'.$update,
             ])->all();
     }
@@ -678,7 +678,7 @@ final class DdFrontendController extends Controller
         return ['id' => (int) $d->id, 'maintenance_id' => (int) $d->maintenance_id, 'document_title' => $d->document_title,
             'description' => $d->description, 'file_name' => $d->file_name, 'uploaded_by' => $d->uploader_name,
             'uploaded_at' => $d->uploaded_at, 'updated_at' => $d->updated_at, 'available' => $this->documents->configured(),
-            'delete_url' => DdRoleAccess::managesBusinessData($actor['role']) && $this->fileDeletions->available() ? '/dd-phase3/files/document/'.$d->id : null,
+            'delete_url' => RoleAccess::managesBusinessData($actor['role']) && $this->fileDeletions->available() ? '/dd-phase3/files/document/'.$d->id : null,
             'download_url' => '/dd-phase3/files/document/'.$d->id, 'can_edit' => $this->canWriteRecord($d, $actor),
             'project' => ['id' => (int) $d->project_id, 'project_title' => $d->project_title, 'municipality' => $d->municipality_name],
             'record' => ['id' => (int) $d->maintenance_id, 'project_id' => (int) $d->project_id, 'year' => (int) $d->maintenance_year, 'quarter' => $d->quarter]];
@@ -745,7 +745,7 @@ final class DdFrontendController extends Controller
     public function reassign(Request $request, int $project, int $id): RedirectResponse
     {
         $actor = $this->actor($request);
-        abort_unless(DdRoleAccess::managesBusinessData($actor['role']), 403);
+        abort_unless(RoleAccess::managesBusinessData($actor['role']), 403);
         abort_unless($this->records($actor)->where('m.project_id', $project)->where('m.id', $id)->exists(), 404);
         $this->operations->reassignRecord($request, $this->identities, $id);
 

@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers\DataDictionary;
+namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
-use App\Services\DataDictionary\DdAuditValues;
-use App\Services\DataDictionary\DdOperationAudit;
-use App\Services\DataDictionary\DdRoleAccess;
-use App\Services\DataDictionary\DuplicateMaintenancePeriod;
-use App\Services\DataDictionary\LinkedPasswordUpdater;
-use App\Services\DataDictionary\ManagingEngineerEligibility;
-use App\Services\DataDictionary\PreservedProjectDeletion;
-use App\Services\DataDictionary\RecordMutationAuthority;
-use App\Services\DataDictionary\RoadCoverageGeometry;
-use App\Services\DataDictionary\RoadMunicipalityChange;
-use App\Services\DataDictionary\TwiceYearlyMaintenance;
+use App\Services\AccountIdentityResolver;
+use App\Services\AuditValues;
+use App\Services\OperationAudit;
+use App\Services\RoleAccess;
+use App\Services\DuplicateMaintenancePeriod;
+use App\Services\LinkedPasswordUpdater;
+use App\Services\ManagingEngineerEligibility;
+use App\Services\PreservedProjectDeletion;
+use App\Services\RecordMutationAuthority;
+use App\Services\RoadCoverageGeometry;
+use App\Services\RoadMunicipalityChange;
+use App\Services\TwiceYearlyMaintenance;
 use App\Services\Documents\PrivateSupabaseStorage;
 use App\Services\Files\PermanentFileDeletion;
 use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
@@ -40,12 +40,12 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
  * Final DD module endpoints. public.users is authentication infrastructure only.
  * All business SQL is explicitly jairoads_next qualified and audited.
  */
-final class DdOperationsController extends Controller
+final class OperationsController extends Controller
 {
     private const SECTIONS = ['settings', 'roads', 'projects', 'updates', 'documents'];
 
     /** @return array{account_id:int, role:string, engineer_id:?int} */
-    private function actor(Request $request, DataDictionaryIdentityResolver $resolver): array
+    private function actor(Request $request, AccountIdentityResolver $resolver): array
     {
         $user = $request->user();
         abort_unless($user instanceof User && $user->getAttribute('dd_user_account_id') !== null, 403);
@@ -60,7 +60,7 @@ final class DdOperationsController extends Controller
      */
     private function managers(array $actor): bool
     {
-        return DdRoleAccess::managesBusinessData($actor['role']);
+        return RoleAccess::managesBusinessData($actor['role']);
     }
 
     /**
@@ -68,7 +68,7 @@ final class DdOperationsController extends Controller
      */
     private function writer(array $actor): void
     {
-        abort_unless(DdRoleAccess::canWriteOperations($actor['role']), 403, 'This role cannot change operational records.');
+        abort_unless(RoleAccess::canWriteOperations($actor['role']), 403, 'This role cannot change operational records.');
     }
 
     private function t(string $table): Builder
@@ -145,13 +145,13 @@ final class DdOperationsController extends Controller
      */
     private function audit(array $actor, string $action, string $entity, ?int $id, string $description, array $meta = [], array $oldMeta = []): void
     {
-        app(DdOperationAudit::class)->record($actor, $action, $entity, $id, $description, $meta, $oldMeta);
+        app(OperationAudit::class)->record($actor, $action, $entity, $id, $description, $meta, $oldMeta);
     }
 
     /** @param array<string,mixed> $data */
     private function changed(string $entity, \stdClass $row, array $data): bool
     {
-        return app(DdAuditValues::class)->changes($entity, (array) $row, array_replace((array) $row, $data)) !== [[], []];
+        return app(AuditValues::class)->changes($entity, (array) $row, array_replace((array) $row, $data)) !== [[], []];
     }
 
     private function done(string $section, string $message): RedirectResponse
@@ -159,7 +159,7 @@ final class DdOperationsController extends Controller
         return redirect()->route('jairoads.dd-phase3.show', ['section' => $section])->with('dd_operations_status', $message);
     }
 
-    public function show(string $section, Request $request, DataDictionaryIdentityResolver $resolver): Response
+    public function show(string $section, Request $request, AccountIdentityResolver $resolver): Response
     {
         abort_unless(in_array($section, self::SECTIONS, true), 404);
         $actor = $this->actor($request, $resolver);
@@ -228,7 +228,7 @@ final class DdOperationsController extends Controller
                     'mr.start_date', 'mr.estimated_duration_days', 'mr.complete_date', 'mr.status', 'mr.description',
                     'e.first_name as manager_first_name', 'e.last_name as manager_last_name']);
             $maintenanceSchedule = app(TwiceYearlyMaintenance::class)->summarize($maintenanceHistory);
-            if (DdRoleAccess::canWriteOperations($actor['role'])) {
+            if (RoleAccess::canWriteOperations($actor['role'])) {
                 $managerChoices = app(ManagingEngineerEligibility::class)->choices($actor, $projectLgu)->get();
             }
         }
@@ -240,7 +240,7 @@ final class DdOperationsController extends Controller
             'maintenanceHistory' => $maintenanceHistory, 'maintenanceSchedule' => $maintenanceSchedule,
             'section' => $section, 'role' => $actor['role'], 'canManage' => $this->managers($actor),
             'engineerId' => $actor['engineer_id'], 'hasAssignment' => count($activeLgus) > 0,
-            'capabilities' => DdRoleAccess::capabilities($actor['role'], count($activeLgus) > 0, $actor['engineer_id'] !== null),
+            'capabilities' => RoleAccess::capabilities($actor['role'], count($activeLgus) > 0, $actor['engineer_id'] !== null),
             'identity' => ['username' => (string) $account->username, 'email' => (string) $account->email, 'role' => $actor['role']],
             'lgus' => $this->t('lgus')->when($restricted, fn ($q) => $q->whereIn('id', $activeLgus))->orderBy('id')->limit(300)->get(['id', 'municipality_name']),
             'engineers' => $this->t('engineers')->where('engineer_status', 'Active')->when($restricted, fn ($q) => $q->where('id', $actor['engineer_id']))->orderBy('id')->limit(300)->get(['id', 'first_name', 'last_name']),
@@ -268,7 +268,7 @@ final class DdOperationsController extends Controller
         ]);
     }
 
-    public function saveRoad(Request $request, DataDictionaryIdentityResolver $resolver, ?int $id = null): RedirectResponse
+    public function saveRoad(Request $request, AccountIdentityResolver $resolver, ?int $id = null): RedirectResponse
     {
         $actor = $this->actor($request, $resolver);
         $this->writer($actor);
@@ -375,7 +375,7 @@ final class DdOperationsController extends Controller
                 // Compare actual persisted values under the lock; never trust an
                 // 'unchanged' flag. Omitted or identical geometry is not rewritten.
                 if (array_key_exists('geojson', $data) && (json_decode($row->geojson, true) === $geometry
-                    || app(DdAuditValues::class)->geometryDigest($row->geojson) === app(DdAuditValues::class)->geometryDigest($data['geojson']))) {
+                    || app(AuditValues::class)->geometryDigest($row->geojson) === app(AuditValues::class)->geometryDigest($data['geojson']))) {
                     unset($data['geojson']);
                 }
                 if (! $this->changed('RoadCoverage', $row, $data)) {
@@ -383,14 +383,14 @@ final class DdOperationsController extends Controller
                 }
                 $this->t('road_coverages')->where('id', $id)->update($data);
                 $this->audit($actor, 'UPDATE', 'RoadCoverage', $id, 'Authorized RoadCoverage updated.',
-                    app(DdAuditValues::class)->persisted('RoadCoverage', $id) + (empty($v['correction_reason']) ? [] : ['correction_reason' => $v['correction_reason']]), (array) $row);
+                    app(AuditValues::class)->persisted('RoadCoverage', $id) + (empty($v['correction_reason']) ? [] : ['correction_reason' => $v['correction_reason']]), (array) $row);
             }
         });
 
         return $this->done('roads', 'Road coverage saved.');
     }
 
-    public function previewRoadMunicipality(Request $request, DataDictionaryIdentityResolver $resolver, RoadMunicipalityChange $changes, int $id): JsonResponse
+    public function previewRoadMunicipality(Request $request, AccountIdentityResolver $resolver, RoadMunicipalityChange $changes, int $id): JsonResponse
     {
         $this->writer($this->actor($request, $resolver));
         $data = $request->validate(['lgu_id' => ['required', 'integer', 'min:1']]);
@@ -401,7 +401,7 @@ final class DdOperationsController extends Controller
             ->header('Cache-Control', 'no-store, private');
     }
 
-    public function confirmRoadMunicipality(Request $request, DataDictionaryIdentityResolver $resolver, RoadMunicipalityChange $changes, int $id): RedirectResponse
+    public function confirmRoadMunicipality(Request $request, AccountIdentityResolver $resolver, RoadMunicipalityChange $changes, int $id): RedirectResponse
     {
         $this->writer($this->actor($request, $resolver));
         $data = $request->validate(['confirmation_token' => ['required', 'string', 'max:20000']]);
@@ -423,7 +423,7 @@ final class DdOperationsController extends Controller
         return $this->done('roads', $message);
     }
 
-    public function saveProject(Request $request, DataDictionaryIdentityResolver $resolver, ?int $id = null): RedirectResponse
+    public function saveProject(Request $request, AccountIdentityResolver $resolver, ?int $id = null): RedirectResponse
     {
         $actor = $this->actor($request, $resolver);
         $this->writer($actor);
@@ -467,14 +467,14 @@ final class DdOperationsController extends Controller
                     return;
                 }
                 abort_unless($this->t('maintenance_projects')->where('id', $id)->update($data) === 1, 404);
-                $this->audit($actor, 'UPDATE', 'MaintenanceProject', $id, 'Authorized project updated.', app(DdAuditValues::class)->persisted('MaintenanceProject', $id), (array) $existing);
+                $this->audit($actor, 'UPDATE', 'MaintenanceProject', $id, 'Authorized project updated.', app(AuditValues::class)->persisted('MaintenanceProject', $id), (array) $existing);
             }
         });
 
         return $this->done('projects', 'Project saved.');
     }
 
-    public function saveRecord(Request $request, DataDictionaryIdentityResolver $resolver, ?int $id = null): RedirectResponse
+    public function saveRecord(Request $request, AccountIdentityResolver $resolver, ?int $id = null): RedirectResponse
     {
         $actor = $this->actor($request, $resolver);
         $this->writer($actor);
@@ -536,7 +536,7 @@ final class DdOperationsController extends Controller
                         return;
                     }
                     $this->t('maintenance_records')->where('id', $id)->update($data);
-                    $this->audit($actor, 'UPDATE', 'MaintenanceRecord', $id, 'Authorized maintenance record updated.', app(DdAuditValues::class)->persisted('MaintenanceRecord', $id), (array) $period);
+                    $this->audit($actor, 'UPDATE', 'MaintenanceRecord', $id, 'Authorized maintenance record updated.', app(AuditValues::class)->persisted('MaintenanceRecord', $id), (array) $period);
                 }
             });
         } catch (QueryException $error) {
@@ -550,7 +550,7 @@ final class DdOperationsController extends Controller
             ->with('dd_operations_status', 'Maintenance record saved.');
     }
 
-    public function reassignRecord(Request $request, DataDictionaryIdentityResolver $resolver, int $id): RedirectResponse
+    public function reassignRecord(Request $request, AccountIdentityResolver $resolver, int $id): RedirectResponse
     {
         $actor = $this->actor($request, $resolver);
         abort_unless($this->managers($actor), 403);
@@ -596,7 +596,7 @@ final class DdOperationsController extends Controller
             ->with('dd_operations_status', 'ManagingEngineer reassigned.');
     }
 
-    public function unassignRecord(Request $request, DataDictionaryIdentityResolver $resolver, int $id): RedirectResponse
+    public function unassignRecord(Request $request, AccountIdentityResolver $resolver, int $id): RedirectResponse
     {
         $actor = $this->actor($request, $resolver);
         abort_unless($this->managers($actor), 403);
@@ -630,7 +630,7 @@ final class DdOperationsController extends Controller
         return back()->with('dd_operations_status', 'ManagingEngineer is NULL (unassigned).');
     }
 
-    public function saveUpdate(Request $request, DataDictionaryIdentityResolver $resolver, ?int $id = null): RedirectResponse
+    public function saveUpdate(Request $request, AccountIdentityResolver $resolver, ?int $id = null): RedirectResponse
     {
         $actor = $this->actor($request, $resolver);
         $this->writer($actor);
@@ -679,14 +679,14 @@ final class DdOperationsController extends Controller
                     return;
                 }
                 $this->t('monthly_updates')->where('id', $id)->update($data);
-                $this->audit($actor, 'UPDATE', 'MonthlyUpdate', $id, 'Authorized monthly update revised.', app(DdAuditValues::class)->persisted('MonthlyUpdate', $id), (array) $old);
+                $this->audit($actor, 'UPDATE', 'MonthlyUpdate', $id, 'Authorized monthly update revised.', app(AuditValues::class)->persisted('MonthlyUpdate', $id), (array) $old);
             }
         });
 
         return $this->done('updates', 'Monthly update saved.');
     }
 
-    public function saveSettings(Request $request, DataDictionaryIdentityResolver $resolver, LinkedPasswordUpdater $passwords): RedirectResponse
+    public function saveSettings(Request $request, AccountIdentityResolver $resolver, LinkedPasswordUpdater $passwords): RedirectResponse
     {
         $actor = $this->actor($request, $resolver);
         // Preserve the existing manager-only Settings permission.
@@ -721,7 +721,7 @@ final class DdOperationsController extends Controller
     }
 
     /** Update approved MaintenanceDocument metadata; the private file and parent stay unchanged. */
-    public function updateDocument(Request $request, DataDictionaryIdentityResolver $resolver, int $id): RedirectResponse
+    public function updateDocument(Request $request, AccountIdentityResolver $resolver, int $id): RedirectResponse
     {
         $actor = $this->actor($request, $resolver);
         $this->writer($actor);
@@ -745,7 +745,7 @@ final class DdOperationsController extends Controller
                 return;
             }
             $this->t('maintenance_documents')->where('id', $id)->update($data);
-            $this->audit($actor, 'UPDATE', 'MaintenanceDocument', $id, 'Approved document metadata revised.', app(DdAuditValues::class)->persisted('MaintenanceDocument', $id), (array) $document);
+            $this->audit($actor, 'UPDATE', 'MaintenanceDocument', $id, 'Approved document metadata revised.', app(AuditValues::class)->persisted('MaintenanceDocument', $id), (array) $document);
         });
 
         return $this->done('documents', 'Document details updated.');
@@ -756,7 +756,7 @@ final class DdOperationsController extends Controller
      *
      * @param  array{account_id:int,role:string,engineer_id:?int}  $actor
      */
-    private function lockUploadAuthorization(Request $request, DataDictionaryIdentityResolver $resolver, array $actor, int $recordId): void
+    private function lockUploadAuthorization(Request $request, AccountIdentityResolver $resolver, array $actor, int $recordId): void
     {
         // Coordinate with lifecycle revocation, then use the reassignment lock order.
         DB::select('SELECT pg_advisory_xact_lock_shared(1927710916)');
@@ -773,7 +773,7 @@ final class DdOperationsController extends Controller
         }
     }
 
-    public function uploadDocument(Request $request, DataDictionaryIdentityResolver $resolver, PrivateSupabaseStorage $storage): RedirectResponse
+    public function uploadDocument(Request $request, AccountIdentityResolver $resolver, PrivateSupabaseStorage $storage): RedirectResponse
     {
         $actor = $this->actor($request, $resolver);
         $this->writer($actor);
@@ -810,7 +810,7 @@ final class DdOperationsController extends Controller
         return $this->done('documents', 'Document uploaded.');
     }
 
-    public function uploadMedia(Request $request, DataDictionaryIdentityResolver $resolver, PrivateMonthlyMediaStorage $storage): RedirectResponse
+    public function uploadMedia(Request $request, AccountIdentityResolver $resolver, PrivateMonthlyMediaStorage $storage): RedirectResponse
     {
         $actor = $this->actor($request, $resolver);
         $this->writer($actor);
@@ -853,7 +853,7 @@ final class DdOperationsController extends Controller
         return $this->done('updates', 'Evidence uploaded.');
     }
 
-    public function deleteEntity(Request $request, DataDictionaryIdentityResolver $resolver, string $entity, int $id): RedirectResponse
+    public function deleteEntity(Request $request, AccountIdentityResolver $resolver, string $entity, int $id): RedirectResponse
     {
         $actor = $this->actor($request, $resolver);
         abort_unless($this->managers($actor), 403, 'Only Admin/SuperAdmin may delete approved entities.');
@@ -896,7 +896,7 @@ final class DdOperationsController extends Controller
         return response()->json($deletions->review($login, $kind, $id))->header('Cache-Control', 'private, no-store');
     }
 
-    public function deleteFile(Request $request, DataDictionaryIdentityResolver $resolver, PermanentFileDeletion $deletions, string $kind, int $id): JsonResponse
+    public function deleteFile(Request $request, AccountIdentityResolver $resolver, PermanentFileDeletion $deletions, string $kind, int $id): JsonResponse
     {
         abort_unless($this->managers($this->actor($request, $resolver)), 403);
         $request->validate(array_fill_keys(['file_path', 'file_name', 'bucket', 'storage_origin', 'role', 'lgu_id'], ['prohibited']));
@@ -911,7 +911,7 @@ final class DdOperationsController extends Controller
         return response()->json($result, $result['state'] === 'completed' ? 200 : 202)->header('Cache-Control', 'private, no-store');
     }
 
-    public function download(Request $request, DataDictionaryIdentityResolver $resolver, string $kind, int $id, PrivateSupabaseStorage $documents, PrivateMonthlyMediaStorage $media): HttpResponse
+    public function download(Request $request, AccountIdentityResolver $resolver, string $kind, int $id, PrivateSupabaseStorage $documents, PrivateMonthlyMediaStorage $media): HttpResponse
     {
         abort_unless(in_array($kind, ['document', 'media'], true), 404);
         $actor = $this->actor($request, $resolver);

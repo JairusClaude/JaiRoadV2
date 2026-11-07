@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers\DataDictionary;
+namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Services\DataDictionary\AccountProvisioning;
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
-use App\Services\DataDictionary\DdAuditValues;
-use App\Services\DataDictionary\DdDashboardAnalytics;
-use App\Services\DataDictionary\DdOperationAudit;
-use App\Services\DataDictionary\DdRoleAccess;
-use App\Services\DataDictionary\PreservedProjectDeletion;
+use App\Services\AccountProvisioning;
+use App\Services\AccountIdentityResolver;
+use App\Services\AuditValues;
+use App\Services\DashboardAnalytics;
+use App\Services\OperationAudit;
+use App\Services\RoleAccess;
+use App\Services\PreservedProjectDeletion;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -30,12 +30,12 @@ use Inertia\Response;
  * Never uses legacy public business tables; public.users is Fortify infrastructure.
  * All writes use existing, approved DD entities + a system-written AuditLog.
  */
-final class DdPhase3Controller extends Controller
+final class DirectoryController extends Controller
 {
     /**
      * @return array{account_id:int,role:string,engineer_id:?int}
      */
-    private function identity(Request $request, DataDictionaryIdentityResolver $resolver): array
+    private function identity(Request $request, AccountIdentityResolver $resolver): array
     {
         $user = $request->user();
         abort_unless($user instanceof User && $user->getAttribute('dd_user_account_id') !== null, 403);
@@ -48,10 +48,10 @@ final class DdPhase3Controller extends Controller
     /**
      * @return array{account_id:int,role:string,engineer_id:?int}
      */
-    private function admin(Request $request, DataDictionaryIdentityResolver $resolver): array
+    private function admin(Request $request, AccountIdentityResolver $resolver): array
     {
         $id = $this->identity($request, $resolver);
-        abort_unless(DdRoleAccess::canManageAccounts($id['role']), 403);
+        abort_unless(RoleAccess::canManageAccounts($id['role']), 403);
 
         return $id;
     }
@@ -63,15 +63,15 @@ final class DdPhase3Controller extends Controller
      */
     private function audit(array $actor, string $action, string $entity, int $recordId, string $description, array $details, array $old = []): void
     {
-        app(DdOperationAudit::class)->record($actor, $action, $entity, $recordId, $description, $details, $old);
+        app(OperationAudit::class)->record($actor, $action, $entity, $recordId, $description, $details, $old);
     }
 
-    public function show(string $section, Request $request, DataDictionaryIdentityResolver $resolver): Response|RedirectResponse
+    public function show(string $section, Request $request, AccountIdentityResolver $resolver): Response|RedirectResponse
     {
         // The single named DD GET route dispatches to one of the two DD-only
         // controllers. Keep these sections separate from legacy public CRUD.
         if (in_array($section, ['settings', 'roads', 'projects', 'updates', 'documents'], true)) {
-            return app(DdOperationsController::class)->show($section, $request, $resolver);
+            return app(OperationsController::class)->show($section, $request, $resolver);
         }
 
         $actor = $this->identity($request, $resolver);
@@ -80,7 +80,7 @@ final class DdPhase3Controller extends Controller
             return redirect()->route('jairoads.dd-superadmin-landing');
         }
         if ($section === 'users') {
-            abort_unless(DdRoleAccess::canManageAccounts($actor['role']), 403);
+            abort_unless(RoleAccess::canManageAccounts($actor['role']), 403);
         }
         $t = static fn (string $name) => DB::table('jairoads_next.'.$name);
         $lguQuery = $t('lgus')->orderBy('id');
@@ -94,7 +94,7 @@ final class DdPhase3Controller extends Controller
             'id', 'municipality_name', 'province', 'region',
             'mayor_first_name', 'mayor_middle_name', 'mayor_last_name',
         ]);
-        $allowedManager = DdRoleAccess::canManageAccounts($actor['role']);
+        $allowedManager = RoleAccess::canManageAccounts($actor['role']);
         $accounts = $allowedManager ? $t('user_accounts')->orderBy('id')->limit(200)->get([
             'id', 'username', 'email', 'account_type', 'engineer_id', 'is_active',
         ]) : collect();
@@ -130,7 +130,7 @@ final class DdPhase3Controller extends Controller
             'identity' => ['role' => $actor['role'], 'username' => (string) $userName, 'accountId' => $actor['account_id']],
             'counts' => $counts,
             'historyUrl' => $allowedManager && app(PreservedProjectDeletion::class)->available() ? '/dd-phase3/history/records' : null,
-            'analytics' => $section === 'dashboard' ? app(DdDashboardAnalytics::class)->summary($actor) : null,
+            'analytics' => $section === 'dashboard' ? app(DashboardAnalytics::class)->summary($actor) : null,
             'lgus' => $lgus, 'accounts' => $accounts,
             'engineers' => $engineers,
             'eligibleEngineers' => $eligibleEngineers, 'assignments' => $assignments,
@@ -142,7 +142,7 @@ final class DdPhase3Controller extends Controller
         ]);
     }
 
-    public function createLgu(Request $request, DataDictionaryIdentityResolver $resolver): RedirectResponse
+    public function createLgu(Request $request, AccountIdentityResolver $resolver): RedirectResponse
     {
         $actor = $this->admin($request, $resolver);
         $v = $request->validate([
@@ -165,7 +165,7 @@ final class DdPhase3Controller extends Controller
      * Admin/SuperAdmin LGU maintenance only. Dependent RoadCoverage and
      * EngineerLGU rows are protected by the approved restrictive foreign keys.
      */
-    public function updateLgu(Request $request, DataDictionaryIdentityResolver $resolver, int $id): RedirectResponse
+    public function updateLgu(Request $request, AccountIdentityResolver $resolver, int $id): RedirectResponse
     {
         $actor = $this->admin($request, $resolver);
         $v = $request->validate([
@@ -179,17 +179,17 @@ final class DdPhase3Controller extends Controller
         DB::transaction(function () use ($actor, $id, $v): void {
             $row = DB::table('jairoads_next.lgus')->where('id', $id)->lockForUpdate()->first();
             abort_unless($row !== null, 404);
-            if (app(DdAuditValues::class)->changes('LGU', (array) $row, array_replace((array) $row, $v)) === [[], []]) {
+            if (app(AuditValues::class)->changes('LGU', (array) $row, array_replace((array) $row, $v)) === [[], []]) {
                 return;
             }
             DB::table('jairoads_next.lgus')->where('id', $id)->update($v);
-            $this->audit($actor, 'UPDATE', 'LGU', $id, 'Authorized administrator updated an LGU.', app(DdAuditValues::class)->persisted('LGU', $id), (array) $row);
+            $this->audit($actor, 'UPDATE', 'LGU', $id, 'Authorized administrator updated an LGU.', app(AuditValues::class)->persisted('LGU', $id), (array) $row);
         });
 
         return redirect()->route('jairoads.dd-phase3.show', ['section' => 'lgus'])->with('dd_phase3_status', 'Municipality updated.');
     }
 
-    public function deleteLgu(Request $request, DataDictionaryIdentityResolver $resolver, int $id): RedirectResponse
+    public function deleteLgu(Request $request, AccountIdentityResolver $resolver, int $id): RedirectResponse
     {
         $actor = $this->admin($request, $resolver);
         DB::transaction(function () use ($actor, $id): void {
@@ -211,7 +211,7 @@ final class DdPhase3Controller extends Controller
         return redirect()->route('jairoads.dd-phase3.show', ['section' => 'lgus'])->with('dd_phase3_status', 'Municipality deleted.');
     }
 
-    public function createEngineer(Request $request, DataDictionaryIdentityResolver $resolver): RedirectResponse
+    public function createEngineer(Request $request, AccountIdentityResolver $resolver): RedirectResponse
     {
         $actor = $this->admin($request, $resolver);
         // ContactNo is REQUIRED on new forms pending the DD nullability conflict;
@@ -232,7 +232,7 @@ final class DdPhase3Controller extends Controller
         return redirect()->route('jairoads.dd-phase3.show', ['section' => 'users'])->with('dd_phase3_status', 'Engineer profile created.');
     }
 
-    public function setAssignment(Request $request, DataDictionaryIdentityResolver $resolver): RedirectResponse
+    public function setAssignment(Request $request, AccountIdentityResolver $resolver): RedirectResponse
     {
         $actor = $this->admin($request, $resolver);
         $v = $request->validate(['engineer_id' => ['required', 'integer', 'min:1'], 'lgu_id' => ['required', 'integer', 'min:1'], 'is_active' => ['required', 'boolean']]);
@@ -261,7 +261,7 @@ final class DdPhase3Controller extends Controller
         return redirect()->route('jairoads.dd-phase3.show', ['section' => 'users'])->with('dd_phase3_status', 'Engineer assignment saved.');
     }
 
-    public function createAccount(Request $request, DataDictionaryIdentityResolver $resolver): RedirectResponse
+    public function createAccount(Request $request, AccountIdentityResolver $resolver): RedirectResponse
     {
         $actor = $this->admin($request, $resolver);
         $allowed = ['Admin', 'Engineer', 'Viewer'];
