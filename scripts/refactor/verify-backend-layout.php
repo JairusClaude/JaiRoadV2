@@ -117,14 +117,14 @@ foreach (['routes/operations.php', 'routes/operations-pages.php'] as $route) {
     }
 }
 
-printf("Checked %d PHP files; parsed %d successfully.\\n", $checked, $linted);
+printf("Checked %d PHP files; parsed %d successfully.\n", $checked, $linted);
 if ($errors !== []) {
     foreach ($errors as $error) {
-        fwrite(STDERR, "FAIL: {$error}\\n");
+        fwrite(STDERR, "FAIL: {$error}\n");
     }
-    fwrite(STDERR, "Refactor is NOT verified. Do not deploy.\\n");
+    fwrite(STDERR, "Refactor is NOT verified. Do not deploy.\n");
     exit(1);
 }
 
-echo "PASS: PHP syntax, PSR-4 class paths, removed namespaces and route include structure.\\n";
-echo "NOTE: This does not prove app boot, database, browser acceptance or production readiness.\\n";
+echo "PASS: PHP syntax, PSR-4 class paths, removed namespaces and route include structure.\n";
+echo "NOTE: This does not prove app boot, database, browser acceptance or production readiness.\n";
