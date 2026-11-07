@@ -24,8 +24,14 @@ This refactor removes the nested `DataDictionary` backend folders and uses ordin
 | `app/Models/DataDictionary/StagingUserAccount.php` | `app/Models/StagingUserAccount.php` |
 | `routes/dd-phase3.php` | `routes/operations.php` |
 | `routes/dd-frontend.php` | `routes/operations-pages.php` |
+| `app/Http/Middleware/DenyLegacyBusinessRoutesForDd.php` | `app/Http/Middleware/GuardLegacyRoutesForCanonicalAccounts.php` |
+| `tests/Feature/DdWorkspaceNavigationTest.php` | `tests/Feature/CanonicalWorkspaceNavigationTest.php` |
+| `tests/Unit/DdNotificationAudienceTest.php` | `tests/Unit/ActivityNotificationAudienceTest.php` |
+| `tests/Unit/DdRoleAccessTest.php` | `tests/Unit/RoleAccessTest.php` |
 
 Reference models retain the `Reference` suffix because existing `App\Models\RoadCoverage`, `App\Models\UserAccount`, etc., already exist and may be used by legacy code. The read-only protections on canonical reference models are retained. Do **not** collapse two distinct implementations into a single writable model without a separate approved data migration and authorization review.
+
+The middleware name now describes its fail-closed responsibility; `bootstrap/app.php` registers the renamed class and the corresponding feature test follows it. No redirect logic or external URLs were modified.
 
 The route *file names* have changed, but public URL paths such as `/dd-phase3/dashboard` and Laravel route names remain unchanged so users' bookmarks, browser tests and active permissions do not silently break. React page names and the `resources/js/pages/dd-phase3` folder are also **left unchanged** for this backend-only refactor; that frontend rename can be a separately tested pass.
 
@@ -54,7 +60,7 @@ bash scripts/staging/free-local.sh up
 bash scripts/staging/free-local.sh smoke
 ```
 
-The PHP verifier scans application code, routes, tests, bootstrap, database and config. It checks for old class names/namespaces, class-to-file PSR-4 correspondence, the new route includes and `php -l` success. No network/API calls, migrations or staging data mutation are performed by that verifier. **These checks must actually be run on your machine** before marking them PASS.
+The PHP verifier scans application code, routes, tests, bootstrap, database and config. It checks for old class names/namespaces, class-to-file PSR-4 correspondence, the new route includes and `php -l` success. No network/API calls, migrations or staging data mutation are performed by that verifier. **These checks must actually be run on your machine** before marking them PASS. GitHub connector inspection verified the moved file names, updated namespace declarations, and affected references, but did not execute the Laravel application or its test suite.
 
 After starting the rebuilt local app, manually recheck Admin, Engineer, Viewer, SuperAdmin login/dashboard and your routes for roads, projects, audit history, private files (using permitted local mocks only) and permissions. A browser login performed against an older image does **not** validate this refactor.
 
