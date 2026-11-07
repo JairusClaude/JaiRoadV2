@@ -1,7 +1,7 @@
 name: JaiROADS full system verification
 on:
   push:
-    branches: ['integration/dd-system-completion', 'Oct10_Front&BackEnd_Merge_Integration', 'fix/security-auth-revocation-passkey-dependencies', 'fix/canonical-only-provisioned-auth', 'fix/audit-multirecipient-consistency', 'fix/ordinary-mutation-authorization-races', 'integration/combined-review-candidate-2026-11-07', 'fix/full-system-role-acceptance']
+    branches: ['integration/dd-system-completion', 'Oct10_Front&BackEnd_Merge_Integration', 'fix/security-auth-revocation-passkey-dependencies', 'fix/canonical-only-provisioned-auth', 'fix/audit-multirecipient-consistency', 'fix/ordinary-mutation-authorization-races', 'integration/combined-review-candidate-2026-11-07', 'fix/full-system-role-acceptance', 'fix/uat-defect-and-recovery-gates']
   workflow_dispatch:
 permissions:
   contents: read
@@ -18,6 +18,29 @@ jobs:
           persist-credentials: false
       - name: Verify all stacked PRs and teammate integration remain in this candidate
         run: bash tests/Integration/assert-reviewed-history.sh
+
+  uat-blocker-gates:
+    name: qa / UAT evidence must block incomplete releases
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Test UAT evidence validation on synthetic examples
+        run: python3 -m unittest discover -s tests/QA -p 'test_*.py' -v
+      - name: Prove committed blank UAT template cannot authorize a release
+        run: |
+          set +e
+          python3 scripts/qa/check_uat_evidence.py docs/qa/uat-evidence-template.json
+          code=$?
+          set -e
+          if [[ "$code" -ne 2 ]]; then
+            echo "FAIL: blank UAT template was not rejected with a block status." >&2
+            exit 1
+          fi
+          echo "PASS: incomplete UAT is refused, even when application CI is green."
 
   repository-quality:
     name: repository / ${{ matrix.check }}
