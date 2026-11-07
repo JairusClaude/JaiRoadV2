@@ -1,4 +1,6 @@
 -- REVIEW PROPOSAL ONLY. Schema owner must approve/adapt before deployment.
+-- Live Supabase verification: project aeaaxwyytsagbacysvvx, PostgreSQL 17.6,
+-- audit_logs already has immutable row and TRUNCATE triggers. Do not auto-apply.
 -- Rehearsed only in guarded disposable PostgreSQL 17. No historical cleanup.
 CREATE TABLE jairoads_next.audit_notification_recipients (
     id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -38,13 +40,40 @@ CREATE TRIGGER audit_notification_recipients_immutable
 CREATE TRIGGER audit_notification_recipients_no_truncate
     BEFORE TRUNCATE ON jairoads_next.audit_notification_recipients
     FOR EACH STATEMENT EXECUTE FUNCTION jairoads_next.reject_audit_history_mutation();
--- Owner must reconcile these names with any existing append-only protections.
-CREATE TRIGGER canonical_audit_history_immutable
-    BEFORE UPDATE OR DELETE ON jairoads_next.audit_logs
-    FOR EACH ROW EXECUTE FUNCTION jairoads_next.reject_audit_history_mutation();
-CREATE TRIGGER canonical_audit_history_no_truncate
-    BEFORE TRUNCATE ON jairoads_next.audit_logs
-    FOR EACH STATEMENT EXECUTE FUNCTION jairoads_next.reject_audit_history_mutation();
+-- The official database already protects audit_logs with
+-- jairoads_dd_auditlog_reject_changes / jairoads_dd_auditlog_reject_truncate.
+-- Preserve them without installing duplicate audit_log triggers. The guarded
+-- fallback is needed for genuinely empty disposable PostgreSQL fixtures.
+-- Schema owner must inspect trigger functions and adapt for other deployments.
+DO $
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger
+        WHERE tgrelid = 'jairoads_next.audit_logs'::regclass
+          AND tgname IN ('jairoads_dd_auditlog_reject_changes', 'canonical_audit_history_immutable')
+          AND tgenabled <> 'D'
+          AND (tgtype::int & 1) <> 0   -- row trigger
+          AND (tgtype::int & 2) <> 0   -- BEFORE
+          AND (tgtype::int & 8) <> 0   -- DELETE
+          AND (tgtype::int & 16) <> 0  -- UPDATE
+    ) THEN
+        CREATE TRIGGER canonical_audit_history_immutable
+            BEFORE UPDATE OR DELETE ON jairoads_next.audit_logs
+            FOR EACH ROW EXECUTE FUNCTION jairoads_next.reject_audit_history_mutation();
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger
+        WHERE tgrelid = 'jairoads_next.audit_logs'::regclass
+          AND tgname IN ('jairoads_dd_auditlog_reject_truncate', 'canonical_audit_history_no_truncate')
+          AND tgenabled <> 'D'
+          AND (tgtype::int & 32) <> 0  -- TRUNCATE
+    ) THEN
+        CREATE TRIGGER canonical_audit_history_no_truncate
+            BEFORE TRUNCATE ON jairoads_next.audit_logs
+            FOR EACH STATEMENT EXECUTE FUNCTION jairoads_next.reject_audit_history_mutation();
+    END IF;
+END;
+$;
 
 -- No Data API grants. Use a dedicated Laravel DB role, SELECT/INSERT + sequence
 -- USAGE and targeted RLS; never UPDATE/DELETE/TRUNCATE/ownership or public policy.
