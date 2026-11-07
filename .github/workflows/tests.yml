@@ -12,6 +12,32 @@ permissions:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: jairoads_scratch_pull_request
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d jairoads_scratch_pull_request"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DB_DATABASE: jairoads_scratch_pull_request
+      DB_USERNAME: postgres
+      DB_PASSWORD: disposable-ci-only
+      DB_SSLMODE: disable
+      DB_URL: ''
+      JAIROADS_SCRATCH_APPROVAL: DISPOSABLE_LOCAL_ONLY
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      PAO_DISABLE: '1'
 
     steps:
       - name: Checkout code
@@ -23,6 +49,7 @@ jobs:
         uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: '8.4'
+          extensions: 'pdo_pgsql, mbstring'
           tools: composer:v2
           coverage: none
 
@@ -30,15 +57,15 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '22'
+          cache: npm
 
-      - name: Setup Application
-        env:
-          APP_ENV: testing
-          JAIROADS_SCRATCH_APPROVAL: DISPOSABLE_LOCAL_ONLY
-          DB_CONNECTION: sqlite
-          DB_DATABASE: ":memory:"
-          DB_URL: ""
-        run: composer setup
+      - name: Install dependencies and build assets without running migrations
+        run: |
+          composer install --no-interaction --prefer-dist
+          npm ci
+          touch .env
+          php artisan wayfinder:generate --with-form
+          npm run build
 
-      - name: Run CI Checks
+      - name: Run CI Checks against disposable PostgreSQL 17
         run: composer ci:check

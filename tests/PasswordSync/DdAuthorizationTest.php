@@ -46,7 +46,7 @@ it('revokes protected dashboard and mutation access for existing inactive sessio
     $this->actingAs($login)->get('/dashboard')->assertRedirect();
     DB::table('jairoads_next.user_accounts')->where('id', $login->dd_user_account_id)->update(['is_active' => false]);
     $this->get('/dashboard')->assertForbidden();
-    $this->postJson('/dd-phase3/ops/projects', [])->assertForbidden();
+    $this->postJson('/dd-phase3/ops/projects', [])->assertUnauthorized();
     $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
 })->with(['SuperAdmin', 'Admin', 'Engineer', 'Viewer']);
 
@@ -85,7 +85,7 @@ it('attributes project creation to the authenticated UserAccount and preserves s
     $event = DB::table('jairoads_next.audit_logs')->whereNull('recipient_user_id')->first();
     $this->assertSame((int) $login->dd_user_account_id, $project->created_by);
     $this->assertSame((int) $login->dd_user_account_id, $event->user_id);
-    $this->assertSame('DD-UserAccount#'.$login->dd_user_account_id, $event->actor_identifier);
+    $this->assertSame('DD-UserAccount#'.$login->dd_user_account_id.' ('.DB::table('jairoads_next.user_accounts')->where('id', $login->dd_user_account_id)->value('username').')', $event->actor_identifier);
     $this->assertSame('MaintenanceProject', $event->entity_type);
     $this->assertSame($project->id, $event->entity_id);
     $this->assertStringNotContainsString($login->password, json_encode($event));
@@ -107,7 +107,7 @@ it('rehearses the additive append-only proposal without changing historical acto
         'user_id' => $login->dd_user_account_id, 'actor_identifier' => 'Retained actor', 'action' => 'CREATE',
     ]);
     DB::unprepared(file_get_contents(base_path('tests/Fixtures/password-append-only.sql')));
-    foreach (["UPDATE jairoads_next.audit_logs SET actor_identifier = 'Altered'", 'DELETE FROM jairoads_next.audit_logs', 'TRUNCATE jairoads_next.audit_logs'] as $sql) {
+    foreach (["UPDATE jairoads_next.audit_logs SET actor_identifier = 'Altered'", 'DELETE FROM jairoads_next.audit_logs', 'TRUNCATE jairoads_next.audit_logs CASCADE'] as $sql) {
         try {
             DB::statement($sql);
             $this->fail('Audit history mutation was allowed.');

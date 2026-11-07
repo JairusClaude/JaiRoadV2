@@ -20,9 +20,8 @@ final class LinkedPasswordUserProvider extends EloquentUserProvider
     public function validateCredentials(Authenticatable $user, #[SensitiveParameter] array $credentials): bool
     {
         // A current hash still needs canonical active-account/link verification.
-        // Legacy-only identities retain the normal Eloquent credential path.
-        if ($user instanceof User && $user->getAttribute('dd_user_account_id') !== null
-            && app(DataDictionaryIdentityResolver::class)->resolve($user) === null) {
+        // No legacy-only identity may establish an accepted session.
+        if (! $user instanceof User || app(DataDictionaryIdentityResolver::class)->resolve($user) === null) {
             return false;
         }
 
@@ -30,12 +29,25 @@ final class LinkedPasswordUserProvider extends EloquentUserProvider
     }
 
     /** @param array<string, mixed> $credentials */
+    public function retrieveByCredentials(#[SensitiveParameter] array $credentials)
+    {
+        $user = parent::retrieveByCredentials($credentials);
+
+        return $user instanceof User && app(DataDictionaryIdentityResolver::class)->resolveForRecovery($user) !== null ? $user : null;
+    }
+
+    public function retrieveByToken($identifier, #[SensitiveParameter] $token)
+    {
+        $user = parent::retrieveByToken($identifier, $token);
+
+        return $user instanceof User && app(DataDictionaryIdentityResolver::class)->resolve($user) !== null ? $user : null;
+    }
+
+    /** @param array<string, mixed> $credentials */
     public function rehashPasswordIfRequired(Authenticatable $user, #[SensitiveParameter] array $credentials, bool $force = false): void
     {
-        if (! $user instanceof User || $user->getAttribute('dd_user_account_id') === null) {
-            parent::rehashPasswordIfRequired($user, $credentials, $force);
-
-            return;
+        if (! $user instanceof User || app(DataDictionaryIdentityResolver::class)->resolve($user) === null) {
+            throw ValidationException::withMessages([Fortify::username() => __('auth.failed')]);
         }
         if (! $force && ! $this->hasher->needsRehash($user->getAuthPassword())) {
             return;

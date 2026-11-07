@@ -134,7 +134,7 @@ final class UnifiedFrontendTest extends PostgresTestCase
         $this->get(self::UI.'/maintenance-projects')->assertForbidden();
         DB::table('jairoads_next.engineers')->where('id', $f['engineer'])->update(['engineer_status' => 'Active']);
         DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->update(['is_active' => false]);
-        $this->get(self::UI.'/road-coverages')->assertForbidden();
+        $this->actingAs($f['user'])->get(self::UI.'/road-coverages')->assertForbidden();
     }
 
     public function test_document_upload_uses_private_storage_and_never_exposes_path_in_props(): void

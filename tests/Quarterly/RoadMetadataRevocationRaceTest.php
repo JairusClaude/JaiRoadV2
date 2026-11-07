@@ -38,7 +38,7 @@ final class RoadMetadataRevocationRaceTest extends PostgresTestCase
             while (DB::transactionLevel() > 0) {
                 DB::rollBack();
             }
-            DB::unprepared('TRUNCATE public.users, jairoads_next.user_accounts, jairoads_next.engineers, jairoads_next.lgus CASCADE');
+            PostgresTestSchema::clearCommittedFixtures();
         }
     }
 
@@ -118,7 +118,7 @@ final class RoadMetadataRevocationRaceTest extends PostgresTestCase
             while (DB::transactionLevel() > 0) {
                 DB::rollBack();
             }
-            DB::unprepared('TRUNCATE public.users, jairoads_next.user_accounts, jairoads_next.engineers, jairoads_next.lgus CASCADE');
+            PostgresTestSchema::clearCommittedFixtures();
         }
     }
 }

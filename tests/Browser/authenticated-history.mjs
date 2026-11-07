@@ -19,19 +19,31 @@ export async function verifyAuthenticatedHistory(
     await page.waitForURL(`${base}/login`);
     await page.getByLabel('Email address').waitFor();
     // Replay the actual pre-logout session cookie: Fortify invalidates it server-side.
-    assert.equal(
-        (
-            await page.request.get(`${ui}/monthly-updates`, {
-                headers: {
-                    Cookie: oldCookies
-                        .map((cookie) => `${cookie.name}=${cookie.value}`)
-                        .join('; '),
-                },
-                maxRedirects: 0,
-            })
-        ).status(),
-        302,
-    );
+    const replay = await page.request.get(`${ui}/monthly-updates`, {
+        headers: {
+            Cookie: oldCookies
+                .map((cookie) => `${cookie.name}=${cookie.value}`)
+                .join('; '),
+        },
+        maxRedirects: 0,
+    });
+
+    if (replay.status() !== 302) {
+        const body = await replay.text();
+        console.log(
+            'Logout replay diagnostic:',
+            JSON.stringify({
+                status: replay.status(),
+                url: replay.url(),
+                location: replay.headers().location,
+                contentType: replay.headers()['content-type'],
+                hasMonthlyComponent: body.includes('MonthlyUpdates/Index'),
+                hasLoginComponent: body.includes('auth/login'),
+            }),
+        );
+    }
+
+    assert.equal(replay.status(), 302);
     const historyResponse = page.waitForResponse(
         (response) =>
             response.status() === 409 &&

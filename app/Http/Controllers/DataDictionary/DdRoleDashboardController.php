@@ -7,6 +7,7 @@ namespace App\Http\Controllers\DataDictionary;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\DataDictionary\DataDictionaryIdentityResolver;
+use App\Services\DataDictionary\DdActivityNotifications;
 use App\Services\DataDictionary\DdDashboardAnalytics;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -34,8 +35,7 @@ final class DdRoleDashboardController extends Controller
             'roadCoverages' => 0, 'projects' => 0, 'lgus' => 0,
         ];
 
-        // An unlinked Engineer is allowed to sign in but has no EngineerLGU
-        // assignment or maintenance editing privileges. Never cast NULL to 0.
+        // Strict identity requires an active linked profile; LGU scope remains separate.
         if ($actor['role'] === 'Engineer' && $actor['engineer_id'] !== null) {
             $id = (int) $actor['engineer_id'];
             $profile = DB::table('jairoads_next.engineers')->where('id', $id)
@@ -93,15 +93,7 @@ final class DdRoleDashboardController extends Controller
                 ])->all();
         }
 
-        $notifications = DB::table('jairoads_next.audit_logs')
-            ->where('recipient_user_id', $actor['account_id'])
-            ->whereNotNull('notification_message')
-            ->orderByDesc('created_at')->orderByDesc('id')->limit(8)
-            ->get(['id', 'notification_message', 'created_at'])
-            ->map(static fn ($n): array => [
-                'id' => (int) $n->id, 'message' => (string) $n->notification_message,
-                'createdAt' => (string) $n->created_at,
-            ])->all();
+        $notifications = array_map(static fn (array $n): array => ['id' => $n['id'], 'message' => $n['notification_message'], 'createdAt' => $n['created_at']], app(DdActivityNotifications::class)->feed($actor['account_id'], 8));
 
         $username = DB::table('jairoads_next.user_accounts')
             ->where('id', $actor['account_id'])->value('username');

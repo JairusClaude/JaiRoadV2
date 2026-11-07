@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnforceCanonicalSession;
 use App\Models\MaintenanceProject;
 use App\Models\RoadCoverage;
 use App\Models\User;
@@ -15,19 +16,28 @@ use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
-// No RefreshDatabase, migrations, seeders or development connection. Every test
-// creates a dedicated SQLite :memory: schema and destroys it on disconnect.
+// Frozen legacy controller/domain contracts, not a public authentication path.
+// These tests already supply an explicit VerifiedProjectAccount stub below.
+// Isolate the new outer session boundary here only; real legacy denial is covered
+// by CanonicalOnlyAuthenticationTest with the complete middleware stack enabled.
+// All schema writes now use a disposable PostgreSQL per-test schema.
 uses(TestCase::class);
 
 beforeEach(function (): void {
+    $this->withoutMiddleware(EnforceCanonicalSession::class);
+    $config = config('database.connections.pgsql');
+    if (getenv('JAIROADS_SCRATCH_APPROVAL') !== 'DISPOSABLE_LOCAL_ONLY' || ! app()->environment('testing')
+        || ! in_array($config['host'], ['127.0.0.1', 'localhost'], true) || ! empty($config['url'])
+        || ! preg_match('/^jairoads_scratch_[a-z0-9_]+$/', $config['database'])) {
+        throw new RuntimeException('Disposable PostgreSQL required for legacy unit fixtures.');
+    }
+    $this->legacySchema = 'legacy_unit_'.bin2hex(random_bytes(8));
+    DB::connection('pgsql')->statement('CREATE SCHEMA '.$this->legacySchema);
+    $config['search_path'] = $this->legacySchema;
     config([
         'app.key' => 'base64:'.base64_encode(str_repeat('t', 32)),
         'database.default' => 'maintenance_test',
-        'database.connections.maintenance_test' => [
-            'driver' => 'sqlite',
-            'database' => ':memory:',
-            'foreign_key_constraints' => true,
-        ],
+        'database.connections.maintenance_test' => $config,
         'session.driver' => 'array',
         'cache.default' => 'array',
     ]);
@@ -54,6 +64,7 @@ beforeEach(function (): void {
         $table->foreignId('lgu_id')->constrained('lgus');
         $table->string('road_name');
         $table->decimal('kilometers', 10, 2);
+        $table->jsonb('geojson')->nullable();
     });
 
     $schema->create('maintenance_projects', function (Blueprint $table): void {
@@ -143,6 +154,7 @@ beforeEach(function (): void {
 afterEach(function (): void {
     MaintenanceProject::flushEventListeners();
     DB::disconnect('maintenance_test');
+    DB::connection('pgsql')->statement('DROP SCHEMA '.$this->legacySchema.' CASCADE');
 });
 
 function jrProject(

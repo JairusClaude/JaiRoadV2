@@ -49,7 +49,7 @@ it('does not change either credential for an invalid reset token', function (): 
     $before = $login->password;
     $this->post(route('password.update'), resetPayload($login, 'invalid-token'))->assertSessionHasErrors('email');
     expect(hash_equals($before, $login->fresh()->password))->toBeTrue()
-        ->and(hash_equals($before, DB::table('jairoads_next.user_accounts')->value('password')))->toBeTrue();
+        ->and(hash_equals($before, DB::table('jairoads_next.user_accounts')->where('id', 77)->value('password')))->toBeTrue();
 });
 
 it('denies missing inactive mismatched-email ambiguous and retired DD links without partial changes', function (string $problem): void {
@@ -57,9 +57,9 @@ it('denies missing inactive mismatched-email ambiguous and retired DD links with
     $login = $this->linkedLogin($problem === 'retired' ? 'Engineer' : 'Admin');
     $before = $login->password;
     match ($problem) {
-        'missing' => DB::table('jairoads_next.user_accounts')->delete(),
-        'inactive' => DB::table('jairoads_next.user_accounts')->update(['is_active' => false]),
-        'email' => DB::table('jairoads_next.user_accounts')->update(['email' => 'different@example.test']),
+        'missing' => DB::table('jairoads_next.user_accounts')->where('id', 77)->delete(),
+        'inactive' => DB::table('jairoads_next.user_accounts')->where('id', 77)->update(['is_active' => false]),
+        'email' => DB::table('jairoads_next.user_accounts')->where('id', 77)->update(['email' => 'different@example.test']),
         'ambiguous' => User::forceCreate(['name' => 'Other', 'email' => 'other@example.test', 'password' => 'unrelated-password', 'dd_user_account_id' => 77]),
         'retired' => DB::table('jairoads_next.engineers')->update(['engineer_status' => 'Retired']),
     };
@@ -67,7 +67,7 @@ it('denies missing inactive mismatched-email ambiguous and retired DD links with
     $this->post(route('password.update'), $payload)->assertSessionHasErrors('email');
     expect(hash_equals($before, $login->fresh()->password))->toBeTrue();
     if ($problem !== 'missing') {
-        expect(hash_equals($before, DB::table('jairoads_next.user_accounts')->value('password')))->toBeTrue();
+        expect(hash_equals($before, DB::table('jairoads_next.user_accounts')->where('id', 77)->value('password')))->toBeTrue();
     }
     expect(Password::broker()->tokenExists($login, $payload['token']))->toBeTrue();
     Event::assertNotDispatched(PasswordReset::class);
@@ -85,7 +85,7 @@ it('rolls back the first update when PostgreSQL rejects the second update', func
         SQL);
     $this->post(route('password.update'), resetPayload($login))->assertSessionHasErrors('email');
     expect(hash_equals($before, $login->fresh()->password))->toBeTrue()
-        ->and(hash_equals($before, DB::table('jairoads_next.user_accounts')->value('password')))->toBeTrue()
+        ->and(hash_equals($before, DB::table('jairoads_next.user_accounts')->where('id', 77)->value('password')))->toBeTrue()
         ->and(hash_equals($remember, $login->fresh()->remember_token))->toBeTrue();
 });
 
@@ -98,14 +98,14 @@ it('recovers a desynchronized account only through legitimate token-verified res
     expect(app(DataDictionaryIdentityResolver::class)->resolve($login)['account_id'])->toBe(77);
 });
 
-it('preserves legacy reset behavior without matching a DD identity by email or number', function (): void {
+it('rejects legacy reset without matching a DD identity by email or number', function (): void {
     $linked = $this->linkedLogin();
-    $ddBefore = DB::table('jairoads_next.user_accounts')->value('password');
+    $ddBefore = DB::table('jairoads_next.user_accounts')->where('id', 77)->value('password');
     DB::table('public.users')->where('id', $linked->id)->delete();
     $legacy = User::forceCreate(['id' => 77, 'name' => 'Legacy', 'email' => 'linked@example.test', 'password' => 'old-password', 'user_account_id' => 77, 'dd_user_account_id' => null]);
-    $this->post(route('password.update'), resetPayload($legacy))->assertSessionHasNoErrors();
-    expect(Hash::check('New-password-42!', $legacy->fresh()->password))->toBeTrue()
-        ->and(hash_equals($ddBefore, DB::table('jairoads_next.user_accounts')->value('password')))->toBeTrue();
+    $this->post(route('password.update'), resetPayload($legacy))->assertSessionHasErrors('email');
+    expect(Hash::check('New-password-42!', $legacy->fresh()->password))->toBeFalse()
+        ->and(hash_equals($ddBefore, DB::table('jairoads_next.user_accounts')->where('id', 77)->value('password')))->toBeTrue();
 });
 
 it('uses the same updater for DD Settings and excludes credentials from its audit rows', function (): void {
@@ -115,9 +115,9 @@ it('uses the same updater for DD Settings and excludes credentials from its audi
         'account_type' => 'SuperAdmin', 'is_active' => false, 'engineer_id' => 999, 'dd_user_account_id' => 999,
     ])->assertSessionHasNoErrors()->assertRedirect(route('jairoads.dd-phase3.show', ['section' => 'settings']));
     $this->assertSynchronized($login, 'New-password-42!');
-    expect(DB::table('jairoads_next.user_accounts')->value('username'))->toBe('changed-name');
-    expect(DB::table('jairoads_next.user_accounts')->value('account_type'))->toBe('Admin')
-        ->and(DB::table('jairoads_next.user_accounts')->value('is_active'))->toBeTrue()
+    expect(DB::table('jairoads_next.user_accounts')->where('id', 77)->value('username'))->toBe('changed-name');
+    expect(DB::table('jairoads_next.user_accounts')->where('id', 77)->value('account_type'))->toBe('Admin')
+        ->and(DB::table('jairoads_next.user_accounts')->where('id', 77)->value('is_active'))->toBeTrue()
         ->and($login->getAttribute('dd_user_account_id'))->toBe(77);
     $audits = json_encode(DB::table('jairoads_next.audit_logs')->get());
     expect(str_contains($audits, 'New-password-42!'))->toBeFalse()->and(str_contains($audits, $login->password))->toBeFalse();
@@ -130,15 +130,15 @@ it('preserves Viewer and Engineer read-only account settings restrictions', func
         'password' => 'New-password-42!', 'password_confirmation' => 'New-password-42!', 'account_type' => 'SuperAdmin', 'is_active' => true,
     ])->assertForbidden();
     expect(hash_equals($before, $login->fresh()->password))->toBeTrue()
-        ->and(DB::table('jairoads_next.user_accounts')->value('account_type'))->toBe($role);
+        ->and(DB::table('jairoads_next.user_accounts')->where('id', 77)->value('account_type'))->toBe($role);
 })->with(['Viewer', 'Engineer']);
 
 it('denies protected operations immediately when an existing session account is deactivated', function (): void {
     $login = $this->linkedLogin();
     $this->actingAs($login)->get('/dashboard')->assertRedirect();
-    DB::table('jairoads_next.user_accounts')->update(['is_active' => false]);
+    DB::table('jairoads_next.user_accounts')->where('id', 77)->update(['is_active' => false]);
     $this->get('/dashboard')->assertForbidden();
-    $this->put('/dd-phase3/ops/settings', [])->assertForbidden();
+    $this->putJson('/dd-phase3/ops/settings', [])->assertUnauthorized();
 });
 
 it('synchronizes automatic login rehashing instead of disabling hash upgrades', function (): void {
@@ -150,7 +150,7 @@ it('synchronizes automatic login rehashing instead of disabling hash upgrades', 
     $this->post(route('login.store'), ['email' => $login->email, 'password' => 'old-password'])->assertSessionHasNoErrors()->assertRedirect('/dashboard');
     $login->refresh();
     expect(hash_equals($before, $login->password))->toBeFalse()
-        ->and(hash_equals($login->password, DB::table('jairoads_next.user_accounts')->value('password')))->toBeTrue()
+        ->and(hash_equals($login->password, DB::table('jairoads_next.user_accounts')->where('id', 77)->value('password')))->toBeTrue()
         ->and(Hash::needsRehash($login->password))->toBeFalse();
     $this->get('/dashboard')->assertRedirect();
 });
@@ -207,13 +207,12 @@ it('revokes database sessions and remember tokens only for the changed account',
         ->and(hash_equals($before, $login->fresh()->remember_token))->toBeFalse();
 });
 
-it('keeps authenticated legacy Security Settings changes working without a DD link', function (): void {
+it('invalidates authenticated legacy Security Settings sessions without changing credentials', function (): void {
     $login = User::forceCreate(['name' => 'Legacy', 'email' => 'legacy@example.test', 'password' => 'old-password']);
-    $this->actingAs($login)->from('/settings/security')->put(route('user-password.update'), [
-        'current_password' => 'old-password', 'password' => 'New-password-42!', 'password_confirmation' => 'New-password-42!',
-    ])->assertSessionHasNoErrors()->assertRedirect('/settings/security');
-    expect(Hash::check('New-password-42!', $login->fresh()->password))->toBeTrue()
-        ->and(Hash::check('old-password', $login->password))->toBeFalse()
+    $before = $login->password;
+    $this->actingAs($login)->getJson('/settings/security')->assertForbidden();
+    $this->assertGuest();
+    expect($login->fresh()->password)->toBe($before)
         ->and(DB::table('jairoads_next.user_accounts')->count())->toBe(0);
 });
 
@@ -242,8 +241,8 @@ it('rolls back Settings credentials and username when its enclosing audit fails'
     ]))->toThrow(QueryException::class);
     expect(hash_equals($before, $login->password))->toBeTrue()
         ->and(hash_equals($before, $login->fresh()->password))->toBeTrue()
-        ->and(hash_equals($before, DB::table('jairoads_next.user_accounts')->value('password')))->toBeTrue()
-        ->and(DB::table('jairoads_next.user_accounts')->value('username'))->toBe('linked-account');
+        ->and(hash_equals($before, DB::table('jairoads_next.user_accounts')->where('id', 77)->value('password')))->toBeTrue()
+        ->and(DB::table('jairoads_next.user_accounts')->where('id', 77)->value('username'))->toBe('linked-account');
 });
 
 it('rejects inactive credential login even without a password rehash', function (string $role): void {
@@ -259,14 +258,14 @@ it('rejects inactive credential login even without a password rehash', function 
 it('rejects inconsistent or retired DD credentials at login without changing either hash', function (string $problem): void {
     $login = $this->linkedLogin($problem === 'retired' ? 'Engineer' : 'Admin', mismatch: $problem === 'hash');
     if ($problem === 'email') {
-        DB::table('jairoads_next.user_accounts')->update(['email' => 'other@example.test']);
+        DB::table('jairoads_next.user_accounts')->where('id', 77)->update(['email' => 'other@example.test']);
     } elseif ($problem === 'retired') {
         DB::table('jairoads_next.engineers')->update(['engineer_status' => 'Retired']);
     }
     $before = $login->password;
-    $canonical = DB::table('jairoads_next.user_accounts')->value('password');
+    $canonical = DB::table('jairoads_next.user_accounts')->where('id', 77)->value('password');
     $this->post(route('login.store'), ['email' => $login->email, 'password' => 'old-password'])->assertSessionHasErrors('email');
     $this->assertGuest();
     expect(hash_equals($before, $login->fresh()->password))->toBeTrue()
-        ->and(hash_equals($canonical, DB::table('jairoads_next.user_accounts')->value('password')))->toBeTrue();
+        ->and(hash_equals($canonical, DB::table('jairoads_next.user_accounts')->where('id', 77)->value('password')))->toBeTrue();
 })->with(['email', 'retired', 'hash']);

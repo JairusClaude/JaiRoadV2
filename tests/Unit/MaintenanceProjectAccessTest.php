@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\User;
-use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 // Intentionally outside Feature: tests/Pest.php applies RefreshDatabase there.
@@ -24,25 +23,14 @@ beforeEach(function (): void {
     $this->actingAs($user);
 });
 
-it('renders the directory status without exposing data or opening a database', function (): void {
-    $this->get('/maintenance-projects')
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('MaintenanceProjects/Index')
-            ->where('integration.ready', false)
-            ->where('projects.data', [])
-            ->where('canCreate', false)
-        );
+it('rejects a legacy directory request without exposing data or opening a database', function (): void {
+    $this->get('/maintenance-projects')->assertForbidden();
+    $this->assertGuest();
 });
 
-it('renders Add Project with no protected coverage choices for an unlinked account', function (): void {
-    $this->get('/maintenance-projects/create')
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('MaintenanceProjects/Create')
-            ->where('integration.ready', false)
-            ->where('coverages', [])
-        );
+it('rejects Add Project for an unlinked account without opening a database', function (): void {
+    $this->get('/maintenance-projects/create')->assertForbidden();
+    $this->assertGuest();
 });
 
 it('rejects an unlinked login even if a matching creator ID is submitted', function (): void {

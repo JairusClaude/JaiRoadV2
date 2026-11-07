@@ -16,7 +16,7 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
     public static function linkedTypes(): iterable
     {
         foreach (['Admin', 'SuperAdmin'] as $actor) {
-            foreach (['Admin', 'Engineer'] as $type) {
+            foreach (['Admin', 'Engineer', 'Viewer'] as $type) {
                 yield $actor.' provisions '.$type => [$actor, $type];
             }
         }
@@ -28,7 +28,7 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
         $this->actingAs($this->account($actor));
         $data = $this->input($type);
         $this->postJson('/dd-phase3/accounts', $data)->assertUnprocessable()->assertJsonValidationErrors('engineer_id');
-        $this->assertSame(1, DB::table('public.users')->count());
+        $this->assertSame($actor === 'Admin' ? 2 : 1, DB::table('public.users')->count());
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
         $engineer = $this->engineer();
         $this->postJson('/dd-phase3/accounts', $data + ['engineer_id' => $engineer])->assertRedirect();
@@ -57,7 +57,7 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
             $this->account('Engineer', $engineer, $case !== 'linked_inactive');
         }
         $before = DB::table('public.users')->count();
-        foreach (['Admin', 'Engineer'] as $type) {
+        foreach (['Admin', 'Engineer', 'Viewer'] as $type) {
             $this->postJson('/dd-phase3/accounts', $this->input($type) + ['engineer_id' => $case === 'missing' ? 999999 : $engineer])
                 ->assertUnprocessable()->assertJsonValidationErrors('engineer_id');
         }
@@ -66,13 +66,14 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
     }
 
-    public function test_viewer_is_unlinked_and_ordinary_creation_cannot_escalate_to_superadmin(): void
+    public function test_viewer_requires_a_profile_and_ordinary_creation_cannot_escalate_to_superadmin(): void
     {
         $this->actingAs($this->account('SuperAdmin'));
-        $this->postJson('/dd-phase3/accounts', $this->input('Viewer') + ['engineer_id' => $this->engineer()])->assertUnprocessable()->assertJsonValidationErrors('engineer_id');
+        $this->postJson('/dd-phase3/accounts', $this->input('Viewer'))->assertUnprocessable()->assertJsonValidationErrors('engineer_id');
         $this->postJson('/dd-phase3/accounts', $this->input('SuperAdmin'))->assertUnprocessable()->assertJsonValidationErrors('account_type');
-        $this->postJson('/dd-phase3/accounts', $this->input('Viewer'))->assertRedirect();
-        $this->assertDatabaseHas('jairoads_next.user_accounts', ['username' => 'linked-new', 'account_type' => 'Viewer', 'engineer_id' => null]);
+        $engineer = $this->engineer();
+        $this->postJson('/dd-phase3/accounts', $this->input('Viewer') + ['engineer_id' => $engineer])->assertRedirect();
+        $this->assertDatabaseHas('jairoads_next.user_accounts', ['username' => 'linked-new', 'account_type' => 'Viewer', 'engineer_id' => $engineer]);
     }
 
     public function test_available_profiles_are_filtered_against_all_accounts_not_the_limited_directory(): void
@@ -92,22 +93,14 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
             ->has('accounts', 200)->has('eligibleEngineers', 1)->where('eligibleEngineers.0.id', $available));
     }
 
-    public function test_existing_unlinked_admin_can_login_create_projects_and_choose_only_real_managers(): void
+    public function test_existing_unlinked_admin_is_denied_without_mutating_or_grandfathering_it(): void
     {
-        $engineer = $this->engineer();
-        $this->account('Engineer', $engineer);
-        $admin = $this->account();
+        $admin = $this->account(linked: false);
         $before = DB::table('jairoads_next.user_accounts')->where('id', $admin->dd_user_account_id)->first();
-        $road = $this->road($engineer);
-        $this->post(route('login'), ['email' => $admin->email, 'password' => 'Disposable-Test!123'])->assertSessionHasNoErrors();
-        $this->assertAuthenticatedAs($admin);
-        $this->postJson('/dd-phase3/ops/projects', ['project_title' => 'Unlinked Admin compatibility', 'road_coverage_id' => $road])->assertRedirect();
-        $project = (int) DB::table('jairoads_next.maintenance_projects')->value('id');
-        $this->get('/dd-phase3/projects?view=show&project='.$project)->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
-            ->has('managerChoices', 1)->where('managerChoices.0.id', $engineer));
-        $after = DB::table('jairoads_next.user_accounts')->where('id', $admin->dd_user_account_id)->first();
-        $this->assertEquals($before, $after);
-        $this->assertNull(app(DataDictionaryIdentityResolver::class)->resolve($admin)['engineer_id']);
+        $this->post(route('login'), ['email' => $admin->email, 'password' => 'Disposable-Test!123'])->assertSessionHasErrors('email');
+        $this->assertGuest();
+        $this->assertNull(app(DataDictionaryIdentityResolver::class)->resolve($admin));
+        $this->assertEquals($before, DB::table('jairoads_next.user_accounts')->where('id', $admin->dd_user_account_id)->first());
     }
 
     public function test_provisioning_and_fortify_identity_roll_back_when_audit_insert_fails(): void
@@ -120,8 +113,8 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
             }
         });
         $this->postJson('/dd-phase3/accounts', $this->input('Admin') + ['engineer_id' => $engineer])->assertServerError();
-        $this->assertSame(1, DB::table('public.users')->count());
-        $this->assertSame(1, DB::table('jairoads_next.user_accounts')->count());
+        $this->assertSame(2, DB::table('public.users')->count());
+        $this->assertSame(2, DB::table('jairoads_next.user_accounts')->count());
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
         $this->assertDatabaseMissing('jairoads_next.user_accounts', ['engineer_id' => $engineer]);
     }

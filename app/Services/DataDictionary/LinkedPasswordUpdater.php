@@ -53,6 +53,10 @@ final class LinkedPasswordUpdater
                     $this->unavailable();
                 }
 
+                if (app(DataDictionaryIdentityResolver::class)->resolveForRecovery($fresh) === null) {
+                    $this->unavailable();
+                }
+
                 $accountId = $fresh->getAttribute('dd_user_account_id');
                 $account = null;
                 if ($accountId !== null) {

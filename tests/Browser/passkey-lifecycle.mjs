@@ -45,7 +45,13 @@ async function request(page, path, data, method = 'POST') {
 
             return {
                 status: response.status,
-                body: text ? JSON.parse(text) : null,
+                body:
+                    text &&
+                    response.headers
+                        .get('content-type')
+                        ?.includes('application/json')
+                        ? JSON.parse(text)
+                        : null,
             };
         },
         { path, data, method },
@@ -149,11 +155,16 @@ try {
         const keyIds = state(user, 'snapshot');
         await request(page, '/logout', {});
         await page.goto(base + '/login');
+
+        if (user.role === 'Legacy') {
+            state(user, 'legacy');
+        }
+
         const credential = await assertion(page);
         assert.equal(
             (await request(page, '/passkeys/login', { credential })).status,
-            200,
-            `Valid ${user.role} passkey login`,
+            user.role === 'Legacy' ? 422 : 200,
+            `${user.role} passkey policy`,
         );
 
         if (user.role !== 'Legacy') {
@@ -161,38 +172,37 @@ try {
             assert.equal(response.status(), 200);
             state(user, 'inactive');
 
-            for (const path of [
+            for (const [index, path] of [
                 '/settings/security',
                 '/user/passkeys/options',
                 '/passkeys/confirm/options',
-            ]) {
+            ].entries()) {
                 const denied = await page.request.get(base + path, {
                     headers: { Accept: 'application/json' },
                     maxRedirects: 0,
                 });
                 assert.equal(
                     denied.status(),
-                    403,
-                    'Existing revoked session cannot manage credentials',
+                    index === 0 ? 403 : 401,
+                    'Revocation invalidates the session and denies credential management',
                 );
             }
         } else {
             assert.equal(
                 (
-                    await page.request.get(
-                        base + '/dd-phase3/ui/maintenance-projects',
-                        { headers: { Accept: 'application/json' } },
-                    )
-                ).status(),
-                403,
+                    await request(page, '/login', {
+                        email: user.email,
+                        password: 'Disposable-Test!123',
+                    })
+                ).status,
+                422,
             );
+            await guest(page);
         }
 
-        assert.equal(
-            (await request(page, '/logout', {})).status,
-            204,
-            'Revoked sessions may still log out',
-        );
+        // Revoked sessions have already been invalidated; an explicit logout
+        // remains available while an ineligible principal is still authenticated.
+        assert.equal((await request(page, '/logout', {})).status, 401);
 
         if (user.role !== 'Legacy') {
             state(user, 'reset');
@@ -207,7 +217,9 @@ try {
         await guest(page);
         sessions.push({ user, context, page, cdp, authenticatorId, keyIds });
         console.log(
-            `PASS: real ${user.role} passkey registration/authentication, NULL verification, logout and replay rejection.`,
+            user.role === 'Legacy'
+                ? 'PASS: real registered legacy-only passkey and password denied after bridge removal.'
+                : `PASS: real ${user.role} passkey registration/authentication, NULL verification, logout and replay rejection.`,
         );
     }
 
@@ -221,6 +233,8 @@ try {
         'invalid-link',
         'email',
         'hash',
+        'unlinked',
+        'provenance',
     ]) {
         state(user, action);
         await page.goto(base + '/login');
@@ -364,7 +378,138 @@ try {
     assert.equal((await page.request.get(base + '/dashboard')).status(), 200);
     assert.equal(state(user, 'snapshot'), keyIds);
     console.log(
-        'PASS: signed wrong-origin assertion and foreign credential confirmation rejected; legacy compatibility retained.',
+        'PASS: signed wrong-origin assertion and foreign credential confirmation rejected; legacy-only login denied.',
+    );
+
+    // Exercise the real remember-me cookie, with the session cookie removed.
+    const adminSession = sessions.find((s) => s.user.role === 'Admin');
+    await adminSession.page.goto(base + '/login');
+    assert.equal(
+        (
+            await request(adminSession.page, '/login', {
+                email: adminSession.user.email,
+                password: 'Disposable-Test!123',
+                remember: true,
+            })
+        ).status,
+        200,
+    );
+    const rememberCookies = (await adminSession.context.cookies()).filter(
+        (cookie) => cookie.name.startsWith('remember_'),
+    );
+    assert.equal(rememberCookies.length, 1);
+    await adminSession.context.clearCookies();
+    await adminSession.context.addCookies(rememberCookies);
+    assert.equal(
+        (
+            await adminSession.page.request.get(base + '/dashboard', {
+                headers: { Accept: 'application/json' },
+                maxRedirects: 0,
+            })
+        ).status(),
+        302,
+    );
+    state(adminSession.user, 'inactive');
+    await adminSession.context.clearCookies();
+    await adminSession.context.addCookies(rememberCookies);
+    assert.equal(
+        (
+            await adminSession.page.request.get(base + '/dashboard', {
+                headers: { Accept: 'application/json' },
+                maxRedirects: 0,
+            })
+        ).status(),
+        401,
+    );
+    state(adminSession.user, 'reset');
+    console.log(
+        'PASS: real remember-me cookie restores an eligible identity and rejects a revoked identity without a session cookie.',
+    );
+
+    // Real Inertia provisioning form: Viewer must be allowed to select a profile,
+    // and that link must not confer Engineer permissions.
+    const root = sessions.find((s) => s.user.role === 'SuperAdmin');
+    await root.page.goto(base + '/login');
+    assert.equal(
+        (
+            await request(root.page, '/login', {
+                email: root.user.email,
+                password: 'Disposable-Test!123',
+            })
+        ).status,
+        200,
+    );
+    assert.equal(
+        (
+            await request(root.page, '/dd-phase3/engineers', {
+                first_name: 'Browser',
+                last_name: 'Provisioning',
+                contact_no: '09000000000',
+                rank: 'Engineer I',
+            })
+        ).status,
+        200,
+    );
+    await root.page.goto(base + '/dd-phase3/users');
+    const form = root.page
+        .getByRole('heading', { name: 'Create account', exact: true })
+        .locator('xpath=ancestor::section[1]')
+        .locator('form');
+    await form
+        .getByLabel('Username', { exact: false })
+        .fill('browser-provisioned-viewer');
+    await form
+        .getByLabel('Email', { exact: true })
+        .fill('browser-provisioned-viewer@example.test');
+    await form
+        .getByLabel('Display name', { exact: true })
+        .fill('Browser provisioned Viewer');
+    await form
+        .getByLabel('Account Type', { exact: false })
+        .selectOption('Viewer');
+    const profile = form.getByLabel('Linked Engineer', { exact: false });
+    assert.equal(await profile.isEnabled(), true);
+    assert.equal(await profile.getAttribute('required'), '');
+    await profile.selectOption({ label: 'Browser Provisioning · Engineer I' });
+    await form
+        .getByLabel('Password', { exact: false })
+        .first()
+        .fill('Browser-Provisioned!123');
+    await form
+        .getByLabel('Confirm password', { exact: true })
+        .fill('Browser-Provisioned!123');
+    const saved = root.page.waitForResponse(
+        (response) =>
+            response.url().endsWith('/dd-phase3/accounts') &&
+            response.request().method() === 'POST',
+    );
+    await form
+        .getByRole('button', { name: 'Create account', exact: true })
+        .click();
+    assert.equal((await saved).status(), 302);
+    await root.page.getByText('Account created.', { exact: true }).waitFor();
+    await request(root.page, '/logout', {});
+    await root.page.goto(base + '/login');
+    assert.equal(
+        (
+            await request(root.page, '/login', {
+                email: 'browser-provisioned-viewer@example.test',
+                password: 'Browser-Provisioned!123',
+            })
+        ).status,
+        200,
+    );
+    assert.equal(
+        (
+            await request(root.page, '/dd-phase3/ops/projects', {
+                project_title: 'Forbidden',
+            })
+        ).status,
+        403,
+    );
+    await request(root.page, '/logout', {});
+    console.log(
+        'PASS: actual Inertia Viewer form requires/selects an active Engineer; provisioned Viewer logs in and remains read-only.',
     );
 
     for (const session of sessions) {

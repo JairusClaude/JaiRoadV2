@@ -7,7 +7,7 @@ namespace App\Http\Controllers\DataDictionary;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\DataDictionary\DataDictionaryIdentityResolver;
-use App\Services\DataDictionary\DdActivityNotifications;
+use App\Services\DataDictionary\DdOperationAudit;
 use App\Services\DataDictionary\DdRoleAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -56,13 +56,7 @@ final class DdPeopleLifecycleController extends Controller
      */
     private function audit(array $actor, string $entity, int $id, string $description, array $old, array $new): void
     {
-        DB::table('jairoads_next.audit_logs')->insert([
-            'user_id' => $actor['account_id'], 'actor_identifier' => 'DD-UserAccount#'.$actor['account_id'],
-            'action' => 'UPDATE', 'entity_type' => $entity, 'entity_id' => $id, 'description' => $description,
-            'old_value' => json_encode($old, JSON_THROW_ON_ERROR), 'new_value' => json_encode($new, JSON_THROW_ON_ERROR),
-            'recipient_user_id' => null, 'notification_message' => null, 'created_at' => now(),
-        ]);
-        app(DdActivityNotifications::class)->record($actor, 'UPDATE', $entity, $id, $description);
+        app(DdOperationAudit::class)->record($actor, 'UPDATE', $entity, $id, $description, $new, $old);
     }
 
     public function updateEngineer(Request $request, DataDictionaryIdentityResolver $resolver, int $id): RedirectResponse
@@ -133,9 +127,14 @@ final class DdPeopleLifecycleController extends Controller
 
     private function protectLastSuperAdmin(stdClass $account): void
     {
-        if ($account->account_type === 'SuperAdmin' && $this->active($account->is_active)
-            && DB::table('jairoads_next.user_accounts')->where('account_type', 'SuperAdmin')->where('is_active', true)->count() <= 1) {
-            throw ValidationException::withMessages(['is_active' => 'Keep at least one active SuperAdmin account.']);
+        if ($account->account_type !== 'SuperAdmin' || ! $this->active($account->is_active)) {
+            return;
+        }
+        $candidates = User::whereIn('dd_user_account_id', DB::table('jairoads_next.user_accounts')
+            ->where('account_type', 'SuperAdmin')->where('is_active', true)->where('id', '!=', $account->id)->select('id'))->get();
+        $resolver = app(DataDictionaryIdentityResolver::class);
+        if (! $candidates->contains(fn (User $login): bool => $resolver->resolve($login) !== null)) {
+            throw ValidationException::withMessages(['is_active' => 'Keep at least one eligible active SuperAdmin account.']);
         }
     }
 
@@ -183,6 +182,8 @@ final class DdPeopleLifecycleController extends Controller
                     $valid = $valid && $profile->engineer_status === 'Active'
                         && ! DB::table('jairoads_next.user_accounts')->where('engineer_id', $account->engineer_id)->where('id', '!=', $id)->exists();
                 }
+                $fortify = $login === null ? null : User::query()->whereKey($login->id)->first();
+                $valid = $valid && $fortify !== null && $resolver->canReactivate($fortify);
                 if (! $valid) {
                     throw ValidationException::withMessages(['is_active' => 'Reactivation requires a valid Fortify link and an eligible active Engineer profile for linked accounts.']);
                 }

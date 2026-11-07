@@ -23,7 +23,7 @@ if ($server->name !== config('database.connections.pgsql.database') || $server->
 $fixture = json_decode(file_get_contents(getenv('PASSKEY_BROWSER_FIXTURE')), true, flags: JSON_THROW_ON_ERROR);
 $user = collect($fixture['users'])->firstWhere('id', (int) ($argv[1] ?? 0));
 $action = $argv[2] ?? '';
-if (! $user || ! in_array($action, ['reset', 'inactive', 'retired', 'hash', 'email', 'missing', 'invalid-link', 'snapshot', 'recovery-token'], true)) {
+if (! $user || ! in_array($action, ['reset', 'inactive', 'retired', 'hash', 'email', 'missing', 'invalid-link', 'snapshot', 'recovery-token', 'legacy', 'unlinked', 'provenance'], true)) {
     throw new RuntimeException('Unknown disposable passkey fixture.');
 }
 if ($action === 'recovery-token') {
@@ -45,7 +45,9 @@ DB::transaction(function () use ($user, $action): void {
     if ($action === 'missing') {
         DB::statement("SET LOCAL session_replication_role = 'replica'");
     }
-    $accountId = $action === 'missing' ? 999999999 : $user['account_id'];
+    $accountId = match ($action) {
+        'missing' => 999999999, 'legacy' => null, default => $user['account_id'],
+    };
     if ($action === 'invalid-link') {
         $accountId = DB::table('jairoads_next.user_accounts')->where('id', '!=', $user['account_id'])->value('id');
         DB::table('public.users')->where('dd_user_account_id', $accountId)->where('id', '!=', $user['id'])->update(['dd_user_account_id' => null]);
@@ -59,7 +61,10 @@ DB::transaction(function () use ($user, $action): void {
             }
         }
     }
+    $originalRole = $user['role'] === 'Legacy' ? 'Viewer' : $user['role'];
     DB::table('jairoads_next.user_accounts')->where('id', $user['account_id'])->update([
+        'account_type' => $action === 'provenance' ? 'Viewer' : $originalRole,
+        'engineer_id' => $action === 'unlinked' ? null : $user['engineer_id'],
         'is_active' => $action !== 'inactive', 'email' => $action === 'email' ? 'mismatch@example.test' : $login->email,
         'password' => $action === 'hash' ? 'invalid-disposable-hash' : $login->password,
     ]);

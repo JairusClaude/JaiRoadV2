@@ -1,7 +1,7 @@
 name: JaiROADS full system verification
 on:
   push:
-    branches: ['integration/dd-system-completion', 'Oct10_Front&BackEnd_Merge_Integration', 'fix/security-auth-revocation-passkey-dependencies']
+    branches: ['integration/dd-system-completion', 'Oct10_Front&BackEnd_Merge_Integration', 'fix/security-auth-revocation-passkey-dependencies', 'fix/canonical-only-provisioned-auth', 'fix/audit-multirecipient-consistency', 'fix/ordinary-mutation-authorization-races']
   workflow_dispatch:
 permissions:
   contents: read
@@ -13,6 +13,14 @@ jobs:
       fail-fast: false
       matrix:
         check: [pint, phpstan, eslint, prettier, typescript, build, laravel, routes, composer-audit, npm-audit]
+    services:
+      postgres:
+        image: ${{ matrix.check == 'laravel' && 'postgres:17' || '' }}
+        env: { POSTGRES_DB: jairoads_scratch_repository, POSTGRES_USER: postgres, POSTGRES_PASSWORD: disposable-ci-only }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d jairoads_scratch_repository"
+          --health-interval 5s --health-timeout 5s --health-retries 10
     env:
       APP_ENV: testing
       APP_KEY: base64:MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
@@ -44,7 +52,11 @@ jobs:
             prettier) npm run format:check ;;
             typescript) npm run types:check ;;
             build) npm run build ;;
-            laravel) npm run build && php artisan test ;;
+            laravel)
+              npm run build
+              export DB_CONNECTION=pgsql DB_HOST=127.0.0.1 DB_PORT=5432 DB_DATABASE=jairoads_scratch_repository DB_USERNAME=postgres DB_PASSWORD=disposable-ci-only
+              export JAIROADS_SCRATCH_APPROVAL=DISPOSABLE_LOCAL_ONLY
+              php artisan test ;;
             routes) php artisan route:list --except-vendor ;;
             composer-audit) composer audit --locked --no-interaction ;;
             npm-audit) npm audit --audit-level=high ;;

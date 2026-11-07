@@ -11,6 +11,17 @@ final class PostgresTestSchema
 {
     private static bool $initialized = false;
 
+    /** Reset only committed concurrency fixtures in the positively guarded local DB. */
+    public static function clearCommittedFixtures(): void
+    {
+        self::prepare();
+        DB::unprepared('DROP SCHEMA jairoads_security CASCADE');
+        DB::unprepared('DROP TABLE jairoads_next.audit_notification_recipients; DROP TRIGGER canonical_audit_history_immutable ON jairoads_next.audit_logs; DROP TRIGGER canonical_audit_history_no_truncate ON jairoads_next.audit_logs; DROP FUNCTION jairoads_next.reject_audit_history_mutation()');
+        DB::unprepared('TRUNCATE public.users, jairoads_next.user_accounts, jairoads_next.engineers, jairoads_next.lgus CASCADE');
+        DB::unprepared(file_get_contents(base_path('database/proposals/canonical_account_provisioning.sql')));
+        DB::unprepared(file_get_contents(base_path('database/proposals/audit_notification_recipients.sql')));
+    }
+
     public static function prepare(): void
     {
         $db = DB::connection();
@@ -54,6 +65,8 @@ CREATE TABLE public.passkeys (
 );
 SQL);
         });
+        $db->unprepared(file_get_contents(base_path('database/proposals/canonical_account_provisioning.sql')));
+        $db->unprepared(file_get_contents(base_path('database/proposals/audit_notification_recipients.sql')));
         self::$initialized = true;
     }
 }

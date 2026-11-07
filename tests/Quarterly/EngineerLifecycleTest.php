@@ -48,11 +48,27 @@ final class EngineerLifecycleTest extends PostgresTestCase
         $this->assertTrue(hash_equals($hash, $f['user']->fresh()->password));
         $this->assertTrue(hash_equals($hash, DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->value('password')));
         $count = DB::table('jairoads_next.audit_logs')->count();
+        $this->assertSame(4, $count); // Account, two distinct memberships, Engineer profile.
+        $assignmentEvents = DB::table('jairoads_next.audit_logs')->where('entity_type', 'EngineerLGU')->get();
+        $this->assertCount(2, $assignmentEvents);
+        $lguIds = [];
+        foreach ($assignmentEvents as $event) {
+            $old = json_decode($event->old_value, true);
+            $new = json_decode($event->new_value, true);
+            $this->assertSame($f['engineer'], $old['engineer_id']);
+            $this->assertSame($old['lgu_id'], $new['lgu_id']);
+            $this->assertTrue($old['is_active']);
+            $this->assertFalse($new['is_active']);
+            $lguIds[] = $old['lgu_id'];
+        }
+        $this->assertCount(2, array_unique($lguIds));
+        $this->assertSame(0, DB::table('jairoads_next.audit_notification_recipients')->where('recipient_user_id', $f['user']->dd_user_account_id)->count());
+        $this->assertSame(4, DB::table('jairoads_next.audit_notification_recipients')->where('recipient_user_id', $admin->dd_user_account_id)->count());
         $this->postJson('/dd-phase3/engineers/'.$f['engineer'].'/retirement')->assertRedirect();
         $this->assertSame($count, DB::table('jairoads_next.audit_logs')->count());
         $this->withSession(['password_hash_web' => null])->actingAs($f['user'])->getJson('/dd-phase3/dashboard')->assertForbidden();
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q1'))->assertForbidden();
-        $this->putJson('/dd-phase3/ops/records/'.$id, $this->recordData($f['project'], $f['engineer'], 'Q4'))->assertForbidden();
+        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q1'))->assertUnauthorized();
+        $this->putJson('/dd-phase3/ops/records/'.$id, $this->recordData($f['project'], $f['engineer'], 'Q4'))->assertUnauthorized();
     }
 
     public function test_linked_admin_retirement_is_atomic_and_self_retirement_is_blocked(): void

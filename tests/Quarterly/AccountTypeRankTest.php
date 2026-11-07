@@ -19,7 +19,7 @@ final class AccountTypeRankTest extends PostgresTestCase
         $this->actingAs($admin);
         $input = ['first_name' => 'Rank', 'middle_name' => null, 'last_name' => 'Fixture', 'contact_no' => '09123456789'];
         $this->postJson('/dd-phase3/engineers', $input)->assertUnprocessable()->assertJsonValidationErrors('rank');
-        $this->assertSame(0, DB::table('jairoads_next.engineers')->count());
+        $this->assertSame(1, DB::table('jairoads_next.engineers')->count());
         $this->postJson('/dd-phase3/engineers', $input + ['rank' => 'Engineer III'])->assertRedirect('/dd-phase3/users');
         $this->assertDatabaseHas('jairoads_next.engineers', ['first_name' => 'Rank', 'rank' => 'Engineer III', 'engineer_status' => 'Active']);
         $this->assertSame('Admin', DB::table('jairoads_next.user_accounts')->where('id', $admin->dd_user_account_id)->value('account_type'));
@@ -36,7 +36,7 @@ final class AccountTypeRankTest extends PostgresTestCase
     public function test_account_creation_uses_canonical_account_type_and_preserves_credentials_and_link(string $type): void
     {
         $this->actingAs($this->account('SuperAdmin'));
-        $engineer = $type === 'Viewer' ? null : $this->engineer();
+        $engineer = $this->engineer();
         $data = ['username' => 'typed-account', 'email' => 'typed@example.test', 'name' => 'Typed account',
             'account_type' => $type, 'engineer_id' => $engineer, 'password' => 'Typed-Disposable!123', 'password_confirmation' => 'Typed-Disposable!123'];
         $this->postJson('/dd-phase3/accounts', $data)->assertRedirect('/dd-phase3/users');
@@ -95,9 +95,9 @@ final class AccountTypeRankTest extends PostgresTestCase
         $engineer = $this->engineer();
         $this->account('Engineer', $engineer);
         $this->actingAs($admin)->get('/dd-phase3/users')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
-            ->component('dd-phase3/Workspace')->where('accounts.0.account_type', 'Admin')
-            ->where('accounts.1.account_type', 'SuperAdmin')->where('accounts.2.account_type', 'Viewer')
-            ->where('accounts.3.account_type', 'Engineer')->where('accounts.3.engineer_id', $engineer)
+            ->component('dd-phase3/Workspace')->where('accounts.0.account_type', 'SuperAdmin')
+            ->where('accounts.1.account_type', 'Admin')->where('accounts.2.account_type', 'SuperAdmin')->where('accounts.3.account_type', 'Viewer')
+            ->where('accounts.4.account_type', 'Engineer')->where('accounts.4.engineer_id', $engineer)
             ->where('engineers.0.rank', 'Engineer II')->missing('engineers.0.position')
             ->missing('accounts.0.password')->missing('accounts.0.position'));
     }
@@ -109,7 +109,7 @@ final class AccountTypeRankTest extends PostgresTestCase
         $this->patchJson('/user-management/engineers/999', ['position' => 'Changed'])->assertForbidden();
         $this->get('/engineers')->assertForbidden();
         $this->postJson('/engineers', ['position' => 'Engineer'])->assertStatus(405);
-        $this->assertSame(0, DB::table('jairoads_next.engineers')->count());
+        $this->assertSame(1, DB::table('jairoads_next.engineers')->count());
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
     }
 }

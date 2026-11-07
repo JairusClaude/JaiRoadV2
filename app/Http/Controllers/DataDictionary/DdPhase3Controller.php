@@ -6,9 +6,11 @@ namespace App\Http\Controllers\DataDictionary;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\DataDictionary\AccountProvisioning;
 use App\Services\DataDictionary\DataDictionaryIdentityResolver;
-use App\Services\DataDictionary\DdActivityNotifications;
+use App\Services\DataDictionary\DdAuditValues;
 use App\Services\DataDictionary\DdDashboardAnalytics;
+use App\Services\DataDictionary\DdOperationAudit;
 use App\Services\DataDictionary\DdRoleAccess;
 use App\Services\DataDictionary\PreservedProjectDeletion;
 use Illuminate\Database\Query\Builder;
@@ -57,25 +59,11 @@ final class DdPhase3Controller extends Controller
     /**
      * @param  array{account_id:int,role:string,engineer_id:?int}  $actor
      * @param  array<string,mixed>  $details
+     * @param  array<string,mixed>  $old
      */
-    private function audit(array $actor, string $action, string $entity, int $recordId, string $description, array $details): void
+    private function audit(array $actor, string $action, string $entity, int $recordId, string $description, array $details, array $old = []): void
     {
-        // Never include password, email, token or secret in the audit payload.
-        DB::table('jairoads_next.audit_logs')->insert([
-            'user_id' => $actor['account_id'],
-            'actor_identifier' => 'DD-UserAccount#'.$actor['account_id'],
-            'action' => $action,
-            'entity_type' => $entity,
-            'entity_id' => $recordId,
-            'description' => $description,
-            'old_value' => null,
-            'new_value' => json_encode($details, JSON_THROW_ON_ERROR),
-            'recipient_user_id' => null,
-            'notification_message' => null,
-            'created_at' => now(),
-        ]);
-        app(DdActivityNotifications::class)
-            ->record($actor, $action, $entity, $recordId, $description);
+        app(DdOperationAudit::class)->record($actor, $action, $entity, $recordId, $description, $details, $old);
     }
 
     public function show(string $section, Request $request, DataDictionaryIdentityResolver $resolver): Response|RedirectResponse
@@ -189,10 +177,13 @@ final class DdPhase3Controller extends Controller
             'mayor_last_name' => ['required', 'string', 'max:100'],
         ]);
         DB::transaction(function () use ($actor, $id, $v): void {
-            $row = DB::table('jairoads_next.lgus')->where('id', $id)->lockForUpdate()->first(['id']);
+            $row = DB::table('jairoads_next.lgus')->where('id', $id)->lockForUpdate()->first();
             abort_unless($row !== null, 404);
+            if (app(DdAuditValues::class)->changes('LGU', (array) $row, array_replace((array) $row, $v)) === [[], []]) {
+                return;
+            }
             DB::table('jairoads_next.lgus')->where('id', $id)->update($v);
-            $this->audit($actor, 'UPDATE', 'LGU', $id, 'Authorized administrator updated an LGU.', ['lgu_id' => $id]);
+            $this->audit($actor, 'UPDATE', 'LGU', $id, 'Authorized administrator updated an LGU.', app(DdAuditValues::class)->persisted('LGU', $id), (array) $row);
         });
 
         return redirect()->route('jairoads.dd-phase3.show', ['section' => 'lgus'])->with('dd_phase3_status', 'Municipality updated.');
@@ -202,7 +193,7 @@ final class DdPhase3Controller extends Controller
     {
         $actor = $this->admin($request, $resolver);
         DB::transaction(function () use ($actor, $id): void {
-            $row = DB::table('jairoads_next.lgus')->where('id', $id)->lockForUpdate()->first(['id']);
+            $row = DB::table('jairoads_next.lgus')->where('id', $id)->lockForUpdate()->first();
             abort_unless($row !== null, 404);
             try {
                 DB::table('jairoads_next.lgus')->where('id', $id)->delete();
@@ -214,7 +205,7 @@ final class DdPhase3Controller extends Controller
                     'delete' => 'The LGU is referenced by road coverage or engineer assignments. Retain the LGU until those dependencies are explicitly handled.',
                 ]);
             }
-            $this->audit($actor, 'DELETE', 'LGU', $id, 'Authorized administrator deleted an unreferenced LGU.', ['lgu_id' => $id]);
+            $this->audit($actor, 'DELETE', 'LGU', $id, 'Authorized administrator deleted an unreferenced LGU.', [], (array) $row);
         });
 
         return redirect()->route('jairoads.dd-phase3.show', ['section' => 'lgus'])->with('dd_phase3_status', 'Municipality deleted.');
@@ -256,12 +247,15 @@ final class DdPhase3Controller extends Controller
             }
             $key = ['engineer_id' => (int) $v['engineer_id'], 'lgu_id' => (int) $v['lgu_id']];
             $existing = DB::table('jairoads_next.engineer_lgus')->where($key)->first(['is_active']);
+            if ($existing && $existing->is_active === (bool) $v['is_active']) {
+                return;
+            }
             if ($existing) {
                 DB::table('jairoads_next.engineer_lgus')->where($key)->update(['is_active' => (bool) $v['is_active']]);
             } else {
                 DB::table('jairoads_next.engineer_lgus')->insert($key + ['is_active' => (bool) $v['is_active']]);
             }
-            $this->audit($actor, $existing ? 'UPDATE' : 'CREATE', 'EngineerLGU', (int) $v['engineer_id'], 'Authorized administrator maintained an EngineerLGU assignment.', $key + ['is_active' => (bool) $v['is_active']]);
+            $this->audit($actor, $existing ? 'UPDATE' : 'CREATE', 'EngineerLGU', (int) $v['engineer_id'], 'Authorized administrator maintained an EngineerLGU assignment.', $key + ['is_active' => (bool) $v['is_active']], $existing ? $key + ['is_active' => $existing->is_active] : []);
         });
 
         return redirect()->route('jairoads.dd-phase3.show', ['section' => 'users'])->with('dd_phase3_status', 'Engineer assignment saved.');
@@ -276,21 +270,19 @@ final class DdPhase3Controller extends Controller
             'email' => ['required', 'email:rfc', 'max:255'],
             'name' => ['required', 'string', 'max:255'],
             'account_type' => ['required', Rule::in($allowed)],
-            'engineer_id' => ['required_if:account_type,Admin,Engineer', 'nullable', 'integer', 'min:1'],
+            'engineer_id' => ['required', 'integer', 'min:1'],
             'password' => ['required', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()],
         ]);
         $username = strtolower(trim((string) $v['username']));
         $email = strtolower(trim((string) $v['email']));
         $role = $v['account_type'];
         $engineerId = ! empty($v['engineer_id']) ? (int) $v['engineer_id'] : null;
-        // New Admin/Engineer identities require an explicit active profile.
-        // Existing unlinked Admin identities remain compatible in the resolver.
-        if ($role === 'Viewer' && $engineerId !== null) {
-            throw ValidationException::withMessages(['engineer_id' => 'Viewer accounts cannot be linked to an Engineer.']);
-        }
         try {
-            DB::transaction(function () use ($actor, $v, $username, $email, $role, $engineerId): void {
+            DB::transaction(function () use ($request, $resolver, $actor, $v, $username, $email, $role, $engineerId): void {
+                DB::select('SELECT pg_advisory_xact_lock_shared(1927710916)');
                 DB::select('SELECT pg_advisory_xact_lock(1927710914)');
+                abort_unless($this->admin($request, $resolver) === $actor, 403);
+                abort_unless(app(AccountProvisioning::class)->available(), 503, 'Account provisioning is unavailable pending schema-owner setup.');
                 if (DB::table('public.users')->whereRaw('LOWER(email) = ?', [$email])->exists()
                     || DB::table('jairoads_next.user_accounts')->whereRaw('LOWER(email) = ?', [$email])->exists()) {
                     throw ValidationException::withMessages(['email' => 'Email already exists.']);
@@ -318,6 +310,7 @@ final class DdPhase3Controller extends Controller
                     'dd_user_account_id' => $ddId,
                     'email_verified_at' => null, 'created_at' => now(), 'updated_at' => now(),
                 ]);
+                app(AccountProvisioning::class)->record($request->user(), $ddId);
                 $this->audit($actor, 'CREATE', 'UserAccount', $ddId, 'Administrator provisioned a DD account with an explicit Fortify link.', [
                     'account_type' => $role, 'engineer_id' => $engineerId, 'is_active' => true,
                 ]);
