@@ -3,8 +3,10 @@
 
 These do NOT replace a real Docker startup test on the operator's computer.
 """
+import base64
 from pathlib import Path
 import re
+import subprocess
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -61,6 +63,21 @@ class FreeLocalStagingSafetyTests(unittest.TestCase):
         self.assertIn("tests/Staging/restricted-app-grants.sql", LAUNCHER)
         self.assertIn("NOBYPASSRLS", LAUNCHER)
         self.assertIn("PG17", LAUNCHER + COMPOSE)
+
+    def test_generated_laravel_app_key_has_exactly_32_bytes(self):
+        # Regression: openssl rand -base64 -A 32 is not supported by OpenSSL 3.
+        expected = r"openssl rand -base64 32 | tr -d '\\n'"
+        self.assertIn(expected, LAUNCHER)
+        self.assertNotIn("openssl rand -base64 -A", LAUNCHER)
+        result = subprocess.run(
+            ["bash", "-c", "set -euo pipefail; " + expected],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        self.assertEqual(len(base64.b64decode(result.stdout, validate=True)), 32)
+        self.assertEqual(len(result.stdout), 44)
+        self.assertNotIn("\\n", result.stdout)
 
     def test_no_unprompted_volume_deletion_or_prod_deploy_command(self):
         self.assertIn("CONFIRM_LOCAL_SYNTHETIC_DESTROY", LAUNCHER)
