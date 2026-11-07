@@ -8,6 +8,7 @@ on:
       - fix/staging-restricted-runtime-role
       - fix/superadmin-recovery-readiness
       - fix/atomic-security-schema-rehearsal
+      - fix/reviewed-account-transition-readiness
   workflow_dispatch:
 
 permissions:
@@ -52,6 +53,13 @@ jobs:
           fi
       - name: Rehearse fresh and pre-protected canonical AuditLog schemas
         run: bash tests/Staging/rehearse-auxiliary.sh
+      - name: Verify owner-reviewed transition is not forgeable by application role
+        run: |
+          set -euo pipefail
+          export PGHOST="$DB_HOST" PGPORT="$DB_PORT" PGUSER="$DB_USERNAME"
+          export PGPASSWORD="$DB_PASSWORD" PGSSLMODE=disable
+          psql -X -v ON_ERROR_STOP=1 -d jairoads_scratch_staging_existing -f tests/Staging/rehearse-reviewed-transitions.sql >/dev/null
+          echo "PASS: only schema owner can write reviewed historical transition evidence"
       - name: Rehearse migration rollback and atomic restricted-role event delivery
         run: bash tests/Staging/rehearse-atomic-migrations.sh
       - name: Verify automatic RLS remains active after revoking public function EXECUTE
@@ -226,3 +234,56 @@ jobs:
           touch .env
       - name: Test recovery, last eligible root, MFA and passkey revocation on disposable PostgreSQL
         run: php artisan test tests/Quarterly/SuperAdminRecoveryReadinessTest.php --stop-on-failure
+
+  reviewed-account-transition:
+    name: staging / approved ordinary-account transition
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: jairoads_scratch_account_transition
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d jairoads_scratch_account_transition"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+      APP_KEY: base64:MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
+      APP_URL: http://localhost
+      DB_CONNECTION: pgsql
+      DB_URL: ''
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DB_DATABASE: jairoads_scratch_account_transition
+      DB_USERNAME: postgres
+      DB_PASSWORD: disposable-ci-only
+      DB_SSLMODE: disable
+      SESSION_DRIVER: array
+      CACHE_STORE: array
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: array
+      BCRYPT_ROUNDS: '4'
+      PAO_DISABLE: '1'
+      JAIROADS_SCRATCH_APPROVAL: DISPOSABLE_LOCAL_ONLY
+    steps:
+      - name: Checkout review branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with:
+          php-version: '8.4'
+          extensions: 'pdo_pgsql, mbstring'
+          tools: composer:v2
+          coverage: none
+      - name: Install dependencies without shared migrations
+        run: |
+          composer install --no-interaction --prefer-dist
+          touch .env
+      - name: Test synthetic approved transition and identifier-free read-only preflight
+        run: php artisan test tests/Quarterly/ReviewedAccountTransitionTest.php --stop-on-failure

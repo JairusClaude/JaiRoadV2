@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 /** Read only; outputs IDs/reason codes, never passwords, hashes, email or tokens. */
 final class CanonicalAccessPreflight extends Command
 {
-    protected $signature = 'jairoads:canonical-access-preflight';
+    protected $signature = 'jairoads:canonical-access-preflight {--summary : Print aggregate readiness counts without identifiers}';
 
     protected $description = 'Read-only canonical access readiness and remediation inventory';
 
@@ -65,6 +65,38 @@ final class CanonicalAccessPreflight extends Command
                 'legacy_only_login_ids' => User::whereNull('dd_user_account_id')->orderBy('id')->pluck('id')->all(),
                 'orphaned_bridge_login_ids' => User::whereNotNull('dd_user_account_id')->whereNotIn('dd_user_account_id', DB::table('jairoads_next.user_accounts')->select('id'))->orderBy('id')->pluck('id')->all()];
         });
+        if ($this->option('summary')) {
+            // Safe to share with reviewers: role-level counts only. No IDs,
+            // logins, email addresses, profile names, tokens or hashes.
+            $summary = [
+                'provenance_available' => $report['provenance_available'],
+                'roles' => array_fill_keys(['SuperAdmin', 'Admin', 'Engineer', 'Viewer'], [
+                    'total' => 0, 'eligible' => 0, 'needs_engineer_link' => 0,
+                    'needs_reviewed_provisioning_evidence' => 0,
+                ]),
+                'legacy_only_login_count' => count($report['legacy_only_login_ids']),
+                'orphaned_bridge_login_count' => count($report['orphaned_bridge_login_ids']),
+            ];
+            foreach ($report['accounts'] as $account) {
+                $role = $account['account_type'];
+                if (! isset($summary['roles'][$role])) {
+                    continue;
+                }
+                $summary['roles'][$role]['total']++;
+                if ($account['eligible']) {
+                    $summary['roles'][$role]['eligible']++;
+                }
+                foreach (['needs_engineer_link', 'needs_reviewed_provisioning_evidence'] as $issue) {
+                    if (in_array($issue, $account['issues'], true)) {
+                        $summary['roles'][$role][$issue]++;
+                    }
+                }
+            }
+            $this->line(json_encode($summary, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
+
+            return self::SUCCESS;
+        }
+
         $this->line(json_encode($report, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
 
         return self::SUCCESS;
