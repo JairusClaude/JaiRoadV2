@@ -15,6 +15,11 @@ BEGIN
  END IF;
 END;
 $role_guard$;
+-- Server-side provenance for the already-verified synthetic Admin, in the same
+-- transaction as a representative new event and linked delivery rows.
+INSERT INTO jairoads_security.account_provisioning
+ (user_account_id, provisioned_by, provisioner_role, provisioned_role, engineer_id, method)
+VALUES (2, 1, 'SuperAdmin', 'Admin', 1, 'administrator');
 WITH event AS (
  INSERT INTO jairoads_next.audit_logs
  (user_id, actor_identifier, action, entity_type, entity_id, description)
@@ -35,6 +40,10 @@ BEGIN
  FROM jairoads_next.audit_notification_recipients r
  JOIN jairoads_next.audit_logs a ON a.id=r.audit_log_id
  WHERE a.description='Synthetic committed one-event rehearsal';
+ IF (SELECT count(*) FROM jairoads_security.account_provisioning
+     WHERE user_account_id=2 AND provisioned_role='Admin') <> 1 THEN
+   RAISE EXCEPTION 'Provenance missing inside atomic synthetic transaction';
+ END IF;
  IF matching_events <> 1 OR recipient_count <> 3 OR distinct_count <> 3 THEN
    RAISE EXCEPTION 'Expected one canonical business event and exactly 3 unique deliveries; got %, %, %',
       matching_events, recipient_count, distinct_count;
