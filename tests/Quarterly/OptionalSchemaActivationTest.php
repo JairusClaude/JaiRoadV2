@@ -120,7 +120,7 @@ SQL);
         try {
             DB::transaction(function () use ($id): void {
                 DB::table('jairoads_next.maintenance_records')->where('id', $id)->update(['project_id' => null]);
-                DB::statement('SET CONSTRAINTS require_maintenance_record_context IMMEDIATE');
+                DB::statement('SET CONSTRAINTS ALL IMMEDIATE');
             });
             $this->fail('Missing context for a detached record was accepted.');
         } catch (QueryException $error) {
