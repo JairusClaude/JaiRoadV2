@@ -1,4 +1,6 @@
 -- REVIEW PROPOSAL ONLY. Never automatically loaded by migrations or application startup.
+-- Verified against the canonical tables in official Supabase PostgreSQL 17.6;
+-- owner approval, real restricted app role, and reviewed account transition remain mandatory.
 -- Schema owner must approve runtime-role grants and transition evidence before deployment.
 -- No historical rows are inferred/backfilled. Existing canonical tables are unchanged.
 CREATE SCHEMA jairoads_security;
@@ -19,6 +21,20 @@ CREATE TABLE jairoads_security.account_provisioning (
 );
 ALTER TABLE jairoads_security.account_provisioning ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON jairoads_security.account_provisioning FROM PUBLIC;
+-- Supabase API roles do not need provenance access, even if other default
+-- privileges or schema grants are later modified. This is defense in depth,
+-- not a substitute for keeping jairoads_security out of exposed API schemas.
+DO $
+DECLARE api_role text;
+BEGIN
+    FOREACH api_role IN ARRAY ARRAY['anon', 'authenticated', 'service_role'] LOOP
+        IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = api_role) THEN
+            EXECUTE format('REVOKE ALL ON SCHEMA jairoads_security FROM %I', api_role);
+            EXECUTE format('REVOKE ALL ON jairoads_security.account_provisioning FROM %I', api_role);
+        END IF;
+    END LOOP;
+END;
+$;
 
 CREATE FUNCTION jairoads_security.protect_provisioning() RETURNS trigger
 LANGUAGE plpgsql SET search_path = pg_catalog AS $$
