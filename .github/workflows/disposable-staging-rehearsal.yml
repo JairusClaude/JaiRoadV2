@@ -172,6 +172,7 @@ jobs:
             tail -n 80 /tmp/jairoads-staging-server.log
             exit 1
           fi
+          python3 tests/Release/readonly-http-cutover-smoke.py
           python3 tests/Staging/restricted-auth-http-smoke.py
           export PGHOST=127.0.0.1 PGPORT=5432 PGUSER=jairoads_app_runtime
           export PGPASSWORD="$JAIROADS_RUNTIME_TEST_PASSWORD" PGSSLMODE=disable
