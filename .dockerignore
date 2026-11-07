@@ -15,3 +15,6 @@ storage/framework/views/*
 .DS_Store
 
 bootstrap/cache/*.php
+
+# Never bake local staging credentials or fixture email IDs into the application image.
+.free-staging/
