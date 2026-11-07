@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Models\User;
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
+use App\Services\AccountIdentityResolver;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,7 +20,7 @@ final class EnforceCanonicalSession
         if ($request->routeIs('logout')) {
             return $next($request);
         }
-        $resolver = app(DataDictionaryIdentityResolver::class);
+        $resolver = app(AccountIdentityResolver::class);
         $user = $request->user();
         if ($user !== null && $resolver->resolve($user) === null) {
             $this->revoke($request);
