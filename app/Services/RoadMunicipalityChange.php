@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\DataDictionary;
+namespace App\Services;
 
 use App\Models\User;
 use Closure;
@@ -21,7 +21,7 @@ use Illuminate\Validation\ValidationException;
  */
 final class RoadMunicipalityChange
 {
-    public function __construct(private DataDictionaryIdentityResolver $identities) {}
+    public function __construct(private AccountIdentityResolver $identities) {}
 
     /** @return array<string,mixed> */
     public function preview(User $login, int $roadId, int $destination): array
@@ -92,7 +92,7 @@ final class RoadMunicipalityChange
     private function actor(User $login): array
     {
         $actor = $this->identities->resolve($login);
-        abort_unless($actor !== null && DdRoleAccess::canWriteOperations($actor['role']), 403);
+        abort_unless($actor !== null && RoleAccess::canWriteOperations($actor['role']), 403);
         abort_if($actor['role'] === 'Engineer' && $actor['engineer_id'] === null, 403, 'An active linked Engineer profile is required.');
 
         return $actor;

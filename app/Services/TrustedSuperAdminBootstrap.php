@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\DataDictionary;
+namespace App\Services;
 
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;

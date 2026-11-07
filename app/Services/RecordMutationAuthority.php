@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\DataDictionary;
+namespace App\Services;
 
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 /** Final authority pins for the two reproduced record/monthly mutation paths. */
 final class RecordMutationAuthority
 {
-    public function __construct(private DataDictionaryIdentityResolver $identities) {}
+    public function __construct(private AccountIdentityResolver $identities) {}
 
     /**
      * Called after the project/record locks, before business writes. Do not wait
@@ -37,7 +37,7 @@ final class RecordMutationAuthority
         }
         $membership = $expected['role'] === 'Engineer' ? DB::table('jairoads_next.engineer_lgus')
             ->where('engineer_id', $account->engineer_id)->where('lgu_id', $lguId)->sharedLock()->first(['is_active']) : null;
-        abort_unless($this->identities->resolve($login) === $expected && DdRoleAccess::canWriteOperations($expected['role']), 403, 'Your current account is unavailable.');
+        abort_unless($this->identities->resolve($login) === $expected && RoleAccess::canWriteOperations($expected['role']), 403, 'Your current account is unavailable.');
         if ($expected['role'] === 'Engineer') {
             abort_unless($membership?->is_active === true, 403, 'Current EngineerLGU authorization is required.');
         }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\DataDictionary;
+namespace App\Services;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Crypt;
@@ -17,7 +17,7 @@ final class PreservedProjectDeletion
 
     private ?bool $available = null;
 
-    public function __construct(private DataDictionaryIdentityResolver $identities, private DdOperationAudit $audit) {}
+    public function __construct(private AccountIdentityResolver $identities, private OperationAudit $audit) {}
 
     public function available(): bool
     {
@@ -30,7 +30,7 @@ final class PreservedProjectDeletion
     private function actor(User $login): array
     {
         $actor = $this->identities->resolve($login);
-        abort_unless($actor !== null && DdRoleAccess::managesBusinessData($actor['role']), 403);
+        abort_unless($actor !== null && RoleAccess::managesBusinessData($actor['role']), 403);
 
         return $actor;
     }

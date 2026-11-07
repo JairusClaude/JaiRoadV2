@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\DataDictionary;
+namespace App\Services;
 
 /**
  * Checks GeoJSON road-line geometry without creating a new business entity,
