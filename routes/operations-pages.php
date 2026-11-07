@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\MaintenanceDocumentPageController;
 use App\Http\Controllers\MaintenanceProjectPageController;
 use App\Http\Controllers\MaintenanceRecordPageController;
 use App\Http\Controllers\MonthlyUpdatePageController;
-use App\Http\Controllers\OperationsFrontendController;
 use App\Http\Controllers\PreservedHistoryController;
 use App\Http\Controllers\RoadCoveragePageController;
 use Illuminate\Support\Facades\Route;
@@ -42,10 +42,10 @@ Route::middleware(['auth'])->prefix('dd-phase3/ui')->name('jairoads.ui.')->group
     Route::post('/monthly-updates', [MonthlyUpdatePageController::class, 'saveUpdate'])->name('updates.store');
     Route::put('/monthly-updates/{id}', [MonthlyUpdatePageController::class, 'saveUpdate'])->whereNumber('id')->name('updates.update');
     Route::post('/monthly-updates/{id}/media', [MonthlyUpdatePageController::class, 'uploadMedia'])->whereNumber('id')->middleware('throttle:8,1')->name('updates.media');
-    Route::get('/maintenance-documents', [OperationsFrontendController::class, 'documentIndex'])->name('documents.index');
-    Route::get('/maintenance-documents/create', [OperationsFrontendController::class, 'documentForm'])->name('documents.create');
-    Route::get('/maintenance-documents/{id}', [OperationsFrontendController::class, 'documentShow'])->whereNumber('id')->name('documents.show');
-    Route::get('/maintenance-documents/{id}/edit', [OperationsFrontendController::class, 'documentForm'])->whereNumber('id')->name('documents.edit');
-    Route::post('/maintenance-documents', [OperationsFrontendController::class, 'saveDocument'])->middleware('throttle:8,1')->name('documents.store');
-    Route::put('/maintenance-documents/{id}', [OperationsFrontendController::class, 'saveDocument'])->whereNumber('id')->middleware('throttle:10,1')->name('documents.update');
+    Route::get('/maintenance-documents', [MaintenanceDocumentPageController::class, 'documentIndex'])->name('documents.index');
+    Route::get('/maintenance-documents/create', [MaintenanceDocumentPageController::class, 'documentForm'])->name('documents.create');
+    Route::get('/maintenance-documents/{id}', [MaintenanceDocumentPageController::class, 'documentShow'])->whereNumber('id')->name('documents.show');
+    Route::get('/maintenance-documents/{id}/edit', [MaintenanceDocumentPageController::class, 'documentForm'])->whereNumber('id')->name('documents.edit');
+    Route::post('/maintenance-documents', [MaintenanceDocumentPageController::class, 'saveDocument'])->middleware('throttle:8,1')->name('documents.store');
+    Route::put('/maintenance-documents/{id}', [MaintenanceDocumentPageController::class, 'saveDocument'])->whereNumber('id')->middleware('throttle:10,1')->name('documents.update');
 });
