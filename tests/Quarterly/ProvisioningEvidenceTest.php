@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tests\Quarterly;
 
 use App\Models\User;
-use App\Services\DataDictionary\AccountProvisioning;
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
-use App\Services\DataDictionary\TrustedSuperAdminBootstrap;
+use App\Services\AccountProvisioning;
+use App\Services\AccountIdentityResolver;
+use App\Services\TrustedSuperAdminBootstrap;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -41,7 +41,7 @@ final class ProvisioningEvidenceTest extends PostgresTestCase
         $child = $this->account('Engineer');
         $evidence = DB::table(AccountProvisioning::TABLE)->where('user_account_id', $child->dd_user_account_id)->first();
         DB::table('jairoads_next.user_accounts')->where('id', $evidence->provisioned_by)->update(['is_active' => false]);
-        $this->assertNotNull(app(DataDictionaryIdentityResolver::class)->resolve($child));
+        $this->assertNotNull(app(AccountIdentityResolver::class)->resolve($child));
         $this->assertEquals($evidence, DB::table(AccountProvisioning::TABLE)->where('user_account_id', $child->dd_user_account_id)->first());
     }
 
@@ -59,7 +59,7 @@ final class ProvisioningEvidenceTest extends PostgresTestCase
         } catch (QueryException $e) {
             $this->assertSame('23514', $e->errorInfo[0]);
         }
-        $this->assertNull(app(DataDictionaryIdentityResolver::class)->resolve($target));
+        $this->assertNull(app(AccountIdentityResolver::class)->resolve($target));
     }
 
     public function test_bootstrap_rolls_back_canonical_identity_when_fortify_insert_fails(): void

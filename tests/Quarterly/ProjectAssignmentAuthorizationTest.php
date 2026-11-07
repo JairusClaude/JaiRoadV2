@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Quarterly;
 
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
+use App\Services\AccountIdentityResolver;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -134,7 +134,7 @@ final class ProjectAssignmentAuthorizationTest extends PostgresTestCase
     {
         $f = $this->fixture();
         DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->update(['engineer_id' => null]);
-        $this->assertNull(app(DataDictionaryIdentityResolver::class)->resolve($f['user']));
+        $this->assertNull(app(AccountIdentityResolver::class)->resolve($f['user']));
         $this->get('/dd-phase3/projects?view=show&project='.$f['project'])->assertForbidden();
         $this->assertNull(DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->value('engineer_id'));
     }

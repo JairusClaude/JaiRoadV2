@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Quarterly;
 
-use App\Models\DataDictionary\Canonical\MaintenanceRecord;
+use App\Models\MaintenanceRecordReference as MaintenanceRecord;
 use App\Models\User;
-use App\Services\DataDictionary\PreservedProjectDeletion;
+use App\Services\PreservedProjectDeletion;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;

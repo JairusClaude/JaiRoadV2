@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Quarterly;
 
 use App\Models\User;
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
-use App\Services\DataDictionary\TrustedSuperAdminBootstrap;
+use App\Services\AccountIdentityResolver;
+use App\Services\TrustedSuperAdminBootstrap;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -57,7 +57,7 @@ final class SuperAdminRecoveryReadinessTest extends PostgresTestCase
         $this->postJson('/login', ['email' => $root->email, 'password' => 'Recovered-Synthetic!123'])->assertOk();
         $this->assertAuthenticatedAs($root);
         $this->getJson('/dd-phase3/users')->assertOk();
-        $this->assertNull(app(DataDictionaryIdentityResolver::class)->resolve($root)['engineer_id']);
+        $this->assertNull(app(AccountIdentityResolver::class)->resolve($root)['engineer_id']);
         $this->assertSame(1, DB::table('jairoads_next.user_accounts')->where('account_type', 'SuperAdmin')->count());
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
     }
@@ -127,12 +127,12 @@ final class SuperAdminRecoveryReadinessTest extends PostgresTestCase
         $this->patchJson('/dd-phase3/accounts/'.$id.'/status', ['is_active' => false])
             ->assertRedirect();
         $this->assertDatabaseHas('jairoads_next.user_accounts', ['id' => $id, 'is_active' => false]);
-        $this->assertNull(app(DataDictionaryIdentityResolver::class)->resolve($root));
+        $this->assertNull(app(AccountIdentityResolver::class)->resolve($root));
         $this->patchJson('/dd-phase3/accounts/'.$id.'/status', ['is_active' => true])
             ->assertRedirect();
         $this->assertDatabaseHas('jairoads_next.user_accounts', ['id' => $id, 'is_active' => true]);
         $this->assertSame($password, $root->fresh()->password);
-        $this->assertNotNull(app(DataDictionaryIdentityResolver::class)->resolve($root));
+        $this->assertNotNull(app(AccountIdentityResolver::class)->resolve($root));
         $this->assertSame(2, DB::table('jairoads_next.audit_logs')
             ->where('entity_type', 'UserAccount')->where('entity_id', $id)->count());
 
@@ -187,7 +187,7 @@ final class SuperAdminRecoveryReadinessTest extends PostgresTestCase
             ->assertNoContent();
         $this->assertAuthenticatedAs($root);
         $this->getJson('/dd-phase3/users')->assertOk();
-        $this->assertSame('SuperAdmin', app(DataDictionaryIdentityResolver::class)->resolve($root)['role']);
+        $this->assertSame('SuperAdmin', app(AccountIdentityResolver::class)->resolve($root)['role']);
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
     }
 }

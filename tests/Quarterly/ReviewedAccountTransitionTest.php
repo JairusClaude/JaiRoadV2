@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Quarterly;
 
 use App\Models\User;
-use App\Services\DataDictionary\AccountProvisioning;
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
+use App\Services\AccountProvisioning;
+use App\Services\AccountIdentityResolver;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +20,7 @@ final class ReviewedAccountTransitionTest extends PostgresTestCase
         $admin = $this->account('Admin', linked: false);
         $root = User::where('dd_user_account_id', DB::table('jairoads_next.user_accounts')
             ->where('account_type', 'SuperAdmin')->value('id'))->firstOrFail();
-        $resolver = app(DataDictionaryIdentityResolver::class);
+        $resolver = app(AccountIdentityResolver::class);
         $before = DB::table('jairoads_next.user_accounts')->where('id', $admin->dd_user_account_id)->first();
         $this->assertNull($resolver->resolve($admin));
 
@@ -106,7 +106,7 @@ final class ReviewedAccountTransitionTest extends PostgresTestCase
         }
         $this->assertSame(1, DB::table(AccountProvisioning::TABLE)
             ->where('user_account_id', $target->dd_user_account_id)->count());
-        $this->assertNotNull(app(DataDictionaryIdentityResolver::class)->resolve($target));
+        $this->assertNotNull(app(AccountIdentityResolver::class)->resolve($target));
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
     }
 

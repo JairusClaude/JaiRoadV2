@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Services\DataDictionary\RoadCoverageGeometry;
+use App\Services\RoadCoverageGeometry;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\Quarterly\PostgresTestCase;
