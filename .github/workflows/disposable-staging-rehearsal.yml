@@ -64,6 +64,8 @@ jobs:
           echo "PASS: only schema owner can write reviewed historical transition evidence"
       - name: Rehearse migration rollback and atomic restricted-role event delivery
         run: bash tests/Staging/rehearse-atomic-migrations.sh
+      - name: Restore a real PG17 custom archive and verify immutable canonical history
+        run: bash tests/Staging/rehearse-backup-restore.sh
       - name: Verify automatic RLS remains active after revoking public function EXECUTE
         run: |
           set -euo pipefail
