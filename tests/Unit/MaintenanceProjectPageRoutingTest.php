@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\MaintenanceProjectPageController;
-use App\Http\Controllers\OperationsFrontendController;
+use App\Http\Controllers\MaintenanceRecordPageController;
 use App\Http\Controllers\PreservedHistoryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -25,7 +25,7 @@ it('keeps the existing maintenance-project page route contracts', function (): v
     }
 });
 
-it('does not move project deletion or maintenance record routes', function (): void {
+it('keeps the project deletion handler and record routing contract', function (): void {
     $deletion = Route::getRoutes()->match(
         Request::create('/dd-phase3/ui/maintenance-projects/1', 'DELETE')
     );
@@ -33,5 +33,5 @@ it('does not move project deletion or maintenance record routes', function (): v
 
     $record = Route::getRoutes()->getByName('jairoads.ui.records.create');
     expect($record)->not->toBeNull();
-    expect($record->getActionName())->toBe(OperationsFrontendController::class.'@recordForm');
+    expect($record->getActionName())->toBe(MaintenanceRecordPageController::class.'@recordForm');
 });

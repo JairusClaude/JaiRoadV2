@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\MaintenanceProjectPageController;
+use App\Http\Controllers\MaintenanceRecordPageController;
 use App\Http\Controllers\OperationsFrontendController;
 use App\Http\Controllers\PreservedHistoryController;
 use App\Http\Controllers\RoadCoveragePageController;
@@ -25,14 +26,14 @@ Route::middleware(['auth'])->prefix('dd-phase3/ui')->name('jairoads.ui.')->group
     Route::delete('/maintenance-projects/{id}', [PreservedHistoryController::class, 'delete'])->whereNumber('id')->middleware('throttle:6,1');
     Route::post('/maintenance-projects', [MaintenanceProjectPageController::class, 'saveProject'])->name('projects.store');
     Route::put('/maintenance-projects/{id}', [MaintenanceProjectPageController::class, 'saveProject'])->whereNumber('id')->name('projects.update');
-    Route::get('/maintenance-projects/{project}/records/create', [OperationsFrontendController::class, 'recordForm'])->whereNumber('project')->name('records.create');
-    Route::get('/maintenance-projects/{project}/records/{id}', [OperationsFrontendController::class, 'recordShow'])->whereNumber('project')->whereNumber('id')->name('records.show');
-    Route::get('/maintenance-projects/{project}/records/{id}/edit', [OperationsFrontendController::class, 'recordForm'])->whereNumber('project')->whereNumber('id')->name('records.edit');
-    Route::post('/maintenance-projects/{project}/records', [OperationsFrontendController::class, 'saveRecord'])->whereNumber('project')->name('records.store');
-    Route::put('/maintenance-projects/{project}/records/{id}', [OperationsFrontendController::class, 'saveRecord'])->whereNumber('project')->whereNumber('id')->name('records.update');
-    Route::post('/maintenance-projects/{project}/records/{id}/reassignment', [OperationsFrontendController::class, 'reassign'])->whereNumber('project')->whereNumber('id')->middleware('throttle:10,1')->name('records.reassign');
-    Route::get('/maintenance-records', [OperationsFrontendController::class, 'recordIndex'])->name('records.index');
-    Route::get('/maintenance-records/create', [OperationsFrontendController::class, 'recordCreate'])->name('records.directory-create');
+    Route::get('/maintenance-projects/{project}/records/create', [MaintenanceRecordPageController::class, 'recordForm'])->whereNumber('project')->name('records.create');
+    Route::get('/maintenance-projects/{project}/records/{id}', [MaintenanceRecordPageController::class, 'recordShow'])->whereNumber('project')->whereNumber('id')->name('records.show');
+    Route::get('/maintenance-projects/{project}/records/{id}/edit', [MaintenanceRecordPageController::class, 'recordForm'])->whereNumber('project')->whereNumber('id')->name('records.edit');
+    Route::post('/maintenance-projects/{project}/records', [MaintenanceRecordPageController::class, 'saveRecord'])->whereNumber('project')->name('records.store');
+    Route::put('/maintenance-projects/{project}/records/{id}', [MaintenanceRecordPageController::class, 'saveRecord'])->whereNumber('project')->whereNumber('id')->name('records.update');
+    Route::post('/maintenance-projects/{project}/records/{id}/reassignment', [MaintenanceRecordPageController::class, 'reassign'])->whereNumber('project')->whereNumber('id')->middleware('throttle:10,1')->name('records.reassign');
+    Route::get('/maintenance-records', [MaintenanceRecordPageController::class, 'recordIndex'])->name('records.index');
+    Route::get('/maintenance-records/create', [MaintenanceRecordPageController::class, 'recordCreate'])->name('records.directory-create');
     Route::get('/monthly-updates', [OperationsFrontendController::class, 'updateIndex'])->name('updates.index');
     Route::get('/monthly-updates/create', [OperationsFrontendController::class, 'updateForm'])->name('updates.create');
     Route::get('/monthly-updates/{id}', [OperationsFrontendController::class, 'updateShow'])->whereNumber('id')->name('updates.show');
