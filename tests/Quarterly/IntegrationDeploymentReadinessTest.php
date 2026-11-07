@@ -97,10 +97,8 @@ final class IntegrationDeploymentReadinessTest extends PostgresTestCase
             'jairoads_monthly_updates.bucket' => 'private-media',
         ]);
         Http::fake([
-            'https://synthetic-storage.invalid/storage/v1/object/authenticated/private-docs/*'
-                => Http::response('%PDF-1.4 synthetic', 200),
-            'https://synthetic-storage.invalid/storage/v1/object/authenticated/private-media/*'
-                => Http::response('synthetic-image', 200),
+            'https://synthetic-storage.invalid/storage/v1/object/authenticated/private-docs/*' => Http::response('%PDF-1.4 synthetic', 200),
+            'https://synthetic-storage.invalid/storage/v1/object/authenticated/private-media/*' => Http::response('synthetic-image', 200),
         ]);
         $document = app(PrivateSupabaseStorage::class)->fetch(
             'maintenance-records/71/00000000-0000-4000-8000-000000000001.pdf'
@@ -148,10 +146,8 @@ final class IntegrationDeploymentReadinessTest extends PostgresTestCase
             'jairoads_documents.bucket' => 'private-docs',
         ]);
         Http::fake([
-            'https://synthetic-storage.invalid/storage/v1/bucket/private-docs'
-                => Http::response(['id' => 'private-docs', 'public' => true, 'versioning_status' => 'DISABLED'], 200),
-            'https://synthetic-storage.invalid/storage/v1/object/*'
-                => Http::response(['message' => 'Successfully deleted'], 200),
+            'https://synthetic-storage.invalid/storage/v1/bucket/private-docs' => Http::response(['id' => 'private-docs', 'public' => true, 'versioning_status' => 'DISABLED'], 200),
+            'https://synthetic-storage.invalid/storage/v1/object/*' => Http::response(['message' => 'Successfully deleted'], 200),
         ]);
         try {
             app(PrivateSupabaseStorage::class)->removePermanently(
