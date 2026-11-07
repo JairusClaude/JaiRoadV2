@@ -147,7 +147,12 @@ smoke() {
 }
 
 case "$MODE" in
+  doctor)
+    python3 scripts/staging/doctor.py
+    ;;
   up)
+    python3 scripts/staging/doctor.py ||
+      refuse 'Local prerequisite checks failed; run doctor and resolve blockers before startup'
     local_docker_only
     init_secrets
     compose up --detach --wait db
@@ -183,7 +188,7 @@ case "$MODE" in
     printf 'Destroyed only the named LOCAL synthetic staging project/volume.\n'
     ;;
   *)
-    printf 'Usage: bash scripts/staging/free-local.sh {up|smoke|status|stop|destroy CONFIRM_LOCAL_SYNTHETIC_DESTROY}\n' >&2
+    printf 'Usage: bash scripts/staging/free-local.sh {doctor|up|smoke|status|stop|destroy CONFIRM_LOCAL_SYNTHETIC_DESTROY}\n' >&2
     exit 2
     ;;
 esac
