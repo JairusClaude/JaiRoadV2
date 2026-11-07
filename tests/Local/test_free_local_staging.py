@@ -4,16 +4,22 @@
 These do NOT replace a real Docker startup test on the operator's computer.
 """
 import base64
+import contextlib
+import importlib.util
+import io
+import os
 from pathlib import Path
 import re
 import subprocess
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 COMPOSE = (ROOT / "compose.free-staging.yml").read_text(encoding="utf-8")
 LAUNCHER = (ROOT / "scripts/staging/free-local.sh").read_text(encoding="utf-8")
 DOCKERIGNORE = (ROOT / ".dockerignore").read_text(encoding="utf-8")
 GITIGNORE = (ROOT / ".gitignore").read_text(encoding="utf-8")
+DOCTOR = (ROOT / "scripts/staging/doctor.py").read_text(encoding="utf-8")
 
 
 class FreeLocalStagingSafetyTests(unittest.TestCase):
@@ -78,6 +84,33 @@ class FreeLocalStagingSafetyTests(unittest.TestCase):
         self.assertEqual(len(base64.b64decode(result.stdout, validate=True)), 32)
         self.assertEqual(len(result.stdout), 44)
         self.assertNotIn("\\n", result.stdout)
+
+    def test_offline_doctor_refuses_remote_docker_without_calling_it(self):
+        spec = importlib.util.spec_from_file_location(
+            "free_local_staging_doctor", ROOT / "scripts/staging/doctor.py"
+        )
+        self.assertIsNotNone(spec)
+        doctor = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(doctor)
+        doctor.FAILURES.clear()
+        with patch.dict(os.environ, {"DOCKER_HOST": "tcp://paid-host.invalid:2376"}):
+            with patch.object(doctor.shutil, "which",
+                              side_effect=lambda name: "/fake/docker"
+                              if name == "docker" else None):
+                with patch.object(doctor, "command") as run:
+                    with contextlib.redirect_stdout(io.StringIO()) as output:
+                        result = doctor.main()
+                    self.assertEqual(result, 2)
+                    self.assertIn("BLOCKED: No remote Docker override",
+                                  output.getvalue())
+                    run.assert_not_called()
+
+    def test_doctor_reads_only_local_prerequisites(self):
+        self.assertIn("Local Docker daemon is running", DOCTOR)
+        self.assertIn("No remote Docker override", DOCTOR)
+        self.assertIn("No Supabase project/branch, cloud API, CI", DOCTOR)
+        self.assertIn("scripts/staging/doctor.py", LAUNCHER)
+        self.assertIn("case \"$MODE\" in", LAUNCHER)
 
     def test_no_unprompted_volume_deletion_or_prod_deploy_command(self):
         self.assertIn("CONFIRM_LOCAL_SYNTHETIC_DESTROY", LAUNCHER)
