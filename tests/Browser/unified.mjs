@@ -6,10 +6,10 @@ import { verifyAuditNotifications } from './audit-notifications.mjs';
 import { verifyAuthenticatedHistory } from './authenticated-history.mjs';
 import { verifyDuplicatePeriod } from './duplicate-period.mjs';
 import { verifyPermanentFileDeletion } from './permanent-file-deletion.mjs';
-import { verifyRoleAcceptanceMatrix } from './role-acceptance.mjs';
 import { verifyPreservedRelationships } from './preserved-relationships.mjs';
 import { pdf, png, startStorageMock } from './private-storage-mock.mjs';
 import { verifyDirectoryLayouts } from './responsive-directories.mjs';
+import { verifyRoleAcceptanceMatrix } from './role-acceptance.mjs';
 const { chromium } = await import(
     process.env.PLAYWRIGHT_MODULE || 'playwright'
 );
