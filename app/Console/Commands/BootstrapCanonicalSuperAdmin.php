@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
-use App\Services\DataDictionary\TrustedSuperAdminBootstrap;
+use App\Services\TrustedSuperAdminBootstrap;
 use Illuminate\Console\Command;
 
 final class BootstrapCanonicalSuperAdmin extends Command

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Models\User;
-use App\Services\DataDictionary\AccountProvisioning;
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
+use App\Services\AccountProvisioning;
+use App\Services\AccountIdentityResolver;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -17,7 +17,7 @@ final class CanonicalAccessPreflight extends Command
 
     protected $description = 'Read-only canonical access readiness and remediation inventory';
 
-    public function handle(DataDictionaryIdentityResolver $resolver, AccountProvisioning $provisioning): int
+    public function handle(AccountIdentityResolver $resolver, AccountProvisioning $provisioning): int
     {
         if (DB::connection()->getDriverName() !== 'pgsql') {
             $this->error('PostgreSQL required.');
@@ -35,7 +35,7 @@ final class CanonicalAccessPreflight extends Command
                 if (! $a->is_active) {
                     $issues[] = 'inactive';
                 }
-                if (! DataDictionaryIdentityResolver::roleLinkValid($a->account_type, $a->engineer_id)) {
+                if (! AccountIdentityResolver::roleLinkValid($a->account_type, $a->engineer_id)) {
                     $issues[] = 'role_profile_conflict';
                 }
                 if ($a->account_type !== 'SuperAdmin' && $a->engineer_id === null) {
