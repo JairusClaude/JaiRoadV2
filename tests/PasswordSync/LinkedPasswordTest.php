@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\User;
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
-use App\Services\DataDictionary\LinkedPasswordUpdater;
+use App\Services\AccountIdentityResolver;
+use App\Services\LinkedPasswordUpdater;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
@@ -38,7 +38,7 @@ it('keeps each role and its correct dashboard after reset', function (string $ro
     $this->post(route('password.update'), resetPayload($login))->assertSessionHasNoErrors();
     $this->post(route('login.store'), ['email' => $login->email, 'password' => 'New-password-42!'])->assertRedirect('/dashboard');
     $this->get('/dashboard')->assertRedirect($role === 'SuperAdmin' ? route('jairoads.dd-superadmin-landing') : route('jairoads.dd-phase3.show', ['section' => 'dashboard']));
-    expect(app(DataDictionaryIdentityResolver::class)->resolve($login)['role'])->toBe($role);
+    expect(app(AccountIdentityResolver::class)->resolve($login)['role'])->toBe($role);
     if ($role === 'Engineer') {
         expect(DB::table('jairoads_next.engineer_lgus')->where('engineer_id', 88)->value('is_active'))->toBeTrue();
     }
@@ -91,11 +91,11 @@ it('rolls back the first update when PostgreSQL rejects the second update', func
 
 it('recovers a desynchronized account only through legitimate token-verified reset', function (): void {
     $login = $this->linkedLogin(mismatch: true);
-    expect(app(DataDictionaryIdentityResolver::class)->resolve($login))->toBeNull();
+    expect(app(AccountIdentityResolver::class)->resolve($login))->toBeNull();
     expect(fn () => app(LinkedPasswordUpdater::class)->change($login, 'old-password', 'New-password-42!'))->toThrow(ValidationException::class);
     $this->post(route('password.update'), resetPayload($login))->assertSessionHasNoErrors();
     $this->assertSynchronized($login, 'New-password-42!');
-    expect(app(DataDictionaryIdentityResolver::class)->resolve($login)['account_id'])->toBe(77);
+    expect(app(AccountIdentityResolver::class)->resolve($login)['account_id'])->toBe(77);
 });
 
 it('rejects legacy reset without matching a DD identity by email or number', function (): void {

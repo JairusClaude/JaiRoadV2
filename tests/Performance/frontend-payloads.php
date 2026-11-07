@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\DataDictionary\DdFrontendController;
+use App\Http\Controllers\OperationsFrontendController;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -68,7 +68,7 @@ $benchmark = new class('runMeasurements') extends PostgresTestCase
                 }
                 $results[] = ['roads' => $i, 'page' => $name, 'samples' => $samples];
             }
-            if (method_exists(DdFrontendController::class, 'roadReferences')) {
+            if (method_exists(OperationsFrontendController::class, 'roadReferences')) {
                 $samples = [];
                 for ($run = 0; $run < 3; $run++) {
                     $cursor = null;

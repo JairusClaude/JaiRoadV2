@@ -6,7 +6,7 @@ namespace Tests\Feature;
 
 use App\Http\Middleware\DenyLegacyBusinessRoutesForDd;
 use App\Models\User;
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
+use App\Services\AccountIdentityResolver;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -27,7 +27,7 @@ final class DdWorkspaceNavigationTest extends TestCase
 
     private function bindIdentity(?array $identity): void
     {
-        $this->app->instance(DataDictionaryIdentityResolver::class, new class($identity)
+        $this->app->instance(AccountIdentityResolver::class, new class($identity)
         {
             public function __construct(private ?array $identity) {}
 
