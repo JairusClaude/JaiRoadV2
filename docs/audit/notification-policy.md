@@ -75,6 +75,9 @@ reported as completed. No folder/bucket/parent deletion semantics changed.
 
 ## Schema-owner handoff: REQUIRED before deployment
 
+The official JaiROADS database already has UPDATE/DELETE and TRUNCATE immutability triggers on `jairoads_next.audit_logs`. The reviewed proposal now detects those known live triggers and installs its canonical AuditLog protection only as a **fixture fallback** when they are absent. It never drops or disables existing triggers. Inspect the actual trigger definitions before owner approval. See [the schema-owner activation runbook](../security/schema-owner-activation-runbook.md) and [Data Dictionary amendment request](../governance/dd-policy-alignment-review-2026-11-07.md).
+
+
 `database/proposals/audit_notification_recipients.sql` is a reviewed code proposal,
 **not an applied canonical migration and not yet approved for shared execution**.
 It adds an auxiliary delivery table, two restrictive FKs, event/recipient uniqueness,
