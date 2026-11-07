@@ -25,6 +25,21 @@
 
 ## Start and verify
 
+Start with the **free, offline doctor**. It checks your local Docker context,
+PHP version/extensions, development dependencies, OpenSSL key generation, and
+credential-file safety. It makes no database, cloud or web requests and creates
+nothing:
+
+```bash
+bash scripts/staging/free-local.sh doctor
+```
+
+Resolve any `BLOCKED` lines before using `up`. The startup command reruns
+the doctor automatically, so it fails safely rather than partially initializing
+your local database with missing dependencies. The launcher also verifies that
+OpenSSL generates exactly **32 bytes** for Laravel's `APP_KEY`; an older
+unsupported `openssl rand -base64 -A` invocation was corrected.
+
 You can first check the safety invariants **offline** (no Docker, internet or CI needed):
 
 ```bash
@@ -36,6 +51,7 @@ This inspects loopback ports, absent cloud credentials, fixed scratch database, 
 ```bash
 git checkout docs/free-local-staging-no-cloud-cost
 composer install --no-interaction --prefer-dist
+bash scripts/staging/free-local.sh doctor
 bash scripts/staging/free-local.sh up
 bash scripts/staging/free-local.sh status
 bash scripts/staging/free-local.sh smoke
