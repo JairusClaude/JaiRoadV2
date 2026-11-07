@@ -66,7 +66,7 @@ class FreeLocalStagingSafetyTests(unittest.TestCase):
 
     def test_generated_laravel_app_key_has_exactly_32_bytes(self):
         # Regression: openssl rand -base64 -A 32 is not supported by OpenSSL 3.
-        expected = r"openssl rand -base64 32 | tr -d '\\n'"
+        expected = r"openssl rand -base64 32 | tr -d '\n'"
         self.assertIn(expected, LAUNCHER)
         self.assertNotIn("openssl rand -base64 -A", LAUNCHER)
         result = subprocess.run(
