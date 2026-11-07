@@ -9,6 +9,7 @@ import { verifyPermanentFileDeletion } from './permanent-file-deletion.mjs';
 import { verifyPreservedRelationships } from './preserved-relationships.mjs';
 import { pdf, png, startStorageMock } from './private-storage-mock.mjs';
 import { verifyDirectoryLayouts } from './responsive-directories.mjs';
+import { verifyRoleAcceptanceMatrix } from './role-acceptance.mjs';
 const { chromium } = await import(
     process.env.PLAYWRIGHT_MODULE || 'playwright'
 );
@@ -149,6 +150,15 @@ try {
     const viewer = await signIn(f.viewer_email);
     const superadmin = await signIn(f.superadmin_email);
     lastPage = engineer;
+
+    await verifyRoleAcceptanceMatrix({
+        browser,
+        base,
+        admin,
+        superadmin,
+        engineer,
+        viewer,
+    });
 
     for (const page of [engineer, admin, viewer, superadmin]) {
         await page.goto(`${ui}/road-coverages`);
