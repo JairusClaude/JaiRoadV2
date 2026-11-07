@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
-use App\Services\DataDictionary\DdActivityNotifications;
+use App\Services\AccountIdentityResolver;
+use App\Services\ActivityNotifications;
 use App\Services\MaintenanceProjects\VerifiedProjectAccount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,10 +27,10 @@ final class JaiRoadsNotificationsController extends Controller
         // Notifications belong to the explicit recipient account ONLY, not a
         // global role-based query. An inactive or invalid bridge fails closed.
         if ($user->getAttribute('dd_user_account_id') !== null) {
-            $identity = app(DataDictionaryIdentityResolver::class)->resolve($user);
+            $identity = app(AccountIdentityResolver::class)->resolve($user);
             abort_unless($identity !== null, 403);
 
-            return response()->json(['notifications' => app(DdActivityNotifications::class)->feed((int) $identity['account_id'])])->header('Cache-Control', 'private, no-store');
+            return response()->json(['notifications' => app(ActivityNotifications::class)->feed((int) $identity['account_id'])])->header('Cache-Control', 'private, no-store');
         } else {
             $account = $accounts->require($user);
             $role = strtolower((string) $account->accountType);
