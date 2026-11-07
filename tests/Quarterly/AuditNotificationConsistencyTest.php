@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace Tests\Quarterly;
 
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
-use App\Services\DataDictionary\DdActivityNotifications;
-use App\Services\DataDictionary\DdAuditValues;
-use App\Services\DataDictionary\DdOperationAudit;
+use App\Services\AccountIdentityResolver;
+use App\Services\ActivityNotifications;
+use App\Services\AuditValues;
+use App\Services\OperationAudit;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 final class AuditNotificationConsistencyTest extends PostgresTestCase
 {
-    private const DELIVERIES = DdActivityNotifications::TABLE;
+    private const DELIVERIES = ActivityNotifications::TABLE;
 
     public static function actors(): iterable
     {
@@ -52,7 +52,7 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
         foreach ([$viewer, $unrelated, $inactive, $retired, $unlinked, $badEvidence, $badHash] as $denied) {
             $this->assertNotContains($denied->dd_user_account_id, $actual);
         }
-        $eligible = app(DataDictionaryIdentityResolver::class)->notificationRecipients($role === 'Engineer' ? $f['user']->dd_user_account_id : null)->count();
+        $eligible = app(AccountIdentityResolver::class)->notificationRecipients($role === 'Engineer' ? $f['user']->dd_user_account_id : null)->count();
         $this->assertCount($eligible, $actual);
         $this->assertSame(count($actual), count(array_unique($actual)));
     }
@@ -118,7 +118,7 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
 
     public function test_structured_normalization_preserves_coordinate_order_dimensions_and_real_changes(): void
     {
-        $values = app(DdAuditValues::class);
+        $values = app(AuditValues::class);
         $this->assertSame(64, strlen($values->safe('RoadCoverage', ['geojson' => 'Malformed historical geometry'])['geometry_sha256']));
         $a = '{"type":"LineString","coordinates":[[125.0,7],[126,8]],"properties":{"x":1,"y":2}}';
         $b = '{"properties":{"y":2,"x":1},"coordinates":[[125,7],[126,8]],"type":"LineString"}';
@@ -143,13 +143,13 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
     public function test_retry_rolls_back_intermediate_event_and_deliveries(): void
     {
         $f = $this->fixture();
-        $actor = app(DataDictionaryIdentityResolver::class)->resolve($f['user']);
+        $actor = app(AccountIdentityResolver::class)->resolve($f['user']);
         DB::commit(); // Exercise Laravel's real top-level transaction retry, not a nested savepoint.
         try {
             $attempts = 0;
             DB::transaction(function () use ($f, $actor, &$attempts): void {
                 $id = (int) DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer']) + ['created_by' => $actor['account_id']]);
-                app(DdOperationAudit::class)->record($actor, 'CREATE', 'MaintenanceRecord', $id, 'Synthetic retry test.');
+                app(OperationAudit::class)->record($actor, 'CREATE', 'MaintenanceRecord', $id, 'Synthetic retry test.');
                 if (++$attempts === 1) {
                     throw new \PDOException('deadlock detected', 40001);
                 }
@@ -166,18 +166,18 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
     public function test_allowlists_exclude_credentials_paths_and_arbitrary_fields(): void
     {
         $f = $this->fixture();
-        $actor = app(DataDictionaryIdentityResolver::class)->resolve($f['user']);
+        $actor = app(AccountIdentityResolver::class)->resolve($f['user']);
         $secrets = ['password' => 'HASH-SECRET', 'two_factor_secret' => 'MFA-SECRET', 'token' => 'RESET-SECRET', 'file_path' => 'PRIVATE-PATH', 'credential' => 'PASSKEY-SECRET', 'email' => 'private@example.test'];
         $old = DB::table('jairoads_next.user_accounts')->where('id', $actor['account_id'])->value('username');
         DB::table('jairoads_next.user_accounts')->where('id', $actor['account_id'])->update(['username' => 'after']);
-        app(DdOperationAudit::class)->record($actor, 'UPDATE', 'UserAccount', $actor['account_id'], 'Safe account change.', ['username' => 'after'] + $secrets, ['username' => $old] + $secrets);
+        app(OperationAudit::class)->record($actor, 'UPDATE', 'UserAccount', $actor['account_id'], 'Safe account change.', ['username' => 'after'] + $secrets, ['username' => $old] + $secrets);
         $event = DB::table('jairoads_next.audit_logs')->sole();
         $this->assertSame(['username' => $old], json_decode($event->old_value, true));
         $this->assertSame(['username' => 'after'], json_decode($event->new_value, true));
         foreach ($secrets as $secret) {
             $this->assertStringNotContainsString($secret, json_encode($event));
         }
-        $safe = app(DdAuditValues::class)->safe('Media', ['file_name' => '/private/path/name.png', 'file_path' => 'secret']);
+        $safe = app(AuditValues::class)->safe('Media', ['file_name' => '/private/path/name.png', 'file_path' => 'secret']);
         $this->assertSame(['file_name' => 'name.png'], $safe);
     }
 
@@ -264,11 +264,11 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
         DB::table('jairoads_next.monthly_updates')->insert(['maintenance_id' => $record, 'update_month' => '2026-01', 'progress_percentage' => 10, 'created_by' => $f['user']->dd_user_account_id]);
         $this->deleteJson('/dd-phase3/ops/records/'.$record)->assertUnprocessable();
         $this->assertDatabaseHas('jairoads_next.maintenance_records', ['id' => $record]);
-        $actor = app(DataDictionaryIdentityResolver::class)->resolve($f['user']);
+        $actor = app(AccountIdentityResolver::class)->resolve($f['user']);
         try {
             DB::transaction(function () use ($actor, $record): void {
                 DB::table('jairoads_next.maintenance_records')->where('id', $record)->update(['description' => 'Must roll back']);
-                app(DdOperationAudit::class)->record($actor, 'UPDATE', 'MaintenanceRecord', $record, 'Late transaction test.', ['description' => 'Must roll back'], ['description' => null]);
+                app(OperationAudit::class)->record($actor, 'UPDATE', 'MaintenanceRecord', $record, 'Late transaction test.', ['description' => 'Must roll back'], ['description' => null]);
                 throw new \RuntimeException('Disposable late failure');
             });
             $this->fail('Late failure was swallowed.');

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tests\Quarterly;
 
 use App\Models\User;
-use App\Services\DataDictionary\AccountProvisioning;
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
-use App\Services\DataDictionary\TrustedSuperAdminBootstrap;
+use App\Services\AccountProvisioning;
+use App\Services\AccountIdentityResolver;
+use App\Services\TrustedSuperAdminBootstrap;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -165,8 +165,8 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
         $login = $this->account('Viewer');
         $root = User::where('dd_user_account_id', DB::table('jairoads_next.user_accounts')->where('account_type', 'SuperAdmin')->value('id'))->firstOrFail();
         DB::statement('ALTER TABLE jairoads_security.account_provisioning RENAME TO offline_evidence');
-        $this->assertNull(app(DataDictionaryIdentityResolver::class)->resolve($login));
-        $this->assertNotNull(app(DataDictionaryIdentityResolver::class)->resolve($root));
+        $this->assertNull(app(AccountIdentityResolver::class)->resolve($login));
+        $this->assertNotNull(app(AccountIdentityResolver::class)->resolve($root));
         $this->actingAs($root)->postJson('/dd-phase3/accounts', $this->provision('Viewer', $this->engineer()))->assertStatus(503);
     }
 
@@ -221,7 +221,7 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
 
     private function identity(User $user): array
     {
-        return app(DataDictionaryIdentityResolver::class)->resolve($user);
+        return app(AccountIdentityResolver::class)->resolve($user);
     }
 
     private function provision(string $role, int $engineer): array

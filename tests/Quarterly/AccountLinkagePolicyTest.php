@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Quarterly;
 
 use App\Models\User;
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
+use App\Services\AccountIdentityResolver;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia;
@@ -99,7 +99,7 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
         $before = DB::table('jairoads_next.user_accounts')->where('id', $admin->dd_user_account_id)->first();
         $this->post(route('login'), ['email' => $admin->email, 'password' => 'Disposable-Test!123'])->assertSessionHasErrors('email');
         $this->assertGuest();
-        $this->assertNull(app(DataDictionaryIdentityResolver::class)->resolve($admin));
+        $this->assertNull(app(AccountIdentityResolver::class)->resolve($admin));
         $this->assertEquals($before, DB::table('jairoads_next.user_accounts')->where('id', $admin->dd_user_account_id)->first());
     }
 
@@ -127,7 +127,7 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
         $this->post(route('logout'))->assertRedirect();
         $this->post(route('login'), ['email' => 'linked-new@example.test', 'password' => 'Linked-Disposable!123'])->assertSessionHasNoErrors();
         $login = User::where('email', 'linked-new@example.test')->firstOrFail();
-        $identity = app(DataDictionaryIdentityResolver::class)->resolve($login);
+        $identity = app(AccountIdentityResolver::class)->resolve($login);
         $this->assertSame('Admin', $identity['role']);
         $this->assertSame($engineer, $identity['engineer_id']);
         $road = $this->road($engineer);

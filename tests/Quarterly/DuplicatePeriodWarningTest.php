@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Quarterly;
 
-use App\Services\DataDictionary\DuplicateMaintenancePeriod;
+use App\Services\DuplicateMaintenancePeriod;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;

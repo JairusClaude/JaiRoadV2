@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Quarterly;
 
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
-use App\Services\DataDictionary\DdRoleAccess;
+use App\Services\AccountIdentityResolver;
+use App\Services\RoleAccess;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia;
@@ -65,17 +65,17 @@ final class AccountTypeRankTest extends PostgresTestCase
     public function test_rank_changes_do_not_change_account_type_links_passwords_or_capabilities(): void
     {
         $f = $this->fixture('Engineer');
-        $resolver = app(DataDictionaryIdentityResolver::class);
+        $resolver = app(AccountIdentityResolver::class);
         $beforeIdentity = $resolver->resolve($f['user']);
         $before = DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->first();
-        $beforeCapabilities = DdRoleAccess::capabilities($beforeIdentity['role'], true, true);
+        $beforeCapabilities = RoleAccess::capabilities($beforeIdentity['role'], true, true);
         // There is no DD profile-update endpoint. Simulate an independent professional-rank
         // change only in this guarded disposable fixture; no application route is added.
         DB::table('jairoads_next.engineers')->where('id', $f['engineer'])->update(['rank' => 'SuperAdmin']);
         $after = DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->first();
         $afterIdentity = $resolver->resolve($f['user']->fresh());
         $this->assertSame($beforeIdentity, $afterIdentity);
-        $this->assertSame($beforeCapabilities, DdRoleAccess::capabilities($afterIdentity['role'], true, true));
+        $this->assertSame($beforeCapabilities, RoleAccess::capabilities($afterIdentity['role'], true, true));
         $this->assertSame('Engineer', $after->account_type);
         $this->assertSame($before->engineer_id, $after->engineer_id);
         $this->assertSame($before->is_active, $after->is_active);
