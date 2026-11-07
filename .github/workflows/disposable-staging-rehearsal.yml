@@ -7,6 +7,7 @@ on:
       - fix/disposable-staging-rehearsal
       - fix/staging-restricted-runtime-role
       - fix/superadmin-recovery-readiness
+      - fix/atomic-security-schema-rehearsal
   workflow_dispatch:
 
 permissions:
@@ -51,6 +52,8 @@ jobs:
           fi
       - name: Rehearse fresh and pre-protected canonical AuditLog schemas
         run: bash tests/Staging/rehearse-auxiliary.sh
+      - name: Rehearse migration rollback and atomic restricted-role event delivery
+        run: bash tests/Staging/rehearse-atomic-migrations.sh
       - name: Verify automatic RLS remains active after revoking public function EXECUTE
         run: |
           set -euo pipefail
