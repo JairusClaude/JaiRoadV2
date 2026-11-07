@@ -80,6 +80,7 @@ final class IntegrationDeploymentReadiness
     private static function httpsUrl(string $url): bool
     {
         $parts = parse_url($url);
+
         return filter_var($url, FILTER_VALIDATE_URL) !== false
             && is_array($parts)
             && strtolower((string) ($parts['scheme'] ?? '')) === 'https'
