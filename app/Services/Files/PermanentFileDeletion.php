@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Services\Files;
 
 use App\Models\User;
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
-use App\Services\DataDictionary\DdOperationAudit;
-use App\Services\DataDictionary\DdRoleAccess;
-use App\Services\DataDictionary\PreservedProjectDeletion;
+use App\Services\AccountIdentityResolver;
+use App\Services\OperationAudit;
+use App\Services\RoleAccess;
+use App\Services\PreservedProjectDeletion;
 use App\Services\Documents\PrivateSupabaseStorage;
 use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
 use Illuminate\Database\Query\Builder;
@@ -25,8 +25,8 @@ final class PermanentFileDeletion
 
     private ?bool $available = null;
 
-    public function __construct(private DataDictionaryIdentityResolver $identities, private PrivateSupabaseStorage $documents,
-        private PrivateMonthlyMediaStorage $media, private DdOperationAudit $audit) {}
+    public function __construct(private AccountIdentityResolver $identities, private PrivateSupabaseStorage $documents,
+        private PrivateMonthlyMediaStorage $media, private OperationAudit $audit) {}
 
     public function available(): bool
     {
@@ -37,7 +37,7 @@ final class PermanentFileDeletion
     private function actor(User $login): array
     {
         $actor = $this->identities->resolve($login);
-        abort_unless($actor !== null && DdRoleAccess::managesBusinessData($actor['role']), 403);
+        abort_unless($actor !== null && RoleAccess::managesBusinessData($actor['role']), 403);
 
         return $actor;
     }

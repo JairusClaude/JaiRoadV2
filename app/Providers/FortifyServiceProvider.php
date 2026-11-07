@@ -5,7 +5,7 @@ namespace App\Providers;
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Models\User;
-use App\Services\DataDictionary\DataDictionaryIdentityResolver;
+use App\Services\AccountIdentityResolver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -42,7 +42,7 @@ class FortifyServiceProvider extends ServiceProvider
                 return false;
             }
 
-            return app(DataDictionaryIdentityResolver::class)->resolve($user) !== null;
+            return app(AccountIdentityResolver::class)->resolve($user) !== null;
         });
     }
 
