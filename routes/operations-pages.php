@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\MaintenanceProjectPageController;
 use App\Http\Controllers\MaintenanceRecordPageController;
+use App\Http\Controllers\MonthlyUpdatePageController;
 use App\Http\Controllers\OperationsFrontendController;
 use App\Http\Controllers\PreservedHistoryController;
 use App\Http\Controllers\RoadCoveragePageController;
@@ -34,13 +35,13 @@ Route::middleware(['auth'])->prefix('dd-phase3/ui')->name('jairoads.ui.')->group
     Route::post('/maintenance-projects/{project}/records/{id}/reassignment', [MaintenanceRecordPageController::class, 'reassign'])->whereNumber('project')->whereNumber('id')->middleware('throttle:10,1')->name('records.reassign');
     Route::get('/maintenance-records', [MaintenanceRecordPageController::class, 'recordIndex'])->name('records.index');
     Route::get('/maintenance-records/create', [MaintenanceRecordPageController::class, 'recordCreate'])->name('records.directory-create');
-    Route::get('/monthly-updates', [OperationsFrontendController::class, 'updateIndex'])->name('updates.index');
-    Route::get('/monthly-updates/create', [OperationsFrontendController::class, 'updateForm'])->name('updates.create');
-    Route::get('/monthly-updates/{id}', [OperationsFrontendController::class, 'updateShow'])->whereNumber('id')->name('updates.show');
-    Route::get('/monthly-updates/{id}/edit', [OperationsFrontendController::class, 'updateForm'])->whereNumber('id')->name('updates.edit');
-    Route::post('/monthly-updates', [OperationsFrontendController::class, 'saveUpdate'])->name('updates.store');
-    Route::put('/monthly-updates/{id}', [OperationsFrontendController::class, 'saveUpdate'])->whereNumber('id')->name('updates.update');
-    Route::post('/monthly-updates/{id}/media', [OperationsFrontendController::class, 'uploadMedia'])->whereNumber('id')->middleware('throttle:8,1')->name('updates.media');
+    Route::get('/monthly-updates', [MonthlyUpdatePageController::class, 'updateIndex'])->name('updates.index');
+    Route::get('/monthly-updates/create', [MonthlyUpdatePageController::class, 'updateForm'])->name('updates.create');
+    Route::get('/monthly-updates/{id}', [MonthlyUpdatePageController::class, 'updateShow'])->whereNumber('id')->name('updates.show');
+    Route::get('/monthly-updates/{id}/edit', [MonthlyUpdatePageController::class, 'updateForm'])->whereNumber('id')->name('updates.edit');
+    Route::post('/monthly-updates', [MonthlyUpdatePageController::class, 'saveUpdate'])->name('updates.store');
+    Route::put('/monthly-updates/{id}', [MonthlyUpdatePageController::class, 'saveUpdate'])->whereNumber('id')->name('updates.update');
+    Route::post('/monthly-updates/{id}/media', [MonthlyUpdatePageController::class, 'uploadMedia'])->whereNumber('id')->middleware('throttle:8,1')->name('updates.media');
     Route::get('/maintenance-documents', [OperationsFrontendController::class, 'documentIndex'])->name('documents.index');
     Route::get('/maintenance-documents/create', [OperationsFrontendController::class, 'documentForm'])->name('documents.create');
     Route::get('/maintenance-documents/{id}', [OperationsFrontendController::class, 'documentShow'])->whereNumber('id')->name('documents.show');
