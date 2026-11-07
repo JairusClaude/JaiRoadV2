@@ -40,9 +40,15 @@ init_secrets() {
   umask 077
   local tmp
   tmp="$(mktemp "$ROOT/.free-staging/.secrets.XXXXXXXX")"
-  printf 'JAIROADS_FREE_DB_PASSWORD=%s\n' "$(openssl rand -hex 24)" > "$tmp"
-  printf 'JAIROADS_FREE_RUNTIME_PASSWORD=%s\n' "$(openssl rand -hex 24)" >> "$tmp"
-  local app_key_b64
+  local db_pw runtime_pw app_key_b64
+  db_pw="$(openssl rand -hex 24)" ||
+    refuse 'Could not generate a random synthetic database password'
+  runtime_pw="$(openssl rand -hex 24)" ||
+    refuse 'Could not generate a random synthetic runtime password'
+  [[ "$db_pw" =~ ^[0-9a-f]{48}$ && "$runtime_pw" =~ ^[0-9a-f]{48}$ ]] ||
+    refuse 'Random synthetic database credentials were invalid'
+  printf 'JAIROADS_FREE_DB_PASSWORD=%s\n' "$db_pw" > "$tmp"
+  printf 'JAIROADS_FREE_RUNTIME_PASSWORD=%s\n' "$runtime_pw" >> "$tmp"
   app_key_b64="$(openssl rand -base64 32 | tr -d '\n')" ||
     refuse 'Could not generate a valid random Laravel application key'
   [[ "${#app_key_b64}" == "44" ]] ||
