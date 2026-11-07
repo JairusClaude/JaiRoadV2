@@ -125,7 +125,7 @@ class OperationsFrontendController extends Controller
     }
 
     /** @param Actor $actor */
-    private function projects(array $actor, bool $geometry = true): Builder
+    protected function projects(array $actor, bool $geometry = true): Builder
     {
         return $this->scope(DB::table('jairoads_next.maintenance_projects as p')
             ->join('jairoads_next.road_coverages as rc', 'rc.id', '=', 'p.road_coverage_id')
@@ -138,7 +138,7 @@ class OperationsFrontendController extends Controller
     /** @param Actor $actor
      * @return array<string,mixed>
      */
-    private function projectData(\stdClass $p, array $actor): array
+    protected function projectData(\stdClass $p, array $actor): array
     {
         return ['id' => (int) $p->id, 'project_title' => $p->project_title, 'description' => $p->description,
             'road_coverage_id' => (int) $p->road_coverage_id, 'road_name' => $p->road_name, 'municipality' => $p->municipality_name,
@@ -167,48 +167,8 @@ class OperationsFrontendController extends Controller
             'details_url' => self::BASE.'/maintenance-projects/'.$r->project_id.'/records/'.$r->id];
     }
 
-    public function projectIndex(Request $request): Response
-    {
-        $actor = $this->actor($request);
-        $filters = ['search' => $request->string('search')->toString(), 'municipality' => $request->string('municipality', 'all')->toString(), 'sort' => $request->query('sort') === 'oldest' ? 'oldest' : 'newest'];
-        $q = $this->projects($actor, false)->when($filters['search'] !== '', fn (Builder $q) => $q->where('p.project_title', 'ilike', '%'.substr($filters['search'], 0, 255).'%'));
-        if (ctype_digit($filters['municipality'])) {
-            $q->where('rc.lgu_id', $filters['municipality']);
-        }
-
-        return $this->render('MaintenanceProjects/Index', $request, [
-            'projects' => $q->orderBy('p.id', $filters['sort'] === 'oldest' ? 'asc' : 'desc')->paginate(12)->withQueryString()->through(fn (\stdClass $p): array => $this->projectData($p, $actor)),
-            'municipalities' => $this->municipalities($actor), 'filters' => $filters,
-            'integration' => ['ready' => true, 'message' => null], 'canCreate' => $this->writable($actor), 'canBulkDelete' => false,
-        ]);
-    }
-
-    public function projectForm(Request $request, ?int $id = null): Response
-    {
-        $actor = $this->actor($request);
-        $this->writer($actor);
-        $p = $id === null ? null : $this->projects($actor)->where('p.id', $id)->first();
-        abort_if($id !== null && $p === null, 404);
-
-        return $this->render('MaintenanceProjects/'.($id === null ? 'Create' : 'Edit'), $request, [
-            'project' => $p === null ? null : $this->projectData($p, $actor),
-            'coverages' => $this->roads($actor)->where(fn (Builder $q) => $q->whereNull('p.id')->when($id !== null, fn (Builder $q) => $q->orWhere('p.id', $id)))
-                ->orderBy('rc.road_name')->get()->map(fn (\stdClass $r): array => ['id' => (int) $r->id, 'road_name' => $r->road_name,
-                    'municipality' => $r->municipality_name, 'kilometers' => $r->kilometers, 'assigned' => false, 'geojson' => json_decode($r->geojson, true, 512, JSON_THROW_ON_ERROR)]),
-            'integration' => ['ready' => true, 'message' => null],
-        ]);
-    }
-
-    public function saveProject(Request $request, ?int $id = null): RedirectResponse
-    {
-        $this->writer($this->actor($request));
-        $this->operations->saveProject($request, $this->identities, $id);
-
-        return redirect(self::BASE.'/maintenance-projects'.($id === null ? '' : '/'.$id))->with('dd_operations_status', 'Maintenance Project saved to the database.');
-    }
-
     /** @param Actor $actor */
-    private function records(array $actor): Builder
+    protected function records(array $actor): Builder
     {
         return $this->scope(DB::table('jairoads_next.maintenance_records as m')
             ->join('jairoads_next.maintenance_projects as p', 'p.id', '=', 'm.project_id')
@@ -244,7 +204,7 @@ class OperationsFrontendController extends Controller
     /** @param Actor $actor
      * @return array<string,mixed>
      */
-    private function historyData(\stdClass $r, array $actor): array
+    protected function historyData(\stdClass $r, array $actor): array
     {
         $url = self::BASE.'/maintenance-projects/'.$r->project_id.'/records/'.$r->id;
 
@@ -253,20 +213,6 @@ class OperationsFrontendController extends Controller
             'managing_engineer' => $r->managing_engineer_id === null ? null : ['id' => (int) $r->managing_engineer_id, 'first_name' => $r->first_name, 'last_name' => $r->last_name],
             'start_date' => $r->start_date, 'details_url' => $url,
             'edit_url' => $this->canWriteRecord($r, $actor) ? $url.'/edit' : null, 'delete_url' => null];
-    }
-
-    public function projectShow(Request $request, int $id): Response
-    {
-        $actor = $this->actor($request);
-        $p = $this->projects($actor)->where('p.id', $id)->first();
-        abort_unless($p !== null, 404);
-
-        return $this->render('MaintenanceProjects/Show', $request, ['project' => $this->projectData($p, $actor),
-            'records' => $this->records($actor)->where('m.project_id', $id)->orderByDesc('m.maintenance_year')->orderByDesc('m.quarter')
-                ->get(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter', 'm.status', 'm.managing_engineer_id', 'm.start_date', 'e.first_name', 'e.last_name'])
-                ->map(fn (\stdClass $r): array => $this->historyData($r, $actor)),
-            'recordCreateUrl' => $this->writable($actor) ? self::BASE.'/maintenance-projects/'.$id.'/records/create' : null,
-            'expandedYear' => $request->integer('record_year', (int) date('Y'))]);
     }
 
     /** @param Actor $actor
