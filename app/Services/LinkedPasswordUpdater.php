@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\DataDictionary;
+namespace App\Services;
 
 use App\Models\User;
 use Illuminate\Database\QueryException;
@@ -53,7 +53,7 @@ final class LinkedPasswordUpdater
                     $this->unavailable();
                 }
 
-                if (app(DataDictionaryIdentityResolver::class)->resolveForRecovery($fresh) === null) {
+                if (app(AccountIdentityResolver::class)->resolveForRecovery($fresh) === null) {
                     $this->unavailable();
                 }
 
@@ -66,7 +66,7 @@ final class LinkedPasswordUpdater
                     $account = $connection->table('jairoads_next.user_accounts')->where('id', $accountId)->lockForUpdate()->first();
                     if (! $account || ! in_array($account->is_active, [true, 1, '1', 't', 'true'], true)
                         || strcasecmp((string) $account->email, $fresh->email) !== 0
-                        || ! DataDictionaryIdentityResolver::roleLinkValid((string) $account->account_type, $account->engineer_id === null ? null : (int) $account->engineer_id)
+                        || ! AccountIdentityResolver::roleLinkValid((string) $account->account_type, $account->engineer_id === null ? null : (int) $account->engineer_id)
                         || $connection->table('public.users')->where('dd_user_account_id', $accountId)->where('id', '!=', $fresh->getKey())->exists()) {
                         $this->unavailable();
                     }

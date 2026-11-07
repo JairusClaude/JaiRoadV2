@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Services\DataDictionary;
+namespace App\Services;
 
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /** One canonical event plus deduplicated deliveries in the mutation transaction. */
-final class DdOperationAudit
+final class OperationAudit
 {
     /** @param array{account_id:int,role:string,engineer_id:?int} $actor
      * @param  array<string,mixed>  $meta
@@ -20,8 +20,8 @@ final class DdOperationAudit
             throw new \LogicException('Business events require an enclosing mutation transaction and supported action.');
         }
         $login = User::where('dd_user_account_id', $actor['account_id'])->first();
-        abort_unless($login instanceof User && app(DataDictionaryIdentityResolver::class)->resolve($login) === $actor && $actor['role'] !== 'Viewer', 403);
-        $values = app(DdAuditValues::class);
+        abort_unless($login instanceof User && app(AccountIdentityResolver::class)->resolve($login) === $actor && $actor['role'] !== 'Viewer', 403);
+        $values = app(AuditValues::class);
         $old = $action === 'CREATE' ? [] : $values->safe($entity, $oldMeta);
         $new = $action === 'DELETE' ? [] : $values->safe($entity, $action === 'CREATE' && $id !== null && $entity !== 'EngineerLGU'
             ? $values->persisted($entity, $id) + $meta : $meta);
@@ -55,6 +55,6 @@ final class DdOperationAudit
             'new_value' => $action === 'DELETE' ? null : json_encode($new, JSON_THROW_ON_ERROR),
             'recipient_user_id' => null, 'notification_message' => null, 'created_at' => now(),
         ]);
-        app(DdActivityNotifications::class)->deliver($event, $actor, $action, $entity, $id);
+        app(ActivityNotifications::class)->deliver($event, $actor, $action, $entity, $id);
     }
 }

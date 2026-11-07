@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Services\DataDictionary;
+namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
 
 /** Explicit business allowlists. No model/request serialization into history. */
-final class DdAuditValues
+final class AuditValues
 {
     public const TABLES = ['LGU' => 'lgus', 'Engineer' => 'engineers', 'EngineerLGU' => 'engineer_lgus',
         'UserAccount' => 'user_accounts', 'RoadCoverage' => 'road_coverages', 'MaintenanceProject' => 'maintenance_projects',

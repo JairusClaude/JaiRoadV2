@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Services\DataDictionary;
+namespace App\Services;
 
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 /** Linked immutable deliveries, never event copies or read/dismiss state. */
-final class DdActivityNotifications
+final class ActivityNotifications
 {
     public const TABLE = 'jairoads_next.audit_notification_recipients';
 
@@ -33,7 +33,7 @@ final class DdActivityNotifications
             'CREATE' => 'created', 'UPDATE' => 'updated', 'DELETE' => 'deleted', default => throw new \InvalidArgumentException('Unsupported business action.')
         };
         $message = $actor['role'].' '.$verb.' '.$entity.($id === null ? '' : ' #'.$id).'.';
-        $audience = app(DataDictionaryIdentityResolver::class)->notificationRecipients($actor['role'] === 'Engineer' ? $actor['account_id'] : null)
+        $audience = app(AccountIdentityResolver::class)->notificationRecipients($actor['role'] === 'Engineer' ? $actor['account_id'] : null)
             ->selectRaw('?::bigint AS audit_log_id, account.id AS recipient_user_id, ?::text AS notification_message, ?::timestamp AS created_at', [$eventId, $message, now()]);
         DB::table(self::TABLE)->insertUsing(['audit_log_id', 'recipient_user_id', 'notification_message', 'created_at'], $audience);
     }

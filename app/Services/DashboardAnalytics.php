@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Services\DataDictionary;
+namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
 
 /** Read-only summary: source data is the approved jairoads_next business schema. */
-final class DdDashboardAnalytics
+final class DashboardAnalytics
 {
     /**
      * @param  array{account_id:int,role:string,engineer_id:?int}  $actor

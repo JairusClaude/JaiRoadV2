@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\DataDictionary;
+namespace App\Services;
 
 /**
  * Role gates for the approved DD business model.
@@ -13,7 +13,7 @@ namespace App\Services\DataDictionary;
  * record management and data integrity are checked by the controllers on
  * each request, not by this preliminary role-level permission map.
  */
-final class DdRoleAccess
+final class RoleAccess
 {
     private const MANAGERS = ['SuperAdmin', 'Admin'];
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\DataDictionary;
+namespace App\Services;
 
 use App\Models\User;
 use Illuminate\Database\Query\Builder;
@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
  * Data Dictionary: UserAccount(AccountType, IsActive, EngineerID) and
  * Engineer(EngineerStatus). public.users is separate login infrastructure.
  */
-final class DataDictionaryIdentityResolver
+final class AccountIdentityResolver
 {
     /** Canonical role controls permissions; profile linkage never grants a role. */
     public static function roleLinkValid(string $role, ?int $engineerId): bool
@@ -72,7 +72,7 @@ final class DataDictionaryIdentityResolver
     public function notificationRecipients(?int $engineerActor): Builder
     {
         return $this->eligibleLinks(false)->where(function (Builder $query) use ($engineerActor): void {
-            $query->whereIn('account.account_type', DdActivityNotifications::ADMINISTRATIVE_AUDIENCE);
+            $query->whereIn('account.account_type', ActivityNotifications::ADMINISTRATIVE_AUDIENCE);
             if ($engineerActor !== null) {
                 $query->orWhere(function (Builder $engineer) use ($engineerActor): void {
                     $engineer->where('account.account_type', 'Engineer')->where('account.id', $engineerActor);

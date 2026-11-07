@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\DataDictionary;
+namespace App\Services;
 
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -29,8 +29,8 @@ final class AccountProvisioning
     public function record(User $login, int $accountId): void
     {
         abort_unless(DB::transactionLevel() > 0 && $this->available(), 503);
-        $actor = app(DataDictionaryIdentityResolver::class)->resolve($login);
-        abort_unless($actor !== null && DdRoleAccess::canManageAccounts($actor['role']), 403);
+        $actor = app(AccountIdentityResolver::class)->resolve($login);
+        abort_unless($actor !== null && RoleAccess::canManageAccounts($actor['role']), 403);
         $account = DB::table('jairoads_next.user_accounts')->where('id', $accountId)->firstOrFail();
         abort_unless(in_array($account->account_type, ['Admin', 'Engineer', 'Viewer'], true), 403);
         DB::table(self::TABLE)->insert([
