@@ -31,7 +31,7 @@ All PostgreSQL roles, secrets, user data, logs, and web server state exist only 
 - **No Supabase Auth substitution.** The app still uses Fortify plus canonical `public.users.dd_user_account_id`. The dummy `anon/authenticated/service_role` PostgreSQL roles are for an access-denial fixture only.
 - **No persistent staging environment.** This workflow runs on GitHub-hosted ephemeral infrastructure; real manual UAT requires independently authorized staging hosting, DNS/origin, isolated secrets and private Storage.
 - **No historical identity transition.** Official SuperAdmin login, existing unlinked Admin remediation, provenance evidence, manual UAT, backup/restore, teammate integration and deployment are separate review gates.
-- **No production-function privilege change.** `public.rls_auto_enable()` `EXECUTE` revocation requires its own explicit isolated Supabase-like event-trigger rehearsal; it is not changed here.
+- **No production-function privilege change.** An additional disposable PostgreSQL 17 scenario (`tests/Staging/auto-rls-public-execute-probe.sql`) models the enabled `ensure_rls` callback, revokes `PUBLIC EXECUTE` on a **synthetic** `public.rls_auto_enable()` function, verifies API roles cannot call it, then confirms a separate non-owner CREATE TABLE still automatically enables RLS. This is behavioral staging evidence, **not** permission to revoke EXECUTE on the official Supabase function without its own approved rollout.
 
 ## Signoff items before production adaptation
 
