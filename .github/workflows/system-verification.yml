@@ -1,7 +1,7 @@
 name: JaiROADS full system verification
 on:
   push:
-    branches: ['integration/dd-system-completion', 'Oct10_Front&BackEnd_Merge_Integration', 'fix/security-auth-revocation-passkey-dependencies', 'fix/canonical-only-provisioned-auth', 'fix/audit-multirecipient-consistency', 'fix/ordinary-mutation-authorization-races', 'integration/combined-review-candidate-2026-11-07', 'fix/full-system-role-acceptance', 'fix/uat-defect-and-recovery-gates']
+    branches: ['integration/dd-system-completion', 'Oct10_Front&BackEnd_Merge_Integration', 'fix/security-auth-revocation-passkey-dependencies', 'fix/canonical-only-provisioned-auth', 'fix/audit-multirecipient-consistency', 'fix/ordinary-mutation-authorization-races', 'integration/combined-review-candidate-2026-11-07', 'fix/full-system-role-acceptance', 'fix/uat-defect-and-recovery-gates', 'fix/controlled-release-readiness']
   workflow_dispatch:
 permissions:
   contents: read
@@ -18,6 +18,34 @@ jobs:
           persist-credentials: false
       - name: Verify all stacked PRs and teammate integration remain in this candidate
         run: bash tests/Integration/assert-reviewed-history.sh
+
+  release-no-go-gate:
+    name: release / unapproved deployment must remain blocked
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Verify synthetic release gate regressions
+        run: python3 -m unittest discover -s tests/Release -p 'test_*.py' -v
+      - name: Verify committed release templates cannot approve production
+        run: |
+          set +e
+          python3 scripts/release/check_release_readiness.py \
+            --manifest docs/release/release-manifest-template.json \
+            --inventory docs/release/release-inventory-template.json \
+            --uat docs/qa/uat-evidence-template.json \
+            --sha c909ae0f238a532c9c560de6d40a1237215527ac \
+            > /tmp/jairoads-release-no-go.txt
+          code=$?
+          set -e
+          if [[ "$code" != "2" ]] || ! grep -q 'NO GO:' /tmp/jairoads-release-no-go.txt; then
+            echo "FAIL: unapproved release templates did not block." >&2
+            exit 1
+          fi
+          echo "PASS: unapproved release fails closed with no credentials, deployment or database access."
 
   uat-blocker-gates:
     name: qa / UAT evidence must block incomplete releases
