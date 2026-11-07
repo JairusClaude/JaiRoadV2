@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\User;
-use App\Services\DataDictionary\TrustedSuperAdminBootstrap;
+use App\Services\TrustedSuperAdminBootstrap;
 use Illuminate\Support\Facades\DB;
 use Tests\Quarterly\PostgresTestCase;
 
