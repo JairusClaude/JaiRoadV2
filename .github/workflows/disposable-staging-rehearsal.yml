@@ -1,0 +1,134 @@
+name: JaiROADS disposable staging rehearsal
+
+on:
+  pull_request:
+  push:
+    branches:
+      - fix/disposable-staging-rehearsal
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  auxiliary-schema:
+    name: staging / auxiliary schema + restricted RLS
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: jairoads_scratch_staging_host
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d jairoads_scratch_staging_host"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: testing
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DB_DATABASE: jairoads_scratch_staging_host
+      DB_USERNAME: postgres
+      DB_PASSWORD: disposable-ci-only
+      DB_SSLMODE: disable
+      DB_URL: ''
+      JAIROADS_SCRATCH_APPROVAL: DISPOSABLE_LOCAL_ONLY
+    steps:
+      - name: Checkout review branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Install PostgreSQL client if absent
+        run: |
+          if ! command -v psql >/dev/null || ! command -v createdb >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y postgresql-client
+          fi
+      - name: Rehearse fresh and pre-protected canonical AuditLog schemas
+        run: bash tests/Staging/rehearse-auxiliary.sh
+
+  application-smoke:
+    name: staging / disposable Laravel HTTP smoke
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: jairoads_scratch_staging_app
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d jairoads_scratch_staging_app"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+      APP_KEY: base64:MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
+      APP_URL: http://127.0.0.1:8015
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DB_DATABASE: jairoads_scratch_staging_app
+      DB_USERNAME: postgres
+      DB_PASSWORD: disposable-ci-only
+      DB_SSLMODE: disable
+      DB_URL: ''
+      JAIROADS_SCRATCH_APPROVAL: DISPOSABLE_LOCAL_ONLY
+      CACHE_STORE: array
+      SESSION_DRIVER: file
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: array
+      BCRYPT_ROUNDS: '4'
+      PAO_DISABLE: '1'
+      SUPABASE_URL: http://127.0.0.1:5799
+      SUPABASE_SECRET_KEY: disposable-storage-only
+      SUPABASE_SERVICE_ROLE_KEY: disposable-storage-only
+      QUARTERLY_BROWSER_FIXTURE: /tmp/jairoads-staging-fixture.json
+    steps:
+      - name: Checkout review branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with:
+          php-version: '8.4'
+          extensions: 'pdo_pgsql, mbstring'
+          tools: composer:v2
+          coverage: none
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Build app and install synthetic fixtures only
+        run: |
+          composer install --no-interaction --prefer-dist
+          npm ci
+          touch .env
+          npm run build
+          php tests/Browser/prepare-unified.php > "$QUARTERLY_BROWSER_FIXTURE"
+      - name: Verify temporary HTTP app and login endpoint
+        run: |
+          set -euo pipefail
+          php artisan serve --host=127.0.0.1 --port=8015 --no-reload > /tmp/jairoads-staging-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          ready=0
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent "http://127.0.0.1:8015/up" >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" -ne 1 ]; then
+            cat /tmp/jairoads-staging-server.log
+            exit 1
+          fi
+          curl --fail --silent "http://127.0.0.1:8015/login" >/dev/null
+          echo "PASS: isolated Laravel health check and Fortify login page"
