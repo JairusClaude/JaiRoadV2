@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - fix/disposable-staging-rehearsal
+      - fix/staging-restricted-runtime-role
   workflow_dispatch:
 
 permissions:
@@ -49,6 +50,13 @@ jobs:
           fi
       - name: Rehearse fresh and pre-protected canonical AuditLog schemas
         run: bash tests/Staging/rehearse-auxiliary.sh
+      - name: Verify automatic RLS remains active after revoking public function EXECUTE
+        run: |
+          set -euo pipefail
+          export PGHOST="$DB_HOST" PGPORT="$DB_PORT" PGUSER="$DB_USERNAME"
+          export PGPASSWORD="$DB_PASSWORD" PGSSLMODE=disable
+          psql -X -v ON_ERROR_STOP=1 -d "$DB_DATABASE" -f tests/Staging/auto-rls-public-execute-probe.sql >/dev/null
+          echo "PASS: API roles cannot execute auto-RLS callback; event trigger still enables RLS"
 
   application-smoke:
     name: staging / disposable Laravel HTTP smoke
@@ -112,9 +120,19 @@ jobs:
           touch .env
           npm run build
           php tests/Browser/prepare-unified.php > "$QUARTERLY_BROWSER_FIXTURE"
-      - name: Verify temporary HTTP app and login endpoint
+      - name: Install PostgreSQL client for restricted-role verification
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y postgresql-client
+          fi
+      - name: Create temporary non-owner LOGIN role and limited RLS grants
+        run: bash tests/Staging/prepare-restricted-runtime.sh
+      - name: Verify Laravel auth, real business write and notifications as restricted role
         run: |
           set -euo pipefail
+          export DB_USERNAME=jairoads_app_runtime
+          export DB_PASSWORD="$JAIROADS_RUNTIME_TEST_PASSWORD"
           php artisan serve --host=127.0.0.1 --port=8015 --no-reload > /tmp/jairoads-staging-server.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
@@ -127,8 +145,27 @@ jobs:
             sleep 1
           done
           if [ "$ready" -ne 1 ]; then
-            cat /tmp/jairoads-staging-server.log
+            tail -n 80 /tmp/jairoads-staging-server.log
             exit 1
           fi
-          curl --fail --silent "http://127.0.0.1:8015/login" >/dev/null
-          echo "PASS: isolated Laravel health check and Fortify login page"
+          python3 tests/Staging/restricted-auth-http-smoke.py
+          export PGHOST=127.0.0.1 PGPORT=5432 PGUSER=jairoads_app_runtime
+          export PGPASSWORD="$JAIROADS_RUNTIME_TEST_PASSWORD" PGSSLMODE=disable
+          counts="$(psql -X -v ON_ERROR_STOP=1 -Atq -d "$DB_DATABASE" <<'SQL'
+          WITH matching AS (
+            SELECT id FROM jairoads_next.audit_logs
+            WHERE entity_type='LGU' AND action='CREATE'
+              AND description='Authorized administrator created an LGU.'
+          )
+          SELECT (SELECT count(*) FROM matching) || '|' ||
+                 (SELECT count(DISTINCT recipient_user_id)
+                    FROM jairoads_next.audit_notification_recipients
+                   WHERE audit_log_id IN (SELECT id FROM matching));
+          SQL
+          )"
+          IFS='|' read -r events recipients <<< "$counts"
+          if [[ "$events" != '1' || "$recipients" -lt 2 ]]; then
+            echo "Expected one LGU event and at least two eligible unique recipients." >&2
+            exit 1
+          fi
+          echo "PASS: one audited business event and $recipients eligible deliveries committed with restricted DB access"
