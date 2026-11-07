@@ -97,7 +97,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 require __DIR__.'/settings.php';
-require __DIR__.'/dd-frontend.php';
+require __DIR__.'/operations-pages.php';
 
 require __DIR__.'/user-management.php';
 
@@ -168,4 +168,4 @@ require __DIR__.'/role-dashboard.php';
 
 // Dedicated governance command center, never exposed to Admin/Engineer/Viewer.
 require __DIR__.'/superadmin-dashboard.php';
-require __DIR__.'/dd-phase3.php';
+require __DIR__.'/operations.php';
