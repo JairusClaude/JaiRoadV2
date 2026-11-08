@@ -7,6 +7,7 @@ use App\Http\Controllers\DirectoryController;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\PeopleLifecycleController;
 use App\Http\Controllers\PreservedHistoryController;
+use App\Http\Controllers\RoadMunicipalityChangeController;
 use App\Http\Controllers\SectionController;
 use Illuminate\Support\Facades\Route;
 
@@ -42,8 +43,8 @@ Route::middleware(['auth'])->prefix('dd-phase3')->name('jairoads.dd-phase3.')->g
     // Explicitly qualified DD module endpoints; never use legacy CRUD routes.
     Route::post('/ops/roads', [OperationsController::class, 'saveRoad'])->name('operations.roads.store');
     Route::put('/ops/roads/{id}', [OperationsController::class, 'saveRoad'])->whereNumber('id');
-    Route::post('/ops/roads/{id}/municipality/preview', [OperationsController::class, 'previewRoadMunicipality'])->whereNumber('id')->name('operations.roads.municipality.preview');
-    Route::post('/ops/roads/{id}/municipality/confirm', [OperationsController::class, 'confirmRoadMunicipality'])->whereNumber('id')->name('operations.roads.municipality.confirm');
+    Route::post('/ops/roads/{id}/municipality/preview', [RoadMunicipalityChangeController::class, 'previewRoadMunicipality'])->whereNumber('id')->name('operations.roads.municipality.preview');
+    Route::post('/ops/roads/{id}/municipality/confirm', [RoadMunicipalityChangeController::class, 'confirmRoadMunicipality'])->whereNumber('id')->name('operations.roads.municipality.confirm');
     Route::post('/ops/projects', [OperationsController::class, 'saveProject'])->name('operations.projects.store');
     Route::put('/ops/projects/{id}', [OperationsController::class, 'saveProject'])->whereNumber('id');
     Route::post('/ops/records', [OperationsController::class, 'saveRecord'])->name('operations.records.store');

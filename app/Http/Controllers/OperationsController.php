@@ -17,7 +17,6 @@ use App\Services\OperationAudit;
 use App\Services\PreservedProjectDeletion;
 use App\Services\RecordMutationAuthority;
 use App\Services\RoadCoverageGeometry;
-use App\Services\RoadMunicipalityChange;
 use App\Services\RoleAccess;
 use App\Services\TwiceYearlyMaintenance;
 use Illuminate\Database\Query\Builder;
@@ -39,12 +38,12 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
  * Final DD module endpoints. public.users is authentication infrastructure only.
  * All business SQL is explicitly jairoads_next qualified and audited.
  */
-final class OperationsController extends Controller
+class OperationsController extends Controller
 {
     private const SECTIONS = ['settings', 'roads', 'projects', 'updates', 'documents'];
 
     /** @return array{account_id:int, role:string, engineer_id:?int} */
-    private function actor(Request $request, AccountIdentityResolver $resolver): array
+    protected function actor(Request $request, AccountIdentityResolver $resolver): array
     {
         $user = $request->user();
         abort_unless($user instanceof User && $user->getAttribute('dd_user_account_id') !== null, 403);
@@ -65,7 +64,7 @@ final class OperationsController extends Controller
     /**
      * @param  array{account_id:int,role:string,engineer_id:?int}  $actor
      */
-    private function writer(array $actor): void
+    protected function writer(array $actor): void
     {
         abort_unless(RoleAccess::canWriteOperations($actor['role']), 403, 'This role cannot change operational records.');
     }
@@ -142,7 +141,7 @@ final class OperationsController extends Controller
      * @param  array<string,mixed>  $meta
      * @param  array<string,mixed>  $oldMeta
      */
-    private function audit(array $actor, string $action, string $entity, ?int $id, string $description, array $meta = [], array $oldMeta = []): void
+    protected function audit(array $actor, string $action, string $entity, ?int $id, string $description, array $meta = [], array $oldMeta = []): void
     {
         app(OperationAudit::class)->record($actor, $action, $entity, $id, $description, $meta, $oldMeta);
     }
@@ -153,7 +152,7 @@ final class OperationsController extends Controller
         return app(AuditValues::class)->changes($entity, (array) $row, array_replace((array) $row, $data)) !== [[], []];
     }
 
-    private function done(string $section, string $message): RedirectResponse
+    protected function done(string $section, string $message): RedirectResponse
     {
         return redirect()->route('jairoads.dd-phase3.show', ['section' => $section])->with('dd_operations_status', $message);
     }
@@ -387,39 +386,6 @@ final class OperationsController extends Controller
         });
 
         return $this->done('roads', 'Road coverage saved.');
-    }
-
-    public function previewRoadMunicipality(Request $request, AccountIdentityResolver $resolver, RoadMunicipalityChange $changes, int $id): JsonResponse
-    {
-        $this->writer($this->actor($request, $resolver));
-        $data = $request->validate(['lgu_id' => ['required', 'integer', 'min:1']]);
-        $login = $request->user();
-        abort_unless($login instanceof User, 403);
-
-        return response()->json($changes->preview($login, $id, (int) $data['lgu_id']))
-            ->header('Cache-Control', 'no-store, private');
-    }
-
-    public function confirmRoadMunicipality(Request $request, AccountIdentityResolver $resolver, RoadMunicipalityChange $changes, int $id): RedirectResponse
-    {
-        $this->writer($this->actor($request, $resolver));
-        $data = $request->validate(['confirmation_token' => ['required', 'string', 'max:20000']]);
-        $login = $request->user();
-        abort_unless($login instanceof User, 403);
-        $impact = $changes->confirm($login, $id, $data['confirmation_token'], function (array $actor, array $impact) use ($id): void {
-            $affected = ['project_ids' => array_column($impact['projects'], 'id'), 'maintenance_record_ids' => $impact['maintenance_record_ids']];
-            $this->audit($actor, 'UPDATE', 'RoadCoverage', $id,
-                'RoadCoverage #'.$id.' municipality changed from '.$impact['previous']['municipality'].' to '.$impact['proposed']['municipality'].' by authorized '.$actor['role'].' DD-UserAccount#'.$actor['account_id'].'.',
-                $impact['proposed'] + $affected, $impact['previous'] + $affected);
-        });
-
-        $message = 'Municipality changed from '.$impact['previous']['municipality'].' to '.$impact['proposed']['municipality'].'. Road geometry and maintenance history were preserved.';
-        $details = '/dd-phase3/ui/road-coverages/'.$id;
-        if ($request->input('return_to') === $details) {
-            return redirect($details)->with('dd_operations_status', $message);
-        }
-
-        return $this->done('roads', $message);
     }
 
     public function saveProject(Request $request, AccountIdentityResolver $resolver, ?int $id = null): RedirectResponse
