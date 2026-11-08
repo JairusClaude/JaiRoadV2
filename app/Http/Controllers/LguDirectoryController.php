@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesAndAuditsDirectory;
 use App\Services\AccountIdentityResolver;
 use App\Services\AuditValues;
 use Illuminate\Database\QueryException;
@@ -14,10 +15,12 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * LGU create, update and delete endpoints.
- * Retains the existing DirectoryController administrator guard and audit helper.
+ * Retains the shared canonical administrator guard and audit helper.
  */
-final class LguDirectoryController extends DirectoryController
+final class LguDirectoryController extends Controller
 {
+    use AuthorizesAndAuditsDirectory;
+
     public function createLgu(Request $request, AccountIdentityResolver $resolver): RedirectResponse
     {
         $actor = $this->admin($request, $resolver);

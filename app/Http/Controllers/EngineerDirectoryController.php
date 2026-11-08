@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesAndAuditsDirectory;
 use App\Services\AccountIdentityResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -11,10 +12,12 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Engineer directory profile creation endpoint.
- * Reuses existing DirectoryController administrator guard and audit writer.
+ * Reuses the shared canonical administrator guard and audit writer.
  */
-final class EngineerDirectoryController extends DirectoryController
+final class EngineerDirectoryController extends Controller
 {
+    use AuthorizesAndAuditsDirectory;
+
     public function createEngineer(Request $request, AccountIdentityResolver $resolver): RedirectResponse
     {
         $actor = $this->admin($request, $resolver);

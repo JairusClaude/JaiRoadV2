@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesAndAuditsDirectory;
 use App\Services\AccountIdentityResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,10 +13,12 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * EngineerLGU assignment administration endpoint.
- * Reuses existing DirectoryController administrator guard and audit writer.
+ * Reuses the shared canonical administrator guard and audit writer.
  */
-final class EngineerAssignmentController extends DirectoryController
+final class EngineerAssignmentController extends Controller
 {
+    use AuthorizesAndAuditsDirectory;
+
     public function setAssignment(Request $request, AccountIdentityResolver $resolver): RedirectResponse
     {
         $actor = $this->admin($request, $resolver);

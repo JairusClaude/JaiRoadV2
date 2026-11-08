@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesAndAuditsDirectory;
 use App\Services\AccountIdentityResolver;
 use App\Services\AccountProvisioning;
 use Illuminate\Database\QueryException;
@@ -17,10 +18,12 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Canonical DD account provisioning; retains original atomic Fortify linkage,
- * authorization, locks, audit and validation, via DirectoryController helpers.
+ * authorization, locks, audit and validation, via the shared canonical directory helpers.
  */
-final class CanonicalAccountProvisioningController extends DirectoryController
+final class CanonicalAccountProvisioningController extends Controller
 {
+    use AuthorizesAndAuditsDirectory;
+
     public function createAccount(Request $request, AccountIdentityResolver $resolver): RedirectResponse
     {
         $actor = $this->admin($request, $resolver);
