@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\AuditHistoryController;
-use App\Http\Controllers\DirectoryController;
+use App\Http\Controllers\CanonicalAccountProvisioningController;
 use App\Http\Controllers\EngineerAssignmentController;
 use App\Http\Controllers\EngineerDirectoryController;
 use App\Http\Controllers\LguDirectoryController;
@@ -30,7 +30,7 @@ Route::middleware(['auth'])->prefix('dd-phase3')->name('jairoads.dd-phase3.')->g
     Route::delete('/lgus/{id}', [LguDirectoryController::class, 'deleteLgu'])->whereNumber('id')->middleware('throttle:6,1')->name('lgus.destroy');
     Route::post('/engineers', [EngineerDirectoryController::class, 'createEngineer'])->middleware('throttle:10,1')->name('engineers.store');
     Route::post('/assignments', [EngineerAssignmentController::class, 'setAssignment'])->middleware('throttle:10,1')->name('assignments.store');
-    Route::post('/accounts', [DirectoryController::class, 'createAccount'])->middleware('throttle:5,1')->name('accounts.store');
+    Route::post('/accounts', [CanonicalAccountProvisioningController::class, 'createAccount'])->middleware('throttle:5,1')->name('accounts.store');
 
     Route::put('/engineers/{id}', [PeopleLifecycleController::class, 'updateEngineer'])->whereNumber('id');
     Route::post('/engineers/{id}/retirement', [PeopleLifecycleController::class, 'retireEngineer'])->whereNumber('id');

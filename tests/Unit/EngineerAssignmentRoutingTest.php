@@ -28,7 +28,6 @@ it('preserves engineer creation and assignment route contracts after extraction'
 
     expect(method_exists(DirectoryController::class, 'createEngineer'))->toBeFalse();
     expect(method_exists(DirectoryController::class, 'setAssignment'))->toBeFalse();
-    expect(method_exists(DirectoryController::class, 'createAccount'))->toBeTrue();
     expect(method_exists(EngineerDirectoryController::class, 'createEngineer'))->toBeTrue();
     expect(method_exists(EngineerAssignmentController::class, 'setAssignment'))->toBeTrue();
 });
