@@ -107,7 +107,7 @@ final class PeopleLifecycleController extends Controller
             if ($account !== null && $this->active($account->is_active)) {
                 $this->protectLastSuperAdmin($account);
                 DB::table('jairoads_next.user_accounts')->where('id', $accountId)->update(['is_active' => false, 'updated_at' => now()]);
-                $this->audit($actor, 'UserAccount', (int) $accountId, 'Linked account deactivated during Engineer retirement.', ['is_active' => true], ['is_active' => false]);
+                $this->audit($actor, 'UserAccount', (int) $accountId, 'Linked account deactivated during Engineer retirement.', ['is_active' => true], ['is_active' => false], 'DEACTIVATE');
             }
             $assignments = DB::table('jairoads_next.engineer_lgus')->where('engineer_id', $id)->where('is_active', true)->orderBy('lgu_id')->lockForUpdate()->get(['lgu_id']);
             foreach ($assignments as $assignment) {
@@ -117,7 +117,7 @@ final class PeopleLifecycleController extends Controller
             }
             if ($profile->engineer_status !== 'Retired') {
                 DB::table('jairoads_next.engineers')->where('id', $id)->update(['engineer_status' => 'Retired']);
-                $this->audit($actor, 'Engineer', $id, 'Administrator retired Engineer; historical references retained.', ['engineer_status' => $profile->engineer_status], ['engineer_status' => 'Retired']);
+                $this->audit($actor, 'Engineer', $id, 'Administrator retired Engineer; historical references retained.', ['engineer_status' => $profile->engineer_status], ['engineer_status' => 'Retired'], 'RETIRE');
             }
         }, 3);
 
@@ -188,7 +188,7 @@ final class PeopleLifecycleController extends Controller
                 }
             }
             DB::table('jairoads_next.user_accounts')->where('id', $id)->update(['is_active' => $active, 'updated_at' => now()]);
-            $this->audit($actor, 'UserAccount', $id, $active ? 'Administrator reactivated account.' : 'Administrator deactivated account.', ['is_active' => ! $active], ['is_active' => $active]);
+            $this->audit($actor, 'UserAccount', $id, $active ? 'Administrator reactivated account.' : 'Administrator deactivated account.', ['is_active' => ! $active], ['is_active' => $active], $active ? 'ACTIVATE' : 'DEACTIVATE');
         }, 3);
 
         return back()->with('dd_phase3_status', 'Account status saved.');

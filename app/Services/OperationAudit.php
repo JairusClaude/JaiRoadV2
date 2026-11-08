@@ -17,9 +17,14 @@ final class OperationAudit
     public function record(array $actor, string $action, string $entity, ?int $id, string $description, array $meta = [], array $oldMeta = []): void
     {
         $lifecycle = in_array($action, ['ACTIVATE', 'DEACTIVATE'], true);
+        $reassignment = $action === 'REASSIGN';
+        $retirement = $action === 'RETIRE';
         if (DB::transactionLevel() < 1
-            || ! in_array($action, ['CREATE', 'UPDATE', 'DELETE', 'ACTIVATE', 'DEACTIVATE'], true)
-            || ($lifecycle && $entity !== 'EngineerLGU')) {
+            || ! in_array($action, ['CREATE', 'UPDATE', 'DELETE', 'ACTIVATE', 'DEACTIVATE', 'REASSIGN', 'RETIRE'], true)
+            || ($lifecycle && ! in_array($entity, ['EngineerLGU', 'UserAccount'], true))
+            || ($reassignment && $entity !== 'MaintenanceRecord')
+            || ($retirement && $entity !== 'Engineer')
+            || (($lifecycle || $reassignment || $retirement) && ($id === null || $id < 1))) {
             throw new \LogicException('Business events require an enclosing mutation transaction and supported action.');
         }
         $login = User::where('dd_user_account_id', $actor['account_id'])->first();
@@ -28,32 +33,56 @@ final class OperationAudit
         $old = $action === 'CREATE' ? [] : $values->safe($entity, $oldMeta);
         $new = $action === 'DELETE' ? [] : $values->safe($entity, $action === 'CREATE' && $id !== null && $entity !== 'EngineerLGU'
             ? $values->persisted($entity, $id) + $meta : $meta);
-        if ($action === 'UPDATE' || $lifecycle) {
+        if ($action === 'UPDATE' || $lifecycle || $reassignment || $retirement) {
             if ($oldMeta === []) {
-                throw new \LogicException($lifecycle
-                    ? 'Lifecycle auditing requires a persisted before image.'
-                    : 'UPDATE auditing requires a persisted before image.');
+                throw new \LogicException('Change auditing requires a persisted before image.');
             }
             if ($lifecycle) {
-                // The action must describe an actual, identified EngineerLGU status transition.
                 $afterActive = $action === 'ACTIVATE';
                 if (! array_key_exists('is_active', $old)
                     || ! array_key_exists('is_active', $new)
                     || $old['is_active'] !== ($action === 'DEACTIVATE')
                     || $new['is_active'] !== $afterActive) {
-                    throw new \LogicException('EngineerLGU lifecycle action does not match the before/after status.');
+                    throw new \LogicException('Lifecycle audit action does not match the before/after status.');
                 }
-                foreach (['engineer_id', 'lgu_id'] as $key) {
-                    if (! isset($meta[$key], $oldMeta[$key])
-                        || (int) $meta[$key] < 1
-                        || (int) $meta[$key] !== (int) $oldMeta[$key]) {
-                        throw new \LogicException('EngineerLGU lifecycle auditing requires matching assignment identifiers.');
+                if ($entity === 'EngineerLGU') {
+                    foreach (['engineer_id', 'lgu_id'] as $key) {
+                        if (! isset($meta[$key], $oldMeta[$key])
+                            || (int) $meta[$key] < 1
+                            || (int) $meta[$key] !== (int) $oldMeta[$key]) {
+                            throw new \LogicException('EngineerLGU lifecycle auditing requires matching assignment identifiers.');
+                        }
+                    }
+                }
+            }
+            if ($retirement && (($old['engineer_status'] ?? null) !== 'Active' || ($new['engineer_status'] ?? null) !== 'Retired')) {
+                throw new \LogicException('RETIRE requires an Active to Retired Engineer transition.');
+            }
+            if ($reassignment) {
+                // NULL is a permitted manager endpoint for explicitly approved unassignment.
+                if (! array_key_exists('managing_engineer_id', $old)
+                    || ! array_key_exists('managing_engineer_id', $new)
+                    || $old['managing_engineer_id'] === $new['managing_engineer_id']) {
+                    throw new \LogicException('REASSIGN requires a changed ManagingEngineer ID.');
+                }
+                foreach ([$old['managing_engineer_id'], $new['managing_engineer_id']] as $managerId) {
+                    if ($managerId !== null && (! is_int($managerId) || $managerId < 1)) {
+                        throw new \LogicException('REASSIGN requires valid nullable ManagingEngineer IDs.');
                     }
                 }
             }
             [$old, $new] = $values->changes($entity, $old, $new);
             if ($old === [] && $new === []) {
                 return;
+            }
+            $allowedChanges = match (true) {
+                $lifecycle => ['is_active'],
+                $reassignment => ['managing_engineer_id', 'managing_engineer_name'],
+                $retirement => ['engineer_status'],
+                default => null,
+            };
+            if ($allowedChanges !== null && array_diff(array_unique([...array_keys($old), ...array_keys($new)]), $allowedChanges) !== []) {
+                throw new \LogicException('Lifecycle audit contains unrelated changed fields.');
             }
             if ($entity === 'EngineerLGU') {
                 foreach (['engineer_id', 'lgu_id'] as $key) {

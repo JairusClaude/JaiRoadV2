@@ -23,6 +23,8 @@ final class ActivityNotifications
             'DELETE' => 'deleted',
             'ACTIVATE' => 'activated',
             'DEACTIVATE' => 'deactivated',
+            'REASSIGN' => 'reassigned',
+            'RETIRE' => 'retired',
             default => throw new \InvalidArgumentException('Unsupported business action.'),
         };
     }

@@ -40,8 +40,17 @@ final class AccountLifecycleTest extends PostgresTestCase
         $this->assertTrue(hash_equals($target->password, $target->fresh()->password));
         $events = DB::table('jairoads_next.audit_logs')->where('entity_type', 'UserAccount')->where('entity_id', $target->dd_user_account_id)->whereNull('recipient_user_id')->orderBy('id')->get();
         $this->assertCount(2, $events);
+        $this->assertSame('DEACTIVATE', $events[0]->action);
+        $this->assertSame('ACTIVATE', $events[1]->action);
+        $this->assertTrue(json_decode($events[0]->old_value, true)['is_active']);
         $this->assertFalse(json_decode($events[0]->new_value, true)['is_active']);
         $this->assertTrue(json_decode($events[1]->new_value, true)['is_active']);
+        $this->assertFalse(json_decode($events[1]->old_value, true)['is_active']);
+        $deliveries = DB::table('jairoads_next.audit_notification_recipients')->count();
+        $this->patchJson('/dd-phase3/accounts/'.$target->dd_user_account_id.'/status', ['is_active' => true])->assertRedirect();
+        $this->assertCount(2, DB::table('jairoads_next.audit_logs')->where('entity_type', 'UserAccount')
+            ->where('entity_id', $target->dd_user_account_id)->get());
+        $this->assertSame($deliveries, DB::table('jairoads_next.audit_notification_recipients')->count());
         $this->assertStringNotContainsString($target->password, $events->toJson());
     }
 

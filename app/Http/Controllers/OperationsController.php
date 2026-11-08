@@ -553,8 +553,8 @@ class OperationsController extends Controller
             $new = ['managing_engineer_id' => (int) $data['managing_engineer_id'],
                 'managing_engineer_name' => trim($newManager->first_name.' '.$newManager->last_name)];
             $this->t('maintenance_records')->where('id', $id)->update(['managing_engineer_id' => $new['managing_engineer_id'], 'updated_at' => now()]);
-            // Reuse existing UPDATE vocabulary/helper; old/new snapshots retain explicit reassignment history.
-            $this->audit($actor, 'UPDATE', 'MaintenanceRecord', $id, 'Administrator explicitly reassigned ManagingEngineer.', $new, $old);
+            // Explicit manager change has a dedicated auditable action.
+            $this->audit($actor, 'REASSIGN', 'MaintenanceRecord', $id, 'Administrator explicitly reassigned ManagingEngineer.', $new, $old);
         }, 3);
 
         return redirect()->route('jairoads.dd-phase3.show', ['section' => 'projects', 'view' => 'show', 'project' => $projectId])
@@ -587,7 +587,7 @@ class OperationsController extends Controller
                 return;
             }
             $this->t('maintenance_records')->where('id', $id)->update(['managing_engineer_id' => null, 'updated_at' => now()]);
-            $this->audit($actor, 'UPDATE', 'MaintenanceRecord', $id,
+            $this->audit($actor, 'REASSIGN', 'MaintenanceRecord', $id,
                 'MaintenanceRecord #'.$id.' ManagingEngineer changed from Engineer #'.$old.' to NULL.',
                 ['managing_engineer_id' => null], ['managing_engineer_id' => $old]);
         }, 3);

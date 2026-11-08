@@ -20,6 +20,10 @@ final class ManagingEngineerReassignmentTest extends PostgresTestCase
         $this->assertDatabaseHas('jairoads_next.maintenance_records', ['id' => $id, 'managing_engineer_id' => $replacement, 'created_by' => $f['user']->dd_user_account_id, 'quarter' => 'Q4']);
         $event = DB::table('jairoads_next.audit_logs')->where('entity_type', 'MaintenanceRecord')->where('entity_id', $id)->whereNull('recipient_user_id')->first();
         $this->assertSame((int) $admin->dd_user_account_id, (int) $event->user_id);
+        $this->assertSame('REASSIGN', $event->action);
+        $this->assertTrue(DB::table('jairoads_next.audit_notification_recipients')
+            ->where('audit_log_id', $event->id)
+            ->where('notification_message', 'like', '%reassigned MaintenanceRecord%')->exists());
         $this->assertSame($f['engineer'], json_decode($event->old_value, true)['managing_engineer_id']);
         $this->assertSame($replacement, json_decode($event->new_value, true)['managing_engineer_id']);
         $this->withSession(['password_hash_web' => null])->actingAs($f['user'])->putJson('/dd-phase3/ops/records/'.$id, $this->recordData($f['project'], $f['engineer'], 'Q4'))->assertForbidden();

@@ -49,6 +49,13 @@ final class EngineerLifecycleTest extends PostgresTestCase
         $this->assertTrue(hash_equals($hash, DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->value('password')));
         $count = DB::table('jairoads_next.audit_logs')->count();
         $this->assertSame(4, $count); // Account, two distinct memberships, Engineer profile.
+        $this->assertSame('DEACTIVATE', DB::table('jairoads_next.audit_logs')
+            ->where('entity_type', 'UserAccount')->where('entity_id', $f['user']->dd_user_account_id)->sole()->action);
+        $retirementEvent = DB::table('jairoads_next.audit_logs')
+            ->where('entity_type', 'Engineer')->where('entity_id', $f['engineer'])->sole();
+        $this->assertSame('RETIRE', $retirementEvent->action);
+        $this->assertSame('Active', json_decode($retirementEvent->old_value, true)['engineer_status']);
+        $this->assertSame('Retired', json_decode($retirementEvent->new_value, true)['engineer_status']);
         $assignmentEvents = DB::table('jairoads_next.audit_logs')->where('entity_type', 'EngineerLGU')->get();
         $this->assertCount(2, $assignmentEvents);
         $lguIds = [];

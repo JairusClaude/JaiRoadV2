@@ -238,12 +238,12 @@ final class PreservedRelationshipsTest extends PostgresTestCase
         $id = $f['records'][0];
         $url = '/dd-phase3/ops/records/'.$id.'/unassignment';
         $this->postJson($url, ['expected_current_manager_id' => $f['engineer']])->assertRedirect();
-        $event = DB::table('jairoads_next.audit_logs')->where('action', 'UPDATE')->sole();
+        $event = DB::table('jairoads_next.audit_logs')->where('action', 'REASSIGN')->sole();
         $this->assertSame(['managing_engineer_id' => null], json_decode($event->new_value, true));
         $this->assertSame(['managing_engineer_id' => $f['engineer']], json_decode($event->old_value, true));
         $this->postJson($url, ['expected_current_manager_id' => $f['engineer']])->assertUnprocessable();
         $this->postJson($url, ['expected_current_manager_id' => null])->assertRedirect();
-        $this->assertSame(1, DB::table('jairoads_next.audit_logs')->where('action', 'UPDATE')->count());
+        $this->assertSame(1, DB::table('jairoads_next.audit_logs')->where('action', 'REASSIGN')->count());
         $ineligible = $this->engineer();
         $this->account('Engineer', $ineligible);
         $this->postJson('/dd-phase3/ops/records/'.$id.'/reassignment', ['managing_engineer_id' => $ineligible, 'expected_current_manager_id' => null])->assertUnprocessable()->assertJsonValidationErrors('managing_engineer_id');
@@ -261,7 +261,7 @@ final class PreservedRelationshipsTest extends PostgresTestCase
     {
         $f = $this->history();
         $token = $this->preview($f['project']);
-        DB::unprepared("CREATE FUNCTION jairoads_next.reject_unassign_test() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.action='UPDATE' THEN RAISE EXCEPTION 'Disposable audit failure'; END IF; RETURN NEW; END $$; CREATE TRIGGER reject_unassign_test BEFORE INSERT ON jairoads_next.audit_logs FOR EACH ROW EXECUTE FUNCTION jairoads_next.reject_unassign_test()");
+        DB::unprepared("CREATE FUNCTION jairoads_next.reject_unassign_test() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.action='REASSIGN' THEN RAISE EXCEPTION 'Disposable audit failure'; END IF; RETURN NEW; END $$; CREATE TRIGGER reject_unassign_test BEFORE INSERT ON jairoads_next.audit_logs FOR EACH ROW EXECUTE FUNCTION jairoads_next.reject_unassign_test()");
         $this->postJson('/dd-phase3/ops/records/'.$f['records'][0].'/unassignment', ['expected_current_manager_id' => $f['engineer']])->assertServerError();
         $this->assertDatabaseHas('jairoads_next.maintenance_records', ['id' => $f['records'][0], 'managing_engineer_id' => $f['engineer']]);
         DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->update(['is_active' => false]);
