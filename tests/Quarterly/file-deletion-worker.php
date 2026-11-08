@@ -10,11 +10,21 @@ use Illuminate\Support\Facades\Http;
 require __DIR__.'/../../vendor/autoload.php';
 $app = require __DIR__.'/../../bootstrap/app.php';
 $app->make(Kernel::class)->bootstrap();
+// Resolve the temporary marker to its real directory. tempnam() on Windows
+// returns a path with backslashes, whereas the former prefix check hard-coded
+// a forward slash. Never accept a nonexistent marker or a file outside temp.
+$marker = $argv[4] ?? '';
+$markerPath = is_file($marker) ? realpath($marker) : false;
+$tempPath = realpath(sys_get_temp_dir());
+$validMarker = $markerPath !== false && $tempPath !== false
+    && dirname($markerPath) === $tempPath
+    && str_starts_with(basename($markerPath), 'jairoads-file-delete-');
+
 if (! $app->environment('testing') || getenv('JAIROADS_SCRATCH_APPROVAL') !== 'DISPOSABLE_LOCAL_ONLY'
     || config('database.connections.pgsql.host') !== '127.0.0.1'
     || ! preg_match('/^jairoads_scratch_[a-z0-9_]+$/', config('database.connections.pgsql.database'))
     || config('database.connections.pgsql.url') || getenv('RENDER') !== false
-    || ! str_starts_with($argv[4], sys_get_temp_dir().'/jairoads-file-delete-')) {
+    || ! $validMarker) {
     throw new RuntimeException('Unsafe file deletion worker target.');
 }
 config(['database.connections.pgsql.sslmode' => 'disable', 'jairoads_documents.supabase_url' => 'https://disposable-storage.test',

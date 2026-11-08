@@ -16,7 +16,10 @@ final class OperationAudit
      */
     public function record(array $actor, string $action, string $entity, ?int $id, string $description, array $meta = [], array $oldMeta = []): void
     {
-        if (DB::transactionLevel() < 1 || ! in_array($action, ['CREATE', 'UPDATE', 'DELETE'], true)) {
+        $lifecycle = in_array($action, ['ACTIVATE', 'DEACTIVATE'], true);
+        if (DB::transactionLevel() < 1
+            || ! in_array($action, ['CREATE', 'UPDATE', 'DELETE', 'ACTIVATE', 'DEACTIVATE'], true)
+            || ($lifecycle && $entity !== 'EngineerLGU')) {
             throw new \LogicException('Business events require an enclosing mutation transaction and supported action.');
         }
         $login = User::where('dd_user_account_id', $actor['account_id'])->first();
@@ -25,9 +28,28 @@ final class OperationAudit
         $old = $action === 'CREATE' ? [] : $values->safe($entity, $oldMeta);
         $new = $action === 'DELETE' ? [] : $values->safe($entity, $action === 'CREATE' && $id !== null && $entity !== 'EngineerLGU'
             ? $values->persisted($entity, $id) + $meta : $meta);
-        if ($action === 'UPDATE') {
+        if ($action === 'UPDATE' || $lifecycle) {
             if ($oldMeta === []) {
-                throw new \LogicException('UPDATE auditing requires a persisted before image.');
+                throw new \LogicException($lifecycle
+                    ? 'Lifecycle auditing requires a persisted before image.'
+                    : 'UPDATE auditing requires a persisted before image.');
+            }
+            if ($lifecycle) {
+                // The action must describe an actual, identified EngineerLGU status transition.
+                $afterActive = $action === 'ACTIVATE';
+                if (! array_key_exists('is_active', $old)
+                    || ! array_key_exists('is_active', $new)
+                    || $old['is_active'] !== ($action === 'DEACTIVATE')
+                    || $new['is_active'] !== $afterActive) {
+                    throw new \LogicException('EngineerLGU lifecycle action does not match the before/after status.');
+                }
+                foreach (['engineer_id', 'lgu_id'] as $key) {
+                    if (! isset($meta[$key], $oldMeta[$key])
+                        || (int) $meta[$key] < 1
+                        || (int) $meta[$key] !== (int) $oldMeta[$key]) {
+                        throw new \LogicException('EngineerLGU lifecycle auditing requires matching assignment identifiers.');
+                    }
+                }
             }
             [$old, $new] = $values->changes($entity, $old, $new);
             if ($old === [] && $new === []) {

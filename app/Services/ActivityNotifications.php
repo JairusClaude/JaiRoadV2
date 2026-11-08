@@ -14,6 +14,19 @@ final class ActivityNotifications
 
     public const ADMINISTRATIVE_AUDIENCE = ['Admin', 'SuperAdmin'];
 
+    /** Lifecycle verbs are not new permissions or notification audiences. */
+    public static function verbForAction(string $action): string
+    {
+        return match ($action) {
+            'CREATE' => 'created',
+            'UPDATE' => 'updated',
+            'DELETE' => 'deleted',
+            'ACTIVATE' => 'activated',
+            'DEACTIVATE' => 'deactivated',
+            default => throw new \InvalidArgumentException('Unsupported business action.'),
+        };
+    }
+
     /** @return list<string> */
     public static function recipientsFor(string $actorRole): array
     {
@@ -29,9 +42,7 @@ final class ActivityNotifications
     public function deliver(int $eventId, array $actor, string $action, string $entity, ?int $id): void
     {
         abort_unless(DB::transactionLevel() > 0 && $this->available(), 503, 'Business auditing requires schema-owner notification setup.');
-        $verb = match ($action) {
-            'CREATE' => 'created', 'UPDATE' => 'updated', 'DELETE' => 'deleted', default => throw new \InvalidArgumentException('Unsupported business action.')
-        };
+        $verb = self::verbForAction($action);
         $message = $actor['role'].' '.$verb.' '.$entity.($id === null ? '' : ' #'.$id).'.';
         $audience = app(AccountIdentityResolver::class)->notificationRecipients($actor['role'] === 'Engineer' ? $actor['account_id'] : null)
             ->selectRaw('?::bigint AS audit_log_id, account.id AS recipient_user_id, ?::text AS notification_message, ?::timestamp AS created_at', [$eventId, $message, now()]);

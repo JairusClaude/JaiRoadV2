@@ -53,9 +53,9 @@ final class PeopleLifecycleController extends Controller
      * @param  array<string,mixed>  $old
      * @param  array<string,mixed>  $new
      */
-    private function audit(array $actor, string $entity, int $id, string $description, array $old, array $new): void
+    private function audit(array $actor, string $entity, int $id, string $description, array $old, array $new, string $action = 'UPDATE'): void
     {
-        app(OperationAudit::class)->record($actor, 'UPDATE', $entity, $id, $description, $new, $old);
+        app(OperationAudit::class)->record($actor, $action, $entity, $id, $description, $new, $old);
     }
 
     public function updateEngineer(Request $request, AccountIdentityResolver $resolver, int $id): RedirectResponse
@@ -113,7 +113,7 @@ final class PeopleLifecycleController extends Controller
             foreach ($assignments as $assignment) {
                 DB::table('jairoads_next.engineer_lgus')->where('engineer_id', $id)->where('lgu_id', $assignment->lgu_id)->update(['is_active' => false]);
                 $key = ['engineer_id' => $id, 'lgu_id' => (int) $assignment->lgu_id];
-                $this->audit($actor, 'EngineerLGU', $id, 'LGU assignment deactivated during Engineer retirement.', $key + ['is_active' => true], $key + ['is_active' => false]);
+                $this->audit($actor, 'EngineerLGU', $id, 'LGU assignment deactivated during Engineer retirement.', $key + ['is_active' => true], $key + ['is_active' => false], 'DEACTIVATE');
             }
             if ($profile->engineer_status !== 'Retired') {
                 DB::table('jairoads_next.engineers')->where('id', $id)->update(['engineer_status' => 'Retired']);

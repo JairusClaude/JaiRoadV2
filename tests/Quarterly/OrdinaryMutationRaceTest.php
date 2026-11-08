@@ -351,6 +351,7 @@ final class OrdinaryMutationRaceTest extends PostgresTestCase
             $events = DB::table('jairoads_next.audit_logs')->orderBy('id')->get();
             $this->assertSame($case === 'project' ? 'MaintenanceProject' : ($case === 'record' ? 'MaintenanceRecord' : 'MonthlyUpdate'), $events[0]->entity_type);
             $this->assertSame('EngineerLGU', $events[1]->entity_type);
+            $this->assertSame('DEACTIVATE', $events[1]->action);
             $this->assertCount(2, $events);
             if ($case === 'project') {
                 $this->assertDatabaseHas('jairoads_next.maintenance_projects', ['project_title' => 'Commit-safe project']);

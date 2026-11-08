@@ -53,6 +53,7 @@ final class EngineerLifecycleTest extends PostgresTestCase
         $this->assertCount(2, $assignmentEvents);
         $lguIds = [];
         foreach ($assignmentEvents as $event) {
+            $this->assertSame('DEACTIVATE', $event->action);
             $old = json_decode($event->old_value, true);
             $new = json_decode($event->new_value, true);
             $this->assertSame($f['engineer'], $old['engineer_id']);

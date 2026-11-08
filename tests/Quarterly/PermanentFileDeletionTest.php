@@ -14,6 +14,30 @@ final class PermanentFileDeletionTest extends PostgresTestCase
 {
     private array $bucketOverrides = [];
 
+    /** tempnam() truncates its requested prefix to three characters on Windows. */
+    private static function createWorkerMarker(): string
+    {
+        $tempDirectory = realpath(sys_get_temp_dir());
+        if ($tempDirectory === false || ! is_dir($tempDirectory)) {
+            throw new \RuntimeException('Cannot resolve the disposable file-deletion test marker directory.');
+        }
+
+        // Exclusive creation retains a full, unpredictable name on Windows and Linux.
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $marker = $tempDirectory.DIRECTORY_SEPARATOR.'jairoads-file-delete-'.bin2hex(random_bytes(16));
+            $handle = @fopen($marker, 'x');
+            if ($handle === false) {
+                continue;
+            }
+
+            fclose($handle);
+
+            return $marker;
+        }
+
+        throw new \RuntimeException('Cannot create a unique disposable file-deletion test marker.');
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -356,7 +380,7 @@ final class PermanentFileDeletionTest extends PostgresTestCase
     {
         $f = $this->files();
         DB::commit();
-        $marker = tempnam(sys_get_temp_dir(), 'jairoads-file-delete-');
+        $marker = self::createWorkerMarker();
         $worker = null;
         try {
             DB::beginTransaction();
@@ -409,7 +433,7 @@ final class PermanentFileDeletionTest extends PostgresTestCase
             $this->deleteJson($url)->assertStatus(202); // Commit intent before the crash/recovery worker starts.
         }
         DB::commit();
-        $marker = tempnam(sys_get_temp_dir(), 'jairoads-file-delete-');
+        $marker = self::createWorkerMarker();
         $workers = [];
         try {
             DB::beginTransaction();

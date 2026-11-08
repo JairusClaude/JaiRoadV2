@@ -42,7 +42,8 @@ final class EngineerAssignmentController extends Controller
             } else {
                 DB::table('jairoads_next.engineer_lgus')->insert($key + ['is_active' => (bool) $v['is_active']]);
             }
-            $this->audit($actor, $existing ? 'UPDATE' : 'CREATE', 'EngineerLGU', (int) $v['engineer_id'], 'Authorized administrator maintained an EngineerLGU assignment.', $key + ['is_active' => (bool) $v['is_active']], $existing ? $key + ['is_active' => $existing->is_active] : []);
+            $action = $existing ? ((bool) $v['is_active'] ? 'ACTIVATE' : 'DEACTIVATE') : 'CREATE';
+            $this->audit($actor, $action, 'EngineerLGU', (int) $v['engineer_id'], 'Authorized administrator maintained an EngineerLGU assignment.', $key + ['is_active' => (bool) $v['is_active']], $existing ? $key + ['is_active' => $existing->is_active] : []);
         });
 
         return redirect()->route('jairoads.dd-phase3.show', ['section' => 'users'])->with('dd_phase3_status', 'Engineer assignment saved.');
