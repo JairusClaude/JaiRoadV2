@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\AuditHistoryController;
 use App\Http\Controllers\DirectoryController;
+use App\Http\Controllers\LguDirectoryController;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\PeopleLifecycleController;
 use App\Http\Controllers\PreservedHistoryController;
@@ -22,9 +23,9 @@ Route::middleware(['auth'])->prefix('dd-phase3')->name('jairoads.dd-phase3.')->g
     Route::get('/{section}', SectionController::class)
         ->whereIn('section', ['dashboard', 'users', 'lgus', 'settings', 'roads', 'projects', 'updates', 'documents'])
         ->name('show');
-    Route::post('/lgus', [DirectoryController::class, 'createLgu'])->middleware('throttle:10,1')->name('lgus.store');
-    Route::put('/lgus/{id}', [DirectoryController::class, 'updateLgu'])->whereNumber('id')->middleware('throttle:10,1')->name('lgus.update');
-    Route::delete('/lgus/{id}', [DirectoryController::class, 'deleteLgu'])->whereNumber('id')->middleware('throttle:6,1')->name('lgus.destroy');
+    Route::post('/lgus', [LguDirectoryController::class, 'createLgu'])->middleware('throttle:10,1')->name('lgus.store');
+    Route::put('/lgus/{id}', [LguDirectoryController::class, 'updateLgu'])->whereNumber('id')->middleware('throttle:10,1')->name('lgus.update');
+    Route::delete('/lgus/{id}', [LguDirectoryController::class, 'deleteLgu'])->whereNumber('id')->middleware('throttle:6,1')->name('lgus.destroy');
     Route::post('/engineers', [DirectoryController::class, 'createEngineer'])->middleware('throttle:10,1')->name('engineers.store');
     Route::post('/assignments', [DirectoryController::class, 'setAssignment'])->middleware('throttle:10,1')->name('assignments.store');
     Route::post('/accounts', [DirectoryController::class, 'createAccount'])->middleware('throttle:5,1')->name('accounts.store');
