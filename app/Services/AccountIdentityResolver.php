@@ -20,7 +20,7 @@ final class AccountIdentityResolver
     public static function roleLinkValid(string $role, ?int $engineerId): bool
     {
         return match ($role) {
-            'SuperAdmin' => $engineerId === null || $engineerId > 0,
+            'SuperAdmin' => $engineerId === null,
             'Admin', 'Engineer', 'Viewer' => $engineerId !== null && $engineerId > 0,
             default => false,
         };
@@ -94,7 +94,9 @@ final class AccountIdentityResolver
                 $q->where(function (Builder $root): void {
                     $root->where('account.account_type', 'SuperAdmin')->whereNull('account.engineer_id');
                 })->orWhere(function (Builder $linked): void {
-                    $linked->where('account.engineer_id', '>', 0)->where('engineer.engineer_status', 'Active');
+                    // Linked roles require a current active Engineer; SuperAdmin never has a link.
+                    $linked->whereIn('account.account_type', ['Admin', 'Engineer', 'Viewer'])
+                        ->where('account.engineer_id', '>', 0)->where('engineer.engineer_status', 'Active');
                 });
             });
         if (! $reactivation) {
