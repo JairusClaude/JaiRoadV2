@@ -140,56 +140,6 @@ class DirectoryController extends Controller
         ]);
     }
 
-    public function createEngineer(Request $request, AccountIdentityResolver $resolver): RedirectResponse
-    {
-        $actor = $this->admin($request, $resolver);
-        // ContactNo is REQUIRED on new forms pending the DD nullability conflict;
-        // this satisfies both competing tab definitions without changing DDL.
-        $v = $request->validate([
-            'first_name' => ['required', 'string', 'max:100'],
-            'middle_name' => ['nullable', 'string', 'max:100'],
-            'last_name' => ['required', 'string', 'max:100'],
-            'contact_no' => ['required', 'string', 'max:30'],
-            'rank' => ['required', 'string', 'max:100'],
-        ]);
-        $v['engineer_status'] = 'Active';
-        DB::transaction(function () use ($actor, $v): void {
-            $id = (int) DB::table('jairoads_next.engineers')->insertGetId($v);
-            $this->audit($actor, 'CREATE', 'Engineer', $id, 'Authorized administrator created an Engineer.', ['engineer_id' => $id, 'engineer_status' => 'Active']);
-        });
-
-        return redirect()->route('jairoads.dd-phase3.show', ['section' => 'users'])->with('dd_phase3_status', 'Engineer profile created.');
-    }
-
-    public function setAssignment(Request $request, AccountIdentityResolver $resolver): RedirectResponse
-    {
-        $actor = $this->admin($request, $resolver);
-        $v = $request->validate(['engineer_id' => ['required', 'integer', 'min:1'], 'lgu_id' => ['required', 'integer', 'min:1'], 'is_active' => ['required', 'boolean']]);
-        DB::transaction(function () use ($actor, $v): void {
-            DB::select('SELECT pg_advisory_xact_lock(1927710915)');
-            $engineer = DB::table('jairoads_next.engineers')->where('id', $v['engineer_id'])->lockForUpdate()->first(['id', 'engineer_status']);
-            if (! $engineer || (string) $engineer->engineer_status !== 'Active') {
-                throw ValidationException::withMessages(['engineer_id' => 'Only active Engineers may be assigned.']);
-            }
-            if (! DB::table('jairoads_next.lgus')->where('id', $v['lgu_id'])->exists()) {
-                throw ValidationException::withMessages(['lgu_id' => 'LGU does not exist.']);
-            }
-            $key = ['engineer_id' => (int) $v['engineer_id'], 'lgu_id' => (int) $v['lgu_id']];
-            $existing = DB::table('jairoads_next.engineer_lgus')->where($key)->first(['is_active']);
-            if ($existing && $existing->is_active === (bool) $v['is_active']) {
-                return;
-            }
-            if ($existing) {
-                DB::table('jairoads_next.engineer_lgus')->where($key)->update(['is_active' => (bool) $v['is_active']]);
-            } else {
-                DB::table('jairoads_next.engineer_lgus')->insert($key + ['is_active' => (bool) $v['is_active']]);
-            }
-            $this->audit($actor, $existing ? 'UPDATE' : 'CREATE', 'EngineerLGU', (int) $v['engineer_id'], 'Authorized administrator maintained an EngineerLGU assignment.', $key + ['is_active' => (bool) $v['is_active']], $existing ? $key + ['is_active' => $existing->is_active] : []);
-        });
-
-        return redirect()->route('jairoads.dd-phase3.show', ['section' => 'users'])->with('dd_phase3_status', 'Engineer assignment saved.');
-    }
-
     public function createAccount(Request $request, AccountIdentityResolver $resolver): RedirectResponse
     {
         $actor = $this->admin($request, $resolver);
