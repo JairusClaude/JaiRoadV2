@@ -234,7 +234,7 @@ class OperationsController extends Controller
 
         return Inertia::render('dd-phase3/Operations', [
             'managerChoices' => $managerChoices,
-            'canUnassign' => $this->managers($actor) && app(PreservedProjectDeletion::class)->available(),
+            'canUnassign' => false,
             'maintenanceHistory' => $maintenanceHistory, 'maintenanceSchedule' => $maintenanceSchedule,
             'section' => $section, 'role' => $actor['role'], 'canManage' => $this->managers($actor),
             'engineerId' => $actor['engineer_id'], 'hasAssignment' => count($activeLgus) > 0,
@@ -563,36 +563,7 @@ class OperationsController extends Controller
 
     public function unassignRecord(Request $request, AccountIdentityResolver $resolver, int $id): RedirectResponse
     {
-        $actor = $this->actor($request, $resolver);
-        abort_unless($this->managers($actor), 403);
-        abort_unless(app(PreservedProjectDeletion::class)->available(), 503, 'Schema-owner setup is required for unassignment.');
-        $data = $request->validate(['expected_current_manager_id' => ['present', 'nullable', 'integer', 'min:1']]);
-        $projectId = $this->t('maintenance_records')->where('id', $id)->value('project_id');
-        abort_unless($projectId !== null, 409, 'Detached history cannot change assignments.');
-        DB::transaction(function () use ($request, $resolver, $actor, $data, $id, $projectId): void {
-            DB::select('SELECT pg_advisory_xact_lock_shared(1927710916)');
-            abort_unless($this->t('maintenance_projects')->where('id', $projectId)->lockForUpdate()->first(['id']) !== null, 404);
-            $row = $this->t('maintenance_records')->where('id', $id)->lockForUpdate()->first(['project_id', 'managing_engineer_id']);
-            abort_unless($row !== null && $row->project_id === $projectId, 409);
-            $account = $this->t('user_accounts')->where('id', $actor['account_id'])->sharedLock()->first(['engineer_id']);
-            if ($account?->engineer_id !== null) {
-                $this->t('engineers')->where('id', $account->engineer_id)->sharedLock()->first(['id']);
-            }
-            abort_unless($this->actor($request, $resolver) === $actor, 403);
-            $old = $row->managing_engineer_id === null ? null : (int) $row->managing_engineer_id;
-            if ($old !== ($data['expected_current_manager_id'] === null ? null : (int) $data['expected_current_manager_id'])) {
-                throw ValidationException::withMessages(['expected_current_manager_id' => 'Manager changed. Refresh before unassigning.']);
-            }
-            if ($old === null) {
-                return;
-            }
-            $this->t('maintenance_records')->where('id', $id)->update(['managing_engineer_id' => null, 'updated_at' => now()]);
-            $this->audit($actor, 'REASSIGN', 'MaintenanceRecord', $id,
-                'MaintenanceRecord #'.$id.' ManagingEngineer changed from Engineer #'.$old.' to NULL.',
-                ['managing_engineer_id' => null], ['managing_engineer_id' => $old]);
-        }, 3);
-
-        return back()->with('dd_operations_status', 'ManagingEngineer is NULL (unassigned).');
+        abort(403, 'ManagingEngineer is required by the Final Data Dictionary. Reassign this record to another eligible Engineer instead.');
     }
 
     public function saveUpdate(Request $request, AccountIdentityResolver $resolver, ?int $id = null): RedirectResponse
@@ -828,7 +799,7 @@ class OperationsController extends Controller
             abort_unless($login instanceof User, 403);
             app(PreservedProjectDeletion::class)->confirm($login, $id, $v['confirmation_token']);
 
-            return $this->done('projects', 'Project deleted; maintenance history and files preserved.');
+            return $this->done('projects', 'Empty MaintenanceProject deleted successfully.');
         }
         $allowed = ['roads' => ['road_coverages', 'RoadCoverage'],
             'projects' => ['maintenance_projects', 'MaintenanceProject'],
