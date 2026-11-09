@@ -16,7 +16,7 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
     public static function linkedTypes(): iterable
     {
         foreach (['Admin', 'SuperAdmin'] as $actor) {
-            foreach (['Admin', 'Engineer', 'Viewer'] as $type) {
+            foreach (['Admin', 'Engineer'] as $type) {
                 yield $actor.' provisions '.$type => [$actor, $type];
             }
         }
@@ -66,14 +66,35 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
     }
 
-    public function test_viewer_requires_a_profile_and_ordinary_creation_cannot_escalate_to_superadmin(): void
+    public function test_unlinked_viewer_can_be_provisioned_with_evidence_but_cannot_escalate(): void
     {
         $this->actingAs($this->account('SuperAdmin'));
-        $this->postJson('/dd-phase3/accounts', $this->input('Viewer'))->assertUnprocessable()->assertJsonValidationErrors('engineer_id');
         $this->postJson('/dd-phase3/accounts', $this->input('SuperAdmin'))->assertUnprocessable()->assertJsonValidationErrors('account_type');
+        $this->postJson('/dd-phase3/accounts', $this->input('Viewer'))->assertRedirect();
+        $account = DB::table('jairoads_next.user_accounts')->where('username', 'linked-new')->first();
+        $this->assertSame('Viewer', $account->account_type);
+        $this->assertNull($account->engineer_id);
+        $this->assertDatabaseHas('jairoads_security.account_provisioning', [
+            'user_account_id' => $account->id, 'engineer_id' => null, 'method' => 'administrator',
+        ]);
+        $viewer = User::where('dd_user_account_id', $account->id)->firstOrFail();
+        $identity = app(AccountIdentityResolver::class)->resolve($viewer);
+        $this->assertNotNull($identity);
+        $this->assertSame('Viewer', $identity['role']);
+        $this->assertNull($identity['engineer_id']);
+        $this->postJson('/logout')->assertNoContent();
+        $this->postJson('/login', ['email' => $viewer->email, 'password' => 'Linked-Disposable!123'])->assertOk();
+        $this->postJson('/dd-phase3/ops/projects', [])->assertForbidden();
+    }
+
+    public function test_viewer_explicit_active_unclaimed_link_is_also_supported(): void
+    {
+        $this->actingAs($this->account('SuperAdmin'));
         $engineer = $this->engineer();
         $this->postJson('/dd-phase3/accounts', $this->input('Viewer') + ['engineer_id' => $engineer])->assertRedirect();
-        $this->assertDatabaseHas('jairoads_next.user_accounts', ['username' => 'linked-new', 'account_type' => 'Viewer', 'engineer_id' => $engineer]);
+        $this->assertDatabaseHas('jairoads_next.user_accounts', [
+            'username' => 'linked-new', 'account_type' => 'Viewer', 'engineer_id' => $engineer,
+        ]);
     }
 
     public function test_available_profiles_are_filtered_against_all_accounts_not_the_limited_directory(): void

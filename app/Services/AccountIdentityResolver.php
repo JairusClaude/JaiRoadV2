@@ -21,7 +21,10 @@ final class AccountIdentityResolver
     {
         return match ($role) {
             'SuperAdmin' => $engineerId === null,
-            'Admin', 'Engineer', 'Viewer' => $engineerId !== null && $engineerId > 0,
+            // Existing unlinked Admins require independent reviewed-transition evidence.
+            // New Admin provisioning still requires a real Active Engineer profile.
+            'Admin', 'Viewer' => $engineerId === null || $engineerId > 0,
+            'Engineer' => $engineerId !== null && $engineerId > 0,
             default => false,
         };
     }
@@ -93,8 +96,12 @@ final class AccountIdentityResolver
             ->where(function (Builder $q): void {
                 $q->where(function (Builder $root): void {
                     $root->where('account.account_type', 'SuperAdmin')->whereNull('account.engineer_id');
+                })->orWhere(function (Builder $optional): void {
+                    // Existing Admin compatibility and optional Viewer links need provenance below.
+                    // An unlinked Engineer may never authenticate.
+                    $optional->whereIn('account.account_type', ['Admin', 'Viewer'])
+                        ->whereNull('account.engineer_id');
                 })->orWhere(function (Builder $linked): void {
-                    // Linked roles require a current active Engineer; SuperAdmin never has a link.
                     $linked->whereIn('account.account_type', ['Admin', 'Engineer', 'Viewer'])
                         ->where('account.engineer_id', '>', 0)->where('engineer.engineer_status', 'Active');
                 });
@@ -110,7 +117,14 @@ final class AccountIdentityResolver
                 ->where(function (Builder $q): void {
                     $q->where('account.account_type', 'SuperAdmin')->orWhere(function (Builder $ordinary): void {
                         $ordinary->whereColumn('provenance.provisioned_role', 'account.account_type')
-                            ->whereColumn('provenance.engineer_id', 'account.engineer_id');
+                            // Equality does not match NULL; this PostgreSQL comparison does.
+                            ->whereRaw('provenance.engineer_id IS NOT DISTINCT FROM account.engineer_id')
+                            ->where(function (Builder $link): void {
+                                $link->where('account.account_type', '<>', 'Admin')
+                                    ->orWhereNotNull('account.engineer_id')
+                                    // No unlinked Admin is admitted through ordinary creation evidence.
+                                    ->orWhere('provenance.method', 'reviewed_transition');
+                            });
                     });
                 });
         } else {

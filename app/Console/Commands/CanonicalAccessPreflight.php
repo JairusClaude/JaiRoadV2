@@ -38,8 +38,13 @@ final class CanonicalAccessPreflight extends Command
                 if (! AccountIdentityResolver::roleLinkValid($a->account_type, $a->engineer_id)) {
                     $issues[] = 'role_profile_conflict';
                 }
-                if ($a->account_type !== 'SuperAdmin' && $a->engineer_id === null) {
+                if ($a->account_type === 'Engineer' && $a->engineer_id === null) {
                     $issues[] = 'needs_engineer_link';
+                }
+                if ($a->account_type === 'Admin' && $a->engineer_id === null
+                    && ! $provisioning->verified((int) $a->id, $a->account_type, null)) {
+                    // No silent grandfathering of existing Admins without review evidence.
+                    $issues[] = 'needs_existing_admin_review';
                 }
                 if ($a->engineer_id !== null && $a->engineer_status !== 'Active') {
                     $issues[] = 'missing_or_retired_profile';
@@ -72,7 +77,7 @@ final class CanonicalAccessPreflight extends Command
                 'provenance_available' => $report['provenance_available'],
                 'roles' => array_fill_keys(['SuperAdmin', 'Admin', 'Engineer', 'Viewer'], [
                     'total' => 0, 'eligible' => 0, 'needs_engineer_link' => 0,
-                    'needs_reviewed_provisioning_evidence' => 0,
+                    'needs_existing_admin_review' => 0, 'needs_reviewed_provisioning_evidence' => 0,
                 ]),
                 'legacy_only_login_count' => count($report['legacy_only_login_ids']),
                 'orphaned_bridge_login_count' => count($report['orphaned_bridge_login_ids']),
@@ -86,7 +91,7 @@ final class CanonicalAccessPreflight extends Command
                 if ($account['eligible']) {
                     $summary['roles'][$role]['eligible']++;
                 }
-                foreach (['needs_engineer_link', 'needs_reviewed_provisioning_evidence'] as $issue) {
+                foreach (['needs_engineer_link', 'needs_existing_admin_review', 'needs_reviewed_provisioning_evidence'] as $issue) {
                     if (in_array($issue, $account['issues'], true)) {
                         $summary['roles'][$role][$issue]++;
                     }
