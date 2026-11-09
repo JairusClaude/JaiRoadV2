@@ -887,9 +887,8 @@ export default function AdminDashboardPage({
                         ))}
                     </div>
                     <p className="mt-4 text-xs leading-5 text-[#96A2B2]">
-                        Monthly reports and documents are inventory totals;
-                        their legacy relationships may require review against
-                        the newer data dictionary.
+                        Monthly updates and formal documents are displayed as
+                        inventory totals.
                     </p>
                 </Panel>
             </div>

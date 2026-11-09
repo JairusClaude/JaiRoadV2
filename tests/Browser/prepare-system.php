@@ -11,7 +11,7 @@ final class SystemBrowserFixture extends PostgresTestCase
     public function prepare(): void
     {
         $this->setUp();
-        (require base_path('database/proposals/preserve_project_history.php'))->up(); // Disposable schema-owner rehearsal only.
+        // Final DD: project and ManagingEngineer references must remain required.
         (require base_path('database/proposals/create_file_deletions.php'))->up(); // Disposable schema-owner rehearsal only.
         $f = $this->fixture('Engineer');
         $lgu = DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->value('lgu_id');
@@ -32,11 +32,19 @@ final class SystemBrowserFixture extends PostgresTestCase
         $preservedUpdate = (int) DB::table('jairoads_next.monthly_updates')->insertGetId(['maintenance_id' => $preservedRecord, 'update_month' => '2026-04', 'progress_percentage' => 25, 'created_by' => $admin->dd_user_account_id]);
         $preservedDocument = (int) DB::table('jairoads_next.maintenance_documents')->insertGetId(['maintenance_id' => $preservedRecord, 'document_title' => 'Retained Docker document', 'file_name' => 'seed.pdf', 'file_path' => 'maintenance-records/'.$preservedRecord.'/00000000-0000-4000-8000-000000000001.pdf', 'uploaded_by' => $admin->dd_user_account_id]);
         $preservedMedia = (int) DB::table('jairoads_next.media')->insertGetId(['monthly_update_id' => $preservedUpdate, 'file_name' => 'seed.png', 'file_type' => 'image/png', 'file_path' => 'monthly-updates/'.$preservedUpdate.'/00000000-0000-4000-8000-000000000001.png', 'uploaded_by' => $admin->dd_user_account_id]);
+        // Strict-DD browser fixture: a distinct RoadCoverage and an EMPTY project.
+        // Existing fixture projects retain their records and private attachments.
+        $emptyRoadId = $this->road($f['engineer']);
+        $emptyProject = (int) DB::table('jairoads_next.maintenance_projects')->insertGetId([
+            'road_coverage_id' => $emptyRoadId,
+            'project_title' => 'Phase 11L empty project',
+            'created_by' => $admin->dd_user_account_id,
+        ]);
         DB::commit();
         echo json_encode(['admin_email' => $admin->email, 'superadmin_email' => $super->email,
             'engineer_email' => $f['user']->email, 'viewer_email' => $viewer->email, 'rogue_email' => $rogueLogin->email,
             'engineer_id' => $f['engineer'], 'viewer_id' => $viewer->dd_user_account_id,
-            'lgu_id' => (int) $lgu, 'project_id' => $f['project'], 'record_id' => (int) $record,
+            'lgu_id' => (int) $lgu, 'project_id' => $f['project'], 'empty_project' => $emptyProject, 'record_id' => (int) $record,
             'preserved_project' => $preservedProject, 'preserved_record' => $preservedRecord, 'preserved_document' => $preservedDocument, 'preserved_media' => $preservedMedia,
             'document_id' => (int) $document, 'media_id' => (int) $media], JSON_THROW_ON_ERROR);
     }

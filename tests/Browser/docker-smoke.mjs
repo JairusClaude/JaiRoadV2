@@ -310,19 +310,18 @@ try {
         ];
         const retainedBytes = await Promise.all(
             retainedFiles.map(async (path) => {
-                const r = await historicalAdmin.request(path);
-                assert.equal(r.status, 200);
+                const result = await historicalAdmin.request(path);
+                assert.equal(result.status, 200);
 
-                return Buffer.from(await r.arrayBuffer());
+                return Buffer.from(await result.arrayBuffer());
             }),
         );
-        const previewUrl = `/dd-phase3/ui/maintenance-projects/${fixture.preserved_project}/deletion-preview`;
-        const stalePreview = await (
-            await historicalAdmin.request(previewUrl, {
-                headers: { Accept: 'application/json' },
-            })
-        ).json();
-        assert.equal(stalePreview.counts.maintenance_records, 1);
+        const blockedProject = `/dd-phase3/ui/maintenance-projects/${fixture.preserved_project}`;
+        const blockedPreview = await historicalAdmin.request(
+            `${blockedProject}/deletion-preview`,
+            { headers: { Accept: 'application/json' } },
+        );
+        assert.equal(blockedPreview.status, 409);
         assert.equal(
             (
                 await historicalAdmin.post(
@@ -330,93 +329,49 @@ try {
                     { expected_current_manager_id: fixture.engineer_id },
                 )
             ).status,
-            302,
+            403,
         );
         assert.equal(
             (
-                await historicalAdmin.remove(
-                    `/dd-phase3/ui/maintenance-projects/${fixture.preserved_project}`,
-                    { confirmation_token: stalePreview.confirmation_token },
-                )
+                await historicalAdmin.remove(blockedProject, {
+                    confirmation_token: 'invalid',
+                })
             ).status,
             422,
         );
-        const freshPreview = await (
-            await historicalAdmin.request(previewUrl, {
-                headers: { Accept: 'application/json' },
-            })
-        ).json();
-        const deletesBeforeProject = mock.counts.compensations;
-        const deletion = await historicalAdmin.remove(
-            `/dd-phase3/ui/maintenance-projects/${fixture.preserved_project}`,
-            { confirmation_token: freshPreview.confirmation_token },
-        );
-        assert.equal(deletion.status, 200);
-        assert.equal((await deletion.json()).state, 'completed');
-        assert.equal(mock.counts.compensations, deletesBeforeProject);
-        const historyPath = `/dd-phase3/history/records/${fixture.preserved_record}`;
-        const history = await historicalAdmin.request(historyPath);
-        assert.equal(history.status, 200);
-        // This HTTP-only smoke harness receives Inertia's unhydrated shell.
-        // The browser suite verifies the visible NULL label after React mounts.
-        const historyHtml = await history.text();
-        const pageScript = historyHtml.match(
-            /<script\b[^>]*\bdata-page=[^>]*>([\s\S]*?)<\/script>/i,
-        );
-        assert.ok(
-            pageScript,
-            'Historical response must include its Inertia page',
-        );
-        const historicalPage = JSON.parse(pageScript[1]);
-        assert.equal(
-            historicalPage.component,
-            'MaintenanceRecords/PreservedHistory',
-        );
-        assert.equal(historicalPage.props.record.id, fixture.preserved_record);
-        assert.equal(historicalPage.props.record.project_id, null);
-        assert.equal(historicalPage.props.record.managing_engineer_id, null);
-        assert.equal(
-            historicalPage.props.record.previous_project_id,
-            fixture.preserved_project,
-        );
-        assert.equal(
-            historicalPage.props.record.historical_context.previous_project.id,
-            fixture.preserved_project,
-        );
-        assert.equal(historicalPage.props.updates.total, 1);
-        assert.equal(historicalPage.props.documents.total, 1);
-        assert.equal(historicalPage.props.media.total, 1);
+        assert.equal((await historicalAdmin.request(blockedProject)).status, 200);
+        const storageBeforeProject = mock.counts.compensations;
 
         for (const [i, path] of retainedFiles.entries()) {
-            const r = await historicalAdmin.request(path);
-            assert.equal(r.status, 200);
-            assert.deepEqual(
-                Buffer.from(await r.arrayBuffer()),
-                retainedBytes[i],
-            );
+            const response = await historicalAdmin.request(path);
+            assert.equal(response.status, 200);
+            assert.deepEqual(Buffer.from(await response.arrayBuffer()), retainedBytes[i]);
         }
 
-        for (const email of [
-            fixture.engineer_email,
-            fixture.viewer_email,
-            fixture.rogue_email,
-        ]) {
-            const denied = await session();
-            await denied.post('/login', {
-                email,
-                password: 'Disposable-Test!123',
-            });
-            assert.equal((await denied.request(historyPath)).status, 403);
+        const emptyProject = `/dd-phase3/ui/maintenance-projects/${fixture.empty_project}`;
+        const emptyPreviewResponse = await historicalAdmin.request(
+            `${emptyProject}/deletion-preview`,
+            { headers: { Accept: 'application/json' } },
+        );
+        assert.equal(emptyPreviewResponse.status, 200);
+        const emptyPreview = await emptyPreviewResponse.json();
+        assert.equal(emptyPreview.counts.maintenance_records, 0);
+        const deletion = await historicalAdmin.remove(emptyProject, {
+            confirmation_token: emptyPreview.confirmation_token,
+        });
+        assert.equal(deletion.status, 200);
+        assert.equal((await deletion.json()).state, 'completed');
+        assert.equal((await historicalAdmin.request(emptyProject)).status, 404);
+        assert.equal((await historicalAdmin.request(blockedProject)).status, 200);
+        assert.equal(mock.counts.compensations, storageBeforeProject);
 
-            for (const path of retainedFiles) {
-                assert.equal((await denied.request(path)).status, 403);
-            }
+        for (const path of retainedFiles) {
+            assert.equal((await historicalAdmin.request(path)).status, 200);
         }
 
         console.log(
-            'PASS: production Docker project-only deletion, NULL manager unassignment, stale preview rejection, preserved history/files, zero project Storage deletion and orphan-history authorization.',
+            'PASS: production Docker denies referenced-project deletion and manager NULL unassignment, preserves records/files, and deletes only a separately confirmed empty project without Storage mutation.',
         );
-
         console.log(
             'PASS: production Docker Admin document and SuperAdmin media permanent deletion through exact-object Storage mocks, idempotent retry and retained parent project.',
         );

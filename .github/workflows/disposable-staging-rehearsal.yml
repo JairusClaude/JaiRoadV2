@@ -302,7 +302,7 @@ jobs:
         run: php artisan test tests/Quarterly/ReviewedAccountTransitionTest.php --stop-on-failure
 
   optional-schema:
-    name: staging / file intents, preserved history and period uniqueness
+    name: staging / file intents, strict-DD preservation guard and period uniqueness
     runs-on: ubuntu-latest
     services:
       postgres:

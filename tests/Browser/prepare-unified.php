@@ -11,7 +11,7 @@ final class UnifiedFrontendBrowserFixture extends PostgresTestCase
     public function prepare(): void
     {
         $this->setUp();
-        (require base_path('database/proposals/preserve_project_history.php'))->up(); // Disposable schema-owner rehearsal only.
+        // Final DD: project and ManagingEngineer references must remain required.
         (require base_path('database/proposals/create_file_deletions.php'))->up(); // Guarded disposable rehearsal, never shared.
         $f = $this->fixture('Engineer');
         $lgu = DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->value('lgu_id');
@@ -60,11 +60,19 @@ final class UnifiedFrontendBrowserFixture extends PostgresTestCase
                 'actor_identifier' => 'Historical browser fixture', 'action' => 'LOGIN', 'entity_type' => 'UserAccount',
                 'entity_id' => $super->dd_user_account_id, 'description' => 'Retained historical authentication entry', 'created_at' => '2020-01-01 00:00:00']);
         }
+        // Strict-DD browser fixture: a distinct RoadCoverage and an EMPTY project.
+        // Existing fixture projects retain their records and private attachments.
+        $emptyRoadId = $this->road($f['engineer']);
+        $emptyProject = (int) DB::table('jairoads_next.maintenance_projects')->insertGetId([
+            'road_coverage_id' => $emptyRoadId,
+            'project_title' => 'Phase 11L empty project',
+            'created_by' => $admin->dd_user_account_id,
+        ]);
         DB::commit();
         echo json_encode(['audit_history_ids' => $auditHistory, 'session_cookie_name' => config('session.cookie'), 'admin_email' => $admin->email, 'superadmin_email' => $super->email,
             'engineer_email' => $f['user']->email, 'viewer_email' => $viewer->email, 'rogue_email' => $rogueLogin->email,
             'geometry_roads' => $geometryRoads, 'road_id' => $f['road'], 'destination_id' => (int) $destination, 'engineer_id' => $f['engineer'], 'viewer_id' => $viewer->dd_user_account_id,
-            'lgu_id' => (int) $lgu, 'project_id' => $f['project'], 'record_id' => (int) $record,
+            'lgu_id' => (int) $lgu, 'project_id' => $f['project'], 'empty_project' => $emptyProject, 'record_id' => (int) $record,
             'document_id' => (int) $document, 'media_id' => (int) $media], JSON_THROW_ON_ERROR);
     }
 }

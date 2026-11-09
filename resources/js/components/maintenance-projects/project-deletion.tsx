@@ -63,7 +63,14 @@ export function useProjectDeletion(onDeleted?: () => void) {
                 );
 
                 if (!response.ok) {
-                    throw new Error();
+                    const payload = await response.json().catch(() => null);
+
+                    throw new Error(
+                        response.status === 409 &&
+                            typeof payload?.message === 'string'
+                            ? payload.message
+                            : 'Deletion preview is unavailable. Refresh and try again.',
+                    );
                 }
 
                 const data = await response.json();
@@ -71,10 +78,12 @@ export function useProjectDeletion(onDeleted?: () => void) {
                 if (request === generation.current) {
                     setImpact(data);
                 }
-            } catch {
+            } catch (reason) {
                 if (request === generation.current) {
                     setError(
-                        'Deletion preview is unavailable. Check your authorization and schema-owner setup.',
+                        reason instanceof Error
+                            ? reason.message
+                            : 'Deletion preview is unavailable. Refresh and try again.',
                     );
                 }
             }
@@ -119,7 +128,10 @@ export function useProjectDeletion(onDeleted?: () => void) {
                 if (!response.ok || data.state !== 'completed') {
                     setError(
                         data.errors?.confirmation_token?.[0] ??
-                            'Project deletion was not confirmed. Refresh the preview or contact an administrator.',
+                            (response.status === 409 &&
+                            typeof data.message === 'string'
+                                ? data.message
+                                : 'Project deletion was not confirmed. Refresh the preview and try again.'),
                     );
 
                     return;
@@ -194,7 +206,7 @@ export function ProjectDeletionDialog({
             description={
                 preview
                     ? `You selected ${count} ${count === 1 ? 'project' : 'projects'}. Its maintenance records, monthly updates, media and maintenance documents will also be deleted. This cannot be undone within the preview. RoadCoverage, LGUs, Engineers and UserAccounts are preserved.`
-                    : 'Permanently delete only this project? Its MaintenanceRecords, MonthlyUpdates, documents, media and private Storage objects will be preserved. Current project_id references will become NULL. This cannot be undone.'
+                    : 'Permanently delete this empty project? Projects with MaintenanceRecords cannot be deleted. The road and existing audit history remain. This action cannot be undone.'
             }
             confirmDisabled={!preview && !impact}
             processing={processing}
@@ -219,11 +231,10 @@ export function ProjectDeletionDialog({
                         RoadCoverage: #{impact.road.id} ·{' '}
                         {impact.road.road_name} (preserved)
                     </p>
-                    <DeletionCounts counts={impact.counts} preserve />
+                    <DeletionCounts counts={impact.counts} />
                     <p>
-                        Records retain their creators, uploaders and historical
-                        audit entries. Detached history is available only to
-                        Admin/SuperAdmin.
+                        No MaintenanceRecords will be detached or deleted.
+                        Existing audit history is retained.
                     </p>
                 </section>
             )}

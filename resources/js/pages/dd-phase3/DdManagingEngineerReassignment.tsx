@@ -6,7 +6,6 @@ export default function DdManagingEngineerReassignment({
     record,
     managers,
     submitUrl,
-    canUnassign = false,
 }: {
     record: {
         id: number;
@@ -36,39 +35,6 @@ export default function DdManagingEngineerReassignment({
             >
                 Reassign manager
             </button>
-            {canUnassign && record.managing_engineer_id !== null && (
-                <button
-                    type="button"
-                    className="ml-2 rounded border px-3 py-2"
-                    disabled={busy}
-                    onClick={() => {
-                        if (
-                            !window.confirm(
-                                'Unassign the current ManagingEngineer? The record and its history remain. The current manager will lose editing access.',
-                            )
-                        ) {
-                            return;
-                        }
-
-                        setBusy(true);
-                        setErrors({});
-                        router.post(
-                            `/dd-phase3/ops/records/${record.id}/unassignment`,
-                            {
-                                expected_current_manager_id:
-                                    record.managing_engineer_id,
-                            },
-                            {
-                                preserveScroll: true,
-                                onError: setErrors,
-                                onFinish: () => setBusy(false),
-                            },
-                        );
-                    }}
-                >
-                    Unassign manager
-                </button>
-            )}
             {!open &&
                 Object.entries(errors).map(([field, error]) => (
                     <p role="alert" key={field}>

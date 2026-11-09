@@ -2,12 +2,12 @@
 -- Owner approval required before any shared PostgreSQL deployment.
 -- Intended for PostgreSQL 17 canonical jairoads_next.maintenance_records.
 --
--- A project may have ONE record for each maintenance_year + quarter. A
--- preserved-history record detached from its deleted project has project_id
--- NULL, and must NOT block a different active project's quarter.
--- PostgreSQL's default UNIQUE semantics treat NULLs as DISTINCT; do NOT use
--- NULLS NOT DISTINCT here. This ordinary nonpartial UNIQUE constraint is
--- also recognized by DuplicateMaintenancePeriod::matchesDatabaseConstraint().
+-- PROPOSED business rule: a project may have ONE record for each
+-- maintenance_year + quarter. The Final Data Dictionary requires project_id
+-- and managing_engineer_id NOT NULL, with ON DELETE RESTRICT foreign keys.
+-- No records may be detached and no nullable-project design is approved.
+-- This ordinary UNIQUE constraint is also recognized by
+-- DuplicateMaintenancePeriod::matchesDatabaseConstraint().
 --
 -- Before deploying, independently check the actual project/year/quarter data
 -- for duplicates; if any exist, STOP and obtain a data-owner disposition.
@@ -32,7 +32,7 @@ ALTER TABLE jairoads_next.maintenance_records
  ADD CONSTRAINT maintenance_records_project_year_quarter_unique
  UNIQUE (project_id, maintenance_year, quarter);
 
--- Does not relax current record write rules, change nullable columns or
--- replace application validation. If project_id is still NOT NULL on the
--- target schema, owner should separately approve preserved-history schema
--- work before assuming detached records are available.
+-- Does not relax the required NOT NULL relationships or RESTRICT foreign keys,
+-- and does not replace application validation. Requires separate approval of
+-- the proposed quarterly identity rule; it does not authorize project
+-- detachment, manager unassignment, or preserve_project_history.php.

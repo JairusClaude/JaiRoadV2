@@ -42,15 +42,13 @@ BEGIN
 END;
 $business$;
 
--- The two retained-history support tables intentionally have narrower grants.
+-- File-deletion intents are optional support infrastructure with narrower grants.
+-- This disposable fixture is expected to create file_deletions before this step.
 GRANT SELECT, INSERT, UPDATE ON jairoads_next.file_deletions TO jairoads_app_runtime;
 CREATE POLICY staging_backend_file_intents ON jairoads_next.file_deletions
   FOR ALL TO jairoads_app_runtime USING (true) WITH CHECK (true);
-GRANT SELECT, INSERT ON jairoads_next.maintenance_record_contexts TO jairoads_app_runtime;
-CREATE POLICY staging_backend_history_read ON jairoads_next.maintenance_record_contexts
-  FOR SELECT TO jairoads_app_runtime USING (true);
-CREATE POLICY staging_backend_history_insert ON jairoads_next.maintenance_record_contexts
-  FOR INSERT TO jairoads_app_runtime WITH CHECK (true);
+-- Final DD prohibits project detachment and nullable maintenance-record links.
+-- maintenance_record_contexts is intentionally absent; never grant/policy it.
 
 -- Canonical events are append-only. No UPDATE/DELETE/TRUNCATE privilege.
 GRANT SELECT, INSERT ON jairoads_next.audit_logs TO jairoads_app_runtime;

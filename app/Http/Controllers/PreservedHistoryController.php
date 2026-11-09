@@ -42,10 +42,10 @@ final class PreservedHistoryController extends Controller
         $this->deletions->confirm($login, $id, $v['confirmation_token']);
 
         if ($request->expectsJson()) {
-            return response()->json(['state' => 'completed', 'message' => 'Project deleted. Related history and files were preserved.']);
+            return response()->json(['state' => 'completed', 'message' => 'Empty MaintenanceProject deleted successfully.']);
         }
 
-        return redirect('/dd-phase3/ui/maintenance-projects')->with('dd_operations_status', 'Project deleted. Related history and files were preserved.');
+        return redirect('/dd-phase3/ui/maintenance-projects')->with('dd_operations_status', 'Empty MaintenanceProject deleted successfully.');
     }
 
     private function records(): Builder

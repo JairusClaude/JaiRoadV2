@@ -83,7 +83,7 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
             'updates' => $this->updateQuery($actor)->where('u.maintenance_id', $id)->orderByDesc('u.update_month')->get()->map(fn (\stdClass $u): array => $this->updateData($u, $actor)),
             'canWrite' => $this->canWriteRecord($r, $actor),
             'canReassign' => RoleAccess::managesBusinessData($actor['role']),
-            'canUnassign' => RoleAccess::managesBusinessData($actor['role']) && app(PreservedProjectDeletion::class)->available(),
+            'canUnassign' => false,
             'managerChoices' => RoleAccess::managesBusinessData($actor['role']) ? $this->eligibility->choices($actor, (int) $r->lgu_id)->get() : [],
         ]);
     }

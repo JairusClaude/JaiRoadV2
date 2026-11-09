@@ -1,5 +1,8 @@
 # Repair B verification and source inventory
 
+> **PHASE 11L SUPERSESSION NOTICE (2026-11-09):** This document records an earlier *proposed* nullable-project/nullable-manager design and is retained for historical traceability, **not** as a current release instruction. The user's Final Data Dictionary requires `maintenance_records.project_id` and `managing_engineer_id` to stay NOT NULL with RESTRICT foreign keys. Do not detach MaintenanceRecords, unassign their ManagingEngineer, or activate `database/proposals/preserve_project_history.php`. Only an empty MaintenanceProject may be deleted after administrative confirmation. Refer to `docs/release/phase11l-strict-dd-integrity-2026-11-09.md`. No live schema change is authorized.
+
+
 4 November 2026. Initial remote SHA `c5ad04f6edfd84558f6b2bb86d5d015fbe5cdb44`; local preservation merge `e77254ce77edf230928c0e50ed88588c1d42549c`, clean working tree. Repair A was already published and both workflows verified before this task. Earlier local-only audit documents and preservation commits were retained and excluded from this repair's publication.
 
 ## Actual local results

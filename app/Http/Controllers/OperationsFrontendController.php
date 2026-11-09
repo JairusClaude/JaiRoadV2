@@ -10,7 +10,6 @@ use App\Services\Documents\PrivateSupabaseStorage;
 use App\Services\Files\PermanentFileDeletion;
 use App\Services\ManagingEngineerEligibility;
 use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
-use App\Services\PreservedProjectDeletion;
 use App\Services\RoleAccess;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
@@ -141,7 +140,7 @@ class OperationsFrontendController extends Controller
         return ['id' => (int) $p->id, 'project_title' => $p->project_title, 'description' => $p->description,
             'road_coverage_id' => (int) $p->road_coverage_id, 'road_name' => $p->road_name, 'municipality' => $p->municipality_name,
             'created_by' => $p->creator_name, 'created_at' => $p->created_at, 'updated_at' => $p->updated_at,
-            'maintenance_records_count' => (int) $p->record_count, 'can_edit' => $this->writable($actor), 'can_delete' => RoleAccess::managesBusinessData($actor['role']) && app(PreservedProjectDeletion::class)->available(),
+            'maintenance_records_count' => (int) $p->record_count, 'can_edit' => $this->writable($actor), 'can_delete' => RoleAccess::managesBusinessData($actor['role']) && (int) $p->record_count === 0,
             ...(isset($p->geojson) ? ['geojson' => json_decode($p->geojson, true, 512, JSON_THROW_ON_ERROR)] : [])];
     }
 
