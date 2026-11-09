@@ -107,11 +107,31 @@ class ReleaseGateTests(unittest.TestCase):
         self.assertIn("invalid_release_manifest", inspect_release([], {}, {}, SHA))
         self.assertIn("invalid_inventory", inspect_release({}, [], {}, SHA))
 
+    def test_strict_final_dd_rejects_nullable_or_detached_history_schema(self):
+        manifest, inventory, uat = simulated_complete()
+        for key in (
+            "maintenance_project_manager_not_null",
+            "maintenance_project_manager_restrict_fk",
+            "no_maintenance_record_contexts",
+        ):
+            inventory["checks"][key] = False
+        failures = inspect_release(manifest, inventory, uat, SHA)
+        for key in (
+            "maintenance_project_manager_not_null",
+            "maintenance_project_manager_restrict_fk",
+            "no_maintenance_record_contexts",
+        ):
+            self.assertIn("database_" + key, failures)
+
     def test_readonly_sql_has_catalog_only_transaction_boundary(self):
         sql = (ROOT / "database/preflight/release_readonly.sql").read_text()
         self.assertIn("BEGIN TRANSACTION READ ONLY;", sql)
         self.assertTrue(sql.rstrip().endswith("COMMIT;"))
         self.assertIn("read_only_postgresql_catalog", sql)
+        self.assertIn("bool_and(a.attnotnull)", sql)
+        self.assertIn("fk.confdeltype = 'r'", sql)
+        self.assertIn("'no_maintenance_record_contexts'", sql)
+        self.assertNotIn("'project_and_manager_nullable'", sql)
 
 
 if __name__ == "__main__":
