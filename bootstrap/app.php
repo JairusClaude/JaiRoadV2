@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Middleware\GuardLegacyRoutesForCanonicalAccounts;
 use App\Http\Middleware\EnforceCanonicalSession;
+use App\Http\Middleware\GuardLegacyRoutesForCanonicalAccounts;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Auth\AuthenticationException;

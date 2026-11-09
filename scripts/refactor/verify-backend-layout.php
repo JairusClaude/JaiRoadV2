@@ -43,6 +43,7 @@ foreach (['app', 'routes', 'tests', 'bootstrap', 'config', 'database'] as $direc
     $source = $root.DIRECTORY_SEPARATOR.$directory;
     if (! is_dir($source)) {
         $errors[] = "Missing source directory: {$directory}";
+
         continue;
     }
     $iterator = new RecursiveIteratorIterator(
@@ -57,6 +58,7 @@ foreach (['app', 'routes', 'tests', 'bootstrap', 'config', 'database'] as $direc
         $text = file_get_contents($full);
         if ($text === false) {
             $errors[] = "Cannot read: {$path}";
+
             continue;
         }
         $checked++;

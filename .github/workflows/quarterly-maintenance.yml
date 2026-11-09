@@ -50,6 +50,8 @@ jobs:
         run: vendor/bin/phpstan analyse app/Services/TwiceYearlyMaintenance.php app/Services/ManagingEngineerEligibility.php app/Http/Controllers/PeopleLifecycleController.php --no-progress
       - name: Controller syntax
         run: php -l app/Http/Controllers/OperationsController.php
+      - name: Guard relocated PHP paths used by workflows
+        run: python3 -m unittest discover -s tests/Local -p test_workflow_backend_paths.py
 
   frontend:
     runs-on: ubuntu-latest

@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\AuditHistoryController;
+use App\Http\Controllers\DirectoryController;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\PeopleLifecycleController;
-use App\Http\Controllers\DirectoryController;
 use App\Http\Controllers\PreservedHistoryController;
 use App\Http\Controllers\SectionController;
 use Illuminate\Support\Facades\Route;

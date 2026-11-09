@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Quarterly;
 
 use App\Models\User;
-use App\Services\AccountProvisioning;
 use App\Services\AccountIdentityResolver;
+use App\Services\AccountProvisioning;
 use App\Services\TrustedSuperAdminBootstrap;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

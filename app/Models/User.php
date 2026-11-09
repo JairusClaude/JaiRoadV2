@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\StagingUserAccount;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
