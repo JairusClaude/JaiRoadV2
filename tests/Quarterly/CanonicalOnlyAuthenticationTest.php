@@ -205,6 +205,38 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
     }
 
+    public function test_canonical_account_cannot_use_legacy_preview_workflows(): void
+    {
+        $login = $this->account('SuperAdmin');
+        $this->actingAs($login);
+
+        // Legacy module entry points redirect to canonical pages.
+        $this->get('/monthly-updates-preview')
+            ->assertRedirect(route('jairoads.dd-phase3.show', [
+                'section' => 'updates',
+            ]));
+
+        $this->get('/project-documents-preview')
+            ->assertRedirect(route('jairoads.dd-phase3.show', [
+                'section' => 'documents',
+            ]));
+
+        // Legacy mutations and file downloads must remain blocked.
+        $this->postJson('/monthly-updates-preview/save', [])
+            ->assertForbidden();
+
+        $this->postJson('/project-documents-preview/upload', [])
+            ->assertForbidden();
+
+        $this->get('/monthly-updates-preview/media/999/download')
+            ->assertForbidden();
+
+        $this->get('/project-documents-preview/files/999/download')
+            ->assertForbidden();
+
+        $this->assertAuthenticatedAs($login);
+    }
+
     public function test_valid_mfa_totp_completes_without_changing_canonical_role_or_link(): void
     {
         $login = $this->account('Viewer');
