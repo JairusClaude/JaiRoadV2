@@ -1,0 +1,106 @@
+{
+  "original": {
+    "full-quarterly.log": [
+      "  Tests:    453 passed (4911 assertions)"
+    ],
+    "full-password.log": [
+      "  Tests:    56 passed (330 assertions)"
+    ],
+    "full-pg-feature.log": [
+      "  Tests:    2 skipped, 49 passed (344 assertions)"
+    ],
+    "standard-laravel.log": [
+      "  Tests:    2 skipped, 105 passed (649 assertions)"
+    ],
+    "full-unified-browser.log": [
+      "PASS: real-session SuperAdmin/Admin/Engineer/Viewer route matrix; guest JSON denial; privileged audit/account reads; Viewer write denial and Engineer account/LGU governance denial.",
+      "PASS: photographic Fortify login and authenticated canonical navigation for all four roles.",
+      "PASS: legacy lines edit safely; multi-lines, collections and higher dimensions use read-only geometry; invalid geometry requires review; metadata save and Cancel preserve stored shapes.",
+      "PASS: occupied-quarter labels; client and stale-server duplicate panels; authorized detail links; Close and Choose Another Quarter preserve inputs; all four unoccupied quarters remain available.",
+      "PASS: Leaflet search and 2/3-point road persisted; canonical project/Q2/monthly/media/document writes; duplicate rejection; private download.",
+      "PASS: all three visible monthly sort modes, reporting-year selection, accurate URLs, and filter/order persistence after reload.",
+      "PASS: 24 directory/viewport measurements; six widths; monthly project/year/sort dropdowns, search, table scrolling, pagination and sidebar separation.",
+      "PASS: one real Engineer update appears in each eligible Admin/SuperAdmin/actor feed; Viewer receives none; safe unique feed IDs; privileged read-only audit snapshots/pagination; historical LOGIN preserved without new authentication events.",
+      "PASS: real Fortify individual file deletion; exact filename/type/parent confirmation; red Delete, neutral Cancel/no mutation; processing guard; pending failure and retry; Admin document/SuperAdmin media deletion; siblings/parents retained; Engineer/Viewer/cross-LGU denials; CSRF enforced.",
+      "PASS: real Fortify project impact/Cancel/stale-confirmation handling; explicit NULL manager unassignment and reassignment; project-only deletion with zero Storage mutations; Admin-only preserved history, unchanged document/media bytes and Engineer/Viewer/cross-LGU denials.",
+      "PASS: Fortify invalidates the old session; logout/Back URL is /login; reload and another tab remain unauthorized; fresh-login Back/Forward works; expired session cookie redirects safely.",
+      "PASS: municipality Cancel/final confirmation; exact saved geometry; cross-LGU/private/Viewer HTTP denial; responsive directories; logout/back protects session."
+    ],
+    "passkey-fixed.log": [
+      "PASS: real SuperAdmin passkey registration/authentication, NULL verification, logout and replay rejection.",
+      "PASS: real Admin passkey registration/authentication, NULL verification, logout and replay rejection.",
+      "PASS: real Engineer passkey registration/authentication, NULL verification, logout and replay rejection.",
+      "PASS: real Viewer passkey registration/authentication, NULL verification, logout and replay rejection.",
+      "PASS: real registered legacy-only passkey and password denied after bridge removal.",
+      "PASS: inactive canonical passkey denied; DD and credential-management routes remain guest.",
+      "PASS: retired canonical passkey denied; DD and credential-management routes remain guest.",
+      "PASS: missing canonical passkey denied; DD and credential-management routes remain guest.",
+      "PASS: invalid-link canonical passkey denied; DD and credential-management routes remain guest.",
+      "PASS: email canonical passkey denied; DD and credential-management routes remain guest.",
+      "PASS: hash canonical passkey denied; DD and credential-management routes remain guest.",
+      "PASS: unlinked canonical passkey denied; DD and credential-management routes remain guest.",
+      "PASS: provenance canonical passkey denied; DD and credential-management routes remain guest.",
+      "PASS: signed wrong-origin assertion and foreign credential confirmation rejected; legacy-only login denied.",
+      "PASS: real remember-me cookie restores an eligible identity and rejects a revoked identity without a session cookie.",
+      "PASS: actual Inertia Viewer form requires/selects an active Engineer; provisioned Viewer logs in and remains read-only."
+    ]
+  },
+  "corrected_application": {
+    "full-quarterly.log": [
+      "  Tests:    453 passed (4911 assertions)"
+    ],
+    "full-password.log": [
+      "  Tests:    56 passed (330 assertions)"
+    ],
+    "full-pg-feature.log": [
+      "  Tests:    2 skipped, 49 passed (344 assertions)"
+    ],
+    "standard-laravel.log": [
+      "  Tests:    2 skipped, 105 passed (649 assertions)"
+    ],
+    "full-unified-browser.log": [
+      "PASS: real-session SuperAdmin/Admin/Engineer/Viewer route matrix; guest JSON denial; privileged audit/account reads; Viewer write denial and Engineer account/LGU governance denial.",
+      "PASS: photographic Fortify login and authenticated canonical navigation for all four roles.",
+      "PASS: legacy lines edit safely; multi-lines, collections and higher dimensions use read-only geometry; invalid geometry requires review; metadata save and Cancel preserve stored shapes.",
+      "PASS: occupied-quarter labels; client and stale-server duplicate panels; authorized detail links; Close and Choose Another Quarter preserve inputs; all four unoccupied quarters remain available.",
+      "PASS: Leaflet search and 2/3-point road persisted; canonical project/Q2/monthly/media/document writes; duplicate rejection; private download.",
+      "PASS: all three visible monthly sort modes, reporting-year selection, accurate URLs, and filter/order persistence after reload.",
+      "PASS: 24 directory/viewport measurements; six widths; monthly project/year/sort dropdowns, search, table scrolling, pagination and sidebar separation.",
+      "PASS: one real Engineer update appears in each eligible Admin/SuperAdmin/actor feed; Viewer receives none; safe unique feed IDs; privileged read-only audit snapshots/pagination; historical LOGIN preserved without new authentication events.",
+      "PASS: real Fortify individual file deletion; exact filename/type/parent confirmation; red Delete, neutral Cancel/no mutation; processing guard; pending failure and retry; Admin document/SuperAdmin media deletion; siblings/parents retained; Engineer/Viewer/cross-LGU denials; CSRF enforced.",
+      "PASS: real Fortify project impact/Cancel/stale-confirmation handling; explicit NULL manager unassignment and reassignment; project-only deletion with zero Storage mutations; Admin-only preserved history, unchanged document/media bytes and Engineer/Viewer/cross-LGU denials.",
+      "PASS: Fortify invalidates the old session; logout/Back URL is /login; reload and another tab remain unauthorized; fresh-login Back/Forward works; expired session cookie redirects safely.",
+      "PASS: municipality Cancel/final confirmation; exact saved geometry; cross-LGU/private/Viewer HTTP denial; responsive directories; logout/back protects session."
+    ],
+    "passkey-fixed.log": [
+      "PASS: real SuperAdmin passkey registration/authentication, NULL verification, logout and replay rejection.",
+      "PASS: real Admin passkey registration/authentication, NULL verification, logout and replay rejection.",
+      "PASS: real Engineer passkey registration/authentication, NULL verification, logout and replay rejection.",
+      "PASS: real Viewer passkey registration/authentication, NULL verification, logout and replay rejection.",
+      "PASS: real registered legacy-only passkey and password denied after bridge removal.",
+      "PASS: inactive canonical passkey denied; DD and credential-management routes remain guest.",
+      "PASS: retired canonical passkey denied; DD and credential-management routes remain guest.",
+      "PASS: missing canonical passkey denied; DD and credential-management routes remain guest.",
+      "PASS: invalid-link canonical passkey denied; DD and credential-management routes remain guest.",
+      "PASS: email canonical passkey denied; DD and credential-management routes remain guest.",
+      "PASS: hash canonical passkey denied; DD and credential-management routes remain guest.",
+      "PASS: unlinked canonical passkey denied; DD and credential-management routes remain guest.",
+      "PASS: provenance canonical passkey denied; DD and credential-management routes remain guest.",
+      "PASS: signed wrong-origin assertion and foreign credential confirmation rejected; legacy-only login denied.",
+      "PASS: real remember-me cookie restores an eligible identity and rejects a revoked identity without a session cookie.",
+      "PASS: actual Inertia Viewer form requires/selects an active Engineer; provisioned Viewer logs in and remains read-only."
+    ],
+    "composer-ci-check.log": [
+      "  Tests:    2 skipped, 105 passed (649 assertions)"
+    ]
+  },
+  "revision_notes": {
+    "source": "d18fc9457cdecbd92bfd46d3ef51a171fb7a19f2",
+    "corrected_application": "6942ccb43945ce921f41997d969b793ce0b702ec",
+    "final_guard_correction": "e2cb2e4410c193f9208e3122bf799d0bb75a24db",
+    "node22": "22.23.4",
+    "node22_build_exit": 0,
+    "github_runs_on_source": 0,
+    "published": false
+  }
+}

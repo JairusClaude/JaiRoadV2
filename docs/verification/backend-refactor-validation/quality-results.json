@@ -1,0 +1,87 @@
+{
+  "revision": "6942ccb43945ce921f41997d969b793ce0b702ec",
+  "checks": {
+    "pint": {
+      "command": [
+        "composer",
+        "lint:check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.77
+    },
+    "phpstan": {
+      "command": [
+        "composer",
+        "types:check"
+      ],
+      "exit_code": 0,
+      "seconds": 9.67
+    },
+    "composer-validate": {
+      "command": [
+        "composer",
+        "validate",
+        "--strict",
+        "--no-check-publish"
+      ],
+      "exit_code": 0,
+      "seconds": 0.19
+    },
+    "composer-audit": {
+      "command": [
+        "composer",
+        "audit",
+        "--locked",
+        "--no-interaction"
+      ],
+      "exit_code": 0,
+      "seconds": 15.32
+    },
+    "eslint": {
+      "command": [
+        "npm",
+        "run",
+        "lint:check"
+      ],
+      "exit_code": 0,
+      "seconds": 14.57
+    },
+    "prettier": {
+      "command": [
+        "npm",
+        "run",
+        "format:check"
+      ],
+      "exit_code": 0,
+      "seconds": 6.86
+    },
+    "typescript": {
+      "command": [
+        "npm",
+        "run",
+        "types:check"
+      ],
+      "exit_code": 0,
+      "seconds": 10.17
+    },
+    "npm-audit": {
+      "command": [
+        "npm",
+        "audit",
+        "--audit-level=high"
+      ],
+      "exit_code": 0,
+      "seconds": 8.6
+    },
+    "routes": {
+      "command": [
+        "php",
+        "artisan",
+        "route:list",
+        "--except-vendor"
+      ],
+      "exit_code": 0,
+      "seconds": 0.31
+    }
+  }
+}

@@ -1,0 +1,3 @@
+Checked 303 PHP files; parsed 303 successfully.
+PASS: PHP syntax, PSR-4 class paths, removed namespaces and route include structure.
+NOTE: This does not prove app boot, database, browser acceptance or production readiness.

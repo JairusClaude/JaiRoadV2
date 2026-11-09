@@ -1,0 +1,22 @@
+{
+    "formatting_only_files": [
+        "app\/Console\/Commands\/CanonicalAccessPreflight.php",
+        "app\/Http\/Controllers\/AuditHistoryController.php",
+        "app\/Http\/Controllers\/DirectoryController.php",
+        "app\/Http\/Controllers\/OperationsController.php",
+        "app\/Http\/Controllers\/OperationsFrontendController.php",
+        "app\/Http\/Controllers\/PeopleLifecycleController.php",
+        "app\/Http\/Controllers\/PreservedHistoryController.php",
+        "app\/Http\/Controllers\/RoleLandingController.php",
+        "app\/Http\/Controllers\/SectionController.php",
+        "app\/Models\/User.php",
+        "app\/Services\/Files\/PermanentFileDeletion.php",
+        "bootstrap\/app.php",
+        "routes\/operations.php",
+        "scripts\/refactor\/verify-backend-layout.php",
+        "tests\/Quarterly\/CanonicalOnlyAuthenticationTest.php",
+        "tests\/Quarterly\/ProvisioningEvidenceTest.php",
+        "tests\/Quarterly\/ReviewedAccountTransitionTest.php"
+    ],
+    "count": 17
+}

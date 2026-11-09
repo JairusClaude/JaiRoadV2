@@ -1,0 +1,346 @@
+{
+    "relocations": [
+        {
+            "old_path": "app\/Http\/Controllers\/DataDictionary\/DdAuditHistoryController.php",
+            "new_path": "app\/Http\/Controllers\/AuditHistoryController.php",
+            "old_class": "App\\Http\\Controllers\\DataDictionary\\DdAuditHistoryController",
+            "new_class": "App\\Http\\Controllers\\AuditHistoryController",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Http\/Controllers\/Dashboard\/DdSuperAdminLandingController.php",
+            "new_path": "app\/Http\/Controllers\/Dashboard\/SuperAdminLandingController.php",
+            "old_class": "App\\Http\\Controllers\\Dashboard\\DdSuperAdminLandingController",
+            "new_class": "App\\Http\\Controllers\\Dashboard\\SuperAdminLandingController",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Http\/Controllers\/DataDictionary\/DdPhase3Controller.php",
+            "new_path": "app\/Http\/Controllers\/DirectoryController.php",
+            "old_class": "App\\Http\\Controllers\\DataDictionary\\DdPhase3Controller",
+            "new_class": "App\\Http\\Controllers\\DirectoryController",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Http\/Controllers\/DataDictionary\/DdOperationsController.php",
+            "new_path": "app\/Http\/Controllers\/OperationsController.php",
+            "old_class": "App\\Http\\Controllers\\DataDictionary\\DdOperationsController",
+            "new_class": "App\\Http\\Controllers\\OperationsController",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Http\/Controllers\/DataDictionary\/DdFrontendController.php",
+            "new_path": "app\/Http\/Controllers\/OperationsFrontendController.php",
+            "old_class": "App\\Http\\Controllers\\DataDictionary\\DdFrontendController",
+            "new_class": "App\\Http\\Controllers\\OperationsFrontendController",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Http\/Controllers\/DataDictionary\/DdPeopleLifecycleController.php",
+            "new_path": "app\/Http\/Controllers\/PeopleLifecycleController.php",
+            "old_class": "App\\Http\\Controllers\\DataDictionary\\DdPeopleLifecycleController",
+            "new_class": "App\\Http\\Controllers\\PeopleLifecycleController",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Http\/Controllers\/DataDictionary\/DdPreservedHistoryController.php",
+            "new_path": "app\/Http\/Controllers\/PreservedHistoryController.php",
+            "old_class": "App\\Http\\Controllers\\DataDictionary\\DdPreservedHistoryController",
+            "new_class": "App\\Http\\Controllers\\PreservedHistoryController",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Http\/Controllers\/DataDictionary\/DdRoleDashboardController.php",
+            "new_path": "app\/Http\/Controllers\/RoleLandingController.php",
+            "old_class": "App\\Http\\Controllers\\DataDictionary\\DdRoleDashboardController",
+            "new_class": "App\\Http\\Controllers\\RoleLandingController",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Http\/Controllers\/DataDictionary\/DdSectionController.php",
+            "new_path": "app\/Http\/Controllers\/SectionController.php",
+            "old_class": "App\\Http\\Controllers\\DataDictionary\\DdSectionController",
+            "new_class": "App\\Http\\Controllers\\SectionController",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Http\/Middleware\/DenyLegacyBusinessRoutesForDd.php",
+            "new_path": "app\/Http\/Middleware\/GuardLegacyRoutesForCanonicalAccounts.php",
+            "old_class": "App\\Http\\Middleware\\DenyLegacyBusinessRoutesForDd",
+            "new_class": "App\\Http\\Middleware\\GuardLegacyRoutesForCanonicalAccounts",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Models\/DataDictionary\/Canonical\/AuditLog.php",
+            "new_path": "app\/Models\/AuditLogReference.php",
+            "old_class": "App\\Models\\DataDictionary\\Canonical\\AuditLog",
+            "new_class": "App\\Models\\AuditLogReference",
+            "autoload": true,
+            "file_matches": true,
+            "table": "jairoads_next.audit_logs"
+        },
+        {
+            "old_path": "app\/Models\/DataDictionary\/Canonical\/EngineerLgu.php",
+            "new_path": "app\/Models\/EngineerLguReference.php",
+            "old_class": "App\\Models\\DataDictionary\\Canonical\\EngineerLgu",
+            "new_class": "App\\Models\\EngineerLguReference",
+            "autoload": true,
+            "file_matches": true,
+            "table": "jairoads_next.engineer_lgus"
+        },
+        {
+            "old_path": "app\/Models\/DataDictionary\/Canonical\/Engineer.php",
+            "new_path": "app\/Models\/EngineerReference.php",
+            "old_class": "App\\Models\\DataDictionary\\Canonical\\Engineer",
+            "new_class": "App\\Models\\EngineerReference",
+            "autoload": true,
+            "file_matches": true,
+            "table": "jairoads_next.engineers"
+        },
+        {
+            "old_path": "app\/Models\/DataDictionary\/Canonical\/Lgu.php",
+            "new_path": "app\/Models\/LguReference.php",
+            "old_class": "App\\Models\\DataDictionary\\Canonical\\Lgu",
+            "new_class": "App\\Models\\LguReference",
+            "autoload": true,
+            "file_matches": true,
+            "table": "jairoads_next.lgus"
+        },
+        {
+            "old_path": "app\/Models\/DataDictionary\/Canonical\/MaintenanceDocument.php",
+            "new_path": "app\/Models\/MaintenanceDocumentReference.php",
+            "old_class": "App\\Models\\DataDictionary\\Canonical\\MaintenanceDocument",
+            "new_class": "App\\Models\\MaintenanceDocumentReference",
+            "autoload": true,
+            "file_matches": true,
+            "table": "jairoads_next.maintenance_documents"
+        },
+        {
+            "old_path": "app\/Models\/DataDictionary\/Canonical\/MaintenanceProject.php",
+            "new_path": "app\/Models\/MaintenanceProjectReference.php",
+            "old_class": "App\\Models\\DataDictionary\\Canonical\\MaintenanceProject",
+            "new_class": "App\\Models\\MaintenanceProjectReference",
+            "autoload": true,
+            "file_matches": true,
+            "table": "jairoads_next.maintenance_projects"
+        },
+        {
+            "old_path": "app\/Models\/DataDictionary\/Canonical\/MaintenanceRecord.php",
+            "new_path": "app\/Models\/MaintenanceRecordReference.php",
+            "old_class": "App\\Models\\DataDictionary\\Canonical\\MaintenanceRecord",
+            "new_class": "App\\Models\\MaintenanceRecordReference",
+            "autoload": true,
+            "file_matches": true,
+            "table": "jairoads_next.maintenance_records"
+        },
+        {
+            "old_path": "app\/Models\/DataDictionary\/Canonical\/Media.php",
+            "new_path": "app\/Models\/MediaReference.php",
+            "old_class": "App\\Models\\DataDictionary\\Canonical\\Media",
+            "new_class": "App\\Models\\MediaReference",
+            "autoload": true,
+            "file_matches": true,
+            "table": "jairoads_next.media"
+        },
+        {
+            "old_path": "app\/Models\/DataDictionary\/Canonical\/MonthlyUpdate.php",
+            "new_path": "app\/Models\/MonthlyUpdateReference.php",
+            "old_class": "App\\Models\\DataDictionary\\Canonical\\MonthlyUpdate",
+            "new_class": "App\\Models\\MonthlyUpdateReference",
+            "autoload": true,
+            "file_matches": true,
+            "table": "jairoads_next.monthly_updates"
+        },
+        {
+            "old_path": "app\/Models\/DataDictionary\/Canonical\/ReadOnlyDdModel.php",
+            "new_path": "app\/Models\/ReadOnlyReferenceModel.php",
+            "old_class": "App\\Models\\DataDictionary\\Canonical\\ReadOnlyDdModel",
+            "new_class": "App\\Models\\ReadOnlyReferenceModel",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Models\/DataDictionary\/Canonical\/RoadCoverage.php",
+            "new_path": "app\/Models\/RoadCoverageReference.php",
+            "old_class": "App\\Models\\DataDictionary\\Canonical\\RoadCoverage",
+            "new_class": "App\\Models\\RoadCoverageReference",
+            "autoload": true,
+            "file_matches": true,
+            "table": "jairoads_next.road_coverages"
+        },
+        {
+            "old_path": "app\/Models\/DataDictionary\/StagingEngineer.php",
+            "new_path": "app\/Models\/StagingEngineer.php",
+            "old_class": "App\\Models\\DataDictionary\\StagingEngineer",
+            "new_class": "App\\Models\\StagingEngineer",
+            "autoload": true,
+            "file_matches": true,
+            "table": "jairoads_next.engineers"
+        },
+        {
+            "old_path": "app\/Models\/DataDictionary\/StagingUserAccount.php",
+            "new_path": "app\/Models\/StagingUserAccount.php",
+            "old_class": "App\\Models\\DataDictionary\\StagingUserAccount",
+            "new_class": "App\\Models\\StagingUserAccount",
+            "autoload": true,
+            "file_matches": true,
+            "table": "jairoads_next.user_accounts"
+        },
+        {
+            "old_path": "app\/Models\/DataDictionary\/Canonical\/UserAccount.php",
+            "new_path": "app\/Models\/UserAccountReference.php",
+            "old_class": "App\\Models\\DataDictionary\\Canonical\\UserAccount",
+            "new_class": "App\\Models\\UserAccountReference",
+            "autoload": true,
+            "file_matches": true,
+            "table": "jairoads_next.user_accounts"
+        },
+        {
+            "old_path": "app\/Services\/DataDictionary\/DataDictionaryIdentityResolver.php",
+            "new_path": "app\/Services\/AccountIdentityResolver.php",
+            "old_class": "App\\Services\\DataDictionary\\DataDictionaryIdentityResolver",
+            "new_class": "App\\Services\\AccountIdentityResolver",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Services\/DataDictionary\/AccountProvisioning.php",
+            "new_path": "app\/Services\/AccountProvisioning.php",
+            "old_class": "App\\Services\\DataDictionary\\AccountProvisioning",
+            "new_class": "App\\Services\\AccountProvisioning",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Services\/DataDictionary\/DdActivityNotifications.php",
+            "new_path": "app\/Services\/ActivityNotifications.php",
+            "old_class": "App\\Services\\DataDictionary\\DdActivityNotifications",
+            "new_class": "App\\Services\\ActivityNotifications",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Services\/DataDictionary\/DdAuditValues.php",
+            "new_path": "app\/Services\/AuditValues.php",
+            "old_class": "App\\Services\\DataDictionary\\DdAuditValues",
+            "new_class": "App\\Services\\AuditValues",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Services\/DataDictionary\/DdDashboardAnalytics.php",
+            "new_path": "app\/Services\/DashboardAnalytics.php",
+            "old_class": "App\\Services\\DataDictionary\\DdDashboardAnalytics",
+            "new_class": "App\\Services\\DashboardAnalytics",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Services\/DataDictionary\/DuplicateMaintenancePeriod.php",
+            "new_path": "app\/Services\/DuplicateMaintenancePeriod.php",
+            "old_class": "App\\Services\\DataDictionary\\DuplicateMaintenancePeriod",
+            "new_class": "App\\Services\\DuplicateMaintenancePeriod",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Services\/DataDictionary\/LinkedPasswordUpdater.php",
+            "new_path": "app\/Services\/LinkedPasswordUpdater.php",
+            "old_class": "App\\Services\\DataDictionary\\LinkedPasswordUpdater",
+            "new_class": "App\\Services\\LinkedPasswordUpdater",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Services\/DataDictionary\/ManagingEngineerEligibility.php",
+            "new_path": "app\/Services\/ManagingEngineerEligibility.php",
+            "old_class": "App\\Services\\DataDictionary\\ManagingEngineerEligibility",
+            "new_class": "App\\Services\\ManagingEngineerEligibility",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Services\/DataDictionary\/DdOperationAudit.php",
+            "new_path": "app\/Services\/OperationAudit.php",
+            "old_class": "App\\Services\\DataDictionary\\DdOperationAudit",
+            "new_class": "App\\Services\\OperationAudit",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Services\/DataDictionary\/PreservedProjectDeletion.php",
+            "new_path": "app\/Services\/PreservedProjectDeletion.php",
+            "old_class": "App\\Services\\DataDictionary\\PreservedProjectDeletion",
+            "new_class": "App\\Services\\PreservedProjectDeletion",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Services\/DataDictionary\/RecordMutationAuthority.php",
+            "new_path": "app\/Services\/RecordMutationAuthority.php",
+            "old_class": "App\\Services\\DataDictionary\\RecordMutationAuthority",
+            "new_class": "App\\Services\\RecordMutationAuthority",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Services\/DataDictionary\/RoadCoverageGeometry.php",
+            "new_path": "app\/Services\/RoadCoverageGeometry.php",
+            "old_class": "App\\Services\\DataDictionary\\RoadCoverageGeometry",
+            "new_class": "App\\Services\\RoadCoverageGeometry",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Services\/DataDictionary\/RoadMunicipalityChange.php",
+            "new_path": "app\/Services\/RoadMunicipalityChange.php",
+            "old_class": "App\\Services\\DataDictionary\\RoadMunicipalityChange",
+            "new_class": "App\\Services\\RoadMunicipalityChange",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Services\/DataDictionary\/RoadReferenceBounds.php",
+            "new_path": "app\/Services\/RoadReferenceBounds.php",
+            "old_class": "App\\Services\\DataDictionary\\RoadReferenceBounds",
+            "new_class": "App\\Services\\RoadReferenceBounds",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Services\/DataDictionary\/DdRoleAccess.php",
+            "new_path": "app\/Services\/RoleAccess.php",
+            "old_class": "App\\Services\\DataDictionary\\DdRoleAccess",
+            "new_class": "App\\Services\\RoleAccess",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Services\/DataDictionary\/TrustedSuperAdminBootstrap.php",
+            "new_path": "app\/Services\/TrustedSuperAdminBootstrap.php",
+            "old_class": "App\\Services\\DataDictionary\\TrustedSuperAdminBootstrap",
+            "new_class": "App\\Services\\TrustedSuperAdminBootstrap",
+            "autoload": true,
+            "file_matches": true
+        },
+        {
+            "old_path": "app\/Services\/DataDictionary\/TwiceYearlyMaintenance.php",
+            "new_path": "app\/Services\/TwiceYearlyMaintenance.php",
+            "old_class": "App\\Services\\DataDictionary\\TwiceYearlyMaintenance",
+            "new_class": "App\\Services\\TwiceYearlyMaintenance",
+            "autoload": true,
+            "file_matches": true
+        }
+    ],
+    "controller_routes": 175
+}
