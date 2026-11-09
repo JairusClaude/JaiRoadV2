@@ -66,7 +66,8 @@ export function useProjectDeletion(onDeleted?: () => void) {
                     const payload = await response.json().catch(() => null);
 
                     throw new Error(
-                        response.status === 409 && typeof payload?.message === 'string'
+                        response.status === 409 &&
+                            typeof payload?.message === 'string'
                             ? payload.message
                             : 'Deletion preview is unavailable. Refresh and try again.',
                     );
@@ -127,7 +128,8 @@ export function useProjectDeletion(onDeleted?: () => void) {
                 if (!response.ok || data.state !== 'completed') {
                     setError(
                         data.errors?.confirmation_token?.[0] ??
-                            (response.status === 409 && typeof data.message === 'string'
+                            (response.status === 409 &&
+                            typeof data.message === 'string'
                                 ? data.message
                                 : 'Project deletion was not confirmed. Refresh the preview and try again.'),
                     );
