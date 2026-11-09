@@ -312,6 +312,7 @@ try {
             retainedFiles.map(async (path) => {
                 const result = await historicalAdmin.request(path);
                 assert.equal(result.status, 200);
+
                 return Buffer.from(await result.arrayBuffer());
             }),
         );
@@ -340,11 +341,13 @@ try {
         );
         assert.equal((await historicalAdmin.request(blockedProject)).status, 200);
         const storageBeforeProject = mock.counts.compensations;
+
         for (const [i, path] of retainedFiles.entries()) {
             const response = await historicalAdmin.request(path);
             assert.equal(response.status, 200);
             assert.deepEqual(Buffer.from(await response.arrayBuffer()), retainedBytes[i]);
         }
+
         const emptyProject = `/dd-phase3/ui/maintenance-projects/${fixture.empty_project}`;
         const emptyPreviewResponse = await historicalAdmin.request(
             `${emptyProject}/deletion-preview`,
@@ -361,6 +364,7 @@ try {
         assert.equal((await historicalAdmin.request(emptyProject)).status, 404);
         assert.equal((await historicalAdmin.request(blockedProject)).status, 200);
         assert.equal(mock.counts.compensations, storageBeforeProject);
+
         for (const path of retainedFiles) {
             assert.equal((await historicalAdmin.request(path)).status, 200);
         }

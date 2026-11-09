@@ -35,9 +35,11 @@ export async function verifyPreservedRelationships({
                 const cookie = document.cookie
                     .split('; ')
                     .find((v) => v.startsWith('XSRF-TOKEN='));
+
                 if (!cookie) {
                     throw new Error('Authenticated test page lacks CSRF cookie');
                 }
+
                 const response = await fetch(path, {
                     method,
                     headers: {
@@ -47,6 +49,7 @@ export async function verifyPreservedRelationships({
                     },
                     body: JSON.stringify(data),
                 });
+
                 return { status: response.status };
             },
             { path, method, data },
@@ -66,6 +69,7 @@ export async function verifyPreservedRelationships({
             'Manager unassignment is forbidden for every role',
         );
     }
+
     for (const page of [engineer, viewer, rogue]) {
         assert.equal(
             (

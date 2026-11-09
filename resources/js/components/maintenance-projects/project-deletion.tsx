@@ -64,6 +64,7 @@ export function useProjectDeletion(onDeleted?: () => void) {
 
                 if (!response.ok) {
                     const payload = await response.json().catch(() => null);
+
                     throw new Error(
                         response.status === 409 && typeof payload?.message === 'string'
                             ? payload.message
