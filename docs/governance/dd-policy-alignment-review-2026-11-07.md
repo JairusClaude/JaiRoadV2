@@ -37,9 +37,9 @@ An event plus all eligible recipients must persist atomically with its database 
 ## 3. Other Data Dictionary decisions still requiring owner signoff
 
 The following are **not silently changed** by this request and have different code/schema readiness:
-- **Preserved-history project deletion:** the current proposal preserves MaintenanceRecords, media, documents and updates by detaching the project and saving record context. Review `database/proposals/preserve_project_history.php`; it needs `maintenance_record_contexts` and a nullable `maintenance_records.project_id`.
-- **ManagingEngineer unassignment:** a deliberate administrative workflow requires nullable `maintenance_records.managing_engineer_id`. Preserve the existing Manager permissions and history rules.
-- **Unique quarterly MaintenanceRecord identity:** reconcile the service's period checks and a proposed database uniqueness constraint for `(project_id,maintenance_year,quarter)`, including NULL project_id behavior after preserved deletion.
+- **MaintenanceProject deletion (Final Data Dictionary):** Admin/SuperAdmin may delete only an empty project after the approved confirmation/audit workflow. Dependent MaintenanceRecords, monthly updates, documents, media and Storage objects remain attached and retained. `maintenance_records.project_id` is always NOT NULL and its FK remains ON DELETE RESTRICT. The historical `preserve_project_history.php` proposal is prohibited and must not be activated.
+- **ManagingEngineer reassignment (Final Data Dictionary):** authorized reassignment requires an eligible real Engineer; the `maintenance_records.managing_engineer_id` FK remains NOT NULL and ON DELETE RESTRICT. Unassignment to NULL is prohibited.
+- **Unique quarterly MaintenanceRecord identity (separate proposed rule):** review the proposed `(project_id, maintenance_year, quarter)` uniqueness constraint against the Final Data Dictionary and live duplicates. This proposal does not depend on nullable projects or detached history and requires its own schema-owner approval.
 - **Individual-file durable deletion:** review the separate `file_deletions` proposal and exact-object Storage semantics. Bulk deletion stays outside this change request.
 
 Do not automatically include these independent schema changes in the two security proposals. The schema owner must explicitly decide each of these before claiming the entire feature set ready.

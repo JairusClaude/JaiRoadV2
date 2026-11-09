@@ -4,6 +4,8 @@
 
 ## Official live-state snapshot (read-only, 2026-11-07)
 
+> **Newer 2026-11-09 read-only observation:** two active SuperAdmin records now exist, not one. This section remains a historical snapshot; verify the current ownership, provisioning and recovery for both records independently before approval. No account change is authorized by this observation.
+
 Supabase project `aeaaxwyytsagbacysvvx`, schema `jairoads_next`:
 - **1 active SuperAdmin** — existing Fortify/canonical identity link matches; EngineerID NULL is allowed for a genuine initial root. Login/MFA possession still requires a private operator check.
 - **1 active Admin** — existing Fortify link matches, but **EngineerID is NULL**. The new ordinary-account rule denies login until a real, owner-verified active Engineer profile is linked and legitimate provisioning review evidence exists.

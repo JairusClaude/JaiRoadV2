@@ -3,7 +3,9 @@
 > **Phase 11L Final DD correction (2026-11-09; NO GO remains):** `maintenance_records.project_id` and `managing_engineer_id` must remain NOT NULL, with RESTRICT foreign keys. Historical suggestions to activate `preserve_project_history.php`, detach records, or unassign a ManagingEngineer are superseded and must not be followed. This runbook is a review artifact, not deployment approval. See `docs/release/phase11l-strict-dd-integrity-2026-11-09.md`.
 
 
-**State: NO GO — review-only release package. 2026-11-07 (Asia/Manila).**  
+**State: NO GO — review-only release package. 2026-11-07 (Asia/Manila).**
+
+> **Phase 11N read-only delta (2026-11-09):** The live account inventory now shows **two active SuperAdmin records**, rather than the one in the historical snapshot below. Both require independent ownership/recovery review. The Admin still lacks an Engineer link; a dedicated non-BYPASSRLS JaiROADS runtime login and the two proposed security support tables are still absent. Do not alter or deactivate accounts based on these aggregate counts alone.
 Official Supabase: `aeaaxwyytsagbacysvvx`. Baseline: [Task 12 PR #17](https://github.com/JairusClaude/JaiRoadV2/pull/17), commit `c909ae0f238a532c9c560de6d40a1237215527ac`. The 26/26 green checks on Task 12 establish **disposable CI compatibility**, not a real production recovery plan or user approval.
 
 This runbook documents steps for a **future owner-authorized change**. It contains NO executable production migration, deployment token, production database URL, live account repair, automatic rollback of retained data, automatic merge, or permission to use the `postgres` owner as the runtime user. No release has been approved or executed.

@@ -3,8 +3,9 @@
 Baseline: `fix/canonical-only-provisioned-auth` at verified remote
 `239af5db1d864fedbd58a55a2a9ca7779aaf69ce` (6 November 2026, Asia/Manila).
 Repair branch: `fix/audit-multirecipient-consistency`. No old `auditLog_behavior`
-implementation was merged. This implements the newly approved audience and
-supersedes older one-recipient/supervisor-only/self-suppression proposals.
+implementation was merged. This implements the proposed multi-recipient audience
+in code and disposable tests; formal Data Dictionary/schema-owner approval is still pending.
+It supersedes older one-recipient/supervisor-only/self-suppression proposals for rehearsal only.
 
 ## Audience decision matrix
 
@@ -22,7 +23,7 @@ Fortify bridge, matching email/hash state, active linked Engineer and matching
 immutable provisioning evidence for ordinary accounts. The existing SuperAdmin
 bootstrap exceptions remain. Engineer linkage never confers Engineer permissions.
 No LGU/manager rule or role permission was broadened. Eligible administrators are
-system-wide notification recipients under the approved policy, not a newly
+system-wide notification recipients under the proposed policy, not a newly
 introduced business write scope.
 
 Eligibility is evaluated in the delivery INSERT SELECT statement's database
@@ -44,8 +45,9 @@ normalized changed fields on both sides. DELETE stores the captured prior state
 and NULL after. EngineerLGU changes retain both composite-key identifiers.
 Reassignment and municipality transitions retain relevant identifiers and safe
 context. Retirement records each actually changed account, membership and profile.
-Project deletion records each actual record detachment plus the deleted project;
-these are distinct entity changes, not recipient duplicates.
+Only an empty MaintenanceProject may be deleted under the Final Data Dictionary;
+its deletion creates no record-detachment events. Projects with MaintenanceRecords
+are protected by their required NOT NULL, ON DELETE RESTRICT relationships.
 
 No-op comparison ignores Laravel timestamps, handles boolean/nullable values,
 normalizes the two numeric(...,2) fields to committed precision, and uses canonical
