@@ -3,6 +3,8 @@ name: tests
 on:
   push:
     branches:
+      - refactor/standard-backend-layout
+      - verify/standard-backend-layout-ci
       - main
   pull_request:
 

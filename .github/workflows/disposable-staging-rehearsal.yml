@@ -4,6 +4,8 @@ on:
   pull_request:
   push:
     branches:
+      - refactor/standard-backend-layout
+      - verify/standard-backend-layout-ci
       - fix/disposable-staging-rehearsal
       - fix/staging-restricted-runtime-role
       - fix/superadmin-recovery-readiness
