@@ -55,8 +55,8 @@ done
 # Assert essential canonical/feature contracts still exist in the candidate.
 for file in \
   app/Auth/LinkedPasswordUserProvider.php \
-  app/Services/DataDictionary/DataDictionaryIdentityResolver.php \
-  app/Services/DataDictionary/DdOperationAudit.php \
+  app/Services/AccountIdentityResolver.php \
+  app/Services/OperationAudit.php \
   app/Services/Files/PermanentFileDeletion.php \
   app/Services/Documents/PrivateSupabaseStorage.php \
   resources/js/pages/auth/login.tsx \
