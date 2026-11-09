@@ -35,12 +35,29 @@ runtime_role AS (
       AND NOT rolcreatedb AND NOT rolcreaterole
  ) AS has_restricted_login
 ),
-maintenance_fk AS (
- SELECT count(*)=2 AND COALESCE(bool_and(NOT a.attnotnull),false) AS is_nullable
+maintenance_required AS (
+ SELECT count(*)=2 AND COALESCE(bool_and(a.attnotnull),false) AS are_required
  FROM pg_attribute a
  WHERE a.attrelid = to_regclass('jairoads_next.maintenance_records')
    AND a.attnum > 0 AND NOT a.attisdropped
    AND a.attname IN ('project_id','managing_engineer_id')
+),
+maintenance_restrict_fks AS (
+ SELECT count(*)=2 AND count(DISTINCT source_column.attname)=2
+    AND COALESCE(bool_and(fk.confdeltype = 'r'),false) AS are_restrict
+ FROM pg_constraint fk
+ JOIN pg_attribute source_column
+   ON source_column.attrelid=fk.conrelid
+   AND source_column.attnum = ANY(fk.conkey)
+ WHERE fk.conrelid=to_regclass('jairoads_next.maintenance_records')
+   AND fk.contype='f'
+   AND cardinality(fk.conkey)=1
+   AND (
+      (source_column.attname='project_id'
+        AND fk.confrelid=to_regclass('jairoads_next.maintenance_projects'))
+      OR (source_column.attname='managing_engineer_id'
+        AND fk.confrelid=to_regclass('jairoads_next.engineers'))
+   )
 ),
 period_index AS (
  SELECT EXISTS (
@@ -69,8 +86,9 @@ SELECT jsonb_build_object(
     'provenance_table_present', new_tables.has_provenance,
     'notification_recipients_present', new_tables.has_notifications,
     'file_deletion_intents_present', new_tables.has_file_intents,
-    'maintenance_history_contexts_present', new_tables.has_contexts,
-    'project_and_manager_nullable', maintenance_fk.is_nullable,
+    'maintenance_project_manager_not_null', maintenance_required.are_required,
+    'maintenance_project_manager_restrict_fk', maintenance_restrict_fks.are_restrict,
+    'no_maintenance_record_contexts', NOT new_tables.has_contexts,
     'quarterly_unique_constraint_present', period_index.has_unique_constraint,
     'restricted_runtime_login_present', runtime_role.has_restricted_login,
     'active_superadmin_exists', EXISTS (
@@ -88,6 +106,6 @@ SELECT jsonb_build_object(
     'Owner must inspect actual table grants, data API exposure and function execution separately.'
   )
 ) AS release_inventory
-FROM audit_guard, runtime_role, maintenance_fk, period_index, new_tables;
+FROM audit_guard, runtime_role, maintenance_required, maintenance_restrict_fks, period_index, new_tables;
 
 COMMIT;
