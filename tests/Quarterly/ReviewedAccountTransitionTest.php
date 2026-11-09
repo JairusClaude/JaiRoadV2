@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 
 final class ReviewedAccountTransitionTest extends PostgresTestCase
 {
-    public function test_synthetic_unlinked_admin_stays_denied_until_real_profile_link_and_reviewed_evidence_exist(): void
+    public function test_synthetic_unlinked_admin_stays_denied_until_profile_link_and_reviewed_evidence_exist(): void
     {
         // This only represents synthetic identity verification: it is NOT a
         // proposed automatic match between real people and Engineer records.
@@ -64,6 +64,45 @@ final class ReviewedAccountTransitionTest extends PostgresTestCase
             'method' => 'reviewed_transition',
             'review_reference' => 'SYNTHETIC-OWNER-REVIEW-2026-11-07',
         ]);
+    }
+
+    public function test_existing_unlinked_admin_requires_a_genuine_owner_review_not_a_fake_new_account(): void
+    {
+        // Disposable simulation only. Production identity and legacy status MUST
+        // be checked privately by the authorized owner before any attestation.
+        $admin = $this->account('Admin', linked: false);
+        $root = User::where('dd_user_account_id', DB::table('jairoads_next.user_accounts')
+            ->where('account_type', 'SuperAdmin')->value('id'))->firstOrFail();
+        $resolver = app(AccountIdentityResolver::class);
+        $this->assertNull($resolver->resolve($admin));
+        $payload = [
+            'user_account_id' => $admin->dd_user_account_id,
+            'provisioned_by' => $root->dd_user_account_id,
+            'provisioner_role' => 'SuperAdmin',
+            'provisioned_role' => 'Admin',
+            'engineer_id' => null,
+            'method' => 'administrator',
+        ];
+        try {
+            DB::transaction(fn () => DB::table(AccountProvisioning::TABLE)->insert($payload));
+            $this->fail('A new unlinked Admin must not be provisioned.');
+        } catch (QueryException $error) {
+            $this->assertSame('23514', $error->errorInfo[0]);
+        }
+        $this->assertNull($resolver->resolve($admin));
+
+        $payload['method'] = 'reviewed_transition';
+        $payload['review_reference'] = 'SYNTHETIC-PRIVATE-OWNER-REVIEW-001';
+        DB::table(AccountProvisioning::TABLE)->insert($payload);
+        $eligible = $resolver->resolve($admin);
+        $this->assertNotNull($eligible);
+        $this->assertSame('Admin', $eligible['role']);
+        $this->assertNull($eligible['engineer_id']);
+        $this->postJson('/login', [
+            'email' => $admin->email, 'password' => 'Disposable-Test!123',
+        ])->assertOk();
+        $this->assertAuthenticatedAs($admin);
+        $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
     }
 
     public function test_review_record_cannot_be_short_or_forged_by_a_viewer_or_duplicated(): void
@@ -127,7 +166,8 @@ final class ReviewedAccountTransitionTest extends PostgresTestCase
             $this->assertTrue($summary['provenance_available']);
             $this->assertSame(1, $summary['roles']['Admin']['total']);
             $this->assertSame(0, $summary['roles']['Admin']['eligible']);
-            $this->assertSame(1, $summary['roles']['Admin']['needs_engineer_link']);
+            $this->assertSame(0, $summary['roles']['Admin']['needs_engineer_link']);
+            $this->assertSame(1, $summary['roles']['Admin']['needs_existing_admin_review']);
             $this->assertSame(1, $summary['roles']['Admin']['needs_reviewed_provisioning_evidence']);
             $this->assertSame(1, $summary['roles']['Engineer']['eligible']);
             $this->assertSame(1, $summary['roles']['SuperAdmin']['eligible']);

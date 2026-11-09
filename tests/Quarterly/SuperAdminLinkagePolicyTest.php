@@ -7,7 +7,7 @@ namespace Tests\Quarterly;
 use App\Services\AccountIdentityResolver;
 use Illuminate\Support\Facades\DB;
 
-/** Final DD: SuperAdmin has no Engineer link; other roles retain required links. */
+/** Final DD: optional Viewer link and reviewed existing-Admin compatibility. */
 final class SuperAdminLinkagePolicyTest extends PostgresTestCase
 {
     public function test_role_link_validation_enforces_unlinked_superadmin_and_linked_ordinary_roles(): void
@@ -15,11 +15,14 @@ final class SuperAdminLinkagePolicyTest extends PostgresTestCase
         $this->assertTrue(AccountIdentityResolver::roleLinkValid('SuperAdmin', null));
         $this->assertFalse(AccountIdentityResolver::roleLinkValid('SuperAdmin', 1));
         $this->assertFalse(AccountIdentityResolver::roleLinkValid('SuperAdmin', 999));
-        foreach (['Admin', 'Engineer', 'Viewer'] as $role) {
-            $this->assertFalse(AccountIdentityResolver::roleLinkValid($role, null));
+        foreach (['Admin', 'Viewer'] as $role) {
+            $this->assertTrue(AccountIdentityResolver::roleLinkValid($role, null));
             $this->assertFalse(AccountIdentityResolver::roleLinkValid($role, 0));
             $this->assertTrue(AccountIdentityResolver::roleLinkValid($role, 1));
         }
+        $this->assertFalse(AccountIdentityResolver::roleLinkValid('Engineer', null));
+        $this->assertFalse(AccountIdentityResolver::roleLinkValid('Engineer', 0));
+        $this->assertTrue(AccountIdentityResolver::roleLinkValid('Engineer', 1));
         $this->assertFalse(AccountIdentityResolver::roleLinkValid('Unknown', null));
     }
 

@@ -11,11 +11,14 @@ CREATE TABLE jairoads_security.account_provisioning (
     provisioned_by bigint NOT NULL REFERENCES jairoads_next.user_accounts(id) ON DELETE RESTRICT,
     provisioner_role varchar(20) NOT NULL CHECK (provisioner_role IN ('Admin', 'SuperAdmin')),
     provisioned_role varchar(20) NOT NULL CHECK (provisioned_role IN ('Admin', 'Engineer', 'Viewer')),
-    engineer_id bigint NOT NULL REFERENCES jairoads_next.engineers(id) ON DELETE RESTRICT,
+    -- Optional only for Viewer and owner-reviewed existing Admin compatibility.
+    engineer_id bigint REFERENCES jairoads_next.engineers(id) ON DELETE RESTRICT,
     provisioned_at timestamptz NOT NULL DEFAULT statement_timestamp(),
     method varchar(30) NOT NULL CHECK (method IN ('administrator', 'reviewed_transition')),
     review_reference text,
     CHECK (user_account_id <> provisioned_by),
+    CHECK (provisioned_role = 'Viewer' OR engineer_id IS NOT NULL
+        OR (provisioned_role = 'Admin' AND method = 'reviewed_transition')),
     CHECK ((method = 'administrator' AND review_reference IS NULL)
         OR (method = 'reviewed_transition' AND length(btrim(review_reference)) BETWEEN 8 AND 500))
 );
@@ -45,10 +48,15 @@ BEGIN
     END IF;
     SELECT a.*, e.engineer_status INTO target
       FROM jairoads_next.user_accounts a
-      JOIN jairoads_next.engineers e ON e.id = a.engineer_id
+      LEFT JOIN jairoads_next.engineers e ON e.id = a.engineer_id
       WHERE a.id = NEW.user_account_id;
-    IF NOT FOUND OR NOT target.is_active OR target.engineer_status <> 'Active'
-       OR target.engineer_id <> NEW.engineer_id OR target.account_type <> NEW.provisioned_role
+    IF NOT FOUND OR NOT target.is_active
+       OR target.engineer_id IS DISTINCT FROM NEW.engineer_id
+       OR target.account_type <> NEW.provisioned_role
+       OR (target.engineer_id IS NOT NULL AND target.engineer_status IS DISTINCT FROM 'Active')
+       OR (target.account_type = 'Engineer' AND target.engineer_id IS NULL)
+       OR (target.account_type = 'Admin' AND target.engineer_id IS NULL
+           AND NEW.method <> 'reviewed_transition')
        OR NOT EXISTS (SELECT 1 FROM public.users u WHERE u.dd_user_account_id = target.id
                        AND lower(u.email) = lower(target.email) AND u.password = target.password) THEN
         RAISE EXCEPTION 'Invalid provisioned identity' USING ERRCODE = '23514';
@@ -61,9 +69,11 @@ BEGIN
        OR (actor.engineer_id IS NOT NULL AND actor.engineer_status IS DISTINCT FROM 'Active')
        OR NOT EXISTS (SELECT 1 FROM public.users u WHERE u.dd_user_account_id = actor.id
                        AND lower(u.email) = lower(actor.email) AND u.password = actor.password)
-       OR (actor.account_type = 'Admin' AND (actor.engineer_id IS NULL OR NOT EXISTS (
+       OR (actor.account_type = 'Admin' AND NOT EXISTS (
            SELECT 1 FROM jairoads_security.account_provisioning p WHERE p.user_account_id = actor.id
-             AND p.provisioned_role = 'Admin' AND p.engineer_id = actor.engineer_id))) THEN
+             AND p.provisioned_role = 'Admin'
+             AND p.engineer_id IS NOT DISTINCT FROM actor.engineer_id
+             AND (actor.engineer_id IS NOT NULL OR p.method = 'reviewed_transition'))) THEN
         RAISE EXCEPTION 'Invalid provisioning administrator' USING ERRCODE = '23514';
     END IF;
     -- Callers cannot falsify a historical creation timestamp. A reviewed transition
@@ -93,5 +103,11 @@ EXECUTE FUNCTION jairoads_security.reject_provisioning_truncate();
 -- Owner-only rehearsal works as table owner. Before deployment the schema owner
 -- must grant the actual Laravel DB role USAGE + SELECT + INSERT with a targeted
 -- RLS policy (not PUBLIC); never UPDATE, DELETE, TRUNCATE or schema ownership.
+-- Existing unlinked Admins may receive an approved reviewed_transition with
+-- engineer_id NULL only after a real private owner review; new Admin/Engineer
+-- accounts still require a valid unique Active Engineer. New Viewers may be
+-- provisioned with NULL EngineerID and remain read-only. None of these changes
+-- automatically marks historical records as reviewed or grants access without
+-- immutable matching provenance.
 -- reviewed_transition inserts are trusted-operator only operational procedures;
 -- the application's sole writer always supplies method='administrator'.

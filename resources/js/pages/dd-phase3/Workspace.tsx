@@ -352,10 +352,10 @@ export default function DdPhase3Workspace({
                             <p
                                 className={`max-w-2xl text-sm leading-6 ${identity.role === 'SuperAdmin' ? 'text-slate-300' : 'text-slate-600'}`}
                             >
-                                All ordinary accounts require an active,
-                                available Engineer profile and verified
-                                administrative provisioning. Unlinked accounts
-                                cannot sign in.
+                                New Admin and Engineer accounts require an
+                                active Engineer profile; Viewer links are
+                                optional. Existing unlinked Admins require
+                                verified owner review before access.
                             </p>
                             <div className="grid gap-3 pt-2 sm:grid-cols-3">
                                 <div
@@ -416,9 +416,9 @@ export default function DdPhase3Workspace({
                         <div>
                             <h2 className={sectionTitle}>Provisioning rules</h2>
                             <p className={muted}>
-                                New Admin, Engineer and Viewer accounts require
-                                a Linked Engineer; account uniqueness and
-                                password rules still apply.
+                                New Admin and Engineer accounts require an
+                                active Engineer link; Viewer links are optional.
+                                Account uniqueness and password rules apply.
                             </p>
                         </div>
                         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
@@ -963,8 +963,8 @@ export default function DdPhase3Workspace({
                                     </h2>
                                     <p className={muted}>
                                         Provision Admin, Engineer, or Viewer
-                                        accounts. All three require an active
-                                        Linked Engineer.
+                                        accounts. Admin and Engineer need active
+                                        links; Viewer links are optional.
                                     </p>
                                 </div>
                                 <div className="rounded-2xl bg-violet-50 p-3 text-violet-700">
@@ -1000,19 +1000,17 @@ export default function DdPhase3Workspace({
                                         Viewer
                                     </div>
                                     <p className="mt-2 text-xs leading-5 text-slate-500">
-                                        Requires an active available Engineer
-                                        profile. Account Type remains Viewer and
-                                        read-only.
+                                        Engineer profile is optional. Account
+                                        Type remains Viewer and read-only.
                                     </p>
                                 </div>
                             </div>
 
                             {
                                 <div className="mt-4 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-950">
-                                    All ordinary accounts require a Linked
-                                    Engineer. Create an active Engineer profile
-                                    with its professional Rank first if no
-                                    eligible profile is available.
+                                    New Admin and Engineer accounts require an
+                                    active unused Engineer profile. Viewer links
+                                    are optional; permissions remain read-only.
                                 </div>
                             }
 
@@ -1073,8 +1071,9 @@ export default function DdPhase3Workspace({
                                         ))}
                                     </select>
                                     <span className="mt-1 block text-[11px] text-slate-500">
-                                        Admin, Engineer and Viewer accounts must
-                                        link to an available active Engineer.
+                                        Admin and Engineer require an active
+                                        available Engineer; Viewer link is
+                                        optional.
                                     </span>
                                     <FieldError
                                         message={validation.account_type}
@@ -1083,7 +1082,9 @@ export default function DdPhase3Workspace({
                                 <label className="text-xs font-semibold text-slate-600">
                                     Linked Engineer
                                     <select
-                                        required
+                                        required={
+                                            account.account_type !== 'Viewer'
+                                        }
                                         className={`${inp} mt-1`}
                                         value={account.engineer_id}
                                         onChange={(e) =>
@@ -1094,7 +1095,9 @@ export default function DdPhase3Workspace({
                                         }
                                     >
                                         <option value="">
-                                            Select a Linked Engineer (required)
+                                            {account.account_type === 'Viewer'
+                                                ? 'No Engineer link (optional)'
+                                                : 'Select a Linked Engineer (required)'}
                                         </option>
                                         {availableEngineers.map((e) => (
                                             <option key={e.id} value={e.id}>
@@ -1134,8 +1137,9 @@ export default function DdPhase3Workspace({
                                             • Username and email must be unique.
                                         </li>
                                         <li>
-                                            • Every ordinary account requires an
-                                            active, unused Engineer profile.
+                                            • New Admin and Engineer accounts
+                                            require an active, unused Engineer;
+                                            Viewer link is optional.
                                         </li>
                                         <li>
                                             • Viewer remains read-only even with

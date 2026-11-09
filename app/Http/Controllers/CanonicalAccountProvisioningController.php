@@ -33,7 +33,8 @@ final class CanonicalAccountProvisioningController extends Controller
             'email' => ['required', 'email:rfc', 'max:255'],
             'name' => ['required', 'string', 'max:255'],
             'account_type' => ['required', Rule::in($allowed)],
-            'engineer_id' => ['required', 'integer', 'min:1'],
+            // New Admin/Engineer require a real Engineer; Viewer can be unlinked.
+            'engineer_id' => ['nullable', 'required_if:account_type,Admin,Engineer', 'integer', 'min:1'],
             'password' => ['required', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()],
         ]);
         $username = strtolower(trim((string) $v['username']));
