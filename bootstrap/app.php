@@ -4,6 +4,7 @@ use App\Http\Middleware\EnforceCanonicalSession;
 use App\Http\Middleware\GuardLegacyRoutesForCanonicalAccounts;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\RecordSecurityMonitoring;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
@@ -27,7 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prependToPriorityList(AuthenticatesRequests::class, EnforceCanonicalSession::class);
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
-        $middleware->web(append: [
+        $middleware->web(prepend: [RecordSecurityMonitoring::class], append: [
             HandleAppearance::class,
             EnforceCanonicalSession::class,
             AuthenticateSession::class,

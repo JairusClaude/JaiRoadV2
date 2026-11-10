@@ -13,6 +13,7 @@ import {
     PanelLeftClose,
     Route,
     Settings,
+    ShieldCheck,
     Users,
     X,
 } from 'lucide-react';
@@ -79,6 +80,7 @@ const ddCommonLinks: NavItem[] = [
 const ddAdminLinks: NavItem[] = [
     ...ddCommonLinks.slice(0, 2),
     { label: 'User Management', href: '/dd-phase3/users', icon: Users },
+    { label: 'Audit Log', href: '/dd-phase3/audit-logs', icon: ShieldCheck },
     ...ddCommonLinks.slice(2),
 ];
 

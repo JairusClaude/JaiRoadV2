@@ -513,6 +513,51 @@ try {
         'PASS: actual Inertia Viewer form creates no Engineer link; provisioned Viewer logs in and remains read-only.',
     );
 
+    await root.page.goto(base + '/login');
+    assert.equal(
+        (
+            await request(root.page, '/login', {
+                email: root.user.email,
+                password: 'Disposable-Test!123',
+            })
+        ).status,
+        200,
+    );
+    await root.page.goto(base + '/dd-phase3/audit-logs');
+    const history = await root.page.request.get(
+        base + '/dd-phase3/audit-logs?auth_event=LOGIN',
+        {
+            headers: {
+                'X-Inertia': 'true',
+                'X-Inertia-Version': JSON.parse(
+                    await root.page.locator('script[data-page]').textContent(),
+                ).version,
+            },
+        },
+    );
+    assert.equal(history.status(), 200);
+    const telemetry = (await history.json()).props.authentication.data;
+
+    for (const role of ['SuperAdmin', 'Admin', 'Engineer', 'Viewer']) {
+        assert.ok(
+            telemetry.some(
+                (event) =>
+                    event.event === 'LOGIN' &&
+                    event.method === 'passkey' &&
+                    event.account_type === role,
+            ),
+            `${role} completed passkey login recorded separately`,
+        );
+    }
+
+    assert.equal(
+        JSON.stringify(telemetry).includes('session_reference'),
+        false,
+    );
+    console.log(
+        'PASS: completed real WebAuthn logins for all four roles appear in separate, safe authentication history.',
+    );
+
     for (const session of sessions) {
         await session.context.close();
     }

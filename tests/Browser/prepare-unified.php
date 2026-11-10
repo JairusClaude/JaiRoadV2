@@ -11,6 +11,7 @@ final class UnifiedFrontendBrowserFixture extends PostgresTestCase
     public function prepare(): void
     {
         $this->setUp();
+        DB::unprepared(file_get_contents(base_path('database/proposals/security_monitoring.sql')));
         // Final DD: project and ManagingEngineer references must remain required.
         (require base_path('database/proposals/create_file_deletions.php'))->up(); // Guarded disposable rehearsal, never shared.
         $f = $this->fixture('Engineer');

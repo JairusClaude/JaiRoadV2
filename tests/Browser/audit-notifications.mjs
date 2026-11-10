@@ -84,7 +84,7 @@ export async function verifyAuditNotifications({
         .getByRole('link', { name: 'Full audit history', exact: true })
         .click();
     await admin
-        .getByRole('heading', { name: 'Permanent audit history', exact: true })
+        .getByRole('heading', { name: 'Audit Log', exact: true })
         .waitFor();
     const historyResponse = await admin.request.get(
         `${base}/dd-phase3/audit-logs`,
@@ -143,7 +143,7 @@ export async function verifyAuditNotifications({
     );
     await superadmin.goto(`${base}/dd-phase3/audit-logs`);
     await superadmin
-        .getByRole('heading', { name: 'Permanent audit history', exact: true })
+        .getByRole('heading', { name: 'Audit Log', exact: true })
         .waitFor();
     console.log(
         'PASS: one real Engineer update appears in each eligible Admin/SuperAdmin/actor feed; Viewer receives none; safe unique feed IDs; privileged read-only audit snapshots/pagination; historical LOGIN preserved without new authentication events.',

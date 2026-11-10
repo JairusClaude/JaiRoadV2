@@ -84,6 +84,12 @@ final class AccountIdentityResolver
         });
     }
 
+    /** Same eligibility query for privileged presence reads; no new permission rules. */
+    public function eligibleMonitoringLogins(): Builder
+    {
+        return $this->eligibleLinks(false);
+    }
+
     /** Shared SQL authority for identity and new delivery eligibility. No credentials projected. */
     private function eligibleLinks(bool $recovery, bool $reactivation = false): Builder
     {

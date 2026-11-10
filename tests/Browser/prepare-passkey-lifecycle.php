@@ -13,6 +13,7 @@ require __DIR__.'/../../vendor/autoload.php';
     public function prepare(): void
     {
         $this->setUp();
+        DB::unprepared(file_get_contents(base_path('database/proposals/security_monitoring.sql')));
         $users = [];
         foreach (['SuperAdmin', 'Admin', 'Engineer', 'Viewer'] as $role) {
             $engineer = $role !== 'SuperAdmin' ? $this->engineer() : null;

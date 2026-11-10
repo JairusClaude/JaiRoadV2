@@ -38,6 +38,12 @@ const modules = [
         group: 'governance',
         enabled: true,
     },
+    {
+        label: 'Audit Log',
+        icon: ShieldCheck,
+        group: 'governance',
+        enabled: true,
+    },
     { label: 'Settings', icon: Settings, group: 'governance', enabled: true },
     {
         label: 'Maintenance Projects',
@@ -98,6 +104,7 @@ export default function DdSuperAdminCommandLayout({
                 ? '/dd-superadmin-landing'
                 : '/dd-phase3/dashboard',
         'User Management': '/dd-phase3/users',
+        'Audit Log': '/dd-phase3/audit-logs',
         Settings: '/dd-phase3/settings',
         'Maintenance Projects': '/dd-phase3/ui/maintenance-projects',
         'Monthly Updates': '/dd-phase3/ui/monthly-updates',
@@ -110,7 +117,7 @@ export default function DdSuperAdminCommandLayout({
             .filter((item) => item.group === group)
             .map(({ label, icon: Icon }) => {
                 const enabled =
-                    label !== 'User Management' ||
+                    !['User Management', 'Audit Log'].includes(label) ||
                     identity.role === 'superadmin' ||
                     identity.role === 'admin';
                 const url = routes[label];

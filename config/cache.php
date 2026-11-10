@@ -34,6 +34,11 @@ return [
 
     'stores' => [
 
+        'security_monitoring' => [
+            'driver' => 'file',
+            'path' => env('SECURITY_MONITOR_CACHE_PATH', storage_path('framework/cache/security-monitoring')),
+        ],
+
         'array' => [
             'driver' => 'array',
             'serialize' => false,

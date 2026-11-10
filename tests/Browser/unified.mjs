@@ -11,6 +11,7 @@ import { verifyPreservedRelationships } from './preserved-relationships.mjs';
 import { pdf, png, startStorageMock } from './private-storage-mock.mjs';
 import { verifyDirectoryLayouts } from './responsive-directories.mjs';
 import { verifyRoleAcceptanceMatrix } from './role-acceptance.mjs';
+import { verifySecurityMonitoring } from './security-monitoring.mjs';
 const { chromium } = await import(
     process.env.PLAYWRIGHT_MODULE || 'playwright'
 );
@@ -694,6 +695,15 @@ try {
             .getAttribute('href'),
         '/dd-phase3/settings',
     );
+    await verifySecurityMonitoring({
+        browser,
+        admin,
+        superadmin,
+        engineer,
+        viewer,
+        base,
+        fixture: f,
+    });
     await verifyPostDemoUserManagement({ admin, superadmin, base });
 
     await verifyAuthenticatedHistory(
