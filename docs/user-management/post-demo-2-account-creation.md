@@ -58,6 +58,28 @@ This is conservative detection, not a global unique-person constraint: changed c
 | `tests/Integration/assert-reviewed-history.sh` | Point the retained-contract assertions to current resolver/audit paths; preserve ancestry requirements |
 | This document | Approved behavior, scope, validation evidence and limitations |
 
+## Executed local verification
+
+| Check | Result |
+| --- | --- |
+| New `PostDemoAccountCreationTest` | 24 passing cases; included in canonical total |
+| Focused account/authentication selection | 79 passed, 724 assertions |
+| Complete canonical PostgreSQL suite (`phpunit.quarterly.xml`) | 467 passed, 4,849 assertions; no failures/skips |
+| Original password suite (`phpunit-passwords.xml`) | 56 passed, 330 assertions |
+| PostgreSQL Feature suite | 49 passed, 344 assertions; 2 existing public-registration skips |
+| Standard `php artisan test` | 120 passed, 901 assertions; 2 existing public-registration skips |
+| Real unified Laravel/Fortify browser acceptance | Passed, including six new account creations, all four roles, private files, geometry, quarter/month reporting, audit/notifications and logout/history |
+| Real WebAuthn browser acceptance | Passed; all four roles, revoked/invalid identity rejection, remember-me, and newly provisioned unlinked Viewer login/read-only access |
+| Pint / PHPStan / ESLint / Prettier / TypeScript / routes / PHP syntax | Passed |
+| Composer strict validation and security audit | Passed; no reported advisories (one initial Packagist timeout resolved on retry) |
+| npm security audit | Passed; zero vulnerabilities |
+| Vite production build | Passed; existing chunk-size and optional font-optimization notices remain |
+| Local Docker | Not executed: Docker is unavailable; existing CI runtime job remains enabled |
+
+The two registration skips are the existing Fortify feature-gated tests for an intentionally disabled public feature; they are not counted as passes. Separate executed regressions verify that public registration cannot provision accounts. Suite counts overlap and must not be added together.
+
+New cases cover `role_specific_creation_and_real_password_login` (six role combinations), `every_required_write_failure_rolls_back_all_entities_and_history` (six write stages), `invalid_profile_fields_cannot_create_partial_records` (six malformed payloads), duplicate credentials/person conflict, normalized retired-profile conflict versus same-name-only acceptance, preservation of historical linked Viewers and events, Engineer/Viewer denial, and `real_concurrent_duplicate_submissions_create_one_profile_and_account`. The concurrency case verifies both requests waiting on a real PostgreSQL advisory lock through `pg_stat_activity` and `pg_blocking_pids`, then asserts one successful creation and one validation rejection.
+
 ## Verification and safety
 
 All mutating local tests use newly initialized disposable PostgreSQL 17 clusters, guarded `jairoads_scratch_*` databases (or the guarded password-test database), synthetic credentials and local Storage mocks. Shared Supabase, production Storage and existing accounts were not contacted for writes. No canonical models, migrations, schema definitions, password implementation or permission services are changed.
