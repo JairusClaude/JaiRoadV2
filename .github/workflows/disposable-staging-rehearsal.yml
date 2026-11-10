@@ -11,6 +11,7 @@ on:
       - fix/reviewed-account-transition-readiness
       - fix/optional-feature-schema-rehearsal
       - fix/isolated-integration-readiness
+      - PostDemo2Update--UserManagementModifications
   workflow_dispatch:
 
 permissions:

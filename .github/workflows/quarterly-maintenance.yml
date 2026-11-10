@@ -2,7 +2,7 @@ name: JaiROADS focused regressions
 
 on:
   push:
-    branches: ['QuarterlyFeature_Update', 'EngineerProjectAssignment_Update', 'PositionCleanup_Update', 'Quarterly/Role/Assignment_Update', 'feature/premerge-policy-alignment', 'integration/dd-system-completion', 'Oct10_Front&BackEnd_Merge_Integration', 'fix/security-auth-revocation-passkey-dependencies', 'fix/canonical-only-provisioned-auth', 'fix/audit-multirecipient-consistency', 'fix/ordinary-mutation-authorization-races', 'integration/combined-review-candidate-2026-11-07', 'fix/full-system-role-acceptance', 'fix/uat-defect-and-recovery-gates', 'fix/controlled-release-readiness']
+    branches: ['QuarterlyFeature_Update', 'EngineerProjectAssignment_Update', 'PositionCleanup_Update', 'Quarterly/Role/Assignment_Update', 'feature/premerge-policy-alignment', 'integration/dd-system-completion', 'Oct10_Front&BackEnd_Merge_Integration', 'fix/security-auth-revocation-passkey-dependencies', 'fix/canonical-only-provisioned-auth', 'fix/audit-multirecipient-consistency', 'fix/ordinary-mutation-authorization-races', 'integration/combined-review-candidate-2026-11-07', 'fix/full-system-role-acceptance', 'fix/uat-defect-and-recovery-gates', 'fix/controlled-release-readiness', 'PostDemo2Update--UserManagementModifications']
 
 permissions:
   contents: read
@@ -45,11 +45,11 @@ jobs:
       - name: Guarded PostgreSQL 17 regression suite
         run: php vendor/bin/pest --configuration=phpunit.quarterly.xml --display-warnings --fail-on-warning
       - name: Scheduling service and test formatting
-        run: vendor/bin/pint --test app/Services/DataDictionary/TwiceYearlyMaintenance.php app/Services/DataDictionary/ManagingEngineerEligibility.php tests/Quarterly tests/Browser/prepare-quarterly.php tests/Browser/prepare-assignments.php tests/Browser/prepare-account-terminology.php tests/Browser/prepare-lifecycle.php app/Http/Controllers/DataDictionary/DdPeopleLifecycleController.php
+        run: vendor/bin/pint --test app/Services/TwiceYearlyMaintenance.php app/Services/ManagingEngineerEligibility.php tests/Quarterly tests/Browser/prepare-quarterly.php tests/Browser/prepare-assignments.php tests/Browser/prepare-account-terminology.php tests/Browser/prepare-lifecycle.php app/Http/Controllers/PeopleLifecycleController.php
       - name: Scheduling service static analysis
-        run: vendor/bin/phpstan analyse app/Services/DataDictionary/TwiceYearlyMaintenance.php app/Services/DataDictionary/ManagingEngineerEligibility.php app/Http/Controllers/DataDictionary/DdPeopleLifecycleController.php --no-progress
+        run: vendor/bin/phpstan analyse app/Services/TwiceYearlyMaintenance.php app/Services/ManagingEngineerEligibility.php app/Http/Controllers/PeopleLifecycleController.php --no-progress
       - name: Controller syntax
-        run: php -l app/Http/Controllers/DataDictionary/DdOperationsController.php
+        run: php -l app/Http/Controllers/OperationsController.php
 
   frontend:
     runs-on: ubuntu-latest
@@ -121,6 +121,6 @@ jobs:
       - name: All original password/DD regressions and integration hardening
         run: php vendor/bin/pest --configuration=phpunit-passwords.xml --display-warnings --fail-on-warning
       - name: Password code and regression formatting
-        run: vendor/bin/pint --test app/Auth app/Services/DataDictionary/LinkedPasswordUpdater.php app/Actions/Fortify/ResetUserPassword.php app/Http/Controllers/Settings/SecurityController.php app/Providers/AppServiceProvider.php bootstrap/app.php config/auth.php tests/PasswordSync tests/PasswordSyncTestCase.php tests/DdOperationsTestCase.php
+        run: vendor/bin/pint --test app/Auth app/Services/LinkedPasswordUpdater.php app/Actions/Fortify/ResetUserPassword.php app/Http/Controllers/Settings/SecurityController.php app/Providers/AppServiceProvider.php bootstrap/app.php config/auth.php tests/PasswordSync tests/PasswordSyncTestCase.php tests/DdOperationsTestCase.php
       - name: Password static analysis
-        run: vendor/bin/phpstan analyse app/Auth app/Services/DataDictionary/LinkedPasswordUpdater.php app/Actions/Fortify/ResetUserPassword.php app/Http/Controllers/Settings/SecurityController.php --no-progress
+        run: vendor/bin/phpstan analyse app/Auth app/Services/LinkedPasswordUpdater.php app/Actions/Fortify/ResetUserPassword.php app/Http/Controllers/Settings/SecurityController.php --no-progress
