@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - PostDemo2Update--UserManagementModifications
+      - PostDemo2Update--AuditLogModifications
   pull_request:
 
 permissions:

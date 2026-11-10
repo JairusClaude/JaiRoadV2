@@ -12,6 +12,7 @@ on:
       - fix/optional-feature-schema-rehearsal
       - fix/isolated-integration-readiness
       - PostDemo2Update--UserManagementModifications
+      - PostDemo2Update--AuditLogModifications
   workflow_dispatch:
 
 permissions:
