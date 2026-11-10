@@ -259,7 +259,7 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
     private function provision(string $role, int $engineer): array
     {
         return ['username' => 'ordinary', 'name' => 'Ordinary account', 'email' => 'ordinary@example.test',
-            'account_type' => $role, 'engineer_id' => $engineer, 'password' => 'Disposable-User!123',
+            'account_type' => $role, 'password' => 'Disposable-User!123',
             'password_confirmation' => 'Disposable-User!123', 'provisioned_by' => 999999, 'created_by' => 999999];
     }
 }

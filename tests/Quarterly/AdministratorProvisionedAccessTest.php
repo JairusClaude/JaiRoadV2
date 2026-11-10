@@ -42,11 +42,16 @@ final class AdministratorProvisionedAccessTest extends PostgresTestCase
         $this->actingAs($admin)->postJson('/dd-phase3/accounts', [
             'name' => 'Provisioned test account',
             'username' => 'provisioned-account', 'email' => 'provisioned@example.test', 'account_type' => $role,
-            'engineer_id' => $engineer, 'is_active' => true,
+            ...($role === 'Viewer' ? [] : ['first_name' => 'Provisioned', 'last_name' => 'Professional', 'contact_no' => '09123456789', 'rank' => 'Engineer II']), 'is_active' => true,
             'password' => 'Provisioned-Secure!123', 'password_confirmation' => 'Provisioned-Secure!123',
         ])->assertRedirect();
         $account = DB::table('jairoads_next.user_accounts')->where('email', 'provisioned@example.test')->first();
         $login = User::where('dd_user_account_id', $account->id)->firstOrFail();
+        if ($role !== 'Viewer') {
+            $engineer = (int) $account->engineer_id;
+            $lgu = DB::table('jairoads_next.road_coverages')->where('id', $road)->value('lgu_id');
+            $this->postJson('/dd-phase3/assignments', ['engineer_id' => $engineer, 'lgu_id' => $lgu, 'is_active' => true])->assertRedirect();
+        }
         $this->assertNull($login->email_verified_at);
         $this->assertTrue($account->is_active);
         $this->postJson('/logout')->assertNoContent();

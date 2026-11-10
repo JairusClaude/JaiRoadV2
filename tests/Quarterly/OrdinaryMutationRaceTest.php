@@ -280,14 +280,13 @@ final class OrdinaryMutationRaceTest extends PostgresTestCase
     {
         $f = $this->fixture();
         $revoker = $this->account('SuperAdmin');
-        $target = $this->engineer();
         DB::commit();
         $worker = $revocation = null;
         try {
             DB::beginTransaction();
             DB::select('SELECT pg_advisory_xact_lock(1927710914)');
             $worker = $this->worker($f['user'], 'POST', '/dd-phase3/accounts', ['username' => 'race.provisioned', 'name' => 'Disposable provision', 'email' => 'race-provisioned@example.test',
-                'account_type' => 'Viewer', 'engineer_id' => $target, 'password' => 'New-Account!12345', 'password_confirmation' => 'New-Account!12345']);
+                'account_type' => 'Viewer', 'password' => 'New-Account!12345', 'password_confirmation' => 'New-Account!12345']);
             $wait = $this->waiting($worker, 'ordinary_victim', ['1927710914']);
             if ($revoke) {
                 $revocation = $this->worker($revoker, 'PATCH', '/dd-phase3/accounts/'.$f['user']->dd_user_account_id.'/status', ['is_active' => false], 'ordinary_revoker');
@@ -300,7 +299,7 @@ final class OrdinaryMutationRaceTest extends PostgresTestCase
             if ($revocation !== null) {
                 $this->assertSame(302, $this->workerStatus($revocation));
             }
-            $this->assertDatabaseHas('jairoads_next.user_accounts', ['username' => 'race.provisioned', 'account_type' => 'Viewer', 'engineer_id' => $target]);
+            $this->assertDatabaseHas('jairoads_next.user_accounts', ['username' => 'race.provisioned', 'account_type' => 'Viewer', 'engineer_id' => null]);
             $this->assertDatabaseHas('public.users', ['email' => 'race-provisioned@example.test']);
             $this->assertSame(! $revoke, DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->value('is_active'));
             $this->evidence('account_provisioning', $revoke ? 'revocation_serialized_after_commit' : 'unchanged', $wait, $status, true, true, true);

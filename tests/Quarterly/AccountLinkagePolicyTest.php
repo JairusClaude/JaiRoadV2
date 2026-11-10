@@ -23,15 +23,16 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
     }
 
     #[DataProvider('linkedTypes')]
-    public function test_new_admin_and_engineer_accounts_require_explicit_active_unused_links(string $actor, string $type): void
+    public function test_new_admin_and_engineer_accounts_create_active_profiles_atomically(string $actor, string $type): void
     {
         $this->actingAs($this->account($actor));
         $data = $this->input($type);
-        $this->postJson('/dd-phase3/accounts', $data)->assertUnprocessable()->assertJsonValidationErrors('engineer_id');
+        $missing = array_diff_key($data, array_flip(['first_name', 'last_name', 'contact_no', 'rank']));
+        $this->postJson('/dd-phase3/accounts', $missing)->assertUnprocessable()->assertJsonValidationErrors('first_name');
         $this->assertSame($actor === 'Admin' ? 2 : 1, DB::table('public.users')->count());
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
-        $engineer = $this->engineer();
-        $this->postJson('/dd-phase3/accounts', $data + ['engineer_id' => $engineer])->assertRedirect();
+        $this->postJson('/dd-phase3/accounts', $data)->assertRedirect();
+        $engineer = (int) DB::table('jairoads_next.user_accounts')->where('username', 'linked-new')->value('engineer_id');
         $account = DB::table('jairoads_next.user_accounts')->where('username', 'linked-new')->first();
         $login = DB::table('public.users')->where('dd_user_account_id', $account->id)->first();
         $this->assertSame($type, $account->account_type);
@@ -87,14 +88,12 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
         $this->postJson('/dd-phase3/ops/projects', [])->assertForbidden();
     }
 
-    public function test_viewer_explicit_active_unclaimed_link_is_also_supported(): void
+    public function test_new_viewer_cannot_claim_an_existing_profile(): void
     {
         $this->actingAs($this->account('SuperAdmin'));
         $engineer = $this->engineer();
-        $this->postJson('/dd-phase3/accounts', $this->input('Viewer') + ['engineer_id' => $engineer])->assertRedirect();
-        $this->assertDatabaseHas('jairoads_next.user_accounts', [
-            'username' => 'linked-new', 'account_type' => 'Viewer', 'engineer_id' => $engineer,
-        ]);
+        $this->postJson('/dd-phase3/accounts', $this->input('Viewer') + ['engineer_id' => $engineer])->assertUnprocessable()->assertJsonValidationErrors('engineer_id');
+        $this->assertDatabaseMissing('jairoads_next.user_accounts', ['username' => 'linked-new']);
     }
 
     public function test_available_profiles_are_filtered_against_all_accounts_not_the_limited_directory(): void
@@ -133,7 +132,7 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
                 throw new \RuntimeException('Deliberate disposable account audit failure.');
             }
         });
-        $this->postJson('/dd-phase3/accounts', $this->input('Admin') + ['engineer_id' => $engineer])->assertServerError();
+        $this->postJson('/dd-phase3/accounts', $this->input('Admin'))->assertServerError();
         $this->assertSame(2, DB::table('public.users')->count());
         $this->assertSame(2, DB::table('jairoads_next.user_accounts')->count());
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
@@ -144,7 +143,8 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
     {
         $this->actingAs($this->account());
         $engineer = $this->engineer();
-        $this->postJson('/dd-phase3/accounts', $this->input('Admin') + ['engineer_id' => $engineer])->assertRedirect();
+        $this->postJson('/dd-phase3/accounts', $this->input('Admin'))->assertRedirect();
+        $engineer = (int) DB::table('jairoads_next.user_accounts')->where('username', 'linked-new')->value('engineer_id');
         $this->post(route('logout'))->assertRedirect();
         $this->post(route('login'), ['email' => 'linked-new@example.test', 'password' => 'Linked-Disposable!123'])->assertSessionHasNoErrors();
         $login = User::where('email', 'linked-new@example.test')->firstOrFail();
@@ -161,6 +161,6 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
     private function input(string $type): array
     {
         return ['username' => 'linked-new', 'name' => 'Linked account', 'email' => 'linked-new@example.test',
-            'account_type' => $type, 'password' => 'Linked-Disposable!123', 'password_confirmation' => 'Linked-Disposable!123'];
+            'account_type' => $type, ...($type === 'Viewer' ? [] : ['first_name' => 'New', 'last_name' => 'Person', 'contact_no' => '09123456789', 'rank' => 'Engineer II']), 'password' => 'Linked-Disposable!123', 'password_confirmation' => 'Linked-Disposable!123'];
     }
 }

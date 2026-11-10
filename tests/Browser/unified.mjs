@@ -6,6 +6,7 @@ import { verifyAuditNotifications } from './audit-notifications.mjs';
 import { verifyAuthenticatedHistory } from './authenticated-history.mjs';
 import { verifyDuplicatePeriod } from './duplicate-period.mjs';
 import { verifyPermanentFileDeletion } from './permanent-file-deletion.mjs';
+import { verifyPostDemoUserManagement } from './postdemo-user-management.mjs';
 import { verifyPreservedRelationships } from './preserved-relationships.mjs';
 import { pdf, png, startStorageMock } from './private-storage-mock.mjs';
 import { verifyDirectoryLayouts } from './responsive-directories.mjs';
@@ -693,6 +694,8 @@ try {
             .getAttribute('href'),
         '/dd-phase3/settings',
     );
+    await verifyPostDemoUserManagement({ admin, superadmin, base });
+
     await verifyAuthenticatedHistory(
         engineer,
         ui,

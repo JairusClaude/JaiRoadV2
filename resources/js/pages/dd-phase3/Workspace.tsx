@@ -18,6 +18,7 @@ import { useMemo, useState } from 'react';
 import { DdDashboardAnalytics } from '@/components/dd-dashboard-analytics';
 import type { DdDashboardSummary } from '@/components/dd-dashboard-analytics';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
+import CanonicalAccountCreationForm from '@/components/user-management/canonical-account-creation-form';
 import DdAccountLifecycle from '@/pages/dd-phase3/DdAccountLifecycle';
 import DdEngineerLifecycle from '@/pages/dd-phase3/DdEngineerLifecycle';
 import DdLguDirectory from '@/pages/dd-phase3/DdLguDirectory';
@@ -77,8 +78,6 @@ const inp =
     'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-100';
 const btn =
     'rounded-xl bg-[#90451f] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#773917] disabled:cursor-not-allowed disabled:opacity-50';
-const ghostBtn =
-    'rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50';
 const panel =
     'rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_12px_40px_rgba(15,23,42,.04)]';
 const sectionTitle = 'text-lg font-bold text-slate-900';
@@ -151,15 +150,6 @@ export default function DdPhase3Workspace({
 }: Props) {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
-    const [account, setAccount] = useState({
-        username: '',
-        email: '',
-        name: '',
-        account_type: canCreateRoles[0] ?? 'Viewer',
-        engineer_id: '',
-        password: '',
-        password_confirmation: '',
-    });
     const [engineer, setEngineer] = useState({
         first_name: '',
         middle_name: '',
@@ -352,10 +342,10 @@ export default function DdPhase3Workspace({
                             <p
                                 className={`max-w-2xl text-sm leading-6 ${identity.role === 'SuperAdmin' ? 'text-slate-300' : 'text-slate-600'}`}
                             >
-                                New Admin and Engineer accounts require an
-                                active Engineer profile; Viewer links are
-                                optional. Existing unlinked Admins require
-                                verified owner review before access.
+                                Admin and Engineer creation includes a new
+                                active Engineer profile. Viewer creation does
+                                not. Existing unlinked Admins require verified
+                                owner review before access.
                             </p>
                             <div className="grid gap-3 pt-2 sm:grid-cols-3">
                                 <div
@@ -416,9 +406,10 @@ export default function DdPhase3Workspace({
                         <div>
                             <h2 className={sectionTitle}>Provisioning rules</h2>
                             <p className={muted}>
-                                New Admin and Engineer accounts require an
-                                active Engineer link; Viewer links are optional.
-                                Account uniqueness and password rules apply.
+                                Select Account Type first. Admin and Engineer
+                                accounts create an active profile automatically;
+                                Viewers do not. Account uniqueness and password
+                                rules apply.
                             </p>
                         </div>
                         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
@@ -430,8 +421,9 @@ export default function DdPhase3Workspace({
                                     </p>
                                     <ul className="list-disc space-y-1 pl-5 text-[13px] leading-6">
                                         <li>
-                                            Admin, Engineer and Viewer accounts
-                                            must have an Engineer link.
+                                            Admin and Engineer accounts receive
+                                            a new active Engineer profile.
+                                            Viewers do not.
                                         </li>
                                         <li>
                                             Profile linkage does not change the
@@ -785,9 +777,10 @@ export default function DdPhase3Workspace({
                                             Create Engineer profile
                                         </h2>
                                         <p className={muted}>
-                                            Create an active Engineer first,
-                                            then link that Engineer to an
-                                            account if needed. Rank describes
+                                            Manage standalone Engineer profiles
+                                            here. New Admin and Engineer
+                                            accounts create their own profile in
+                                            Create account. Rank describes
                                             professional standing; Account Type
                                             controls permissions.
                                         </p>
@@ -963,8 +956,9 @@ export default function DdPhase3Workspace({
                                     </h2>
                                     <p className={muted}>
                                         Provision Admin, Engineer, or Viewer
-                                        accounts. Admin and Engineer need active
-                                        links; Viewer links are optional.
+                                        accounts. Admin and Engineer profiles
+                                        are created automatically; Viewers have
+                                        no profile.
                                     </p>
                                 </div>
                                 <div className="rounded-2xl bg-violet-50 p-3 text-violet-700">
@@ -979,7 +973,7 @@ export default function DdPhase3Workspace({
                                         Admin
                                     </div>
                                     <p className="mt-2 text-xs leading-5 text-slate-500">
-                                        Requires an active available Engineer
+                                        Automatically creates an active Engineer
                                         profile. Account Type remains Admin.
                                     </p>
                                 </div>
@@ -989,7 +983,7 @@ export default function DdPhase3Workspace({
                                         Engineer
                                     </div>
                                     <p className="mt-2 text-xs leading-5 text-slate-500">
-                                        Requires an active available Engineer
+                                        Automatically creates an active Engineer
                                         profile. LGU editing also requires an
                                         active assignment.
                                     </p>
@@ -1000,7 +994,7 @@ export default function DdPhase3Workspace({
                                         Viewer
                                     </div>
                                     <p className="mt-2 text-xs leading-5 text-slate-500">
-                                        Engineer profile is optional. Account
+                                        No Engineer profile is created. Account
                                         Type remains Viewer and read-only.
                                     </p>
                                 </div>
@@ -1008,179 +1002,16 @@ export default function DdPhase3Workspace({
 
                             {
                                 <div className="mt-4 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-950">
-                                    New Admin and Engineer accounts require an
-                                    active unused Engineer profile. Viewer links
-                                    are optional; permissions remain read-only.
+                                    Select Account Type first. Admin and
+                                    Engineer accounts create a new active
+                                    Engineer profile automatically. Viewer
+                                    accounts have no Engineer profile.
                                 </div>
                             }
 
-                            <form
-                                className="mt-5 grid gap-4 sm:grid-cols-2"
-                                onSubmit={(e) => {
-                                    e.preventDefault();
-                                    submit(
-                                        '/dd-phase3/accounts',
-                                        {
-                                            ...account,
-                                            engineer_id: account.engineer_id,
-                                        },
-                                        () =>
-                                            setAccount({
-                                                username: '',
-                                                email: '',
-                                                name: '',
-                                                account_type:
-                                                    account.account_type,
-                                                engineer_id: '',
-                                                password: '',
-                                                password_confirmation: '',
-                                            }),
-                                    );
-                                }}
-                            >
-                                {fields(account, setAccount, [
-                                    [
-                                        'username',
-                                        'Username',
-                                        'text',
-                                        'Letters, numbers, underscore, dot, and hyphen are allowed.',
-                                    ],
-                                    ['email', 'Email', 'email'],
-                                    ['name', 'Display name', 'text'],
-                                ])}
-                                <label className="text-xs font-semibold text-slate-600">
-                                    Account Type
-                                    <select
-                                        className={`${inp} mt-1`}
-                                        value={account.account_type}
-                                        onChange={(e) => {
-                                            const nextRole = e.target
-                                                .value as Role;
-                                            setAccount({
-                                                ...account,
-                                                account_type: nextRole,
-                                                engineer_id:
-                                                    account.engineer_id,
-                                            });
-                                        }}
-                                    >
-                                        {canCreateRoles.map((r) => (
-                                            <option key={r} value={r}>
-                                                {r}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <span className="mt-1 block text-[11px] text-slate-500">
-                                        Admin and Engineer require an active
-                                        available Engineer; Viewer link is
-                                        optional.
-                                    </span>
-                                    <FieldError
-                                        message={validation.account_type}
-                                    />
-                                </label>
-                                <label className="text-xs font-semibold text-slate-600">
-                                    Linked Engineer
-                                    <select
-                                        required={
-                                            account.account_type !== 'Viewer'
-                                        }
-                                        className={`${inp} mt-1`}
-                                        value={account.engineer_id}
-                                        onChange={(e) =>
-                                            setAccount({
-                                                ...account,
-                                                engineer_id: e.target.value,
-                                            })
-                                        }
-                                    >
-                                        <option value="">
-                                            {account.account_type === 'Viewer'
-                                                ? 'No Engineer link (optional)'
-                                                : 'Select a Linked Engineer (required)'}
-                                        </option>
-                                        {availableEngineers.map((e) => (
-                                            <option key={e.id} value={e.id}>
-                                                {e.first_name} {e.last_name} ·{' '}
-                                                {e.rank}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <span className="mt-1 block text-[11px] text-slate-500">
-                                        {availableEngineers.length} Engineer
-                                        profile(s) available for new linked
-                                        accounts.
-                                    </span>
-                                    <FieldError
-                                        message={validation.engineer_id}
-                                    />
-                                </label>
-                                {fields(account, setAccount, [
-                                    [
-                                        'password',
-                                        'Password',
-                                        'password',
-                                        'Use at least 12 characters with upper/lowercase letters, numbers, and symbols.',
-                                    ],
-                                    [
-                                        'password_confirmation',
-                                        'Confirm password',
-                                        'password',
-                                    ],
-                                ])}
-                                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:col-span-2">
-                                    <div className="text-xs font-semibold tracking-wide text-slate-600 uppercase">
-                                        Provisioning checklist
-                                    </div>
-                                    <ul className="mt-2 space-y-1.5 text-sm text-slate-600">
-                                        <li>
-                                            • Username and email must be unique.
-                                        </li>
-                                        <li>
-                                            • New Admin and Engineer accounts
-                                            require an active, unused Engineer;
-                                            Viewer link is optional.
-                                        </li>
-                                        <li>
-                                            • Viewer remains read-only even with
-                                            a profile.
-                                        </li>
-                                        <li>
-                                            • Provisioning evidence is recorded
-                                            by the server in the same
-                                            account-creation transaction.
-                                        </li>
-                                        <li>
-                                            • Password and confirmation must
-                                            match.
-                                        </li>
-                                    </ul>
-                                </div>
-                                <div className="flex flex-wrap gap-3 sm:col-span-2">
-                                    <button className={btn} disabled={busy}>
-                                        Create account
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className={ghostBtn}
-                                        onClick={() =>
-                                            setAccount({
-                                                username: '',
-                                                email: '',
-                                                name: '',
-                                                account_type:
-                                                    canCreateRoles[0] ??
-                                                    'Viewer',
-                                                engineer_id: '',
-                                                password: '',
-                                                password_confirmation: '',
-                                            })
-                                        }
-                                    >
-                                        Reset form
-                                    </button>
-                                </div>
-                            </form>
+                            <CanonicalAccountCreationForm
+                                roles={canCreateRoles}
+                            />
                         </section>
                     </section>
                 </>

@@ -31,18 +31,22 @@ final class CanonicalAccountProvisioningController extends Controller
         $v = $request->validate([
             'username' => ['required', 'string', 'min:3', 'max:100', 'regex:/\A[a-zA-Z0-9_.-]+\z/'],
             'email' => ['required', 'email:rfc', 'max:255'],
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['exclude_unless:account_type,Viewer', 'required', 'string', 'max:255'],
             'account_type' => ['required', Rule::in($allowed)],
-            // New Admin/Engineer require a real Engineer; Viewer can be unlinked.
-            'engineer_id' => ['nullable', 'required_if:account_type,Admin,Engineer', 'integer', 'min:1'],
+            // The server creates the profile; existing identities cannot be claimed.
+            'engineer_id' => ['prohibited'],
+            'first_name' => ['required_if:account_type,Admin,Engineer', 'prohibited_if:account_type,Viewer', 'string', 'max:100'],
+            'middle_name' => ['nullable', 'prohibited_if:account_type,Viewer', 'string', 'max:100'],
+            'last_name' => ['required_if:account_type,Admin,Engineer', 'prohibited_if:account_type,Viewer', 'string', 'max:100'],
+            'contact_no' => ['required_if:account_type,Admin,Engineer', 'prohibited_if:account_type,Viewer', 'string', 'max:30'],
+            'rank' => ['required_if:account_type,Admin,Engineer', 'prohibited_if:account_type,Viewer', 'string', 'max:100'],
             'password' => ['required', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()],
         ]);
         $username = strtolower(trim((string) $v['username']));
         $email = strtolower(trim((string) $v['email']));
         $role = $v['account_type'];
-        $engineerId = ! empty($v['engineer_id']) ? (int) $v['engineer_id'] : null;
         try {
-            DB::transaction(function () use ($request, $resolver, $actor, $v, $username, $email, $role, $engineerId): void {
+            DB::transaction(function () use ($request, $resolver, $actor, $v, $username, $email, $role): void {
                 DB::select('SELECT pg_advisory_xact_lock_shared(1927710916)');
                 DB::select('SELECT pg_advisory_xact_lock(1927710914)');
                 abort_unless($this->admin($request, $resolver) === $actor, 403);
@@ -54,12 +58,29 @@ final class CanonicalAccountProvisioningController extends Controller
                 if (DB::table('jairoads_next.user_accounts')->whereRaw('LOWER(username) = ?', [$username])->exists()) {
                     throw ValidationException::withMessages(['username' => 'Username already exists.']);
                 }
-                if ($engineerId !== null) {
-                    $engineer = DB::table('jairoads_next.engineers')->where('id', $engineerId)->lockForUpdate()->first(['engineer_status']);
-                    if (! $engineer || (string) $engineer->engineer_status !== 'Active'
-                        || DB::table('jairoads_next.user_accounts')->where('engineer_id', $engineerId)->exists()) {
-                        throw ValidationException::withMessages(['engineer_id' => 'Engineer is retired, missing or already linked to an account.']);
+                $engineerId = null;
+                $name = trim((string) ($v['name'] ?? ''));
+                if (in_array($role, ['Admin', 'Engineer'], true)) {
+                    $profile = [];
+                    foreach (['first_name', 'middle_name', 'last_name', 'contact_no', 'rank'] as $field) {
+                        $value = preg_replace('/\s+/u', ' ', trim((string) ($v[$field] ?? '')));
+                        $profile[$field] = $value === '' ? null : $value;
                     }
+                    // Names alone are not a reliable person identifier. Reject only
+                    // a matching full name AND nonempty normalized contact number.
+                    $digits = preg_replace('/[^0-9]/', '', (string) $profile['contact_no']);
+                    $duplicate = DB::table('jairoads_next.engineers');
+                    foreach (['first_name', 'middle_name', 'last_name'] as $field) {
+                        $duplicate->whereRaw("LOWER(regexp_replace(btrim(COALESCE({$field}, '')), '\\s+', ' ', 'g')) = ?", [mb_strtolower((string) $profile[$field])]);
+                    }
+                    if ($digits !== '' && $duplicate->whereRaw("regexp_replace(COALESCE(contact_no, ''), '[^0-9]', '', 'g') = ?", [$digits])->exists()) {
+                        throw ValidationException::withMessages(['contact_no' => 'An Engineer with this full name and contact number already exists. Review that profile; no account was created.']);
+                    }
+                    $name = implode(' ', array_filter([$profile['first_name'], $profile['middle_name'], $profile['last_name']]));
+                    if (mb_strlen($name) > 255) {
+                        throw ValidationException::withMessages(['last_name' => 'The combined profile name must not exceed 255 characters.']);
+                    }
+                    $engineerId = (int) DB::table('jairoads_next.engineers')->insertGetId($profile + ['engineer_status' => 'Active']);
                 }
                 $hashed = Hash::make((string) $v['password']);
                 $ddId = (int) DB::table('jairoads_next.user_accounts')->insertGetId([
@@ -69,12 +90,15 @@ final class CanonicalAccountProvisioningController extends Controller
                 ]);
                 // Keep public.users strictly as Fortify infrastructure; no legacy role FK.
                 DB::table('public.users')->insert([
-                    'name' => trim((string) $v['name']), 'email' => $email,
+                    'name' => $name, 'email' => $email,
                     'password' => $hashed, 'user_account_id' => null,
                     'dd_user_account_id' => $ddId,
                     'email_verified_at' => null, 'created_at' => now(), 'updated_at' => now(),
                 ]);
                 app(AccountProvisioning::class)->record($request->user(), $ddId);
+                if ($engineerId !== null) {
+                    $this->audit($actor, 'CREATE', 'Engineer', $engineerId, 'Administrator created an Engineer profile during account provisioning.', ['engineer_status' => 'Active']);
+                }
                 $this->audit($actor, 'CREATE', 'UserAccount', $ddId, 'Administrator provisioned a DD account with an explicit Fortify link.', [
                     'account_type' => $role, 'engineer_id' => $engineerId, 'is_active' => true,
                 ]);

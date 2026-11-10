@@ -84,28 +84,19 @@ try {
         .filter({ has: page.getByLabel(/^Account Type/) });
     const accountType = accountForm.getByLabel(/^Account Type/);
     await accountType.selectOption('Engineer');
-    const engineerSelect = accountForm.getByLabel(/^Linked Engineer/);
-    assert.equal(await engineerSelect.getAttribute('required'), '');
-    await accountType.selectOption('Viewer');
-    assert.equal(await engineerSelect.isDisabled(), true);
-    assert.equal(await engineerSelect.getAttribute('required'), null);
-    await accountType.selectOption('Admin');
-    assert.equal(await engineerSelect.isDisabled(), false);
-    assert.equal(await engineerSelect.getAttribute('required'), '');
-    await accountType.selectOption('Engineer');
-    const option = engineerSelect
-        .locator('option')
-        .filter({ hasText: 'UI Rank Fixture · Engineer III' });
-    await option.waitFor({ state: 'attached' });
-    const engineerId = await option.getAttribute('value');
-    await engineerSelect.selectOption(engineerId);
+    assert.equal(await accountForm.getByLabel(/^Linked Engineer/).count(), 0);
+    await accountForm.getByLabel('First name', { exact: true }).fill('UI');
+    await accountForm
+        .getByLabel('Last name', { exact: true })
+        .fill('Account Professional');
+    await accountForm
+        .getByLabel('Contact number', { exact: true })
+        .fill('09098765432');
+    await accountForm.getByLabel('Rank', { exact: true }).fill('Engineer II');
     await accountForm.getByLabel(/^Username/).fill('ui-type-engineer');
     await accountForm
-        .getByLabel('Email', { exact: true })
+        .getByLabel('Login email', { exact: true })
         .fill('ui-type-engineer@example.test');
-    await accountForm
-        .getByLabel('Display name', { exact: true })
-        .fill('UI Type Engineer');
     await accountForm.getByLabel(/^Password/).fill('Typed-Disposable!123');
     await accountForm
         .getByLabel(/^Confirm password/)
@@ -120,7 +111,7 @@ try {
         .click();
     const accountPayload = (await accountRequest).postDataJSON();
     assert.equal(accountPayload.account_type, 'Engineer');
-    assert.equal(String(accountPayload.engineer_id), engineerId);
+    assert.equal(Object.hasOwn(accountPayload, 'engineer_id'), false);
     assert.equal(Object.hasOwn(accountPayload, 'position'), false);
     await page.getByText('Account created.', { exact: true }).waitFor();
     const row = page
@@ -128,7 +119,7 @@ try {
         .filter({ hasText: 'ui-type-engineer@example.test' });
     await row.waitFor();
     assert.match(await row.innerText(), /Engineer/);
-    assert.match(await row.innerText(), /UI Rank Fixture/);
+    assert.match(await row.innerText(), /UI Account Professional/);
     await page.goto(`${base}/dd-phase3/settings`);
     await page.getByText('Account Type', { exact: true }).waitFor();
     assert.equal(await page.getByText('Role', { exact: true }).count(), 0);

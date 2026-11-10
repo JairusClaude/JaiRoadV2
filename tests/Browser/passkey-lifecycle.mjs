@@ -426,8 +426,8 @@ try {
         'PASS: real remember-me cookie restores an eligible identity and rejects a revoked identity without a session cookie.',
     );
 
-    // Real Inertia provisioning form: Viewer must be allowed to select a profile,
-    // and that link must not confer Engineer permissions.
+    // Real Inertia provisioning form: Viewer creates no Engineer profile
+    // and retains read-only permissions.
     const root = sessions.find((s) => s.user.role === 'SuperAdmin');
     await root.page.goto(base + '/login');
     assert.equal(
@@ -456,21 +456,22 @@ try {
         .locator('xpath=ancestor::section[1]')
         .locator('form');
     await form
+        .getByLabel('Account Type', { exact: false })
+        .selectOption('Viewer');
+    await form
         .getByLabel('Username', { exact: false })
         .fill('browser-provisioned-viewer');
     await form
-        .getByLabel('Email', { exact: true })
+        .getByLabel('Login email', { exact: true })
         .fill('browser-provisioned-viewer@example.test');
     await form
         .getByLabel('Display name', { exact: true })
         .fill('Browser provisioned Viewer');
-    await form
-        .getByLabel('Account Type', { exact: false })
-        .selectOption('Viewer');
-    const profile = form.getByLabel('Linked Engineer', { exact: false });
-    assert.equal(await profile.isEnabled(), true);
-    assert.equal(await profile.getAttribute('required'), '');
-    await profile.selectOption({ label: 'Browser Provisioning · Engineer I' });
+    assert.equal(
+        await form.getByLabel('Linked Engineer', { exact: false }).count(),
+        0,
+    );
+    assert.equal(await form.getByLabel('Rank', { exact: true }).count(), 0);
     await form
         .getByLabel('Password', { exact: false })
         .first()
@@ -509,7 +510,7 @@ try {
     );
     await request(root.page, '/logout', {});
     console.log(
-        'PASS: actual Inertia Viewer form requires/selects an active Engineer; provisioned Viewer logs in and remains read-only.',
+        'PASS: actual Inertia Viewer form creates no Engineer link; provisioned Viewer logs in and remains read-only.',
     );
 
     for (const session of sessions) {
