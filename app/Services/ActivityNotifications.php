@@ -50,9 +50,9 @@ final class ActivityNotifications
      * Resolve the eligible current ManagingEngineer, never a broadcast audience.
      * This runs within the same transaction as the canonical AuditLog INSERT.
      *
-     * @param array{account_id:int,role:string,engineer_id:?int} $actor
-     * @param array<string,mixed> $new
-     * @param array<string,mixed> $old
+     * @param  array{account_id:int,role:string,engineer_id:?int}  $actor
+     * @param  array<string,mixed>  $new
+     * @param  array<string,mixed>  $old
      * @return array{recipient_user_id:int,notification_message:string}|null
      */
     public function forEvent(array $actor, string $action, string $entity, ?int $id, array $new = [], array $old = []): ?array
@@ -96,7 +96,7 @@ final class ActivityNotifications
     }
 
     /** @param array<string,mixed> $new
-     * @param array<string,mixed> $old
+     * @param  array<string,mixed>  $old
      */
     private function relatedId(string $table, string $field, int $id, array $new, array $old): ?int
     {

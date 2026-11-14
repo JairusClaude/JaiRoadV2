@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Quarterly;
 
+use App\Models\User;
 use App\Services\AccountIdentityResolver;
 use App\Services\ActivityNotifications;
 use App\Services\AuditValues;
@@ -48,7 +49,7 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
         $this->assertSame(0, DB::table(self::DELIVERIES)->count());
         $this->getJson('/jairoads/notifications')->assertOk()->assertExactJson(['notifications' => []]);
         if ($expected !== null) {
-            $engineer = \App\Models\User::where('dd_user_account_id', $expected)->firstOrFail();
+            $engineer = User::where('dd_user_account_id', $expected)->firstOrFail();
             $this->actingAs($engineer)->getJson('/jairoads/notifications')->assertOk()
                 ->assertJsonPath('notifications.0.id', (int) $event->id);
         }
