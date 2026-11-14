@@ -74,6 +74,29 @@ final class ManagingEngineerReassignmentTest extends PostgresTestCase
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
     }
 
+    public function test_null_manager_is_rejected_on_record_edit_and_reassignment_without_audit(): void
+    {
+        [$f, $id, $replacement] = $this->setupRecord();
+        $this->actingAs($this->account('Admin'));
+
+        $this->putJson('/dd-phase3/ops/records/'.$id, array_replace(
+            $this->recordData($f['project'], $f['engineer'], 'Q4'),
+            ['managing_engineer_id' => null]
+        ))->assertUnprocessable()->assertJsonValidationErrors('managing_engineer_id');
+
+        $this->postJson('/dd-phase3/ops/records/'.$id.'/reassignment', [
+            'managing_engineer_id' => $replacement,
+            'expected_current_manager_id' => null,
+        ])->assertUnprocessable()->assertJsonValidationErrors('expected_current_manager_id');
+
+        $this->assertDatabaseHas('jairoads_next.maintenance_records', [
+            'id' => $id,
+            'project_id' => $f['project'],
+            'managing_engineer_id' => $f['engineer'],
+        ]);
+        $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
+    }
+
     public function test_linked_admin_can_self_manage_and_audit_failure_rolls_back_reassignment(): void
     {
         [$f,$id] = $this->setupRecord();
