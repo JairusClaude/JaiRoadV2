@@ -42,7 +42,7 @@ abstract class PostgresTestCase extends TestCase
             if ($provisioner === null) {
                 $provisioner = $this->account('SuperAdmin')->getAttribute('dd_user_account_id');
             }
-            if ($linked) {
+            if ($linked && $type !== 'Viewer') {
                 $engineerId ??= $this->engineer();
             }
         }
@@ -55,16 +55,22 @@ abstract class PostgresTestCase extends TestCase
 
         $login = User::forceCreate(['name' => 'Test account', 'email' => $email, 'email_verified_at' => now(),
             'password' => $hash, 'dd_user_account_id' => $id]);
-        if ($type !== 'SuperAdmin' && $linked && $engineerId !== null) {
-            // Evidence was acquired while eligible; retirement/deactivation comes later.
-            $profileStatus = DB::table('jairoads_next.engineers')->where('id', $engineerId)->value('engineer_status');
-            DB::table('jairoads_next.engineers')->where('id', $engineerId)->update(['engineer_status' => 'Active']);
+        if ($type !== 'SuperAdmin' && $linked && ($engineerId !== null || $type === 'Viewer')) {
+            // Viewer has no Engineer profile in the Final DD, but still requires
+            // immutable provisioning evidence to authenticate.
+            // Tests requesting an explicit invalid Viewer profile remain ineligible.
+            $profileStatus = $engineerId === null ? null : DB::table('jairoads_next.engineers')->where('id', $engineerId)->value('engineer_status');
+            if ($engineerId !== null) {
+                DB::table('jairoads_next.engineers')->where('id', $engineerId)->update(['engineer_status' => 'Active']);
+            }
             DB::table('jairoads_next.user_accounts')->where('id', $id)->update(['is_active' => true]);
             DB::table('jairoads_security.account_provisioning')->insert(['user_account_id' => $id,
                 'provisioned_by' => $provisioner, 'provisioner_role' => 'SuperAdmin', 'provisioned_role' => $type,
                 'engineer_id' => $engineerId, 'method' => 'administrator']);
             DB::table('jairoads_next.user_accounts')->where('id', $id)->update(['is_active' => $active]);
-            DB::table('jairoads_next.engineers')->where('id', $engineerId)->update(['engineer_status' => $profileStatus]);
+            if ($engineerId !== null) {
+                DB::table('jairoads_next.engineers')->where('id', $engineerId)->update(['engineer_status' => $profileStatus]);
+            }
         }
 
         return $login;

@@ -23,7 +23,8 @@ final class AccountIdentityResolver
             'SuperAdmin' => $engineerId === null,
             // Existing unlinked Admins require independent reviewed-transition evidence.
             // New Admin provisioning still requires a real Active Engineer profile.
-            'Admin', 'Viewer' => $engineerId === null || $engineerId > 0,
+            'Admin' => $engineerId === null || $engineerId > 0,
+            'Viewer' => $engineerId === null,
             'Engineer' => $engineerId !== null && $engineerId > 0,
             default => false,
         };
@@ -108,7 +109,7 @@ final class AccountIdentityResolver
                     $optional->whereIn('account.account_type', ['Admin', 'Viewer'])
                         ->whereNull('account.engineer_id');
                 })->orWhere(function (Builder $linked): void {
-                    $linked->whereIn('account.account_type', ['Admin', 'Engineer', 'Viewer'])
+                    $linked->whereIn('account.account_type', ['Admin', 'Engineer'])
                         ->where('account.engineer_id', '>', 0)->where('engineer.engineer_status', 'Active');
                 });
             });
