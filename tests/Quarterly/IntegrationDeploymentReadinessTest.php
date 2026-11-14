@@ -174,4 +174,30 @@ final class IntegrationDeploymentReadinessTest extends PostgresTestCase
         $this->assertFalse($report['ready_for_live_probes']);
         Http::assertNothingSent();
     }
+    public function test_default_public_demo_map_providers_fail_strict_readiness(): void
+    {
+        config([
+            'app.url' => 'https://staging.jairoads.invalid',
+            'jairoads_documents.supabase_url' => 'https://synthetic-storage.invalid',
+            'jairoads_documents.service_role_key' => 'sb_secret_SYNTHETIC_ONLY',
+            'jairoads_documents.bucket' => 'private-docs',
+            'jairoads_monthly_updates.supabase_url' => 'https://synthetic-storage.invalid',
+            'jairoads_monthly_updates.service_role_key' => 'sb_secret_SYNTHETIC_ONLY',
+            'jairoads_monthly_updates.bucket' => 'private-media',
+            'mail.default' => 'smtp',
+            'mail.from.address' => 'noreply@jairoads.invalid',
+            'fortify.passkeys.relying_party_id' => 'staging.jairoads.invalid',
+            'fortify.passkeys.allowed_origins' => ['https://staging.jairoads.invalid'],
+            'jairoads_maps.routing' => 'https://router.project-osrm.org/route/v1/driving',
+            'jairoads_maps.geocoding' => 'https://photon.komoot.io/api',
+        ]);
+        Http::fake();
+        $report = app(IntegrationDeploymentReadiness::class)->report();
+        $this->assertFalse($report['ready_for_live_probes']);
+        $this->assertFalse($report['checks']['map_routing_not_shared_demo_endpoint']);
+        $this->assertFalse($report['checks']['map_geocoding_not_shared_demo_endpoint']);
+        $this->assertSame(1, Artisan::call('jairoads:integration-readiness', ['--strict' => true]));
+        Http::assertNothingSent();
+    }
+
 }

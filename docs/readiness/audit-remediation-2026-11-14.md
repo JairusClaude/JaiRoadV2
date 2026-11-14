@@ -51,3 +51,10 @@ php artisan jairoads:canonical-access-preflight --summary
 Do **not** treat a successful check as a substitute for 25 human UAT scenarios, 13 approvals, private backups, Storage recovery, MFA and mail delivery. Never run destructive migrations/seeders or modify existing identity evidence without explicit signed approval.
 
 **Render review (created after the prior conformance report):** `jairoads-dd-review-20261114` at `https://jairoads-dd-review-20261114.onrender.com`; it points to official Supabase and should be treated as a *non-isolated review instance*, not accepted staging. The original JaiRoadV2 Render service was not changed by this remediation PR.
+
+
+### 2026-11-14 additional code and acceptance gates
+
+- New source-level regression tests exercise actual canonical document/media HTTP upload paths against **fake private Storage**, including canonical `maintenance_documents` versus `media` linkage, MIME, AuditLog and Viewer/Engineer denial. These tests never upload to official buckets; live UAT remains pending.
+- The strict integration configuration checker now treats the shared public OSRM/Photon demonstration endpoints as *not accepted production provider choices*. Neither a custom HTTPS URL nor this boolean proves contractual availability or real routing acceptance.
+- The release manifest/checker require nonempty, privately retained operator references for official-credential rotation, isolated runtime preflights, media UAT, historical DOCX reconciliation decision, Engineer.ContactNo source-rule decision, recipient-only notification acceptance, and persistent sessions/queues. Templates remain blank and production release remains NO GO.

@@ -15,5 +15,12 @@
   "isolated_staging_acceptance_reference": null,
   "oncall_and_monitoring_reference": null,
   "approved_change_window_reference": null,
-  "deploy_authorized": false
+  "deploy_authorized": false,
+  "credential_rotation_confirmation_reference": null,
+  "isolated_project_and_runtime_preflight_reference": null,
+  "canonical_media_upload_acceptance_reference": null,
+  "legacy_document_reconciliation_decision_reference": null,
+  "engineer_contact_rule_decision_reference": null,
+  "recipient_only_notification_acceptance_reference": null,
+  "session_and_queue_operational_acceptance_reference": null
 }
