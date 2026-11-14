@@ -1,5 +1,7 @@
 # JaiROADS Task 7 — existing-account transition readiness (review-only)
 
+> **2026-11-14 hosted delta:** Seven canonical accounts currently exist (2 SuperAdmin, 1 Admin, 2 Engineer, 2 Viewer). The five supporting tables and restricted runtime role are now installed. The role was privately enabled for password-based LOGIN and directly read 7 canonical UserAccounts. **Account-provisioning evidence remains empty (0 rows)** and the active Admin still has no EngineerID. This does **not** authorize linking profiles, fabricating review references or enabling strict Laravel login for ordinary accounts. The earlier 2026-11-07 aggregate inventory below is retained as historical evidence.
+
 **Status:** Proposed and tested with synthetic accounts. **No official account, Engineer linkage, provisioning evidence, migration, grant, or data has been changed.** This is stacked after [PR #11](https://github.com/JairusClaude/JaiRoadV2/pull/11).
 
 ## Official live-state snapshot (read-only, 2026-11-07)
