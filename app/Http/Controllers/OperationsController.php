@@ -445,7 +445,7 @@ class OperationsController extends Controller
         $this->writer($actor);
         $v = $request->validate([
             'project_id' => ['required', 'integer', 'min:1'],
-            'managing_engineer_id' => [$id === null ? 'required' : 'present', $id === null ? 'required' : 'nullable', 'integer', 'min:1'],
+            'managing_engineer_id' => ['required', 'integer', 'min:1'],
             'maintenance_year' => ['required', 'integer', 'between:1900,2100'],
             'quarter' => ['required', Rule::in(['Q1', 'Q2', 'Q3', 'Q4'])],
             'start_date' => ['required', 'date_format:Y-m-d'],
@@ -469,7 +469,7 @@ class OperationsController extends Controller
                 $lgu = $this->projectLgu((int) $project->id);
                 abort_unless($lgu !== null, 404);
                 $this->lguAllowed($actor, $lgu);
-                abort_unless($v['managing_engineer_id'] === null || $this->t('engineers')->where('id', $v['managing_engineer_id'])->where('engineer_status', 'Active')->exists(), 422, 'Managing Engineer must be active.');
+                abort_unless($this->t('engineers')->where('id', $v['managing_engineer_id'])->where('engineer_status', 'Active')->exists(), 422, 'Managing Engineer must be active.');
                 $data = array_intersect_key($v, array_flip(['project_id', 'managing_engineer_id', 'maintenance_year', 'quarter', 'start_date', 'estimated_duration_days', 'complete_date', 'status', 'description']));
                 $data['complete_date'] = $v['complete_date'] ?? null;
                 $data['description'] = $v['description'] ?? null;
@@ -521,7 +521,7 @@ class OperationsController extends Controller
         abort_unless($this->managers($actor), 403);
         $data = $request->validate([
             'managing_engineer_id' => ['required', 'integer', 'min:1'],
-            'expected_current_manager_id' => ['present', 'nullable', 'integer', 'min:1'],
+            'expected_current_manager_id' => ['required', 'integer', 'min:1'],
         ]);
         $projectId = $this->t('maintenance_records')->where('id', $id)->value('project_id');
         abort_unless($projectId !== null, 404);
