@@ -1,8 +1,12 @@
 # Permanent individual file deletion — approved scope and operational handoff
 
+> **Hosted deployment safety update (2026-11-14, draft PR #24):** `jairoads_next.file_deletions` now exists in the official Supabase project as one of six already-applied migrations, but this is **not** proof of independent private-object recovery. The server now requires the explicit `JAIROADS_PERMANENT_FILE_DELETION_ENABLED=true` environment setting **in addition to** the private intent table before showing an enabled deletion confirmation, accepting HTTP permanent deletion or running the CLI retry command. Default is **false**, including for Render; remain disabled until a real authorized owner proves private exact-object backup/restore, provider and storage credentials, signed UAT, and controlled worker operations for that environment. Existing pending intents must still be detected while the kill switch is off. Disposable CI mocks opt in only inside guarded scratch fixtures; they are not hosted Storage acceptance. Do not put credentials or recovered bytes into GitHub.
+
 4 November 2026. Supersedes the earlier undecided **individual** file-retention policy in [file-removal-policy-decision.md](file-removal-policy-decision.md). Parent-project, record, MonthlyUpdate and bulk/cascade deletion policies remain separate and unresolved. No shared database, bucket, Storage object or historical audit row was changed during implementation.
 
 ## User contract
+
+The contract below applies **only after operational enablement**; approval of an individual-file feature is not automatic permission to delete actual private objects in a hosted environment.
 
 Active canonical Admin/SuperAdmin accounts can remove one selected MaintenanceDocument or Media attachment. Engineers/Viewers cannot invoke the endpoint or review. Existing administrator global parent scope is preserved; this introduces no new role/LGU permissions. The parent MaintenanceRecord/project/road must exist when accepting a new request. Clients supply the canonical kind and ID only; paths, bucket, role and LGU overrides are prohibited and submitted actor IDs are ignored.
 
