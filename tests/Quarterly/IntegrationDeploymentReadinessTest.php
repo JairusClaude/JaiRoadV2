@@ -160,6 +160,7 @@ final class IntegrationDeploymentReadinessTest extends PostgresTestCase
         Http::assertSentCount(1);
         Http::assertNotSent(fn ($request): bool => $request->method() === 'DELETE');
     }
+
     public function test_strict_mode_fails_on_incomplete_configuration_without_network_requests(): void
     {
         config([
