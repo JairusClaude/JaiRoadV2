@@ -26,7 +26,7 @@ final class DeploymentTargetSafety
         $sslMode = (string) Config::get('database.connections.pgsql.sslmode', '');
         if ($dbUrl !== '') {
             parse_str((string) (parse_url($dbUrl, PHP_URL_QUERY) ?: ''), $options);
-            $sslMode = (string) ($options['sslmode'] ?? $sslMode);
+            $sslMode = is_string($options['sslmode'] ?? null) ? $options['sslmode'] : '';
         }
         $appKey = (string) Config::get('app.key', '');
         $keyBytes = str_starts_with($appKey, 'base64:')
