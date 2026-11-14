@@ -57,3 +57,6 @@ The live DB enforces required Project/ManagingEngineer/actor links, quarter enum
 ## Operational safety and provenance
 
 All this branch's changes are **GitHub source/tests only**; no official Supabase DDL/DML, account/role mutation, Storage deletion, deployed Render settings or merge were performed. Automated GitHub Actions use isolated disposable PostgreSQL 17 fixtures; those green checks never imply human acceptance, live account possession or recoverable private Storage. PR #26 remains **draft** until confirmed acceptance.
+
+
+> **Subsequent review (2026-11-14):** A separate Render review service was created **after** this conformance report. It is not an isolated Supabase staging environment. See [audit remediation and remaining gates](audit-remediation-2026-11-14.md). Previous statements are historical as of their review timestamp.

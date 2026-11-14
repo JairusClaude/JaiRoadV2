@@ -52,6 +52,15 @@ final class CanonicalAccessPreflight extends Command
                 if ($a->account_type !== 'SuperAdmin' && ! $provisioning->verified((int) $a->id, $a->account_type, $a->engineer_id)) {
                     $issues[] = 'needs_reviewed_provisioning_evidence';
                 }
+                if ($a->account_type === 'Engineer' && $a->engineer_id !== null
+                    && ! DB::table('jairoads_next.engineer_lgus')->where('engineer_id', $a->engineer_id)->where('is_active', true)->exists()) {
+                    // Scope issue does not alone invalidate login eligibility.
+                    $issues[] = 'no_active_lgu_assignment';
+                }
+                if ($logins->count() === 1 && $logins->first()?->getAttribute('user_account_id') !== null) {
+                    // Dual-link accounts may work canonically but require owner review.
+                    $issues[] = 'dual_legacy_bridge_review';
+                }
                 if ($logins->count() !== 1) {
                     $issues[] = 'missing_or_ambiguous_fortify_bridge';
                 } elseif (! DB::table('public.users as u')->join('jairoads_next.user_accounts as a', 'u.dd_user_account_id', '=', 'a.id')
@@ -80,6 +89,7 @@ final class CanonicalAccessPreflight extends Command
                     'needs_existing_admin_review' => 0, 'needs_reviewed_provisioning_evidence' => 0,
                     'missing_or_ambiguous_fortify_bridge' => 0, 'email_or_credential_mismatch' => 0,
                     'missing_or_retired_profile' => 0, 'invalid_fortify_link_or_credential_integrity' => 0,
+                    'no_active_lgu_assignment' => 0, 'dual_legacy_bridge_review' => 0,
                 ]),
                 'legacy_only_login_count' => count($report['legacy_only_login_ids']),
                 'orphaned_bridge_login_count' => count($report['orphaned_bridge_login_ids']),
@@ -95,7 +105,8 @@ final class CanonicalAccessPreflight extends Command
                 }
                 foreach (['needs_engineer_link', 'needs_existing_admin_review', 'needs_reviewed_provisioning_evidence',
                     'missing_or_ambiguous_fortify_bridge', 'email_or_credential_mismatch',
-                    'missing_or_retired_profile', 'invalid_fortify_link_or_credential_integrity'] as $issue) {
+                    'missing_or_retired_profile', 'invalid_fortify_link_or_credential_integrity',
+                    'no_active_lgu_assignment', 'dual_legacy_bridge_review'] as $issue) {
                     if (in_array($issue, $account['issues'], true)) {
                         $summary['roles'][$role][$issue]++;
                     }

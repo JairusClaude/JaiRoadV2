@@ -60,6 +60,13 @@ final class IntegrationDeploymentReadiness
                 && is_string($relyingParty) && strtolower($host) === strtolower($relyingParty),
             'map_routing_https' => self::httpsUrl((string) Config::get('jairoads_maps.routing', '')),
             'map_geocoding_https' => self::httpsUrl((string) Config::get('jairoads_maps.geocoding', '')),
+            // Public community demo services can appear reachable without a
+            // contractual quota/availability commitment. A production
+            // acceptance gate should demand an explicitly selected provider.
+            'map_routing_not_shared_demo_endpoint' => rtrim((string) Config::get('jairoads_maps.routing', ''), '/')
+                !== 'https://router.project-osrm.org/route/v1/driving',
+            'map_geocoding_not_shared_demo_endpoint' => rtrim((string) Config::get('jairoads_maps.geocoding', ''), '/')
+                !== 'https://photon.komoot.io/api',
         ];
 
         return [
@@ -72,6 +79,9 @@ final class IntegrationDeploymentReadiness
                 'verify_password_reset_mail_delivery_and_token_expiry',
                 'verify_https_passkey_registration_login_wrong_origin_and_recovery',
                 'verify_map_provider_cors_terms_rate_limits_and_actual_routes',
+                'verify_25_human_cases_and_13_owner_approvals',
+                'verify_canonical_private_media_upload_and_file_recovery',
+                'verify_session_cache_queue_persistence_across_redeploy',
                 'verify_real_staging_runtime_role_and_backup_restore',
             ],
         ];

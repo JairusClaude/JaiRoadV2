@@ -49,7 +49,8 @@ class MonthlyUpdatesReadiness
 
     public function canWrite(): bool
     {
-        return (bool) config('jairoads_monthly_updates.writes_enabled', false)
+        return CanonicalMonthlyWriteGate::enabled()
+            && (bool) config('jairoads_monthly_updates.writes_enabled', false)
             && $this->schemaReady();
     }
 }

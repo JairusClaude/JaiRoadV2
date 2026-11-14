@@ -47,6 +47,13 @@ REQUIRED_OWNER_REFERENCES = frozenset({
     "isolated_staging_acceptance_reference",
     "oncall_and_monitoring_reference",
     "approved_change_window_reference",
+    "credential_rotation_confirmation_reference",
+    "isolated_project_and_runtime_preflight_reference",
+    "canonical_media_upload_acceptance_reference",
+    "legacy_document_reconciliation_decision_reference",
+    "engineer_contact_rule_decision_reference",
+    "recipient_only_notification_acceptance_reference",
+    "session_and_queue_operational_acceptance_reference",
 })
 
 

@@ -223,6 +223,7 @@ jobs:
         run: |
           docker run -d --name jairoads-system --network host \
             -e APP_ENV=production -e APP_DEBUG=false -e APP_KEY -e DB_CONNECTION=pgsql \
+            -e JAIROADS_DD_MONTHLY_WRITES_ENABLED=true \
             -e 'DB_URL=postgresql://postgres:disposable-ci-only@127.0.0.1:5432/jairoads_scratch_system_docker?sslmode=disable' \
             -e APP_URL=http://127.0.0.1:10000 -e SESSION_DRIVER=file -e CACHE_STORE=file -e LOG_CHANNEL=stderr \
             -e SUPABASE_URL=http://127.0.0.1:5799 -e SUPABASE_SECRET_KEY=sb_secret_disposable \
