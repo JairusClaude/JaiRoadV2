@@ -1,4 +1,3 @@
-
 <?php
 
 namespace App\Http\Controllers;
@@ -9,7 +8,9 @@ use App\Models\AuditLog;
 use App\Models\Engineer;
 use App\Models\MaintenanceProject;
 use App\Models\MaintenanceRecord;
+use App\Models\User;
 use App\Models\UserAccount;
+use App\Services\MaintenanceProjects\VerifiedProjectAccount;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -24,8 +25,8 @@ class MaintenanceRecordController extends Controller
      * Fields included in maintenance-record audit snapshots.
      */
     private const AUDITABLE_FIELDS = [
-        'project_id',
-        'managing_engineer_id',
+        'maintenance_projects_id',
+        'engineers_id',
         'maintenance_year',
         'quarter',
         'start_date',
@@ -85,13 +86,15 @@ class MaintenanceRecordController extends Controller
          * to records managed by their linked Engineer account.
          */
         if (! Gate::allows('viewAll', MaintenanceRecord::class)) {
-            if ($actorAccount->engineer_id === null) {
+            if ($actorAccount->engineers_id === null) {
                 $query->whereRaw('1 = 0');
             } else {
-                $query->where(
-                    'managing_engineer_id',
-                    $actorAccount->engineer_id
-                );
+                $query->where('engineers_id', $actorAccount->engineers_id)
+                    ->whereHas('maintenanceProject.roadCoverage', fn (Builder $coverage) => $coverage
+                        ->whereIn('lgu_id', DB::table('engineer_lgus')
+                            ->select('lgus_id')
+                            ->where('engineers_id', $actorAccount->engineers_id)
+                            ->where('is_active', true)));
             }
         }
 
@@ -180,6 +183,11 @@ class MaintenanceRecordController extends Controller
             'description',
         ]);
 
+        // Phase4C-DB-Mapping: accept documented request keys; persist deployed columns.
+        $data['maintenance_projects_id'] = $data['project_id'];
+        unset($data['project_id']);
+        $data['engineers_id'] = $data['managing_engineer_id'];
+        unset($data['managing_engineer_id']);
         $data['created_by'] = $actorAccount->getKey();
 
         DB::transaction(function () use (
@@ -230,6 +238,10 @@ class MaintenanceRecordController extends Controller
             'description',
         ]);
 
+        // Phase4C-DB-Mapping: keep project_id as the validated request key.
+        $data['maintenance_projects_id'] = $data['project_id'];
+        unset($data['project_id']);
+
         DB::transaction(function () use (
             $maintenanceRecord,
             $data,
@@ -237,9 +249,16 @@ class MaintenanceRecordController extends Controller
         ): void {
             $record = MaintenanceRecord::query()
                 ->lockForUpdate()
-                ->findOrFail($maintenanceRecord->getKey());
+                ->whereKey($maintenanceRecord->getKey())->firstOrFail();
 
             Gate::authorize('update', $record);
+            // An Engineer cannot relocate a managed activity to another project.
+            // Such reassignment requires a separate approved/audited workflow.
+            $actorRole = app(VerifiedProjectAccount::class)->role(Auth::user());
+            if ($actorRole === 'engineer'
+                && (int) $data['maintenance_projects_id'] !== (int) $record->maintenance_projects_id) {
+                abort(403, 'Engineers cannot reassign maintenance activities to a different project.');
+            }
 
             $oldValues = $this->auditValues($record);
 
@@ -295,58 +314,9 @@ class MaintenanceRecordController extends Controller
     ): RedirectResponse {
         Gate::authorize('delete', $maintenanceRecord);
 
-        $actorAccount = $this->authenticatedUserAccount();
-
-        $deleted = DB::transaction(function () use (
-            $maintenanceRecord,
-            $actorAccount
-        ): bool {
-            $record = MaintenanceRecord::query()
-                ->lockForUpdate()
-                ->findOrFail($maintenanceRecord->getKey());
-
-            Gate::authorize('delete', $record);
-
-            /*
-             * These relationship methods must exist on MaintenanceRecord.
-             * Foreign keys should also use ON DELETE RESTRICT.
-             */
-            if (
-                $record->monthlyUpdates()->exists()
-                || $record->maintenanceDocuments()->exists()
-            ) {
-                return false;
-            }
-
-            $oldValues = $this->auditValues($record);
-
-            $record->delete();
-
-            $this->writeAuditLog(
-                $actorAccount,
-                'DELETE',
-                $record,
-                $oldValues,
-                null
-            );
-
-            return true;
-        });
-
-        if (! $deleted) {
-            return to_route('maintenance-records.index')
-                ->with(
-                    'error',
-                    'This maintenance record cannot be deleted while '
-                    .'monthly updates or maintenance documents reference it.'
-                );
-        }
-
-        return to_route('maintenance-records.index')
-            ->with(
-                'message',
-                'Successfully deleted a maintenance record.'
-            );
+        // Do not delete history until dependent schemas and retention
+        // workflows are approved. This is an intentional temporary 409.
+        abort(409, 'MaintenanceRecord deletion is unavailable pending dependent-table alignment.');
     }
 
     /**
@@ -358,26 +328,11 @@ class MaintenanceRecordController extends Controller
     private function authenticatedUserAccount(): UserAccount
     {
         $user = Auth::user();
-
-        if ($user instanceof UserAccount) {
-            return $user;
+        if (! $user instanceof User) {
+            abort(403, 'An authenticated Laravel user is required.');
         }
 
-        if (
-            $user !== null
-            && method_exists($user, 'userAccount')
-        ) {
-            $account = $user->userAccount;
-
-            if ($account instanceof UserAccount) {
-                return $account;
-            }
-        }
-
-        abort(
-            403,
-            'The authenticated user is not linked to a UserAccount.'
-        );
+        return app(VerifiedProjectAccount::class)->require($user);
     }
 
     /**
@@ -415,32 +370,8 @@ class MaintenanceRecordController extends Controller
          * UserAccount linked to the assigned Engineer, unless it is
          * the same account that created the record.
          */
-        if ($action === 'CREATE') {
-            $recipient = UserAccount::query()
-                ->where(
-                    'engineer_id',
-                    $record->managing_engineer_id
-                )
-                ->where('is_active', true)
-                ->first();
-
-            if (
-                $recipient !== null
-                && (string) $recipient->getKey()
-                    === (string) $actorAccount->getKey()
-            ) {
-                $recipient = null;
-            }
-
-            if ($recipient !== null) {
-                $notificationMessage = sprintf(
-                    'A maintenance record for %s %s has been assigned to you.',
-                    $record->maintenance_year,
-                    $record->quarter
-                );
-            }
-        }
-
+        // Eligibility cannot be verified until EngineerLGU and EngineerStatus
+        // exist. Suppress notifications (not AuditLog) pending team approval.
         $description = match ($action) {
             'CREATE' => "Maintenance record #{$record->getKey()} was created.",
             'UPDATE' => "Maintenance record #{$record->getKey()} was updated.",
@@ -458,7 +389,7 @@ class MaintenanceRecordController extends Controller
             'description' => $description,
             'old_value' => $oldValues,
             'new_value' => $newValues,
-            'recipient_user_id' => $recipient?->getKey(),
+            'recipient_user_id' => null,
             'notification_message' => $notificationMessage,
         ]);
     }

@@ -1,0 +1,39 @@
+VIEW ON WINDOWS POWERSHELL
+
+1. Extract JaiROADS_Road_Coverage_Details_Review.zip into its own folder.
+2. Stop any older preview server with Ctrl+C.
+3. With Node.js 22.12+ available, open PowerShell and run:
+
+Set-Location "$env:USERPROFILE\Downloads\JaiROADS_Road_Coverage_Details_Review\source"
+node .\tools\maintenance-project-preview\server.mjs
+
+4. Open http://localhost:5179/road-coverages and select a road row/title.
+   Existing sample roads show the missing-geography placeholder. To inspect
+   a mapped road, use Add Road Coverage, save valid geography, then open its row.
+5. Stop with Ctrl+C. Preview-created records reset on server restart.
+
+The package includes compiled frontend assets. Viewing the standalone preview
+requires no PHP, Composer, npm install, PostgreSQL, Supabase or migrations.
+This preview is not a database-backed production deployment.
+
+RESTORE THE PRIOR DESIGN
+
+Keep a copy of the entire current folder before reverting.
+The simplest full checkpoint is the preceding JaiROADS_Map_Navigation_Review.zip.
+Extract it separately; do not overwrite later unrelated work with a full old copy.
+
+For a selective rollback of this task:
+- Stop the preview.
+- Copy the seven files under source/review-road-details/restore/resources and
+  restore/tools to the matching source/resources and source/tools paths.
+- Move these four newly created files out of the application source:
+  resources/js/pages/RoadCoverages/Show.tsx
+  resources/js/components/road-coverages/coverage-map-preview.tsx
+  resources/css/road-coverage-details.css
+  tools/maintenance-project-preview/road-coverage-details.mjs
+- Move current source/public/build aside, then copy the complete matching
+  review-road-details/restore/public/build into source/public/build.
+- Start the preview again. No rebuild is required with those matching assets.
+
+Restoration affects only this task's source/compiled changes. Preserve any newer
+modifications you made to the same files before copying the older versions.

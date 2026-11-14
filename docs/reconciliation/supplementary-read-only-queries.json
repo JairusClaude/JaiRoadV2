@@ -1,0 +1,5 @@
+{
+    "migration_ledger": "SELECT migration,batch FROM public.migrations ORDER BY batch,migration",
+    "canonical_functions": "SELECT n.nspname AS schema_name,p.proname AS name,pg_get_function_identity_arguments(p.oid) AS arguments,p.prosecdef AS security_definer FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='jairoads_next' ORDER BY p.proname",
+    "index_health": "SELECT n.nspname AS schema_name,c.relname AS table_name,ic.relname AS index_name,i.indisunique AS is_unique,i.indisvalid AS is_valid,i.indisready AS is_ready FROM pg_index i JOIN pg_class c ON c.oid=i.indrelid JOIN pg_namespace n ON n.oid=c.relnamespace JOIN pg_class ic ON ic.oid=i.indexrelid WHERE n.nspname='jairoads_next' OR (n.nspname='public' AND c.relname='users') ORDER BY n.nspname,c.relname,ic.relname"
+}

@@ -1,0 +1,46 @@
+[
+  {
+    "sha": "b10bcd69e79e2c7bb923eeb9f29ab1ac6af03652",
+    "subject": "Fix canonical sidebar selection and Maintenance Records navigation"
+  },
+  {
+    "sha": "ca6476c624186e377aefe977fa7271d918589fac",
+    "subject": "Fix MonthlyUpdate sorting and reporting-year filtering"
+  },
+  {
+    "sha": "cdbea73455da581d82bbc1d89a3be3ece8f05be1",
+    "subject": "Preserve normalized monthly filters in pagination URLs"
+  },
+  {
+    "sha": "d1b76ec924af40b68fa3de6f45186ad8c34117f9",
+    "subject": "test: distinguish monthly modification order from insertion order"
+  },
+  {
+    "sha": "0d1f45f8a9678ee62968b9c93fbaf06740325f98",
+    "subject": "Protect saved road geometry outside manual editor capabilities"
+  },
+  {
+    "sha": "3d996e5a41a4e7f379630b0180b17d5ef6b180fe",
+    "subject": "Fix Monthly Updates filter wrapping at tablet widths"
+  },
+  {
+    "sha": "f06a36668a5f3569304caf22bb327d2e28fef470",
+    "subject": "Use Inertia location redirects for unauthenticated history navigation"
+  },
+  {
+    "sha": "0c3786046b9838e58f1057384292200f9340bf4a",
+    "subject": "Document and verify integrated DD field contracts"
+  },
+  {
+    "sha": "746c0958a3fe8639b08a6544bba4472ac840a291",
+    "subject": "Load authorized road references by viewport and cursor"
+  },
+  {
+    "sha": "5c62bec97878ae03c8f9de89001a6fe03158af09",
+    "subject": "Trim form choices and history to their required projections"
+  },
+  {
+    "sha": "e7a4c609980808959780fdf61388f4c82365cddf",
+    "subject": "Warn on occupied maintenance periods and preserve unsaved form inputs"
+  }
+]

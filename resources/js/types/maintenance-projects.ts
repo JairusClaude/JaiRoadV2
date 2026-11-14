@@ -1,0 +1,56 @@
+export type IntegrationStatus = { ready: boolean; message: string | null };
+export type DependentCounts = {
+    maintenance_records: number;
+    monthly_updates: number;
+    media: number;
+    maintenance_documents: number;
+};
+export type ProjectSummary = {
+    geojson?: object | null;
+    deletion_counts?: DependentCounts;
+    id: number;
+    project_title: string;
+    description: string | null;
+    road_coverage_id: number | null;
+    road_name: string | null;
+    municipality: string | null;
+    // Display username; stored created_by is a server-assigned UserAccount ID.
+    created_by: string | null;
+    created_at: string | null;
+    updated_at: string | null;
+    maintenance_records_count: number;
+    can_edit: boolean;
+    can_delete: boolean;
+};
+export type ProjectFilters = {
+    search: string;
+    municipality: string | number;
+    sort: 'newest' | 'oldest';
+};
+export type Pagination = {
+    data: ProjectSummary[];
+    total: number;
+    from: number | null;
+    to: number | null;
+    current_page: number;
+    last_page: number;
+    links: { url: string | null; label: string; active: boolean }[];
+};
+export type CoverageChoice = {
+    id: number;
+    road_name: string;
+    municipality: string | null;
+    kilometers: string;
+    assigned: boolean;
+    geojson: unknown | null;
+};
+export type ProjectFormValues = {
+    road_coverage_id: string;
+    project_title: string;
+    description: string;
+};
+
+export type ProjectChoice = Pick<
+    ProjectSummary,
+    'id' | 'project_title' | 'municipality' | 'road_coverage_id' | 'road_name'
+>;

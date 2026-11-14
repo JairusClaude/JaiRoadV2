@@ -7,6 +7,8 @@ use App\Http\Requests\UpdateLguRequest;
 use App\Models\Lgu;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -16,37 +18,14 @@ class LguController extends Controller
     /**
      * Display the LGU list.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
         Gate::authorize('viewAny', Lgu::class);
 
-        $search = trim((string) request()->query('search', ''));
-
-        $sortField = (string) request()->query(
-            'sort_field',
-            'municipality_name'
-        );
-
-        $sortDirection = strtolower(
-            (string) request()->query('sort_direction', 'asc')
-        );
-
-        $allowedSortFields = [
-            'municipality_name',
-            'province',
-            'region',
-            'mayor_first_name',
-            'mayor_middle_name',
-            'mayor_last_name',
-        ];
-
-        if (! in_array($sortField, $allowedSortFields, true)) {
-            $sortField = 'municipality_name';
-        }
-
-        if (! in_array($sortDirection, ['asc', 'desc'], true)) {
-            $sortDirection = 'asc';
-        }
+        $search = trim((string) $request->query('search', ''));
+        $province = trim((string) $request->query('province', ''));
+        $region = trim((string) $request->query('region', ''));
+        $sort = strtolower((string) $request->query('sort', 'asc')) === 'desc' ? 'desc' : 'asc';
 
         $query = Lgu::query();
 
@@ -63,14 +42,65 @@ class LguController extends Controller
             });
         }
 
-        $model = $query
-            ->orderBy($sortField, $sortDirection)
-            ->paginate(5)
+        if ($province !== '' && $province !== 'all') {
+            $query->where('province', $province);
+        }
+
+        if ($region !== '' && $region !== 'all') {
+            $query->where('region', $region);
+        }
+
+        $paginated = $query
+            ->orderBy('municipality_name', $sort)
+            ->paginate(10)
             ->withQueryString();
 
+        $lgus = [
+            'data' => collect($paginated->items())->map(function (Lgu $lgu): array {
+                $roadCount = DB::table('jairoads_next.road_coverages')->where('lgu_id', $lgu->id)->count();
+                $assignmentCount = DB::table('jairoads_next.engineer_lgus')->where('lgu_id', $lgu->id)->where('is_active', true)->count();
+
+                return [
+                    'id' => (int) $lgu->id,
+                    'municipality_name' => $lgu->municipality_name,
+                    'province' => $lgu->province,
+                    'region' => $lgu->region,
+                    'mayor_first_name' => $lgu->mayor_first_name,
+                    'mayor_middle_name' => $lgu->mayor_middle_name,
+                    'mayor_last_name' => $lgu->mayor_last_name,
+                    'deletion_check' => [
+                        'available' => true,
+                        'road_coverages' => $roadCount,
+                        'engineer_assignments' => $assignmentCount,
+                    ],
+                ];
+            })->all(),
+            'total' => $paginated->total(),
+            'current_page' => $paginated->currentPage(),
+            'last_page' => $paginated->lastPage(),
+            'from' => $paginated->firstItem(),
+            'to' => $paginated->lastItem(),
+        ];
+
+        $provinces = Lgu::query()->distinct()->whereNotNull('province')->orderBy('province')->pluck('province')->all();
+        $regions = Lgu::query()->distinct()->whereNotNull('region')->orderBy('region')->pluck('region')->all();
+
         return Inertia::render('LGUs/Index', [
-            'model' => $model,
-            'queryParams' => request()->query(),
+            'lgus' => $lgus,
+            'filters' => [
+                'search' => $search,
+                'province' => $province,
+                'region' => $region,
+                'sort' => $sort,
+            ],
+            'provinces' => $provinces,
+            'regions' => $regions,
+            'lguPermissions' => [
+                'can_edit' => true,
+                'can_delete' => true,
+            ],
+            'canBulkDelete' => true,
+            'canDelete' => true,
         ]);
     }
 
@@ -143,21 +173,37 @@ class LguController extends Controller
     {
         Gate::authorize('delete', $lgu);
 
-        if (
-            $lgu->roadCoverages()->exists()
-            || $lgu->engineerAssignments()->exists()
-        ) {
-            return to_route('lgus.index')
-                ->with(
-                    'error',
-                    'This LGU cannot be deleted because road coverage '
-                    .'or engineer assignment records still reference it.'
-                );
+        $hasRoads = DB::table('jairoads_next.road_coverages')->where('lgu_id', $lgu->id)->exists();
+        $hasAssignments = DB::table('jairoads_next.engineer_lgus')->where('lgu_id', $lgu->id)->exists();
+
+        if ($hasRoads || $hasAssignments) {
+            return back()->withErrors(['delete' => "Cannot delete LGU {$lgu->municipality_name} because it has linked road coverages or engineer assignments."]);
         }
 
-        $lgu->delete();
+        DB::transaction(function () use ($lgu): void {
+            $lgu->delete();
+        });
 
-        return to_route('lgus.index')
-            ->with('message', 'Successfully deleted the LGU.');
+        return to_route('lgus.index')->with('message', 'Successfully deleted the LGU.');
+    }
+
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        Gate::authorize('viewAny', Lgu::class);
+
+        $ids = $request->input('lgu_ids', []);
+        if (is_array($ids) && count($ids) > 0) {
+            DB::transaction(function () use ($ids): void {
+                foreach ($ids as $id) {
+                    $hasRoads = DB::table('jairoads_next.road_coverages')->where('lgu_id', $id)->exists();
+                    $hasAssignments = DB::table('jairoads_next.engineer_lgus')->where('lgu_id', $id)->exists();
+                    if (!$hasRoads && !$hasAssignments) {
+                        Lgu::destroy($id);
+                    }
+                }
+            });
+        }
+
+        return to_route('lgus.index')->with('message', 'Selected LGUs processed for deletion.');
     }
 }

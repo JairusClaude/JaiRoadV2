@@ -1,0 +1,1 @@
+PASS: two/three location contract, original three-point compatibility, mismatched/missing/duplicate points rejected, distance measurement, positive/two-decimal kilometers, unchanged legacy retention.

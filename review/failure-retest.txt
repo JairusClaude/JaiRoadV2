@@ -1,0 +1,1 @@
+PASS: forced routing failure shows recovery UI, retains both markers, no unhandled runtime error after queue rejection fix.

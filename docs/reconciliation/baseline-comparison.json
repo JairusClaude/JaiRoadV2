@@ -1,0 +1,221 @@
+{
+    "baseline_sql_blocks": 41,
+    "fixture_matches_baseline_statements": true,
+    "baseline_hash_sha256": "2729c96440095553bae70651c22a4efe506ed6b545e57f52712e1a2ab8974530",
+    "fixture_hash_sha256": "733c4780e1b11c15a4f1550536a2c6fd52793e5eabfe0bc6da07becd70f1c822",
+    "baseline_tables": 11,
+    "baseline_columns": 92,
+    "baseline_constraints": 47,
+    "live_constraints": 47,
+    "baseline_indexes": 16,
+    "live_indexes": 24,
+    "column_differences": [
+        {
+            "table": "audit_logs",
+            "column": "id",
+            "differences": {
+                "identity": {
+                    "baseline": "ALWAYS",
+                    "live": "BY DEFAULT"
+                }
+            }
+        },
+        {
+            "table": "engineers",
+            "column": "id",
+            "differences": {
+                "identity": {
+                    "baseline": "ALWAYS",
+                    "live": "BY DEFAULT"
+                }
+            }
+        },
+        {
+            "table": "lgus",
+            "column": "id",
+            "differences": {
+                "identity": {
+                    "baseline": "ALWAYS",
+                    "live": "BY DEFAULT"
+                }
+            }
+        },
+        {
+            "table": "maintenance_documents",
+            "column": "id",
+            "differences": {
+                "identity": {
+                    "baseline": "ALWAYS",
+                    "live": "BY DEFAULT"
+                }
+            }
+        },
+        {
+            "table": "maintenance_projects",
+            "column": "id",
+            "differences": {
+                "identity": {
+                    "baseline": "ALWAYS",
+                    "live": "BY DEFAULT"
+                }
+            }
+        },
+        {
+            "table": "maintenance_records",
+            "column": "id",
+            "differences": {
+                "identity": {
+                    "baseline": "ALWAYS",
+                    "live": "BY DEFAULT"
+                }
+            }
+        },
+        {
+            "table": "media",
+            "column": "id",
+            "differences": {
+                "identity": {
+                    "baseline": "ALWAYS",
+                    "live": "BY DEFAULT"
+                }
+            }
+        },
+        {
+            "table": "monthly_updates",
+            "column": "id",
+            "differences": {
+                "identity": {
+                    "baseline": "ALWAYS",
+                    "live": "BY DEFAULT"
+                }
+            }
+        },
+        {
+            "table": "road_coverages",
+            "column": "id",
+            "differences": {
+                "identity": {
+                    "baseline": "ALWAYS",
+                    "live": "BY DEFAULT"
+                }
+            }
+        },
+        {
+            "table": "user_accounts",
+            "column": "id",
+            "differences": {
+                "identity": {
+                    "baseline": "ALWAYS",
+                    "live": "BY DEFAULT"
+                }
+            }
+        }
+    ],
+    "missing_live_constraints": [],
+    "additional_live_constraints": [],
+    "changed_constraints": [
+        {
+            "key": ["engineers", "engineers_status_ck"],
+            "baseline": "CHECK (engineer_status::text = ANY (ARRAY['Active'::character varying::text, 'Retired'::character varying::text]))",
+            "live": "CHECK (engineer_status::text = ANY (ARRAY['Active'::character varying, 'Retired'::character varying]::text[]))"
+        },
+        {
+            "key": ["maintenance_records", "maintenance_quarter_ck"],
+            "baseline": "CHECK (quarter::text = ANY (ARRAY['Q1'::character varying::text, 'Q2'::character varying::text, 'Q3'::character varying::text, 'Q4'::character varying::text]))",
+            "live": "CHECK (quarter::text = ANY (ARRAY['Q1'::character varying, 'Q2'::character varying, 'Q3'::character varying, 'Q4'::character varying]::text[]))"
+        },
+        {
+            "key": ["maintenance_records", "maintenance_status_ck"],
+            "baseline": "CHECK (status::text = ANY (ARRAY['Ongoing'::character varying::text, 'Completed'::character varying::text]))",
+            "live": "CHECK (status::text = ANY (ARRAY['Ongoing'::character varying, 'Completed'::character varying]::text[]))"
+        },
+        {
+            "key": ["media", "media_type_ck"],
+            "baseline": "CHECK (file_type::text = ANY (ARRAY['image/jpeg'::character varying::text, 'image/png'::character varying::text, 'image/webp'::character varying::text, 'video/mp4'::character varying::text, 'video/webm'::character varying::text]))",
+            "live": "CHECK (file_type::text = ANY (ARRAY['image/jpeg'::character varying, 'image/png'::character varying, 'image/webp'::character varying, 'video/mp4'::character varying, 'video/webm'::character varying]::text[]))"
+        },
+        {
+            "key": ["road_coverages", "road_pavement_ck"],
+            "baseline": "CHECK (pavement_type::text = ANY (ARRAY['Concrete'::character varying::text, 'Asphalt'::character varying::text, 'Gravel'::character varying::text, 'Earth'::character varying::text]))",
+            "live": "CHECK (pavement_type::text = ANY (ARRAY['Concrete'::character varying, 'Asphalt'::character varying, 'Gravel'::character varying, 'Earth'::character varying]::text[]))"
+        },
+        {
+            "key": ["road_coverages", "road_state_ck"],
+            "baseline": "CHECK (state_category::text = ANY (ARRAY['Good'::character varying::text, 'Fair'::character varying::text, 'Bad'::character varying::text]))",
+            "live": "CHECK (state_category::text = ANY (ARRAY['Good'::character varying, 'Fair'::character varying, 'Bad'::character varying]::text[]))"
+        },
+        {
+            "key": ["user_accounts", "user_accounts_role_ck"],
+            "baseline": "CHECK (account_type::text = ANY (ARRAY['SuperAdmin'::character varying::text, 'Admin'::character varying::text, 'Engineer'::character varying::text, 'Viewer'::character varying::text]))",
+            "live": "CHECK (account_type::text = ANY (ARRAY['SuperAdmin'::character varying, 'Admin'::character varying, 'Engineer'::character varying, 'Viewer'::character varying]::text[]))"
+        }
+    ],
+    "missing_live_indexes": [],
+    "additional_live_indexes": [
+        {
+            "table": "audit_logs",
+            "name": "audit_logs_recipient_created_idx",
+            "definition": "CREATE INDEX audit_logs_recipient_created_idx ON jairoads_next.audit_logs USING btree (recipient_user_id, created_at DESC)"
+        },
+        {
+            "table": "engineer_lgus",
+            "name": "engineer_lgus_lgu_idx",
+            "definition": "CREATE INDEX engineer_lgus_lgu_idx ON jairoads_next.engineer_lgus USING btree (lgu_id)"
+        },
+        {
+            "table": "maintenance_documents",
+            "name": "maintenance_documents_record_idx",
+            "definition": "CREATE INDEX maintenance_documents_record_idx ON jairoads_next.maintenance_documents USING btree (maintenance_id)"
+        },
+        {
+            "table": "maintenance_records",
+            "name": "maintenance_records_engineer_idx",
+            "definition": "CREATE INDEX maintenance_records_engineer_idx ON jairoads_next.maintenance_records USING btree (managing_engineer_id)"
+        },
+        {
+            "table": "maintenance_records",
+            "name": "maintenance_records_project_idx",
+            "definition": "CREATE INDEX maintenance_records_project_idx ON jairoads_next.maintenance_records USING btree (project_id)"
+        },
+        {
+            "table": "media",
+            "name": "media_monthly_update_idx",
+            "definition": "CREATE INDEX media_monthly_update_idx ON jairoads_next.media USING btree (monthly_update_id)"
+        },
+        {
+            "table": "monthly_updates",
+            "name": "monthly_updates_created_by_idx",
+            "definition": "CREATE INDEX monthly_updates_created_by_idx ON jairoads_next.monthly_updates USING btree (created_by)"
+        },
+        {
+            "table": "road_coverages",
+            "name": "road_coverages_lgu_idx",
+            "definition": "CREATE INDEX road_coverages_lgu_idx ON jairoads_next.road_coverages USING btree (lgu_id)"
+        }
+    ],
+    "baseline_triggers": [],
+    "live_triggers": [
+        {
+            "schema_name": "jairoads_next",
+            "table_name": "audit_logs",
+            "trigger_name": "jairoads_dd_auditlog_reject_changes",
+            "tgenabled": "O",
+            "definition": "CREATE TRIGGER jairoads_dd_auditlog_reject_changes BEFORE DELETE OR UPDATE ON jairoads_next.audit_logs FOR EACH ROW EXECUTE FUNCTION jairoads_next.jairoads_dd_auditlog_deny_mutation()",
+            "function_schema": "jairoads_next",
+            "function_name": "jairoads_dd_auditlog_deny_mutation",
+            "security_definer": false
+        },
+        {
+            "schema_name": "jairoads_next",
+            "table_name": "audit_logs",
+            "trigger_name": "jairoads_dd_auditlog_reject_truncate",
+            "tgenabled": "O",
+            "definition": "CREATE TRIGGER jairoads_dd_auditlog_reject_truncate BEFORE TRUNCATE ON jairoads_next.audit_logs FOR EACH STATEMENT EXECUTE FUNCTION jairoads_next.jairoads_dd_auditlog_deny_mutation()",
+            "function_schema": "jairoads_next",
+            "function_name": "jairoads_dd_auditlog_deny_mutation",
+            "security_definer": false
+        }
+    ],
+    "baseline_rls_all_enabled": true,
+    "constraint_text_diff_note": "Seven enum CHECK deparses differ only in placement of equivalent varchar-to-text casts; field names and complete allowed-value sets match. No missing or additional canonical constraints."
+}

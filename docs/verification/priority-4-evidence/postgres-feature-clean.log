@@ -1,0 +1,72 @@
+
+   PASS  Tests\Feature\Auth\AuthenticationTest
+  ✓ login screen can be rendered                                         0.06s  
+  ✓ users can authenticate using the login screen                        0.04s  
+  ✓ users with two factor enabled are redirected to two factor challeng… 0.03s  
+  ✓ users can not authenticate with invalid password                     0.02s  
+  ✓ users can logout                                                     0.02s  
+  ✓ users are rate limited                                               0.02s  
+
+   PASS  Tests\Feature\Auth\EmailVerificationTest
+  ✓ email verification screen can be rendered                            0.05s  
+  ✓ email can be verified                                                0.02s  
+  ✓ email is not verified with invalid hash                              0.02s  
+  ✓ email is not verified with invalid user id                           0.02s  
+  ✓ verified user is redirected to dashboard from verification prompt    0.02s  
+  ✓ already verified user visiting verification link is redirected with… 0.02s  
+
+   PASS  Tests\Feature\Auth\PasswordConfirmationTest
+  ✓ confirm password screen can be rendered                              0.04s  
+  ✓ password confirmation requires authentication                        0.02s  
+
+   PASS  Tests\Feature\Auth\PasswordResetTest
+  ✓ reset password link screen can be rendered                           0.02s  
+  ✓ reset password link can be requested                                 0.22s  
+  ✓ reset password screen can be rendered                                0.23s  
+  ✓ password can be reset with valid token                               0.26s  
+  ✓ password cannot be reset with invalid token                          0.22s  
+
+   WARN  Tests\Feature\Auth\RegistrationTest
+  - registration screen can be rendered → Fortify feature [registration] is not enabled.
+  - new users can register → Fortify feature [registration] is not enabled.
+
+   PASS  Tests\Feature\Auth\TwoFactorChallengeTest
+  ✓ two factor challenge redirects to login when not authenticated       0.02s  
+  ✓ two factor challenge can be rendered                                 0.03s  
+
+   PASS  Tests\Feature\Auth\VerificationNotificationTest
+  ✓ sends verification notification                                      0.03s  
+  ✓ does not send verification notification if email is verified         0.02s  
+
+   PASS  Tests\Feature\DashboardTest
+  ✓ guests are redirected to the login page                              0.02s  
+  ✓ an authenticated login without an approved account receives no dash… 0.02s  
+  ✓ a verified active viewer is routed to and can read their role dashb… 0.04s  
+
+   PASS  Tests\Feature\DdWorkspaceNavigationTest
+  ✓ exact module entries redirect to dd modules                          0.02s  
+  ✓ legacy ids and mutations stay blocked                                0.01s  
+  ✓ invalid dd identity cannot use a redirect as fallback                0.01s  
+  ✓ unlinked and dd native requests continue to their own controllers    0.01s  
+
+   PASS  Tests\Feature\ExampleTest
+  ✓ the public entry redirects to the working Fortify login form         0.04s  
+
+   PASS  Tests\Feature\Settings\ProfileUpdateTest
+  ✓ profile page is displayed                                            0.03s  
+  ✓ profile information can be updated                                   0.03s  
+  ✓ email verification status is unchanged when the email address is un… 0.02s  
+  ✓ user can delete their account                                        0.02s  
+  ✓ correct password must be provided to delete account                  0.02s  
+
+   PASS  Tests\Feature\Settings\SecurityTest
+  ✓ security page is displayed                                           0.04s  
+  ✓ security page requires password confirmation when enabled            0.02s  
+  ✓ security page renders without two factor when feature is disabled    0.03s  
+  ✓ password can be updated                                              0.03s  
+  ✓ correct password must be provided to update password                 0.02s  
+
+  Tests:    2 skipped, 41 passed (173 assertions)
+  Duration: 2.15s
+
+EXIT=0

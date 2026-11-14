@@ -1,0 +1,353 @@
+{
+  "checks": [
+    {
+      "name": "Add opens ready for A; Add Location resumes B without resetting A",
+      "status": "PASS"
+    },
+    {
+      "name": "B automatically routes A–B; toolbar Add Location extends C, preserves A–B and prevents a fourth point",
+      "status": "PASS"
+    },
+    {
+      "name": "All A/B/C markers open small management popups",
+      "status": "PASS"
+    },
+    {
+      "name": "Cancel Replacement retains original marker and both accepted routes",
+      "status": "PASS"
+    },
+    {
+      "name": "Unselected three-point Draw asks for target; B–C drawing state excludes old completion",
+      "status": "PASS"
+    },
+    {
+      "name": "Intermediate point moves live before Finish Drawing without adding a point",
+      "status": "PASS"
+    },
+    {
+      "name": "Drawing Undo reverses drag; Save blocks unfinished trace; Cancel restores prior geometry/status",
+      "status": "PASS"
+    },
+    {
+      "name": "Selected Draw targets immediately; Finish accepts trace, updates length and saves without changing A–B",
+      "status": "PASS"
+    },
+    {
+      "name": "Replacing manual C preserves both paths and marks only B–C for correction",
+      "status": "PASS"
+    },
+    {
+      "name": "Undo replacement restores marker and valid route",
+      "status": "PASS"
+    },
+    {
+      "name": "Remove C confirms; cancel keeps it; removal preserves complete A–B; Undo restores C",
+      "status": "PASS"
+    },
+    {
+      "name": "Remove A keeps former B/C coordinates, relabels them and preserves the manual B–C path as A–B",
+      "status": "PASS"
+    },
+    {
+      "name": "Remove B preserves A/C as sequential A/B, clears both old portions, and permits immediate one-portion Draw rebuilding",
+      "status": "PASS"
+    },
+    {
+      "name": "Two-point removal preserves and relabels the remaining location; incomplete road cannot be saved",
+      "status": "PASS"
+    },
+    {
+      "name": "Start Over confirms, clears working map only, keeps form fields and saved record; Undo restores work",
+      "status": "PASS"
+    },
+    {
+      "name": "Location confirmation remains visible and keyboard-accessible inside fullscreen",
+      "status": "PASS"
+    },
+    {
+      "name": "Narrow layout stays within viewport",
+      "status": "PASS"
+    },
+    {
+      "name": "No browser runtime errors",
+      "status": "PASS"
+    }
+  ],
+  "errors": [],
+  "network": [
+    {
+      "url": "https://router.project-osrm.org/route/v1/driving/125.96602037839398,7.599989270343235;125.96320916617321,7.603668822472622?overview=full&geometries=geojson&alternatives=false&steps=false&radiuses=50;50",
+      "status": 200,
+      "body": {
+        "code": "Ok",
+        "routes": [
+          {
+            "legs": [
+              {
+                "steps": [],
+                "weight": 35.3,
+                "summary": "",
+                "duration": 35.3,
+                "distance": 672.6
+              }
+            ],
+            "weight_name": "routability",
+            "geometry": {
+              "coordinates": [
+                [
+                  125.966021,
+                  7.599991
+                ],
+                [
+                  125.965958,
+                  7.600032
+                ],
+                [
+                  125.965869,
+                  7.600081
+                ],
+                [
+                  125.965652,
+                  7.600203
+                ],
+                [
+                  125.965387,
+                  7.60037
+                ],
+                [
+                  125.965217,
+                  7.600477
+                ],
+                [
+                  125.965158,
+                  7.600514
+                ],
+                [
+                  125.965084,
+                  7.60056
+                ],
+                [
+                  125.964453,
+                  7.600958
+                ],
+                [
+                  125.964329,
+                  7.601036
+                ],
+                [
+                  125.963696,
+                  7.601427
+                ],
+                [
+                  125.963081,
+                  7.601796
+                ],
+                [
+                  125.962814,
+                  7.601961
+                ],
+                [
+                  125.962281,
+                  7.602291
+                ],
+                [
+                  125.962354,
+                  7.602556
+                ],
+                [
+                  125.962427,
+                  7.602759
+                ],
+                [
+                  125.962509,
+                  7.602925
+                ],
+                [
+                  125.962597,
+                  7.603053
+                ],
+                [
+                  125.962722,
+                  7.60319
+                ],
+                [
+                  125.96289,
+                  7.603364
+                ],
+                [
+                  125.963194,
+                  7.603683
+                ]
+              ],
+              "type": "LineString"
+            },
+            "weight": 35.3,
+            "duration": 35.3,
+            "distance": 672.6
+          }
+        ],
+        "waypoints": [
+          {
+            "hint": "qYKNgJ8ctYAEAAAABQAAAAAAAAAiAAAAU8sEQQ_OBEEAAAAAN8d1QgQAAAAFAAAAAAAAACIAAABZQgAAxRaCB3f3cwDEFoIHdfdzAAAAvwcAAAAA",
+            "location": [
+              125.966021,
+              7.599991
+            ],
+            "name": "L. Arabejo Avenue",
+            "distance": 0.2471878978
+          },
+          {
+            "hint": "skZIh____38UAAAAFgAAADsAAAAAAAAAPLlCQl4LQ0CKFgtDAAAAABQAAAAWAAAAOwAAAAAAAABZQgAAuguCB-MFdADJC4IH1QV0AAwAvwIAAAAA",
+            "location": [
+              125.963194,
+              7.603683
+            ],
+            "name": "Davao-Agusan National Highway",
+            "distance": 2.266432058
+          }
+        ]
+      }
+    },
+    {
+      "url": "https://router.project-osrm.org/route/v1/driving/125.963194,7.603683;125.96720065833415,7.6062423633082075?overview=full&geometries=geojson&alternatives=false&steps=false&radiuses=50;50",
+      "status": 200,
+      "body": {
+        "code": "Ok",
+        "routes": [
+          {
+            "legs": [
+              {
+                "steps": [],
+                "weight": 30.3,
+                "summary": "",
+                "duration": 30.3,
+                "distance": 579.4
+              }
+            ],
+            "weight_name": "routability",
+            "geometry": {
+              "coordinates": [
+                [
+                  125.963194,
+                  7.603683
+                ],
+                [
+                  125.963213,
+                  7.603703
+                ],
+                [
+                  125.963283,
+                  7.603784
+                ],
+                [
+                  125.963406,
+                  7.603908
+                ],
+                [
+                  125.963506,
+                  7.604009
+                ],
+                [
+                  125.964009,
+                  7.604551
+                ],
+                [
+                  125.964048,
+                  7.604592
+                ],
+                [
+                  125.964115,
+                  7.604662
+                ],
+                [
+                  125.964251,
+                  7.60481
+                ],
+                [
+                  125.964353,
+                  7.60492
+                ],
+                [
+                  125.964585,
+                  7.605177
+                ],
+                [
+                  125.96467,
+                  7.60527
+                ],
+                [
+                  125.965257,
+                  7.605897
+                ],
+                [
+                  125.96544,
+                  7.606072
+                ],
+                [
+                  125.965664,
+                  7.606372
+                ],
+                [
+                  125.965726,
+                  7.606343
+                ],
+                [
+                  125.965784,
+                  7.606325
+                ],
+                [
+                  125.965877,
+                  7.606308
+                ],
+                [
+                  125.966003,
+                  7.606299
+                ],
+                [
+                  125.966366,
+                  7.60629
+                ],
+                [
+                  125.966594,
+                  7.606286
+                ],
+                [
+                  125.967213,
+                  7.606273
+                ],
+                [
+                  125.967211,
+                  7.606241
+                ]
+              ],
+              "type": "LineString"
+            },
+            "weight": 30.3,
+            "duration": 30.3,
+            "distance": 579.4
+          }
+        ],
+        "waypoints": [
+          {
+            "hint": "skZIh____38UAAAAFgAAADsAAAAAAAAAPLlCQl4LQ0CKFgtDAAAAABQAAAAWAAAAOwAAAAAAAABZQgAAuguCB-MFdAC6C4IH4wV0AAwAvwIAAAAA",
+            "location": [
+              125.963194,
+              7.603683
+            ],
+            "name": "Davao-Agusan National Highway",
+            "distance": 0
+          },
+          {
+            "hint": "ZFftgMkocIgFAAAADQAAAAAAAACWAAAApO9iQOOAD0EAAAAAD7DPQgUAAAANAAAAAAAAAJYAAABZQgAAaxuCB-EPdABhG4IH4g90AAAAfwsAAAAA",
+            "location": [
+              125.967211,
+              7.606241
+            ],
+            "name": "M. Malvar Street",
+            "distance": 1.108945254
+          }
+        ]
+      }
+    }
+  ]
+}

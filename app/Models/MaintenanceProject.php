@@ -8,9 +8,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Support\Facades\Schema;
 
 #[Fillable([
     'project_title',
+    'road_coverage_id',
     'description',
     'status',
     'start_date',
@@ -25,6 +28,20 @@ class MaintenanceProject extends Model
     /** @use HasFactory<MaintenanceProjectFactory> */
     use HasFactory;
 
+    /** @return BelongsTo<RoadCoverage, $this> */
+    public function roadCoverage(): BelongsTo
+    {
+        return $this->belongsTo(RoadCoverage::class);
+    }
+
+    /** @return HasMany<MaintenanceRecord, $this> */
+    public function maintenanceRecords(): HasMany
+    {
+        return $this->hasMany(MaintenanceRecord::class, 'maintenance_projects_id');
+    }
+
+    // Legacy relations remain for existing modules; directory municipality is
+    // derived exclusively through roadCoverage.lgu, never through this old FK.
     /** @return BelongsTo<Lgu, $this> */
     public function lgu(): BelongsTo
     {
@@ -58,12 +75,24 @@ class MaintenanceProject extends Model
         );
     }
 
-    /** @return HasMany<MonthlyUpdate, $this> */
-    public function monthlyUpdates(): HasMany
+    /**
+     * Compatibility during staged cutover; never reinterpret legacy rows as record history.
+     *
+     * @return HasMany<MonthlyUpdate, $this>|HasManyThrough<MonthlyUpdate, MaintenanceRecord, $this>
+     */
+    public function monthlyUpdates(): HasMany|HasManyThrough
     {
-        return $this->hasMany(
-            MonthlyUpdate::class,
-            'maintenance_projects_id'
+        // ProjectMutations::delete calls this method even before SQL cutover.
+        // Keep the old FK functional during staging, then traverse records after cutover.
+        $recordKey = Schema::hasColumn('monthly_updates', 'maintenance_id') ? 'maintenance_id'
+            : (Schema::hasColumn('monthly_updates', 'maintenance_records_id') ? 'maintenance_records_id' : null);
+        if ($recordKey === null) {
+            return $this->hasMany(MonthlyUpdate::class, 'maintenance_projects_id');
+        }
+
+        return $this->hasManyThrough(
+            MonthlyUpdate::class, MaintenanceRecord::class,
+            'maintenance_projects_id', $recordKey, 'id', 'id'
         );
     }
 }

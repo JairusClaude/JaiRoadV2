@@ -1,0 +1,12 @@
+Desktop preview in Windows PowerShell
+
+Extract JaiROADS_Map_Navigation_Review.zip into a new folder.
+Open PowerShell in the extracted source folder and run:
+  node .\tools\maintenance-project-preview\server.mjs
+Open http://localhost:5179/road-coverages/create
+Keep PowerShell open. Ctrl+C stops the preview.
+
+Node 22.12 or newer is required. Compiled assets are included; PHP, Composer, npm install and migrations are unnecessary for merely viewing the preview. Internet services are required for map tiles, routing and place search. Saves are process-local and reset on restart.
+
+Restoration
+Stop the preview, back up your current folder, then copy the files in review-navigation/restore/ to the matching paths under source/. They include the two pre-change source files and their corresponding public/build manifest/assets. The previous complete Location Management review ZIP is also preserved separately. Keep old and new full packages in separate folders if comparing them.

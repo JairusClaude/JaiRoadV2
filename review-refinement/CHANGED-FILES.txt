@@ -1,0 +1,7 @@
+resources/css/road-coverage-form.css
+resources/js/lib/road-coverages/geometry.mjs
+resources/js/components/road-coverages/coverage-form.tsx
+resources/js/components/road-coverages/coverage-map-editor.tsx
+
+Generated: public/build/manifest.json and compiled assets.
+Review: review-refinement/ reports, test scripts, logs, screenshots and restoration source.

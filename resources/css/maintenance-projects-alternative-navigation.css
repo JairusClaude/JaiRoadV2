@@ -1,0 +1,141 @@
+/* This navigation is mounted only in the isolated alternative preview. */
+.jr-alternative-nav .jr-nav-link.jr-active::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 5px;
+    width: 3px;
+    height: 18px;
+    border-radius: 2px;
+    background: #8b471f;
+    transform: translateY(-50%);
+}
+
+.jr-alternative-nav .jr-nav-link.jr-active svg {
+    color: #8b471f;
+}
+
+.jr-alternative-parent {
+    position: relative;
+}
+
+.jr-alternative-parent .jr-nav-link > span {
+    left: 41px;
+}
+
+.jr-alternative-chevron {
+    position: absolute;
+    inset: 0 4px 0 auto;
+    display: grid;
+    width: 18px;
+    place-items: center;
+    border-radius: 8px;
+    color: #64748b;
+}
+
+.jr-alternative-chevron:hover {
+    background: #64748b0d;
+    color: #1e2430;
+}
+
+.jr-alternative-chevron svg {
+    width: 10px;
+    height: 10px;
+    stroke-width: 1.75;
+    transition: transform 150ms ease;
+}
+
+.jr-alternative-chevron svg[data-open='true'] {
+    transform: rotate(180deg);
+}
+
+.jr-alternative-submenu-transition {
+    display: grid;
+    grid-template-rows: 0fr;
+    visibility: hidden;
+    transition:
+        grid-template-rows 180ms ease,
+        visibility 0s 180ms;
+}
+
+.jr-alternative-submenu-transition[data-open='true'] {
+    grid-template-rows: 1fr;
+    visibility: visible;
+    transition-delay: 0s;
+}
+
+.jr-alternative-submenu-clip {
+    min-height: 0;
+    overflow: hidden;
+}
+
+.jr-alternative-submenu {
+    position: relative;
+    margin: 4px 0 0 44px;
+}
+
+/* One continuous border bends from the parent's icon center to the child. */
+.jr-alternative-submenu::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -20px;
+    width: 12px;
+    height: calc(50% + 4px);
+    border-left: 1px solid #cbd2d8;
+    border-bottom: 1px solid #cbd2d8;
+    border-bottom-left-radius: 7px;
+    pointer-events: none;
+}
+
+.jr-alternative-submenu .jr-alternative-record-label {
+    left: 15px;
+}
+
+.jr-alternative-record-abbreviation {
+    display: none;
+}
+
+.jr-app [data-state='collapsed'] .jr-alternative-parent .jr-nav-link > span {
+    left: 45px;
+}
+
+.jr-app [data-state='collapsed'] .jr-alternative-submenu::before {
+    content: none;
+}
+
+.jr-app [data-state='collapsed'] .jr-alternative-submenu {
+    margin-left: 0;
+    padding-left: 0;
+    border-left: 0;
+}
+
+.jr-app [data-state='collapsed'] .jr-alternative-record-abbreviation {
+    display: block;
+    left: 14px;
+    width: 18px;
+    font-size: 10px;
+    font-weight: 600;
+    text-align: center;
+    opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .jr-alternative-submenu-transition,
+    .jr-alternative-chevron svg {
+        transition: none;
+    }
+}
+
+/* Hidden children must not retain rows or spacing in the icon rail. */
+.jr-app [data-state='collapsed'] .jr-alternative-submenu-transition {
+    display: none;
+}
+
+/* Keep the longer document label inside the existing 42px navigation row.
+   Only expanded navigation needs wrapping; the collapsed icon rail is unchanged. */
+.jr-alternative-nav .jr-nav-link > span.jr-document-nav-label {
+    right: 12px;
+    white-space: normal;
+    line-height: 16px;
+}

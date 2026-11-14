@@ -1,0 +1,22 @@
+PASS Add starts ready for Location A; no unnecessary B–C section
+PASS A–B routes automatically; bounded road snapping completes route and calculates length
+PASS Direct road click turns only selected line blue and opens state-specific popup
+LIMITATION Provider returned only one route; genuine no-alternatives feedback verified
+PASS Escape clears selection and restores brown road
+PASS Valid two-location road saves as one RoadCoverage in temporary preview
+PASS Edit loads saved two-point geometry without rerouting
+PASS Add Location C creates only B–C without regenerating A–B
+PASS Draw/Redraw produces a blue dashed draft and completes a selected manual portion in one step
+PASS Three-location save preserves A–B exactly and stores manual length override
+PASS Panel selection matches map selection; manual popup offers Edit Path rather than automatic actions
+PASS Manual tracing point drag works; Cancel restores the previous geometry
+PASS Manual correction applies; length override survives geometry changes with discrepancy message
+PASS Independent panel/section collapse and fullscreen preserve state
+PASS Saved manual B–C correction leaves A–B byte-for-byte unchanged; calculated length restored
+PASS Information-only edit preserves saved GeoJSON exactly
+PASS Failed routing retains locations and provides specific error/recovery actions even without a line
+PASS Retry Route recovers a failed portion
+PASS Draw toolbar, scoped Undo, and unfinished-operation save validation work
+PASS Narrow layout stacks map and information with no horizontal overflow
+PASS Road Coverage and Maintenance Projects directories remain functional
+PASS No browser runtime errors, including forced routing failure

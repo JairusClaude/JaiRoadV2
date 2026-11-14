@@ -1,0 +1,623 @@
+{
+  "checks": [
+    {
+      "name": "Add starts ready for Location A; no unnecessary B–C section",
+      "status": "PASS"
+    },
+    {
+      "name": "A–B routes automatically; bounded road snapping completes route and calculates length",
+      "status": "PASS"
+    },
+    {
+      "name": "Direct road click turns only selected line blue and opens state-specific popup",
+      "status": "PASS"
+    },
+    {
+      "name": "Provider returned only one route; genuine no-alternatives feedback verified",
+      "status": "LIMITATION"
+    },
+    {
+      "name": "Escape clears selection and restores brown road",
+      "status": "PASS"
+    },
+    {
+      "name": "Valid two-location road saves as one RoadCoverage in temporary preview",
+      "status": "PASS"
+    },
+    {
+      "name": "Edit loads saved two-point geometry without rerouting",
+      "status": "PASS"
+    },
+    {
+      "name": "Add Location C creates only B–C without regenerating A–B",
+      "status": "PASS"
+    },
+    {
+      "name": "Draw/Redraw produces a blue dashed draft and completes a selected manual portion in one step",
+      "status": "PASS"
+    },
+    {
+      "name": "Three-location save preserves A–B exactly and stores manual length override",
+      "status": "PASS"
+    },
+    {
+      "name": "Panel selection matches map selection; manual popup offers Edit Path rather than automatic actions",
+      "status": "PASS"
+    },
+    {
+      "name": "Manual tracing point drag works; Cancel restores the previous geometry",
+      "status": "PASS"
+    },
+    {
+      "name": "Manual correction applies; length override survives geometry changes with discrepancy message",
+      "status": "PASS"
+    },
+    {
+      "name": "Independent panel/section collapse and fullscreen preserve state",
+      "status": "PASS"
+    },
+    {
+      "name": "Saved manual B–C correction leaves A–B byte-for-byte unchanged; calculated length restored",
+      "status": "PASS"
+    },
+    {
+      "name": "Information-only edit preserves saved GeoJSON exactly",
+      "status": "PASS"
+    },
+    {
+      "name": "Failed routing retains locations and provides specific error/recovery actions even without a line",
+      "status": "PASS"
+    },
+    {
+      "name": "Retry Route recovers a failed portion",
+      "status": "PASS"
+    },
+    {
+      "name": "Draw toolbar, scoped Undo, and unfinished-operation save validation work",
+      "status": "PASS"
+    },
+    {
+      "name": "Narrow layout stacks map and information with no horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "Road Coverage and Maintenance Projects directories remain functional",
+      "status": "PASS"
+    },
+    {
+      "name": "No browser runtime errors, including forced routing failure",
+      "status": "PASS"
+    }
+  ],
+  "errors": [],
+  "routes": [
+    {
+      "url": "https://router.project-osrm.org/route/v1/driving/125.96602037839398,7.599989270343235;125.96320916617321,7.603668822472622?overview=full&geometries=geojson&alternatives=false&steps=false&radiuses=50;50",
+      "status": 200,
+      "body": {
+        "code": "Ok",
+        "routes": [
+          {
+            "legs": [
+              {
+                "steps": [],
+                "weight": 35.3,
+                "summary": "",
+                "duration": 35.3,
+                "distance": 672.6
+              }
+            ],
+            "weight_name": "routability",
+            "geometry": {
+              "coordinates": [
+                [
+                  125.966021,
+                  7.599991
+                ],
+                [
+                  125.965958,
+                  7.600032
+                ],
+                [
+                  125.965869,
+                  7.600081
+                ],
+                [
+                  125.965652,
+                  7.600203
+                ],
+                [
+                  125.965387,
+                  7.60037
+                ],
+                [
+                  125.965217,
+                  7.600477
+                ],
+                [
+                  125.965158,
+                  7.600514
+                ],
+                [
+                  125.965084,
+                  7.60056
+                ],
+                [
+                  125.964453,
+                  7.600958
+                ],
+                [
+                  125.964329,
+                  7.601036
+                ],
+                [
+                  125.963696,
+                  7.601427
+                ],
+                [
+                  125.963081,
+                  7.601796
+                ],
+                [
+                  125.962814,
+                  7.601961
+                ],
+                [
+                  125.962281,
+                  7.602291
+                ],
+                [
+                  125.962354,
+                  7.602556
+                ],
+                [
+                  125.962427,
+                  7.602759
+                ],
+                [
+                  125.962509,
+                  7.602925
+                ],
+                [
+                  125.962597,
+                  7.603053
+                ],
+                [
+                  125.962722,
+                  7.60319
+                ],
+                [
+                  125.96289,
+                  7.603364
+                ],
+                [
+                  125.963194,
+                  7.603683
+                ]
+              ],
+              "type": "LineString"
+            },
+            "weight": 35.3,
+            "duration": 35.3,
+            "distance": 672.6
+          }
+        ],
+        "waypoints": [
+          {
+            "hint": "qYKNgJ8ctYAEAAAABQAAAAAAAAAiAAAAU8sEQQ_OBEEAAAAAN8d1QgQAAAAFAAAAAAAAACIAAABZQgAAxRaCB3f3cwDEFoIHdfdzAAAAvwcAAAAA",
+            "location": [
+              125.966021,
+              7.599991
+            ],
+            "name": "L. Arabejo Avenue",
+            "distance": 0.2471878978
+          },
+          {
+            "hint": "skZIh____38UAAAAFgAAADsAAAAAAAAAPLlCQl4LQ0CKFgtDAAAAABQAAAAWAAAAOwAAAAAAAABZQgAAuguCB-MFdADJC4IH1QV0AAwAvwIAAAAA",
+            "location": [
+              125.963194,
+              7.603683
+            ],
+            "name": "Davao-Agusan National Highway",
+            "distance": 2.266432058
+          }
+        ]
+      }
+    },
+    {
+      "url": "https://router.project-osrm.org/route/v1/driving/125.966021,7.599991;125.963194,7.603683?overview=full&geometries=geojson&alternatives=true&steps=false&radiuses=50;50",
+      "status": 200,
+      "body": {
+        "code": "Ok",
+        "routes": [
+          {
+            "legs": [
+              {
+                "steps": [],
+                "weight": 35.3,
+                "summary": "",
+                "duration": 35.3,
+                "distance": 672.6
+              }
+            ],
+            "weight_name": "routability",
+            "geometry": {
+              "coordinates": [
+                [
+                  125.966021,
+                  7.599991
+                ],
+                [
+                  125.965958,
+                  7.600032
+                ],
+                [
+                  125.965869,
+                  7.600081
+                ],
+                [
+                  125.965652,
+                  7.600203
+                ],
+                [
+                  125.965387,
+                  7.60037
+                ],
+                [
+                  125.965217,
+                  7.600477
+                ],
+                [
+                  125.965158,
+                  7.600514
+                ],
+                [
+                  125.965084,
+                  7.60056
+                ],
+                [
+                  125.964453,
+                  7.600958
+                ],
+                [
+                  125.964329,
+                  7.601036
+                ],
+                [
+                  125.963696,
+                  7.601427
+                ],
+                [
+                  125.963081,
+                  7.601796
+                ],
+                [
+                  125.962814,
+                  7.601961
+                ],
+                [
+                  125.962281,
+                  7.602291
+                ],
+                [
+                  125.962354,
+                  7.602556
+                ],
+                [
+                  125.962427,
+                  7.602759
+                ],
+                [
+                  125.962509,
+                  7.602925
+                ],
+                [
+                  125.962597,
+                  7.603053
+                ],
+                [
+                  125.962722,
+                  7.60319
+                ],
+                [
+                  125.96289,
+                  7.603364
+                ],
+                [
+                  125.963194,
+                  7.603683
+                ]
+              ],
+              "type": "LineString"
+            },
+            "weight": 35.3,
+            "duration": 35.3,
+            "distance": 672.6
+          }
+        ],
+        "waypoints": [
+          {
+            "hint": "qYKNgJ8ctYAEAAAABQAAAAAAAAAiAAAAU8sEQQ_OBEEAAAAAN8d1QgQAAAAFAAAAAAAAACIAAABZQgAAxRaCB3f3cwDFFoIHd_dzAAAAvwcAAAAA",
+            "location": [
+              125.966021,
+              7.599991
+            ],
+            "name": "L. Arabejo Avenue",
+            "distance": 0
+          },
+          {
+            "hint": "skZIh____38UAAAAFgAAADsAAAAAAAAAPLlCQl4LQ0CKFgtDAAAAABQAAAAWAAAAOwAAAAAAAABZQgAAuguCB-MFdAC6C4IH4wV0AAwAvwIAAAAA",
+            "location": [
+              125.963194,
+              7.603683
+            ],
+            "name": "Davao-Agusan National Highway",
+            "distance": 0
+          }
+        ]
+      }
+    },
+    {
+      "url": "https://router.project-osrm.org/route/v1/driving/125.963194,7.603683;125.96579489418968,7.603218019212776?overview=full&geometries=geojson&alternatives=false&steps=false&radiuses=50;50",
+      "status": 200,
+      "body": {
+        "code": "Ok",
+        "routes": [
+          {
+            "legs": [
+              {
+                "steps": [],
+                "weight": 72.5,
+                "summary": "",
+                "duration": 72.5,
+                "distance": 575.3
+              }
+            ],
+            "weight_name": "routability",
+            "geometry": {
+              "coordinates": [
+                [
+                  125.963194,
+                  7.603683
+                ],
+                [
+                  125.963213,
+                  7.603703
+                ],
+                [
+                  125.963283,
+                  7.603784
+                ],
+                [
+                  125.963406,
+                  7.603908
+                ],
+                [
+                  125.963506,
+                  7.604009
+                ],
+                [
+                  125.964009,
+                  7.604551
+                ],
+                [
+                  125.964048,
+                  7.604592
+                ],
+                [
+                  125.964115,
+                  7.604662
+                ],
+                [
+                  125.964251,
+                  7.60481
+                ],
+                [
+                  125.964353,
+                  7.60492
+                ],
+                [
+                  125.964585,
+                  7.605177
+                ],
+                [
+                  125.96467,
+                  7.60527
+                ],
+                [
+                  125.965308,
+                  7.604709
+                ],
+                [
+                  125.965935,
+                  7.604239
+                ],
+                [
+                  125.966338,
+                  7.603936
+                ],
+                [
+                  125.966041,
+                  7.603576
+                ],
+                [
+                  125.965935,
+                  7.603392
+                ],
+                [
+                  125.965896,
+                  7.60333
+                ],
+                [
+                  125.965845,
+                  7.60327
+                ],
+                [
+                  125.965791,
+                  7.603222
+                ]
+              ],
+              "type": "LineString"
+            },
+            "weight": 72.5,
+            "duration": 72.5,
+            "distance": 575.3
+          }
+        ],
+        "waypoints": [
+          {
+            "hint": "skZIh____38UAAAAFgAAADsAAAAAAAAAPLlCQl4LQ0CKFgtDAAAAABQAAAAWAAAAOwAAAAAAAABZQgAAuguCB-MFdAC6C4IH4wV0AAwAvwIAAAAA",
+            "location": [
+              125.963194,
+              7.603683
+            ],
+            "name": "Davao-Agusan National Highway",
+            "distance": 0
+          },
+          {
+            "hint": "_FH-hM8lSIcTAAAACAAAAGAAAABVAQAArF3_QPQxSEBuESFCwdQNQxMAAAAIAAAAYAAAAFUBAABZQgAA3xWCBxYEdADjFYIHEgR0AAYATw4AAAAA",
+            "location": [
+              125.965791,
+              7.603222
+            ],
+            "name": "",
+            "distance": 0.6249003831
+          }
+        ]
+      }
+    },
+    {
+      "url": "https://router.project-osrm.org/route/v1/driving/125.96602037839398,7.599989270343235;125.96320916617321,7.603668822472622?overview=full&geometries=geojson&alternatives=false&steps=false&radiuses=50;50",
+      "status": 200,
+      "body": {
+        "code": "Ok",
+        "routes": [
+          {
+            "legs": [
+              {
+                "steps": [],
+                "weight": 35.3,
+                "summary": "",
+                "duration": 35.3,
+                "distance": 672.6
+              }
+            ],
+            "weight_name": "routability",
+            "geometry": {
+              "coordinates": [
+                [
+                  125.966021,
+                  7.599991
+                ],
+                [
+                  125.965958,
+                  7.600032
+                ],
+                [
+                  125.965869,
+                  7.600081
+                ],
+                [
+                  125.965652,
+                  7.600203
+                ],
+                [
+                  125.965387,
+                  7.60037
+                ],
+                [
+                  125.965217,
+                  7.600477
+                ],
+                [
+                  125.965158,
+                  7.600514
+                ],
+                [
+                  125.965084,
+                  7.60056
+                ],
+                [
+                  125.964453,
+                  7.600958
+                ],
+                [
+                  125.964329,
+                  7.601036
+                ],
+                [
+                  125.963696,
+                  7.601427
+                ],
+                [
+                  125.963081,
+                  7.601796
+                ],
+                [
+                  125.962814,
+                  7.601961
+                ],
+                [
+                  125.962281,
+                  7.602291
+                ],
+                [
+                  125.962354,
+                  7.602556
+                ],
+                [
+                  125.962427,
+                  7.602759
+                ],
+                [
+                  125.962509,
+                  7.602925
+                ],
+                [
+                  125.962597,
+                  7.603053
+                ],
+                [
+                  125.962722,
+                  7.60319
+                ],
+                [
+                  125.96289,
+                  7.603364
+                ],
+                [
+                  125.963194,
+                  7.603683
+                ]
+              ],
+              "type": "LineString"
+            },
+            "weight": 35.3,
+            "duration": 35.3,
+            "distance": 672.6
+          }
+        ],
+        "waypoints": [
+          {
+            "hint": "qYKNgJ8ctYAEAAAABQAAAAAAAAAiAAAAU8sEQQ_OBEEAAAAAN8d1QgQAAAAFAAAAAAAAACIAAABZQgAAxRaCB3f3cwDEFoIHdfdzAAAAvwcAAAAA",
+            "location": [
+              125.966021,
+              7.599991
+            ],
+            "name": "L. Arabejo Avenue",
+            "distance": 0.2471878978
+          },
+          {
+            "hint": "skZIh____38UAAAAFgAAADsAAAAAAAAAPLlCQl4LQ0CKFgtDAAAAABQAAAAWAAAAOwAAAAAAAABZQgAAuguCB-MFdADJC4IH1QV0AAwAvwIAAAAA",
+            "location": [
+              125.963194,
+              7.603683
+            ],
+            "name": "Davao-Agusan National Highway",
+            "distance": 2.266432058
+          }
+        ]
+      }
+    }
+  ]
+}

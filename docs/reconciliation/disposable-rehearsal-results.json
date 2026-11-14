@@ -1,0 +1,70 @@
+{
+    "database": "jairoads_scratch_reconciliation",
+    "host": "127.0.0.1",
+    "port": "55442",
+    "postgres": "PostgreSQL 17.11 (Ubuntu 17.11-1.pgdg24.04+2) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, 64-bit",
+    "source": "Unmodified frozen SQL fixture; migration class not executed",
+    "live_mutations": 0,
+    "checks": [
+        {
+            "check": "Concurrent unique-index build detects existing duplicate (SQLSTATE 23505)",
+            "result": "passed"
+        },
+        {
+            "check": "Failed build leaves invalid index to inspect",
+            "result": "passed"
+        },
+        {
+            "check": "Unique index attaches as validated constraint",
+            "result": "passed"
+        },
+        {
+            "check": "Independent duplicate INSERT rejected (SQLSTATE 23505)",
+            "result": "passed"
+        },
+        {
+            "check": "All four distinct quarters remain available",
+            "result": "passed"
+        },
+        {
+            "check": "UPDATE collision rejected without losing period (SQLSTATE 23505)",
+            "result": "passed"
+        },
+        {
+            "check": "Same quarter allowed next year",
+            "result": "passed"
+        },
+        {
+            "check": "Same period allowed on different project",
+            "result": "passed"
+        },
+        {
+            "check": "Competing connection waits on in-flight unique key (SQLSTATE 55P03)",
+            "result": "passed"
+        },
+        {
+            "check": "Competing retry rejected after winning commit (SQLSTATE 23505)",
+            "result": "passed"
+        },
+        {
+            "check": "Concurrent path leaves exactly one committed occurrence",
+            "result": "passed"
+        },
+        {
+            "check": "Copied live trigger rejects audit UPDATE (SQLSTATE 42501)",
+            "result": "passed"
+        },
+        {
+            "check": "Copied live trigger rejects audit DELETE (SQLSTATE 42501)",
+            "result": "passed"
+        },
+        {
+            "check": "Copied live trigger rejects audit TRUNCATE (SQLSTATE 42501)",
+            "result": "passed"
+        },
+        {
+            "check": "Copied live protection permits INSERT and retains row",
+            "result": "passed"
+        }
+    ]
+}

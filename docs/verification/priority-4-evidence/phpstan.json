@@ -1,0 +1,280 @@
+{
+  "totals": {
+    "errors": 0,
+    "file_errors": 36
+  },
+  "files": {
+    "app/Models/DataDictionary/Canonical/AuditLog.php": {
+      "errors": 2,
+      "messages": [
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\AuditLog::actor() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 22,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        },
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\AuditLog::recipient() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 27,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        }
+      ]
+    },
+    "app/Models/DataDictionary/Canonical/Engineer.php": {
+      "errors": 4,
+      "messages": [
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\Engineer::assignments() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 15,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        },
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\Engineer::account() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasOne does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 20,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        },
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\Engineer::createdRoadCoverages() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 25,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        },
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\Engineer::managedMaintenanceRecords() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 30,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        }
+      ]
+    },
+    "app/Models/DataDictionary/Canonical/EngineerLgu.php": {
+      "errors": 2,
+      "messages": [
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\EngineerLgu::engineer() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 24,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        },
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\EngineerLgu::lgu() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 29,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        }
+      ]
+    },
+    "app/Models/DataDictionary/Canonical/Lgu.php": {
+      "errors": 2,
+      "messages": [
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\Lgu::roadCoverages() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 14,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        },
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\Lgu::assignments() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 19,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        }
+      ]
+    },
+    "app/Models/DataDictionary/Canonical/MaintenanceDocument.php": {
+      "errors": 2,
+      "messages": [
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\MaintenanceDocument::maintenanceRecord() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 14,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        },
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\MaintenanceDocument::uploader() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 19,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        }
+      ]
+    },
+    "app/Models/DataDictionary/Canonical/MaintenanceProject.php": {
+      "errors": 3,
+      "messages": [
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\MaintenanceProject::roadCoverage() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 14,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        },
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\MaintenanceProject::creator() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 19,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        },
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\MaintenanceProject::maintenanceRecords() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 24,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        }
+      ]
+    },
+    "app/Models/DataDictionary/Canonical/MaintenanceRecord.php": {
+      "errors": 5,
+      "messages": [
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\MaintenanceRecord::project() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 24,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        },
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\MaintenanceRecord::managingEngineer() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 29,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        },
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\MaintenanceRecord::creator() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 34,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        },
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\MaintenanceRecord::monthlyUpdates() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 39,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        },
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\MaintenanceRecord::documents() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 44,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        }
+      ]
+    },
+    "app/Models/DataDictionary/Canonical/Media.php": {
+      "errors": 2,
+      "messages": [
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\Media::monthlyUpdate() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 14,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        },
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\Media::uploader() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 19,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        }
+      ]
+    },
+    "app/Models/DataDictionary/Canonical/MonthlyUpdate.php": {
+      "errors": 3,
+      "messages": [
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\MonthlyUpdate::maintenanceRecord() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 14,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        },
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\MonthlyUpdate::creator() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 19,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        },
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\MonthlyUpdate::media() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 24,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        }
+      ]
+    },
+    "app/Models/DataDictionary/Canonical/RoadCoverage.php": {
+      "errors": 3,
+      "messages": [
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\RoadCoverage::lgu() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 21,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        },
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\RoadCoverage::creatorEngineer() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 26,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        },
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\RoadCoverage::project() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasOne does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 31,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        }
+      ]
+    },
+    "app/Models/DataDictionary/Canonical/UserAccount.php": {
+      "errors": 8,
+      "messages": [
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\UserAccount::engineer() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 22,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        },
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\UserAccount::createdProjects() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 27,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        },
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\UserAccount::createdMaintenanceRecords() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 32,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        },
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\UserAccount::createdMonthlyUpdates() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 37,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        },
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\UserAccount::uploadedDocuments() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 42,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        },
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\UserAccount::uploadedMedia() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 47,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        },
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\UserAccount::auditEvents() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 52,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        },
+        {
+          "message": "Method App\\Models\\DataDictionary\\Canonical\\UserAccount::notifications() return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types: TRelatedModel, TDeclaringModel",
+          "line": 57,
+          "ignorable": true,
+          "identifier": "missingType.generics"
+        }
+      ]
+    }
+  },
+  "errors": []
+}

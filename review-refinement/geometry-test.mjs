@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {routeFeature,mappingData,distanceKm,validateCoverage} from '../resources/js/lib/road-coverages/geometry.mjs';
+const a=[125.96,7.60],b=[125.97,7.61],c=[125.98,7.62],ab=[a,[125.965,7.606],b],bc=[b,[125.974,7.615],c];
+const two=routeFeature([a,b],[ab]),three=routeFeature([a,b,c],[ab,bc]);
+assert.deepEqual(mappingData(two),{points:[a,b],legs:[ab]});
+assert.deepEqual(mappingData(three),{points:[a,b,c],legs:[ab,bc]});
+assert.equal(routeFeature([a,b,c],[ab]),null);assert.equal(routeFeature([a,a],[[a,b,a]]),null);
+assert.equal(mappingData({...two,geometry:{type:'LineString',coordinates:[a,b]}}),null);
+const values={road_name:'Boundary test',lgus_id:'1',pavement_type:'Concrete',state_category:'Good',kilometers:distanceKm(ab).toFixed(2),geojson:two};
+assert.deepEqual(validateCoverage(values,[{id:1}]),{});
+assert.ok(validateCoverage({...values,kilometers:'0'},[{id:1}]).kilometers);
+assert.ok(validateCoverage({...values,kilometers:'1.234'},[{id:1}]).kilometers);
+const legacy={type:'LineString',coordinates:ab};assert.deepEqual(validateCoverage({...values,geojson:legacy},[{id:1}],{geojson:legacy}),{});
+console.log('PASS: two/three location contract, original three-point compatibility, mismatched/missing/duplicate points rejected, distance measurement, positive/two-decimal kilometers, unchanged legacy retention.');

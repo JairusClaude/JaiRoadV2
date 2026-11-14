@@ -1,0 +1,7 @@
+{
+  "checks": [
+    "PASS Viewer Details has neither edit nor unsupported deletion",
+    "PASS Viewer directory create/edit disabled; keyboard title link still opens Details"
+  ],
+  "errors": []
+}

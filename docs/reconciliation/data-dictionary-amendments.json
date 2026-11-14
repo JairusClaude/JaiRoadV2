@@ -1,0 +1,229 @@
+{
+    "document_url": "https://docs.google.com/document/d/1WeaLeaOTvxMMsjce0Ec50VNMz0_2Psf5soC-dmbVcbA",
+    "revision_before": "AHj4eMSt5zva3u4Gn_hLJekZ-Ow9ZwgRFbOubTqsi9Yslc-xkf1PuXSE_ajn_SIYmgaEmQSL3_MP14nXCvGV3EoUtjy5l04k6iBRrTZQs8M",
+    "status": "applied_and_readback_verified",
+    "revision_after": "AHj4eMRAHupzYyxxuE0DM3Zv2ev0ErnupGv4UCv9pjVsbEYLPbuTWrV5wvt7F2eTTvKpUAC64XdHC7DmDW12D4k1mH9-vnzOqvEX3e83Vzk",
+    "paragraphs_verified": 2579,
+    "approved_paragraphs_changed": 30,
+    "unchanged_paragraphs": 2549,
+    "native_structure": {
+        "tables": 49,
+        "rows": 447,
+        "cells": 2526,
+        "paragraphs": 3036
+    },
+    "tabs_verified": 15,
+    "scope": "Only user-confirmed Task 3 Part A policies; pending decisions unchanged",
+    "edits": [
+        {
+            "paragraph_index": 10,
+            "tab_id": "t.0",
+            "start_index": 1356,
+            "old_text": "Linkage: Admin and Engineer accounts must link to an Engineer profile, whereas SuperAdmin and Viewer accounts do not.",
+            "new_text": "Linkage: New Admin and Engineer accounts require an Active Engineer profile that is not linked to another UserAccount, including an inactive account. Existing unlinked Admin accounts remain temporarily supported; do not backfill or delete them automatically. EngineerID remains nullable for that compatibility and for SuperAdmin/Viewer, and unique when present."
+        },
+        {
+            "paragraph_index": 92,
+            "tab_id": "t.0",
+            "start_index": 5209,
+            "old_text": "An Engineer may have at most one UserAccount. UserAccount.EngineerID is nullable at the database level, but under the current working authorization rule it is required for Admin and Engineer accounts and remains NULL for SuperAdmin and Viewer accounts.",
+            "new_text": "An Engineer may have at most one UserAccount. New Admin and Engineer accounts require an Active Engineer profile that is not linked to another UserAccount, including an inactive account. Existing unlinked Admin accounts remain temporarily supported; do not backfill or delete them automatically. EngineerID remains nullable for that compatibility and for SuperAdmin/Viewer, and unique when present."
+        },
+        {
+            "paragraph_index": 147,
+            "tab_id": "t.0",
+            "start_index": 9108,
+            "old_text": "EngineerID → Engineer.EngineerID when the account type requires an Engineer; NULL for Viewer and SuperAdmin.",
+            "new_text": "EngineerID → Engineer.EngineerID for newly provisioned Admin/Engineer accounts. Existing unlinked Admin compatibility is retained; NULL for Viewer and SuperAdmin."
+        },
+        {
+            "paragraph_index": 158,
+            "tab_id": "t.0",
+            "start_index": 9919,
+            "old_text": "AccountType currently = SuperAdmin, Admin, Engineer, Viewer.",
+            "new_text": "Account Type controls account permissions and uses SuperAdmin, Admin, Engineer or Viewer. Engineer Rank is a separate professional attribute and never grants account permissions; do not label Account Type as Position."
+        },
+        {
+            "paragraph_index": 161,
+            "tab_id": "t.0",
+            "start_index": 10078,
+            "old_text": "EngineerID is nullable and unique when present.",
+            "new_text": "EngineerID is nullable and unique when present. New Admin and Engineer accounts require an Active Engineer profile that is not linked to another UserAccount, including an inactive account. Existing unlinked Admin accounts remain temporarily supported; do not backfill or delete them automatically. EngineerID remains nullable for that compatibility and for SuperAdmin/Viewer, and unique when present."
+        },
+        {
+            "paragraph_index": 180,
+            "tab_id": "t.0",
+            "start_index": 11542,
+            "old_text": "A project is created after a RoadCoverage exists and is selected. The project and its descriptive information may be updated over time while MaintenanceRecords capture individual maintenance periods.",
+            "new_text": "A project is created after a RoadCoverage exists and is selected. The project and its descriptive information may be updated over time while MaintenanceRecords capture individual maintenance periods. The municipality is inherited from the selected RoadCoverage; the long-term project has no project-level maintenance dates or lifecycle status."
+        },
+        {
+            "paragraph_index": 206,
+            "tab_id": "t.0",
+            "start_index": 13392,
+            "old_text": "Quarter = Q1, Q2, Q3, or Q4.",
+            "new_text": "An authorized Engineer may select any available Q1, Q2, Q3 or Q4. Fixed Q1/Q3 or Q2/Q4 pairing is not mandatory. Duplicate ProjectID + MaintenanceYear + Quarter entries are prohibited; no requirement exists to create all four quarters or to create future placeholder records."
+        },
+        {
+            "paragraph_index": 208,
+            "tab_id": "t.0",
+            "start_index": 13479,
+            "old_text": "Proposed: one MaintenanceRecord per ProjectID + MaintenanceYear + Quarter. UNIQUE is recommended and pending team/client confirmation.",
+            "new_text": "Confirmed business rule: at most one MaintenanceRecord per ProjectID + MaintenanceYear + Quarter. The schema teammate must review and apply the corresponding UNIQUE safeguard separately after duplicate checks; this document does not authorize database execution."
+        },
+        {
+            "paragraph_index": 394,
+            "tab_id": "t.0",
+            "start_index": 20789,
+            "old_text": "Engineer rank used by the organization.",
+            "new_text": "Engineer professional Rank used by the organization. Rank does not determine Account Type or permissions; active Data Dictionary Engineer forms use Rank, not Position."
+        },
+        {
+            "paragraph_index": 515,
+            "tab_id": "t.0",
+            "start_index": 23121,
+            "old_text": "Optional link to the Engineer identity for account types that represent Engineers.",
+            "new_text": "Engineer identity link for newly provisioned Admin/Engineer accounts; nullable for the approved existing unlinked Admin compatibility and for SuperAdmin/Viewer."
+        },
+        {
+            "paragraph_index": 522,
+            "tab_id": "t.0",
+            "start_index": 23246,
+            "old_text": "Required for Admin and Engineer accounts; NULL for Viewer and SuperAdmin. At most one UserAccount per Engineer.",
+            "new_text": "New Admin and Engineer accounts require an Active Engineer profile that is not linked to another UserAccount, including an inactive account. Existing unlinked Admin accounts remain temporarily supported; do not backfill or delete them automatically. EngineerID remains nullable for that compatibility and for SuperAdmin/Viewer, and unique when present."
+        },
+        {
+            "paragraph_index": 548,
+            "tab_id": "t.0",
+            "start_index": 23982,
+            "old_text": "EngineerID is required for Admin and Engineer account types, but NULL for Viewer and SuperAdmin.",
+            "new_text": "New Admin and Engineer accounts require an Active Engineer profile that is not linked to another UserAccount, including an inactive account. Existing unlinked Admin accounts remain temporarily supported; do not backfill or delete them automatically. EngineerID remains nullable for that compatibility and for SuperAdmin/Viewer, and unique when present."
+        },
+        {
+            "paragraph_index": 820,
+            "tab_id": "t.0",
+            "start_index": 30237,
+            "old_text": "UNIQUE(ProjectID, MaintenanceYear, Quarter) is recommended to prevent duplicate quarterly records; pending team/client confirmation.",
+            "new_text": "Required business uniqueness: ProjectID + MaintenanceYear + Quarter. A physical UNIQUE constraint is recommended for schema-owner implementation after duplicate preflight; no database change is performed by this revision."
+        },
+        {
+            "paragraph_index": 826,
+            "tab_id": "t.0",
+            "start_index": 31037,
+            "old_text": "Whether all four quarters must exist every year is TBD.",
+            "new_text": "An authorized Engineer may select any available Q1, Q2, Q3 or Q4. Fixed Q1/Q3 or Q2/Q4 pairing is not mandatory. Duplicate ProjectID + MaintenanceYear + Quarter entries are prohibited; no requirement exists to create all four quarters or to create future placeholder records."
+        },
+        {
+            "paragraph_index": 1203,
+            "tab_id": "t.0",
+            "start_index": 39121,
+            "old_text": "Viewer is treated as a guest/view-only account and is not linked to an Engineer in the current design. SuperAdmin accounts are also independent of Engineer records and represent the system creators/maintainers. Admin accounts remain associated with Engineers.",
+            "new_text": "Viewer is treated as a guest/view-only account and is not linked to an Engineer in the current design. SuperAdmin accounts are also independent of Engineer records and represent the system creators/maintainers. New Admin accounts require an Active, available Engineer profile; existing unlinked Admin accounts remain temporarily permitted. A linked Admin may manage their own MaintenanceRecord only with an Active Engineer profile and active EngineerLGU authorization for its RoadCoverage municipality."
+        },
+        {
+            "paragraph_index": 1217,
+            "tab_id": "t.0",
+            "start_index": 40839,
+            "old_text": "Quarter completeness",
+            "new_text": "Quarter selection and uniqueness"
+        },
+        {
+            "paragraph_index": 1218,
+            "tab_id": "t.0",
+            "start_index": 40861,
+            "old_text": "TBD",
+            "new_text": "Confirmed business rule; schema implementation pending"
+        },
+        {
+            "paragraph_index": 1219,
+            "tab_id": "t.0",
+            "start_index": 40866,
+            "old_text": "Confirm whether UNIQUE(ProjectID, MaintenanceYear, Quarter) is mandatory and whether every year must contain all four quarters. Current recommendation: prevent duplicate records for a quarter without requiring all four quarters.",
+            "new_text": "An authorized Engineer may select any available Q1, Q2, Q3 or Q4. Fixed Q1/Q3 or Q2/Q4 pairing is not mandatory. Duplicate ProjectID + MaintenanceYear + Quarter entries are prohibited; no requirement exists to create all four quarters or to create future placeholder records. Physical constraint execution remains the schema teammate's separately approved responsibility."
+        },
+        {
+            "paragraph_index": 1269,
+            "tab_id": "t.0",
+            "start_index": 44229,
+            "old_text": "Whether every year requires all four quarterly MaintenanceRecords.",
+            "new_text": "Resolved 2026-10-27: An authorized Engineer may select any available Q1, Q2, Q3 or Q4. Fixed Q1/Q3 or Q2/Q4 pairing is not mandatory. Duplicate ProjectID + MaintenanceYear + Quarter entries are prohibited; no requirement exists to create all four quarters or to create future placeholder records."
+        },
+        {
+            "paragraph_index": 1275,
+            "tab_id": "t.0",
+            "start_index": 44749,
+            "old_text": "End of Draft. This document is intended to be reviewed by the JaiROADS development team and then updated after client confirmation of the remaining TBD items.",
+            "new_text": "End of Draft. This document is intended to be reviewed by the JaiROADS development team and then updated after client confirmation of the remaining TBD items. Revision note — 2026-10-27, user-approved Task 3 policy synchronization: free available-quarter selection replaces mandatory pairing; project/year/quarter duplicates are prohibited without requiring all four periods; new Admin/Engineer accounts require an Active available Engineer, with existing unlinked Admin compatibility; eligible linked Admin self-management, Account Type/Rank separation, RoadCoverage-derived municipality and Ongoing/Completed status are preserved. Only these approved policies are synchronized. Deletion/retention, previous-update cutoff, file limits, auditing replacement and notification decisions remain unresolved. No live database change is authorized."
+        },
+        {
+            "paragraph_index": 1948,
+            "tab_id": "t.fhor7lvsrksp",
+            "start_index": 1335,
+            "old_text": "Current values: SuperAdmin, Admin, Engineer, Viewer.",
+            "new_text": "Account Type: SuperAdmin, Admin, Engineer or Viewer. It controls permissions independently of Engineer Rank."
+        },
+        {
+            "paragraph_index": 1952,
+            "tab_id": "t.fhor7lvsrksp",
+            "start_index": 1435,
+            "old_text": "Nullable. Admin and Engineer accounts are linked; SuperAdmin and Viewer are currently unlinked.",
+            "new_text": "New Admin and Engineer accounts require an Active Engineer profile that is not linked to another UserAccount, including an inactive account. Existing unlinked Admin accounts remain temporarily supported; do not backfill or delete them automatically. EngineerID remains nullable for that compatibility and for SuperAdmin/Viewer, and unique when present."
+        },
+        {
+            "paragraph_index": 1996,
+            "tab_id": "t.fhor7lvsrksp",
+            "start_index": 2713,
+            "old_text": "Engineer assigned to manage and update this MaintenanceRecord. Only their linked Engineer UserAccount can edit the activity, subject to applicable authorization; Admin/SuperAdmin can override. CreatedBy/UploadedBy indicate actors, not ownership. Assignment-based project views use the current ManagingEngineerID; prior assignments belong in AuditLog history.",
+            "new_text": "Engineer assigned to manage and update this MaintenanceRecord. Only their linked Engineer UserAccount can edit the activity, subject to applicable authorization; Admin/SuperAdmin can override. CreatedBy/UploadedBy indicate actors, not ownership. Assignment-based project views use the current ManagingEngineerID; prior assignments belong in AuditLog history. A linked Admin may select themselves as manager only when their Engineer profile is Active and has an active EngineerLGU assignment for the project's municipality."
+        },
+        {
+            "paragraph_index": 2004,
+            "tab_id": "t.fhor7lvsrksp",
+            "start_index": 3213,
+            "old_text": "Q1, Q2, Q3, or Q4.",
+            "new_text": "An authorized Engineer may select any available Q1, Q2, Q3 or Q4. Fixed Q1/Q3 or Q2/Q4 pairing is not mandatory. Duplicate ProjectID + MaintenanceYear + Quarter entries are prohibited; no requirement exists to create all four quarters or to create future placeholder records."
+        },
+        {
+            "paragraph_index": 2008,
+            "tab_id": "t.fhor7lvsrksp",
+            "start_index": 3316,
+            "old_text": "Recommended UNIQUE(ProjectID, MaintenanceYear, Quarter) to prevent duplicates. Pending confirmation; this does not require all four quarters to exist.",
+            "new_text": "Required business rule: no duplicate ProjectID + MaintenanceYear + Quarter. Recommend UNIQUE(project_id, maintenance_year, quarter) for separate schema-owner review and execution. An authorized Engineer may select any available Q1, Q2, Q3 or Q4. Fixed Q1/Q3 or Q2/Q4 pairing is not mandatory. Duplicate ProjectID + MaintenanceYear + Quarter entries are prohibited; no requirement exists to create all four quarters or to create future placeholder records."
+        },
+        {
+            "paragraph_index": 2009,
+            "tab_id": "t.fhor7lvsrksp",
+            "start_index": 3468,
+            "old_text": "Recommended database constraint",
+            "new_text": "Approved business rule; proposed database implementation"
+        },
+        {
+            "paragraph_index": 2308,
+            "tab_id": "t.mmkhx5r0gkba",
+            "start_index": 2818,
+            "old_text": "Administrative access to ordinary system entities. Admin is linked to Engineer. Admin/SuperAdmin handle User Management, Engineer information, LGU records, and EngineerLGU assignments. Referenced UserAccounts are deactivated through IsActive = FALSE rather than hard-deleted.",
+            "new_text": "Administrative access to ordinary system entities. New Admin accounts require an Active, available Engineer profile. Existing unlinked Admin accounts remain temporarily supported. An Admin may manage their own record only with valid Active profile/LGU eligibility. Admin/SuperAdmin handle User Management, Engineer information, LGU records, and EngineerLGU assignments. Referenced UserAccounts are deactivated through IsActive = FALSE rather than hard-deleted."
+        },
+        {
+            "paragraph_index": 2328,
+            "tab_id": "t.xds4rxz6hx2m",
+            "start_index": 648,
+            "old_text": "After a RoadCoverage exists, the creator selects/fetches it and creates the MaintenanceProject. For an Engineer account, Create/Update is allowed when that Engineer has an active EngineerLGU assignment to the LGU referenced by the selected RoadCoverage. Working title: Place-Place-Place Maintenance Project.",
+            "new_text": "After a RoadCoverage exists, the creator selects/fetches it and creates the MaintenanceProject. For an Engineer account, Create/Update is allowed when that Engineer has an active EngineerLGU assignment to the LGU referenced by the selected RoadCoverage. Working title: Place-Place-Place Maintenance Project. The Engineer UserAccount and linked Engineer profile must also be Active. Admin/SuperAdmin may create a project without assigning a manager; municipality comes from RoadCoverage, and manager assignment belongs to each MaintenanceRecord."
+        },
+        {
+            "paragraph_index": 2332,
+            "tab_id": "t.xds4rxz6hx2m",
+            "start_index": 1242,
+            "old_text": "A MaintenanceProject may have multiple MaintenanceRecords across years and quarters. Each stores its responsible ManagingEngineer, quarter, dates, duration, status and description. One record per project/year/quarter is recommended, pending confirmation; this does not require all four quarters. CompleteDate is required for Completed and must be on/after StartDate; reopening clears it and is audited. Only the assigned Engineer may edit; Admin/SuperAdmin may override.",
+            "new_text": "A MaintenanceProject may have multiple MaintenanceRecords across years and quarters. An authorized Engineer may select any available Q1, Q2, Q3 or Q4. Fixed Q1/Q3 or Q2/Q4 pairing is not mandatory. Duplicate ProjectID + MaintenanceYear + Quarter entries are prohibited; no requirement exists to create all four quarters or to create future placeholder records. Each record stores its current ManagingEngineer, quarter, dates, positive estimated duration, description and status Ongoing or Completed. CompleteDate is required for Completed and must be on/after StartDate; reopening clears it and is audited. The assigned Engineer may edit subject to active account/profile/LGU authorization; Admin/SuperAdmin may override. A properly linked and LGU-authorized Admin may manage their own record."
+        },
+        {
+            "paragraph_index": 2336,
+            "tab_id": "t.xds4rxz6hx2m",
+            "start_index": 1914,
+            "old_text": "MonthlyUpdate belongs to MaintenanceRecord, not directly to MaintenanceProject. UpdateMonth uses YYYY-MM. The current confirmed data rule allows at most one update for the same MaintenanceRecord and month, enforced by UNIQUE(MaintenanceID, UpdateMonth).",
+            "new_text": "MonthlyUpdate belongs to MaintenanceRecord, not directly to MaintenanceProject. UpdateMonth uses YYYY-MM. The current confirmed data rule allows at most one update for the same MaintenanceRecord and month, enforced by UNIQUE(MaintenanceID, UpdateMonth). Quarterly MaintenanceRecords and MonthlyUpdates are distinct: choosing a quarter does not create MonthlyUpdates, and monthly reports do not satisfy or create quarterly maintenance occurrences."
+        }
+    ]
+}

@@ -1,0 +1,408 @@
+name: JaiROADS disposable staging rehearsal
+
+on:
+  pull_request:
+  push:
+    branches:
+      - fix/disposable-staging-rehearsal
+      - fix/staging-restricted-runtime-role
+      - fix/superadmin-recovery-readiness
+      - fix/atomic-security-schema-rehearsal
+      - fix/reviewed-account-transition-readiness
+      - fix/optional-feature-schema-rehearsal
+      - fix/isolated-integration-readiness
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  auxiliary-schema:
+    name: staging / auxiliary schema + restricted RLS
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: jairoads_scratch_staging_host
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d jairoads_scratch_staging_host"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: testing
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DB_DATABASE: jairoads_scratch_staging_host
+      DB_USERNAME: postgres
+      DB_PASSWORD: disposable-ci-only
+      DB_SSLMODE: disable
+      DB_URL: ''
+      JAIROADS_SCRATCH_APPROVAL: DISPOSABLE_LOCAL_ONLY
+    steps:
+      - name: Checkout review branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Install PostgreSQL client if absent
+        run: |
+          if ! command -v psql >/dev/null || ! command -v createdb >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y postgresql-client
+          fi
+      - name: Rehearse fresh and pre-protected canonical AuditLog schemas
+        run: bash tests/Staging/rehearse-auxiliary.sh
+      - name: Verify owner-reviewed transition is not forgeable by application role
+        run: |
+          set -euo pipefail
+          export PGHOST="$DB_HOST" PGPORT="$DB_PORT" PGUSER="$DB_USERNAME"
+          export PGPASSWORD="$DB_PASSWORD" PGSSLMODE=disable
+          psql -X -v ON_ERROR_STOP=1 -d jairoads_scratch_staging_existing -f tests/Staging/rehearse-reviewed-transitions.sql >/dev/null
+          echo "PASS: only schema owner can write reviewed historical transition evidence"
+      - name: Rehearse migration rollback and atomic restricted-role event delivery
+        run: bash tests/Staging/rehearse-atomic-migrations.sh
+      - name: Restore a real PG17 custom archive and verify immutable canonical history
+        run: bash tests/Staging/rehearse-backup-restore.sh
+      - name: Verify read-only release SQL inventory remains NO GO on disposable staging
+        run: |
+          set -euo pipefail
+          export PGHOST="$DB_HOST" PGPORT="$DB_PORT" PGUSER="$DB_USERNAME"
+          export PGPASSWORD="$DB_PASSWORD" PGSSLMODE=disable
+          psql -X -qAt -v ON_ERROR_STOP=1 -d jairoads_scratch_staging_existing \
+            -f database/preflight/release_readonly.sql \
+            | python3 -c 'import json,sys; r=json.load(sys.stdin); c=r["checks"]; assert r["source"]=="read_only_postgresql_catalog"; assert c["postgres17"]; assert c["provenance_table_present"]; assert c["notification_recipients_present"]; assert c["audit_mutation_and_truncate_guards"]; assert not c["restricted_runtime_login_present"]; assert not c["file_deletion_intents_present"]; print("PASS: read-only inventory accurately flags unapproved disposable staging gaps")'
+      - name: Verify automatic RLS remains active after revoking public function EXECUTE
+        run: |
+          set -euo pipefail
+          export PGHOST="$DB_HOST" PGPORT="$DB_PORT" PGUSER="$DB_USERNAME"
+          export PGPASSWORD="$DB_PASSWORD" PGSSLMODE=disable
+          psql -X -v ON_ERROR_STOP=1 -d "$DB_DATABASE" -f tests/Staging/auto-rls-public-execute-probe.sql >/dev/null
+          echo "PASS: API roles cannot execute auto-RLS callback; event trigger still enables RLS"
+
+  application-smoke:
+    name: staging / disposable Laravel HTTP smoke
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: jairoads_scratch_staging_app
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d jairoads_scratch_staging_app"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+      APP_KEY: base64:MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
+      APP_URL: http://127.0.0.1:8015
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DB_DATABASE: jairoads_scratch_staging_app
+      DB_USERNAME: postgres
+      DB_PASSWORD: disposable-ci-only
+      DB_SSLMODE: disable
+      DB_URL: ''
+      JAIROADS_SCRATCH_APPROVAL: DISPOSABLE_LOCAL_ONLY
+      CACHE_STORE: array
+      SESSION_DRIVER: file
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: array
+      BCRYPT_ROUNDS: '4'
+      PAO_DISABLE: '1'
+      SUPABASE_URL: http://127.0.0.1:5799
+      SUPABASE_SECRET_KEY: disposable-storage-only
+      SUPABASE_SERVICE_ROLE_KEY: disposable-storage-only
+      QUARTERLY_BROWSER_FIXTURE: /tmp/jairoads-staging-fixture.json
+    steps:
+      - name: Checkout review branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with:
+          php-version: '8.4'
+          extensions: 'pdo_pgsql, mbstring'
+          tools: composer:v2
+          coverage: none
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Build app and install synthetic fixtures only
+        run: |
+          composer install --no-interaction --prefer-dist
+          npm ci
+          touch .env
+          npm run build
+          php tests/Browser/prepare-unified.php > "$QUARTERLY_BROWSER_FIXTURE"
+      - name: Install PostgreSQL client for restricted-role verification
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y postgresql-client
+          fi
+      - name: Create temporary non-owner LOGIN role and limited RLS grants
+        run: bash tests/Staging/prepare-restricted-runtime.sh
+      - name: Verify Laravel auth, real business write and notifications as restricted role
+        run: |
+          set -euo pipefail
+          export DB_USERNAME=jairoads_app_runtime
+          export DB_PASSWORD="$JAIROADS_RUNTIME_TEST_PASSWORD"
+          php artisan serve --host=127.0.0.1 --port=8015 --no-reload > /tmp/jairoads-staging-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          ready=0
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent "http://127.0.0.1:8015/up" >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" -ne 1 ]; then
+            tail -n 80 /tmp/jairoads-staging-server.log
+            exit 1
+          fi
+          python3 tests/Release/readonly-http-cutover-smoke.py
+          python3 tests/Staging/restricted-auth-http-smoke.py
+          export PGHOST=127.0.0.1 PGPORT=5432 PGUSER=jairoads_app_runtime
+          export PGPASSWORD="$JAIROADS_RUNTIME_TEST_PASSWORD" PGSSLMODE=disable
+          counts="$(psql -X -v ON_ERROR_STOP=1 -Atq -d "$DB_DATABASE" <<'SQL'
+          WITH matching AS (
+            SELECT id FROM jairoads_next.audit_logs
+            WHERE entity_type='LGU' AND action='CREATE'
+              AND description='Authorized administrator created an LGU.'
+          )
+          SELECT (SELECT count(*) FROM matching) || '|' ||
+                 (SELECT count(DISTINCT recipient_user_id)
+                    FROM jairoads_next.audit_notification_recipients
+                   WHERE audit_log_id IN (SELECT id FROM matching));
+          SQL
+          )"
+          IFS='|' read -r events recipients <<< "$counts"
+          if [[ "$events" != '1' || "$recipients" -lt 2 ]]; then
+            echo "Expected one LGU event and at least two eligible unique recipients." >&2
+            exit 1
+          fi
+          echo "PASS: one audited business event and $recipients eligible deliveries committed with restricted DB access"
+
+  superadmin-recovery:
+    name: staging / SuperAdmin recovery and last-root guard
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: jairoads_scratch_superadmin_recovery
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d jairoads_scratch_superadmin_recovery"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+      APP_KEY: base64:MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
+      APP_URL: http://localhost
+      DB_CONNECTION: pgsql
+      DB_URL: ''
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DB_DATABASE: jairoads_scratch_superadmin_recovery
+      DB_USERNAME: postgres
+      DB_PASSWORD: disposable-ci-only
+      DB_SSLMODE: disable
+      SESSION_DRIVER: array
+      CACHE_STORE: array
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: array
+      BCRYPT_ROUNDS: '4'
+      PAO_DISABLE: '1'
+      JAIROADS_SCRATCH_APPROVAL: DISPOSABLE_LOCAL_ONLY
+    steps:
+      - name: Checkout review branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with:
+          php-version: '8.4'
+          extensions: 'pdo_pgsql, mbstring'
+          tools: composer:v2
+          coverage: none
+      - name: Install dependencies without shared migrations
+        run: |
+          composer install --no-interaction --prefer-dist
+          touch .env
+      - name: Test recovery, last eligible root, MFA and passkey revocation on disposable PostgreSQL
+        run: php artisan test tests/Quarterly/SuperAdminRecoveryReadinessTest.php --stop-on-failure
+
+  reviewed-account-transition:
+    name: staging / approved ordinary-account transition
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: jairoads_scratch_account_transition
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d jairoads_scratch_account_transition"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+      APP_KEY: base64:MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
+      APP_URL: http://localhost
+      DB_CONNECTION: pgsql
+      DB_URL: ''
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DB_DATABASE: jairoads_scratch_account_transition
+      DB_USERNAME: postgres
+      DB_PASSWORD: disposable-ci-only
+      DB_SSLMODE: disable
+      SESSION_DRIVER: array
+      CACHE_STORE: array
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: array
+      BCRYPT_ROUNDS: '4'
+      PAO_DISABLE: '1'
+      JAIROADS_SCRATCH_APPROVAL: DISPOSABLE_LOCAL_ONLY
+    steps:
+      - name: Checkout review branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with:
+          php-version: '8.4'
+          extensions: 'pdo_pgsql, mbstring'
+          tools: composer:v2
+          coverage: none
+      - name: Install dependencies without shared migrations
+        run: |
+          composer install --no-interaction --prefer-dist
+          touch .env
+      - name: Test synthetic approved transition and identifier-free read-only preflight
+        run: php artisan test tests/Quarterly/ReviewedAccountTransitionTest.php --stop-on-failure
+
+  optional-schema:
+    name: staging / file intents, strict-DD preservation guard and period uniqueness
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: jairoads_scratch_optional_features
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d jairoads_scratch_optional_features"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+      APP_KEY: base64:MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
+      APP_URL: http://localhost
+      DB_CONNECTION: pgsql
+      DB_URL: ''
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DB_DATABASE: jairoads_scratch_optional_features
+      DB_USERNAME: postgres
+      DB_PASSWORD: disposable-ci-only
+      DB_SSLMODE: disable
+      SESSION_DRIVER: array
+      CACHE_STORE: array
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: array
+      BCRYPT_ROUNDS: '4'
+      PAO_DISABLE: '1'
+      JAIROADS_SCRATCH_APPROVAL: DISPOSABLE_LOCAL_ONLY
+    steps:
+      - name: Checkout review branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with:
+          php-version: '8.4'
+          extensions: 'pdo_pgsql, mbstring'
+          tools: composer:v2
+          coverage: none
+      - name: Install dependencies without any shared migration
+        run: |
+          composer install --no-interaction --prefer-dist
+          touch .env
+      - name: Test isolated optional schema and canonical period uniqueness
+        run: php artisan test tests/Quarterly/OptionalSchemaActivationTest.php --stop-on-failure
+
+  integration-readiness:
+    name: staging / private Storage, mail, passkey and map configuration
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: jairoads_scratch_integrations
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d jairoads_scratch_integrations"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+      APP_KEY: base64:MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
+      APP_URL: http://localhost
+      DB_CONNECTION: pgsql
+      DB_URL: ''
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DB_DATABASE: jairoads_scratch_integrations
+      DB_USERNAME: postgres
+      DB_PASSWORD: disposable-ci-only
+      DB_SSLMODE: disable
+      SESSION_DRIVER: array
+      CACHE_STORE: array
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: array
+      BCRYPT_ROUNDS: '4'
+      PAO_DISABLE: '1'
+      JAIROADS_SCRATCH_APPROVAL: DISPOSABLE_LOCAL_ONLY
+    steps:
+      - name: Checkout review branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with:
+          php-version: '8.4'
+          extensions: 'pdo_pgsql, mbstring'
+          tools: composer:v2
+          coverage: none
+      - name: Install dependencies without shared migrations
+        run: |
+          composer install --no-interaction --prefer-dist
+          touch .env
+      - name: Verify secret-free integration preflight and private Storage boundaries
+        run: php artisan test tests/Quarterly/IntegrationDeploymentReadinessTest.php tests/Quarterly/IntegrationCompatibilityTest.php tests/Quarterly/PasskeyEligibilityTest.php --stop-on-failure

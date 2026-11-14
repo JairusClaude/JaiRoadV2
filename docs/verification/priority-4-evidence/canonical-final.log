@@ -1,0 +1,145 @@
+
+   PASS  Tests\Quarterly\AccountLifecycleTest
+  ✓ deactivate reactivate preserves credentials identity and history wi… 0.31s  
+  ✓ deactivate reactivate preserves credentials identity and history wi… 0.08s  
+  ✓ deactivate reactivate preserves credentials identity and history wi… 0.06s  
+  ✓ deactivate reactivate preserves credentials identity and history wi… 0.08s  
+  ✓ account status changes preserve creator uploader and audit history   0.10s  
+  ✓ self lockout last superadmin and privilege changes are blocked       0.05s  
+  ✓ ineligible reactivation fails without changing credentials with dat… 0.04s  
+  ✓ ineligible reactivation fails without changing credentials with dat… 0.04s  
+  ✓ ineligible reactivation fails without changing credentials with dat… 0.04s  
+  ✓ ineligible reactivation fails without changing credentials with dat… 0.04s  
+  ✓ ineligible reactivation fails without changing credentials with dat… 0.04s  
+  ✓ existing session is denied after deactivation and administration re… 0.09s  
+  ✓ status rolls back on audit failure and unknown account is not found  0.06s  
+
+   PASS  Tests\Quarterly\AccountLinkagePolicyTest
+  ✓ new admin and engineer accounts require explicit active unused link… 0.16s  
+  ✓ new admin and engineer accounts require explicit active unused link… 0.07s  
+  ✓ new admin and engineer accounts require explicit active unused link… 0.06s  
+  ✓ new admin and engineer accounts require explicit active unused link… 0.06s  
+  ✓ invalid or already linked profiles never provision an identity with… 0.08s  
+  ✓ invalid or already linked profiles never provision an identity with… 0.05s  
+  ✓ invalid or already linked profiles never provision an identity with… 0.05s  
+  ✓ invalid or already linked profiles never provision an identity with… 0.06s  
+  ✓ viewer is unlinked and ordinary creation cannot escalate to superad… 0.07s  
+  ✓ available profiles are filtered against all accounts not the limite… 0.10s  
+  ✓ existing unlinked admin can login create projects and choose only r… 0.12s  
+  ✓ provisioning and fortify identity roll back when audit insert fails  0.07s  
+  ✓ new linked admin keeps admin type and can manage their own eligible… 0.13s  
+
+   PASS  Tests\Quarterly\AccountTypeRankTest
+  ✓ engineer creation requires rank and accepts no position              0.18s  
+  ✓ account creation uses canonical account type and preserves credenti… 0.08s  
+  ✓ account creation uses canonical account type and preserves credenti… 0.04s  
+  ✓ account creation uses canonical account type and preserves credenti… 0.04s  
+  ✓ position or rank cannot substitute for account type or grant supera… 0.04s  
+  ✓ rank changes do not change account type links passwords or capabili… 0.06s  
+  ✓ user directory exposes canonical types and rank without legacy posi… 0.04s  
+  ✓ dd navigation redirects legacy directory and blocks legacy position… 0.03s  
+
+   PASS  Tests\Quarterly\ConcurrentPeriodTest
+  ✓ two competing http requests commit one period                        0.32s  
+
+   PASS  Tests\Quarterly\EngineerLifecycleTest
+  ✓ profile edit changes only professional fields with data set #0       0.05s  
+  ✓ profile edit changes only professional fields with data set #1       0.04s  
+  ✓ retirement deactivates links preserves history and revokes existing… 0.08s  
+  ✓ linked admin retirement is atomic and self retirement is blocked     0.04s  
+  ✓ another admin can retire a linked admin without removing their iden… 0.05s  
+  ✓ nonadministrators and invalid profiles cannot mutate                 0.05s  
+
+   PASS  Tests\Quarterly\FileRemovalPreparationTest
+  ✓ review is non destructive safe and administrative only with data se… 0.21s  
+  ✓ review is non destructive safe and administrative only with data se… 0.06s  
+  ✓ invalid file access checks parent scope before private storage       0.09s  
+  ✓ existing private download and storage failure do not delete metadat… 0.07s  
+
+   PASS  Tests\Quarterly\FullMaintenanceWorkflowTest
+  ✓ engineer completes the canonical road to private supporting files w… 0.20s  
+  ✓ audit failure after private upload rolls back metadata and compensa… 0.06s  
+  ✓ audit failure after private upload rolls back metadata and compensa… 0.06s  
+  ✓ upload losing authorization during storage io cannot commit with da… 0.06s  
+  ✓ upload losing authorization during storage io cannot commit with da… 0.06s  
+  ✓ upload losing authorization during storage io cannot commit with da… 0.08s  
+  ✓ upload losing authorization during storage io cannot commit with da… 0.06s  
+  ✓ upload losing authorization during storage io cannot commit with da… 0.06s  
+  ✓ upload losing authorization during storage io cannot commit with da… 0.06s  
+
+   PASS  Tests\Quarterly\IntegrationCompatibilityTest
+  ✓ dd settings keep both password hashes synchronized and preserve ide… 0.10s  
+  ✓ fortify password reset keeps both hashes synchronized and new login… 0.29s  
+  ✓ audit insert failure rolls back the integrated business mutation wi… 0.04s  
+  ✓ audit insert failure rolls back the integrated business mutation wi… 0.04s  
+  ✓ audit insert failure rolls back the integrated business mutation wi… 0.05s  
+  ✓ period edits preserve road attachments historical events and canoni… 0.06s  
+  ✓ monthly updates keep their own monthly uniqueness and parent when a… 0.08s  
+
+   PASS  Tests\Quarterly\MaintenanceBehaviorTest
+  ✓ engineer can choose any first quarter and reuse it next year with d… 0.08s  
+  ✓ engineer can choose any first quarter and reuse it next year with d… 0.05s  
+  ✓ engineer can choose any first quarter and reuse it next year with d… 0.05s  
+  ✓ engineer can choose any first quarter and reuse it next year with d… 0.05s  
+  ✓ invalid record never writes business or audit with data set "differ… 0.05s  
+  ✓ invalid record never writes business or audit with data set "differ… 0.04s  
+  ✓ invalid record never writes business or audit with data set "invali… 0.03s  
+  ✓ invalid record never writes business or audit with data set "zero d… 0.05s  
+  ✓ invalid record never writes business or audit with data set "negati… 0.04s  
+  ✓ invalid record never writes business or audit with data set "fracti… 0.03s  
+  ✓ invalid record never writes business or audit with data set "comple… 0.04s  
+  ✓ invalid record never writes business or audit with data set "ongoin… 0.04s  
+  ✓ invalid record never writes business or audit with data set "comple… 0.03s  
+  ✓ invalid record never writes business or audit with data set "planne… 0.03s  
+  ✓ invalid record never writes business or audit with data set "manage… 0.04s  
+  ✓ invalid record never writes business or audit with data set "invali… 0.06s  
+  ✓ all four distinct quarters are allowed but each duplicate is reject… 0.09s  
+  ✓ different projects can use the same year and quarter                 0.05s  
+  ✓ mixed history is preserved and does not block available quarters     0.04s  
+  ✓ historical duplicates are flagged preserved and not duplicated agai… 0.05s  
+  ✓ details expose existing and available quarters without an enforced…  0.05s  
+  ✓ duplicate detection and details use history beyond the listing limi… 0.08s  
+  ✓ ordinary detail edits preserve project manager and period            0.06s  
+
+   PASS  Tests\Quarterly\ManagingEngineerReassignmentTest
+  ✓ explicit reassignment preserves creator history and changes only re… 0.16s  
+  ✓ invalid manager choice is rejected without history changes with dat… 0.07s  
+  ✓ invalid manager choice is rejected without history changes with dat… 0.05s  
+  ✓ invalid manager choice is rejected without history changes with dat… 0.05s  
+  ✓ invalid manager choice is rejected without history changes with dat… 0.05s  
+  ✓ invalid manager choice is rejected without history changes with dat… 0.05s  
+  ✓ invalid manager choice is rejected without history changes with dat… 0.05s  
+  ✓ unauthorized stale missing and noop reassignments cannot change his… 0.06s  
+  ✓ linked admin can self manage and audit failure rolls back reassignm… 0.06s  
+
+   PASS  Tests\Quarterly\ProjectAssignmentAuthorizationTest
+  ✓ eligible engineer can open and submit create project with canonical… 0.10s  
+  ✓ ineligible project creator is rejected without mutation with data s… 0.03s  
+  ✓ ineligible project creator is rejected without mutation with data s… 0.03s  
+  ✓ ineligible project creator is rejected without mutation with data s… 0.05s  
+  ✓ ineligible project creator is rejected without mutation with data s… 0.04s  
+  ✓ ineligible project creator is rejected without mutation with data s… 0.04s  
+  ✓ ineligible project creator is rejected without mutation with data s… 0.04s  
+  ✓ wrong lgu is hidden and request municipality cannot override road s… 0.06s  
+  ✓ administrator creates an empty project then assigns an eligible eng… 0.07s  
+  ✓ administrator creates an empty project then assigns an eligible eng… 0.05s  
+  ✓ invalid manager choice is rejected and absent from choices with dat… 0.06s  
+  ✓ invalid manager choice is rejected and absent from choices with dat… 0.07s  
+  ✓ invalid manager choice is rejected and absent from choices with dat… 0.05s  
+  ✓ invalid manager choice is rejected and absent from choices with dat… 0.08s  
+  ✓ invalid manager choice is rejected and absent from choices with dat… 0.07s  
+  ✓ invalid manager choice is rejected and absent from choices with dat… 0.08s  
+  ✓ invalid manager choice is rejected and absent from choices with dat… 0.05s  
+  ✓ admin self management requires real active profile and matching ass… 0.07s  
+  ✓ unlinked admin retains administrative access without invented self…  0.06s  
+  ✓ engineer manages only own records and never assigns or deletes for…  0.10s  
+  ✓ current lgu membership is required even for previously assigned rec… 0.06s  
+  ✓ even administrators cannot silently reassign existing record with d… 0.05s  
+  ✓ even administrators cannot silently reassign existing record with d… 0.07s  
+  ✓ viewer cannot create update delete or receive manager choices        0.08s  
+  ✓ inactive or retired actor cannot continue using existing session     0.04s  
+
+  Tests:    118 passed (1088 assertions)
+  Duration: 8.41s
+
+EXIT=0

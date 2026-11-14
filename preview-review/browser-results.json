@@ -1,0 +1,21 @@
+{
+  "checks": [
+    "Protected GET and mutation requests redirect guests",
+    "Root opens faithful login with local image and preview limitations",
+    "Actual invalid login preserves entered email",
+    "Slideshow pause/navigation and password visibility",
+    "Tablet and mobile layouts have no horizontal overflow",
+    "Reduced motion suppresses automatic slideshow",
+    "Actual demo login and refresh preserve session",
+    "Directories, Add/Edit, details, records, documents, LGUs and exploration render",
+    "Corrected map editor places A/B, adds C and routes portions",
+    "Corrected editor marker drag, undo and manual redraw work",
+    "Temporary project create/update/delete survive navigation",
+    "Temporary road save/edit preserves geometry and renders saved markers",
+    "Road Coverage Details shows saved geometry and Edit/Save returns correctly",
+    "Two-location Details/Cancel, mobile Details and missing-geometry fallback remain intact",
+    "Logout clears session; browser Back and protected URLs cannot restore access",
+    "Zero browser runtime errors"
+  ],
+  "errors": []
+}

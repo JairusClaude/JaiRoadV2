@@ -1,0 +1,70 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Http\Controllers\AuditLogPageController;
+use App\Http\Controllers\LguPageController;
+use App\Http\Controllers\MaintenanceDocumentPageController;
+use App\Http\Controllers\MaintenanceProjectPageController;
+use App\Http\Controllers\MaintenanceRecordPageController;
+use App\Http\Controllers\MonthlyUpdatePageController;
+use App\Http\Controllers\PreservedHistoryController;
+use App\Http\Controllers\RoadCoveragePageController;
+use Illuminate\Support\Facades\Route;
+
+// These URLs are canonical DD projections. Legacy public.* route quarantine stays intact.
+Route::middleware(['auth'])->prefix('dd-phase3/ui')->name('jairoads.ui.')->group(function (): void {
+    Route::get('/map/roads', [RoadCoveragePageController::class, 'roadReferences'])->name('roads.references');
+    Route::get('/road-coverages', [RoadCoveragePageController::class, 'roadIndex'])->name('roads.index');
+    Route::get('/road-coverages/create', [RoadCoveragePageController::class, 'roadForm'])->name('roads.create');
+    Route::get('/road-coverages/{id}', [RoadCoveragePageController::class, 'roadShow'])->whereNumber('id')->name('roads.show');
+    Route::get('/road-coverages/{id}/edit', [RoadCoveragePageController::class, 'roadForm'])->whereNumber('id')->name('roads.edit');
+    Route::post('/road-coverages', [RoadCoveragePageController::class, 'saveRoad'])->name('roads.store');
+    Route::put('/road-coverages/{id}', [RoadCoveragePageController::class, 'saveRoad'])->whereNumber('id')->name('roads.update');
+    Route::delete('/road-coverages/bulk', [RoadCoveragePageController::class, 'bulkDeleteRoad'])->name('roads.bulk-destroy');
+    Route::delete('/road-coverages/{id}', [RoadCoveragePageController::class, 'deleteRoad'])->whereNumber('id')->name('roads.destroy');
+    Route::get('/maintenance-projects', [MaintenanceProjectPageController::class, 'projectIndex'])->name('projects.index');
+    Route::get('/maintenance-projects/create', [MaintenanceProjectPageController::class, 'projectForm'])->name('projects.create');
+    Route::get('/maintenance-projects/{id}', [MaintenanceProjectPageController::class, 'projectShow'])->whereNumber('id')->name('projects.show');
+    Route::get('/maintenance-projects/{id}/edit', [MaintenanceProjectPageController::class, 'projectForm'])->whereNumber('id')->name('projects.edit');
+    Route::get('/maintenance-projects/{id}/deletion-preview', [PreservedHistoryController::class, 'preview'])->whereNumber('id');
+    Route::delete('/maintenance-projects/bulk', [PreservedHistoryController::class, 'bulkDelete'])->name('projects.bulk-destroy');
+    Route::delete('/maintenance-projects/{id}', [PreservedHistoryController::class, 'delete'])->whereNumber('id')->middleware('throttle:6,1');
+    Route::post('/maintenance-projects', [MaintenanceProjectPageController::class, 'saveProject'])->name('projects.store');
+    Route::put('/maintenance-projects/{id}', [MaintenanceProjectPageController::class, 'saveProject'])->whereNumber('id')->name('projects.update');
+    Route::get('/maintenance-projects/{project}/records/create', [MaintenanceRecordPageController::class, 'recordForm'])->whereNumber('project')->name('records.create');
+    Route::get('/maintenance-projects/{project}/records/{id}', [MaintenanceRecordPageController::class, 'recordShow'])->whereNumber('project')->whereNumber('id')->name('records.show');
+    Route::get('/maintenance-projects/{project}/records/{id}/edit', [MaintenanceRecordPageController::class, 'recordForm'])->whereNumber('project')->whereNumber('id')->name('records.edit');
+    Route::post('/maintenance-projects/{project}/records', [MaintenanceRecordPageController::class, 'saveRecord'])->whereNumber('project')->name('records.store');
+    Route::put('/maintenance-projects/{project}/records/{id}', [MaintenanceRecordPageController::class, 'saveRecord'])->whereNumber('project')->whereNumber('id')->name('records.update');
+    Route::post('/maintenance-projects/{project}/records/{id}/reassignment', [MaintenanceRecordPageController::class, 'reassign'])->whereNumber('project')->whereNumber('id')->middleware('throttle:10,1')->name('records.reassign');
+    Route::get('/maintenance-records', [MaintenanceRecordPageController::class, 'recordIndex'])->name('records.index');
+    Route::get('/maintenance-records/create', [MaintenanceRecordPageController::class, 'recordCreate'])->name('records.directory-create');
+    Route::delete('/maintenance-records/bulk', [MaintenanceRecordPageController::class, 'bulkDeleteRecord'])->name('records.bulk-destroy');
+    Route::delete('/maintenance-records/{id}', [MaintenanceRecordPageController::class, 'deleteRecord'])->whereNumber('id')->name('records.destroy');
+    Route::get('/monthly-updates', [MonthlyUpdatePageController::class, 'updateIndex'])->name('updates.index');
+    Route::get('/monthly-updates/create', [MonthlyUpdatePageController::class, 'updateForm'])->name('updates.create');
+    Route::get('/monthly-updates/{id}', [MonthlyUpdatePageController::class, 'updateShow'])->whereNumber('id')->name('updates.show');
+    Route::get('/monthly-updates/{id}/edit', [MonthlyUpdatePageController::class, 'updateForm'])->whereNumber('id')->name('updates.edit');
+    Route::post('/monthly-updates', [MonthlyUpdatePageController::class, 'saveUpdate'])->name('updates.store');
+    Route::put('/monthly-updates/{id}', [MonthlyUpdatePageController::class, 'saveUpdate'])->whereNumber('id')->name('updates.update');
+    Route::delete('/monthly-updates/bulk', [MonthlyUpdatePageController::class, 'bulkDelete'])->name('updates.bulk-destroy');
+    Route::delete('/monthly-updates/{id}', [MonthlyUpdatePageController::class, 'deleteUpdate'])->whereNumber('id')->name('updates.destroy');
+    Route::post('/monthly-updates/{id}/media', [MonthlyUpdatePageController::class, 'uploadMedia'])->whereNumber('id')->middleware('throttle:8,1')->name('updates.media');
+    Route::get('/maintenance-documents', [MaintenanceDocumentPageController::class, 'documentIndex'])->name('documents.index');
+    Route::get('/maintenance-documents/create', [MaintenanceDocumentPageController::class, 'documentForm'])->name('documents.create');
+    Route::get('/maintenance-documents/{id}', [MaintenanceDocumentPageController::class, 'documentShow'])->whereNumber('id')->name('documents.show');
+    Route::get('/maintenance-documents/{id}/edit', [MaintenanceDocumentPageController::class, 'documentForm'])->whereNumber('id')->name('documents.edit');
+    Route::post('/maintenance-documents', [MaintenanceDocumentPageController::class, 'saveDocument'])->middleware('throttle:8,1')->name('documents.store');
+    Route::put('/maintenance-documents/{id}', [MaintenanceDocumentPageController::class, 'saveDocument'])->whereNumber('id')->middleware('throttle:10,1')->name('documents.update');
+    Route::delete('/maintenance-documents/bulk', [MaintenanceDocumentPageController::class, 'bulkDeleteDocument'])->name('documents.bulk-destroy');
+    Route::get('/lgus', [LguPageController::class, 'lguIndex'])->name('lgus.index');
+    Route::get('/lgus/create', [LguPageController::class, 'lguForm'])->name('lgus.create');
+    Route::get('/lgus/{id}', [LguPageController::class, 'lguShow'])->whereNumber('id')->name('lgus.show');
+    Route::get('/lgus/{id}/edit', [LguPageController::class, 'lguForm'])->whereNumber('id')->name('lgus.edit');
+    Route::post('/lgus', [LguPageController::class, 'saveLgu'])->name('lgus.store');
+    Route::put('/lgus/{id}', [LguPageController::class, 'saveLgu'])->whereNumber('id')->name('lgus.update');
+    Route::delete('/lgus/bulk', [LguPageController::class, 'bulkDestroy'])->name('lgus.bulk-destroy');
+    Route::delete('/lgus/{id}', [LguPageController::class, 'deleteLgu'])->whereNumber('id')->name('lgus.destroy');
+    Route::get('/audit-logs', [AuditLogPageController::class, 'index'])->name('audit.index');
+});

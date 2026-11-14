@@ -1,0 +1,7 @@
+PASS Keyboard summary selection focuses relevant popup action
+PASS Keyboard Escape closes popup
+PASS Manual trace can follow saved reference; unaffected automatic portion preserved
+PASS Manual marker move shows exact missing connection; scoped Undo restores it without changing adjacent road
+PASS Mouse-wheel zoom preserves all locations
+PASS Narrow summary scrolls to map and popup remains within map boundaries
+ERRORS []

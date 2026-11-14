@@ -1,0 +1,20 @@
+.git
+.env
+.env.*
+!.env.example
+node_modules
+vendor
+public/build
+public/hot
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+*.zip
+*.sql
+.DS_Store
+
+bootstrap/cache/*.php
+
+# Never bake local staging credentials or fixture email IDs into the application image.
+.free-staging/

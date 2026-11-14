@@ -1,0 +1,1 @@
+PASS: 320px viewport keeps panel-focused marker popup inside map without horizontal overflow.

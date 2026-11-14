@@ -1,4 +1,3 @@
-
 <?php
 
 namespace App\Http\Requests;
@@ -7,6 +6,7 @@ use App\Models\Engineer;
 use App\Models\MaintenanceProject;
 use App\Models\MaintenanceRecord;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 class StoreMaintenanceRecordRequest extends FormRequest
@@ -49,7 +49,18 @@ class StoreMaintenanceRecordRequest extends FormRequest
                 Rule::exists(
                     $engineer->getTable(),
                     $engineer->getKeyName()
-                )->where('engineer_status', 'Active'),
+                ),
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (! Schema::hasColumn('engineers', 'engineer_status')) {
+                        $fail('MaintenanceRecord creation is unavailable until EngineerStatus is deployed and approved.');
+
+                        return;
+                    }
+
+                    if (! Engineer::query()->whereKey($value)->where('engineer_status', 'Active')->exists()) {
+                        $fail('The managing Engineer must have Active status.');
+                    }
+                },
             ],
 
             'maintenance_year' => [

@@ -3,17 +3,17 @@
 use App\Models\User;
 
 test('profile page is displayed', function () {
-    $user = User::factory()->create();
+    $user = $this->canonicalUser(User::factory()->create());
 
     $response = $this
         ->actingAs($user)
         ->get(route('profile.edit'));
 
-    $response->assertOk();
+    $response->assertRedirect('/dd-phase3/settings');
 });
 
-test('profile information can be updated', function () {
-    $user = User::factory()->create();
+test('legacy profile cannot rewrite canonical identity', function () {
+    $user = $this->canonicalUser(User::factory()->create());
 
     $response = $this
         ->actingAs($user)
@@ -23,18 +23,17 @@ test('profile information can be updated', function () {
         ]);
 
     $response
-        ->assertSessionHasNoErrors()
-        ->assertRedirect(route('profile.edit'));
+        ->assertForbidden();
 
     $user->refresh();
 
-    expect($user->name)->toBe('Test User');
-    expect($user->email)->toBe('test@example.com');
-    expect($user->email_verified_at)->toBeNull();
+    expect($user->name)->not->toBe('Test User');
+    expect($user->email)->not->toBe('test@example.com');
+    expect($user->email_verified_at)->not->toBeNull();
 });
 
 test('email verification status is unchanged when the email address is unchanged', function () {
-    $user = User::factory()->create();
+    $user = $this->canonicalUser(User::factory()->create());
 
     $response = $this
         ->actingAs($user)
@@ -44,14 +43,13 @@ test('email verification status is unchanged when the email address is unchanged
         ]);
 
     $response
-        ->assertSessionHasNoErrors()
-        ->assertRedirect(route('profile.edit'));
+        ->assertForbidden();
 
     expect($user->refresh()->email_verified_at)->not->toBeNull();
 });
 
-test('user can delete their account', function () {
-    $user = User::factory()->create();
+test('legacy self deletion cannot remove canonical history', function () {
+    $user = $this->canonicalUser(User::factory()->create());
 
     $response = $this
         ->actingAs($user)
@@ -60,15 +58,14 @@ test('user can delete their account', function () {
         ]);
 
     $response
-        ->assertSessionHasNoErrors()
-        ->assertRedirect(route('home'));
+        ->assertForbidden();
 
-    $this->assertGuest();
-    expect($user->fresh())->toBeNull();
+    $this->assertAuthenticatedAs($user);
+    expect($user->fresh())->not->toBeNull();
 });
 
 test('correct password must be provided to delete account', function () {
-    $user = User::factory()->create();
+    $user = $this->canonicalUser(User::factory()->create());
 
     $response = $this
         ->actingAs($user)
@@ -78,8 +75,7 @@ test('correct password must be provided to delete account', function () {
         ]);
 
     $response
-        ->assertSessionHasErrors('password')
-        ->assertRedirect(route('profile.edit'));
+        ->assertForbidden();
 
     expect($user->fresh())->not->toBeNull();
 });

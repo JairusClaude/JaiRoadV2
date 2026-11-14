@@ -1,0 +1,8 @@
+PASS Replace A recalculates only automatic A–B and preserves B/C plus B–C
+PASS Replace automatic C recalculates B–C and keeps A–B unchanged
+PASS Replace B updates automatic A–B, retains manual B–C for correction and keeps outer coordinates
+PASS Draw chooser dismisses outside; panning and map controls do not add tracing points
+PASS Draw target chooser works when the third portion failed and has no line
+PASS Stale routing response cannot restore cleared markers/geometry or alter saved data
+PASS Partial location-only work receives unsaved-navigation protection
+PASS Narrow Draw menu stays inside map boundaries

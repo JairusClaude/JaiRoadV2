@@ -1,0 +1,126 @@
+/* Opt-in sidebar palette: the preserved light alternative never has this marker.
+   Body scoping also reaches shadcn's portalled mobile sidebar. */
+body:has(.jr-espresso-exploration)
+    :is(.jr-sidebar-container, .jr-mobile-shell) {
+    --sidebar: #270f13;
+    --color-sidebar: #270f13;
+    background: linear-gradient(
+        to bottom,
+        #411611 0%,
+        #351318 30%,
+        #270f13 60%,
+        #1b0a10 100%
+    );
+    color: #ccbdb9;
+}
+
+body:has(.jr-espresso-exploration)
+    .jr-sidebar-container
+    [data-sidebar='sidebar'] {
+    background: transparent;
+}
+
+body:has(.jr-espresso-exploration)
+    :is(.jr-brand-copy strong, .jr-identity-copy strong) {
+    color: #f4e8e2;
+}
+
+body:has(.jr-espresso-exploration)
+    :is(.jr-brand-copy small, .jr-identity-copy small, .jr-nav-caption) {
+    color: #b9a29e;
+}
+
+body:has(.jr-espresso-exploration)
+    :is(.jr-sidebar-container, .jr-mobile-shell)
+    :is(.jr-brand-icon, .jr-brand-toggle, .jr-initial) {
+    background: #4b2824;
+    border-color: #694030;
+    color: #ebbb8b;
+    box-shadow: none;
+}
+
+body:has(.jr-espresso-exploration)
+    :is(.jr-sidebar-collapse, .jr-alternative-chevron) {
+    color: #baa5a2;
+}
+
+body:has(.jr-espresso-exploration)
+    :is(.jr-sidebar-collapse, .jr-alternative-chevron):hover {
+    background: #ffffff0a;
+    color: #f4e8e2;
+}
+
+body:has(.jr-espresso-exploration) .jr-alternative-nav .jr-nav-link {
+    color: #ccbdb9;
+}
+
+body:has(.jr-espresso-exploration) .jr-alternative-nav .jr-nav-link svg {
+    color: #baa5a2;
+}
+
+body:has(.jr-espresso-exploration) .jr-alternative-nav .jr-nav-link:hover {
+    background: #ffffff08;
+    color: #f4e8e2;
+}
+
+/* The reference signals selection with a warm surface and brighter text,
+   without the light design's white button or brown indicator stripe. */
+body:has(.jr-espresso-exploration) .jr-alternative-nav .jr-nav-link.jr-active {
+    background: #48252a;
+    border-color: #ffffff0a;
+    color: #f4e8e2;
+    box-shadow: 0 2px 5px #10040920;
+}
+
+body:has(.jr-espresso-exploration)
+    .jr-alternative-nav
+    .jr-nav-link.jr-active
+    svg {
+    color: #f4e8e2;
+}
+
+body:has(.jr-espresso-exploration)
+    .jr-alternative-nav
+    .jr-nav-link.jr-active::before {
+    content: none;
+}
+
+body:has(.jr-espresso-exploration) .jr-alternative-submenu::before {
+    border-color: #8b737a;
+}
+
+body:has(.jr-espresso-exploration) .jr-identity {
+    background: #29161e;
+    border-color: #493038;
+    box-shadow: 0 1px 4px #08020520;
+}
+
+/* Reserve the chevron's own hit area with 15px of visible right inset.
+   Slightly tighter parent lettering keeps the complete label clear of it. */
+body:has(.jr-espresso-exploration) .jr-alternative-chevron {
+    right: 11px;
+}
+
+body:has(.jr-espresso-exploration) .jr-alternative-parent .jr-nav-link > span {
+    left: 39px;
+    letter-spacing: -0.25px;
+}
+
+/* Retain the established label position while the icon rail collapses. */
+body:has(.jr-espresso-exploration)
+    [data-state='collapsed']
+    .jr-alternative-parent
+    .jr-nav-link
+    > span {
+    left: 45px;
+}
+
+/* The text-only child has no icon column: center its label within the whole
+   button rather than retaining the shared submenu's fixed left offset. */
+body:has(.jr-espresso-exploration)
+    .jr-alternative-submenu
+    .jr-alternative-record-label {
+    left: 0;
+    right: 0;
+    text-align: center;
+}

@@ -1,0 +1,23 @@
+Commit: 20f57a5281930841ba5f6a05b81afff320c01a89
+Run: https://github.com/JairusClaude/JaiRoadV2/actions/runs/40513541702
+Docker production build: PASS
+Image: sha256:0ffec3ba94b38d71e42df4f500bd5608b4ed9e11247e484067023f3ed66e947b
+Missing key and missing DB configuration guards: PASS
+Health/login HTTP: PASS before asset loop
+Asset smoke: FAIL; role/storage/unreachable-DB smoke did not execute.
+
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:15270:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///home/runner/work/JaiRoadV2/JaiRoadV2/tests/Browser/docker-smoke.mjs:81:27 {
+  [cause]: Error: connect ECONNREFUSED 127.0.0.1:80
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1638:16) {
+    errno: -111,
+    code: 'ECONNREFUSED',
+    syscall: 'connect',
+    address: '127.0.0.1',
+    port: 80
+  }
+}
+
+Node.js v22.23.3

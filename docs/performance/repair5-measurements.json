@@ -1,0 +1,1438 @@
+{
+    "metadata": {
+        "base_commit": "0c3786046b9838e58f1057384292200f9340bf4a",
+        "date": "2026-11-03",
+        "samples_per_case": 3,
+        "roads": [1, 100, 500, 1000],
+        "jit": "off in both baseline and optimized disposable clusters",
+        "vertices_per_synthetic_road": 150
+    },
+    "php_before": [
+        {
+            "roads": 1,
+            "page": "road",
+            "samples": [
+                {
+                    "bytes": 1360,
+                    "queries": 5,
+                    "milliseconds": 5.903,
+                    "peak_delta_bytes": 65648
+                },
+                {
+                    "bytes": 1360,
+                    "queries": 5,
+                    "milliseconds": 5.641,
+                    "peak_delta_bytes": 65328
+                },
+                {
+                    "bytes": 1360,
+                    "queries": 5,
+                    "milliseconds": 6.239,
+                    "peak_delta_bytes": 65328
+                }
+            ]
+        },
+        {
+            "roads": 1,
+            "page": "record",
+            "samples": [
+                {
+                    "bytes": 1846,
+                    "queries": 5,
+                    "milliseconds": 7.48,
+                    "peak_delta_bytes": 68280
+                },
+                {
+                    "bytes": 1846,
+                    "queries": 5,
+                    "milliseconds": 6.616,
+                    "peak_delta_bytes": 68280
+                },
+                {
+                    "bytes": 1846,
+                    "queries": 5,
+                    "milliseconds": 6.137,
+                    "peak_delta_bytes": 68280
+                }
+            ]
+        },
+        {
+            "roads": 1,
+            "page": "fixed-record",
+            "samples": [
+                {
+                    "bytes": 1903,
+                    "queries": 5,
+                    "milliseconds": 8.053,
+                    "peak_delta_bytes": 68200
+                },
+                {
+                    "bytes": 1903,
+                    "queries": 5,
+                    "milliseconds": 6.719,
+                    "peak_delta_bytes": 68200
+                },
+                {
+                    "bytes": 1903,
+                    "queries": 5,
+                    "milliseconds": 8.306,
+                    "peak_delta_bytes": 68200
+                }
+            ]
+        },
+        {
+            "roads": 1,
+            "page": "monthly",
+            "samples": [
+                {
+                    "bytes": 1681,
+                    "queries": 5,
+                    "milliseconds": 12.102,
+                    "peak_delta_bytes": 68144
+                },
+                {
+                    "bytes": 1681,
+                    "queries": 5,
+                    "milliseconds": 10.682,
+                    "peak_delta_bytes": 68144
+                },
+                {
+                    "bytes": 1681,
+                    "queries": 5,
+                    "milliseconds": 13.409,
+                    "peak_delta_bytes": 68144
+                }
+            ]
+        },
+        {
+            "roads": 1,
+            "page": "fixed-monthly",
+            "samples": [
+                {
+                    "bytes": 1695,
+                    "queries": 5,
+                    "milliseconds": 9.097,
+                    "peak_delta_bytes": 69072
+                },
+                {
+                    "bytes": 1695,
+                    "queries": 5,
+                    "milliseconds": 8.83,
+                    "peak_delta_bytes": 69072
+                },
+                {
+                    "bytes": 1695,
+                    "queries": 5,
+                    "milliseconds": 7.922,
+                    "peak_delta_bytes": 69072
+                }
+            ]
+        },
+        {
+            "roads": 1,
+            "page": "project-history",
+            "samples": [
+                {
+                    "bytes": 1758,
+                    "queries": 4,
+                    "milliseconds": 9.815,
+                    "peak_delta_bytes": 65840
+                },
+                {
+                    "bytes": 1758,
+                    "queries": 4,
+                    "milliseconds": 13.599,
+                    "peak_delta_bytes": 65840
+                },
+                {
+                    "bytes": 1758,
+                    "queries": 4,
+                    "milliseconds": 8.44,
+                    "peak_delta_bytes": 65840
+                }
+            ]
+        },
+        {
+            "roads": 100,
+            "page": "road",
+            "samples": [
+                {
+                    "bytes": 397972,
+                    "queries": 5,
+                    "milliseconds": 58.991,
+                    "peak_delta_bytes": 8848240
+                },
+                {
+                    "bytes": 397972,
+                    "queries": 5,
+                    "milliseconds": 64.056,
+                    "peak_delta_bytes": 8846904
+                },
+                {
+                    "bytes": 397972,
+                    "queries": 5,
+                    "milliseconds": 85.208,
+                    "peak_delta_bytes": 8848240
+                }
+            ]
+        },
+        {
+            "roads": 100,
+            "page": "record",
+            "samples": [
+                {
+                    "bytes": 760242,
+                    "queries": 5,
+                    "milliseconds": 75.6,
+                    "peak_delta_bytes": 10400240
+                },
+                {
+                    "bytes": 760242,
+                    "queries": 5,
+                    "milliseconds": 63.763,
+                    "peak_delta_bytes": 10398904
+                },
+                {
+                    "bytes": 760242,
+                    "queries": 5,
+                    "milliseconds": 60.401,
+                    "peak_delta_bytes": 10398904
+                }
+            ]
+        },
+        {
+            "roads": 100,
+            "page": "fixed-record",
+            "samples": [
+                {
+                    "bytes": 289341,
+                    "queries": 5,
+                    "milliseconds": 13.439,
+                    "peak_delta_bytes": 1090560
+                },
+                {
+                    "bytes": 289341,
+                    "queries": 5,
+                    "milliseconds": 12.659,
+                    "peak_delta_bytes": 1090560
+                },
+                {
+                    "bytes": 289341,
+                    "queries": 5,
+                    "milliseconds": 13.047,
+                    "peak_delta_bytes": 1090560
+                }
+            ]
+        },
+        {
+            "roads": 100,
+            "page": "monthly",
+            "samples": [
+                {
+                    "bytes": 456221,
+                    "queries": 5,
+                    "milliseconds": 73.779,
+                    "peak_delta_bytes": 9187952
+                },
+                {
+                    "bytes": 456221,
+                    "queries": 5,
+                    "milliseconds": 73.965,
+                    "peak_delta_bytes": 9189288
+                },
+                {
+                    "bytes": 456221,
+                    "queries": 5,
+                    "milliseconds": 61.54,
+                    "peak_delta_bytes": 9187952
+                }
+            ]
+        },
+        {
+            "roads": 100,
+            "page": "fixed-monthly",
+            "samples": [
+                {
+                    "bytes": 456239,
+                    "queries": 5,
+                    "milliseconds": 58.675,
+                    "peak_delta_bytes": 9188920
+                },
+                {
+                    "bytes": 456239,
+                    "queries": 5,
+                    "milliseconds": 50.46,
+                    "peak_delta_bytes": 9188920
+                },
+                {
+                    "bytes": 456239,
+                    "queries": 5,
+                    "milliseconds": 52.593,
+                    "peak_delta_bytes": 9188920
+                }
+            ]
+        },
+        {
+            "roads": 100,
+            "page": "project-history",
+            "samples": [
+                {
+                    "bytes": 289196,
+                    "queries": 4,
+                    "milliseconds": 9.942,
+                    "peak_delta_bytes": 1087824
+                },
+                {
+                    "bytes": 289196,
+                    "queries": 4,
+                    "milliseconds": 9.479,
+                    "peak_delta_bytes": 1087824
+                },
+                {
+                    "bytes": 289196,
+                    "queries": 4,
+                    "milliseconds": 8.733,
+                    "peak_delta_bytes": 1087824
+                }
+            ]
+        },
+        {
+            "roads": 500,
+            "page": "road",
+            "samples": [
+                {
+                    "bytes": 2000172,
+                    "queries": 5,
+                    "milliseconds": 219.294,
+                    "peak_delta_bytes": 44331632
+                },
+                {
+                    "bytes": 2000172,
+                    "queries": 5,
+                    "milliseconds": 293.291,
+                    "peak_delta_bytes": 44331632
+                },
+                {
+                    "bytes": 2000172,
+                    "queries": 5,
+                    "milliseconds": 282.298,
+                    "peak_delta_bytes": 44331632
+                }
+            ]
+        },
+        {
+            "roads": 500,
+            "page": "record",
+            "samples": [
+                {
+                    "bytes": 3534637,
+                    "queries": 5,
+                    "milliseconds": 311.937,
+                    "peak_delta_bytes": 51026472
+                },
+                {
+                    "bytes": 3534637,
+                    "queries": 5,
+                    "milliseconds": 379.734,
+                    "peak_delta_bytes": 51026472
+                },
+                {
+                    "bytes": 3534637,
+                    "queries": 5,
+                    "milliseconds": 347.711,
+                    "peak_delta_bytes": 51026472
+                }
+            ]
+        },
+        {
+            "roads": 500,
+            "page": "fixed-record",
+            "samples": [
+                {
+                    "bytes": 1157936,
+                    "queries": 5,
+                    "milliseconds": 30.125,
+                    "peak_delta_bytes": 4188576
+                },
+                {
+                    "bytes": 1157936,
+                    "queries": 5,
+                    "milliseconds": 25.757,
+                    "peak_delta_bytes": 4188576
+                },
+                {
+                    "bytes": 1157936,
+                    "queries": 5,
+                    "milliseconds": 22.347,
+                    "peak_delta_bytes": 4188576
+                }
+            ]
+        },
+        {
+            "roads": 500,
+            "page": "monthly",
+            "samples": [
+                {
+                    "bytes": 2289468,
+                    "queries": 5,
+                    "milliseconds": 355.954,
+                    "peak_delta_bytes": 45898568
+                },
+                {
+                    "bytes": 2289468,
+                    "queries": 5,
+                    "milliseconds": 432.916,
+                    "peak_delta_bytes": 45898568
+                },
+                {
+                    "bytes": 2289468,
+                    "queries": 5,
+                    "milliseconds": 332.049,
+                    "peak_delta_bytes": 45897232
+                }
+            ]
+        },
+        {
+            "roads": 500,
+            "page": "fixed-monthly",
+            "samples": [
+                {
+                    "bytes": 2289486,
+                    "queries": 5,
+                    "milliseconds": 260.02,
+                    "peak_delta_bytes": 45898200
+                },
+                {
+                    "bytes": 2289486,
+                    "queries": 5,
+                    "milliseconds": 309.789,
+                    "peak_delta_bytes": 45899536
+                },
+                {
+                    "bytes": 2289486,
+                    "queries": 5,
+                    "milliseconds": 275.822,
+                    "peak_delta_bytes": 45898200
+                }
+            ]
+        },
+        {
+            "roads": 500,
+            "page": "project-history",
+            "samples": [
+                {
+                    "bytes": 1157791,
+                    "queries": 4,
+                    "milliseconds": 25.027,
+                    "peak_delta_bytes": 4185840
+                },
+                {
+                    "bytes": 1157791,
+                    "queries": 4,
+                    "milliseconds": 20.083,
+                    "peak_delta_bytes": 4185840
+                },
+                {
+                    "bytes": 1157791,
+                    "queries": 4,
+                    "milliseconds": 16.865,
+                    "peak_delta_bytes": 4185840
+                }
+            ]
+        },
+        {
+            "roads": 1000,
+            "page": "road",
+            "samples": [
+                {
+                    "bytes": 4002924,
+                    "queries": 5,
+                    "milliseconds": 580.594,
+                    "peak_delta_bytes": 88678984
+                },
+                {
+                    "bytes": 4002924,
+                    "queries": 5,
+                    "milliseconds": 606.537,
+                    "peak_delta_bytes": 88678984
+                },
+                {
+                    "bytes": 4002924,
+                    "queries": 5,
+                    "milliseconds": 592.472,
+                    "peak_delta_bytes": 88678984
+                }
+            ]
+        },
+        {
+            "roads": 1000,
+            "page": "record",
+            "samples": [
+                {
+                    "bytes": 5918092,
+                    "queries": 5,
+                    "milliseconds": 711.432,
+                    "peak_delta_bytes": 97974840
+                },
+                {
+                    "bytes": 5918092,
+                    "queries": 5,
+                    "milliseconds": 708.175,
+                    "peak_delta_bytes": 97974840
+                },
+                {
+                    "bytes": 5918092,
+                    "queries": 5,
+                    "milliseconds": 677.948,
+                    "peak_delta_bytes": 97974840
+                }
+            ]
+        },
+        {
+            "roads": 1000,
+            "page": "fixed-record",
+            "samples": [
+                {
+                    "bytes": 1157936,
+                    "queries": 5,
+                    "milliseconds": 30.653,
+                    "peak_delta_bytes": 4188576
+                },
+                {
+                    "bytes": 1157936,
+                    "queries": 5,
+                    "milliseconds": 21.987,
+                    "peak_delta_bytes": 4188576
+                },
+                {
+                    "bytes": 1157936,
+                    "queries": 5,
+                    "milliseconds": 20.184,
+                    "peak_delta_bytes": 4188576
+                }
+            ]
+        },
+        {
+            "roads": 1000,
+            "page": "monthly",
+            "samples": [
+                {
+                    "bytes": 4562022,
+                    "queries": 5,
+                    "milliseconds": 718.56,
+                    "peak_delta_bytes": 91494632
+                },
+                {
+                    "bytes": 4562022,
+                    "queries": 5,
+                    "milliseconds": 746.753,
+                    "peak_delta_bytes": 91461864
+                },
+                {
+                    "bytes": 4562022,
+                    "queries": 5,
+                    "milliseconds": 745.111,
+                    "peak_delta_bytes": 91461864
+                }
+            ]
+        },
+        {
+            "roads": 1000,
+            "page": "fixed-monthly",
+            "samples": [
+                {
+                    "bytes": 4562042,
+                    "queries": 5,
+                    "milliseconds": 913.509,
+                    "peak_delta_bytes": 91462880
+                },
+                {
+                    "bytes": 4562042,
+                    "queries": 5,
+                    "milliseconds": 872.166,
+                    "peak_delta_bytes": 91462880
+                },
+                {
+                    "bytes": 4562042,
+                    "queries": 5,
+                    "milliseconds": 856.399,
+                    "peak_delta_bytes": 91462880
+                }
+            ]
+        },
+        {
+            "roads": 1000,
+            "page": "project-history",
+            "samples": [
+                {
+                    "bytes": 1157791,
+                    "queries": 4,
+                    "milliseconds": 51.428,
+                    "peak_delta_bytes": 4185840
+                },
+                {
+                    "bytes": 1157791,
+                    "queries": 4,
+                    "milliseconds": 24.67,
+                    "peak_delta_bytes": 4185840
+                },
+                {
+                    "bytes": 1157791,
+                    "queries": 4,
+                    "milliseconds": 24.053,
+                    "peak_delta_bytes": 4185840
+                }
+            ]
+        }
+    ],
+    "php_after": [
+        {
+            "roads": 1,
+            "page": "road",
+            "samples": [
+                {
+                    "bytes": 1066,
+                    "queries": 4,
+                    "milliseconds": 5.557,
+                    "peak_delta_bytes": 61352
+                },
+                {
+                    "bytes": 1066,
+                    "queries": 4,
+                    "milliseconds": 3.947,
+                    "peak_delta_bytes": 61032
+                },
+                {
+                    "bytes": 1066,
+                    "queries": 4,
+                    "milliseconds": 3.293,
+                    "peak_delta_bytes": 61032
+                }
+            ]
+        },
+        {
+            "roads": 1,
+            "page": "record",
+            "samples": [
+                {
+                    "bytes": 998,
+                    "queries": 5,
+                    "milliseconds": 6.31,
+                    "peak_delta_bytes": 63880
+                },
+                {
+                    "bytes": 998,
+                    "queries": 5,
+                    "milliseconds": 6.309,
+                    "peak_delta_bytes": 63880
+                },
+                {
+                    "bytes": 998,
+                    "queries": 5,
+                    "milliseconds": 8.616,
+                    "peak_delta_bytes": 63880
+                }
+            ]
+        },
+        {
+            "roads": 1,
+            "page": "fixed-record",
+            "samples": [
+                {
+                    "bytes": 1055,
+                    "queries": 5,
+                    "milliseconds": 8.079,
+                    "peak_delta_bytes": 63304
+                },
+                {
+                    "bytes": 1055,
+                    "queries": 5,
+                    "milliseconds": 7.874,
+                    "peak_delta_bytes": 63304
+                },
+                {
+                    "bytes": 1055,
+                    "queries": 5,
+                    "milliseconds": 7.853,
+                    "peak_delta_bytes": 63304
+                }
+            ]
+        },
+        {
+            "roads": 1,
+            "page": "monthly",
+            "samples": [
+                {
+                    "bytes": 1403,
+                    "queries": 5,
+                    "milliseconds": 8.791,
+                    "peak_delta_bytes": 66088
+                },
+                {
+                    "bytes": 1403,
+                    "queries": 5,
+                    "milliseconds": 8.622,
+                    "peak_delta_bytes": 66088
+                },
+                {
+                    "bytes": 1403,
+                    "queries": 5,
+                    "milliseconds": 7.382,
+                    "peak_delta_bytes": 66088
+                }
+            ]
+        },
+        {
+            "roads": 1,
+            "page": "fixed-monthly",
+            "samples": [
+                {
+                    "bytes": 1417,
+                    "queries": 5,
+                    "milliseconds": 10.224,
+                    "peak_delta_bytes": 67016
+                },
+                {
+                    "bytes": 1417,
+                    "queries": 5,
+                    "milliseconds": 8.337,
+                    "peak_delta_bytes": 67016
+                },
+                {
+                    "bytes": 1417,
+                    "queries": 5,
+                    "milliseconds": 10.167,
+                    "peak_delta_bytes": 67016
+                }
+            ]
+        },
+        {
+            "roads": 1,
+            "page": "project-history",
+            "samples": [
+                {
+                    "bytes": 1466,
+                    "queries": 4,
+                    "milliseconds": 7.189,
+                    "peak_delta_bytes": 64280
+                },
+                {
+                    "bytes": 1466,
+                    "queries": 4,
+                    "milliseconds": 6.62,
+                    "peak_delta_bytes": 64280
+                },
+                {
+                    "bytes": 1466,
+                    "queries": 4,
+                    "milliseconds": 7.225,
+                    "peak_delta_bytes": 64280
+                }
+            ]
+        },
+        {
+            "roads": 1,
+            "page": "references-all-pages",
+            "samples": [
+                {
+                    "bytes": 30,
+                    "queries": 3,
+                    "milliseconds": 16.497,
+                    "peak_delta_bytes": 1816488,
+                    "visible_roads": 0
+                },
+                {
+                    "bytes": 30,
+                    "queries": 2,
+                    "milliseconds": 3.661,
+                    "peak_delta_bytes": 78776,
+                    "visible_roads": 0
+                },
+                {
+                    "bytes": 30,
+                    "queries": 2,
+                    "milliseconds": 3.093,
+                    "peak_delta_bytes": 78776,
+                    "visible_roads": 0
+                }
+            ]
+        },
+        {
+            "roads": 100,
+            "page": "road",
+            "samples": [
+                {
+                    "bytes": 1066,
+                    "queries": 4,
+                    "milliseconds": 4.044,
+                    "peak_delta_bytes": 61032
+                },
+                {
+                    "bytes": 1066,
+                    "queries": 4,
+                    "milliseconds": 3.763,
+                    "peak_delta_bytes": 61032
+                },
+                {
+                    "bytes": 1066,
+                    "queries": 4,
+                    "milliseconds": 4.088,
+                    "peak_delta_bytes": 61032
+                }
+            ]
+        },
+        {
+            "roads": 100,
+            "page": "record",
+            "samples": [
+                {
+                    "bytes": 30071,
+                    "queries": 5,
+                    "milliseconds": 10.29,
+                    "peak_delta_bytes": 947624
+                },
+                {
+                    "bytes": 30071,
+                    "queries": 5,
+                    "milliseconds": 10.499,
+                    "peak_delta_bytes": 947624
+                },
+                {
+                    "bytes": 30071,
+                    "queries": 5,
+                    "milliseconds": 12.37,
+                    "peak_delta_bytes": 947624
+                }
+            ]
+        },
+        {
+            "roads": 100,
+            "page": "fixed-record",
+            "samples": [
+                {
+                    "bytes": 6249,
+                    "queries": 5,
+                    "milliseconds": 8.271,
+                    "peak_delta_bytes": 536112
+                },
+                {
+                    "bytes": 6249,
+                    "queries": 5,
+                    "milliseconds": 8.713,
+                    "peak_delta_bytes": 536112
+                },
+                {
+                    "bytes": 6249,
+                    "queries": 5,
+                    "milliseconds": 9.565,
+                    "peak_delta_bytes": 536112
+                }
+            ]
+        },
+        {
+            "roads": 100,
+            "page": "monthly",
+            "samples": [
+                {
+                    "bytes": 66056,
+                    "queries": 5,
+                    "milliseconds": 12.226,
+                    "peak_delta_bytes": 841896
+                },
+                {
+                    "bytes": 66056,
+                    "queries": 5,
+                    "milliseconds": 11.974,
+                    "peak_delta_bytes": 841896
+                },
+                {
+                    "bytes": 66056,
+                    "queries": 5,
+                    "milliseconds": 10.298,
+                    "peak_delta_bytes": 841896
+                }
+            ]
+        },
+        {
+            "roads": 100,
+            "page": "fixed-monthly",
+            "samples": [
+                {
+                    "bytes": 1444,
+                    "queries": 5,
+                    "milliseconds": 6.446,
+                    "peak_delta_bytes": 67056
+                },
+                {
+                    "bytes": 1444,
+                    "queries": 5,
+                    "milliseconds": 6.354,
+                    "peak_delta_bytes": 67056
+                },
+                {
+                    "bytes": 1444,
+                    "queries": 5,
+                    "milliseconds": 7.611,
+                    "peak_delta_bytes": 67056
+                }
+            ]
+        },
+        {
+            "roads": 100,
+            "page": "project-history",
+            "samples": [
+                {
+                    "bytes": 34474,
+                    "queries": 4,
+                    "milliseconds": 8.523,
+                    "peak_delta_bytes": 622424
+                },
+                {
+                    "bytes": 34474,
+                    "queries": 4,
+                    "milliseconds": 8.655,
+                    "peak_delta_bytes": 622424
+                },
+                {
+                    "bytes": 34474,
+                    "queries": 4,
+                    "milliseconds": 9.113,
+                    "peak_delta_bytes": 622424
+                }
+            ]
+        },
+        {
+            "roads": 100,
+            "page": "references-all-pages",
+            "samples": [
+                {
+                    "bytes": 180298,
+                    "queries": 2,
+                    "milliseconds": 33.735,
+                    "peak_delta_bytes": 4101168,
+                    "visible_roads": 49
+                },
+                {
+                    "bytes": 180298,
+                    "queries": 2,
+                    "milliseconds": 34.339,
+                    "peak_delta_bytes": 2506088,
+                    "visible_roads": 49
+                },
+                {
+                    "bytes": 180298,
+                    "queries": 2,
+                    "milliseconds": 34.24,
+                    "peak_delta_bytes": 2506088,
+                    "visible_roads": 49
+                }
+            ]
+        },
+        {
+            "roads": 500,
+            "page": "road",
+            "samples": [
+                {
+                    "bytes": 1066,
+                    "queries": 4,
+                    "milliseconds": 4.375,
+                    "peak_delta_bytes": 61032
+                },
+                {
+                    "bytes": 1066,
+                    "queries": 4,
+                    "milliseconds": 3.882,
+                    "peak_delta_bytes": 61032
+                },
+                {
+                    "bytes": 1066,
+                    "queries": 4,
+                    "milliseconds": 4.591,
+                    "peak_delta_bytes": 61032
+                }
+            ]
+        },
+        {
+            "roads": 500,
+            "page": "record",
+            "samples": [
+                {
+                    "bytes": 144318,
+                    "queries": 5,
+                    "milliseconds": 28.348,
+                    "peak_delta_bytes": 3979712
+                },
+                {
+                    "bytes": 144318,
+                    "queries": 5,
+                    "milliseconds": 26.685,
+                    "peak_delta_bytes": 3979712
+                },
+                {
+                    "bytes": 144318,
+                    "queries": 5,
+                    "milliseconds": 24.758,
+                    "peak_delta_bytes": 3979712
+                }
+            ]
+        },
+        {
+            "roads": 500,
+            "page": "fixed-record",
+            "samples": [
+                {
+                    "bytes": 22096,
+                    "queries": 5,
+                    "milliseconds": 18.491,
+                    "peak_delta_bytes": 2012616
+                },
+                {
+                    "bytes": 22096,
+                    "queries": 5,
+                    "milliseconds": 18.057,
+                    "peak_delta_bytes": 2012616
+                },
+                {
+                    "bytes": 22096,
+                    "queries": 5,
+                    "milliseconds": 14.773,
+                    "peak_delta_bytes": 2012616
+                }
+            ]
+        },
+        {
+            "roads": 500,
+            "page": "monthly",
+            "samples": [
+                {
+                    "bytes": 324703,
+                    "queries": 5,
+                    "milliseconds": 30.89,
+                    "peak_delta_bytes": 3463872
+                },
+                {
+                    "bytes": 324703,
+                    "queries": 5,
+                    "milliseconds": 32.407,
+                    "peak_delta_bytes": 3496640
+                },
+                {
+                    "bytes": 324703,
+                    "queries": 5,
+                    "milliseconds": 32.551,
+                    "peak_delta_bytes": 3463872
+                }
+            ]
+        },
+        {
+            "roads": 500,
+            "page": "fixed-monthly",
+            "samples": [
+                {
+                    "bytes": 1444,
+                    "queries": 5,
+                    "milliseconds": 9.343,
+                    "peak_delta_bytes": 67056
+                },
+                {
+                    "bytes": 1444,
+                    "queries": 5,
+                    "milliseconds": 8.735,
+                    "peak_delta_bytes": 67056
+                },
+                {
+                    "bytes": 1444,
+                    "queries": 5,
+                    "milliseconds": 8.209,
+                    "peak_delta_bytes": 67056
+                }
+            ]
+        },
+        {
+            "roads": 500,
+            "page": "project-history",
+            "samples": [
+                {
+                    "bytes": 134639,
+                    "queries": 4,
+                    "milliseconds": 19.8,
+                    "peak_delta_bytes": 2354872
+                },
+                {
+                    "bytes": 134639,
+                    "queries": 4,
+                    "milliseconds": 17.17,
+                    "peak_delta_bytes": 2354872
+                },
+                {
+                    "bytes": 134639,
+                    "queries": 4,
+                    "milliseconds": 19.234,
+                    "peak_delta_bytes": 2354872
+                }
+            ]
+        },
+        {
+            "roads": 500,
+            "page": "references-all-pages",
+            "samples": [
+                {
+                    "bytes": 916354,
+                    "queries": 6,
+                    "milliseconds": 294.952,
+                    "peak_delta_bytes": 8012648,
+                    "visible_roads": 249
+                },
+                {
+                    "bytes": 916354,
+                    "queries": 6,
+                    "milliseconds": 302.862,
+                    "peak_delta_bytes": 6510288,
+                    "visible_roads": 249
+                },
+                {
+                    "bytes": 916354,
+                    "queries": 6,
+                    "milliseconds": 343.457,
+                    "peak_delta_bytes": 6510288,
+                    "visible_roads": 249
+                }
+            ]
+        },
+        {
+            "roads": 1000,
+            "page": "road",
+            "samples": [
+                {
+                    "bytes": 1066,
+                    "queries": 4,
+                    "milliseconds": 5.705,
+                    "peak_delta_bytes": 61032
+                },
+                {
+                    "bytes": 1066,
+                    "queries": 4,
+                    "milliseconds": 6.444,
+                    "peak_delta_bytes": 61032
+                },
+                {
+                    "bytes": 1066,
+                    "queries": 4,
+                    "milliseconds": 6.382,
+                    "peak_delta_bytes": 61032
+                }
+            ]
+        },
+        {
+            "roads": 1000,
+            "page": "record",
+            "samples": [
+                {
+                    "bytes": 267722,
+                    "queries": 5,
+                    "milliseconds": 44.739,
+                    "peak_delta_bytes": 5974112
+                },
+                {
+                    "bytes": 267722,
+                    "queries": 5,
+                    "milliseconds": 47.2,
+                    "peak_delta_bytes": 5974112
+                },
+                {
+                    "bytes": 267722,
+                    "queries": 5,
+                    "milliseconds": 43.846,
+                    "peak_delta_bytes": 5974112
+                }
+            ]
+        },
+        {
+            "roads": 1000,
+            "page": "fixed-record",
+            "samples": [
+                {
+                    "bytes": 22096,
+                    "queries": 5,
+                    "milliseconds": 14.848,
+                    "peak_delta_bytes": 2012616
+                },
+                {
+                    "bytes": 22096,
+                    "queries": 5,
+                    "milliseconds": 13.244,
+                    "peak_delta_bytes": 2012616
+                },
+                {
+                    "bytes": 22096,
+                    "queries": 5,
+                    "milliseconds": 13.083,
+                    "peak_delta_bytes": 2012616
+                }
+            ]
+        },
+        {
+            "roads": 1000,
+            "page": "monthly",
+            "samples": [
+                {
+                    "bytes": 629007,
+                    "queries": 5,
+                    "milliseconds": 48.201,
+                    "peak_delta_bytes": 4946080
+                },
+                {
+                    "bytes": 629007,
+                    "queries": 5,
+                    "milliseconds": 43.651,
+                    "peak_delta_bytes": 4946080
+                },
+                {
+                    "bytes": 629007,
+                    "queries": 5,
+                    "milliseconds": 45.775,
+                    "peak_delta_bytes": 4946080
+                }
+            ]
+        },
+        {
+            "roads": 1000,
+            "page": "fixed-monthly",
+            "samples": [
+                {
+                    "bytes": 1453,
+                    "queries": 5,
+                    "milliseconds": 10.543,
+                    "peak_delta_bytes": 67104
+                },
+                {
+                    "bytes": 1453,
+                    "queries": 5,
+                    "milliseconds": 8.212,
+                    "peak_delta_bytes": 67104
+                },
+                {
+                    "bytes": 1453,
+                    "queries": 5,
+                    "milliseconds": 8.055,
+                    "peak_delta_bytes": 67104
+                }
+            ]
+        },
+        {
+            "roads": 1000,
+            "page": "project-history",
+            "samples": [
+                {
+                    "bytes": 134639,
+                    "queries": 4,
+                    "milliseconds": 17.305,
+                    "peak_delta_bytes": 2354872
+                },
+                {
+                    "bytes": 134639,
+                    "queries": 4,
+                    "milliseconds": 15.778,
+                    "peak_delta_bytes": 2354872
+                },
+                {
+                    "bytes": 134639,
+                    "queries": 4,
+                    "milliseconds": 27.681,
+                    "peak_delta_bytes": 2354872
+                }
+            ]
+        },
+        {
+            "roads": 1000,
+            "page": "references-all-pages",
+            "samples": [
+                {
+                    "bytes": 1836411,
+                    "queries": 10,
+                    "milliseconds": 935.808,
+                    "peak_delta_bytes": 8012648,
+                    "visible_roads": 499
+                },
+                {
+                    "bytes": 1836411,
+                    "queries": 10,
+                    "milliseconds": 898.93,
+                    "peak_delta_bytes": 5054808,
+                    "visible_roads": 499
+                },
+                {
+                    "bytes": 1836411,
+                    "queries": 10,
+                    "milliseconds": 993.193,
+                    "peak_delta_bytes": 5054808,
+                    "visible_roads": 499
+                }
+            ]
+        }
+    ],
+    "browser_before": [
+        {
+            "roads": 1,
+            "samples": [
+                {
+                    "interactive_ms": 412,
+                    "references_ready_ms": 415,
+                    "html_bytes": 10059
+                },
+                {
+                    "interactive_ms": 429,
+                    "references_ready_ms": 431,
+                    "html_bytes": 10059
+                },
+                {
+                    "interactive_ms": 467,
+                    "references_ready_ms": 471,
+                    "html_bytes": 10059
+                }
+            ]
+        },
+        {
+            "roads": 100,
+            "samples": [
+                {
+                    "interactive_ms": 529,
+                    "references_ready_ms": 533,
+                    "html_bytes": 406669
+                },
+                {
+                    "interactive_ms": 484,
+                    "references_ready_ms": 488,
+                    "html_bytes": 406669
+                },
+                {
+                    "interactive_ms": 501,
+                    "references_ready_ms": 504,
+                    "html_bytes": 406669
+                }
+            ]
+        },
+        {
+            "roads": 500,
+            "samples": [
+                {
+                    "interactive_ms": 1116,
+                    "references_ready_ms": 1121,
+                    "html_bytes": 2008869
+                },
+                {
+                    "interactive_ms": 1035,
+                    "references_ready_ms": 1039,
+                    "html_bytes": 2008869
+                },
+                {
+                    "interactive_ms": 1059,
+                    "references_ready_ms": 1062,
+                    "html_bytes": 2008869
+                }
+            ]
+        },
+        {
+            "roads": 1000,
+            "samples": [
+                {
+                    "interactive_ms": 1478,
+                    "references_ready_ms": 1481,
+                    "html_bytes": 4011620
+                },
+                {
+                    "interactive_ms": 1352,
+                    "references_ready_ms": 1355,
+                    "html_bytes": 4011620
+                },
+                {
+                    "interactive_ms": 1186,
+                    "references_ready_ms": 1188,
+                    "html_bytes": 4011620
+                }
+            ]
+        }
+    ],
+    "browser_after": [
+        {
+            "roads": 1,
+            "samples": [
+                {
+                    "interactive_ms": 732,
+                    "references_ready_ms": 1562,
+                    "html_bytes": 9765
+                },
+                {
+                    "interactive_ms": 554,
+                    "references_ready_ms": 1363,
+                    "html_bytes": 9765
+                },
+                {
+                    "interactive_ms": 388,
+                    "references_ready_ms": 1183,
+                    "html_bytes": 9765
+                }
+            ]
+        },
+        {
+            "roads": 100,
+            "samples": [
+                {
+                    "interactive_ms": 447,
+                    "references_ready_ms": 1244,
+                    "html_bytes": 9765
+                },
+                {
+                    "interactive_ms": 385,
+                    "references_ready_ms": 1182,
+                    "html_bytes": 9765
+                },
+                {
+                    "interactive_ms": 523,
+                    "references_ready_ms": 1315,
+                    "html_bytes": 9765
+                }
+            ]
+        },
+        {
+            "roads": 500,
+            "samples": [
+                {
+                    "interactive_ms": 368,
+                    "references_ready_ms": 1663,
+                    "html_bytes": 9765
+                },
+                {
+                    "interactive_ms": 452,
+                    "references_ready_ms": 1751,
+                    "html_bytes": 9765
+                },
+                {
+                    "interactive_ms": 369,
+                    "references_ready_ms": 1671,
+                    "html_bytes": 9765
+                }
+            ]
+        },
+        {
+            "roads": 1000,
+            "samples": [
+                {
+                    "interactive_ms": 329,
+                    "references_ready_ms": 2123,
+                    "html_bytes": 9765
+                },
+                {
+                    "interactive_ms": 321,
+                    "references_ready_ms": 2170,
+                    "html_bytes": 9765
+                },
+                {
+                    "interactive_ms": 492,
+                    "references_ready_ms": 2288,
+                    "html_bytes": 9765
+                }
+            ]
+        }
+    ]
+}

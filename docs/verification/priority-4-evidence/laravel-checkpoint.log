@@ -1,0 +1,140 @@
+
+   PASS  Tests\Unit\DdNotificationAudienceTest
+  ✓ it keeps the audit notification audience in the requested supervisor hierarchy
+
+   PASS  Tests\Unit\DdRoleAccessTest
+  ✓ it keeps ordinary administrator permissions aligned with the final…  0.01s  
+  ✓ it allows engineers scoped operations only with an active linked identity and assignment
+  ✓ it never grants viewer any business mutation
+
+   PASS  Tests\Unit\ExampleTest
+  ✓ that true is true
+
+   PASS  Tests\Unit\LocalSetupGuardTest
+  ✓ refuses unsafe setup before any connection with data set "missing approval"
+  ✓ refuses unsafe setup before any connection with data set "production"
+  ✓ refuses unsafe setup before any connection with data set " render"
+  ✓ refuses unsafe setup before any connection with data set "remote database"
+  ✓ refuses unsafe setup before any connection with data set "shared name on localhost"
+  ✓ refuses unsafe setup before any connection with data set " u r l overrides safe host"
+  ✓ refuses unsafe setup before any connection with data set " u r l overrides scratch name"
+  ✓ refuses unsafe setup before any connection with data set "query overrides host"
+  ✓ refuses unsafe setup before any connection with data set "query overrides database"
+  ✓ refuses unsafe setup before any connection with data set "unsupported u r l"
+  ✓ refuses unsafe setup before any connection with data set "unsupported driver"
+  ✓ refuses unsafe setup before any connection with data set "persistent s q lite"
+  ✓ composer initialization checks target before migrations or key replacement
+  ✓ allows only explicit disposable postgres or memory sqlite
+
+   PASS  Tests\Unit\MaintenanceProjectAccessTest
+  ✓ it renders the directory status without exposing data or opening a…  0.12s  
+  ✓ it renders Add Project with no protected coverage choices for an un… 0.01s  
+  ✓ it rejects an unlinked login even if a matching creator ID is submi… 0.01s  
+
+   PASS  Tests\Unit\MaintenanceProjectCrudTest
+  ✓ it creates through Laravel with backend creator and timestamps with… 0.07s  
+  ✓ it validates title and rejects client creator or timestamp override… 0.03s  
+  ✓ it rejects duplicate coverage in request validation and in the tran… 0.02s  
+  ✓ it edits the existing project and can change coverage without maint… 0.04s  
+  ✓ it allows title and description edits with history but blocks cover… 0.02s  
+  ✓ it cannot change to another projects coverage                        0.02s  
+  ✓ it deletes one eligible project while preserving and releasing its…  0.02s  
+  ✓ it blocks single deletion for ongoing and completed history with ('… 0.02s  
+  ✓ it blocks single deletion for ongoing and completed history with ('… 0.02s  
+  ✓ it atomically deletes eligible bulk selections and preserves all co… 0.02s  
+  ✓ it blocks an entire mixed bulk selection and identifies the protect… 0.02s  
+  ✓ it rejects empty duplicate invalid and missing bulk IDs without del… 0.02s  
+  ✓ it rejects empty duplicate invalid and missing bulk IDs without del… 0.02s  
+  ✓ it rejects empty duplicate invalid and missing bulk IDs without del… 0.02s  
+  ✓ it rejects empty duplicate invalid and missing bulk IDs without del… 0.02s  
+  ✓ it blocks deletion when a legacy document depends on the project     0.02s  
+  ✓ it rechecks new history introduced after selection and before delet… 0.03s  
+  ✓ it supports database listing search sorting municipality filtering…  0.06s  
+  ✓ it rejects writes by viewers engineers legacy roles and inactive ac… 0.02s  
+  ✓ it rejects writes by viewers engineers legacy roles and inactive ac… 0.03s  
+  ✓ it rejects writes by viewers engineers legacy roles and inactive ac… 0.02s  
+  ✓ it rejects writes by viewers engineers legacy roles and inactive ac… 0.02s  
+  ✓ it does not infer identity from matching IDs when the production re… 0.02s  
+  ✓ it enforces coverage uniqueness at the database constraint as a sec… 0.02s  
+  ✓ it does not partially delete when one selected project fails author… 0.02s  
+  ✓ it protects creator and timestamps during edit                       0.02s  
+  ✓ it lets a verified Engineer manage only coverages approved by the a… 0.03s  
+  ✓ it rolls back the whole batch if a dependency appears after its eli… 0.02s  
+  ✓ it returns validation errors for malformed or missing coverage IDs…  0.02s  
+  ✓ it returns validation errors for malformed or missing coverage IDs…  0.02s  
+  ✓ it returns validation errors for malformed or missing coverage IDs…  0.02s  
+  ✓ it returns validation errors for malformed or missing coverage IDs…  0.02s  
+
+
+
+   PASS  Tests\Feature\Auth\AuthenticationTest
+  ✓ login screen can be rendered                                         0.20s  
+  ✓ users can authenticate using the login screen                        0.03s  
+  ✓ users with two factor enabled are redirected to two factor challeng… 0.01s  
+  ✓ users can not authenticate with invalid password                     0.01s  
+  ✓ users can logout                                                     0.01s  
+  ✓ users are rate limited                                               0.01s  
+
+   PASS  Tests\Feature\Auth\EmailVerificationTest
+  ✓ email verification screen can be rendered                            0.02s  
+  ✓ email can be verified                                                0.02s  
+  ✓ email is not verified with invalid hash                              0.02s  
+  ✓ email is not verified with invalid user id                           0.02s  
+  ✓ verified user is redirected to dashboard from verification prompt    0.03s  
+  ✓ already verified user visiting verification link is redirected with… 0.03s  
+
+   PASS  Tests\Feature\Auth\PasswordConfirmationTest
+  ✓ confirm password screen can be rendered                              0.02s  
+  ✓ password confirmation requires authentication                        0.01s  
+
+   PASS  Tests\Feature\Auth\PasswordResetTest
+  ✓ reset password link screen can be rendered                           0.02s  
+  ✓ reset password link can be requested                                 0.25s  
+  ✓ reset password screen can be rendered                                0.24s  
+  ✓ password can be reset with valid token                               0.22s  
+  ✓ password cannot be reset with invalid token                          0.21s  
+
+   WARN  Tests\Feature\Auth\RegistrationTest
+  - registration screen can be rendered → Fortify feature [registration] is not enabled.
+  - new users can register → Fortify feature [registration] is not enabled.
+
+   PASS  Tests\Feature\Auth\TwoFactorChallengeTest
+  ✓ two factor challenge redirects to login when not authenticated       0.01s  
+  ✓ two factor challenge can be rendered                                 0.02s  
+
+   PASS  Tests\Feature\Auth\VerificationNotificationTest
+  ✓ sends verification notification                                      0.01s  
+  ✓ does not send verification notification if email is verified         0.01s  
+
+   PASS  Tests\Feature\DashboardTest
+  ✓ guests are redirected to the login page                              0.01s  
+  ✓ an authenticated login without an approved account receives no dash… 0.01s  
+  ✓ a verified active viewer is routed to and can read their role dashb… 0.02s  
+
+   PASS  Tests\Feature\DdWorkspaceNavigationTest
+  ✓ exact module entries redirect to dd modules                          0.01s  
+  ✓ legacy ids and mutations stay blocked                                0.01s  
+  ✓ invalid dd identity cannot use a redirect as fallback                0.01s  
+  ✓ unlinked and dd native requests continue to their own controllers    0.01s  
+
+   PASS  Tests\Feature\ExampleTest
+  ✓ the public entry redirects to the working Fortify login form         0.02s  
+
+   PASS  Tests\Feature\Settings\ProfileUpdateTest
+  ✓ profile page is displayed                                            0.02s  
+  ✓ profile information can be updated                                   0.01s  
+  ✓ email verification status is unchanged when the email address is un… 0.01s  
+  ✓ user can delete their account                                        0.01s  
+  ✓ correct password must be provided to delete account                  0.01s  
+
+   PASS  Tests\Feature\Settings\SecurityTest
+  ✓ security page is displayed                                           0.02s  
+  ✓ security page requires password confirmation when enabled            0.01s  
+  ✓ security page renders without two factor when feature is disabled    0.02s  
+  ✓ password can be updated                                              0.02s  
+  ✓ correct password must be provided to update password                 0.02s  
+
+  Tests:    2 skipped, 95 passed (483 assertions)
+  Duration: 2.76s
+
+EXIT=0

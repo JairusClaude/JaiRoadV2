@@ -1,0 +1,119 @@
+/* Reuse Project Details' open overview and metadata; only the map is taller. */
+.jr-road-coverage-details .jr-detail-grid {
+    align-items: start;
+}
+.jr-road-coverage-details .jr-details-heading > div:first-child,
+.jr-road-coverage-details .jr-detail-grid > div {
+    min-width: 0;
+}
+.jr-road-coverage-details h1 {
+    overflow-wrap: anywhere;
+}
+.jr-road-coverage-details .jr-coverage-map-column h3 {
+    margin: 0 0 12px;
+    color: #1e2430;
+    font-size: 13px;
+    font-weight: 600;
+}
+.jr-coverage-map-preview,
+.jr-road-coverage-details .jr-coverage-map-empty {
+    height: 420px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+}
+.jr-coverage-map-preview {
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+    background: #eaf0e7;
+}
+.jr-saved-coverage-map {
+    height: 100%;
+    width: 100%;
+    isolation: isolate;
+    z-index: 0;
+    font-family: inherit;
+    background: #eaf0e7;
+}
+.jr-saved-location {
+    display: grid;
+    place-items: center;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    background: #843b12;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 1px 4px #0003;
+}
+.jr-coverage-map-preview .jr-map-fullscreen {
+    position: absolute;
+    right: 12px;
+    bottom: 28px;
+    z-index: 500;
+    display: grid;
+    place-items: center;
+    height: 36px;
+    width: 34px;
+    background: #fff;
+    border: 1px solid #d9dfe3;
+    border-radius: 6px;
+    color: #475569;
+    cursor: pointer;
+}
+.jr-coverage-map-preview:fullscreen {
+    height: 100%;
+    width: 100%;
+    border: 0;
+    border-radius: 0;
+}
+.jr-coverage-map-notice {
+    position: absolute;
+    bottom: 24px;
+    left: 12px;
+    right: 58px;
+    z-index: 500;
+    background: #fff;
+    padding: 8px;
+    font-size: 12px;
+}
+.jr-road-coverage-details .jr-associated-project {
+    margin-top: 28px;
+    border-top: 0;
+    padding-top: 0;
+}
+.jr-road-coverage-details .jr-record-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+.jr-road-coverage-details .jr-record-row .jr-project-title {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.jr-road-coverage-details .jr-record-row > [data-slot='button'] {
+    flex-shrink: 0;
+}
+.jr-road-coverage-details a:focus-visible,
+.jr-road-coverage-details button:focus-visible,
+.jr-saved-coverage-map:focus-visible {
+    outline: 2px solid #c98a55;
+    outline-offset: 2px;
+}
+@media (max-width: 767px) {
+    .jr-road-coverage-details .jr-details-heading,
+    .jr-road-coverage-details .jr-record-row {
+        flex-wrap: wrap;
+    }
+    .jr-road-coverage-details .jr-metadata {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    }
+    .jr-road-coverage-details .jr-record-row {
+        padding-block: 12px;
+    }
+    .jr-coverage-map-preview,
+    .jr-road-coverage-details .jr-coverage-map-empty {
+        height: 360px;
+    }
+}

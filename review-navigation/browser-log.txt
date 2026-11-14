@@ -1,0 +1,15 @@
+PASS Explicit Add Location remains active after A and B; A–B routes automatically; panel placement buttons are removed
+PASS A valid two-location road saves while explicit Add Location is still active
+PASS Explicit placement continues directly to C, preserves A–B and exits at the three-location maximum
+PASS Initial non-explicit workflow is preserved; Select exits placement without losing the road
+PASS Panel A–B focuses actual geometry from an offscreen viewport and opens blue selected-road popup
+PASS Panel B–C has identical viewport focus, selection and contextual actions
+PASS Panel A/B/C center on real markers, emphasize one marker and open Remove-only popups
+PASS Details focuses the same marker without duplicate popups, routing, coordinate or length changes
+PASS Selected location remains directly draggable; unrelated locations are preserved and Undo restores it
+PASS Remove C keeps A–B and two-location navigation; toolbar Add Location places C again without sidebar controls
+PASS Unmapped portion focuses only real endpoints and offers actual recovery actions
+PASS Panel navigation cannot silently cancel an unfinished drawing; Save safeguards remain intact
+PASS Selection-only information edit saves without rewriting untouched GeoJSON
+PASS Narrow panel navigation scrolls to map and keeps the single popup within its bounds
+PASS No browser runtime errors

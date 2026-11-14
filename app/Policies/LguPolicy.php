@@ -4,15 +4,18 @@ namespace App\Policies;
 
 use App\Models\Lgu;
 use App\Models\User;
+use App\Services\MaintenanceProjects\VerifiedProjectAccount;
 
 class LguPolicy
 {
+    public function __construct(private VerifiedProjectAccount $accounts) {}
+
     /**
      * Determine whether the user can view any models.
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return $this->accounts->role($user) !== null;
     }
 
     /**
@@ -20,7 +23,7 @@ class LguPolicy
      */
     public function view(User $user, Lgu $lgu): bool
     {
-        return false;
+        return $this->viewAny($user);
     }
 
     /**
@@ -28,7 +31,7 @@ class LguPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return in_array($this->accounts->role($user), ['admin', 'superadmin'], true);
     }
 
     /**
@@ -36,7 +39,7 @@ class LguPolicy
      */
     public function update(User $user, Lgu $lgu): bool
     {
-        return false;
+        return in_array($this->accounts->role($user), ['admin', 'superadmin'], true);
     }
 
     /**
@@ -44,7 +47,12 @@ class LguPolicy
      */
     public function delete(User $user, Lgu $lgu): bool
     {
-        return false;
+        return in_array($this->accounts->role($user), ['admin', 'superadmin'], true);
+    }
+
+    public function deleteAny(User $user): bool
+    {
+        return in_array($this->accounts->role($user), ['admin', 'superadmin'], true);
     }
 
     /**

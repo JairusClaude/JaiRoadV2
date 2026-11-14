@@ -1,0 +1,20 @@
+CREATED
+resources/css/road-coverage-details.css
+resources/js/components/road-coverages/coverage-map-preview.tsx
+resources/js/pages/RoadCoverages/Show.tsx
+tools/maintenance-project-preview/road-coverage-details.mjs
+
+MODIFIED
+resources/css/road-coverage-directory.css
+resources/js/layouts/maintenance-project-layout.tsx
+resources/js/types/road-coverages.ts
+resources/js/components/road-coverages/coverage-form.tsx
+resources/js/pages/RoadCoverages/Index.tsx
+tools/maintenance-project-preview/road-coverage-forms.mjs
+tools/maintenance-project-preview/server.mjs
+
+GENERATED
+public/build/* (matching compiled assets)
+
+REVIEW ARTIFACTS
+review-road-details/* (reports, tests, screenshots, restoration copies)

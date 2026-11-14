@@ -1,0 +1,1 @@
+PASS: inserted and removed an intermediate vertex, exposed only one edit handle, moved a vertex, applied/saved with correction reason; B–C retained exactly and A–B changed; zero browser runtime errors. Real OSRM line used as temporary test input.

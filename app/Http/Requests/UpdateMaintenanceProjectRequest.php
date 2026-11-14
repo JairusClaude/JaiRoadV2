@@ -1,4 +1,3 @@
-
 <?php
 
 namespace App\Http\Requests;
@@ -11,12 +10,12 @@ use Illuminate\Validation\Rule;
 class UpdateMaintenanceProjectRequest extends FormRequest
 {
     /**
-     * Only users authorized by the MaintenanceProject policy
-     * may update this project.
+     * Only authorized users may update a maintenance project.
      */
     public function authorize(): bool
     {
-        $maintenanceProject = $this->route('maintenanceProject');
+        $maintenanceProject = $this->route('maintenanceProject')
+            ?? $this->route('maintenance_project');
 
         return $maintenanceProject instanceof MaintenanceProject
             && (
@@ -28,13 +27,20 @@ class UpdateMaintenanceProjectRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules for updating a maintenance project.
+     * Validate the maintenance-project update form.
      *
      * @return array<string, mixed>
      */
     public function rules(): array
     {
-        $maintenanceProject = $this->route('maintenanceProject');
+        $maintenanceProject = $this->route('maintenanceProject')
+            ?? $this->route('maintenance_project');
+
+        if (! $maintenanceProject instanceof MaintenanceProject) {
+            return [];
+        }
+
+        $project = new MaintenanceProject;
         $roadCoverage = new RoadCoverage;
 
         return [
@@ -47,12 +53,14 @@ class UpdateMaintenanceProjectRequest extends FormRequest
             'road_coverage_id' => [
                 'required',
                 'integer',
+
                 Rule::exists(
                     $roadCoverage->getTable(),
                     $roadCoverage->getKeyName()
                 ),
+
                 Rule::unique(
-                    (new MaintenanceProject)->getTable(),
+                    $project->getTable(),
                     'road_coverage_id'
                 )->ignore(
                     $maintenanceProject->getKey(),
@@ -64,6 +72,11 @@ class UpdateMaintenanceProjectRequest extends FormRequest
                 'nullable',
                 'string',
             ],
+
+            // Do not allow the client to override protected fields.
+            'created_by' => ['prohibited'],
+            'created_at' => ['prohibited'],
+            'updated_at' => ['prohibited'],
         ];
     }
 }

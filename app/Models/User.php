@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -15,6 +15,9 @@ use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
 /**
+ * Administrator-provisioned accounts do not require email activation. Fortify
+ * may confirm email ownership optionally; MustVerifyEmail is intentionally not implemented.
+ *
  * @property int $id
  * @property string $name
  * @property string $email
@@ -46,5 +49,25 @@ class User extends Authenticatable implements PasskeyUser
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    /** @return BelongsTo<UserAccount, $this> */
+    public function userAccount(): BelongsTo
+    {
+        // The deployed users table stores this link on user_account_id.
+        return $this->belongsTo(UserAccount::class, 'user_account_id');
+    }
+
+    /**
+     * Separate, explicit bridge to the NEW Data Dictionary account.
+     * Only ddUserAccount() provides canonical business identity. The legacy
+     * userAccount() relation is retained for historical compatibility, not login authority.
+     * Never map legacy numeric user_account_id to this relation.
+     *
+     * @return BelongsTo<StagingUserAccount, $this>
+     */
+    public function ddUserAccount(): BelongsTo
+    {
+        return $this->belongsTo(StagingUserAccount::class, 'dd_user_account_id');
     }
 }

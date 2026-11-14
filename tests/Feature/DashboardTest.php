@@ -1,16 +1,19 @@
 <?php
 
 use App\Models\User;
+use Inertia\Testing\AssertableInertia;
 
 test('guests are redirected to the login page', function () {
-    $response = $this->get(route('dashboard'));
-    $response->assertRedirect(route('login'));
+    $this->get(route('dashboard'))->assertRedirect(route('login'));
 });
 
-test('authenticated users can visit the dashboard', function () {
-    $user = User::factory()->create();
-    $this->actingAs($user);
+test('an authenticated login without an approved account receives no dashboard access', function () {
+    $this->actingAs(User::factory()->create())->get(route('dashboard'))->assertForbidden();
+});
 
-    $response = $this->get(route('dashboard'));
-    $response->assertOk();
+test('a verified active viewer is routed to and can read their role dashboard', function () {
+    $user = $this->canonicalUser(User::factory()->create(), 'Viewer');
+    $target = route('jairoads.dd-phase3.show', ['section' => 'dashboard']);
+    $this->actingAs($user)->get(route('dashboard'))->assertRedirect($target);
+    $this->get($target)->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->component('dd-phase3/RoleDashboard'));
 });

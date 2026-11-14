@@ -1,0 +1,1 @@
+PASS: positive kilometers, create, info-only concurrent preservation, stale geography rejection, Viewer denial, geometry/attribution preserved. Preview only.
