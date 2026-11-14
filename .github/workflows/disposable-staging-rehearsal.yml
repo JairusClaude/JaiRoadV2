@@ -121,6 +121,7 @@ jobs:
       SUPABASE_URL: http://127.0.0.1:5799
       SUPABASE_SECRET_KEY: disposable-storage-only
       SUPABASE_SERVICE_ROLE_KEY: disposable-storage-only
+      JAIROADS_PERMANENT_FILE_DELETION_ENABLED: 'true' # Guarded scratch Postgres and mock Storage; never production.
       QUARTERLY_BROWSER_FIXTURE: /tmp/jairoads-staging-fixture.json
     steps:
       - name: Checkout review branch
