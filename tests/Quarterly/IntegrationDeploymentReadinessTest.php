@@ -174,6 +174,7 @@ final class IntegrationDeploymentReadinessTest extends PostgresTestCase
         $this->assertFalse($report['ready_for_live_probes']);
         Http::assertNothingSent();
     }
+
     public function test_default_public_demo_map_providers_fail_strict_readiness(): void
     {
         config([
@@ -199,5 +200,4 @@ final class IntegrationDeploymentReadinessTest extends PostgresTestCase
         $this->assertSame(1, Artisan::call('jairoads:integration-readiness', ['--strict' => true]));
         Http::assertNothingSent();
     }
-
 }
