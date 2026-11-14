@@ -12,6 +12,7 @@ use App\Services\DuplicateMaintenancePeriod;
 use App\Services\Files\PermanentFileDeletion;
 use App\Services\LinkedPasswordUpdater;
 use App\Services\ManagingEngineerEligibility;
+use App\Services\MonthlyUpdates\CanonicalMonthlyWriteGate;
 use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
 use App\Services\OperationAudit;
 use App\Services\PostgresBoolean;
@@ -571,6 +572,7 @@ class OperationsController extends Controller
     {
         $actor = $this->actor($request, $resolver);
         $this->writer($actor);
+        CanonicalMonthlyWriteGate::enforce();
         $v = $request->validate([
             'maintenance_id' => ['required', 'integer', 'min:1'],
             'update_month' => ['required', 'date_format:Y-m'],
@@ -722,15 +724,19 @@ class OperationsController extends Controller
             throw ValidationException::withMessages(['file' => 'Document uploads are temporarily unavailable. Contact your administrator.']);
         }
         $file = $request->file('file');
+        $name = basename(str_replace('\\', '/', $file->getClientOriginalName()));
         $ext = strtolower($file->getClientOriginalExtension());
+        if ($name === '' || strlen($name) > 255 || ! in_array($ext, ['pdf', 'docx', 'xlsx', 'pptx'], true)) {
+            throw ValidationException::withMessages(['file' => 'Use a PDF, DOCX, XLSX or PPTX filename shorter than 256 bytes.']);
+        }
         $path = 'maintenance-records/'.(int) $v['maintenance_id'].'/'.(string) Str::uuid().'.'.$ext;
         $storage->upload($file, $path);
         try {
-            DB::transaction(function () use ($request, $resolver, $actor, $v, $file, $path): void {
+            DB::transaction(function () use ($request, $resolver, $actor, $v, $path, $name): void {
                 $this->lockUploadAuthorization($request, $resolver, $actor, (int) $v['maintenance_id']);
                 $id = (int) $this->t('maintenance_documents')->insertGetId([
                     'maintenance_id' => (int) $v['maintenance_id'], 'document_title' => $v['document_title'],
-                    'description' => $v['description'] ?? null, 'file_name' => basename($file->getClientOriginalName()),
+                    'description' => $v['description'] ?? null, 'file_name' => $name,
                     'file_path' => $path, 'uploaded_by' => $actor['account_id'], 'uploaded_at' => now(), 'updated_at' => now(),
                 ]);
                 $this->audit($actor, 'CREATE', 'MaintenanceDocument', $id, 'Formal maintenance document uploaded.');
@@ -751,6 +757,7 @@ class OperationsController extends Controller
     {
         $actor = $this->actor($request, $resolver);
         $this->writer($actor);
+        CanonicalMonthlyWriteGate::enforce();
         $v = $request->validate(['monthly_update_id' => ['required', 'integer', 'min:1'],
             'file' => ['required', 'file', 'max:20480', 'mimetypes:image/jpeg,image/png,image/webp,video/mp4,video/webm']]);
         $update = $this->t('monthly_updates')->where('id', $v['monthly_update_id'])->first(['maintenance_id']);
@@ -760,6 +767,10 @@ class OperationsController extends Controller
             throw ValidationException::withMessages(['file' => 'Evidence uploads are temporarily unavailable. Contact your administrator.']);
         }
         $file = $request->file('file');
+        $name = basename(str_replace('\\', '/', $file->getClientOriginalName()));
+        if ($name === '' || strlen($name) > 255) {
+            throw ValidationException::withMessages(['file' => 'Use a filename shorter than 256 bytes.']);
+        }
         $mime = (string) $file->getMimeType();
         $ext = match ($mime) {
             'image/jpeg' => 'jpg','image/png' => 'png','image/webp' => 'webp','video/mp4' => 'mp4','video/webm' => 'webm',
@@ -768,12 +779,12 @@ class OperationsController extends Controller
         $path = 'monthly-updates/'.(int) $v['monthly_update_id'].'/'.(string) Str::uuid().'.'.$ext;
         $storage->upload($file, $path);
         try {
-            DB::transaction(function () use ($request, $resolver, $actor, $v, $file, $path, $mime, $update): void {
+            DB::transaction(function () use ($request, $resolver, $actor, $v, $path, $name, $mime, $update): void {
                 $this->lockUploadAuthorization($request, $resolver, $actor, (int) $update->maintenance_id);
                 $currentUpdate = $this->t('monthly_updates')->where('id', $v['monthly_update_id'])->sharedLock()->first(['maintenance_id']);
                 abort_unless($currentUpdate !== null && (int) $currentUpdate->maintenance_id === (int) $update->maintenance_id, 409);
                 $id = (int) $this->t('media')->insertGetId([
-                    'monthly_update_id' => (int) $v['monthly_update_id'], 'file_name' => basename($file->getClientOriginalName()),
+                    'monthly_update_id' => (int) $v['monthly_update_id'], 'file_name' => $name,
                     'file_path' => $path, 'file_type' => $mime, 'uploaded_by' => $actor['account_id'], 'created_at' => now(),
                 ]);
                 $this->audit($actor, 'CREATE', 'Media', $id, 'MonthlyUpdate media evidence uploaded.');

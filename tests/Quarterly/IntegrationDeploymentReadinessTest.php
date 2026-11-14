@@ -160,4 +160,17 @@ final class IntegrationDeploymentReadinessTest extends PostgresTestCase
         Http::assertSentCount(1);
         Http::assertNotSent(fn ($request): bool => $request->method() === 'DELETE');
     }
+    public function test_strict_mode_fails_on_incomplete_configuration_without_network_requests(): void
+    {
+        config([
+            'app.url' => 'http://insecure.test',
+            'mail.default' => 'array',
+            'fortify.passkeys.allowed_origins' => [],
+        ]);
+        Http::fake();
+        $this->assertSame(1, Artisan::call('jairoads:integration-readiness', ['--strict' => true]));
+        $report = json_decode(Artisan::output(), true, 512, JSON_THROW_ON_ERROR);
+        $this->assertFalse($report['ready_for_live_probes']);
+        Http::assertNothingSent();
+    }
 }

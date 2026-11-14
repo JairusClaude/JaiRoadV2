@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Services\MonthlyUpdates\CanonicalMonthlyWriteGate;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -47,7 +48,7 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
             // Choice projection only; filtering above does not apply a function to the column.
             'years' => (clone $authorized)->select([])->selectRaw('substring(u.update_month, 1, 4)::integer as reporting_year')
                 ->distinct()->orderByDesc('reporting_year')->pluck('reporting_year'),
-            'filters' => $filters, 'canWrite' => $this->writable($actor),
+            'filters' => $filters, 'canWrite' => $this->writable($actor) && CanonicalMonthlyWriteGate::enabled(),
         ]);
     }
 
@@ -55,6 +56,7 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
     {
         $actor = $this->actor($request);
         $this->writer($actor);
+        CanonicalMonthlyWriteGate::enforce();
         $u = $id === null ? null : $this->updateQuery($actor)->where('u.id', $id)->first();
         abort_if($id !== null && $u === null, 404);
         abort_if($u !== null && ! $this->canWriteRecord($u, $actor), 403);
@@ -72,6 +74,7 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
     public function saveUpdate(Request $request, ?int $id = null): RedirectResponse
     {
         $this->writer($this->actor($request));
+        CanonicalMonthlyWriteGate::enforce();
         // The canonical upload workflow compensates storage one file at a time.
         // Do not pretend a batch of preview attachments is an atomic report save.
         $request->validate(['attachments' => ['prohibited'], 'removed_media_ids' => ['prohibited']]);
@@ -89,8 +92,8 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
         abort_unless($u !== null, 404);
 
         return $this->render('MonthlyUpdates/Show', $request, [
-            'update' => $this->updateData($u, $actor), 'media' => $this->mediaData($id, $actor), 'canWrite' => $this->canWriteRecord($u, $actor),
-            'canUploadMedia' => $this->canWriteRecord($u, $actor) && $this->media->configured(),
+            'update' => $this->updateData($u, $actor), 'media' => $this->mediaData($id, $actor), 'canWrite' => $this->canWriteRecord($u, $actor) && CanonicalMonthlyWriteGate::enabled(),
+            'canUploadMedia' => $this->canWriteRecord($u, $actor) && CanonicalMonthlyWriteGate::enabled() && $this->media->configured(),
             'backUrl' => self::BASE.'/monthly-updates', 'backLabel' => 'Monthly Updates', 'directoryUrl' => self::BASE.'/monthly-updates',
         ]);
     }
@@ -99,6 +102,7 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
     {
         $actor = $this->actor($request);
         $this->writer($actor);
+        CanonicalMonthlyWriteGate::enforce();
         $u = $this->updateQuery($actor)->where('u.id', $id)->first();
         abort_unless($u !== null, 404);
         $request->merge(['monthly_update_id' => $id]);
