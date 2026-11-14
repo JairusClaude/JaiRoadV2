@@ -1,5 +1,9 @@
 # JaiROADS — Backend/database compatibility and isolated-staging readiness
 
+> **LATEST OPERATOR VERIFICATION — 2026-11-14:** After the six hosted migrations, the user privately set a password for `jairoads_app_runtime`, enabled `LOGIN`, and successfully connected through the Supabase Session pooler using `psql` 18.7 / PostgreSQL 17.6 with TLS 1.3. The real session reported `current_user = jairoads_app_runtime`, database `postgres`, and read 7 canonical UserAccounts. A new **read-only** Supabase catalog check independently confirmed `rolcanlogin=true`, `rolsuper=false`, `rolbypassrls=false`, 11 canonical tables, all five support tables and quarterly uniqueness; 0 account-provisioning evidence rows and 1 active unlinked Admin remain. Credentials are private and **not** in GitHub. **Password authentication and canonical SELECT now PASS; Laravel application HTTP/RLS writes, existing-account authorization, Render configuration, private Storage recovery and human UAT do NOT.**
+
+> **Document structure:** The original pre-activation snapshot below is preserved for provenance. Its references to missing tables, `NOLOGIN` and absent uniqueness are **historical, not current state**. Supabase's six exact applied migration statements are archived under `database/hosted-migration-history/` as non-executable review artifacts.
+
 > **POST-ACTIVATION UPDATE — 2026-11-14 (Asia/Manila):** The original missing-object observations below describe the *pre-change* database. On the user's explicit request, six additive migrations were applied directly to the official hosted Supabase project and verified. Five support tables and quarterly uniqueness are now **PRESENT**. The named restricted role now exists with reviewed server-only grants/policies but is intentionally **NOLOGIN** (no password, no Render use); real login/HTTP/RLS write acceptance and owner identity reviews remain pending. **Do not reapply the older proposals or treat this as production release approval.** See the activation ledger immediately below.
 
 ## Hosted activation ledger (supersedes pre-change missing-object snapshot)
@@ -15,7 +19,7 @@
 
 **Post-change read-only checks:** 11 canonical Final-DD business entities still exist; 7 UserAccounts and 111 immutable AuditLog entries currently exist. All five newly introduced auxiliary tables have zero data rows at verification. `anon`, `authenticated` and `service_role` have **zero SELECT/INSERT/UPDATE/DELETE grants on the five support tables**. Role catalog checks cover 25 server-side tables, RLS enabled on all 25, with no account/Engineer/audit/provenance DELETE grants. A controlled, read-only `SET LOCAL ROLE jairoads_app_runtime` smoke test succeeded after a temporary in-transaction role grant: it read the Fortify/canonical identity and all support tables without modifying data. The follow-up verified that the role-creator's normal membership is **ADMIN=true, SET=false, INHERIT=false**. This is not a password-based LOGIN, write-authorization, production HTTP or end-to-end RLS test.
 
-**Operational blockers remain:** private credential creation/configuration and direct runtime-role HTTP checks; actual reviewed provisioning evidence for existing ordinary accounts (particularly 1 active Admin with no Engineer link); both active SuperAdmin owner/recovery validation; independent DB+private Storage backup/recovery; real Storage deletion testing (creating the intent table makes the endpoint schema-eligible); signed acceptance; and a separate Render staging deployment. **Production NO GO; do not change the running Render service.** Source-derived table proposals retain their historical REVIEW ONLY comments; these actual hosted migrations are recorded in Supabase migration history. Nothing was automatically backfilled or deployed.
+**Operational blockers remain:** private Render/staging credential configuration and direct runtime-role Laravel HTTP/write/RLS checks; actual reviewed provisioning evidence for existing ordinary accounts (particularly 1 active Admin with no Engineer link); both active SuperAdmin owner/recovery validation; independent DB+private Storage backup/recovery; real Storage deletion testing (creating the intent table makes the endpoint schema-eligible); signed acceptance; and a separate Render staging deployment. **Production NO GO; do not change the running Render service.** Source-derived table proposals retain their historical REVIEW ONLY comments; these actual hosted migrations are recorded in Supabase migration history. Nothing was automatically backfilled or deployed.
 
 ---
 
@@ -27,11 +31,11 @@
 
 ## 1. Decision summary
 
-The latest post-demo backend is extensively implemented and has previously passed synthetic/disposable CI, but the official database is **not compatible with a safe cutover today**. The canonical 11-table data model exists and required MaintenanceRecord relationships are intact. However, the support schema/tables used by strict identity, notification delivery, file deletion and monitoring are absent; a dedicated non-owner/non-BYPASSRLS Laravel runtime login is also absent. Do **not** point a new strict-auth application deployment at the current official database as a shortcut to a demonstration.
+**Historical decision at the first read-only inspection:** The latest post-demo backend was not safe to cut over because support tables, quarterly uniqueness and restricted runtime login were absent. **Updated 2026-11-14:** These infrastructure gaps have now been addressed in the official hosted database, and the restricted login passed a direct password-based SELECT test. That does **not** solve the missing ordinary-account provenance, real SuperAdmin recovery, unverified Laravel HTTP permissions, private object recovery, or the lack of persistent isolated staging and human signoff. **Production remains NO GO.** Do not point a strict-auth deployment at the current official database as a shortcut to a demonstration.
 
 This document is an inspection and staging handoff, **not a migration plan approved for execution**. For browser demonstration, create an **independent Render staging service** backed by an **independent PostgreSQL 17 staging database** with synthetic accounts, approved compatibility schema and restricted credentials. Do not reuse official Supabase credentials, accounts, Storage objects or the existing live Render service.
 
-## 2. Live read-only compatibility inventory
+## 2. Original pre-activation read-only compatibility inventory (historical only)
 
 | Dependency / constraint | Verified 2026-11-14 observation | Consequence / next review |
 |---|---|---|
@@ -51,7 +55,7 @@ This document is an inspection and staging handoff, **not a migration plan appro
 | Historical detachment support | `jairoads_next.maintenance_record_contexts` absent | **Correct** for strict Final DD; it must **not** be introduced as a release requirement. |
 | Aggregated canonical accounts | 7 accounts: 2 SuperAdmin, 1 Admin, 2 Engineer, 2 Viewer; 1 active Admin currently lacks EngineerID | Ownership and identity **not verified**. Do not infer a person/profile match, deactivate either SuperAdmin, fabricate an Engineer, or backfill provenance based on counts. |
 
-**Inspection limits:** Catalog privilege tests do not impersonate a working non-owner Laravel connection, prove policy behavior, validate private object recovery, verify Render environment variables, prove authentic human identities, or constitute legal/operational authorization. No personal identifiers, passwords, hashes, tokens or Storage paths were queried or published in this report.
+**Inspection limits:** The later operator `psql` login confirms a real non-owner database connection and canonical SELECT only. Catalog privilege tests still do not verify Laravel HTTP requests, prove policy behavior, validate private object recovery, verify Render environment variables, prove authentic human identities, or constitute legal/operational authorization. No personal identifiers, passwords, hashes, tokens or Storage paths were queried or published in this report.
 
 ## 3. Source-code dependency map
 
