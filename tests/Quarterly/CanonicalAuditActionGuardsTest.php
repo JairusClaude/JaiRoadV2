@@ -26,6 +26,9 @@ final class CanonicalAuditActionGuardsTest extends PostgresTestCase
             ['DEACTIVATE', 'UserAccount', ['is_active' => false], ['is_active' => false]],
             ['REASSIGN', 'MaintenanceRecord', ['managing_engineer_id' => 1], ['managing_engineer_id' => 1]],
             ['REASSIGN', 'MaintenanceRecord', ['managing_engineer_id' => null], ['managing_engineer_id' => null]],
+            // Strict Final DD: a manager is required on both sides of reassignment.
+            ['REASSIGN', 'MaintenanceRecord', ['managing_engineer_id' => null], ['managing_engineer_id' => 2]],
+            ['REASSIGN', 'MaintenanceRecord', ['managing_engineer_id' => 1], ['managing_engineer_id' => null]],
             ['REASSIGN', 'MaintenanceRecord', ['managing_engineer_id' => -1], ['managing_engineer_id' => 2]],
             ['REASSIGN', 'MaintenanceRecord', ['managing_engineer_id' => 1, 'description' => 'A'], ['managing_engineer_id' => 2, 'description' => 'B']],
             ['RETIRE', 'Engineer', ['engineer_status' => 'Active', 'rank' => 'A'], ['engineer_status' => 'Retired', 'rank' => 'B']],
