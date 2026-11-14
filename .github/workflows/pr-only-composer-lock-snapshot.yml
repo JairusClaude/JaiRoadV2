@@ -1,0 +1,30 @@
+name: PR-only Composer lock regeneration snapshot
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  generate-lock:
+    if: github.head_ref == 'review/postdemo2-remaining-gates-2026-11-14'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+      - name: Resolve Wayfinder compatible with patched Laravel framework
+        run: |
+          composer update laravel/wayfinder --with-all-dependencies --no-interaction --prefer-dist --no-progress --no-scripts --no-plugins
+          composer audit --locked --no-interaction
+          php -r '$l=json_decode(file_get_contents("composer.lock"),true);foreach($l["packages"] as $p){if(in_array($p["name"],["laravel/framework","laravel/wayfinder"])){echo $p["name"]." ".$p["version"].PHP_EOL;}}'
+      - name: Print review-only base64 lock payload (no credentials)
+        run: |
+          printf 'JAIROADS_LOCK_BEGIN\n'
+          base64 -w 5000 composer.lock
+          printf '\nJAIROADS_LOCK_END\n'
