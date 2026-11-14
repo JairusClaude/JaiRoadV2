@@ -37,6 +37,8 @@ it('pauses both canonical monthly updates and media writes while preserving read
     ])->assertStatus(503);
     $this->postJson('/dd-phase3/ui/monthly-updates/'.$update.'/media', [])->assertStatus(503);
     $this->postJson('/dd-phase3/ops/media', [])->assertStatus(503);
+    $this->deleteJson('/dd-phase3/ops/updates/'.$update)->assertStatus(503);
+    $this->deleteJson('/dd-phase3/files/media/1')->assertStatus(503);
     expect(DB::table('jairoads_next.monthly_updates')->count())->toBe(1)
         ->and(DB::table('jairoads_next.media')->count())->toBe(0)
         ->and(DB::table('jairoads_next.audit_logs')->count())->toBe(0);

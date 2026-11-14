@@ -805,6 +805,9 @@ class OperationsController extends Controller
     {
         $actor = $this->actor($request, $resolver);
         abort_unless($this->managers($actor), 403, 'Only Admin/SuperAdmin may delete approved entities.');
+        if ($entity === 'updates') {
+            CanonicalMonthlyWriteGate::enforce();
+        }
         if ($entity === 'projects') {
             $v = $request->validate(['confirmation_token' => ['required', 'string']]);
             $login = $request->user();
@@ -840,13 +843,22 @@ class OperationsController extends Controller
     {
         $login = $request->user();
         abort_unless($login instanceof User, 403);
+        $review = $deletions->review($login, $kind, $id);
+        if ($kind === 'media' && ! CanonicalMonthlyWriteGate::enabled()) {
+            $review['can_delete'] = false;
+            $review['delete_url'] = null;
+            $review['message'] = 'MonthlyUpdate and Media writes are paused for this environment.';
+        }
 
-        return response()->json($deletions->review($login, $kind, $id))->header('Cache-Control', 'private, no-store');
+        return response()->json($review)->header('Cache-Control', 'private, no-store');
     }
 
     public function deleteFile(Request $request, AccountIdentityResolver $resolver, PermanentFileDeletion $deletions, string $kind, int $id): JsonResponse
     {
         abort_unless($this->managers($this->actor($request, $resolver)), 403);
+        if ($kind === 'media') {
+            CanonicalMonthlyWriteGate::enforce();
+        }
         $request->validate(array_fill_keys(['file_path', 'file_name', 'bucket', 'storage_origin', 'role', 'lgu_id'], ['prohibited']));
         $login = $request->user();
         abort_unless($login instanceof User, 403);
