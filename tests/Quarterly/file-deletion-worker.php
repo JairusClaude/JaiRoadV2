@@ -27,7 +27,8 @@ if (! $app->environment('testing') || getenv('JAIROADS_SCRATCH_APPROVAL') !== 'D
     || ! $validMarker) {
     throw new RuntimeException('Unsafe file deletion worker target.');
 }
-config(['database.connections.pgsql.sslmode' => 'disable', 'jairoads_documents.supabase_url' => 'https://disposable-storage.test',
+config(['jairoads_file_deletion.operationally_enabled' => true, // Guarded disposable scratch worker only.
+    'database.connections.pgsql.sslmode' => 'disable', 'jairoads_documents.supabase_url' => 'https://disposable-storage.test',
     'jairoads_documents.service_role_key' => 'sb_secret_disposable', 'jairoads_documents.bucket' => 'private-documents']);
 DB::purge('pgsql');
 DB::statement("SET application_name = 'file_deletion_worker'");
