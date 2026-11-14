@@ -6,6 +6,7 @@ namespace App\Services\SecurityMonitoring;
 
 use App\Models\User;
 use App\Services\AccountIdentityResolver;
+use App\Services\PostgresBoolean;
 use Illuminate\Cache\RateLimiter;
 use Illuminate\Database\Connection;
 use Illuminate\Http\Request;
@@ -37,10 +38,10 @@ final class AuthenticationTelemetry
         }
         try {
             if (! $write) {
-                return $this->connection()->selectOne("SELECT CASE WHEN to_regclass(?) IS NULL THEN false ELSE has_schema_privilege(current_user,'jairoads_security','USAGE') AND has_table_privilege(current_user,?,'SELECT') END AS available", [self::EVENTS, self::EVENTS])->available === true;
+                return PostgresBoolean::isTrue($this->connection()->selectOne("SELECT CASE WHEN to_regclass(?) IS NULL THEN false ELSE has_schema_privilege(current_user,'jairoads_security','USAGE') AND has_table_privilege(current_user,?,'SELECT') END AS available", [self::EVENTS, self::EVENTS])?->available);
             }
 
-            return $this->connection()->selectOne("SELECT CASE WHEN to_regclass(?) IS NULL OR to_regclass(?) IS NULL THEN false
+            return PostgresBoolean::isTrue($this->connection()->selectOne("SELECT CASE WHEN to_regclass(?) IS NULL OR to_regclass(?) IS NULL THEN false
                 ELSE has_schema_privilege(current_user,'jairoads_security','USAGE')
                   AND has_table_privilege(current_user,?,'SELECT')
                   AND has_table_privilege(current_user,?,'INSERT')
@@ -48,7 +49,7 @@ final class AuthenticationTelemetry
                   AND has_table_privilege(current_user,?,'INSERT')
                   AND has_table_privilege(current_user,?,'UPDATE')
                   AND has_table_privilege(current_user,?,'DELETE')
-                  AND has_sequence_privilege(current_user,'jairoads_security.authentication_events_id_seq','USAGE') END AS available", [self::EVENTS, self::PRESENCE, self::EVENTS, self::EVENTS, self::PRESENCE, self::PRESENCE, self::PRESENCE, self::PRESENCE])->available === true;
+                  AND has_sequence_privilege(current_user,'jairoads_security.authentication_events_id_seq','USAGE') END AS available", [self::EVENTS, self::PRESENCE, self::EVENTS, self::EVENTS, self::PRESENCE, self::PRESENCE, self::PRESENCE, self::PRESENCE])?->available);
         } catch (\Throwable) {
             return false;
         }
@@ -127,7 +128,7 @@ final class AuthenticationTelemetry
                 $db->statement("SET LOCAL lock_timeout='250ms'");
                 $db->statement("SET LOCAL statement_timeout='750ms'");
                 if ($event === 'FAILED_LOGIN') {
-                    if (! $db->selectOne('SELECT pg_try_advisory_xact_lock(1927710950) AS locked')->locked
+                    if (! PostgresBoolean::isTrue($db->selectOne('SELECT pg_try_advisory_xact_lock(1927710950) AS locked')?->locked)
                         || $db->table(self::EVENTS)->where('event', 'FAILED_LOGIN')->where('created_at', '>=', now()->startOfHour()->utc()->toIso8601String())->count() >= (int) config('security-monitoring.failure_limit_per_hour')) {
                         return;
                     }

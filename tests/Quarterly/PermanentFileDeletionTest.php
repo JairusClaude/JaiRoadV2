@@ -41,6 +41,7 @@ final class PermanentFileDeletionTest extends PostgresTestCase
     protected function setUp(): void
     {
         parent::setUp();
+        config(['jairoads_file_deletion.operationally_enabled' => true]); // Disposable fixture only.
         (require base_path('database/proposals/create_file_deletions.php'))->up();
         config(['jairoads_documents.supabase_url' => 'https://disposable-storage.test', 'jairoads_documents.service_role_key' => 'sb_secret_disposable',
             'jairoads_documents.bucket' => 'private-documents', 'jairoads_monthly_updates.supabase_url' => 'https://disposable-storage.test',
@@ -72,6 +73,20 @@ final class PermanentFileDeletionTest extends PostgresTestCase
     private function history(): string
     {
         return DB::table('jairoads_next.audit_logs')->where('description', 'Historical entry')->get()->toJson();
+    }
+
+    public function test_installing_deletion_table_does_not_authorize_permanent_removal(): void
+    {
+        $f = $this->files();
+        $id = $f['documents'][0];
+        config(['jairoads_file_deletion.operationally_enabled' => false]);
+        $this->getJson('/dd-phase3/files/document/'.$id.'/deletion-review')
+            ->assertOk()->assertJsonPath('can_delete', false);
+        $this->deleteJson('/dd-phase3/files/document/'.$id)->assertStatus(503);
+        $this->artisan('jairoads:resume-file-deletions')->assertFailed();
+        $this->assertSame(0, DB::table('jairoads_next.file_deletions')->count());
+        $this->assertDatabaseHas('jairoads_next.maintenance_documents', ['id' => $id]);
+        Http::assertNotSent(fn ($request) => $request->method() === 'DELETE');
     }
 
     public static function allowed(): iterable

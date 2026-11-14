@@ -24,7 +24,7 @@ final class RecordMutationAuthority
             throw new \LogicException('Record authorization requires the mutation transaction.');
         }
         $guard = DB::selectOne('SELECT pg_try_advisory_xact_lock_shared(1927710916) AS acquired');
-        abort_unless($guard->acquired === true, 409, 'Account authorization is changing. Retry the record operation.');
+        abort_unless(PostgresBoolean::isTrue($guard?->acquired), 409, 'Account authorization is changing. Retry the record operation.');
 
         // Same bridge -> account -> profile -> membership order as credential
         // and lifecycle coordination. These pins survive later creator/audit FK
@@ -39,7 +39,7 @@ final class RecordMutationAuthority
             ->where('engineer_id', $account->engineer_id)->where('lgu_id', $lguId)->sharedLock()->first(['is_active']) : null;
         abort_unless($this->identities->resolve($login) === $expected && RoleAccess::canWriteOperations($expected['role']), 403, 'Your current account is unavailable.');
         if ($expected['role'] === 'Engineer') {
-            abort_unless($membership?->is_active === true, 403, 'Current EngineerLGU authorization is required.');
+            abort_unless(PostgresBoolean::isTrue($membership?->is_active), 403, 'Current EngineerLGU authorization is required.');
         }
     }
 }

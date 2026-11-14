@@ -9,7 +9,7 @@ The current integrated system includes Fortify/React/Inertia, the canonical `jai
 
 **New Task 11 automation:** `tests/Browser/role-acceptance.mjs` is called during `tests/Browser/unified.mjs` using the *same four real Fortify browser sessions* and a separate unauthenticated browser context. It checks **5 unauthenticated routes, 6 role-matrix GET routes × 4 roles and 7 unauthorized POST attempts using actual CSRF cookies**. These are HTTP authorization tests, not merely checks that a button is hidden.
 
-**There is still no approved persistent isolated staging app** with real production-style credentials/SMTP/HTTPS WebAuthn/private Storage. The 0 official schema migrations and 0 live user-account corrections performed by this branch are intentional. A green CI result is evidence for the synthetic test scope, not evidence of real operator credentials, service delivery, client devices or actual users' acceptance.
+**There is still no approved persistent isolated staging app** with real production-style credentials/SMTP/HTTPS WebAuthn/private Storage. The original Task 11 branch made 0 official schema migrations and 0 live user-account corrections. **Later, on 2026-11-14, six hosted migrations were deliberately applied and runtime LOGIN verified outside that Task 11 branch; no real account corrections, human UAT, staging Render deployment or production cutover occurred.** A green CI result is evidence for the synthetic test scope, not evidence of real operator credentials, service delivery, client devices or actual users' acceptance.
 
 The older branches `main` and `integration/road-coverage-login` diverged and remain unmerged pending the teammate's review. The combined integration candidate contains the actual teammate `integration/dd-system-completion` ancestor plus draft PRs #6–#14.
 
@@ -32,7 +32,7 @@ Legend: **Automated** means there is repository/CI coverage to be checked at the
 | QA-01 | Guest returns 401 for protected JSON resources and never gains a session | `role-acceptance.mjs` | Human pending |
 | QA-02 | Four roles log in using actual Fortify, have role-appropriate dashboard and no sample credentials | `unified.mjs` / `role-acceptance.mjs` | Human pending |
 | QA-03 | Manager-only user directory, full AuditLog and ordinary account/Engineer/LGU governance; unauthorized 403 | `role-acceptance.mjs`, `AccountLinkagePolicyTest` | Human pending |
-| QA-04 | New Admin/Engineer/Viewer requires active unclaimed Engineer link and immutable administrator provenance | `AccountLinkagePolicyTest`, `ReviewedAccountTransitionTest` | Human pending |
+| QA-04 | New Admin/Engineer provisioning creates a real new Active Engineer profile atomically with UserAccount, Fortify link, and immutable administrator provenance; Viewer may have no Engineer profile but still requires legitimate provenance; existing ordinary accounts require individually reviewed transition evidence | `PostDemoAccountCreationTest`, `AccountLinkagePolicyTest`, `ReviewedAccountTransitionTest` | Human pending |
 | QA-05 | SuperAdmin survives password reset and MFA/passkey recovery; last eligible root cannot be disabled | `SuperAdminRecoveryReadinessTest`, `passkey-lifecycle.mjs` | **Real operator recovery pending** |
 | QA-06 | Engineer cannot access records/roads/files in another LGU or create Admin accounts | `role-acceptance.mjs`, `UnifiedFrontendTest`, `unified.mjs` | Human pending |
 | QA-07 | Viewer cannot access forms or issue create/update/delete, even with direct POST URLs | `role-acceptance.mjs`, `UnifiedFrontendTest` | Human pending |
@@ -40,10 +40,10 @@ Legend: **Automated** means there is repository/CI coverage to be checked at the
 | QA-09 | Legacy/complex road formats stay safe, unrecognized geometry not silently replaced | `unified.mjs`, `RoadReferenceLoadingTest` | Human pending |
 | QA-10 | Authorized road municipality change requires review/confirm; cancel and stale preview have no write | `unified.mjs`, `RoadMunicipalityChangeTest` | Human pending |
 | QA-11 | Create project attached to authorized road; project/record identities and author snapshots persist | `unified.mjs`, `FullMaintenanceWorkflowTest` | Human pending |
-| QA-12 | Quarterly maintenance records are unique per project/year/quarter, duplicates rejected and preserved NULL project history allowed | `OptionalSchemaActivationTest`, `DuplicatePeriodWarningTest` | Human pending |
+| QA-12 | Quarterly MaintenanceRecord is unique per project/year/quarter; duplicate insert denied; ProjectID and ManagingEngineerID remain NOT NULL with ON DELETE RESTRICT and no detached/null project history | `OptionalSchemaActivationTest`, `DuplicatePeriodWarningTest`, `PreservedRelationshipsTest` | Human pending |
 | QA-13 | Monthly update filters, chronological order, duplicate-month denial and bounded progress | `unified.mjs`, `MonthlyReportingFiltersTest` | Human pending |
 | QA-14 | Real user upload/download/individual exact-object delete/retry and durable Storage intent | `unified.mjs` with Storage mock, `PermanentFileDeletionTest` | **Real private Storage pending** |
-| QA-15 | Deleted project preserves record context/media/documents/history; Managing Engineer unassignment/reassignment respects scope | `PreservedRelationshipsTest`, `unified.mjs` | Human pending |
+| QA-15 | Reject deletion of any project with dependent MaintenanceRecords; only an empty project may be deleted by authorized Admin/SuperAdmin with confirmation and audit; ManagingEngineer may be reassigned to an eligible real Engineer, never unassigned to NULL; retain existing history | `PreservedRelationshipsTest`, `unified.mjs` | Human pending |
 | QA-16 | Single AuditLog per successful mutation, no event on no-op/error, unique eligible notifications incl. Engineer actor | `audit-notifications.mjs`, `AuditNotificationConsistencyTest` | Human pending |
 | QA-17 | Immutable/paginated privileged audit snapshots, redacted notifications; historical LOGIN retained but new auth not in business audit | `audit-notifications.mjs`, `FinalSecurityReadTest` | Human pending |
 | QA-18 | Revoked/deactivated/retired/invalid ordinary accounts denied on password, passkey, sessions and mutation races | `CanonicalOnlyAuthenticationTest`, `passkey-lifecycle.mjs`, `OrdinaryMutationRaceTest` | Human pending |
@@ -52,7 +52,7 @@ Legend: **Automated** means there is repository/CI coverage to be checked at the
 | QA-21 | Real SMTP reset delivery; token expiry and successful canonical/Fortify hash sync | `IntegrationCompatibilityTest` with mail sink | **Real SMTP pending** |
 | QA-22 | Actual approved HTTPS RP ID, origin and signed WebAuthn register/login/lost-device recovery | `passkey-lifecycle.mjs` on virtual authenticator | **Real-device HTTPS pending** |
 | QA-23 | Actual map routing/geocoding permissions, provider terms, rate limits/CORS, graceful manual draw fallback | `unified.mjs` with route/geocoding mocks | **Real providers pending** |
-| QA-24 | Restricted Laravel LOGIN role, RLS, auxiliary schema and migration rollback under actual staging credentials | `restricted-auth-http-smoke.py`, `rehearse-atomic-migrations.sh` | **Persistent staging pending** |
+| QA-24 | Test restricted Laravel HTTP business reads/writes, forbidden operations, RLS, auxiliary tables and rollback under independent persistent staging credentials; official role's successful direct psql LOGIN/SELECT is useful preflight but does not substitute for this | `restricted-auth-http-smoke.py`, `rehearse-atomic-migrations.sh` | **Persistent staging and real Laravel HTTP pending** |
 | QA-25 | Backup/restore, monitoring, slow requests and concurrency under realistic data volume; no secret/log leakage | Existing race and Docker fail-closed tests | **Operational rehearsal pending** |
 
 ## Manual execution and evidence requirements

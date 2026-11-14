@@ -1,5 +1,7 @@
 # Priority Repair A verification checkpoint
 
+> **New safety gate (2026-11-14, PR #24):** The hosted `file_deletions` intent table has been installed, but real private Storage backup/recovery and operator acceptance remain unverified. The code now requires explicit `JAIROADS_PERMANENT_FILE_DELETION_ENABLED=true` to accept/execute destructive object deletion; the default is off. Automated tests use disposable mock Storage and are not proof of live object recovery. The following 2026-11-04 test evidence is historical for that earlier code revision.
+
 4 November 2026. Recovered from local HEAD `4910293610d35c69bd9bdb5864610099325f05b9`, remote base `e5a42a985b2d2657011ccab0de486ba5d7d53663`, on `Oct10_Front&BackEnd_Merge_Integration`. The workspace contained 21 modified tracked implementation/test files and eight new implementation/test files; no staged work or published Repair A commit existed. Earlier local preservation merges/audit documents were retained without publishing them as part of this feature.
 
 Recovered backend/frontend implementation and earlier passing logs were inspected rather than recreated. Remaining work completed: final bucket versioning/private-state verification, exact confirmation wording, legacy DD review integration, additional fail-closed regression cases, Docker production-image acceptance, schema/operations handoff and final local verification.

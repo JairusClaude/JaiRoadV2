@@ -153,6 +153,9 @@ final class ReviewedAccountTransitionTest extends PostgresTestCase
     {
         $admin = $this->account('Admin', linked: false);
         $this->account('Engineer');
+        // Simulate the missing Viewer bridge found in hosted inventory, in disposable PostgreSQL only.
+        $viewer = $this->account('Viewer');
+        DB::table('public.users')->where('id', $viewer->id)->delete();
         $before = DB::table('jairoads_next.user_accounts')->orderBy('id')->get()->toJson();
         DB::commit();
 
@@ -169,6 +172,10 @@ final class ReviewedAccountTransitionTest extends PostgresTestCase
             $this->assertSame(0, $summary['roles']['Admin']['needs_engineer_link']);
             $this->assertSame(1, $summary['roles']['Admin']['needs_existing_admin_review']);
             $this->assertSame(1, $summary['roles']['Admin']['needs_reviewed_provisioning_evidence']);
+            $this->assertSame(0, $summary['roles']['Admin']['missing_or_ambiguous_fortify_bridge']);
+            $this->assertSame(1, $summary['roles']['Viewer']['total']);
+            $this->assertSame(0, $summary['roles']['Viewer']['eligible']);
+            $this->assertSame(1, $summary['roles']['Viewer']['missing_or_ambiguous_fortify_bridge']);
             $this->assertSame(1, $summary['roles']['Engineer']['eligible']);
             $this->assertSame(1, $summary['roles']['SuperAdmin']['eligible']);
             $this->assertSame(0, $summary['legacy_only_login_count']);

@@ -1,5 +1,6 @@
 name: JaiROADS full system verification
 on:
+  pull_request: # Run actual browser/security/release gates for review PRs.
   push:
     branches: ['integration/dd-system-completion', 'Oct10_Front&BackEnd_Merge_Integration', 'fix/security-auth-revocation-passkey-dependencies', 'fix/canonical-only-provisioned-auth', 'fix/audit-multirecipient-consistency', 'fix/ordinary-mutation-authorization-races', 'integration/combined-review-candidate-2026-11-07', 'fix/full-system-role-acceptance', 'fix/uat-defect-and-recovery-gates', 'fix/controlled-release-readiness', 'PostDemo2Update--UserManagementModifications', 'PostDemo2Update--AuditLogModifications']
   workflow_dispatch:
@@ -225,6 +226,7 @@ jobs:
             -e 'DB_URL=postgresql://postgres:disposable-ci-only@127.0.0.1:5432/jairoads_scratch_system_docker?sslmode=disable' \
             -e APP_URL=http://127.0.0.1:10000 -e SESSION_DRIVER=file -e CACHE_STORE=file -e LOG_CHANNEL=stderr \
             -e SUPABASE_URL=http://127.0.0.1:5799 -e SUPABASE_SECRET_KEY=sb_secret_disposable \
+            -e JAIROADS_PERMANENT_FILE_DELETION_ENABLED=true \
             -e SUPABASE_SERVICE_ROLE_KEY=sb_secret_disposable jairoads-system-scratch
           for attempt in $(seq 1 30); do
             if curl -fsS http://127.0.0.1:10000/up >/dev/null; then break; fi
@@ -286,6 +288,7 @@ jobs:
       SUPABASE_URL: http://127.0.0.1:5799
       SUPABASE_SECRET_KEY: disposable-storage-only
       SUPABASE_SERVICE_ROLE_KEY: disposable-storage-only
+      JAIROADS_PERMANENT_FILE_DELETION_ENABLED: 'true' # Guarded disposable localhost browser fixture only.
       QUARTERLY_BROWSER_URL: http://127.0.0.1:8011
       QUARTERLY_BROWSER_FIXTURE: /tmp/jairoads-unified-fixture.json
     steps:

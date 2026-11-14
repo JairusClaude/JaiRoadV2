@@ -15,9 +15,9 @@ final class AccountProvisioning
     public function available(): bool
     {
         return DB::connection()->getDriverName() === 'pgsql'
-            && DB::selectOne("SELECT CASE WHEN to_regclass('jairoads_security.account_provisioning') IS NULL THEN false
+            && PostgresBoolean::isTrue(DB::selectOne("SELECT CASE WHEN to_regclass('jairoads_security.account_provisioning') IS NULL THEN false
                 ELSE has_schema_privilege(current_user, 'jairoads_security', 'USAGE')
-                AND has_table_privilege(current_user, 'jairoads_security.account_provisioning', 'SELECT') END AS allowed")->allowed;
+                AND has_table_privilege(current_user, 'jairoads_security.account_provisioning', 'SELECT') END AS allowed")?->allowed);
     }
 
     public function verified(int $accountId, string $role, ?int $engineerId): bool

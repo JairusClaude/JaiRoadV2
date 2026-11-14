@@ -1,5 +1,8 @@
 # JaiROADS — Task 13 controlled release and post-deployment runbook
 
+> **2026-11-14 operational delta (read-only verification):** Six official Supabase migrations are installed: quarterly uniqueness, private account provenance, notification recipients, auth monitoring, file-deletion intents and restricted RLS grants. The owner has separately set the `jairoads_app_runtime` password, enabled `LOGIN`, and successfully executed `SELECT current_user, current_database()` plus a seven-account canonical SELECT over TLS. Earlier below references to `NOLOGIN`, missing tables and absent uniqueness are an intentionally retained **2026-11-07 historical snapshot**. Laravel/Render use, real business writes, identity transitions, persistent isolated staging, live Storage recovery, 25 human UAT cases and 13 approvals are still **unverified**. Do not rerun the six SQL migration archive files or redeploy the live Render service.
+
+
 > **Phase 11L Final DD correction (2026-11-09; NO GO remains):** `maintenance_records.project_id` and `managing_engineer_id` must remain NOT NULL, with RESTRICT foreign keys. Historical suggestions to activate `preserve_project_history.php`, detach records, or unassign a ManagingEngineer are superseded and must not be followed. This runbook is a review artifact, not deployment approval. See `docs/release/phase11l-strict-dd-integrity-2026-11-09.md`.
 
 
@@ -10,7 +13,7 @@ Official Supabase: `aeaaxwyytsagbacysvvx`. Baseline: [Task 12 PR #17](https://gi
 
 This runbook documents steps for a **future owner-authorized change**. It contains NO executable production migration, deployment token, production database URL, live account repair, automatic rollback of retained data, automatic merge, or permission to use the `postgres` owner as the runtime user. No release has been approved or executed.
 
-## Current official schema — verified read-only 2026-11-07
+## Historical official schema — read-only snapshot dated 2026-11-07 (superseded)
 
 | Release precondition | Observed |
 |---|---|
@@ -29,7 +32,7 @@ This runbook documents steps for a **future owner-authorized change**. It contai
 
 The official private document and monthly-media Storage buckets were previously verified as **nonpublic and unversioned**, but **object backup and exact-object live operations were not tested**. Do not infer live credentials, private storage object recovery, or correct RLS from metadata alone.
 
-The current schema state is incompatible with automatically deploying the strict canonical code. **Stop before any merge, data transition, migration or application cutover.**
+**Updated release interpretation:** The previously missing infrastructure now exists, but strict-account eligibility, end-to-end restricted Laravel permissions, backup/recovery and owner signoffs have not passed. The original no-go release decision still applies. **Stop before any automatic merge, data transition, migration or application cutover.**
 
 ## Review-only artifacts / release controls
 
