@@ -30,7 +30,13 @@ final class PermanentFileDeletion
 
     public function available(): bool
     {
+        // Schema existence remains separate from permission to delete actual bytes.
         return $this->available ??= Schema::hasTable(self::TABLE);
+    }
+
+    public function operationallyEnabled(): bool
+    {
+        return $this->available() && config('jairoads_file_deletion.operationally_enabled') === true;
     }
 
     /** @return array{account_id:int,role:string,engineer_id:?int} */
@@ -86,8 +92,9 @@ final class PermanentFileDeletion
         $row = $this->file($kind, $id)->first();
         abort_unless($row !== null, 404);
         $this->parentExists((int) $row->maintenance_id);
-        $enabled = $this->available();
-        $pending = $enabled && DB::table(self::TABLE)->where('kind', $kind)->where('entity_id', $id)->where('state', 'pending')->exists();
+        $enabled = $this->operationallyEnabled();
+        // Existing durable intents remain visible even if the kill switch is off.
+        $pending = $this->available() && DB::table(self::TABLE)->where('kind', $kind)->where('entity_id', $id)->where('state', 'pending')->exists();
 
         return ['id' => $id, 'kind' => $kind, 'file_name' => $row->file_name,
             'maintenance_id' => (int) $row->maintenance_id, 'monthly_update_id' => $row->monthly_update_id ?? null,
@@ -101,7 +108,7 @@ final class PermanentFileDeletion
     {
         $this->actor($login);
         $this->table($kind);
-        abort_unless($this->available(), 503, 'Permanent file deletion is temporarily unavailable.');
+        abort_unless($this->operationallyEnabled(), 503, 'Permanent file deletion is temporarily unavailable.');
         // Preserve a durable request before external I/O. Every attempt also
         // checks live authority; another active administrator may explicitly
         // reconfirm a blocked request, preserving its original initiator.
@@ -161,6 +168,8 @@ final class PermanentFileDeletion
      */
     public function process(int $operation): array
     {
+        // Protect CLI retries as well as HTTP requests when recovery is unverified.
+        abort_unless($this->operationallyEnabled(), 503, 'Permanent file deletion is temporarily unavailable.');
         $stage = 'verify';
         try {
             return DB::transaction(function () use ($operation, &$stage): array {
