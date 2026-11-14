@@ -78,6 +78,8 @@ final class CanonicalAccessPreflight extends Command
                 'roles' => array_fill_keys(['SuperAdmin', 'Admin', 'Engineer', 'Viewer'], [
                     'total' => 0, 'eligible' => 0, 'needs_engineer_link' => 0,
                     'needs_existing_admin_review' => 0, 'needs_reviewed_provisioning_evidence' => 0,
+                    'missing_or_ambiguous_fortify_bridge' => 0, 'email_or_credential_mismatch' => 0,
+                    'missing_or_retired_profile' => 0, 'invalid_fortify_link_or_credential_integrity' => 0,
                 ]),
                 'legacy_only_login_count' => count($report['legacy_only_login_ids']),
                 'orphaned_bridge_login_count' => count($report['orphaned_bridge_login_ids']),
@@ -91,7 +93,9 @@ final class CanonicalAccessPreflight extends Command
                 if ($account['eligible']) {
                     $summary['roles'][$role]['eligible']++;
                 }
-                foreach (['needs_engineer_link', 'needs_existing_admin_review', 'needs_reviewed_provisioning_evidence'] as $issue) {
+                foreach (['needs_engineer_link', 'needs_existing_admin_review', 'needs_reviewed_provisioning_evidence',
+                    'missing_or_ambiguous_fortify_bridge', 'email_or_credential_mismatch',
+                    'missing_or_retired_profile', 'invalid_fortify_link_or_credential_integrity'] as $issue) {
                     if (in_array($issue, $account['issues'], true)) {
                         $summary['roles'][$role][$issue]++;
                     }
