@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Services\MonthlyUpdates\CanonicalMonthlyWriteGate;
+use App\Services\MonthlyUpdates\MonthlyUpdatesReadiness;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\Quarterly\PostgresTestCase;
@@ -20,7 +21,7 @@ it('pauses both canonical monthly updates and media writes while preserving read
     ]);
     config()->set('jairoads_monthly_updates.canonical_writes_enabled', false);
     config()->set('jairoads_monthly_updates.writes_enabled', true);
-    expect(app(\App\Services\MonthlyUpdates\MonthlyUpdatesReadiness::class)->canWrite())->toBeFalse();
+    expect(app(MonthlyUpdatesReadiness::class)->canWrite())->toBeFalse();
 
     expect(CanonicalMonthlyWriteGate::enabled())->toBeFalse();
     $this->get('/dd-phase3/ui/monthly-updates')->assertOk()
