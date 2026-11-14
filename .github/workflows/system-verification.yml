@@ -1,5 +1,6 @@
 name: JaiROADS full system verification
 on:
+  pull_request: # Run actual browser/security/release gates for review PRs.
   push:
     branches: ['integration/dd-system-completion', 'Oct10_Front&BackEnd_Merge_Integration', 'fix/security-auth-revocation-passkey-dependencies', 'fix/canonical-only-provisioned-auth', 'fix/audit-multirecipient-consistency', 'fix/ordinary-mutation-authorization-races', 'integration/combined-review-candidate-2026-11-07', 'fix/full-system-role-acceptance', 'fix/uat-defect-and-recovery-gates', 'fix/controlled-release-readiness', 'PostDemo2Update--UserManagementModifications', 'PostDemo2Update--AuditLogModifications']
   workflow_dispatch:
