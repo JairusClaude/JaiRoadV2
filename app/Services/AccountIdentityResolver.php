@@ -23,7 +23,8 @@ final class AccountIdentityResolver
             'SuperAdmin' => $engineerId === null,
             // Existing unlinked Admins require independent reviewed-transition evidence.
             // New Admin provisioning still requires a real Active Engineer profile.
-            'Admin', 'Viewer' => $engineerId === null || $engineerId > 0,
+            'Admin' => $engineerId === null || $engineerId > 0,
+            'Viewer' => $engineerId === null,
             'Engineer' => $engineerId !== null && $engineerId > 0,
             default => false,
         };
@@ -71,17 +72,19 @@ final class AccountIdentityResolver
             'engineer_id' => $row->engineer_id === null ? null : (int) $row->engineer_id];
     }
 
-    /** Same SQL eligibility as authentication; one audience query, no per-user resolver loop. */
-    public function notificationRecipients(?int $engineerActor): Builder
+    /** One eligible Engineer assignee, tied to current LGU assignment and verified login. */
+    public function eligibleAssignedEngineer(int $engineerId, int $lguId, int $actorAccountId): ?int
     {
-        return $this->eligibleLinks(false)->where(function (Builder $query) use ($engineerActor): void {
-            $query->whereIn('account.account_type', ActivityNotifications::ADMINISTRATIVE_AUDIENCE);
-            if ($engineerActor !== null) {
-                $query->orWhere(function (Builder $engineer) use ($engineerActor): void {
-                    $engineer->where('account.account_type', 'Engineer')->where('account.id', $engineerActor);
-                });
-            }
-        });
+        $recipient = $this->eligibleLinks(false)
+            ->join('jairoads_next.engineer_lgus as assignment', 'assignment.engineer_id', '=', 'account.engineer_id')
+            ->where('account.account_type', 'Engineer')
+            ->where('account.engineer_id', $engineerId)
+            ->where('account.id', '<>', $actorAccountId)
+            ->where('assignment.lgu_id', $lguId)
+            ->where('assignment.is_active', true)
+            ->value('account.id');
+
+        return $recipient === null ? null : (int) $recipient;
     }
 
     /** Same eligibility query for privileged presence reads; no new permission rules. */
@@ -108,7 +111,7 @@ final class AccountIdentityResolver
                     $optional->whereIn('account.account_type', ['Admin', 'Viewer'])
                         ->whereNull('account.engineer_id');
                 })->orWhere(function (Builder $linked): void {
-                    $linked->whereIn('account.account_type', ['Admin', 'Engineer', 'Viewer'])
+                    $linked->whereIn('account.account_type', ['Admin', 'Engineer'])
                         ->where('account.engineer_id', '>', 0)->where('engineer.engineer_status', 'Active');
                 });
             });

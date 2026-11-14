@@ -22,9 +22,13 @@ abstract class TestCase extends BaseTestCase
         $engineer = null;
         if ($role !== 'SuperAdmin') {
             $root = $this->canonicalUser(User::factory()->create());
-            $engineer = $db->table('jairoads_next.engineers')->insertGetId([
-                'first_name' => 'Synthetic', 'last_name' => 'Profile', 'rank' => 'Engineer I', 'engineer_status' => 'Active',
-            ]);
+            // Viewer is intentionally unlinked; only new Admin/Engineer identities
+            // require a professional Engineer profile under the Final DD.
+            if (in_array($role, ['Admin', 'Engineer'], true)) {
+                $engineer = $db->table('jairoads_next.engineers')->insertGetId([
+                    'first_name' => 'Synthetic', 'last_name' => 'Profile', 'rank' => 'Engineer I', 'engineer_status' => 'Active',
+                ]);
+            }
         }
         $id = $db->table('jairoads_next.user_accounts')->insertGetId([
             'username' => 'fixture-'.$user->id, 'email' => $user->email, 'password' => $user->password,
