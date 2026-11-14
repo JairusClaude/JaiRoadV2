@@ -19,8 +19,15 @@ class VerifiedProjectAccount
             return null;
         }
 
-        $linkedAccountId = $user->fresh()?->getAttribute('user_account_id');
+        $fresh = $user->fresh();
+        // A login linked to the Final-DD account is NEVER authorized through the
+        // legacy public.user_accounts relationship, even if an old link remains.
+        // All its operational permissions must come from AccountIdentityResolver.
+        if ($fresh === null || $fresh->getAttribute('dd_user_account_id') !== null) {
+            return null;
+        }
 
+        $linkedAccountId = $fresh->getAttribute('user_account_id');
         if (! $linkedAccountId) {
             return null;
         }
