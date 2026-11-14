@@ -19,6 +19,8 @@ it('pauses both canonical monthly updates and media writes while preserving read
         'created_by' => $f['user']->dd_user_account_id,
     ]);
     config()->set('jairoads_monthly_updates.canonical_writes_enabled', false);
+    config()->set('jairoads_monthly_updates.writes_enabled', true);
+    expect(app(\App\Services\MonthlyUpdates\MonthlyUpdatesReadiness::class)->canWrite())->toBeFalse();
 
     expect(CanonicalMonthlyWriteGate::enabled())->toBeFalse();
     $this->get('/dd-phase3/ui/monthly-updates')->assertOk()
