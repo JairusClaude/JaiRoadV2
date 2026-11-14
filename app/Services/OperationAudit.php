@@ -59,15 +59,16 @@ final class OperationAudit
                 throw new \LogicException('RETIRE requires an Active to Retired Engineer transition.');
             }
             if ($reassignment) {
-                // NULL is a permitted manager endpoint for explicitly approved unassignment.
+                // Final DD: both previous and new ManagingEngineer IDs are required.
+                // An unassignment to NULL is forbidden, even in an audit-only call.
                 if (! array_key_exists('managing_engineer_id', $old)
                     || ! array_key_exists('managing_engineer_id', $new)
                     || $old['managing_engineer_id'] === $new['managing_engineer_id']) {
                     throw new \LogicException('REASSIGN requires a changed ManagingEngineer ID.');
                 }
                 foreach ([$old['managing_engineer_id'], $new['managing_engineer_id']] as $managerId) {
-                    if ($managerId !== null && (! is_int($managerId) || $managerId < 1)) {
-                        throw new \LogicException('REASSIGN requires valid nullable ManagingEngineer IDs.');
+                    if (! is_int($managerId) || $managerId < 1) {
+                        throw new \LogicException('REASSIGN requires valid non-null ManagingEngineer IDs.');
                     }
                 }
             }
