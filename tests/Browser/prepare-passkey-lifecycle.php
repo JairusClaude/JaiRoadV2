@@ -16,7 +16,7 @@ require __DIR__.'/../../vendor/autoload.php';
         DB::unprepared(file_get_contents(base_path('database/proposals/security_monitoring.sql')));
         $users = [];
         foreach (['SuperAdmin', 'Admin', 'Engineer', 'Viewer'] as $role) {
-            $engineer = $role !== 'SuperAdmin' ? $this->engineer() : null;
+            $engineer = in_array($role, ['Admin', 'Engineer'], true) ? $this->engineer() : null;
             if ($role === 'SuperAdmin') {
                 $id = app(TrustedSuperAdminBootstrap::class)->create('passkey-root', 'passkey-root@example.test', 'Bootstrap root', 'Disposable-Test!123');
                 $user = User::where('dd_user_account_id', $id)->firstOrFail();
@@ -32,7 +32,7 @@ require __DIR__.'/../../vendor/autoload.php';
         $legacy = $this->account('Viewer');
         $legacyAccount = DB::table('jairoads_next.user_accounts')->where('id', $legacy->dd_user_account_id)->first();
         $users[] = ['id' => (int) $legacy->id, 'email' => $legacy->email, 'role' => 'Legacy',
-            'account_id' => (int) $legacy->dd_user_account_id, 'engineer_id' => (int) $legacyAccount->engineer_id];
+            'account_id' => (int) $legacy->dd_user_account_id, 'engineer_id' => $legacyAccount->engineer_id === null ? null : (int) $legacyAccount->engineer_id];
         DB::commit();
         echo json_encode(['users' => $users], JSON_THROW_ON_ERROR);
     }

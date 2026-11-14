@@ -186,17 +186,19 @@ jobs:
               AND description='Authorized administrator created an LGU.'
           )
           SELECT (SELECT count(*) FROM matching) || '|' ||
-                 (SELECT count(DISTINCT recipient_user_id)
-                    FROM jairoads_next.audit_notification_recipients
+                 (SELECT count(*) FROM jairoads_next.audit_logs
+                   WHERE id IN (SELECT id FROM matching)
+                     AND recipient_user_id IS NULL AND notification_message IS NULL) || '|' ||
+                 (SELECT count(*) FROM jairoads_next.audit_notification_recipients
                    WHERE audit_log_id IN (SELECT id FROM matching));
           SQL
           )"
-          IFS='|' read -r events recipients <<< "$counts"
-          if [[ "$events" != '1' || "$recipients" -lt 2 ]]; then
-            echo "Expected one LGU event and at least two eligible unique recipients." >&2
+          IFS='|' read -r events audit_only old_deliveries <<< "$counts"
+          if [[ "$events" != '1' || "$audit_only" != '1' || "$old_deliveries" != '0' ]]; then
+            echo "Expected one LGU AuditLog event with NO notification or broadcast deliveries." >&2
             exit 1
           fi
-          echo "PASS: one audited business event and $recipients eligible deliveries committed with restricted DB access"
+          echo "PASS: one non-notifying LGU audit event committed with restricted DB access"
 
   superadmin-recovery:
     name: staging / SuperAdmin recovery and last-root guard
