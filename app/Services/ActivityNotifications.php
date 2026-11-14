@@ -37,7 +37,7 @@ final class ActivityNotifications
 
     public function available(): bool
     {
-        return DB::selectOne('SELECT to_regclass(?) IS NOT NULL AS available', [self::TABLE])->available === true;
+        return PostgresBoolean::isTrue(DB::selectOne('SELECT to_regclass(?) IS NOT NULL AS available', [self::TABLE])?->available);
     }
 
     /** @param array{account_id:int,role:string,engineer_id:?int} $actor */

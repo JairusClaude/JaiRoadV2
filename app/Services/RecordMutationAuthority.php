@@ -39,7 +39,7 @@ final class RecordMutationAuthority
             ->where('engineer_id', $account->engineer_id)->where('lgu_id', $lguId)->sharedLock()->first(['is_active']) : null;
         abort_unless($this->identities->resolve($login) === $expected && RoleAccess::canWriteOperations($expected['role']), 403, 'Your current account is unavailable.');
         if ($expected['role'] === 'Engineer') {
-            abort_unless($membership?->is_active === true, 403, 'Current EngineerLGU authorization is required.');
+            abort_unless(PostgresBoolean::isTrue($membership?->is_active), 403, 'Current EngineerLGU authorization is required.');
         }
     }
 }

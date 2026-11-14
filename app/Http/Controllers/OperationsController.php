@@ -15,6 +15,7 @@ use App\Services\ManagingEngineerEligibility;
 use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
 use App\Services\OperationAudit;
 use App\Services\PreservedProjectDeletion;
+use App\Services\PostgresBoolean;
 use App\Services\RecordMutationAuthority;
 use App\Services\RoadCoverageGeometry;
 use App\Services\RoleAccess;
@@ -306,7 +307,7 @@ class OperationsController extends Controller
             // Other existing workflows take lifecycle before road locks. Never
             // wait in the inverse order: busy lifecycle work must finish first.
             $authority = DB::selectOne('SELECT pg_try_advisory_xact_lock_shared(1927710916) AS acquired');
-            abort_unless($authority->acquired === true, 409, 'Account authorization is changing. Retry the road edit.');
+            abort_unless(PostgresBoolean::isTrue($authority?->acquired), 409, 'Account authorization is changing. Retry the road edit.');
             // Freeze the bridge/credentials in password-updater lock order.
             DB::table('public.users')->where('id', $request->user()->getAuthIdentifier())->sharedLock()->first(['id']);
             $account = $this->t('user_accounts')->where('id', $actor['account_id'])->sharedLock()->first(['engineer_id']);
