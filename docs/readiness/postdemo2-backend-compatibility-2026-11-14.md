@@ -1,5 +1,24 @@
 # JaiROADS — Backend/database compatibility and isolated-staging readiness
 
+> **POST-ACTIVATION UPDATE — 2026-11-14 (Asia/Manila):** The original missing-object observations below describe the *pre-change* database. On the user's explicit request, six additive migrations were applied directly to the official hosted Supabase project and verified. Five support tables and quarterly uniqueness are now **PRESENT**. The named restricted role now exists with reviewed server-only grants/policies but is intentionally **NOLOGIN** (no password, no Render use); real login/HTTP/RLS write acceptance and owner identity reviews remain pending. **Do not reapply the older proposals or treat this as production release approval.** See the activation ledger immediately below.
+
+## Hosted activation ledger (supersedes pre-change missing-object snapshot)
+
+| Supabase migration version | Change | Verified observation |
+|---|---|---|
+| `20261114095008` | `jairoads_quarterly_record_uniqueness_strict_dd_20261114` | Unique (project_id, maintenance_year, quarter) active; 1 MaintenanceRecord, no duplicate group; required parent/manager FKs still RESTRICT and both NOT NULL |
+| `20261114095058` | `jairoads_immutable_account_provisioning_20261114` | Private security schema/provenance table present, RLS enabled, insert/UPDATE/DELETE immutability guards; 0 fabricated historical evidence rows |
+| `20261114095126` | `jairoads_immutable_notification_recipients_20261114` | Private recipients table present, RLS and immutable delivery guards; original two canonical AuditLog guards retained |
+| `20261114095150` | `jairoads_private_authentication_presence_20261114` | Authentication event and active-session tables present, RLS enabled, event history append-only |
+| `20261114095339` | `jairoads_private_file_deletion_intents_20261114` | File deletion table present with restrictive user-account FKs, target/check constraints, RLS; 0 intents; no Storage objects deleted |
+| `20261114095711` | `jairoads_restricted_runtime_staged_nologin_20261114` | Server-only `jairoads_app_runtime` role defined as NOLOGIN, no superuser/BYPASSRLS/CREATEROLE, 87 role-scoped RLS policies. No password was created or exposed. |
+
+**Post-change read-only checks:** 11 canonical Final-DD business entities still exist; 7 UserAccounts and 111 immutable AuditLog entries currently exist. All five newly introduced auxiliary tables have zero data rows at verification. `anon`, `authenticated` and `service_role` have **zero SELECT/INSERT/UPDATE/DELETE grants on the five support tables**. Role catalog checks cover 25 server-side tables, RLS enabled on all 25, with no account/Engineer/audit/provenance DELETE grants. The role could not be exercised via `SET ROLE` under the owner's session because no role membership was granted; do not mistake catalog checks for actual login or end-to-end RLS tests.
+
+**Operational blockers remain:** private credential creation/configuration and direct runtime-role HTTP checks; actual reviewed provisioning evidence for existing ordinary accounts (particularly 1 active Admin with no Engineer link); both active SuperAdmin owner/recovery validation; independent DB+private Storage backup/recovery; real Storage deletion testing (creating the intent table makes the endpoint schema-eligible); signed acceptance; and a separate Render staging deployment. **Production NO GO; do not change the running Render service.** Source-derived table proposals retain their historical REVIEW ONLY comments; these actual hosted migrations are recorded in Supabase migration history. Nothing was automatically backfilled or deployed.
+
+---
+
 **Prepared:** 2026-11-14 (Asia/Manila)  
 **Status:** REVIEW ONLY — **LIVE DEPLOYMENT NO GO**  
 **GitHub source:** `PostDemo2Update--AuditLogModifications`, commit `830dac2576adc20a02e956723f278f54337e883f` (confirmed unchanged at review)  
