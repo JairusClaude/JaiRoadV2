@@ -58,3 +58,8 @@ Do **not** treat a successful check as a substitute for 25 human UAT scenarios, 
 - New source-level regression tests exercise actual canonical document/media HTTP upload paths against **fake private Storage**, including canonical `maintenance_documents` versus `media` linkage, MIME, AuditLog and Viewer/Engineer denial. These tests never upload to official buckets; live UAT remains pending.
 - The strict integration configuration checker now treats the shared public OSRM/Photon demonstration endpoints as *not accepted production provider choices*. Neither a custom HTTPS URL nor this boolean proves contractual availability or real routing acceptance.
 - The release manifest/checker require nonempty, privately retained operator references for official-credential rotation, isolated runtime preflights, media UAT, historical DOCX reconciliation decision, Engineer.ContactNo source-rule decision, recipient-only notification acceptance, and persistent sessions/queues. Templates remain blank and production release remains NO GO.
+
+
+### Production-safe MonthlyUpdate default (2026-11-14)
+
+The canonical MonthlyUpdate/Media switch now **defaults OFF outside `APP_ENV=testing`**. Use `JAIROADS_DD_MONTHLY_WRITES_ENABLED=true` only after authorized isolation, credential and role acceptance. The production-mode disposable Docker CI explicitly opts into writes against its own synthetic PostgreSQL to preserve integration coverage. The official shared-DB Render review service has not been updated or authorized for write testing.
