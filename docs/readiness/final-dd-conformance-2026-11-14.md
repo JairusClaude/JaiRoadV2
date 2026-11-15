@@ -77,6 +77,12 @@ Ordinary account repair remains blocked on authentic account-owner/provisioner i
 
 The notification bell can periodically refresh the authenticated recipient-only HTTP feed (foreground tab, every 60 seconds, plus focus/visibility changes). This is **not** Supabase Realtime or guaranteed instantaneous delivery, and does not introduce read/unread state.
 
+## Upload-path correction after live review
+
+The canonical document upload now derives its private-object extension from Laravel/Symfony's **verified** file MIME type (which is already checked by the document `mimes` validation). It also normalizes the stored download label to that verified extension. Downloads derive their MIME response from the immutable validated Storage path rather than the originally supplied label. This prevents a browser-supplied misleading extension from being incorporated into an object location that `PrivateSupabaseStorage` would reject.
+
+A November 15 read-only check of the official hosted database found **two** existing canonical document rows, **zero** filename/path-extension mismatches and **zero** paths outside the allowlisted document-prefix pattern. No existing Storage object or metadata was modified. The client-approved upload MIME/size policy remains pending.
+
 ## Operational safety and provenance
 
 All this branch's changes are **GitHub source/tests only**; no official Supabase DDL/DML, account/role mutation, Storage deletion, deployed Render settings or merge were performed. Automated GitHub Actions use isolated disposable PostgreSQL 17 fixtures; those green checks never imply human acceptance, live account possession or recoverable private Storage. PR #26 remains **draft** until confirmed acceptance.

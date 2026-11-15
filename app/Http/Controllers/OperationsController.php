@@ -722,15 +722,23 @@ class OperationsController extends Controller
             throw ValidationException::withMessages(['file' => 'Document uploads are temporarily unavailable. Contact your administrator.']);
         }
         $file = $request->file('file');
-        $ext = strtolower($file->getClientOriginalExtension());
+        // The Storage path enforces the allowlisted extension. Derive it from
+        // the verified MIME content, never from an untrusted browser filename.
+        $ext = strtolower((string) $file->guessExtension());
+        if (! in_array($ext, ['pdf', 'docx', 'xlsx', 'pptx'], true)) {
+            throw ValidationException::withMessages(['file' => 'The document format could not be verified.']);
+        }
+        $originalName = basename($file->getClientOriginalName());
+        $stem = pathinfo($originalName, PATHINFO_FILENAME);
+        $storedName = ($stem !== '' ? $stem : 'document').'.'.$ext;
         $path = 'maintenance-records/'.(int) $v['maintenance_id'].'/'.(string) Str::uuid().'.'.$ext;
         $storage->upload($file, $path);
         try {
-            DB::transaction(function () use ($request, $resolver, $actor, $v, $file, $path): void {
+            DB::transaction(function () use ($request, $resolver, $actor, $v, $file, $path, $storedName): void {
                 $this->lockUploadAuthorization($request, $resolver, $actor, (int) $v['maintenance_id']);
                 $id = (int) $this->t('maintenance_documents')->insertGetId([
                     'maintenance_id' => (int) $v['maintenance_id'], 'document_title' => $v['document_title'],
-                    'description' => $v['description'] ?? null, 'file_name' => basename($file->getClientOriginalName()),
+                    'description' => $v['description'] ?? null, 'file_name' => $storedName,
                     'file_path' => $path, 'uploaded_by' => $actor['account_id'], 'uploaded_at' => now(), 'updated_at' => now(),
                 ]);
                 $this->audit($actor, 'CREATE', 'MaintenanceDocument', $id, 'Formal maintenance document uploaded.');
@@ -858,7 +866,7 @@ class OperationsController extends Controller
             $this->recordScope($actor, (int) $row->maintenance_id);
             app(PermanentFileDeletion::class)->assertNotPending('document', $id);
             $result = $documents->fetch((string) $row->file_path);
-            $mime = match (strtolower(pathinfo($row->file_name, PATHINFO_EXTENSION))) {
+            $mime = match (strtolower(pathinfo($row->file_path, PATHINFO_EXTENSION))) {
                 'pdf' => 'application/pdf','docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                 'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                 'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
