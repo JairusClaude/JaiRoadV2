@@ -179,44 +179,46 @@ export default function Operations({
     const truncated = relevantCollections.filter(
         (collection) => windowHasMore[collection],
     );
-    const loadMore = truncated.length > 0 ? (
-        <div
-            role="status"
-            className="mx-4 my-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"
-        >
-            <p>
-                Additional authorized records exist beyond the first{' '}
-                {windowSize.toLocaleString()} rows. Local search and counts may
-                be incomplete until the remaining batches are loaded. Affected
-                collections: {truncated.join(', ')}.
-            </p>
-            {windowSize < 30000 ? (
-                <button
-                    type="button"
-                    className="mt-3 rounded-lg bg-amber-900 px-4 py-2 font-semibold text-white hover:bg-amber-800"
-                    onClick={() => {
-                        const [path, query = ''] = page.url.split('?');
-                        const params = new URLSearchParams(query);
-                        params.set(
-                            'rows',
-                            String(Math.min(windowSize + 300, 30000)),
-                        );
-                        router.visit(`${path}?${params.toString()}`, {
-                            preserveScroll: true,
-                            preserveState: false,
-                        });
-                    }}
-                >
-                    Load 300 more records
-                </button>
-            ) : (
-                <p className="mt-2 font-medium">
-                    This page has reached its safe response-size limit. Use a
-                    dedicated server-side search or export for larger datasets.
+    const loadMore =
+        truncated.length > 0 ? (
+            <div
+                role="status"
+                className="mx-4 my-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"
+            >
+                <p>
+                    Additional authorized records exist beyond the first{' '}
+                    {windowSize.toLocaleString()} rows. Local search and counts
+                    may be incomplete until the remaining batches are loaded.
+                    Affected collections: {truncated.join(', ')}.
                 </p>
-            )}
-        </div>
-    ) : null;
+                {windowSize < 30000 ? (
+                    <button
+                        type="button"
+                        className="mt-3 rounded-lg bg-amber-900 px-4 py-2 font-semibold text-white hover:bg-amber-800"
+                        onClick={() => {
+                            const [path, query = ''] = page.url.split('?');
+                            const params = new URLSearchParams(query);
+                            params.set(
+                                'rows',
+                                String(Math.min(windowSize + 300, 30000)),
+                            );
+                            router.visit(`${path}?${params.toString()}`, {
+                                preserveScroll: true,
+                                preserveState: false,
+                            });
+                        }}
+                    >
+                        Load 300 more records
+                    </button>
+                ) : (
+                    <p className="mt-2 font-medium">
+                        This page has reached its safe response-size limit. Use
+                        a dedicated server-side search or export for larger
+                        datasets.
+                    </p>
+                )}
+            </div>
+        ) : null;
     const notice = (
         <>
             {status && (
