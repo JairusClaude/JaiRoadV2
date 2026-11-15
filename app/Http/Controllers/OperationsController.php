@@ -734,7 +734,7 @@ class OperationsController extends Controller
         $path = 'maintenance-records/'.(int) $v['maintenance_id'].'/'.(string) Str::uuid().'.'.$ext;
         $storage->upload($file, $path);
         try {
-            DB::transaction(function () use ($request, $resolver, $actor, $v, $file, $path, $storedName): void {
+            DB::transaction(function () use ($request, $resolver, $actor, $v, $path, $storedName): void {
                 $this->lockUploadAuthorization($request, $resolver, $actor, (int) $v['maintenance_id']);
                 $id = (int) $this->t('maintenance_documents')->insertGetId([
                     'maintenance_id' => (int) $v['maintenance_id'], 'document_title' => $v['document_title'],
