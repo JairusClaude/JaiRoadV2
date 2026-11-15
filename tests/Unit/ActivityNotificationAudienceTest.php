@@ -4,10 +4,22 @@ declare(strict_types=1);
 
 use App\Services\ActivityNotifications;
 
-it('keeps the audit notification audience in the requested supervisor hierarchy', function (): void {
-    expect(ActivityNotifications::recipientsFor('SuperAdmin'))->toBe(['Admin', 'SuperAdmin']);
-    expect(ActivityNotifications::recipientsFor('Admin'))->toBe(['Admin', 'SuperAdmin']);
-    expect(ActivityNotifications::recipientsFor('Engineer'))->toBe(['Admin', 'SuperAdmin']);
-    expect(ActivityNotifications::recipientsFor('Viewer'))->toBe([]);
-    expect(ActivityNotifications::recipientsFor('UnexpectedRole'))->toBe([]);
+it('addresses at most one proposed eligible maintenance assignee and never broadcasts', function (): void {
+    foreach (['Admin', 'SuperAdmin'] as $role) {
+        foreach (['CREATE', 'UPDATE', 'REASSIGN'] as $action) {
+            expect(ActivityNotifications::eligibleEvent($role, $action, 'MaintenanceRecord'))->toBeTrue();
+        }
+        foreach (['MonthlyUpdate', 'MaintenanceDocument', 'Media'] as $entity) {
+            foreach (['CREATE', 'UPDATE', 'DELETE'] as $action) {
+                expect(ActivityNotifications::eligibleEvent($role, $action, $entity))->toBeTrue();
+            }
+        }
+        expect(ActivityNotifications::eligibleEvent($role, 'DELETE', 'MaintenanceRecord'))->toBeFalse();
+        expect(ActivityNotifications::eligibleEvent($role, 'UPDATE', 'UserAccount'))->toBeFalse();
+        expect(ActivityNotifications::eligibleEvent($role, 'ACTIVATE', 'EngineerLGU'))->toBeFalse();
+    }
+    foreach (['Engineer', 'Viewer', 'Unknown'] as $role) {
+        expect(ActivityNotifications::eligibleEvent($role, 'CREATE', 'MaintenanceRecord'))->toBeFalse();
+        expect(ActivityNotifications::eligibleEvent($role, 'UPDATE', 'MonthlyUpdate'))->toBeFalse();
+    }
 });

@@ -233,16 +233,34 @@ class OperationsController extends Controller
         }
         $account = $this->t('user_accounts')->where('id', $actor['account_id'])->first(['username', 'email', 'account_type', 'is_active']);
 
+        // Incremental, bounded windows of eligible rows replace the invisible 300-row cutoff.
+        // The extra result row explicitly signals additional records to the UI.
+        $windowSize = min(3000, max(300, $request->integer('rows', 300)));
+        $listing = [
+            'roads' => $roads->limit($windowSize + 1)->get(['id', 'road_name', 'lgu_id', 'kilometers', 'pavement_type', 'state_category', 'created_by', 'geojson']),
+            'projects' => $projects->limit($windowSize + 1)->get(['p.id', 'p.project_title', 'p.road_coverage_id', 'p.description', 'p.created_by', 'r.lgu_id']),
+            'records' => $records->limit($windowSize + 1)->get(['mr.id', 'mr.project_id', 'mr.managing_engineer_id', 'mr.maintenance_year', 'mr.quarter', 'mr.start_date', 'mr.estimated_duration_days', 'mr.complete_date', 'mr.status', 'mr.description', 'r.lgu_id']),
+            'updates' => $updates->limit($windowSize + 1)->get(['author.username as author_name', 'mu.id', 'mu.maintenance_id', 'mu.update_month', 'mu.progress_percentage', 'mu.summary_of_text_reports', 'mr.managing_engineer_id', 'r.lgu_id']),
+            'documents' => $docs->limit($windowSize + 1)->get(['uploader.username as uploader_name', 'd.description', 'd.id', 'd.maintenance_id', 'd.document_title', 'd.file_name', 'd.uploaded_at', 'mr.managing_engineer_id']),
+            'media' => $media->limit($windowSize + 1)->get(['m.id', 'm.monthly_update_id', 'm.file_name', 'm.file_type', 'mr.managing_engineer_id']),
+        ];
+        $windowHasMore = [];
+        foreach ($listing as $name => $items) {
+            $windowHasMore[$name] = $items->count() > $windowSize;
+            $listing[$name] = $items->take($windowSize)->values();
+        }
+
         return Inertia::render('dd-phase3/Operations', [
             'managerChoices' => $managerChoices,
             'canUnassign' => false,
             'maintenanceHistory' => $maintenanceHistory, 'maintenanceSchedule' => $maintenanceSchedule,
             'section' => $section, 'role' => $actor['role'], 'canManage' => $this->managers($actor),
+            'windowSize' => $windowSize, 'windowHasMore' => $windowHasMore,
             'engineerId' => $actor['engineer_id'], 'hasAssignment' => count($activeLgus) > 0,
             'capabilities' => RoleAccess::capabilities($actor['role'], count($activeLgus) > 0, $actor['engineer_id'] !== null),
             'identity' => ['username' => (string) $account->username, 'email' => (string) $account->email, 'role' => $actor['role']],
-            'lgus' => $this->t('lgus')->when($restricted, fn ($q) => $q->whereIn('id', $activeLgus))->orderBy('id')->limit(300)->get(['id', 'municipality_name']),
-            'engineers' => $this->t('engineers')->where('engineer_status', 'Active')->when($restricted, fn ($q) => $q->where('id', $actor['engineer_id']))->orderBy('id')->limit(300)->get(['id', 'first_name', 'last_name']),
+            'lgus' => $this->t('lgus')->when($restricted, fn ($q) => $q->whereIn('id', $activeLgus))->orderBy('id')->get(['id', 'municipality_name']),
+            'engineers' => $this->t('engineers')->where('engineer_status', 'Active')->when($restricted, fn ($q) => $q->where('id', $actor['engineer_id']))->orderBy('id')->get(['id', 'first_name', 'last_name']),
             // For manager-initiated RoadCoverage creation, the actual Engineer
             // who prepared the mapped coverage must be chosen explicitly.
             // The manager remains the authenticated audit actor.
@@ -252,15 +270,14 @@ class OperationsController extends Controller
                     ->where('el.is_active', true)
                     ->where('e.engineer_status', 'Active')
                     ->orderBy('e.last_name')->orderBy('e.first_name')
-                    ->limit(500)
                     ->get(['el.engineer_id as id', 'el.lgu_id', 'e.first_name', 'e.last_name'])
                 : collect(),
-            'roads' => $roads->limit(300)->get(['id', 'road_name', 'lgu_id', 'kilometers', 'pavement_type', 'state_category', 'created_by', 'geojson']),
-            'projects' => $projects->limit(300)->get(['p.id', 'p.project_title', 'p.road_coverage_id', 'p.description', 'p.created_by', 'r.lgu_id']),
-            'records' => $records->limit(300)->get(['mr.id', 'mr.project_id', 'mr.managing_engineer_id', 'mr.maintenance_year', 'mr.quarter', 'mr.start_date', 'mr.estimated_duration_days', 'mr.complete_date', 'mr.status', 'mr.description', 'r.lgu_id']),
-            'updates' => $updates->limit(300)->get(['author.username as author_name', 'mu.id', 'mu.maintenance_id', 'mu.update_month', 'mu.progress_percentage', 'mu.summary_of_text_reports', 'mr.managing_engineer_id', 'r.lgu_id']),
-            'documents' => $docs->limit(300)->get(['uploader.username as uploader_name', 'd.description', 'd.id', 'd.maintenance_id', 'd.document_title', 'd.file_name', 'd.uploaded_at', 'mr.managing_engineer_id']),
-            'media' => $media->limit(300)->get(['m.id', 'm.monthly_update_id', 'm.file_name', 'm.file_type', 'mr.managing_engineer_id']),
+            'roads' => $listing['roads'],
+            'projects' => $listing['projects'],
+            'records' => $listing['records'],
+            'updates' => $listing['updates'],
+            'documents' => $listing['documents'],
+            'media' => $listing['media'],
             'documentsReady' => app(PrivateSupabaseStorage::class)->configured(),
             'mediaReady' => app(PrivateMonthlyMediaStorage::class)->configured(),
             'status' => $request->session()->get('dd_operations_status'),
@@ -722,15 +739,23 @@ class OperationsController extends Controller
             throw ValidationException::withMessages(['file' => 'Document uploads are temporarily unavailable. Contact your administrator.']);
         }
         $file = $request->file('file');
-        $ext = strtolower($file->getClientOriginalExtension());
+        // The Storage path enforces the allowlisted extension. Derive it from
+        // the verified MIME content, never from an untrusted browser filename.
+        $ext = strtolower((string) $file->guessExtension());
+        if (! in_array($ext, ['pdf', 'docx', 'xlsx', 'pptx'], true)) {
+            throw ValidationException::withMessages(['file' => 'The document format could not be verified.']);
+        }
+        $originalName = basename($file->getClientOriginalName());
+        $stem = pathinfo($originalName, PATHINFO_FILENAME);
+        $storedName = ($stem !== '' ? $stem : 'document').'.'.$ext;
         $path = 'maintenance-records/'.(int) $v['maintenance_id'].'/'.(string) Str::uuid().'.'.$ext;
         $storage->upload($file, $path);
         try {
-            DB::transaction(function () use ($request, $resolver, $actor, $v, $file, $path): void {
+            DB::transaction(function () use ($request, $resolver, $actor, $v, $path, $storedName): void {
                 $this->lockUploadAuthorization($request, $resolver, $actor, (int) $v['maintenance_id']);
                 $id = (int) $this->t('maintenance_documents')->insertGetId([
                     'maintenance_id' => (int) $v['maintenance_id'], 'document_title' => $v['document_title'],
-                    'description' => $v['description'] ?? null, 'file_name' => basename($file->getClientOriginalName()),
+                    'description' => $v['description'] ?? null, 'file_name' => $storedName,
                     'file_path' => $path, 'uploaded_by' => $actor['account_id'], 'uploaded_at' => now(), 'updated_at' => now(),
                 ]);
                 $this->audit($actor, 'CREATE', 'MaintenanceDocument', $id, 'Formal maintenance document uploaded.');
@@ -858,7 +883,7 @@ class OperationsController extends Controller
             $this->recordScope($actor, (int) $row->maintenance_id);
             app(PermanentFileDeletion::class)->assertNotPending('document', $id);
             $result = $documents->fetch((string) $row->file_path);
-            $mime = match (strtolower(pathinfo($row->file_name, PATHINFO_EXTENSION))) {
+            $mime = match (strtolower(pathinfo($row->file_path, PATHINFO_EXTENSION))) {
                 'pdf' => 'application/pdf','docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                 'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                 'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Quarterly;
 
+use App\Models\User;
 use App\Services\AccountIdentityResolver;
 use App\Services\ActivityNotifications;
 use App\Services\AuditValues;
@@ -24,37 +25,34 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
     }
 
     #[DataProvider('actors')]
-    public function test_one_event_notifies_every_eligible_administrator_and_engineer_actor_once(string $role): void
+    public function test_one_event_addresses_only_the_eligible_assignee_without_admin_broadcast(string $role): void
     {
         $f = $this->fixture($role);
-        $admins = [$this->account('Admin'), $this->account('Admin'), $this->account('SuperAdmin')];
-        $viewer = $this->account('Viewer');
-        $unrelated = $this->account('Engineer');
-        $inactive = $this->account('Admin', active: false);
-        $retired = $this->account('Admin', $this->engineer('Retired'));
-        $unlinked = $this->account('Admin', linked: false);
-        $badEvidence = $this->account('Admin');
-        DB::table('jairoads_next.user_accounts')->where('id', $badEvidence->dd_user_account_id)->update(['engineer_id' => $this->engineer()]);
-        $badHash = $this->account('SuperAdmin');
-        DB::table('public.users')->where('id', $badHash->id)->update(['password' => 'Invalid matching credential state']);
+        $this->account('Admin');
+        $this->account('SuperAdmin');
+        $this->account('Viewer');
         $this->post('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer']))->assertRedirect();
+
         $event = DB::table('jairoads_next.audit_logs')->sole();
         $this->assertSame('CREATE', $event->action);
         $this->assertNull($event->old_value);
         $this->assertSame($f['project'], json_decode($event->new_value, true)['project_id']);
-        $this->assertNull($event->recipient_user_id);
-        $this->assertNull($event->notification_message);
-        $actual = DB::table(self::DELIVERIES)->where('audit_log_id', $event->id)->pluck('recipient_user_id')->all();
-        $this->assertContains($f['user']->dd_user_account_id, $actual);
-        foreach ($admins as $admin) {
-            $this->assertContains($admin->dd_user_account_id, $actual);
+        $recipient = DB::table('jairoads_next.user_accounts')->where('engineer_id', $f['engineer'])
+            ->where('account_type', 'Engineer')->value('id');
+        $expected = $role === 'Engineer' ? null : (int) $recipient;
+        $this->assertSame($expected, $event->recipient_user_id === null ? null : (int) $event->recipient_user_id);
+        if ($expected === null) {
+            $this->assertNull($event->notification_message);
+        } else {
+            $this->assertSame($role.' created MaintenanceRecord #'.$event->entity_id.'.', $event->notification_message);
         }
-        foreach ([$viewer, $unrelated, $inactive, $retired, $unlinked, $badEvidence, $badHash] as $denied) {
-            $this->assertNotContains($denied->dd_user_account_id, $actual);
+        $this->assertSame(0, DB::table(self::DELIVERIES)->count());
+        $this->getJson('/jairoads/notifications')->assertOk()->assertExactJson(['notifications' => []]);
+        if ($expected !== null) {
+            $engineer = User::where('dd_user_account_id', $expected)->firstOrFail();
+            $this->actingAs($engineer)->getJson('/jairoads/notifications')->assertOk()
+                ->assertJsonPath('notifications.0.id', (int) $event->id);
         }
-        $eligible = app(AccountIdentityResolver::class)->notificationRecipients($role === 'Engineer' ? $f['user']->dd_user_account_id : null)->count();
-        $this->assertCount($eligible, $actual);
-        $this->assertSame(count($actual), count(array_unique($actual)));
     }
 
     public function test_unchanged_normalized_saves_do_not_write_events_deliveries_or_timestamps(): void
@@ -130,10 +128,10 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
         }
     }
 
-    public function test_delivery_failure_rolls_back_the_mutation_and_event(): void
+    public function test_audit_insert_failure_rolls_back_the_mutation_and_notification(): void
     {
         $f = $this->fixture();
-        DB::unprepared("CREATE FUNCTION jairoads_next.fail_delivery_test() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'Disposable recipient failure'; END $$; CREATE TRIGGER fail_delivery_test BEFORE INSERT ON ".self::DELIVERIES.' FOR EACH ROW EXECUTE FUNCTION jairoads_next.fail_delivery_test()');
+        DB::unprepared("CREATE FUNCTION jairoads_next.fail_audit_test() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'Disposable audit failure'; END $$; CREATE TRIGGER fail_audit_test BEFORE INSERT ON jairoads_next.audit_logs FOR EACH ROW EXECUTE FUNCTION jairoads_next.fail_audit_test()");
         $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer']))->assertServerError();
         $this->assertSame(0, DB::table('jairoads_next.maintenance_records')->count());
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
@@ -157,7 +155,10 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
             $this->assertSame(2, $attempts);
             $this->assertSame(1, DB::table('jairoads_next.maintenance_records')->count());
             $this->assertSame(1, DB::table('jairoads_next.audit_logs')->count());
-            $this->assertSame(2, DB::table(self::DELIVERIES)->count());
+            $this->assertSame(0, DB::table(self::DELIVERIES)->count());
+            $event = DB::table('jairoads_next.audit_logs')->sole();
+            $this->assertNotNull($event->recipient_user_id);
+            $this->assertNotNull($event->notification_message);
         } finally {
             PostgresTestSchema::clearCommittedFixtures();
         }
@@ -195,7 +196,14 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
                 }
             }
         }
-        $delivery = DB::table(self::DELIVERIES)->first();
+        // Old auxiliary delivery rows remain immutable but new events never fan out.
+        $this->assertSame(0, DB::table(self::DELIVERIES)->count());
+        $event = DB::table('jairoads_next.audit_logs')->sole();
+        $other = $this->account('Viewer');
+        DB::table(self::DELIVERIES)->insert(['audit_log_id' => $event->id,
+            'recipient_user_id' => $other->dd_user_account_id,
+            'notification_message' => 'Legacy addressed delivery']);
+        $delivery = DB::table(self::DELIVERIES)->sole();
         try {
             DB::transaction(fn () => DB::table(self::DELIVERIES)->insert(['audit_log_id' => $delivery->audit_log_id, 'recipient_user_id' => $delivery->recipient_user_id, 'notification_message' => 'Duplicate']));
             $this->fail('Duplicate delivery allowed.');
@@ -243,13 +251,13 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
         $this->assertSame(0, DB::table(self::DELIVERIES)->count());
     }
 
-    public function test_missing_schema_blocks_mutation_without_losing_legacy_feed(): void
+    public function test_missing_legacy_delivery_table_does_not_block_canonical_audit(): void
     {
         $f = $this->fixture();
         DB::statement('DROP TABLE '.self::DELIVERIES);
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer']))->assertStatus(503);
-        $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
-        $this->assertSame(0, DB::table('jairoads_next.maintenance_records')->count());
+        $this->post('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer']))->assertRedirect();
+        $this->assertSame(1, DB::table('jairoads_next.audit_logs')->count());
+        $this->assertSame(1, DB::table('jairoads_next.maintenance_records')->count());
         $this->getJson('/jairoads/notifications')->assertOk()->assertExactJson(['notifications' => []]);
     }
 
@@ -284,6 +292,14 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
     {
         $f = $this->fixture();
         $this->post('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer']))->assertRedirect();
+        $eventId = DB::table('jairoads_next.audit_logs')->value('id');
+        $other = $this->account('Viewer');
+        DB::table(self::DELIVERIES)->insert([
+            ['audit_log_id' => $eventId, 'recipient_user_id' => $f['user']->dd_user_account_id,
+                'notification_message' => 'Historical first recipient'],
+            ['audit_log_id' => $eventId, 'recipient_user_id' => $other->dd_user_account_id,
+                'notification_message' => 'Historical second recipient'],
+        ]);
         DB::statement('CREATE ROLE jairoads_delivery_rehearsal NOLOGIN');
         DB::statement('GRANT USAGE ON SCHEMA jairoads_next TO jairoads_delivery_rehearsal');
         try {

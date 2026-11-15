@@ -52,8 +52,10 @@ export async function verifyAuditNotifications({
         );
         assert.equal(response.status(), 200);
         const { notifications } = await response.json();
+        // The Final DD makes an Engineer's own maintenance activity audit-only:
+        // no notification is broadcast to administrators or the actor.
         assert.ok(
-            notifications.some(
+            !notifications.some(
                 (n) =>
                     n.notification_message ===
                     `Engineer updated MonthlyUpdate #${report.id}.`,
@@ -146,6 +148,6 @@ export async function verifyAuditNotifications({
         .getByRole('heading', { name: 'Audit Log', exact: true })
         .waitFor();
     console.log(
-        'PASS: one real Engineer update appears in each eligible Admin/SuperAdmin/actor feed; Viewer receives none; safe unique feed IDs; privileged read-only audit snapshots/pagination; historical LOGIN preserved without new authentication events.',
+        'PASS: real Engineer update is audit-only without broadcasts; safe recipient-limited notification feeds; privileged read-only audit snapshots/pagination; historical LOGIN preserved without new authentication events.',
     );
 }

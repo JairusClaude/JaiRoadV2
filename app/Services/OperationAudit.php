@@ -7,7 +7,7 @@ namespace App\Services;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
-/** One canonical event plus deduplicated deliveries in the mutation transaction. */
+/** One append-only canonical event with at most one addressed notification. */
 final class OperationAudit
 {
     /** @param array{account_id:int,role:string,engineer_id:?int} $actor
@@ -100,13 +100,17 @@ final class OperationAudit
             throw new \LogicException('Business auditing requires a safe entity snapshot.');
         }
         $username = DB::table('jairoads_next.user_accounts')->where('id', $actor['account_id'])->value('username');
-        $event = (int) DB::table('jairoads_next.audit_logs')->insertGetId([
+        // The Final DD has a single optional recipient on AuditLog itself.
+        // Resolve the recipient BEFORE the immutable INSERT; never amend history.
+        $notification = app(ActivityNotifications::class)->forEvent($actor, $action, $entity, $id, $meta, $oldMeta);
+        DB::table('jairoads_next.audit_logs')->insert([
             'user_id' => $actor['account_id'], 'actor_identifier' => 'DD-UserAccount#'.$actor['account_id'].' ('.$username.')',
             'action' => $action, 'entity_type' => $entity, 'entity_id' => $id, 'description' => $description,
             'old_value' => $action === 'CREATE' ? null : json_encode($old, JSON_THROW_ON_ERROR),
             'new_value' => $action === 'DELETE' ? null : json_encode($new, JSON_THROW_ON_ERROR),
-            'recipient_user_id' => null, 'notification_message' => null, 'created_at' => now(),
+            'recipient_user_id' => $notification['recipient_user_id'] ?? null,
+            'notification_message' => $notification['notification_message'] ?? null,
+            'created_at' => now(),
         ]);
-        app(ActivityNotifications::class)->deliver($event, $actor, $action, $entity, $id);
     }
 }

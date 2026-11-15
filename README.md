@@ -1,65 +1,50 @@
-# JaiROADS Frontend Login Preview
+# JaiROADS — Canonical Road Maintenance Information System
 
-This is the frontend from `JaiROADS_Road_Coverage_Details_Review (1)(1).zip`, with the login design from GitHub's `feature/jairoads-map-demo` branch. It is a standalone interface review with sample data. The Laravel scaffold remains for future integration, but this preview runs on Node.js without PHP, Composer, Herd, database setup, or production accounts.
+This repository contains a **Laravel 13 / PHP 8.4 / Inertia React** application with PostgreSQL 17, private file services, and role-scoped JaiROADS workflows. The authoritative business schema is `jairoads_next`; the old `public` business tables are legacy and **must not** be substituted for canonical records. `public.users` remains Fortify authentication infrastructure.
 
-## Run on Windows
+> **Release status: NOT APPROVED.** The branch `review/final-dd-alignment-2026-11-14` and draft [PR #26](https://github.com/JairusClaude/JaiRoadV2/pull/26) contain canonical implementation work. A successful Docker build or GitHub Actions run is not proof that accounts, SMTP, passkeys, Storage, RLS writes, maps, backups or human acceptance are ready for production. Do not merge/deploy solely on a green CI result.
 
-1. Extract the complete ZIP into a new folder.
-2. Install Node.js 22.12 or newer (Node.js 24 also works). Check with `node --version`.
-3. Open PowerShell in this folder (the folder containing this README and `package.json`).
-4. Run:
+## Architecture and Data Dictionary
 
-   ```powershell
-   node .\tools\maintenance-project-preview\server.mjs
-   ```
+- Canonical entities: `LGU`, `Engineer`, `EngineerLGU`, `UserAccount`, `RoadCoverage`, `MaintenanceProject`, `MaintenanceRecord`, `MonthlyUpdate`, `MaintenanceDocument`, `Media`, and append-only `AuditLog`.
+- Canonical CRUD and access require active linked identities, valid EngineerLGU scope and record-specific ManagingEngineer checks. Viewer is read-only.
+- `MaintenanceProject.road_coverage_id` is required and unique. MaintenanceRecord has required project and managing-engineer links; monthly updates and documents belong to MaintenanceRecords, and media belongs to MonthlyUpdates.
+- All canonical business foreign keys use `ON DELETE RESTRICT`; never solve a relationship error by detaching history or enabling cascade.
+- The project uses an immutable evidence record for authorized non-SuperAdmin account provisioning. **Do not fabricate historical account ownership or provisioning evidence.**
 
-5. Keep that terminal open and visit **http://localhost:5179/**.
+The controlling [Final DD](https://docs.google.com/document/d/1WeaLeaOTvxMMsjce0Ec50VNMz0_2Psf5soC-dmbVcbA/edit) contains unresolved cross-tab decisions. Keep those decisions explicit; see [Final DD conformance](docs/readiness/final-dd-conformance-2026-11-14.md).
 
-Prebuilt frontend assets are included, so dependency installation is not required for this first launch. Use port 5179; Laravel's port 8000 and Herd's `.test` URL serve a different application path and do not run this preview.
+## What runs in this repository
 
-## Demo login
+- `routes/web.php`: Fortify routes, legacy compatibility and guarded redirects.
+- `routes/operations.php`: canonical `/dd-phase3` endpoints. Read and write permissions are enforced on the server, not just by disabled UI actions.
+- `app/Services/AccountIdentityResolver.php`: strict canonical account eligibility. Missing ordinary provisioning evidence causes denial, not an invented default role.
+- `app/Services/OperationAudit.php`: append-only, transaction-scoped canonical audit events. Optional notifications address at most one eligible recipient.
+- `app/Services/Files/PermanentFileDeletion.php`: durable object-removal intents; private object deletion remains **disabled by default** until independent recovery acceptance.
+- `Dockerfile` and `docker/entrypoint.sh`: PHP-FPM/Nginx image. The entrypoint validates configuration and intentionally does **not** migrate, seed or create real accounts.
 
-- Email: `demo@example.test`
-- Password: `JaiROADS-Demo-2026!`
+## Secure configuration
 
-These are public sample credentials, displayed on the login page. Successful login opens Maintenance Projects. Invalid credentials display an error and keep the entered email. The session survives navigation and refresh. The account menu's **Sign out** clears it. Password recovery, account settings, and passkey authentication are unavailable in preview mode. There is no registration interface.
+Use environment-specific secrets provided by an authorized deployment operator. Never commit `.env`, production database credentials, `APP_KEY`, Supabase service keys or private object paths. The sample `.env.example` is a *development scaffold*, not production configuration.
 
-This demonstration session is not production authentication or a production security boundary. Do not expose this local server as a production service.
+For canonical PostgreSQL runtime, configure `DB_CONNECTION=pgsql`, a properly restricted server-only database role, HTTPS `APP_URL` and appropriate session/queue/cache settings. Use distinct `APP_KEY` and database credentials. Document and media Storage need private buckets and server-only credentials; a configured URL alone does not verify recovery or permission.
 
-## Edit and rebuild
+No sample login, hardcoded demo password, synthetic user or browser-only session is a valid production identity. Historic `tools/maintenance-project-preview` is a separate local demonstration utility, **not** the Laravel production application.
 
-After changing React, TypeScript, or CSS, run in PowerShell:
+## Validation and release
 
-```powershell
-npm.cmd ci
-npm.cmd run build -- --mode review
-node .\tools\maintenance-project-preview\server.mjs
-```
+The exact branch is checked by GitHub Actions for Laravel, PostgreSQL, browser, static analysis, dependency audit and Docker build. Tests use isolated fixtures; they do not touch the official Supabase data.
 
-The server reads its asset manifest at startup: stop it with **Ctrl+C**, rebuild, and start it again. `npm run dev` starts Vite, not this preview server. Review build mode uses the included generated route helpers without invoking PHP. No `.env` is needed.
+Before any production change, review:
 
-Optional development checks:
+- [Hosted database evidence and identity blockers](docs/readiness/live-remote-audit-2026-11-14.md)
+- [Final-DD conformance and unresolved product decisions](docs/readiness/final-dd-conformance-2026-11-14.md)
+- [External acceptance and recovery gates](docs/readiness/pending-acceptance-and-hosted-handoff-2026-11-14.md)
+- [Controlled rollout and rollback runbook](docs/release/controlled-rollout-runbook-2026-11-07.md)
+- [Human UAT evidence template](docs/qa/uat-evidence-template.json)
 
-```powershell
-npm.cmd run types:check
-npm.cmd run lint:check
-npm.cmd run format:check
-```
+Do not replay `database/hosted-migration-history` against Supabase. Those SQL files record **already applied** hosted changes; they are not migration candidates. Do not run any legacy `public` schema reset against the official database.
 
-The supplied source has pre-existing repository-wide ESLint failures; see `IMPLEMENTATION-REPORT.md` for results. Do not run database migrations or seeders to use this preview.
+## Legacy preview status
 
-## Sample data and limitations
-
-The Node process owns all sample collections, uploaded preview files, and demonstration sessions. Temporary edits are shared by local preview sessions and may disappear when the server stops or restarts. They are not stored in a database. Restarting also requires logging in again, including when Keep me signed in was selected.
-
-Existing Road Coverage directory/Add/Edit/Details and two- or three-location mapping, Maintenance Project directory/Add/Edit/Details, Maintenance Records, Monthly Updates, Maintenance Documents, LGUs, and design-exploration pages remain available after login. Existing unfinished navigation sections and unavailable actions retain their original behavior. There is no new production dashboard; the entry point is Maintenance Projects. `/maintenance-records` is the records directory; `/maintenance-projects/101/records` is not an implemented directory URL in the supplied frontend.
-
-Internet is required for OpenStreetMap tiles, OSRM route calculation, Photon place search, and the two external Unsplash slideshow photos. The first photo is bundled locally, and external-photo errors fall back to it. Map-provider availability is outside this project; provider errors retain the existing manual editing and retry behavior. Routing and geocoding can be configured with `JAIROADS_ROUTING_URL` and `JAIROADS_GEOCODING_URL` as in the supplied preview.
-
-Historical scripts/reports under `review/` predate the login requirement. Current browser results and representative screenshots are in `preview-review/`.
-
-## GitHub branch
-
-`feature/frontend-only-login-preview`
-
-https://github.com/JairusClaude/JaiRoadV2/tree/feature/frontend-only-login-preview
+Some historical files and screenshots document a frontend-only sample-data preview. They are kept for compatibility and design provenance, not as descriptions of the current canonical application. The real Laravel app, authentication and database permissions must be verified separately.
