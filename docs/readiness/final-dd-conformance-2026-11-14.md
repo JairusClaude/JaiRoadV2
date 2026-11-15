@@ -83,6 +83,12 @@ The canonical document upload now derives its private-object extension from Lara
 
 A November 15 read-only check of the official hosted database found **two** existing canonical document rows, **zero** filename/path-extension mismatches and **zero** paths outside the allowlisted document-prefix pattern. No existing Storage object or metadata was modified. The client-approved upload MIME/size policy remains pending.
 
+## 2026-11-15 bounded catalogue loading and notification freshness
+
+The previously invisible fixed 300-row operation workspace cutoff now exposes a per-collection `windowHasMore` flag and a visible **Load 300 more records** action. It requests only rows authorized by the current server-side identity and LGU scope and retains the current project query when present. The backend caps a single Inertia response at 30,000 rows per collection to resist unbounded memory requests, and the UI explicitly says when this limit is reached. This is a bounded incremental-window correctness improvement, **not true server-side search/cursor pagination** for arbitrarily large datasets. The unbounded LGU, active Engineer and road-creator dropdown lookups still require scalable server-side filtering in a larger deployment.
+
+Notification refresh is now best-effort every **20 seconds while the tab is visible**, plus focus/visibility-change refresh. It is **polling, not Supabase push delivery**, and the notification feed has no read/unread state by Final DD design. Neither change substitutes for real hosted HTTP acceptance.
+
 ## Operational safety and provenance
 
 All this branch's changes are **GitHub source/tests only**; no official Supabase DDL/DML, account/role mutation, Storage deletion, deployed Render settings or merge were performed. Automated GitHub Actions use isolated disposable PostgreSQL 17 fixtures; those green checks never imply human acceptance, live account possession or recoverable private Storage. PR #26 remains **draft** until confirmed acceptance.

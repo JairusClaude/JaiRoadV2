@@ -66,6 +66,11 @@ type Props = {
     media: Row[];
     documentsReady: boolean;
     mediaReady: boolean;
+    windowSize: number;
+    windowHasMore: Record<
+        'roads' | 'projects' | 'records' | 'updates' | 'documents' | 'media',
+        boolean
+    >;
     status: string | null;
 };
 const box = 'rounded-2xl border border-[#e2e8f1] bg-white p-5 sm:p-6';
@@ -104,6 +109,8 @@ export default function Operations({
     media,
     documentsReady,
     mediaReady,
+    windowSize,
+    windowHasMore,
     status,
 }: Props) {
     const [settings, setSettings] = useState({
@@ -159,6 +166,57 @@ export default function Operations({
         });
     };
     const page = usePage();
+    const relevantCollections: (keyof Props['windowHasMore'])[] =
+        section === 'roads'
+            ? ['roads', 'projects']
+            : section === 'projects'
+              ? ['projects', 'roads', 'records']
+              : section === 'updates'
+                ? ['updates', 'records', 'projects', 'media']
+                : section === 'documents'
+                  ? ['documents', 'records', 'projects']
+                  : [];
+    const truncated = relevantCollections.filter(
+        (collection) => windowHasMore[collection],
+    );
+    const loadMore = truncated.length > 0 ? (
+        <div
+            role="status"
+            className="mx-4 my-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"
+        >
+            <p>
+                Additional authorized records exist beyond the first{' '}
+                {windowSize.toLocaleString()} rows. Local search and counts may
+                be incomplete until the remaining batches are loaded. Affected
+                collections: {truncated.join(', ')}.
+            </p>
+            {windowSize < 30000 ? (
+                <button
+                    type="button"
+                    className="mt-3 rounded-lg bg-amber-900 px-4 py-2 font-semibold text-white hover:bg-amber-800"
+                    onClick={() => {
+                        const [path, query = ''] = page.url.split('?');
+                        const params = new URLSearchParams(query);
+                        params.set(
+                            'rows',
+                            String(Math.min(windowSize + 300, 30000)),
+                        );
+                        router.visit(`${path}?${params.toString()}`, {
+                            preserveScroll: true,
+                            preserveState: false,
+                        });
+                    }}
+                >
+                    Load 300 more records
+                </button>
+            ) : (
+                <p className="mt-2 font-medium">
+                    This page has reached its safe response-size limit. Use a
+                    dedicated server-side search or export for larger datasets.
+                </p>
+            )}
+        </div>
+    ) : null;
     const notice = (
         <>
             {status && (
@@ -239,6 +297,7 @@ export default function Operations({
                     canEdit={capabilities.updateRoads}
                     canManage={capabilities.deleteRoads}
                 />
+                {loadMore}
             </>
         );
     }
@@ -288,6 +347,7 @@ export default function Operations({
                     writableRecordIds={writableRecordIds}
                     mediaReady={mediaReady}
                 />
+                {loadMore}
             </>
         );
     }
@@ -323,6 +383,7 @@ export default function Operations({
                     uploadsReady={documentsReady}
                     writableRecordIds={writableRecordIds}
                 />
+                {loadMore}
             </>
         );
     }
@@ -352,6 +413,7 @@ export default function Operations({
                         projectView === 'show' ? maintenanceHistory : records
                     }
                 />
+                {loadMore}
                 {projectView === 'show' && selectedProject && (
                     <DdQuarterlyMaintenance
                         key={selectedProject.id}

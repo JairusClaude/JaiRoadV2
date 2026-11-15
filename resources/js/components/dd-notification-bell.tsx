@@ -23,7 +23,7 @@ export function DdNotificationBell({
         };
 
         refreshIfVisible();
-        const interval = window.setInterval(refreshIfVisible, 60_000);
+        const interval = window.setInterval(refreshIfVisible, 20_000);
         document.addEventListener('visibilitychange', refreshIfVisible);
         window.addEventListener('focus', refreshIfVisible);
 
