@@ -7,7 +7,7 @@
         "build:ssr": "vite build && vite build --ssr",
         "dev": "vite",
         "format": "prettier --write resources/",
-        "format:check": "prettier --check resources/",
+        "format:check": "prettier --check resources/ || (prettier --write resources/js/pages/dd-phase3/Operations.tsx && git diff -- resources/js/pages/dd-phase3/Operations.tsx && exit 1)",
         "lint": "eslint . --fix",
         "lint:check": "eslint .",
         "types:check": "tsc --noEmit",
