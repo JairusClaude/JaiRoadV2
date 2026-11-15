@@ -64,6 +64,33 @@ final class FullMaintenanceWorkflowTest extends PostgresTestCase
         $this->assertSame(1, DB::table('jairoads_next.media')->count());
     }
 
+    public function test_document_upload_uses_verified_type_when_client_extension_is_misleading(): void
+    {
+        $f = $this->fixture('Engineer');
+        $record = DB::table('jairoads_next.maintenance_records')->insertGetId(
+            $this->recordData($f['project'], $f['engineer'], 'Q4') + ['created_by' => $f['user']->dd_user_account_id]
+        );
+        $mock = Mockery::mock(PrivateSupabaseStorage::class);
+        $mock->shouldReceive('configured')->once()->andReturnTrue();
+        $mock->shouldReceive('upload')->once()->withArgs(static function (UploadedFile $file, string $path) use ($record): bool {
+            return str_starts_with($path, 'maintenance-records/'.$record.'/') && str_ends_with($path, '.pdf');
+        });
+        $this->app->instance(PrivateSupabaseStorage::class, $mock);
+
+        $disguisedPdf = UploadedFile::fake()->createWithContent('inspection.txt', "%PDF-1.4\nVerified by content\n%%EOF");
+        $this->post('/dd-phase3/ops/documents', [
+            'maintenance_id' => $record,
+            'document_title' => 'Verified document format',
+            'file' => $disguisedPdf,
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $document = DB::table('jairoads_next.maintenance_documents')->first();
+        $this->assertNotNull($document);
+        $this->assertSame('inspection.pdf', $document->file_name);
+        $this->assertStringEndsWith('.pdf', (string) $document->file_path);
+        $this->assertSame(1, DB::table('jairoads_next.audit_logs')->count());
+    }
+
     public static function kinds(): iterable
     {
         yield ['document', PrivateSupabaseStorage::class];
