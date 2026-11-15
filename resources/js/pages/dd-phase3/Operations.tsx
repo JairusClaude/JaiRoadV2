@@ -191,7 +191,7 @@ export default function Operations({
                     may be incomplete until the remaining batches are loaded.
                     Affected collections: {truncated.join(', ')}.
                 </p>
-                {windowSize < 30000 ? (
+                {windowSize < 3000 ? (
                     <button
                         type="button"
                         className="mt-3 rounded-lg bg-amber-900 px-4 py-2 font-semibold text-white hover:bg-amber-800"
@@ -200,7 +200,7 @@ export default function Operations({
                             const params = new URLSearchParams(query);
                             params.set(
                                 'rows',
-                                String(Math.min(windowSize + 300, 30000)),
+                                String(Math.min(windowSize + 300, 3000)),
                             );
                             router.visit(`${path}?${params.toString()}`, {
                                 preserveScroll: true,

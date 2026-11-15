@@ -235,7 +235,7 @@ class OperationsController extends Controller
 
         // Incremental, bounded windows of eligible rows replace the invisible 300-row cutoff.
         // The extra result row explicitly signals additional records to the UI.
-        $windowSize = min(30000, max(300, $request->integer('rows', 300)));
+        $windowSize = min(3000, max(300, $request->integer('rows', 300)));
         $listing = [
             'roads' => $roads->limit($windowSize + 1)->get(['id', 'road_name', 'lgu_id', 'kilometers', 'pavement_type', 'state_category', 'created_by', 'geojson']),
             'projects' => $projects->limit($windowSize + 1)->get(['p.id', 'p.project_title', 'p.road_coverage_id', 'p.description', 'p.created_by', 'r.lgu_id']),

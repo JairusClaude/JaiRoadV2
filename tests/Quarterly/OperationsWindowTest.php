@@ -47,7 +47,7 @@ final class OperationsWindowTest extends PostgresTestCase
         $this->get('/dd-phase3/roads?rows=9999999')->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('dd-phase3/Operations')
-                ->where('windowSize', 30000)
+                ->where('windowSize', 3000)
                 ->where('capabilities.readOnly', true)
                 ->where('windowHasMore.roads', false));
         $this->postJson('/dd-phase3/ops/roads', [])->assertForbidden();
