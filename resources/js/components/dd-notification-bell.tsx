@@ -1,5 +1,5 @@
 import { Bell, RefreshCw } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useJaiRoadsNotificationFeed } from '@/components/use-jairoads-notification-feed';
 
 /** Header feed: the API enforces recipient_user_id against the authenticated DD identity. */
@@ -11,6 +11,28 @@ export function DdNotificationBell({
     const [open, setOpen] = useState(false);
     const { status, items, message, refresh } = useJaiRoadsNotificationFeed();
     const dark = variant === 'dark';
+
+    // Refresh a recipient-scoped server feed without exposing Supabase credentials.
+    // A foreground tab periodically checks for newly addressed audit events;
+    // this is polling, not a claim of push/WebSocket delivery or unread status.
+    useEffect(() => {
+        const refreshIfVisible = () => {
+            if (document.visibilityState === 'visible') {
+                void refresh();
+            }
+        };
+
+        refreshIfVisible();
+        const interval = window.setInterval(refreshIfVisible, 60_000);
+        document.addEventListener('visibilitychange', refreshIfVisible);
+        window.addEventListener('focus', refreshIfVisible);
+
+        return () => {
+            window.clearInterval(interval);
+            document.removeEventListener('visibilitychange', refreshIfVisible);
+            window.removeEventListener('focus', refreshIfVisible);
+        };
+    }, [refresh]);
 
     return (
         <div className="relative">

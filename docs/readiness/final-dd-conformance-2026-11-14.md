@@ -54,6 +54,29 @@ The live DB enforces required Project/ManagingEngineer/actor links, quarter enum
 | Monthly previous-update cutoff; road reuse; UI brand details | Deferred/unconfirmed in provided working reference | Retain current safe behavior pending owner/team decision. Do not invent a cutoff or remove one-project-per-road uniqueness. |
 | Release environment | Only official Supabase project verified; persistent independent staging and actual Render, SMTP, passkey/device, map provider, human acceptance unverified | Pin exact code SHA and test against independent nonproduction environment. Complete 25 human UAT cases and 13 authentic approvals. |
 
+## Direct read-only hosted recheck — 2026-11-15
+
+This section supplements, rather than overwrites, the November 14 audit. It was read directly from the same connected official Supabase project on November 15 using a **READ ONLY** transaction:
+
+| Aggregate | Rechecked observation |
+|---|---|
+| Active canonical UserAccounts | 7 |
+| Immutable ordinary-account provisioning entries | 0 |
+| Active ordinary accounts without those entries | 5 |
+| Active Viewer identities without a Fortify bridge | 1 |
+| Active Admin identities without an Engineer link | 1 |
+| Dual-linked Fortify identities | 1 |
+| Engineer profiles with blank/NULL ContactNo | 0 |
+| `engineers.contact_no` declared nullable | YES |
+| Preserved auxiliary notification-delivery rows | 2 |
+| Pending file-deletion intents | 0 |
+
+The *official* Final DD itself contains a real ContactNo conflict: its **Data Dictionary** table lists Engineer.ContactNo as nullable (`Yes`), but **Quick Schema Reference** lists `Null? No`. Consequently neither tightening nor relaxing this live column is authorized by an unqualified "fix all" request; a specific controlling-rule decision is needed. Current Laravel Engineer creation/update requires contact. No live database or account mutation was performed by this read.
+
+Ordinary account repair remains blocked on authentic account-owner/provisioner identity evidence. Do not invent `reviewed_transition` records, new Fortify users or Engineer links to satisfy the resolver. The hosted project remains operationally **NO GO** for this branch, regardless of successful synthetic CI.
+
+The notification bell can periodically refresh the authenticated recipient-only HTTP feed (foreground tab, every 60 seconds, plus focus/visibility changes). This is **not** Supabase Realtime or guaranteed instantaneous delivery, and does not introduce read/unread state.
+
 ## Operational safety and provenance
 
 All this branch's changes are **GitHub source/tests only**; no official Supabase DDL/DML, account/role mutation, Storage deletion, deployed Render settings or merge were performed. Automated GitHub Actions use isolated disposable PostgreSQL 17 fixtures; those green checks never imply human acceptance, live account possession or recoverable private Storage. PR #26 remains **draft** until confirmed acceptance.
