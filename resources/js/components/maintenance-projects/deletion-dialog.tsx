@@ -1,4 +1,5 @@
 import * as Dialog from '@radix-ui/react-dialog';
+import { useEffect, useId, useState } from 'react';
 import type { ReactNode, RefObject } from 'react';
 import { Button } from '@/components/ui/button';
 import type { DependentCounts } from '@/types/maintenance-projects';
@@ -64,6 +65,7 @@ export function DeletionDialog({
     error,
     confirmLabel,
     confirmDisabled = false,
+    requireYes = false,
     onClose,
     onConfirm,
     returnFocus,
@@ -76,10 +78,18 @@ export function DeletionDialog({
     error: string;
     confirmLabel: string;
     confirmDisabled?: boolean;
+    requireYes?: boolean;
     onClose: () => void;
     onConfirm: () => void;
     returnFocus?: RefObject<HTMLElement | null>;
 }) {
+    const [confirmation, setConfirmation] = useState('');
+    const confirmationId = useId();
+    useEffect(() => {
+        setConfirmation('');
+    }, [open, title]);
+    const confirmed = !requireYes || confirmation === 'YES';
+
     return (
         <Dialog.Root
             open={open}
@@ -113,6 +123,12 @@ export function DeletionDialog({
                     <Dialog.Title>{title}</Dialog.Title>
                     <Dialog.Description>{description}</Dialog.Description>
                     {children}
+                    {requireYes && (
+                        <div className="mt-4 grid gap-2 rounded-xl border border-red-200 bg-red-50 p-3">
+                            <label htmlFor={confirmationId} className="text-sm font-semibold text-red-800">Type YES to confirm permanent deletion <span className="jr-required">*</span></label>
+                            <input id={confirmationId} type="text" autoComplete="off" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Type YES" disabled={processing} className="w-full rounded-md border border-red-300 bg-white px-3 py-2 text-sm text-slate-900" />
+                        </div>
+                    )}
                     {error && (
                         <p className="jr-field-error" role="alert">
                             {error}
@@ -131,8 +147,8 @@ export function DeletionDialog({
                             type="button"
                             className="jr-danger"
                             variant="destructive"
-                            disabled={processing || confirmDisabled}
-                            onClick={onConfirm}
+                            disabled={processing || confirmDisabled || !confirmed}
+                            onClick={() => { if (confirmed && !confirmDisabled && !processing) onConfirm(); }}
                         >
                             {processing ? 'Deleting…' : confirmLabel}
                         </Button>

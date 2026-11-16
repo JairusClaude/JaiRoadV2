@@ -116,7 +116,7 @@ export function RecordDirectory({
                 apply({
                     ...filters,
                     search,
-                    [key]: value === 'all' ? '' : value,
+                    [key]: value,
                 })
             }
             options={[
@@ -128,13 +128,7 @@ export function RecordDirectory({
             ]}
         />
     );
-    const hasFilters = Boolean(
-        filters.search ||
-        filters.municipality ||
-        filters.year ||
-        filters.quarter ||
-        filters.status,
-    );
+    const hasFilters = [filters.search, filters.municipality, filters.year, filters.quarter, filters.status].some((value) => Boolean(value && value !== 'all'));
 
     const displayedTotalProjects = totalProjects ?? projects?.length ?? 0;
     const displayedTotalRecords =
@@ -209,6 +203,7 @@ export function RecordDirectory({
                         subtitle="In progress or scheduled"
                     />
                 </section>
+                <div className="jr-record-filter-controls">
                 <div className="jr-search">
                     <Search className="size-[18px]" />
                     <Input
@@ -268,6 +263,13 @@ export function RecordDirectory({
                         }
                     />
                 </div>
+                </div>
+                {hasFilters && (
+                    <Button type="button" variant="outline" onClick={() => {
+                        setSearch('');
+                        apply({ search: '', municipality: 'all', year: 'all', quarter: 'all', status: 'all', sort: 'newest' });
+                    }}>Clear filters</Button>
+                )}
                 <span className="sr-only">
                     Search results update automatically while typing.
                 </span>
@@ -493,6 +495,7 @@ export function RecordDirectory({
                                                     Edit Maintenance Record
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem
+                                                    variant="destructive"
                                                     disabled={
                                                         !canDelete || busy
                                                     }

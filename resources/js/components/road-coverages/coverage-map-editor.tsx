@@ -1905,15 +1905,6 @@ function EditableCoverageMapEditor({
                 </button>
             </div>
             <aside hidden={hidden} className="jr-map-panel">
-                {referenceUrl && (
-                    <p
-                        className="jr-field-hint"
-                        role="status"
-                        data-reference-state={referenceState}
-                    >
-                        {referenceNotice}
-                    </p>
-                )}
                 <section>
                     <button
                         type="button"
@@ -1928,6 +1919,13 @@ function EditableCoverageMapEditor({
                 </section>
                 <section>
                     <h2>Road Mapping</h2>
+                    {referenceUrl && referenceNotice && (
+                        <div className="jr-map-reference-notice" role="status" aria-live="polite" data-reference-state={referenceState}>
+                            <strong>Saved road references</strong>
+                            <p>{referenceNotice}</p>
+                            <small>These are existing road coverages returned by the server for the current map area. They are reference guides, not changes to this road.</small>
+                        </div>
+                    )}
                     <p className="jr-field-hint">
                         {draft.legacy
                             ? 'Saved alignment retained.'

@@ -604,14 +604,18 @@ export function CoverageForm({
                                     lineCoordinates(coverage.geojson),
                                 ) && (
                                 <div
-                                    className="jr-record-field"
-                                    style={{ maxWidth: 480, marginTop: 12 }}
+                                    className="jr-record-field jr-correction-reason"
                                 >
                                     <Label htmlFor="correction_reason">
                                         Correction reason
-                                        <span className="jr-required"> *</span>
+                                        <span className="jr-required"> *Required</span>
                                     </Label>
-                                    <Input
+                                    <p className="jr-field-hint">Explain why the mapped road alignment is being corrected. This reason is recorded in the audit log.</p>
+                                    <textarea
+                                        className="jr-textarea"
+                                        required
+                                        aria-required="true"
+                                        rows={4}
                                         id="correction_reason"
                                         maxLength={255}
                                         value={form.data.correction_reason}

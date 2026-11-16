@@ -42,3 +42,10 @@
         flex: 1 1 130px;
     }
 }
+
+.jr-record-directory .jr-record-filter-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; width: 100%; margin: 0 0 12px; }
+.jr-record-directory .jr-record-filter-controls .jr-search { flex: 1 1 320px; min-width: min(100%, 280px); }
+.jr-record-directory .jr-record-filter-controls .jr-search input { width: 100%; }
+.jr-record-directory .jr-record-filter-controls .jr-filter-row { flex: 0 1 auto; margin: 0; gap: 8px; }
+.jr-record-directory .jr-record-filter-controls [data-slot='select-trigger'] { height: 41px; }
+@media(max-width: 900px) { .jr-record-directory .jr-record-filter-controls .jr-search, .jr-record-directory .jr-record-filter-controls .jr-filter-row { flex: 1 1 100%; } }

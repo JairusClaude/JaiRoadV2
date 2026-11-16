@@ -747,3 +747,12 @@
 .jr-map-readonly .jr-map-warning {
     margin: 16px;
 }
+
+/* Clear correction and reference-server feedback. */
+.jr-correction-reason { margin-top: 18px; padding: 16px; border: 1px solid #d8a063; border-radius: 12px; background: #fff8ed; width: 100%; }
+.jr-correction-reason textarea { width: 100%; min-height: 112px; border: 1px solid #d8a063; background: #fff; padding: 12px; border-radius: 9px; resize: vertical; }
+.jr-correction-reason textarea:focus { outline: 2px solid #b9783f; outline-offset: 2px; }
+.jr-map-reference-notice { margin: 0 0 14px; padding: 12px; border: 1px solid #c7d9ef; border-radius: 10px; background: #f1f6fc; color: #294b70; font-size: 12px; line-height: 1.5; }
+.jr-map-reference-notice strong { display: block; margin-bottom: 4px; }
+.jr-map-reference-notice small { display: block; margin-top: 5px; color: #49617a; }
+.jr-map-reference-notice[data-reference-state='error'] { background: #fff4ed; border-color: #e9b99b; color: #9a3412; }

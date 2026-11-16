@@ -83,6 +83,7 @@ export function RecordDeletionDialog({
 
     return (
         <DeletionDialog
+            requireYes
             open={targets !== null}
             title={
                 count === 1

@@ -2370,3 +2370,8 @@
     outline-offset: 3px;
     border-radius: 3px;
 }
+
+/* Destructive ellipsis actions stay red, including on hover. */
+.jr-menu [data-slot='dropdown-menu-item'][data-variant='destructive'], .jr-menu [data-slot='dropdown-menu-item']:has(svg.lucide-trash-2), .jr-menu [data-slot='dropdown-menu-item']:has(svg.lucide-trash) { color: #b91c1c; }
+.jr-menu [data-slot='dropdown-menu-item'][data-variant='destructive'] svg, .jr-menu [data-slot='dropdown-menu-item']:has(svg.lucide-trash-2) svg, .jr-menu [data-slot='dropdown-menu-item']:has(svg.lucide-trash) svg { color: #b91c1c; }
+.jr-menu [data-slot='dropdown-menu-item'][data-highlighted][data-variant='destructive'], .jr-menu [data-slot='dropdown-menu-item'][data-highlighted]:has(svg.lucide-trash-2), .jr-menu [data-slot='dropdown-menu-item'][data-highlighted]:has(svg.lucide-trash) { background: #fef2f2; color: #991b1b; }

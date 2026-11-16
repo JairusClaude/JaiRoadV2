@@ -360,7 +360,7 @@ export default function Form(parents: DocumentParents) {
                                     (page.props.canonicalFrontend === true &&
                                         !!doc)
                                 }
-                                error={form.errors.attachment}
+                                error={form.errors.attachment || (form.errors as Record<string, string>).file}
                                 onChange={(file) => {
                                     form.clearErrors('attachment');
                                     form.setData('attachment', file);
@@ -372,7 +372,7 @@ export default function Form(parents: DocumentParents) {
                         <footer className="jr-form-footer">
                             <p>
                                 {page.props.canonicalFrontend === true
-                                    ? 'Files remain private. Removing an existing file is applied after you save and confirm permanent deletion.'
+                                    ? 'Files remain private. X stages removal; Save Changes confirms permanent deletion. Cancel retains the file.'
                                     : 'Local preview only · files and changes reset on restart.'}
                             </p>
                             <div className="flex gap-2">

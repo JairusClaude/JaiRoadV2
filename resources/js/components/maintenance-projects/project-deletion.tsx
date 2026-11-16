@@ -267,6 +267,7 @@ export function ProjectDeletionDialog({
 
     return (
         <DeletionDialog
+            requireYes
             open={projects !== null}
             title={
                 count === 1 ? 'Delete project?' : `Delete ${count} projects?`
