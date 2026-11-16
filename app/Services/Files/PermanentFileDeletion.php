@@ -73,16 +73,15 @@ final class PermanentFileDeletion
 
     private function parentExists(int $id): void
     {
-        // Managers have the same global business scope as existing recordScope;
-        // Engineers are rejected above, never upgraded by supplying an LGU/role.
-        $record = DB::table('jairoads_next.maintenance_records')->where('id', $id)->first(['project_id']);
-        if ($record !== null && $record->project_id === null) {
-            abort_unless(app(PreservedProjectDeletion::class)->available() && DB::table(PreservedProjectDeletion::CONTEXT)->where('maintenance_id', $id)->exists(), 404);
-
-            return; // Caller has already verified Admin/SuperAdmin; history stays private.
-        }
-        abort_unless(DB::table('jairoads_next.maintenance_records as m')->join('jairoads_next.maintenance_projects as p', 'p.id', '=', 'm.project_id')
-            ->join('jairoads_next.road_coverages as r', 'r.id', '=', 'p.road_coverage_id')->where('m.id', $id)->exists(), 404);
+        // A document/media row is already linked to this maintenance record.
+        // Verify the referenced record itself, but do not require its project
+        // or road-coverage joins to exist: valid retained/history records may
+        // intentionally have no current project relationship. The actor check
+        // above still restricts permanent deletion to Admin/SuperAdmin.
+        abort_unless(
+            DB::table('jairoads_next.maintenance_records')->where('id', $id)->exists(),
+            404
+        );
     }
 
     /** @return array<string,mixed> */
