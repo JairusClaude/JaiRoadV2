@@ -12,10 +12,12 @@ type Engineer = {
 };
 export default function DdEngineerLifecycle({
     engineers,
+    initialEngineerId,
 }: {
     engineers: Engineer[];
+    initialEngineerId?: number;
 }) {
-    const [selected, setSelected] = useState<Engineer | null>(null);
+    const [selected, setSelected] = useState<Engineer | null>(() => engineers.find((e) => e.id === initialEngineerId) ?? null);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [busy, setBusy] = useState(false);
     const [notice, setNotice] = useState('');
@@ -27,7 +29,7 @@ export default function DdEngineerLifecycle({
 
     return (
         <section
-            className="mt-6 space-y-4 rounded-2xl border border-slate-200 bg-white p-5"
+            className="space-y-4"
             aria-label="Engineer profile lifecycle"
         >
             <h2 className="text-lg font-semibold">Edit or retire Engineer</h2>
@@ -35,7 +37,7 @@ export default function DdEngineerLifecycle({
                 Rank is professional information. Retirement retains history and
                 deactivates the linked account and active LGU assignments.
             </p>
-            <label className="block text-sm">
+            {initialEngineerId === undefined && <label className="block text-sm">
                 Engineer profile
                 <select
                     className="mt-1 block rounded border p-2"
@@ -57,7 +59,7 @@ export default function DdEngineerLifecycle({
                         </option>
                     ))}
                 </select>
-            </label>
+            </label>}
             {selected && (
                 <form
                     className="grid gap-3 sm:grid-cols-2"
@@ -102,7 +104,7 @@ export default function DdEngineerLifecycle({
                                 }[field]
                             }
                             <input
-                                className="mt-1 block w-full rounded border p-2"
+                                className="um-input mt-1"
                                 required={field !== 'middle_name'}
                                 maxLength={field === 'contact_no' ? 30 : 100}
                                 value={selected[field] ?? ''}
@@ -121,7 +123,7 @@ export default function DdEngineerLifecycle({
                     <div className="flex gap-3 sm:col-span-2">
                         <button
                             disabled={busy}
-                            className="rounded border px-3 py-2"
+                            className="um-primary"
                         >
                             Save profile
                         </button>
@@ -130,7 +132,7 @@ export default function DdEngineerLifecycle({
                             disabled={
                                 busy || selected.engineer_status === 'Retired'
                             }
-                            className="rounded border border-red-300 px-3 py-2"
+                            className="um-danger"
                             onClick={() => {
                                 if (
                                     window.confirm(

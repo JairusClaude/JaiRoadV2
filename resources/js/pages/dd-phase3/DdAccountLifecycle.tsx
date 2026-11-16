@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 type Account = {
     id: number;
@@ -21,16 +21,18 @@ type Details = {
 export default function DdAccountLifecycle({
     accounts,
     actorId,
+    initialAccountId,
 }: {
     accounts: Account[];
     actorId: number;
+    initialAccountId?: number;
 }) {
     const [detail, setDetail] = useState<Details | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [busy, setBusy] = useState(false);
     const [notice, setNotice] = useState('');
     const sequence = useRef(0);
-    async function load(id: string) {
+    const load = useCallback(async (id: string) => {
         const current = ++sequence.current;
         setDetail(null);
         setErrors({});
@@ -61,17 +63,21 @@ export default function DdAccountLifecycle({
                 setErrors({ details: 'Account details are unavailable.' });
             }
         }
-    }
+    }, []);
+    useEffect(() => {
+        if (initialAccountId !== undefined) void load(String(initialAccountId));
+        return () => { sequence.current++; };
+    }, [initialAccountId, load]);
 
     return (
         <section
             aria-label="UserAccount lifecycle"
-            className="mt-6 space-y-4 rounded-2xl border border-slate-200 bg-white p-5"
+            className="space-y-4"
         >
             <h2 className="text-lg font-semibold">
                 Account details and access
             </h2>
-            <label className="block text-sm">
+            {initialAccountId === undefined && <label className="block text-sm">
                 Account to manage
                 <select
                     className="mt-1 block rounded border p-2"
@@ -86,7 +92,8 @@ export default function DdAccountLifecycle({
                         </option>
                     ))}
                 </select>
-            </label>
+            </label>}
+            {!detail && !Object.keys(errors).length && initialAccountId !== undefined && <p role="status" className="text-sm text-slate-500">Loading account details…</p>}
             {detail && (
                 <div className="space-y-3">
                     <dl className="grid gap-2 text-sm sm:grid-cols-2">
@@ -125,7 +132,7 @@ export default function DdAccountLifecycle({
                         Account Type and passwords cannot be changed here.
                     </p>
                     <button
-                        className="rounded border px-3 py-2"
+                        className={detail.account.is_active ? 'um-danger' : 'um-primary'}
                         disabled={
                             busy ||
                             (detail.account.id === actorId &&
@@ -175,7 +182,7 @@ export default function DdAccountLifecycle({
                 </div>
             )}
             {Object.entries(errors).map(([key, error]) => (
-                <p key={key} role="alert">
+                <p key={key} role="alert" className="text-sm text-red-700">
                     {error}
                 </p>
             ))}

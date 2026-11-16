@@ -1,0 +1,83 @@
+/* Canonical User Management — shared JaiROADS directory palette. */
+.um-workspace { color:#18263a; display:grid; gap:22px; min-width:0; }
+.um-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
+.um-metric { padding:17px 18px; border:1px solid #e0e7ef; border-radius:15px; background:#fff; box-shadow:0 2px 5px #14263807; min-width:0; }
+.um-metric-top { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:11px; font-weight:650; text-transform:uppercase; letter-spacing:.045em; color:#60738c; }
+.um-stat-icon { display:grid; place-items:center; flex:none; width:36px; height:36px; color:#90451f; background:#faf0e6; border-radius:10px; }
+.um-metric strong { display:block; font-size:29px; line-height:1.25; letter-spacing:-.035em; margin:8px 0 3px; }
+.um-metric small,.um-directory-head p,.um-muted,.um-limit { color:#64758c; font-size:12px; }
+.um-directory { min-width:0; border:1px solid #e0e7ef; border-radius:16px; overflow:hidden; background:white; }
+.um-directory-head { padding:20px; display:flex; align-items:center; justify-content:space-between; gap:15px; flex-wrap:wrap; }
+.um-directory-head h2 { font-size:19px; font-weight:700; letter-spacing:-.02em; margin-bottom:3px; }
+.um-header-actions,.um-dialog-actions { display:flex; flex-wrap:wrap; align-items:center; gap:9px; }
+.um-primary,.um-secondary,.um-danger { display:inline-flex; align-items:center; justify-content:center; gap:7px; border:1px solid transparent; border-radius:10px; padding:9px 14px; font-size:13px; font-weight:600; line-height:1.4; cursor:pointer; transition:background .15s; }
+.um-primary { background:#90451f; color:white; box-shadow:0 2px 6px #90451f22; }
+.um-primary:hover { background:#773917; }
+.um-secondary { background:white; border-color:#dfe6ef; color:#435773; }
+.um-secondary:hover { background:#f6f8fb; }
+.um-danger { background:#fef2f2; color:#b91c1c; border-color:#fecaca; }
+.um-danger:hover { background:#fee2e2; }
+.um-workspace button:disabled,.um-dialog button:disabled { cursor:not-allowed; opacity:.5; }
+.um-tabs { display:flex; gap:18px; padding:0 20px; border-bottom:1px solid #e2e8f0; }
+.um-tabs button { display:flex; align-items:center; gap:8px; color:#64758c; font-size:13px; font-weight:600; padding:12px 3px; border-bottom:2px solid transparent; white-space:nowrap; }
+.um-tabs button[aria-pressed=true] { color:#90451f; border-color:#90451f; }
+.um-tabs button span { background:#f0f3f6; border-radius:10px; padding:1px 7px; font-size:11px; }
+.um-tabs button[aria-pressed=true] span { background:#f9eee3; }
+.um-toolbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:16px 20px; }
+.um-search { display:flex; gap:9px; align-items:center; flex:1 1 280px; min-width:0; border:1px solid #dfe6ef; border-radius:10px; padding:0 12px; color:#8192aa; background:white; }
+.um-search input { color:#18263a; width:100%; min-width:0; padding:10px 0; outline:none; font-size:13px; background:transparent; }
+.um-search:focus-within,.um-input:focus,.um-filter:focus { outline:2px solid #c79576; outline-offset:1px; }
+.um-filter,.um-input { background:#fff; color:#263951; border:1px solid #dfe6ef; border-radius:9px; padding:10px 12px; font-size:13px; }
+.um-input { width:100%; display:block; }
+.um-table-scroll { overflow-x:auto; margin:0 20px; border:1px solid #e4e9ef; border-radius:10px; }
+.um-table { width:100%; border-collapse:collapse; min-width:760px; font-size:13px; text-align:left; }
+.um-table th { background:#f4f5f6; color:#60738c; font-size:11px; letter-spacing:.045em; font-weight:650; text-transform:uppercase; padding:12px 14px; white-space:nowrap; }
+.um-table td { padding:14px; border-top:1px solid #edf0f4; vertical-align:middle; color:#435773; overflow-wrap:anywhere; }
+.um-table td:first-child { width:32%; }
+.um-table td:last-child { text-align:right; }
+.um-table th:last-child { text-align:right; }
+.um-table tr:hover td { background:#fcfaf8; }
+.um-table strong { display:block; font-size:13px; font-weight:600; color:#18263a; }
+.um-table small { display:block; margin-top:3px; color:#72839b; font-size:11px; }
+.um-person { display:flex; align-items:center; gap:10px; }
+.um-avatar { flex:none; width:35px; height:35px; display:grid; place-items:center; background:#f7ebe0; color:#90451f; border-radius:10px; font-size:12px; font-weight:700; }
+.um-you { font-size:10px; color:#64758c; font-weight:500; margin-left:3px; }
+.um-role,.um-status { display:inline-flex; gap:5px; align-items:center; font-size:11px; font-weight:650; padding:4px 9px; border-radius:999px; background:#eef1f5; color:#56657a; white-space:nowrap; }
+.um-role[data-role=SuperAdmin],.um-role[data-role=Admin] { background:#fff0e3; color:#995321; }
+.um-role[data-role=Engineer] { background:#eaf2fd; color:#295e98; }
+.um-status-active { background:#e9f7ee; color:#23774a; }
+.um-status i { width:6px; height:6px; border-radius:50%; background:currentColor; }
+.um-row-action { padding:6px 11px; font-size:12px; }
+.um-footer { padding:15px 20px; display:flex; justify-content:space-between; align-items:center; color:#64758c; font-size:12px; }
+.um-footer>div { display:flex; align-items:center; gap:10px; }
+.um-footer button { border:1px solid #dfe6ef; border-radius:8px; padding:6px; background:#fff; color:#435773; }
+.um-empty { min-height:180px; display:grid; justify-items:center; align-content:center; gap:8px; color:#64758c; padding:20px; font-size:13px; }
+.um-empty strong { color:#18263a; }
+.um-limit { margin:0 20px 15px; }
+.um-policy,.um-notice { display:flex; align-items:flex-start; gap:10px; padding:13px 16px; border:1px solid #e7ddd1; border-radius:12px; background:#fcf8f3; color:#79573d; font-size:12px; }
+.um-policy svg,.um-notice svg { flex:none; }
+.um-policy strong { font-size:13px; }
+.um-policy p { margin-top:3px; }
+.um-notice { border-color:#cae8d6; background:#f0faf4; color:#23774a; align-items:center; }
+.um-notice span { flex:1; }
+.um-overlay { position:fixed; inset:0; z-index:70; background:#17253866; backdrop-filter:blur(2px); }
+.um-dialog { position:fixed; z-index:71; top:50%; left:50%; transform:translate(-50%,-50%); width:min(650px,calc(100vw - 28px)); max-height:calc(100dvh - 32px); overflow:auto; border-radius:18px; background:#fff; color:#18263a; box-shadow:0 22px 80px #0f172a38; }
+.um-dialog-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; border-bottom:1px solid #e6ebf1; padding:20px 24px; }
+.um-dialog-head h2 { font-size:21px; font-weight:700; }
+.um-dialog-head p { font-size:13px; color:#64758c; margin-top:4px; }
+.um-dialog-head button { padding:5px; color:#64758c; }
+.um-dialog-body { padding:22px 24px; }
+.um-form { display:grid; gap:18px; }
+.um-form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:15px; }
+.um-field { display:block; font-size:13px; font-weight:600; color:#344963; }
+.um-field .um-input { margin-top:6px; font-weight:400; }
+.um-field small { display:block; font-size:11px; line-height:1.5; font-weight:400; color:#64758c; margin-top:5px; }
+.um-required,.um-field small.um-required { color:#b91c1c; }
+.um-optional { color:#64758c; font-weight:400; }
+.um-span { grid-column:1/-1; }
+.um-form-note { padding:12px; background:#faf5ee; border:1px solid #eee0d2; border-radius:10px; color:#79573d; font-size:12px; line-height:1.6; }
+.um-dialog-actions { justify-content:flex-end; border-top:1px solid #e6ebf1; padding-top:16px; }
+.um-error { padding:10px 12px; border-radius:8px; background:#fef2f2; color:#b91c1c; font-size:12px; }
+.um-dialog dt { color:#64758c; font-size:12px; }.um-dialog dd { color:#18263a; font-weight:600; overflow-wrap:anywhere; }
+@media(max-width:1050px){.um-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.um-metrics{gap:9px}.um-metric{padding:12px}.um-metric strong{font-size:24px}.um-metric-top{font-size:10px}.um-stat-icon{width:28px;height:28px}.um-directory-head,.um-toolbar{padding:14px}.um-tabs{padding:0 14px;gap:12px}.um-table-scroll{margin:0 12px}.um-filter{flex:1 1 130px}.um-form-grid{grid-template-columns:1fr}.um-dialog-body,.um-dialog-head{padding:16px}.um-header-actions{width:100%}.um-header-actions button{flex:1}}
