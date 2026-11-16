@@ -39,7 +39,7 @@ class OperationsFrontendController extends Controller
         protected ManagingEngineerEligibility $eligibility,
         protected PrivateSupabaseStorage $documents,
         protected PrivateMonthlyMediaStorage $media,
-        private PermanentFileDeletion $fileDeletions,
+        protected PermanentFileDeletion $fileDeletions,
     ) {}
 
     public static function isPreview(?Request $request = null): bool
@@ -232,7 +232,7 @@ class OperationsFrontendController extends Controller
             'engineers_id' => $r->managing_engineer_id === null ? null : (int) $r->managing_engineer_id,
             'managing_engineer' => $r->managing_engineer_id === null ? null : ['id' => (int) $r->managing_engineer_id, 'first_name' => $r->first_name, 'last_name' => $r->last_name],
             'start_date' => $r->start_date, 'details_url' => $url,
-            'edit_url' => $this->canWriteRecord($r, $actor) ? $url.'/edit' : null, 'delete_url' => null];
+            'edit_url' => $this->canWriteRecord($r, $actor) ? $url.'/edit' : null, 'delete_url' => RoleAccess::canDeleteOperations($actor['role']) ? self::BASE.'/maintenance-records/'.$r->id : null];
     }
 
     /** @param Actor $actor
@@ -289,7 +289,7 @@ class OperationsFrontendController extends Controller
      */
     protected function parents(array $actor, Request $request, ?int $fixedRecord = null): array
     {
-        $context = $fixedRecord ?? ($request->integer('maintenance_id') ?: null);
+        $context = $fixedRecord ?? ($request->integer('maintenance_id', $request->integer('record')) ?: null);
         $records = $this->records($actor)->when($context !== null, fn (Builder $q) => $q->where('m.id', $context))
             ->orderByDesc('m.maintenance_year')->get(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter', 'm.managing_engineer_id'])
             ->filter(fn (\stdClass $r): bool => $this->canWriteRecord($r, $actor));
@@ -310,7 +310,7 @@ class OperationsFrontendController extends Controller
             ->get(['id', 'file_name', 'file_type'])->map(fn (\stdClass $m): array => [
                 'id' => (int) $m->id, 'file_name' => (string) $m->file_name, 'mime_type' => (string) $m->file_type, 'size' => null,
                 'available' => $this->media->configured(), 'preview_url' => $this->media->configured() ? '/dd-phase3/files/media/'.$m->id : null,
-                'delete_url' => RoleAccess::managesBusinessData($actor['role']) && $this->fileDeletions->available() ? '/dd-phase3/files/media/'.$m->id : null,
+                'delete_url' => RoleAccess::managesBusinessData($actor['role']) && $this->fileDeletions->operationallyEnabled() ? '/dd-phase3/files/media/'.$m->id : null,
                 'parent_label' => 'MonthlyUpdate #'.$update,
             ])->all();
     }
@@ -336,7 +336,7 @@ class OperationsFrontendController extends Controller
         return ['id' => (int) $d->id, 'maintenance_id' => (int) $d->maintenance_id, 'document_title' => $d->document_title,
             'description' => $d->description, 'file_name' => $d->file_name, 'uploaded_by' => $d->uploader_name,
             'uploaded_at' => $d->uploaded_at, 'updated_at' => $d->updated_at, 'available' => $this->documents->configured(),
-            'delete_url' => RoleAccess::managesBusinessData($actor['role']) && $this->fileDeletions->available() ? '/dd-phase3/files/document/'.$d->id : null,
+            'delete_url' => RoleAccess::managesBusinessData($actor['role']) && $this->fileDeletions->operationallyEnabled() ? '/dd-phase3/files/document/'.$d->id : null,
             'download_url' => '/dd-phase3/files/document/'.$d->id, 'can_edit' => $this->canWriteRecord($d, $actor),
             'project' => ['id' => (int) $d->project_id, 'project_title' => $d->project_title, 'municipality' => $d->municipality_name],
             'record' => ['id' => (int) $d->maintenance_id, 'project_id' => (int) $d->project_id, 'year' => (int) $d->maintenance_year, 'quarter' => $d->quarter]];
@@ -374,4 +374,35 @@ class OperationsFrontendController extends Controller
             throw ValidationException::withMessages($errors);
         }
     }
+
+    /** Complete accepted individual deletions before returning a success redirect. */
+    protected function deletePrivateFile(Request $request, string $kind, int $id): void
+    {
+        try {
+            $result = $this->fileDeletions->delete($request->user(), $kind, $id);
+        } catch (\Illuminate\Validation\ValidationException $error) {
+            throw $error;
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $error) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['file' => 'File deletion unavailable or unauthorized. No successful deletion was confirmed.']);
+        }
+        if ($result['state'] !== 'completed') {
+            throw \Illuminate\Validation\ValidationException::withMessages(['file' => 'File deletion is pending. Retry the deletion or contact an administrator.']);
+        }
+    }
+
+    protected function requirePrivateDeletion(Request $request, array $actor): void
+    {
+        abort_unless(RoleAccess::canDeleteOperations($actor['role']), 403);
+        if (! $this->fileDeletions->operationallyEnabled()) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['file' => 'Permanent file deletion is temporarily unavailable.']);
+        }
+    }
+
+    protected function relatedReturn(Request $request, array $actor, string $fallback): string
+    {
+        $id = $request->integer('record');
+        $record = $id > 0 ? $this->records($actor)->where('m.id', $id)->first() : null;
+        return $record ? self::BASE.'/maintenance-projects/'.$record->project_id.'/records/'.$id : $fallback;
+    }
+
 }

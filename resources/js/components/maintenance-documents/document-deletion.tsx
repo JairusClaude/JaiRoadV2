@@ -34,11 +34,7 @@ export function useDocumentDeletion(returnRecordId?: number) {
             setProcessing(true);
             const suffix = returnRecordId ? `?record=${returnRecordId}` : '';
             router.delete(
-                selected.length === 1
-                    ? workspaceHref(
-                          `/maintenance-documents/${selected[0].id}${suffix}`,
-                      )
-                    : workspaceHref(`/maintenance-documents/bulk${suffix}`),
+                workspaceHref(`/maintenance-documents/bulk${suffix}`),
                 {
                     data: { document_ids: selected.map((d) => d.id) },
                     onSuccess: () => setSelected([]),
@@ -66,7 +62,7 @@ export function DocumentDeletionDialog({
                     ? 'Delete document?'
                     : 'Delete selected documents?'
             }
-            description="The selected documents and their local preview files will be deleted. Their Maintenance Records and Projects will be retained."
+            description="The selected documents and their private Storage files will be permanently deleted. Their Maintenance Records and Projects will be retained."
             processing={deletion.processing}
             error={deletion.error}
             confirmLabel="Delete Document"

@@ -114,8 +114,12 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
         $filters = $request->only(['search', 'municipality', 'year', 'quarter', 'status', 'sort'])
             + ['search' => '', 'municipality' => 'all', 'year' => 'all', 'quarter' => 'all', 'status' => 'all', 'sort' => 'newest'];
         $q = $this->records($actor);
-        if (is_string($filters['search']) && $filters['search'] !== '') {
-            $q->where('p.project_title', 'ilike', '%'.substr($filters['search'], 0, 255).'%');
+        if (is_string($filters['search']) && trim($filters['search']) !== '') {
+            $like = '%'.substr(trim($filters['search']), 0, 255).'%';
+            $q->where(fn ($query) => $query->where('p.project_title', 'ilike', $like)
+                ->orWhereRaw("concat_ws(' ', e.first_name, e.last_name) ilike ?", [$like])
+                ->orWhere('l.municipality_name', 'ilike', $like)
+                ->orWhereRaw('CAST(m.id AS text) ilike ?', [$like]));
         }
         foreach (['municipality' => 'rc.lgu_id', 'year' => 'm.maintenance_year', 'quarter' => 'm.quarter', 'status' => 'm.status'] as $key => $column) {
             if (is_string($filters[$key]) && $filters[$key] !== '' && $filters[$key] !== 'all') {
@@ -135,7 +139,7 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
             'records' => $q->orderBy('m.id', $filters['sort'] === 'oldest' ? 'asc' : 'desc')->paginate(12)->withQueryString()->through(fn (\stdClass $r): array => $this->recordData($r, $actor)),
             'projects' => $this->projectChoices($actor)->orderBy('p.project_title')->get()->map(fn (\stdClass $p): array => $this->projectChoiceData($p)),
             'municipalities' => $this->municipalities($actor)->map(fn (\stdClass $l): array => ['value' => (string) $l->id, 'label' => $l->municipality_name]),
-            'years' => $this->records($actor)->reorder()->distinct()->orderByDesc('m.maintenance_year')->pluck('m.maintenance_year'),
+            'years' => $this->records($actor)->reorder()->select('m.maintenance_year')->distinct()->orderByDesc('m.maintenance_year')->pluck('m.maintenance_year'),
             'historyUrl' => RoleAccess::managesBusinessData($actor['role']) && app(PreservedProjectDeletion::class)->available() ? '/dd-phase3/history/records' : null,
             'filters' => $filters, 'canCreate' => $this->writable($actor), 'canDelete' => RoleAccess::canDeleteOperations($actor['role']),
             'canBulkDelete' => RoleAccess::canDeleteOperations($actor['role']), 'integration' => ['ready' => true, 'message' => null],

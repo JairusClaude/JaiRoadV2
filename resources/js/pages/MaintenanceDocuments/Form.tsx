@@ -1,10 +1,6 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import { useRef, useState } from 'react';
-import {
-    PermanentFileDeletionDialog,
-    usePermanentFileDeletion,
-} from '@/components/files/permanent-file-deletion';
 import { DocumentAttachment } from '@/components/maintenance-documents/document-file';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { ProjectSelector } from '@/components/monthly-updates/project-selector';
@@ -29,6 +25,7 @@ type Values = {
     document_title: string;
     description: string;
     attachment: File | null;
+    remove_attachment: boolean;
 };
 export default function Form(parents: DocumentParents) {
     const page = usePage();
@@ -36,9 +33,6 @@ export default function Form(parents: DocumentParents) {
         page.props.previewOnly === true ||
         (page.props.canonicalFrontend === true && page.props.canWrite === true);
     const doc = parents.document;
-    const deletion = usePermanentFileDeletion(() =>
-        router.visit(workspaceHref('/maintenance-documents')),
-    );
     const [savedRemovalPending, setSavedRemovalPending] = useState(false);
     const fixed = parents.records.find((r) => r.id === parents.contextRecordId);
     const back = formReturn(page.url, parents.cancelUrl, [
@@ -57,6 +51,7 @@ export default function Form(parents: DocumentParents) {
         document_title: doc?.document_title ?? '',
         description: doc?.description ?? '',
         attachment: null,
+        remove_attachment: false,
     });
     const lock = useRef(false);
     const project = parents.projects.find(
@@ -176,6 +171,8 @@ export default function Form(parents: DocumentParents) {
                                 return;
                             }
 
+                            if (savedRemovalPending && !window.confirm('Save changes and permanently delete the selected document from private Storage?')) return;
+                            form.transform((data) => ({ ...data, remove_attachment: savedRemovalPending }));
                             lock.current = true;
                             form.submit(
                                 doc ? 'put' : 'post',
@@ -183,17 +180,6 @@ export default function Form(parents: DocumentParents) {
                                 {
                                     forceFormData: true,
                                     preserveScroll: true,
-                                    onSuccess: () => {
-                                        if (savedRemovalPending && doc?.delete_url) {
-                                            void deletion.open({
-                                                id: doc.id,
-                                                kind: 'document',
-                                                file_name: doc.file_name,
-                                                parent_label: `MaintenanceRecord #${doc.maintenance_id}`,
-                                                delete_url: doc.delete_url,
-                                            });
-                                        }
-                                    },
                                     onFinish: () => {
                                         lock.current = false;
                                     },
@@ -363,7 +349,7 @@ export default function Form(parents: DocumentParents) {
                             <h2>Document Attachment</h2>
                             <p className="jr-field-hint mb-4">
                                 {doc
-                                    ? 'The existing private file is retained. Edit its metadata below.'
+                                    ? 'Remove the attachment with X, then save to permanently delete it; Cancel keeps it.'
                                     : 'Upload one supporting document.'}
                             </p>
                             <DocumentAttachment
@@ -380,9 +366,8 @@ export default function Form(parents: DocumentParents) {
                                     form.setData('attachment', file);
                                 }}
                                 savedRemovalPending={savedRemovalPending}
-                                onRemoveSaved={() => setSavedRemovalPending(true)}
+                                onRemoveSaved={doc?.delete_url ? () => setSavedRemovalPending(true) : undefined}
                             />
-                            <PermanentFileDeletionDialog deletion={deletion} />
                         </section>
                         <footer className="jr-form-footer">
                             <p>

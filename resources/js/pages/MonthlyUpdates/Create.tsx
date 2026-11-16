@@ -1,6 +1,5 @@
 import '../../../css/maintenance-projects.css';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { PermanentFileDeletionDialog, usePermanentFileDeletion } from '@/components/files/permanent-file-deletion';
 import { useRef } from 'react';
 import { MonthlyUpdateForm } from '@/components/monthly-updates/monthly-update-form';
 import { formReturn, returnLabel } from '@/lib/form-navigation';
@@ -38,17 +37,6 @@ export default function Create(parents: MonthlyCreateProps) {
         removed_media_ids: [],
     });
     const submitting = useRef(false);
-    const deletionQueue = useRef<Array<{ id: number; kind: 'media'; file_name: string; parent_label: string; delete_url: string }>>([]);
-    const deletionRef = useRef<ReturnType<typeof usePermanentFileDeletion> | null>(null);
-    const mediaDeletion = usePermanentFileDeletion(() => {
-        const next = deletionQueue.current.shift();
-        if (next) {
-            void deletionRef.current?.open(next);
-        } else {
-            router.reload();
-        }
-    });
-    deletionRef.current = mediaDeletion;
 
     return (
         <>
@@ -128,16 +116,16 @@ export default function Create(parents: MonthlyCreateProps) {
                         return;
                     }
 
+                    if (page.props.canonicalFrontend === true && form.data.removed_media_ids.length && !window.confirm('Save changes and permanently delete the selected media from private Storage?')) return;
+
                     submitting.current = true;
 
                     const selectedAttachments = [...form.data.attachments];
-                    const selectedRemovalIds = [...form.data.removed_media_ids];
 
                     if (page.props.canonicalFrontend === true) {
                         form.transform((data) => ({
                             ...data,
                             attachments: undefined,
-                            removed_media_ids: undefined,
                         }));
                     }
 
@@ -148,26 +136,13 @@ export default function Create(parents: MonthlyCreateProps) {
                             if (page.props.canonicalFrontend !== true) return;
                             const match = responsePage.url.match(new RegExp('/monthly-updates/([0-9]+)(?:[/?#]|$)'));
                             const savedId = update?.id ?? Number(match?.[1] ?? 0);
-                            if ((selectedAttachments.length || selectedRemovalIds.length) && (!Number.isSafeInteger(savedId) || savedId < 1)) {
+                            if (selectedAttachments.length && (!Number.isSafeInteger(savedId) || savedId < 1)) {
                                 form.setError('attachments', 'The update was saved, but its media changes could not be completed. Open the saved update and retry.');
                                 return;
                             }
 
                             const uploadNext = (index: number) => {
                                 if (index >= selectedAttachments.length) {
-                                    deletionQueue.current = selectedRemovalIds
-                                        .map((id) => (parents.media ?? []).find((file) => file.id === id))
-                                        .filter((file): file is NonNullable<typeof file> => Boolean(file?.delete_url))
-                                        .map((file) => ({
-                                            id: file.id,
-                                            kind: 'media' as const,
-                                            file_name: file.file_name,
-                                            parent_label: file.parent_label ?? `MonthlyUpdate #${savedId}`,
-                                            delete_url: file.delete_url!,
-                                        }));
-                                    const next = deletionQueue.current.shift();
-                                    if (next) void mediaDeletion.open(next);
-                                    else if (selectedRemovalIds.length) form.setError('attachments', 'Some selected files could not be deleted because their deletion links were unavailable.');
                                     return;
                                 }
                                 router.post(workspaceHref(`/monthly-updates/${savedId}/media`), {
@@ -187,7 +162,6 @@ export default function Create(parents: MonthlyCreateProps) {
                     });
                 }}
             />
-            <PermanentFileDeletionDialog deletion={mediaDeletion} />
         </>
     );
 }

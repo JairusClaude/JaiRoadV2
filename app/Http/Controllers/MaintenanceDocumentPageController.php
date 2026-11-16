@@ -73,7 +73,14 @@ final class MaintenanceDocumentPageController extends OperationsFrontendControll
 
     public function saveDocument(Request $request, ?int $id = null): RedirectResponse
     {
-        $this->writer($this->actor($request));
+        $actor = $this->actor($request);
+        $this->writer($actor);
+        $request->validate(['remove_attachment' => ['sometimes', 'boolean']]);
+        $remove = $request->boolean('remove_attachment');
+        if ($remove) {
+            $this->requirePrivateDeletion($request, $actor);
+            abort_unless($id !== null && $this->documentQuery($actor)->where('d.id', $id)->exists(), 404);
+        }
         if ($id === null) {
             // Validate the form alias before Symfony's FileBag receives it.
             $request->validate(['attachment' => ['required', 'file']]);
@@ -83,6 +90,10 @@ final class MaintenanceDocumentPageController extends OperationsFrontendControll
         } else {
             $request->validate(['attachment' => ['prohibited']]);
             $this->operations->updateDocument($request, $this->identities, $id);
+            if ($remove) {
+                $this->deletePrivateFile($request, 'document', $id);
+                return redirect(self::BASE.'/maintenance-documents')->with('dd_operations_status', 'Document permanently deleted.');
+            }
         }
 
         return redirect(self::BASE.'/maintenance-documents'.($id === null ? '' : '/'.$id))->with('dd_operations_status', 'MaintenanceDocument saved.');
@@ -93,13 +104,13 @@ final class MaintenanceDocumentPageController extends OperationsFrontendControll
         $actor = $this->actor($request);
         abort_unless(RoleAccess::canDeleteOperations($actor['role']), 403, 'Only administrators may delete documents.');
 
-        $ids = $request->input('document_ids', []);
-        if (is_array($ids) && count($ids) > 0) {
-            DB::transaction(function () use ($ids): void {
-                DB::table('jairoads_next.maintenance_documents')->whereIn('id', $ids)->delete();
-            });
+        $v = $request->validate(['document_ids' => ['required', 'array', 'min:1', 'max:100'], 'document_ids.*' => ['required', 'integer', 'min:1', 'distinct']]);
+        $ids = array_map('intval', $v['document_ids']);
+        $this->requirePrivateDeletion($request, $actor);
+        abort_unless($this->documentQuery($actor)->whereIn('d.id', $ids)->count() === count($ids), 404);
+        foreach ($ids as $id) {
+            $this->deletePrivateFile($request, 'document', $id);
         }
-
-        return redirect(self::BASE.'/maintenance-documents')->with('dd_operations_status', 'Selected documents deleted successfully.');
+        return redirect($this->relatedReturn($request, $actor, self::BASE.'/maintenance-documents'))->with('dd_operations_status', 'Selected documents permanently deleted.');
     }
 }

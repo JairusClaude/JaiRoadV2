@@ -87,15 +87,24 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
 
     public function saveUpdate(Request $request, ?int $id = null): RedirectResponse
     {
-        $this->writer($this->actor($request));
-        // The canonical upload workflow compensates storage one file at a time.
-        // Do not pretend a batch of preview attachments is an atomic report save.
-        $request->validate(['attachments' => ['prohibited'], 'removed_media_ids' => ['prohibited']]);
+        $actor = $this->actor($request);
+        $this->writer($actor);
+        $validated = $request->validate(['attachments' => ['prohibited'], 'removed_media_ids' => ['sometimes', 'array', 'max:100'], 'removed_media_ids.*' => ['integer', 'min:1', 'distinct']]);
+        $removals = array_map('intval', $validated['removed_media_ids'] ?? []);
+        if ($removals !== []) {
+            $this->requirePrivateDeletion($request, $actor);
+            if ($id === null || DB::table('jairoads_next.media')->where('monthly_update_id', $id)->whereIn('id', $removals)->count() !== count($removals)) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['attachments' => 'Selected media does not belong to this update. Refresh and retry.']);
+            }
+        }
         $this->operations->saveUpdate($request, $this->identities, $id);
+        foreach ($removals as $mediaId) {
+            $this->deletePrivateFile($request, 'media', $mediaId);
+        }
         $id ??= (int) DB::table('jairoads_next.monthly_updates')->where('maintenance_id', $request->input('maintenance_id'))
             ->where('update_month', $request->input('update_month'))->value('id');
 
-        return redirect(self::BASE.'/monthly-updates/'.$id)->with('dd_operations_status', 'MonthlyUpdate saved. Media can be uploaded separately below.');
+        return redirect(self::BASE.'/monthly-updates/'.$id)->with('dd_operations_status', 'Monthly update saved.');
     }
 
     public function updateShow(Request $request, int $id): Response
@@ -132,12 +141,9 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
         $actor = $this->actor($request);
         abort_unless(RoleAccess::canDeleteOperations($actor['role']), 403, 'Only administrators may delete monthly updates.');
 
-        DB::transaction(function () use ($id): void {
-            DB::table('jairoads_next.media')->where('monthly_update_id', $id)->delete();
-            DB::table('jairoads_next.monthly_updates')->where('id', $id)->delete();
-        });
+        $this->deleteUpdates($request, $actor, [$id]);
 
-        return redirect(self::BASE.'/monthly-updates')->with('dd_operations_status', 'Monthly update deleted successfully.');
+        return redirect($this->relatedReturn($request, $actor, self::BASE.'/monthly-updates'))->with('dd_operations_status', 'Monthly update deleted successfully.');
     }
 
     public function bulkDelete(Request $request): RedirectResponse
@@ -145,14 +151,31 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
         $actor = $this->actor($request);
         abort_unless(RoleAccess::canDeleteOperations($actor['role']), 403, 'Only administrators may delete monthly updates.');
 
-        $ids = $request->input('update_ids', []);
-        if (is_array($ids) && count($ids) > 0) {
-            DB::transaction(function () use ($ids): void {
-                DB::table('jairoads_next.media')->whereIn('monthly_update_id', $ids)->delete();
-                DB::table('jairoads_next.monthly_updates')->whereIn('id', $ids)->delete();
-            });
-        }
+        $v = $request->validate(['update_ids' => ['required', 'array', 'min:1', 'max:100'], 'update_ids.*' => ['required', 'integer', 'min:1', 'distinct']]);
+        $this->deleteUpdates($request, $actor, array_map('intval', $v['update_ids']));
 
-        return redirect(self::BASE.'/monthly-updates')->with('dd_operations_status', 'Selected monthly updates deleted successfully.');
+        return redirect($this->relatedReturn($request, $actor, self::BASE.'/monthly-updates'))->with('dd_operations_status', 'Selected monthly updates deleted successfully.');
+    }
+
+    private function deleteUpdates(Request $request, array $actor, array $ids): void
+    {
+        abort_unless($this->updateQuery($actor)->whereIn('u.id', $ids)->count() === count($ids), 404);
+        $mediaIds = DB::table('jairoads_next.media')->whereIn('monthly_update_id', $ids)->orderBy('id')->pluck('id');
+        if ($mediaIds->isNotEmpty()) {
+            $this->requirePrivateDeletion($request, $actor);
+            foreach ($mediaIds as $mediaId) {
+                $this->deletePrivateFile($request, 'media', (int) $mediaId);
+            }
+        }
+        DB::transaction(function () use ($ids, $actor): void {
+            $records = DB::table('jairoads_next.monthly_updates')->whereIn('id', $ids)->orderBy('id')->lockForUpdate()->get();
+            if ($records->count() !== count($ids) || DB::table('jairoads_next.media')->whereIn('monthly_update_id', $ids)->exists()) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['delete' => 'Updates changed during deletion. Refresh and retry.']);
+            }
+            foreach ($records as $row) {
+                DB::table('jairoads_next.monthly_updates')->where('id', $row->id)->delete();
+                app(\App\Services\OperationAudit::class)->record($actor, 'DELETE', 'MonthlyUpdate', (int) $row->id, 'Monthly update deleted after private media removal.', [], (array) $row);
+            }
+        });
     }
 }

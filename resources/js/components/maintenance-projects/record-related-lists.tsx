@@ -49,7 +49,9 @@ function RelatedActions({
     onEdit: () => void;
     onDelete: () => void;
 }) {
-    const canonical = usePage().props.canonicalFrontend === true;
+    const page = usePage();
+    const identity = page.props.jairoadsIdentity as { role?: string } | undefined;
+    const canDelete = page.props.previewOnly === true || ['admin', 'superadmin'].includes(identity?.role ?? '');
 
     return (
         <div onClick={(e) => e.stopPropagation()}>
@@ -73,7 +75,8 @@ function RelatedActions({
                             : 'Maintenance Document'}
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                        disabled={!enabled || canonical}
+                        variant="destructive"
+                        disabled={!enabled || !canDelete}
                         onSelect={onDelete}
                     >
                         <Trash2 />
@@ -249,7 +252,7 @@ export function RecordRelatedLists({
                             onClick={() =>
                                 router.visit(
                                     workspaceHref(
-                                        `/maintenance-documents/create?record=${recordId}`,
+                                        `/maintenance-documents/create?maintenance_id=${recordId}`,
                                     ),
                                 )
                             }
