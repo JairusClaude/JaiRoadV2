@@ -787,7 +787,8 @@ class OperationsController extends Controller
             throw $e;
         }
 
-        return $this->done('updates', 'Evidence uploaded.');
+        return redirect('/dd-phase3/ui/monthly-updates/'.(int) $v['monthly_update_id'])
+            ->with('dd_operations_status', 'Evidence uploaded.');
     }
 
     public function deleteEntity(Request $request, AccountIdentityResolver $resolver, string $entity, int $id): RedirectResponse
@@ -878,7 +879,7 @@ class OperationsController extends Controller
         return response($result->body(), 200, [
             'Content-Type' => $mime, 'X-Content-Type-Options' => 'nosniff',
             'Cache-Control' => 'private, no-store',
-            'Content-Disposition' => "attachment; filename*=UTF-8''".rawurlencode($filename),
+            'Content-Disposition' => ($kind === 'media' ? 'inline' : 'attachment')."; filename*=UTF-8''".rawurlencode($filename),
         ]);
     }
 }
