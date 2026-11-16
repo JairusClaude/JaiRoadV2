@@ -381,14 +381,13 @@ export default function Form(parents: DocumentParents) {
                                 }}
                                 savedRemovalPending={savedRemovalPending}
                                 onRemoveSaved={() => setSavedRemovalPending(true)}
-                                onUndoSavedRemoval={() => setSavedRemovalPending(false)}
                             />
                             <PermanentFileDeletionDialog deletion={deletion} />
                         </section>
                         <footer className="jr-form-footer">
                             <p>
                                 {page.props.canonicalFrontend === true
-                                    ? 'Files remain private. File replacement is unavailable. Permanent deletion removes only the selected file.'
+                                    ? 'Files remain private. Removing an existing file is applied after you save and confirm permanent deletion.'
                                     : 'Local preview only · files and changes reset on restart.'}
                             </p>
                             <div className="flex gap-2">
