@@ -46,12 +46,6 @@ class DirectoryController extends Controller
         }
         $t = static fn (string $name) => DB::table('jairoads_next.'.$name);
         $lguQuery = $t('lgus')->orderBy('id');
-        if ($actor['role'] === 'Engineer') {
-            // Engineer visibility is limited to their CURRENT active LGU scope.
-            $lguQuery->whereIn('id', $t('engineer_lgus')
-                ->where('engineer_id', $actor['engineer_id'])
-                ->where('is_active', true)->select('lgu_id'));
-        }
         $lgus = $lguQuery->limit(200)->get([
             'id', 'municipality_name', 'province', 'region',
             'mayor_first_name', 'mayor_middle_name', 'mayor_last_name',
@@ -70,14 +64,9 @@ class DirectoryController extends Controller
                 ->from('jairoads_next.user_accounts as ua')->whereColumn('ua.engineer_id', 'e.id'))
             ->orderBy('e.last_name')->orderBy('e.first_name')->orderBy('e.id')
             ->get(['e.id', 'e.first_name', 'e.last_name', 'e.rank', 'e.engineer_status']) : collect();
-        $assignments = $allowedManager ? $t('engineer_lgus')->orderBy('engineer_id')->limit(300)->get([
-            'engineer_id', 'lgu_id', 'is_active',
-        ]) : collect();
         $counts = [
             'lgus' => $lguQuery->count(),
-            'roadCoverages' => $actor['role'] === 'Engineer'
-                ? (int) $t('road_coverages')->whereIn('lgu_id', $t('engineer_lgus')->where('engineer_id', $actor['engineer_id'])->where('is_active', true)->select('lgu_id'))->count()
-                : (int) $t('road_coverages')->count(),
+            'roadCoverages' => (int) $t('road_coverages')->count(),
             'maintenanceProjects' => $allowedManager || $actor['role'] === 'Viewer'
                 ? (int) $t('maintenance_projects')->count() : null,
             'userAccounts' => $allowedManager ? (int) $t('user_accounts')->count() : null,
@@ -95,7 +84,7 @@ class DirectoryController extends Controller
             'analytics' => $section === 'dashboard' ? app(DashboardAnalytics::class)->summary($actor) : null,
             'lgus' => $lgus, 'accounts' => $accounts,
             'engineers' => $engineers,
-            'eligibleEngineers' => $eligibleEngineers, 'assignments' => $assignments,
+            'eligibleEngineers' => $eligibleEngineers, 'assignments' => [],
             'canManage' => $allowedManager,
             // Both authorized administrative roles can create standard DD accounts.
             // Initial SuperAdmin creation is a separate owner-verified bootstrap.

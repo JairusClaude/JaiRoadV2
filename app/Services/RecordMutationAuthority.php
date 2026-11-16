@@ -26,7 +26,7 @@ final class RecordMutationAuthority
         $guard = DB::selectOne('SELECT pg_try_advisory_xact_lock_shared(1927710916) AS acquired');
         abort_unless($guard->acquired === true, 409, 'Account authorization is changing. Retry the record operation.');
 
-        // Same bridge -> account -> profile -> membership order as credential
+        // Same bridge -> account -> profile order as credential
         // and lifecycle coordination. These pins survive later creator/audit FK
         // waits; a plain recheck alone would leave that commit window open.
         DB::table('public.users')->where('id', $login->getKey())->sharedLock()->first(['id']);
@@ -35,11 +35,6 @@ final class RecordMutationAuthority
         if ($account->engineer_id !== null) {
             DB::table('jairoads_next.engineers')->where('id', $account->engineer_id)->sharedLock()->first(['id']);
         }
-        $membership = $expected['role'] === 'Engineer' ? DB::table('jairoads_next.engineer_lgus')
-            ->where('engineer_id', $account->engineer_id)->where('lgu_id', $lguId)->sharedLock()->first(['is_active']) : null;
         abort_unless($this->identities->resolve($login) === $expected && RoleAccess::canWriteOperations($expected['role']), 403, 'Your current account is unavailable.');
-        if ($expected['role'] === 'Engineer') {
-            abort_unless($membership?->is_active === true, 403, 'Current EngineerLGU authorization is required.');
-        }
     }
 }

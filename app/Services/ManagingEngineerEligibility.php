@@ -14,21 +14,17 @@ final class ManagingEngineerEligibility
     /** @param array{account_id:int, role:string, engineer_id:?int} $actor */
     public function choices(array $actor, int $lguId): Builder
     {
-        return $this->choicesForLgus($actor, [$lguId])->select(['e.id', 'e.first_name', 'e.last_name']);
+        return $this->eligibleChoices($actor);
     }
 
     /** @param array{account_id:int, role:string, engineer_id:?int} $actor
-     * @param  list<int>  $lguIds
      */
-    public function choicesForLgus(array $actor, array $lguIds): Builder
+    public function eligibleChoices(array $actor): Builder
     {
         return DB::table('jairoads_next.engineers as e')
             ->join('jairoads_next.user_accounts as ua', 'ua.engineer_id', '=', 'e.id')
-            ->join('jairoads_next.engineer_lgus as el', 'el.engineer_id', '=', 'e.id')
             ->where('e.engineer_status', 'Active')
             ->where('ua.is_active', true)
-            ->where('el.is_active', true)
-            ->whereIn('el.lgu_id', $lguIds)
             ->where(function (Builder $query) use ($actor): void {
                 $query->where('ua.account_type', 'Engineer');
                 // The approved Admin exception is self-management, not assigning other Admins.
@@ -37,7 +33,7 @@ final class ManagingEngineerEligibility
                 }
             })
             ->when($actor['role'] === 'Engineer', fn (Builder $query) => $query->where('ua.id', $actor['account_id']))
-            ->select(['e.id', 'e.first_name', 'e.last_name', 'el.lgu_id'])
+            ->select(['e.id', 'e.first_name', 'e.last_name'])
             ->orderBy('e.last_name')->orderBy('e.first_name')->orderBy('e.id');
     }
 
@@ -47,13 +43,13 @@ final class ManagingEngineerEligibility
         if ($actor['role'] === 'Engineer') {
             abort_unless($actor['engineer_id'] !== null && $this->choices($actor, $lguId)
                 ->where('e.id', $actor['engineer_id'])->sharedLock()->first() !== null,
-                403, 'An active linked Engineer account and assignment to this municipality are required.');
+                403, 'An active linked Engineer account is required.');
         }
     }
 
     /**
      * Called only inside the record mutation transaction. Shared locks prevent
-     * profile/account deactivation or LGU unassignment during the insert.
+     * profile/account deactivation during the insert.
      *
      * @param  array{account_id:int, role:string, engineer_id:?int}  $actor
      */
@@ -61,7 +57,7 @@ final class ManagingEngineerEligibility
     {
         if ($this->choices($actor, $lguId)->where('e.id', $engineerId)->sharedLock()->first() === null) {
             throw ValidationException::withMessages([
-                'managing_engineer_id' => 'Choose an active Engineer account and profile with an active assignment to this municipality. A linked Admin may select themselves.',
+                'managing_engineer_id' => 'Choose an active Engineer account and profile. A linked Admin may select themselves.',
             ]);
         }
     }

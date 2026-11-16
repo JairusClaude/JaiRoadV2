@@ -9,7 +9,7 @@ namespace App\Services;
  *
  * The ordinary entity CRUD matrix intentionally overlaps for SuperAdmin and
  * Admin. This class does NOT confer extra system governance powers on Admin.
- * Resource ownership, active EngineerLGU membership, required foreign keys,
+ * Resource ownership, required foreign keys,
  * record management and data integrity are checked by the controllers on
  * each request, not by this preliminary role-level permission map.
  */
@@ -42,14 +42,14 @@ final class RoleAccess
         return self::managesBusinessData($role);
     }
 
-    /** UI guide only: endpoint guards additionally require a live Engineer identity and active LGU scope. */
+    /** UI guide only: endpoint guards additionally require a live Engineer identity and record ownership. */
     /**
      * @return array<string,bool|string>
      */
     public static function capabilities(string $role, bool $hasAssignment, bool $linkedEngineer): array
     {
         $manager = self::managesBusinessData($role);
-        $engineerScoped = $role === 'Engineer' && $hasAssignment && $linkedEngineer;
+        $engineerScoped = $role === 'Engineer' && $linkedEngineer;
 
         return [
             'role' => $role,

@@ -20,16 +20,12 @@ final class DashboardAnalytics
         $engineerId = $actor['engineer_id'];
         $manager = in_array($role, ['SuperAdmin', 'Admin'], true);
         $scope = null;
-        $lgus = [];
         if ($role === 'Engineer') {
-            $lgus = $engineerId === null ? [] : DB::table('jairoads_next.engineer_lgus')
-                ->where('engineer_id', $engineerId)->where('is_active', true)
-                ->pluck('lgu_id')->all();
-            // One engineer sees only records they manage in active assigned LGUs.
+            // Own managed records across municipalities.
             $scope = DB::table('jairoads_next.maintenance_records as mr')
                 ->join('jairoads_next.maintenance_projects as p', 'p.id', '=', 'mr.project_id')
                 ->join('jairoads_next.road_coverages as r', 'r.id', '=', 'p.road_coverage_id')
-                ->where('mr.managing_engineer_id', $engineerId ?? -1)->whereIn('r.lgu_id', $lgus);
+                ->where('mr.managing_engineer_id', $engineerId ?? -1);
         }
         if ($role === 'Viewer') {
             // Read-only inventory excludes detached Admin-only historical context.
@@ -102,9 +98,9 @@ final class DashboardAnalytics
                 'reportingCoverage' => $ongoing ? round($reportedOngoing / $ongoing * 100, 1) : null,
                 'updates' => (int) (clone $updated)->count(),
                 'documents' => (int) (clone $docs)->count(),
-                'lgus' => $role === 'Engineer' ? count($lgus) : (int) DB::table('jairoads_next.lgus')->count(),
-                'roads' => $role === 'Engineer' ? (int) DB::table('jairoads_next.road_coverages')->whereIn('lgu_id', $lgus)->count() : (int) DB::table('jairoads_next.road_coverages')->count(),
-                'projects' => $role === 'Engineer' ? (int) DB::table('jairoads_next.maintenance_projects')->whereIn('road_coverage_id', DB::table('jairoads_next.road_coverages')->whereIn('lgu_id', $lgus)->select('id'))->count() : (int) DB::table('jairoads_next.maintenance_projects')->count(),
+                'lgus' => (int) DB::table('jairoads_next.lgus')->count(),
+                'roads' => (int) DB::table('jairoads_next.road_coverages')->count(),
+                'projects' => (int) DB::table('jairoads_next.maintenance_projects')->count(),
             ],
             'trend' => array_map(static fn ($month, $count): array => ['month' => $month, 'count' => $count], array_keys($months), array_values($months)),
             'activity' => $activity,

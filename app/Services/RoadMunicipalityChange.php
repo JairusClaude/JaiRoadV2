@@ -84,7 +84,7 @@ final class RoadMunicipalityChange
     private function stale(): never
     {
         throw ValidationException::withMessages([
-            'confirmation_token' => 'This review is outdated or invalid. Review current municipality, assignments and maintenance history again before confirming.',
+            'confirmation_token' => 'This review is outdated or invalid. Review current municipality, account eligibility and maintenance history again before confirming.',
         ]);
     }
 
@@ -128,19 +128,10 @@ final class RoadMunicipalityChange
         $engineers = $this->table('engineers')->whereIn('id', $engineerIds)->orderBy('id')->sharedLock()->get(['id', 'first_name', 'last_name', 'engineer_status']);
         $accounts = $this->table('user_accounts')->where(fn (Builder $q) => $q->whereIn('engineer_id', $engineerIds)->orWhere('id', $actor['account_id']))
             ->orderBy('id')->sharedLock()->get(['id', 'engineer_id', 'account_type', 'is_active', 'updated_at']);
-        $assignments = $this->table('engineer_lgus')->whereIn('engineer_id', $engineerIds)->whereIn('lgu_id', [(int) $road->lgu_id, $destination])
-            ->orderBy('engineer_id')->orderBy('lgu_id')->sharedLock()->get(['engineer_id', 'lgu_id', 'is_active']);
         // Freeze the explicit Fortify bridge, then re-resolve after account/profile
         // locks. Never infer canonical identity from matching email or numeric IDs.
         $bridge = DB::table('public.users')->where('id', $login->getKey())->sharedLock()->first(['id', 'dd_user_account_id', 'updated_at']);
         abort_unless($this->actor($login) === $actor, 403);
-        if ($actor['role'] === 'Engineer') {
-            foreach ([(int) $road->lgu_id, $destination] as $lguId) {
-                abort_unless($actor['engineer_id'] !== null && $assignments->contains(fn (\stdClass $a): bool => (int) $a->engineer_id === $actor['engineer_id']
-                    && (int) $a->lgu_id === $lguId && $a->is_active === true), 403,
-                    'An active Engineer profile and active assignments to both the current and destination municipalities are required.');
-            }
-        }
         $managers = [];
         $conflicts = [];
         foreach ($records as $record) {
@@ -154,14 +145,12 @@ final class RoadMunicipalityChange
             // An existing linked Admin manager retains their approved self-management
             // eligibility; this operation never assigns a new manager of any role.
             $eligible = $engineer !== null && $engineer->engineer_status === 'Active'
-                && $account !== null && $account->is_active === true && in_array($account->account_type, ['Engineer', 'Admin'], true)
-                && $assignments->contains(fn (\stdClass $a): bool => (int) $a->engineer_id === (int) $record->managing_engineer_id
-                    && (int) $a->lgu_id === $destination && $a->is_active === true);
+                && $account !== null && $account->is_active === true && in_array($account->account_type, ['Engineer', 'Admin'], true);
             $managerName = $engineer === null ? 'Missing Engineer' : trim($engineer->first_name.' '.$engineer->last_name);
             $managers[] = ['maintenance_record_id' => (int) $record->id, 'engineer_id' => (int) $record->managing_engineer_id,
                 'name' => $managerName, 'eligible' => $eligible];
             if (! $eligible) {
-                $conflicts[] = 'MaintenanceRecord #'.$record->id.' ('.$managerName.') needs an eligible manager for '.$new->municipality_name.'. Ask an Admin/SuperAdmin to resolve assignments or use the explicit reassignment workflow, then refresh this review.';
+                $conflicts[] = 'MaintenanceRecord #'.$record->id.' ('.$managerName.') needs an eligible manager for '.$new->municipality_name.'. Ask an Admin/SuperAdmin to review account eligibility or use the explicit reassignment workflow, then refresh this review.';
             }
         }
         $impact = [
@@ -175,7 +164,7 @@ final class RoadMunicipalityChange
         ];
 
         return ['actor' => $actor, 'impact' => $impact, 'fingerprint' => hash('sha256', json_encode([
-            $road, $lgus, $projects, $records, $updates, $documents, $media, $engineers, $accounts, $assignments, $bridge, $actor,
+            $road, $lgus, $projects, $records, $updates, $documents, $media, $engineers, $accounts, $bridge, $actor,
         ], JSON_THROW_ON_ERROR))];
     }
 }

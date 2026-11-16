@@ -81,11 +81,7 @@ class OperationsFrontendController extends Controller
     /** @param Actor $actor */
     protected function scope(Builder $query, array $actor): Builder
     {
-        if ($actor['role'] === 'Engineer') {
-            $query->whereIn('rc.lgu_id', DB::table('jairoads_next.engineer_lgus')
-                ->select('lgu_id')->where('engineer_id', $actor['engineer_id'])->where('is_active', true));
-        }
-
+        // Canonical roles may read attached operational data across municipalities.
         return $query;
     }
 
@@ -93,8 +89,7 @@ class OperationsFrontendController extends Controller
     protected function writable(array $actor): bool
     {
         return $this->writeAccess[$actor['account_id']] ??= RoleAccess::managesBusinessData($actor['role'])
-            || ($actor['role'] === 'Engineer' && $actor['engineer_id'] !== null
-                && DB::table('jairoads_next.engineer_lgus')->where('engineer_id', $actor['engineer_id'])->where('is_active', true)->exists());
+            || ($actor['role'] === 'Engineer' && $actor['engineer_id'] !== null);
     }
 
     /** @param Actor $actor */
@@ -108,8 +103,7 @@ class OperationsFrontendController extends Controller
      */
     protected function municipalities(array $actor): Collection
     {
-        return DB::table('jairoads_next.lgus')->when($actor['role'] === 'Engineer', fn (Builder $q) => $q->whereIn('id',
-            DB::table('jairoads_next.engineer_lgus')->select('lgu_id')->where('engineer_id', $actor['engineer_id'])->where('is_active', true)))
+        return DB::table('jairoads_next.lgus')
             ->orderBy('municipality_name')->get(['id', 'municipality_name']);
     }
 

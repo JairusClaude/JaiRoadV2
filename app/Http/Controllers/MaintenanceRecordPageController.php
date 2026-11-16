@@ -151,10 +151,10 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
         $actor = $this->actor($request);
         $this->writer($actor);
         $projects = $this->projectChoices($actor)->orderBy('p.project_title')->get();
-        $choices = $this->eligibility->choicesForLgus($actor, array_values($projects->pluck('lgu_id')->unique()->map(fn ($id): int => (int) $id)->all()))->get()->groupBy('lgu_id');
+        $choices = $this->eligibility->eligibleChoices($actor)->get()->map(fn (\stdClass $e): array => ['id' => (int) $e->id, 'first_name' => $e->first_name, 'last_name' => $e->last_name])->all();
         $byProject = [];
         foreach ($projects as $p) {
-            $byProject[(int) $p->id] = $choices->get((int) $p->lgu_id, collect())->map(fn (\stdClass $e): array => ['id' => (int) $e->id, 'first_name' => $e->first_name, 'last_name' => $e->last_name])->all();
+            $byProject[(int) $p->id] = $choices;
         }
 
         return $this->render('MaintenanceProjects/Records/Create', $request, [

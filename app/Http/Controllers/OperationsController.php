@@ -84,8 +84,7 @@ class OperationsController extends Controller
             return [];
         }
 
-        return $this->t('engineer_lgus')->where('engineer_id', $actor['engineer_id'])
-            ->where('is_active', true)->pluck('lgu_id')->map(fn ($id) => (int) $id)->all();
+        return $this->t('lgus')->pluck('id')->map(fn ($id) => (int) $id)->all();
     }
 
     /**
@@ -97,7 +96,7 @@ class OperationsController extends Controller
             return;
         }
         if ($actor['role'] === 'Engineer') {
-            abort_unless(in_array($lguId, $this->activeLguIds($actor), true), 403, 'An active assignment to this municipality is required.');
+            abort_unless($actor['engineer_id'] !== null, 403, 'An active linked Engineer profile is required.');
         }
     }
 
@@ -246,13 +245,9 @@ class OperationsController extends Controller
             // who prepared the mapped coverage must be chosen explicitly.
             // The manager remains the authenticated audit actor.
             'roadCreatorChoices' => $this->managers($actor)
-                ? $this->t('engineer_lgus as el')
-                    ->join('jairoads_next.engineers as e', 'e.id', '=', 'el.engineer_id')
-                    ->where('el.is_active', true)
-                    ->where('e.engineer_status', 'Active')
-                    ->orderBy('e.last_name')->orderBy('e.first_name')
-                    ->limit(500)
-                    ->get(['el.engineer_id as id', 'el.lgu_id', 'e.first_name', 'e.last_name'])
+                ? $this->t('engineers as e')->where('e.engineer_status', 'Active')
+                    ->orderBy('e.last_name')->orderBy('e.first_name')->limit(500)
+                    ->get(['e.id', 'e.first_name', 'e.last_name'])
                 : collect(),
             'roads' => $roads->limit(300)->get(['id', 'road_name', 'lgu_id', 'kilometers', 'pavement_type', 'state_category', 'created_by', 'geojson']),
             'projects' => $projects->limit(300)->get(['p.id', 'p.project_title', 'p.road_coverage_id', 'p.description', 'p.created_by', 'r.lgu_id']),
@@ -317,32 +312,20 @@ class OperationsController extends Controller
             if ($account->engineer_id !== null) {
                 $this->t('engineers')->where('id', $account->engineer_id)->sharedLock()->first(['id']);
             }
-            // Assignment administration locks profile then membership; keep the
-            // same order and protect the relevant LGU authorization until commit.
-            if ($actor['role'] === 'Engineer') {
-                $this->t('engineer_lgus')->where('engineer_id', $account->engineer_id)
-                    ->where('lgu_id', $data['lgu_id'])->sharedLock()->first(['is_active']);
-            }
             abort_unless($this->actor($request, $resolver) === $actor, 403);
             $this->writer($actor);
             $this->lguAllowed($actor, (int) $data['lgu_id']);
             if ($id === null) {
                 // RoadCoverage.CreatedBy is an Engineer FK. Manager-initiated
-                // entries require a named, active, LGU-assigned mapping Engineer.
+                // entries require a named, active mapping Engineer.
                 // The AuditLog records the real Admin/SuperAdmin actor separately.
                 if ($this->managers($actor)) {
                     $engineerId = !empty($v['created_by_engineer_id']) ? (int) $v['created_by_engineer_id'] : null;
                     if ($engineerId === null) {
                         $engineerId = $actor['engineer_id']
-                            ?? $this->t('engineer_lgus as el')
-                                ->join('jairoads_next.engineers as e', 'e.id', '=', 'el.engineer_id')
-                                ->where('el.lgu_id', (int) $v['lgu_id'])
-                                ->where('el.is_active', true)
-                                ->where('e.engineer_status', 'Active')
-                                ->value('e.id')
                             ?? $this->t('engineers')->where('engineer_status', 'Active')->value('id');
                     }
-                    if (empty($engineerId)) {
+                    if (empty($engineerId) || $this->t('engineers')->where('id', $engineerId)->where('engineer_status', 'Active')->sharedLock()->first(['id']) === null) {
                         throw ValidationException::withMessages([
                             'lgu_id' => 'No active engineer is available in the system for road attribution.',
                         ]);
@@ -672,7 +655,7 @@ class OperationsController extends Controller
             $this->lockUploadAuthorization($request, $resolver, $actor, (int) $parent->maintenance_id);
             $document = $this->t('maintenance_documents')->where('id', $id)->lockForUpdate()->first();
             abort_unless($document !== null && $document->maintenance_id === $parent->maintenance_id, 409);
-            // Engineer must be the ManagingEngineer with an active LGU assignment.
+            // Engineer must be the current ManagingEngineer.
             $this->recordScope($actor, (int) $document->maintenance_id, true);
             app(PermanentFileDeletion::class)->assertNotPending('document', $id);
             $data = ['document_title' => $v['document_title'],

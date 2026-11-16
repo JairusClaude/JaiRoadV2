@@ -34,7 +34,7 @@ final class RoleLandingController extends Controller
             'roadCoverages' => 0, 'projects' => 0, 'lgus' => 0,
         ];
 
-        // Strict identity requires an active linked profile; LGU scope remains separate.
+        // Strict identity requires an active linked profile; municipality assignments are not required.
         if ($actor['role'] === 'Engineer' && $actor['engineer_id'] !== null) {
             $id = (int) $actor['engineer_id'];
             $profile = DB::table('jairoads_next.engineers')->where('id', $id)
@@ -51,22 +51,19 @@ final class RoleLandingController extends Controller
                 'rank' => (string) ($profile->rank ?? ''),
                 'status' => (string) $profile->engineer_status,
             ];
-            $assigned = DB::table('jairoads_next.engineer_lgus as x')
-                ->join('jairoads_next.lgus as l', 'l.id', '=', 'x.lgu_id')
-                ->where('x.engineer_id', $id)->where('x.is_active', true)
+            $assigned = DB::table('jairoads_next.lgus as l')
                 ->orderBy('l.municipality_name')->get(['l.id', 'l.municipality_name'])
                 ->map(static fn ($l): array => ['id' => (int) $l->id, 'name' => (string) $l->municipality_name])->all();
-            $lguIds = array_column($assigned, 'id');
-            $stats['assignedLgus'] = count($lguIds);
-            $stats['roadCoverages'] = $lguIds === [] ? 0 : (int) DB::table('jairoads_next.road_coverages')
-                ->whereIn('lgu_id', $lguIds)->count();
+            $stats['assignedLgus'] = count($assigned);
+            $stats['lgus'] = count($assigned);
+            $stats['roadCoverages'] = (int) DB::table('jairoads_next.road_coverages')->count();
+            $stats['projects'] = (int) DB::table('jairoads_next.maintenance_projects')->count();
 
-            // Read only records in current active LGU scope, managed by this Engineer.
+            // Dashboard lists own managed records across municipalities.
             $scope = DB::table('jairoads_next.maintenance_records as mr')
                 ->join('jairoads_next.maintenance_projects as p', 'p.id', '=', 'mr.project_id')
                 ->join('jairoads_next.road_coverages as rc', 'rc.id', '=', 'p.road_coverage_id')
-                ->where('mr.managing_engineer_id', $id)
-                ->whereIn('rc.lgu_id', $lguIds);
+                ->where('mr.managing_engineer_id', $id);
             $stats['managedRecords'] = (clone $scope)->count();
             $stats['ongoingRecords'] = (clone $scope)->where('mr.status', 'Ongoing')->count();
             $records = $scope->orderByDesc('mr.id')->limit(6)
@@ -103,7 +100,7 @@ final class RoleLandingController extends Controller
             'username' => (string) $username,
             'engineer' => $engineer,
             'assignedLgus' => $assigned,
-            'limitedAccess' => $actor['role'] === 'Engineer' && $assigned === [],
+            'limitedAccess' => false,
             'stats' => $stats,
             'analytics' => app(DashboardAnalytics::class)->summary($actor),
             'records' => $records,

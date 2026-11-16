@@ -102,11 +102,9 @@ final class RoadCoveragePageController extends OperationsFrontendController
         $this->writer($actor);
         $road = $id === null ? null : $this->roads($actor)->where('rc.id', $id)->first();
         abort_if($id !== null && $road === null, 404);
-        $creators = DB::table('jairoads_next.engineer_lgus as a')
-            ->join('jairoads_next.engineers as e', 'e.id', '=', 'a.engineer_id')
-            ->where('a.is_active', true)->where('e.engineer_status', 'Active')
+        $creators = DB::table('jairoads_next.engineers as e')->where('e.engineer_status', 'Active')
             ->when($actor['role'] === 'Engineer', fn (Builder $q) => $q->where('e.id', $actor['engineer_id']))
-            ->orderBy('e.last_name')->get(['e.id', 'a.lgu_id', 'e.first_name', 'e.last_name']);
+            ->orderBy('e.last_name')->get(['e.id', 'e.first_name', 'e.last_name']);
 
         return $this->render('RoadCoverages/'.($id === null ? 'Create' : 'Edit'), $request, [
             'coverage' => $road === null ? null : $this->roadData($road),
