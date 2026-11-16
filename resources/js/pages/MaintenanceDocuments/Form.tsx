@@ -367,7 +367,20 @@ export default function Form(parents: DocumentParents) {
                                     form.clearErrors('attachment');
                                     form.setData('attachment', file);
                                 }}
+                                onRemoveSaved={
+                                    doc?.delete_url
+                                        ? () =>
+                                              deletion.open({
+                                                  id: doc.id,
+                                                  kind: 'document',
+                                                  file_name: doc.file_name,
+                                                  parent_label: `MaintenanceRecord #${doc.maintenance_id}`,
+                                                  delete_url: doc.delete_url!,
+                                              })
+                                        : undefined
+                                }
                             />
+                            <PermanentFileDeletionDialog deletion={deletion} />
                         </section>
                         <footer className="jr-form-footer">
                             <p>
@@ -376,30 +389,6 @@ export default function Form(parents: DocumentParents) {
                                     : 'Local preview only · files and changes reset on restart.'}
                             </p>
                             <div className="flex gap-2">
-                                {doc?.delete_url && (
-                                    <>
-                                        <Button
-                                            type="button"
-                                            variant="destructive"
-                                            className="jr-danger"
-                                            onClick={() =>
-                                                deletion.open({
-                                                    id: doc.id,
-                                                    kind: 'document',
-                                                    file_name: doc.file_name,
-                                                    parent_label: `MaintenanceRecord #${doc.maintenance_id}`,
-                                                    delete_url: doc.delete_url!,
-                                                })
-                                            }
-                                        >
-                                            Delete File
-                                        </Button>
-                                        <PermanentFileDeletionDialog
-                                            deletion={deletion}
-                                        />
-                                    </>
-                                )}
-
                                 <Button
                                     type="button"
                                     variant="outline"
