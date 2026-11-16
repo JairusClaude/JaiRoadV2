@@ -143,7 +143,8 @@ final class PreservedProjectDeletion
             'updates' => $updates,
             'documents' => $documents,
             'media' => $media,
-            'business_fingerprint' => hash('sha256', json_encode([$project, $road, $lgu, $records, $updates], JSON_THROW_ON_ERROR)),
+            'business_fingerprint' => hash('sha256', json_encode([$project, $road, $lgu, $records, $updates,
+                $documents->map(fn ($d) => array_diff_key((array) $d, array_flip(['file_name', 'file_path', 'updated_at'])))], JSON_THROW_ON_ERROR)),
             'fingerprint' => hash(
                 'sha256',
                 json_encode(

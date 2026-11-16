@@ -109,7 +109,11 @@ final class MaintenanceDocumentPageController extends OperationsFrontendControll
         $ids = array_map('intval', $v['document_ids']);
         abort_unless($this->documentQuery($actor)->whereIn('d.id', $ids)->count() === count($ids), 404);
         foreach ($ids as $id) {
-            $this->fileDeletions->deleteDocumentRecord($request->user(), $id);
+            try {
+                $this->fileDeletions->deleteDocumentRecord($request->user(), $id);
+            } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $error) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['file' => 'Document deletion unavailable or not confirmed. Refresh and review remaining records.']);
+            }
         }
         return redirect($this->relatedReturn($request, $actor, self::BASE.'/maintenance-documents'))->with('dd_operations_status', 'Selected documents permanently deleted.');
     }

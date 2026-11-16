@@ -150,6 +150,21 @@ final class PreservedRelationshipsTest extends PostgresTestCase
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->where('action', 'REASSIGN')->count());
     }
 
+    public function test_project_deletion_requires_correct_fresh_challenge(): void
+    {
+        $f = $this->fixture();
+        $url = '/dd-phase3/ui/maintenance-projects/'.$f['project'];
+        $token = $this->getJson($url.'/deletion-preview')->assertOk()->json('confirmation_token');
+        $this->deleteJson($url, ['confirmation' => 'YES', 'confirmation_token' => $token])->assertUnprocessable()->assertJsonValidationErrors('captcha_token');
+        $verification = $this->deletionVerification('project');
+        $this->deleteJson($url, array_replace($verification, ['captcha_answer' => 999, 'confirmation_token' => $token]))
+            ->assertUnprocessable()->assertJsonValidationErrors('captcha_answer');
+        $this->deleteJson($url, $verification + ['confirmation_token' => $token])->assertUnprocessable()->assertJsonValidationErrors('captcha_answer');
+        $this->assertDatabaseHas('jairoads_next.maintenance_projects', ['id' => $f['project']]);
+        Http::assertNothingSent();
+        $this->deleteJson($url, $this->deletionVerification('project') + ['confirmation_token' => $token])->assertOk();
+    }
+
     public function test_invalid_and_stale_tokens_cannot_delete_empty_project(): void
     {
         $f = $this->fixture();

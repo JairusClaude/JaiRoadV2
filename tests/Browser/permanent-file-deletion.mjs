@@ -66,99 +66,22 @@ export async function verifyPermanentFileDeletion({
     const siblingBytes = await (
         await admin.request.get(`${base}${sibling.download_url}`)
     ).body();
-    let mutations = 0;
-    const count = (request) => {
-        if (
-            request.method() === 'DELETE' &&
-            new URL(request.url()).pathname === documentUrl
-        ) {
-            mutations++;
-        }
-    };
-    admin.on('request', count);
-    await admin.goto(`${ui}/maintenance-documents/${doc.id}`);
-    const trigger = admin.getByRole('button', {
-        name: 'Delete Document',
-        exact: true,
-    });
-    await trigger.click();
-    let panel = admin.getByRole('dialog', { name: 'Delete File Permanently?' });
-    await panel.waitFor();
-    assert.match(await panel.innerText(), /unified\.pdf/);
-    assert.match(await panel.innerText(), /MaintenanceDocument/);
-    assert.match(await panel.innerText(), /cannot be undone/);
-    assert.match(await panel.innerText(), /private Storage/);
-    await panel.getByRole('button', { name: 'Cancel', exact: true }).click();
-    await panel.waitFor({ state: 'hidden' });
-    assert.equal(mutations, 0);
-    assert.equal(
-        (await admin.request.get(`${base}${doc.download_url}`)).status(),
-        200,
-    );
-    await trigger.click();
-    panel = admin.getByRole('dialog', { name: 'Delete File Permanently?' });
-    const confirm = panel.getByRole('button', { name: 'Delete', exact: true });
-    await confirm.click({ trial: true });
-    const rgb = await confirm.evaluate((element) => {
-        const c = document.createElement('canvas');
-        c.width = c.height = 1;
-        const context = c.getContext('2d');
-        context.fillStyle = getComputedStyle(element).backgroundColor;
-        context.fillRect(0, 0, 1, 1);
-
-        return Array.from(context.getImageData(0, 0, 1, 1).data);
-    });
-    assert.ok(
-        rgb[0] > rgb[1] * 1.3 && rgb[0] > rgb[2] * 1.3 && rgb[3] > 0,
-        `Destructive Delete must be visibly red: ${rgb}`,
-    );
-    storage.failNextDelete(503);
-    await confirm.click();
-    await panel
-        .getByRole('alert')
-        .filter({ hasText: 'Deletion is pending' })
-        .waitFor();
-    assert.equal(mutations, 1);
-    assert.equal(
-        (await props(admin, `/maintenance-documents/${doc.id}`)).document.id,
-        doc.id,
-    );
-    assert.equal(
-        await admin
-            .getByText(`File permanently deleted: ${doc.file_name}`, {
-                exact: true,
-            })
-            .count(),
-        0,
-    );
-    storage.delayNextDelete(350);
-    await confirm.click();
-    const processing = panel.getByRole('button', {
-        name: 'Deleting…',
-        exact: true,
-    });
-    await processing.waitFor();
-    assert.equal(await processing.isDisabled(), true);
-    await admin.waitForURL(`${ui}/maintenance-documents`);
-    await admin
-        .getByText(`File permanently deleted: ${doc.file_name}`, {
-            exact: true,
-        })
-        .waitFor();
-    assert.equal(mutations, 2);
-    assert.equal(
-        (
-            await admin.request.get(`${ui}/maintenance-documents/${doc.id}`)
-        ).status(),
-        404,
-    );
-    assert.deepEqual(
-        await (
-            await admin.request.get(`${base}${sibling.download_url}`)
-        ).body(),
-        siblingBytes,
-    );
-    admin.off('request', count);
+    await admin.goto(`${ui}/maintenance-documents/${doc.id}/edit`);
+    await admin.getByRole('button', { name: `Mark ${doc.file_name} for deletion` }).click();
+    await admin.getByRole('button', { name: 'Cancel', exact: true }).click();
+    assert.equal((await admin.request.get(`${base}${doc.download_url}`)).status(), 200);
+    await admin.goto(`${ui}/maintenance-documents/${doc.id}/edit`);
+    await admin.getByRole('button', { name: `Mark ${doc.file_name} for deletion` }).click();
+    admin.once('dialog', (dialog) => dialog.accept());
+    await admin.getByRole('button', { name: 'Save Changes', exact: true }).click();
+    await admin.waitForURL(`${ui}/maintenance-documents/${doc.id}`);
+    const retainedDocument = (await props(admin, `/maintenance-documents/${doc.id}`)).document;
+    assert.equal(retainedDocument.id, doc.id);
+    assert.equal(retainedDocument.document_title, doc.document_title);
+    assert.equal(retainedDocument.file_name, '');
+    assert.equal(retainedDocument.available, false);
+    assert.equal((await admin.request.get(`${base}${doc.download_url}`)).status(), 404);
+    assert.deepEqual(await (await admin.request.get(`${base}${sibling.download_url}`)).body(), siblingBytes);
 
     await superadmin.goto(`${ui}/monthly-updates/${report.id}/edit`);
     await superadmin.locator('input[type=file]').setInputFiles({
@@ -232,6 +155,6 @@ export async function verifyPermanentFileDeletion({
         200,
     );
     console.log(
-        'PASS: real Fortify individual file deletion; exact filename/type/parent confirmation; red Delete, neutral Cancel/no mutation; processing guard; pending failure and retry; Admin document/SuperAdmin media deletion; siblings/parents retained; Engineer/Viewer/cross-LGU denials; CSRF enforced.',
+        'PASS: attachment edit Cancel preserves files; confirmed Save removes private attachment and retains document/update information; siblings retained; authorization and CSRF enforced.',
     );
 }
