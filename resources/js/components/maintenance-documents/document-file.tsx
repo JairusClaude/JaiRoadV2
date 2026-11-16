@@ -37,12 +37,14 @@ export function DocumentAttachment({
     disabled,
     error,
     onChange,
+    onRemoveSaved,
 }: {
     file: File | null;
     savedName?: string;
     disabled: boolean;
     error?: string;
     onChange: (file: File | null) => void;
+    onRemoveSaved?: () => void;
 }) {
     const canonical = usePage().props.canonicalFrontend === true;
     const input = useRef<HTMLInputElement>(null);
@@ -151,13 +153,14 @@ export function DocumentAttachment({
                                 : ' · Existing attachment retained'}
                         </p>
                     </div>
-                    {file && (
+                    {file ? (
                         <Button
                             type="button"
                             variant="ghost"
                             size="icon"
                             disabled={disabled}
-                            aria-label={`Remove ${file.name}`}
+                            aria-label={`Remove selected file ${file.name}`}
+                            title="Remove selected file"
                             onClick={() => {
                                 onChange(null);
                                 setFeedback('');
@@ -165,7 +168,18 @@ export function DocumentAttachment({
                         >
                             <X />
                         </Button>
-                    )}
+                    ) : savedName && onRemoveSaved ? (
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Delete ${savedName} permanently`}
+                            title="Delete file"
+                            onClick={onRemoveSaved}
+                        >
+                            <X />
+                        </Button>
+                    ) : null}
                 </div>
             )}
         </div>
