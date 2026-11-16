@@ -55,8 +55,12 @@ final class UnifiedFrontendTest extends PostgresTestCase
         $this->get(self::UI.'/maintenance-projects')->assertInertia(fn (Assert $page) => $page->has('projects.data', 2));
         $this->get(self::UI.'/road-coverages/'.$other)->assertOk();
         $this->get(self::UI.'/maintenance-projects/'.$project)->assertOk();
+        DB::table('jairoads_next.engineer_lgus')->where('engineer_id', $f['engineer'])->update(['is_active' => false]);
         $this->get(self::UI.'/maintenance-projects/'.$project.'/records/create')->assertOk()
             ->assertInertia(fn (Assert $page) => $page->has('engineers', 1)->where('engineers.0.id', $f['engineer']));
+        $this->post(self::UI.'/maintenance-projects/'.$project.'/records', $this->recordData((int) $project, $f['engineer']) + ['engineers_id' => $f['engineer']])
+            ->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertDatabaseHas('jairoads_next.maintenance_records', ['project_id' => $project, 'managing_engineer_id' => $f['engineer']]);
     }
 
     public function test_directory_create_returns_eligible_managers_across_municipalities(): void

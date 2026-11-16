@@ -67,7 +67,7 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
 
     public static function deniedActors(): iterable
     {
-        foreach (['Viewer', 'missing_destination', 'inactive_destination', 'missing_source', 'inactive_account', 'retired', 'unlinked'] as $case) {
+        foreach (['Viewer', 'inactive_account', 'retired', 'unlinked'] as $case) {
             yield $case => [$case];
         }
     }
@@ -97,7 +97,7 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
 
     public static function invalidManagers(): iterable
     {
-        foreach (['retired', 'inactive_account', 'missing_account', 'viewer_account', 'missing_destination', 'inactive_destination'] as $case) {
+        foreach (['retired', 'inactive_account', 'missing_account', 'viewer_account'] as $case) {
             yield $case => [$case];
         }
     }
@@ -126,7 +126,7 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
 
     public static function staleChanges(): iterable
     {
-        foreach (['road_name', 'source_municipality', 'geometry', 'updated_at', 'project_title', 'project_unlinked', 'record_inserted', 'manager_reassigned', 'record_deleted', 'monthly_inserted', 'monthly_updated', 'document_inserted', 'media_inserted', 'assignment_changed', 'account_changed', 'manager_renamed', 'municipality_renamed'] as $case) {
+        foreach (['road_name', 'source_municipality', 'geometry', 'updated_at', 'project_title', 'project_unlinked', 'record_inserted', 'manager_reassigned', 'record_deleted', 'monthly_inserted', 'monthly_updated', 'document_inserted', 'media_inserted', 'account_changed', 'manager_renamed', 'municipality_renamed'] as $case) {
             yield $case => [$case];
         }
     }
@@ -281,7 +281,7 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
     public function test_explicit_reassignment_resolves_conflict_only_after_a_refreshed_review(): void
     {
         $f = $this->setupHistory();
-        DB::table('jairoads_next.engineer_lgus')->where('engineer_id', $f['engineer'])->where('lgu_id', $f['destination'])->update(['is_active' => false]);
+        DB::table('jairoads_next.user_accounts')->where('engineer_id', $f['engineer'])->update(['is_active' => false]);
         $token = $this->preview($f)->assertOk()->assertJsonPath('can_confirm', false)->json('confirmation_token');
         $replacement = $this->engineer();
         $this->account('Engineer', $replacement);
@@ -301,7 +301,7 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
     {
         $f = $this->setupHistory();
         $other = $this->engineer();
-        $this->account('Engineer', $other);
+        $this->account('Engineer', $other, false);
         $second = (int) DB::table('jairoads_next.maintenance_records')->insertGetId(array_replace($this->recordData($f['project'], $other, 'Q2'), [
             'status' => 'Completed', 'complete_date' => '2026-04-06', 'created_by' => $f['user']->dd_user_account_id,
         ]));

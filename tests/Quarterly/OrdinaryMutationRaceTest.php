@@ -222,7 +222,7 @@ final class OrdinaryMutationRaceTest extends PostgresTestCase
     }
 
     #[DataProvider('lateCases')]
-    public function test_late_wait_cannot_preserve_revoked_engineer_lgu_authority(string $case, string $change): void
+    public function test_late_wait_rechecks_account_and_manager_authority(string $case, string $change): void
     {
         $f = $this->fixture($case === 'record_retired_manager' ? 'Admin' : 'Engineer');
         $revoker = $this->account('SuperAdmin');
@@ -260,10 +260,11 @@ final class OrdinaryMutationRaceTest extends PostgresTestCase
             $audited = $audit !== $this->snapshot('audit_logs');
             $delivered = $delivery !== $this->snapshot('audit_notification_recipients');
             $this->evidence($case.' late', $change, $wait, $status, $business, $audited, $delivered);
-            $this->assertSame($change === 'unchanged' ? 302 : ($case === 'record_retired_manager' ? 422 : 403), $status, json_encode([$business, $audited, $delivered]));
-            $this->assertSame($change === 'unchanged', $business);
-            $this->assertSame($change === 'unchanged', $audited);
-            $this->assertSame($change === 'unchanged', $delivered);
+            $allowed = $change === 'unchanged' || $case !== 'record_retired_manager';
+            $this->assertSame($allowed ? 302 : 422, $status, json_encode([$business, $audited, $delivered]));
+            $this->assertSame($allowed, $business);
+            $this->assertSame($allowed, $audited);
+            $this->assertSame($allowed, $delivered);
         } finally {
             $this->cleanupWorkers([$worker]);
         }

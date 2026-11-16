@@ -50,7 +50,7 @@ final class RoadMetadataRevocationRaceTest extends PostgresTestCase
                 yield $role.' '.$change => [$role, $change];
             }
         }
-        yield 'Engineer assignment revoked' => ['Engineer', 'unassigned'];
+        yield 'Historical assignment deactivated' => ['Engineer', 'unassigned'];
         yield 'Engineer retired' => ['Engineer', 'retired'];
     }
 
@@ -103,10 +103,10 @@ final class RoadMetadataRevocationRaceTest extends PostgresTestCase
             $this->assertTrue($worker->isSuccessful(), $worker->getErrorOutput());
             $response = json_decode($worker->getOutput(), true, flags: JSON_THROW_ON_ERROR);
             $after = DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->first();
-            $this->assertSame($change === 'unchanged' ? 302 : 403, $response['status']);
+            $this->assertSame(in_array($change, ['unchanged', 'unassigned'], true) ? 302 : 403, $response['status']);
             $this->assertSame($before->geojson, $after->geojson);
             $this->assertSame(1, DB::table('jairoads_next.maintenance_projects')->count());
-            if ($change === 'unchanged') {
+            if (in_array($change, ['unchanged', 'unassigned'], true)) {
                 $this->assertSame('Authorized metadata revision', $after->road_name);
                 $this->assertSame(1, DB::table('jairoads_next.audit_logs')->where('entity_type', 'RoadCoverage')->whereNull('recipient_user_id')->count());
             } else {

@@ -113,7 +113,7 @@ final class FullMaintenanceWorkflowTest extends PostgresTestCase
     }
 
     #[DataProvider('revokedUploads')]
-    public function test_upload_losing_authorization_during_storage_io_cannot_commit(string $kind, string $change): void
+    public function test_upload_rechecks_current_account_and_record_ownership_after_storage_io(string $kind, string $change): void
     {
         $f = $this->fixture('Engineer');
         $record = DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer'], 'Q4') + ['created_by' => $f['user']->dd_user_account_id]);
@@ -135,16 +135,26 @@ final class FullMaintenanceWorkflowTest extends PostgresTestCase
                 'reassigned' => DB::table('jairoads_next.maintenance_records')->where('id', $record)->update(['managing_engineer_id' => $replacement]),
             };
         });
-        $mock->shouldReceive('removeAfterFailure')->once()->withArgs(static function ($uploaded) use (&$path): bool {
-            return $uploaded === $path;
-        });
+        if ($change === 'unassigned') {
+            $mock->shouldReceive('removeAfterFailure')->never();
+        } else {
+            $mock->shouldReceive('removeAfterFailure')->once()->withArgs(static function ($uploaded) use (&$path): bool {
+                return $uploaded === $path;
+            });
+        }
         $this->app->instance($class, $mock);
-        $payload = $kind === 'document' ? ['maintenance_id' => $record, 'document_title' => 'Revoked upload'] : ['monthly_update_id' => $update];
-        $this->post('/dd-phase3/ops/'.($kind === 'document' ? 'documents' : 'media'), $payload + ['file' => $this->file($kind)])->assertForbidden();
+        $payload = $kind === 'document' ? ['maintenance_id' => $record, 'document_title' => 'Reviewed upload'] : ['monthly_update_id' => $update];
+        $response = $this->post('/dd-phase3/ops/'.($kind === 'document' ? 'documents' : 'media'), $payload + ['file' => $this->file($kind)]);
+        if ($change === 'unassigned') {
+            $response->assertRedirect()->assertSessionHasNoErrors();
+            $this->assertSame(1, DB::table('jairoads_next.'.($kind === 'document' ? 'maintenance_documents' : 'media'))->count());
+        } else {
+            $response->assertForbidden();
+            $this->assertSame(0, DB::table('jairoads_next.maintenance_documents')->count());
+            $this->assertSame(0, DB::table('jairoads_next.media')->count());
+            $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
+        }
         $this->assertNotNull($path);
-        $this->assertSame(0, DB::table('jairoads_next.maintenance_documents')->count());
-        $this->assertSame(0, DB::table('jairoads_next.media')->count());
-        $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
     }
 
     private function file(string $kind): UploadedFile

@@ -39,7 +39,7 @@ final class ManagingEngineerReassignmentTest extends PostgresTestCase
 
     public static function invalid(): iterable
     {
-        foreach (['retired', 'inactive_account', 'unassigned', 'inactive_assignment', 'no_account', 'other_admin'] as $case) {
+        foreach (['retired', 'inactive_account', 'no_account', 'other_admin'] as $case) {
             yield $case => [$case];
         }
     }
@@ -59,6 +59,16 @@ final class ManagingEngineerReassignmentTest extends PostgresTestCase
         $this->withSession(['password_hash_web' => null])->actingAs($this->account())->postJson('/dd-phase3/ops/records/'.$id.'/reassignment', ['managing_engineer_id' => $replacement, 'expected_current_manager_id' => $f['engineer']])->assertUnprocessable()->assertJsonValidationErrors('managing_engineer_id');
         $this->assertDatabaseHas('jairoads_next.maintenance_records', ['id' => $id, 'managing_engineer_id' => $f['engineer']]);
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
+    }
+
+    public function test_reassignment_accepts_active_engineer_without_lgu_membership(): void
+    {
+        [$f,$id] = $this->setupRecord();
+        $replacement = $this->engineer();
+        $this->account('Engineer', $replacement);
+        $this->withSession(['password_hash_web' => null])->actingAs($this->account())
+            ->postJson('/dd-phase3/ops/records/'.$id.'/reassignment', ['managing_engineer_id' => $replacement, 'expected_current_manager_id' => $f['engineer']])->assertRedirect();
+        $this->assertDatabaseHas('jairoads_next.maintenance_records', ['id' => $id, 'managing_engineer_id' => $replacement]);
     }
 
     public function test_unauthorized_stale_missing_and_noop_reassignments_cannot_change_history(): void
