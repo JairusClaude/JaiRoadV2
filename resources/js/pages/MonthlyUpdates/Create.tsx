@@ -37,6 +37,7 @@ export default function Create(parents: MonthlyCreateProps) {
         removed_media_ids: [],
     });
     const submitting = useRef(false);
+    const mediaDeletion = usePermanentFileDeletion();
 
     return (
         <>
@@ -57,15 +58,21 @@ export default function Create(parents: MonthlyCreateProps) {
                           )
                         : undefined
                 }
-                savedMedia={(parents.media ?? []).filter(
-                    (file) => !form.data.removed_media_ids.includes(file.id),
-                )}
-                onRemoveSaved={(id) =>
-                    form.setData('removed_media_ids', [
-                        ...form.data.removed_media_ids,
-                        id,
-                    ])
-                }
+                savedMedia={parents.media ?? []}
+                onRemoveSaved={(id) => {
+                    const file = (parents.media ?? []).find((item) => item.id === id);
+                    if (!file?.delete_url) {
+                        form.setError('attachments', 'You do not have permission to permanently delete this saved file.');
+                        return;
+                    }
+                    void mediaDeletion.open({
+                        id: file.id,
+                        kind: 'media',
+                        file_name: file.file_name,
+                        parent_label: file.parent_label ?? 'Monthly Update',
+                        delete_url: file.delete_url,
+                    });
+                }}
                 values={form.data}
                 errors={form.errors}
                 enabled={preview && Boolean(parents.submitUrl)}
@@ -157,6 +164,7 @@ export default function Create(parents: MonthlyCreateProps) {
                     });
                 }}
             />
+            <PermanentFileDeletionDialog deletion={mediaDeletion} />
         </>
     );
 }
