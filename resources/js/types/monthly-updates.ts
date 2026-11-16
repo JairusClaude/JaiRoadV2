@@ -87,4 +87,5 @@ export type MonthlyDetailProps = {
     backUrl: string;
     backLabel: string;
     directoryUrl: string;
+    canUploadMedia?: boolean;
 };
