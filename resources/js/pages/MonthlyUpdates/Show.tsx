@@ -196,12 +196,19 @@ export default function Show({
                             </h2>
                             <p className="jr-field-hint">{mediaBreakdown}</p>
                         </div>
+                        {canEdit && !canUploadMedia && (
+                            <p className="jr-field-hint" role="status">
+                                Media uploads are currently unavailable because private storage is not configured for this environment.
+                            </p>
+                        )}
                         {canUploadMedia && (
                             <form
                                 className="jr-monthly-upload"
                                 onSubmit={(event) => {
                                     event.preventDefault();
-                                    if (!mediaForm.data.file || mediaForm.processing) return;
+                                    if (!mediaForm.data.file || mediaForm.processing) {
+                                        return;
+                                    }
                                     mediaForm.clearErrors();
                                     mediaForm.post(workspaceHref(`/monthly-updates/${update.id}/media`), {
                                         forceFormData: true,
@@ -222,9 +229,14 @@ export default function Show({
                                         type="file"
                                         accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"
                                         disabled={mediaForm.processing}
-                                        onChange={(event) => mediaForm.setData('file', event.target.files?.[0] ?? null)}
+                                        onChange={(event) =>
+                                            mediaForm.setData('file', event.target.files?.[0] ?? null)
+                                        }
                                     />
-                                    <Button type="submit" disabled={!mediaForm.data.file || mediaForm.processing}>
+                                    <Button
+                                        type="submit"
+                                        disabled={!mediaForm.data.file || mediaForm.processing}
+                                    >
                                         <UploadCloud className="size-4" />
                                         {mediaForm.processing ? 'Uploading…' : 'Upload media'}
                                     </Button>
