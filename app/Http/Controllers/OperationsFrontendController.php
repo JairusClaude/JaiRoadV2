@@ -324,7 +324,7 @@ class OperationsFrontendController extends Controller
             ->join('jairoads_next.road_coverages as rc', 'rc.id', '=', 'p.road_coverage_id')
             ->join('jairoads_next.lgus as l', 'l.id', '=', 'rc.lgu_id')
             ->join('jairoads_next.user_accounts as a', 'a.id', '=', 'd.uploaded_by'), $actor)
-            ->select(['d.id', 'd.maintenance_id', 'd.document_title', 'd.description', 'd.file_name', 'd.uploaded_at', 'd.updated_at',
+            ->select(['d.id', 'd.maintenance_id', 'd.document_title', 'd.description', 'd.file_name', 'd.file_path', 'd.uploaded_at', 'd.updated_at',
                 'm.project_id', 'm.maintenance_year', 'm.quarter', 'm.managing_engineer_id', 'p.project_title', 'l.municipality_name', 'a.username as uploader_name']);
     }
 
@@ -335,9 +335,9 @@ class OperationsFrontendController extends Controller
     {
         return ['id' => (int) $d->id, 'maintenance_id' => (int) $d->maintenance_id, 'document_title' => $d->document_title,
             'description' => $d->description, 'file_name' => $d->file_name, 'uploaded_by' => $d->uploader_name,
-            'uploaded_at' => $d->uploaded_at, 'updated_at' => $d->updated_at, 'available' => $this->documents->configured(),
-            'delete_url' => RoleAccess::managesBusinessData($actor['role']) && $this->fileDeletions->operationallyEnabled() ? '/dd-phase3/files/document/'.$d->id : null,
-            'download_url' => '/dd-phase3/files/document/'.$d->id, 'can_edit' => $this->canWriteRecord($d, $actor),
+            'uploaded_at' => $d->uploaded_at, 'updated_at' => $d->updated_at, 'available' => $d->file_path !== '' && $this->documents->configured(),
+            'delete_url' => RoleAccess::managesBusinessData($actor['role']) && ($d->file_path === '' || $this->fileDeletions->operationallyEnabled()) ? '/dd-phase3/ui/maintenance-documents/bulk' : null,
+            'download_url' => $d->file_path !== '' ? '/dd-phase3/files/document/'.$d->id : null, 'can_edit' => $this->canWriteRecord($d, $actor),
             'project' => ['id' => (int) $d->project_id, 'project_title' => $d->project_title, 'municipality' => $d->municipality_name],
             'record' => ['id' => (int) $d->maintenance_id, 'project_id' => (int) $d->project_id, 'year' => (int) $d->maintenance_year, 'quarter' => $d->quarter]];
     }

@@ -837,7 +837,7 @@ class OperationsController extends Controller
         $actor = $this->actor($request, $resolver);
         if ($kind === 'document') {
             $row = $this->t('maintenance_documents')->where('id', $id)->first(['maintenance_id', 'file_name', 'file_path']);
-            abort_unless($row !== null, 404);
+            abort_unless($row !== null && $row->file_path !== '', 404, 'No document attachment.');
             $this->recordScope($actor, (int) $row->maintenance_id);
             app(PermanentFileDeletion::class)->assertNotPending('document', $id);
             $result = $documents->fetch((string) $row->file_path);

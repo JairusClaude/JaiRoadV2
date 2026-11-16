@@ -88,7 +88,7 @@ final class PermanentFileDeletion
     {
         $this->actor($login);
         $row = $this->file($kind, $id)->first();
-        abort_unless($row !== null, 404);
+        abort_unless($row !== null && $row->file_path !== '', 404);
         $this->parentExists((int) $row->maintenance_id);
         $enabled = $this->operationallyEnabled();
         // Existing durable intents remain visible even if the kill switch is off.
@@ -199,7 +199,11 @@ final class PermanentFileDeletion
                     return $this->pending(); // Another request/worker owns it.
                 }
                 if ($intent->state === 'completed') {
-                    if (DB::table($this->table($intent->kind))->where('id', $intent->entity_id)->exists()) {
+                    $remaining = DB::table($this->table($intent->kind))->where('id', $intent->entity_id);
+                    if ($intent->kind === 'document') {
+                        $remaining->where(fn (Builder $q) => $q->where('file_path', '!=', '')->orWhere('file_name', '!=', ''));
+                    }
+                    if ($remaining->exists()) {
                         throw new \RuntimeException('target_changed'); // Never claim success for a reused/corrupt entity ID.
                     }
 
@@ -229,14 +233,26 @@ final class PermanentFileDeletion
                 $stage = 'storage';
                 $storage->removePermanently($intent->object_path);
                 $stage = 'finalize';
-                DB::table($this->table($intent->kind))->where('id', $intent->entity_id)->delete();
-                if (DB::table($this->table($intent->kind))->where('id', $intent->entity_id)->exists()) {
-                    throw new \RuntimeException('Metadata removal was not confirmed.');
+                $target = DB::table($this->table($intent->kind))->where('id', $intent->entity_id);
+                if ($intent->kind === 'document' && $row !== null) {
+                    // Canonical file columns are NOT NULL. Empty strings explicitly
+                    // represent no attachment; never manufacture a Storage path.
+                    $before = app(\App\Services\AuditValues::class)->persisted('MaintenanceDocument', (int) $intent->entity_id);
+                    $target->update(['file_name' => '', 'file_path' => '', 'updated_at' => now()]);
+                    if (! (clone $target)->where('file_name', '')->where('file_path', '')->exists()) {
+                        throw new \RuntimeException('Attachment removal was not confirmed.');
+                    }
+                    $this->audit->record($actor, 'UPDATE', 'MaintenanceDocument', (int) $intent->entity_id,
+                        'Attachment permanently removed; document information retained.',
+                        app(\App\Services\AuditValues::class)->persisted('MaintenanceDocument', (int) $intent->entity_id), $before);
+                } elseif ($intent->kind === 'media') {
+                    $target->delete();
+                    if ($target->exists()) {
+                        throw new \RuntimeException('Metadata removal was not confirmed.');
+                    }
+                    $this->audit->record($actor, 'DELETE', 'Media', (int) $intent->entity_id,
+                        'Selected media permanently removed; MonthlyUpdate retained.', [], $old + ['initiated_by' => (int) $intent->initiated_by]);
                 }
-                $this->audit->record($actor,
-                    'DELETE', $intent->kind === 'document' ? 'MaintenanceDocument' : 'Media', (int) $intent->entity_id,
-                    'Selected file permanently removed from private Storage and canonical metadata.', [],
-                    $old + ['initiated_by' => (int) $intent->initiated_by]);
                 DB::table(self::TABLE)->where('id', $operation)->update(['state' => 'completed', 'completed_at' => now(),
                     'attempts' => DB::raw('attempts + 1'), 'last_error_code' => null, 'object_path' => null, 'storage_origin' => null, 'bucket' => null]);
 
@@ -263,6 +279,30 @@ final class PermanentFileDeletion
     private function pending(): array
     {
         return ['state' => 'pending', 'message' => 'Deletion is pending and may already have removed the Storage object. It is not confirmed complete. Retry Delete or contact an administrator. Closing this pane does not cancel the accepted deletion.'];
+    }
+
+    /** Explicit document-record deletion is separate from removing its attachment. */
+    public function deleteDocumentRecord(User $login, int $id): void
+    {
+        $actor = $this->actor($login);
+        $row = $this->file('document', $id)->first();
+        abort_unless($row !== null, 404);
+        if ($row->file_path !== '') {
+            $result = $this->delete($login, 'document', $id, (string) $row->file_path);
+            if ($result['state'] !== 'completed') {
+                throw ValidationException::withMessages(['file' => 'Attachment deletion is pending. Document information is retained.']);
+            }
+        }
+        DB::transaction(function () use ($login, $actor, $id): void {
+            DB::select('SELECT pg_advisory_xact_lock_shared(1927710916)');
+            $document = DB::table('jairoads_next.maintenance_documents')->where('id', $id)->lockForUpdate()->first();
+            DB::table('jairoads_next.user_accounts')->where('id', $actor['account_id'])->sharedLock()->first(['id']);
+            abort_unless($this->actor($login) === $actor, 403);
+            abort_unless($document !== null && $document->file_path === '' && $document->file_name === '', 409, 'Document changed. Review it again.');
+            $this->assertNotPending('document', $id);
+            abort_unless(DB::table('jairoads_next.maintenance_documents')->where('id', $id)->delete() === 1, 409);
+            $this->audit->record($actor, 'DELETE', 'MaintenanceDocument', $id, 'Explicit document record deletion.', [], (array) $document);
+        });
     }
 
     public function assertNotPending(string $kind, int $id): void

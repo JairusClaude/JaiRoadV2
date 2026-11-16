@@ -90,10 +90,9 @@ final class MaintenanceDocumentPageController extends OperationsFrontendControll
         } else {
             $request->validate(['attachment' => ['prohibited']]);
             if ($remove) {
-                // The document and its single file are one entity. Do not edit
-                // metadata first: a pending deletion must remain retryable.
+                // Validate metadata first. Only remove the attachment, never the parent row.
+                $request->validate(['document_title' => ['required', 'string', 'max:255'], 'description' => ['nullable', 'string', 'max:5000']]);
                 $this->deletePrivateFile($request, 'document', $id);
-                return redirect(self::BASE.'/maintenance-documents')->with('dd_operations_status', 'Document permanently deleted.');
             }
             $this->operations->updateDocument($request, $this->identities, $id);
         }
@@ -108,10 +107,9 @@ final class MaintenanceDocumentPageController extends OperationsFrontendControll
 
         $v = $request->validate(['document_ids' => ['required', 'array', 'min:1', 'max:100'], 'document_ids.*' => ['required', 'integer', 'min:1', 'distinct']]);
         $ids = array_map('intval', $v['document_ids']);
-        $this->requirePrivateDeletion($request, $actor);
         abort_unless($this->documentQuery($actor)->whereIn('d.id', $ids)->count() === count($ids), 404);
         foreach ($ids as $id) {
-            $this->deletePrivateFile($request, 'document', $id);
+            $this->fileDeletions->deleteDocumentRecord($request->user(), $id);
         }
         return redirect($this->relatedReturn($request, $actor, self::BASE.'/maintenance-documents'))->with('dd_operations_status', 'Selected documents permanently deleted.');
     }

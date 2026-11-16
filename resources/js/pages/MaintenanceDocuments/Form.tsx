@@ -171,7 +171,7 @@ export default function Form(parents: DocumentParents) {
                                 return;
                             }
 
-                            if (savedRemovalPending && !window.confirm('Save changes and permanently delete the selected document from private Storage?')) return;
+                            if (savedRemovalPending && !window.confirm('Save changes and permanently remove the attachment? Document information will be retained.')) return;
                             form.transform((data) => ({ ...data, remove_attachment: savedRemovalPending }));
                             lock.current = true;
                             form.submit(
@@ -349,7 +349,7 @@ export default function Form(parents: DocumentParents) {
                             <h2>Document Attachment</h2>
                             <p className="jr-field-hint mb-4">
                                 {doc
-                                    ? 'Remove the attachment with X, then save to permanently delete it; Cancel keeps it.'
+                                    ? 'Remove the attachment with X, then save. The document title and information remain; Cancel keeps the file.'
                                     : 'Upload one supporting document.'}
                             </p>
                             <DocumentAttachment
@@ -366,7 +366,7 @@ export default function Form(parents: DocumentParents) {
                                     form.setData('attachment', file);
                                 }}
                                 savedRemovalPending={savedRemovalPending}
-                                onRemoveSaved={doc?.delete_url ? () => setSavedRemovalPending(true) : undefined}
+                                onRemoveSaved={doc?.file_name && doc.delete_url ? () => setSavedRemovalPending(true) : undefined}
                             />
                         </section>
                         <footer className="jr-form-footer">

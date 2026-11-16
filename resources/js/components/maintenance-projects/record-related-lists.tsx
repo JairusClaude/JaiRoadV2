@@ -277,7 +277,7 @@ export function RecordRelatedLists({
                                         )
                                     }
                                 >
-                                    <DocumentIcon name={doc.file_name} />
+                                    <DocumentIcon name={doc.file_name || 'No attachment'} />
                                     <div className="jr-related-row-copy">
                                         <Link
                                             className="jr-related-row-title"

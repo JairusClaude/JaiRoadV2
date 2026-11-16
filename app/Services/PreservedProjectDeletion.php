@@ -194,7 +194,7 @@ final class PreservedProjectDeletion
                     'road_name' => $impact['road']->road_name,
                 ],
                 'counts' => $impact['counts'],
-                'can_delete' => ($impact['documents']->isEmpty() && $impact['media']->isEmpty()) || $this->files->operationallyEnabled(),
+                'can_delete' => ($impact['documents']->every(fn ($d) => $d->file_path === '') && $impact['media']->isEmpty()) || $this->files->operationallyEnabled(),
                 'confirmation_token' => Crypt::encryptString(
                     json_encode(
                         [
@@ -278,7 +278,9 @@ final class PreservedProjectDeletion
         $targets = [];
         foreach (['media' => 'media', 'documents' => 'document'] as $key => $kind) {
             foreach ($approved[$key] as $file) {
-                $targets[] = [$kind, $file];
+                if ($kind !== 'document' || $file->file_path !== '') {
+                    $targets[] = [$kind, $file];
+                }
             }
         }
         if ($targets !== []) {
@@ -306,12 +308,14 @@ final class PreservedProjectDeletion
             }
             abort_unless($this->actor($login) === $actor, 403);
             if (! hash_equals($approved['business_fingerprint'], $impact['business_fingerprint'])
-                || $impact['documents']->isNotEmpty() || $impact['media']->isNotEmpty()) {
+                || $impact['media']->isNotEmpty()
+                || $impact['documents']->contains(fn ($d) => $d->file_path !== '' || $d->file_name !== '')
+                || $impact['documents']->pluck('id')->all() !== $approved['documents']->pluck('id')->all()) {
                 throw ValidationException::withMessages([
                     'confirmation_token' => 'Project data changed during deletion. The project and maintenance records remain; refresh to review remaining data. Approved files already removed cannot be restored.',
                 ]);
             }
-            foreach (['updates' => ['monthly_updates', 'MonthlyUpdate'], 'records' => ['maintenance_records', 'MaintenanceRecord']] as $key => [$table, $entity]) {
+            foreach (['documents' => ['maintenance_documents', 'MaintenanceDocument'], 'updates' => ['monthly_updates', 'MonthlyUpdate'], 'records' => ['maintenance_records', 'MaintenanceRecord']] as $key => [$table, $entity]) {
                 foreach ($impact[$key] as $row) {
                     $childId = (int) $row->id;
                     $query = DB::table('jairoads_next.'.$table)->where('id', $childId);
