@@ -45,20 +45,21 @@ final class UnifiedFrontendTest extends PostgresTestCase
         }
     }
 
-    public function test_engineer_roads_projects_and_parent_choices_are_lgu_scoped(): void
+    public function test_engineer_roads_projects_and_parent_choices_are_available_across_municipalities(): void
     {
         $f = $this->fixture('Engineer');
         $other = $this->road();
         $project = DB::table('jairoads_next.maintenance_projects')->insertGetId(['project_title' => 'Outside scope',
             'road_coverage_id' => $other, 'created_by' => $f['user']->dd_user_account_id]);
-        $this->get(self::UI.'/road-coverages')->assertInertia(fn (Assert $page) => $page->has('coverages.data', 1)->where('coverages.data.0.id', $f['road']));
-        $this->get(self::UI.'/maintenance-projects')->assertInertia(fn (Assert $page) => $page->has('projects.data', 1));
-        $this->get(self::UI.'/road-coverages/'.$other)->assertNotFound();
-        $this->get(self::UI.'/maintenance-projects/'.$project)->assertNotFound();
-        $this->get(self::UI.'/maintenance-projects/'.$project.'/records/create')->assertNotFound();
+        $this->get(self::UI.'/road-coverages')->assertInertia(fn (Assert $page) => $page->has('coverages.data', 2));
+        $this->get(self::UI.'/maintenance-projects')->assertInertia(fn (Assert $page) => $page->has('projects.data', 2));
+        $this->get(self::UI.'/road-coverages/'.$other)->assertOk();
+        $this->get(self::UI.'/maintenance-projects/'.$project)->assertOk();
+        $this->get(self::UI.'/maintenance-projects/'.$project.'/records/create')->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->has('engineers', 1)->where('engineers.0.id', $f['engineer']));
     }
 
-    public function test_directory_create_returns_only_eligible_managers_for_each_project(): void
+    public function test_directory_create_returns_eligible_managers_across_municipalities(): void
     {
         $f = $this->fixture('SuperAdmin');
         $otherEngineer = $this->engineer();
@@ -74,14 +75,14 @@ final class UnifiedFrontendTest extends PostgresTestCase
             ->has('engineers', 0)
             ->has('managerChoicesByProject.'.$f['project'], 1)
             ->where('managerChoicesByProject.'.$f['project'].'.0.id', $f['engineer'])
-            ->has('managerChoicesByProject.'.$otherProject, 0));
+            ->has('managerChoicesByProject.'.$otherProject, 1)
+            ->where('managerChoicesByProject.'.$otherProject.'.0.id', $f['engineer']));
 
         $this->account('Engineer', $otherEngineer);
+        DB::table('jairoads_next.engineer_lgus')->where('engineer_id', $otherEngineer)->update(['is_active' => false]);
         $this->get(self::UI.'/maintenance-records/create')->assertOk()->assertInertia(fn (Assert $page) => $page
-            ->has('managerChoicesByProject.'.$f['project'], 1)
-            ->where('managerChoicesByProject.'.$f['project'].'.0.id', $f['engineer'])
-            ->has('managerChoicesByProject.'.$otherProject, 1)
-            ->where('managerChoicesByProject.'.$otherProject.'.0.id', $otherEngineer));
+            ->has('managerChoicesByProject.'.$f['project'], 2)
+            ->has('managerChoicesByProject.'.$otherProject, 2));
     }
 
     public function test_empty_record_deletion_preserves_parent_siblings_and_audits(): void

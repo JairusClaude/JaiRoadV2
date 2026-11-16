@@ -14,14 +14,14 @@ it('keeps ordinary administrator permissions aligned with the final CRUD matrix'
     }
 });
 
-it('allows engineers scoped operations only with an active linked identity and assignment', function (): void {
+it('allows engineers scoped operations with an active linked identity regardless of LGU assignment', function (): void {
     expect(RoleAccess::canWriteOperations('Engineer'))->toBeTrue();
     expect(RoleAccess::canDeleteOperations('Engineer'))->toBeFalse();
     expect(RoleAccess::canManageAccounts('Engineer'))->toBeFalse();
-    expect(RoleAccess::capabilities('Engineer', false, true)['createProjects'])->toBeFalse();
+    expect(RoleAccess::capabilities('Engineer', false, true)['createProjects'])->toBeTrue();
     expect(RoleAccess::capabilities('Engineer', true, false)['createProjects'])->toBeFalse();
     expect(RoleAccess::capabilities('Engineer', true, true)['createProjects'])->toBeTrue();
-    expect(RoleAccess::capabilities('Engineer', false, true)['createRoads'])->toBeFalse();
+    expect(RoleAccess::capabilities('Engineer', false, true)['createRoads'])->toBeTrue();
     expect(RoleAccess::capabilities('Engineer', true, true)['createRoads'])->toBeTrue();
 });
 

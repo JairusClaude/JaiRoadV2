@@ -49,7 +49,7 @@ type Props = {
     canUnassign?: boolean;
     roadCreatorChoices: {
         id: number;
-        lgu_id: number;
+        lgu_id?: number;
         first_name: string;
         last_name: string;
     }[];
@@ -233,7 +233,7 @@ export default function Operations({
                     roadCreatorChoices={canManage ? roadCreatorChoices : []}
                     schemaNotice={
                         canManage && roadCreatorChoices.length === 0
-                            ? 'Before creating a road coverage, assign an active Engineer to an LGU in User Management. The selected Engineer must have prepared the mapped road.'
+                            ? 'Before creating a road coverage, create an active Engineer profile in User Management. The selected Engineer must have prepared the mapped road.'
                             : null
                     }
                     canCreate={capabilities.createRoads}

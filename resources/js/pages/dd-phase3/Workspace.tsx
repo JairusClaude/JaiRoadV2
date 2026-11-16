@@ -143,7 +143,6 @@ export default function DdPhase3Workspace({
     accounts,
     engineers,
     eligibleEngineers,
-    assignments,
     canManage,
     canCreateRoles,
     status,
@@ -168,11 +167,6 @@ export default function DdPhase3Workspace({
         contact_no: '',
         rank: '',
     });
-    const [assignment, setAssignment] = useState({
-        engineer_id: '',
-        lgu_id: '',
-        is_active: '1',
-    });
     const [validation, setValidation] = useState<Record<string, string>>({});
 
     const activeEngineers = useMemo(
@@ -184,21 +178,7 @@ export default function DdPhase3Workspace({
     const privilegedAccounts = accounts.filter((entry) =>
         ['SuperAdmin', 'Admin'].includes(entry.account_type),
     ).length;
-    const activeAssignments = assignments.filter(
-        (entry) => entry.is_active,
-    ).length;
     const validationSummary = Object.entries(validation);
-    const assignmentLookup = useMemo(() => {
-        const map = new Map<number, number>();
-        assignments.forEach((item) => {
-            if (item.is_active) {
-                map.set(item.engineer_id, (map.get(item.engineer_id) ?? 0) + 1);
-            }
-        });
-
-        return map;
-    }, [assignments]);
-
     const submit = (
         url: string,
         data: Record<string, string>,
@@ -298,7 +278,7 @@ export default function DdPhase3Workspace({
                         </h1>
                         <p>
                             {section === 'users'
-                                ? 'Create engineers, link assignments, and provision data-dictionary compliant accounts.'
+                                ? 'Create engineers and provision data-dictionary compliant accounts.'
                                 : identity.role === 'Admin'
                                   ? 'Coordinate day-to-day road maintenance operations and staff assignments.'
                                   : 'An overview of your road maintenance workspace.'}
@@ -402,15 +382,15 @@ export default function DdPhase3Workspace({
                                     <div
                                         className={`text-xs tracking-wide uppercase ${identity.role === 'SuperAdmin' ? 'text-slate-400' : 'text-slate-500'}`}
                                     >
-                                        Active LGU links
+                                        Municipalities
                                     </div>
                                     <div className="mt-2 text-2xl font-bold">
-                                        {activeAssignments}
+                                        {counts.lgus}
                                     </div>
                                     <div
                                         className={`mt-1 text-xs ${identity.role === 'SuperAdmin' ? 'text-slate-300' : 'text-slate-600'}`}
                                     >
-                                        current engineer-to-LGU assignments
+                                        available municipalities
                                     </div>
                                 </div>
                             </div>
@@ -579,7 +559,7 @@ export default function DdPhase3Workspace({
                                     [
                                         'User Management',
                                         '/dd-phase3/users',
-                                        'Provision accounts and maintain assignments',
+                                        'Provision accounts and manage Engineer profiles',
                                     ],
                                 ].map(([label, href, summary]) => (
                                     <Link
@@ -750,7 +730,7 @@ export default function DdPhase3Workspace({
                                                         ? `${linked.first_name} ${linked.last_name} · #${linked.id}`
                                                         : a.account_type ===
                                                             'Engineer'
-                                                          ? 'Unlinked · LGU editing disabled'
+                                                          ? 'Unlinked · editing disabled'
                                                           : 'Not linked'}
                                                 </td>
                                                 <td className="px-4 py-3">
@@ -842,121 +822,6 @@ export default function DdPhase3Workspace({
                                 </form>
                             </section>
 
-                            <section className={panel}>
-                                <div className="flex items-start justify-between gap-3">
-                                    <div>
-                                        <h2 className={sectionTitle}>
-                                            Engineer assignments
-                                        </h2>
-                                        <p className={muted}>
-                                            Assign active Engineers to LGUs.
-                                            Inactive assignments are retained as
-                                            history.
-                                        </p>
-                                    </div>
-                                    <div className="rounded-2xl bg-sky-50 p-3 text-sky-700">
-                                        <Building2 className="h-5 w-5" />
-                                    </div>
-                                </div>
-                                <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                                    {assignments.length} assignment(s) total ·{' '}
-                                    {activeAssignments} active
-                                </div>
-                                <form
-                                    className="mt-4 grid gap-3 sm:grid-cols-3"
-                                    onSubmit={(e) => {
-                                        e.preventDefault();
-                                        submit(
-                                            '/dd-phase3/assignments',
-                                            assignment,
-                                            () =>
-                                                setAssignment({
-                                                    engineer_id: '',
-                                                    lgu_id: '',
-                                                    is_active: '1',
-                                                }),
-                                        );
-                                    }}
-                                >
-                                    <label className="text-xs font-semibold text-slate-600">
-                                        Engineer
-                                        <select
-                                            className={`${inp} mt-1`}
-                                            value={assignment.engineer_id}
-                                            onChange={(e) =>
-                                                setAssignment({
-                                                    ...assignment,
-                                                    engineer_id: e.target.value,
-                                                })
-                                            }
-                                        >
-                                            <option value="">
-                                                Select Engineer
-                                            </option>
-                                            {activeEngineers.map((e) => (
-                                                <option key={e.id} value={e.id}>
-                                                    {e.first_name} {e.last_name}{' '}
-                                                    ·{' '}
-                                                    {assignmentLookup.get(
-                                                        e.id,
-                                                    ) ?? 0}{' '}
-                                                    active LGU link(s)
-                                                </option>
-                                            ))}
-                                        </select>
-                                        <FieldError
-                                            message={validation.engineer_id}
-                                        />
-                                    </label>
-                                    <label className="text-xs font-semibold text-slate-600">
-                                        LGU
-                                        <select
-                                            className={`${inp} mt-1`}
-                                            value={assignment.lgu_id}
-                                            onChange={(e) =>
-                                                setAssignment({
-                                                    ...assignment,
-                                                    lgu_id: e.target.value,
-                                                })
-                                            }
-                                        >
-                                            <option value="">Select LGU</option>
-                                            {lgus.map((l) => (
-                                                <option key={l.id} value={l.id}>
-                                                    {l.municipality_name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        <FieldError
-                                            message={validation.lgu_id}
-                                        />
-                                    </label>
-                                    <label className="text-xs font-semibold text-slate-600">
-                                        State
-                                        <select
-                                            className={`${inp} mt-1`}
-                                            value={assignment.is_active}
-                                            onChange={(e) =>
-                                                setAssignment({
-                                                    ...assignment,
-                                                    is_active: e.target.value,
-                                                })
-                                            }
-                                        >
-                                            <option value="1">Active</option>
-                                            <option value="0">Inactive</option>
-                                        </select>
-                                        <FieldError
-                                            message={validation.is_active}
-                                        />
-                                    </label>
-                                    <div className="sm:col-span-3">
-                                        <button className={btn} disabled={busy}>
-                                            Save assignment
-                                        </button>
-                                    </div>
-                                </form>
-                            </section>
                         </div>
 
                         <section className={panel}>
@@ -994,8 +859,7 @@ export default function DdPhase3Workspace({
                                     </div>
                                     <p className="mt-2 text-xs leading-5 text-slate-500">
                                         Requires an active available Engineer
-                                        profile. LGU editing also requires an
-                                        active assignment.
+                                        profile. Engineers may work across municipalities.
                                     </p>
                                 </div>
                                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">

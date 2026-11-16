@@ -55,6 +55,12 @@ Route::middleware(['web'])->group(function (): void {
         }
 
         abort_unless(request()->user() !== null, 401);
+        if (request()->user()->getAttribute('dd_user_account_id') !== null) {
+            $identity = app(\App\Services\AccountIdentityResolver::class)->resolve(request()->user());
+            abort_unless($identity !== null && \App\Services\RoleAccess::canManageAccounts($identity['role']), 403);
+
+            return redirect()->route('jairoads.dd-phase3.show', ['section' => 'users']);
+        }
         $role = app(VerifiedProjectAccount::class)->role(request()->user());
         if ($role === null) {
             $identity = app(\App\Services\AccountIdentityResolver::class)->resolve(request()->user());

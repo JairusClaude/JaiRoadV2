@@ -2,7 +2,6 @@ import { router } from '@inertiajs/react';
 import {
     Check,
     HardHat,
-    Link2,
     Plus,
     Search,
     Users,
@@ -300,8 +299,7 @@ export default function UserManagementPage({
                     <div>
                         <h1>User Management</h1>
                         <p>
-                            Manage system accounts, Engineer information, and LGU
-                            assignments.
+                            Manage system accounts and Engineer information.
                         </p>
                     </div>
                     {canManage &&
@@ -342,7 +340,7 @@ export default function UserManagementPage({
                 <main className="relative -mt-3.5 -mx-7 rounded-t-[20px] bg-white px-7 pt-7 pb-10 shadow-sm min-w-0">
                     <section
                         aria-label="User management statistics"
-                        className="jr-metrics-grid mb-6 grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-4"
+                        className="jr-metrics-grid mb-6 grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-3"
                     >
                         <MetricCard
                             title="Total Accounts"
@@ -360,11 +358,6 @@ export default function UserManagementPage({
                             value={engineers.length}
                             subtitle="Registered field engineers"
                         />
-                        <MetricCard
-                            title="Active LGU Assignments"
-                            value={assignmentsAvailable ? activeAssignments : '—'}
-                            subtitle="Active engineer assignments"
-                        />
                     </section>
 
                     <div className="mb-6 flex flex-wrap gap-2 border-b border-[#E2E8F0]">
@@ -372,7 +365,6 @@ export default function UserManagementPage({
                             [
                                 ['accounts', 'User Accounts', Users],
                                 ['engineers', 'Engineers', HardHat],
-                                ['assignments', 'LGU Assignments', Link2],
                             ] as const
                         ).map(([key, label, Icon]) => (
                             <button

@@ -64,8 +64,8 @@ export function MaintenanceRecordForm({
             ? !project
                 ? 'Select a Maintenance Project first to load its eligible engineers.'
                 : engineers.length === 0
-                  ? 'No eligible managing engineers for this municipality. An active Engineer account must be linked to an active engineer profile and LGU assignment. A linked Admin may select themselves.'
-                  : 'Only eligible engineers assigned to this municipality are listed.'
+                  ? 'No eligible managing engineers. An active Engineer account must be linked to an active engineer profile. A linked Admin may select themselves.'
+                  : 'Eligible active engineers from all municipalities are listed.'
             : undefined;
     const required = (
         <span className="jr-required" aria-hidden="true">

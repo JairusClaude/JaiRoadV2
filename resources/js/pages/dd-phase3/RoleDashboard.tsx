@@ -93,7 +93,7 @@ export default function RoleDashboard({
                         <h1>Dashboard</h1>
                         <p>
                             {isEngineer
-                                ? 'Your LGU assignments, managed maintenance activities, and road coverage in one place.'
+                                ? 'Your managed maintenance activities and road coverage across municipalities.'
                                 : 'A read-only view of road coverage, projects, and maintenance progress.'}
                         </p>
                     </div>
@@ -114,7 +114,7 @@ export default function RoleDashboard({
                             </h1>
                             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
                                 {isEngineer
-                                    ? 'Your LGU assignments, managed maintenance activities, and road coverage in one place.'
+                                    ? 'Your managed maintenance activities and road coverage across municipalities.'
                                     : 'A read-only view of road coverage, projects, and maintenance progress.'}
                             </p>
                         </div>
@@ -137,14 +137,14 @@ export default function RoleDashboard({
                                     {limitedAccess
                                         ? engineer === null
                                             ? 'Engineer profile not linked'
-                                            : 'No active LGU assignments'
-                                        : 'LGU assignments available'}
+                                            : 'Engineer profile unavailable'
+                                        : 'All municipalities available'}
                                 </strong>
                                 {limitedAccess
                                     ? engineer === null
-                                        ? 'Your account has not yet been linked to an Engineer profile. You can sign in, but LGU-scoped editing requires an Admin to link your profile and activate its LGU assignment.'
-                                        : 'You can browse permitted information, but cannot create or update LGU-scoped operational records until an Admin activates your LGU assignment. Contact your administrator to request an assignment.'
-                                    : 'Your active LGU assignments determine the maintenance activities you can manage.'}
+                                        ? 'Your account requires an active linked Engineer profile. Contact your administrator.'
+                                        : 'Your Engineer profile is unavailable. Contact your administrator.'
+                                    : 'You may work across municipalities and edit the maintenance records you manage.'}
                             </div>
                         </div>
                     )}
@@ -153,7 +153,7 @@ export default function RoleDashboard({
                         {isEngineer ? (
                             <>
                                 <Metric
-                                    label="Active LGU assignments"
+                                    label="Available municipalities"
                                     value={stats.assignedLgus}
                                     icon={<MapPinned className="h-5 w-5" />}
                                 />
@@ -168,7 +168,7 @@ export default function RoleDashboard({
                                     icon={<FolderKanban className="h-5 w-5" />}
                                 />
                                 <Metric
-                                    label="Road coverages in my LGUs"
+                                    label="Road coverages"
                                     value={stats.roadCoverages}
                                     icon={<Route className="h-5 w-5" />}
                                 />
@@ -213,8 +213,8 @@ export default function RoleDashboard({
                             <p className="mt-1 text-sm text-slate-500">
                                 {isEngineer
                                     ? limitedAccess
-                                        ? 'Browsing only until an active LGU assignment is available.'
-                                        : 'Changes are allowed only for active LGU scope and owned maintenance activity.'
+                                        ? 'Browsing only until your Engineer profile is available.'
+                                        : 'Changes are allowed across municipalities; maintenance edits remain restricted to your managed records.'
                                     : 'Viewing privileges only. Editing and deletion controls are not available.'}
                             </p>
                         </div>
@@ -222,7 +222,7 @@ export default function RoleDashboard({
                             className={`rounded-full border px-3 py-1 text-xs font-bold ${isEngineer ? 'border-sky-200 bg-sky-50 text-sky-800' : 'border-slate-200 bg-slate-50 text-slate-600'}`}
                         >
                             {isEngineer
-                                ? 'Create / Update where assigned'
+                                ? 'Create / Update across municipalities'
                                 : 'Read only'}
                         </span>
                     </div>
@@ -334,10 +334,10 @@ export default function RoleDashboard({
                         {isEngineer && (
                             <section className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
                                 <h2 className="text-lg font-bold text-slate-950">
-                                    My active LGUs
+                                    Available municipalities
                                 </h2>
                                 <p className="mt-1 text-sm text-slate-500">
-                                    Municipalities currently assigned to you.
+                                    Municipalities available to you.
                                 </p>
                                 <div className="mt-4 flex flex-wrap gap-2">
                                     {assignedLgus.map((lgu) => (
@@ -351,7 +351,7 @@ export default function RoleDashboard({
                                 </div>
                                 {assignedLgus.length === 0 && (
                                     <p className="mt-4 rounded-xl bg-slate-50 px-4 py-5 text-sm text-slate-600">
-                                        No active LGU assignments. Contact your
+                                        No municipalities are registered. Contact your
                                         Administrator if access is needed.
                                     </p>
                                 )}

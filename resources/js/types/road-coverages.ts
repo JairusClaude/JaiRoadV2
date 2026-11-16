@@ -55,7 +55,7 @@ export type RoadCoverageFormProps = {
     requiresCreator?: boolean;
     roadCreatorChoices?: {
         id: number;
-        lgu_id: number;
+        lgu_id?: number;
         first_name: string;
         last_name: string;
     }[];

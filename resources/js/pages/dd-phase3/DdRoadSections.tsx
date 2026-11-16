@@ -43,7 +43,7 @@ export type DdRoadSectionsProps = {
     // Manager-only options are limited to active EngineerLGU relationships.
     roadCreatorChoices?: {
         id: number;
-        lgu_id: number;
+        lgu_id?: number;
         first_name: string;
         last_name: string;
     }[];
@@ -226,9 +226,7 @@ export default function DdRoadSections({
     const [lguId, setLguId] = useState('');
     const [createdByEngineerId, setCreatedByEngineerId] = useState('');
     const isManagerCreatorFlow = roadCreatorChoices.length > 0;
-    const creatorsForLgu = roadCreatorChoices.filter(
-        (entry) => String(entry.lgu_id) === lguId,
-    );
+    const creatorsForLgu = roadCreatorChoices;
     const [pavement, setPavement] = useState<Pavement>('Concrete');
     const [condition, setCondition] = useState<Condition>('Good');
     const [geojsonText, setGeojsonText] = useState('');
@@ -1051,9 +1049,8 @@ export default function DdRoadSections({
                                     <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
                                         Admins can create RoadCoverages without
                                         a personal Engineer link, but must
-                                        select an active, LGU-assigned mapping
-                                        Engineer. Create the EngineerLGU
-                                        assignment first.
+                                        select an active mapping Engineer. Create an
+                                        active Engineer profile first.
                                     </p>
                                 )}
                             <div className="grid gap-4 sm:grid-cols-2">
@@ -1115,7 +1112,7 @@ export default function DdRoadSections({
                                             </option>
                                             {creatorsForLgu.map((engineer) => (
                                                 <option
-                                                    key={`${engineer.id}-${engineer.lgu_id}`}
+                                                    key={engineer.id}
                                                     value={engineer.id}
                                                 >
                                                     {engineer.first_name}{' '}
@@ -1131,7 +1128,7 @@ export default function DdRoadSections({
                                             records you as the Admin/SuperAdmin
                                             actor in AuditLog.
                                             {!creatorsForLgu.length && lguId
-                                                ? ' No active Engineer is assigned to this LGU; add an active EngineerLGU assignment first.'
+                                                ? ' No active Engineer profile is available.'
                                                 : ''}
                                         </p>
                                     </div>
