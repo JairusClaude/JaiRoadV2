@@ -203,7 +203,7 @@ export default function Show({
                                     event.preventDefault();
                                     if (!mediaForm.data.file || mediaForm.processing) return;
                                     mediaForm.clearErrors();
-                                    mediaForm.post('/dd-phase3/ops/media', {
+                                    mediaForm.post(workspaceHref(`/monthly-updates/${update.id}/media`), {
                                         forceFormData: true,
                                         preserveScroll: true,
                                         onSuccess: () => {
