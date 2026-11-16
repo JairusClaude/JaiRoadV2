@@ -85,9 +85,11 @@ export function RecordEditor({
             record?.status === 'Completed' ? (record.complete_date ?? '') : '',
         description: record?.description ?? '',
     });
-    const eligibleEngineers = selectedProject
-        ? (managerChoicesByProject?.[String(selectedProject.id)] ?? engineers)
-        : engineers;
+    const eligibleEngineers = !selectedProject
+        ? []
+        : managerChoicesByProject
+          ? (managerChoicesByProject[String(selectedProject.id)] ?? [])
+          : engineers;
     const projectRecords = records.filter(
         (item) =>
             !('project_id' in item) || item.project_id === selectedProject?.id,
@@ -216,6 +218,10 @@ export function RecordEditor({
                                 disabled={!enabled || form.processing}
                                 invalid={Boolean(projectError)}
                                 onChange={(value) => {
+                                    if (value !== projectId) {
+                                        form.setData('engineers_id', '');
+                                        form.clearErrors('engineers_id');
+                                    }
                                     setProjectId(value);
                                     setProjectError('');
                                     form.clearErrors('quarter');

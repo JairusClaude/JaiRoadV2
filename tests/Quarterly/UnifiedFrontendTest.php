@@ -58,6 +58,32 @@ final class UnifiedFrontendTest extends PostgresTestCase
         $this->get(self::UI.'/maintenance-projects/'.$project.'/records/create')->assertNotFound();
     }
 
+    public function test_directory_create_returns_only_eligible_managers_for_each_project(): void
+    {
+        $f = $this->fixture('SuperAdmin');
+        $otherEngineer = $this->engineer();
+        $otherRoad = $this->road($otherEngineer);
+        $otherProject = (int) DB::table('jairoads_next.maintenance_projects')->insertGetId([
+            'project_title' => 'Project without an eligible account',
+            'road_coverage_id' => $otherRoad,
+            'created_by' => $f['user']->dd_user_account_id,
+        ]);
+
+        $this->get(self::UI.'/maintenance-records/create')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->component('MaintenanceProjects/Records/Create')
+            ->has('engineers', 0)
+            ->has('managerChoicesByProject.'.$f['project'], 1)
+            ->where('managerChoicesByProject.'.$f['project'].'.0.id', $f['engineer'])
+            ->has('managerChoicesByProject.'.$otherProject, 0));
+
+        $this->account('Engineer', $otherEngineer);
+        $this->get(self::UI.'/maintenance-records/create')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('managerChoicesByProject.'.$f['project'], 1)
+            ->where('managerChoicesByProject.'.$f['project'].'.0.id', $f['engineer'])
+            ->has('managerChoicesByProject.'.$otherProject, 1)
+            ->where('managerChoicesByProject.'.$otherProject.'.0.id', $otherEngineer));
+    }
+
     public function test_new_frontend_payload_persists_road_geometry_and_canonical_project_creator(): void
     {
         $f = $this->fixture('Engineer');

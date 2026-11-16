@@ -57,6 +57,16 @@ export function MaintenanceRecordForm({
     onSave: () => void;
     onCancel: () => void;
 }) {
+    const managerUnavailable =
+        mode === 'create' && (!project || engineers.length === 0);
+    const managerHint =
+        mode === 'create'
+            ? !project
+                ? 'Select a Maintenance Project first to load its eligible engineers.'
+                : engineers.length === 0
+                  ? 'No eligible managing engineers for this municipality. An active Engineer account must be linked to an active engineer profile and LGU assignment. A linked Admin may select themselves.'
+                  : 'Only eligible engineers assigned to this municipality are listed.'
+            : undefined;
     const required = (
         <span className="jr-required" aria-hidden="true">
             *
@@ -116,6 +126,7 @@ export function MaintenanceRecordForm({
             disabled={
                 !enabled ||
                 processing ||
+                (name === 'engineers_id' && managerUnavailable) ||
                 (mode === 'edit' &&
                     ['engineers_id', 'maintenance_year', 'quarter'].includes(
                         name,
@@ -309,21 +320,21 @@ export function MaintenanceRecordForm({
                                     mode === 'edit' &&
                                         originalEngineerId === null
                                         ? 'NULL (unassigned)'
-                                        : 'Select engineer',
+                                        : mode === 'create' && !project
+                                          ? 'Select project first'
+                                          : managerUnavailable
+                                            ? 'No eligible engineers'
+                                            : 'Select engineer',
                                     engineers.map((engineer) => ({
                                         value: String(engineer.id),
                                         label: engineerName(engineer),
                                     })),
-                                    preview || mode === 'create',
+                                    Boolean(managerHint) || preview,
                                 ),
-                                preview
-                                    ? mode === 'edit' &&
-                                      originalEngineerId &&
-                                      values.engineers_id !==
-                                          String(originalEngineerId)
-                                        ? 'The Managing Engineer assignment will change when you save this record.'
-                                        : 'Representative sample Engineers.'
-                                    : undefined,
+                                managerHint ??
+                                    (preview
+                                        ? 'Representative sample Engineers.'
+                                        : undefined),
                             )}
                             {field(
                                 'status',
@@ -444,7 +455,7 @@ export function MaintenanceRecordForm({
                             <Button
                                 type="submit"
                                 className="jr-primary"
-                                disabled={!enabled || processing}
+                                disabled={!enabled || processing || managerUnavailable}
                             >
                                 {processing
                                     ? 'Saving…'
