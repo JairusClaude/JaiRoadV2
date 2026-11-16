@@ -1,6 +1,6 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import {
     PermanentFileDeletionDialog,
     usePermanentFileDeletion,
@@ -39,6 +39,7 @@ export default function Form(parents: DocumentParents) {
     const deletion = usePermanentFileDeletion(() =>
         router.visit(workspaceHref('/maintenance-documents')),
     );
+    const [savedRemovalPending, setSavedRemovalPending] = useState(false);
     const fixed = parents.records.find((r) => r.id === parents.contextRecordId);
     const back = formReturn(page.url, parents.cancelUrl, [
         workspaceHref('/maintenance-documents'),
@@ -182,6 +183,17 @@ export default function Form(parents: DocumentParents) {
                                 {
                                     forceFormData: true,
                                     preserveScroll: true,
+                                    onSuccess: () => {
+                                        if (savedRemovalPending && doc?.delete_url) {
+                                            void deletion.open({
+                                                id: doc.id,
+                                                kind: 'document',
+                                                file_name: doc.file_name,
+                                                parent_label: `MaintenanceRecord #${doc.maintenance_id}`,
+                                                delete_url: doc.delete_url,
+                                            });
+                                        }
+                                    },
                                     onFinish: () => {
                                         lock.current = false;
                                     },
@@ -367,18 +379,9 @@ export default function Form(parents: DocumentParents) {
                                     form.clearErrors('attachment');
                                     form.setData('attachment', file);
                                 }}
-                                onRemoveSaved={
-                                    doc?.delete_url
-                                        ? () =>
-                                              deletion.open({
-                                                  id: doc.id,
-                                                  kind: 'document',
-                                                  file_name: doc.file_name,
-                                                  parent_label: `MaintenanceRecord #${doc.maintenance_id}`,
-                                                  delete_url: doc.delete_url!,
-                                              })
-                                        : undefined
-                                }
+                                savedRemovalPending={savedRemovalPending}
+                                onRemoveSaved={() => setSavedRemovalPending(true)}
+                                onUndoSavedRemoval={() => setSavedRemovalPending(false)}
                             />
                             <PermanentFileDeletionDialog deletion={deletion} />
                         </section>
