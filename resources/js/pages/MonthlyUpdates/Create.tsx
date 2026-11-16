@@ -136,7 +136,7 @@ export default function Create(parents: MonthlyCreateProps) {
                             if (!Number.isSafeInteger(savedId) || savedId < 1) return;
                             const uploadNext = (index: number) => {
                                 if (index >= selectedAttachments.length) return;
-                                router.post('/dd-phase3/ops/media', {
+                                router.post(workspaceHref(`/monthly-updates/${savedId}/media`), {
                                     monthly_update_id: savedId,
                                     file: selectedAttachments[index],
                                 }, {
