@@ -29,6 +29,7 @@ export default function Show({
         (page.props.canonicalFrontend === true && page.props.canWrite === true);
     const canEdit = update.can_edit ?? preview;
     const deletion = useMonthlyDeletion(directoryUrl.split('?')[1] ?? '');
+    const serverErrors = (page.props as { errors?: Record<string, string> }).errors ?? {};
     const mediaInput = useRef<HTMLInputElement>(null);
     const mediaForm = useForm<{ monthly_update_id: number; file: File | null }>({
         monthly_update_id: update.id,
@@ -232,7 +233,7 @@ export default function Show({
                                 {mediaForm.progress && (
                                     <p className="jr-field-hint" role="status">Uploading {mediaForm.progress.percentage}%</p>
                                 )}
-                                {mediaForm.errors.file && <p className="jr-field-error" role="alert">{mediaForm.errors.file}</p>}
+                                {(mediaForm.errors.file || serverErrors.file) && <p className="jr-field-error" role="alert">{mediaForm.errors.file || serverErrors.file}</p>}
                             </form>
                         )}
                         <MediaGallery key={update.id} media={media} />
