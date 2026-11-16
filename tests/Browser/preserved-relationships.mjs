@@ -85,11 +85,11 @@ export async function verifyPreservedRelationships({
         `${ui}${projectPath}/deletion-preview`,
         { headers: { Accept: 'application/json' } },
     );
-    assert.equal(blockedPreview.status(), 409);
+    assert.equal(blockedPreview.status(), 200);
     assert.equal(
         (
             await csrf(admin, `/dd-phase3/ui${projectPath}`, 'DELETE', {
-                confirmation_token: 'invalid',
+                confirmation_token: 'invalid', confirmation: 'YES',
             })
         ).status,
         422,
@@ -97,8 +97,8 @@ export async function verifyPreservedRelationships({
     await admin.goto(`${ui}${projectPath}`);
     assert.equal(
         await admin.getByRole('button', { name: 'Delete Project', exact: true }).count(),
-        0,
-        'Referenced project must not expose the deletion action',
+        1,
+        'Referenced project must expose the reviewed deletion action',
     );
     assert.equal((await props(admin, projectPath)).project.id, projectId);
     assert.equal((await props(admin, recordPath)).record.engineers_id, fixture.engineer_id);
@@ -133,6 +133,6 @@ export async function verifyPreservedRelationships({
     assert.equal(storage.counts.compensations, storageBefore);
 
     console.log(
-        'PASS: dependent project deletion and manager unassignment refused; original records and private files retained; empty project Cancel/confirmed deletion; no Storage deletion.',
+        'PASS: dependent project review is available; invalid confirmation and manager unassignment refused; original files retained; empty project Cancel/confirmed deletion.',
     );
 }

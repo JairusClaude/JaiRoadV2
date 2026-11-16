@@ -134,6 +134,9 @@ final class PermanentFileDeletion
             if ($existing !== null) {
                 $locked = DB::table(self::TABLE)->where('id', $existing->id)->lock('FOR UPDATE SKIP LOCKED')->first();
                 $actor = $this->actor($login);
+                if ($expectedPath !== null && $locked !== null && $locked->state === 'pending') {
+                    abort_unless($locked->object_path === $expectedPath, 409, 'A reviewed file changed. Refresh the preview.');
+                }
                 if ($locked !== null && $locked->state === 'pending') {
                     DB::table(self::TABLE)->where('id', $existing->id)->update(['requested_by' => $actor['account_id'], 'actor_role' => $actor['role'], 'actor_identifier' => 'DD-UserAccount#'.$actor['account_id']]);
                 }

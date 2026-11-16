@@ -36,7 +36,7 @@ BEFORE INSERT ON jairoads_next.audit_logs
 FOR EACH ROW EXECUTE FUNCTION jairoads_next.reject_restrictive_delete_audit();
 SQL);
 
-        $this->deleteJson($url, ['confirmation_token' => $token])->assertServerError();
+        $this->deleteJson($url, ['confirmation' => 'YES', 'confirmation_token' => $token])->assertServerError();
         $this->assertDatabaseHas('jairoads_next.maintenance_projects', ['id' => $f['project'], 'road_coverage_id' => $f['road']]);
         $this->assertDatabaseHas('jairoads_next.road_coverages', ['id' => $f['road']]);
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->where('action', 'DELETE')->count());
@@ -59,7 +59,7 @@ BEFORE DELETE ON jairoads_next.maintenance_projects
 FOR EACH ROW EXECUTE FUNCTION jairoads_next.reject_restrictive_project_delete();
 SQL);
 
-        $this->deleteJson($url, ['confirmation_token' => $token])->assertServerError();
+        $this->deleteJson($url, ['confirmation' => 'YES', 'confirmation_token' => $token])->assertServerError();
         $this->assertDatabaseHas('jairoads_next.maintenance_projects', ['id' => $f['project']]);
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->where('action', 'DELETE')->count());
         Http::assertNothingSent();
@@ -85,7 +85,7 @@ SQL);
                 __DIR__.'/preserved-history-worker.php',
                 (string) $f['user']->id,
                 $url,
-                base64_encode(json_encode(['confirmation_token' => $token], JSON_THROW_ON_ERROR)),
+                base64_encode(json_encode(['confirmation' => 'YES', 'confirmation_token' => $token], JSON_THROW_ON_ERROR)),
                 'DELETE',
             ]);
             $worker->setTimeout(30);
@@ -113,7 +113,7 @@ SQL);
 
             $this->assertTrue($worker->isSuccessful(), $worker->getErrorOutput().$worker->getOutput());
             $response = json_decode($worker->getOutput(), true, 512, JSON_THROW_ON_ERROR);
-            $this->assertSame(409, $response['status']);
+            $this->assertSame(422, $response['status']);
             $this->assertDatabaseHas('jairoads_next.maintenance_projects', ['id' => $f['project']]);
             $this->assertDatabaseHas('jairoads_next.maintenance_records', [
                 'id' => $record, 'project_id' => $f['project'], 'managing_engineer_id' => $f['engineer'],
