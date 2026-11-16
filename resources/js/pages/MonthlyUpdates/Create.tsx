@@ -1,5 +1,6 @@
 import '../../../css/maintenance-projects.css';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { PermanentFileDeletionDialog, usePermanentFileDeletion } from '@/components/files/permanent-file-deletion';
 import { useRef } from 'react';
 import { MonthlyUpdateForm } from '@/components/monthly-updates/monthly-update-form';
 import { formReturn, returnLabel } from '@/lib/form-navigation';
