@@ -117,6 +117,8 @@ export default function Create(parents: MonthlyCreateProps) {
 
                     submitting.current = true;
 
+                    const selectedAttachments = [...form.data.attachments];
+
                     if (page.props.canonicalFrontend === true) {
                         form.transform((data) => ({
                             ...data,
@@ -128,6 +130,23 @@ export default function Create(parents: MonthlyCreateProps) {
                     form.submit(update ? 'put' : 'post', parents.submitUrl, {
                         forceFormData: true,
                         preserveScroll: true,
+                        onSuccess: (responsePage) => {
+                            if (page.props.canonicalFrontend !== true || selectedAttachments.length === 0) return;
+                            const savedId = update?.id ?? Number((responsePage.props as { update?: { id?: number } }).update?.id ?? 0);
+                            if (!Number.isSafeInteger(savedId) || savedId < 1) return;
+                            const uploadNext = (index: number) => {
+                                if (index >= selectedAttachments.length) return;
+                                router.post('/dd-phase3/ops/media', {
+                                    monthly_update_id: savedId,
+                                    file: selectedAttachments[index],
+                                }, {
+                                    forceFormData: true,
+                                    preserveScroll: true,
+                                    onSuccess: () => uploadNext(index + 1),
+                                });
+                            };
+                            uploadNext(0);
+                        },
                         onFinish: () => {
                             submitting.current = false;
                         },
