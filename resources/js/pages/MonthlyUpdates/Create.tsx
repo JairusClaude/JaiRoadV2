@@ -117,6 +117,8 @@ export default function Create(parents: MonthlyCreateProps) {
 
                     submitting.current = true;
 
+                    const selectedAttachments = [...form.data.attachments];
+
                     if (page.props.canonicalFrontend === true) {
                         form.transform((data) => ({
                             ...data,
@@ -128,6 +130,27 @@ export default function Create(parents: MonthlyCreateProps) {
                     form.submit(update ? 'put' : 'post', parents.submitUrl, {
                         forceFormData: true,
                         preserveScroll: true,
+                        onSuccess: (responsePage) => {
+                            if (page.props.canonicalFrontend !== true || selectedAttachments.length === 0) return;
+                            const match = responsePage.url.match(new RegExp('/monthly-updates/([0-9]+)(?:[/?#]|$)'));
+                            const savedId = update?.id ?? Number(match?.[1] ?? 0);
+                            if (!Number.isSafeInteger(savedId) || savedId < 1) {
+                                form.setError('attachments', 'The update was saved, but its media could not be attached. Open the saved update and retry the upload.');
+                                return;
+                            }
+                            const uploadNext = (index: number) => {
+                                if (index >= selectedAttachments.length) return;
+                                router.post(workspaceHref(`/monthly-updates/${savedId}/media`), {
+                                    file: selectedAttachments[index],
+                                }, {
+                                    forceFormData: true,
+                                    preserveScroll: true,
+                                    onSuccess: () => uploadNext(index + 1),
+                                    onError: (errors) => form.setError('attachments', errors.file ?? 'The update was saved, but a media file could not be uploaded. Open the saved update and retry.'),
+                                });
+                            };
+                            uploadNext(0);
+                        },
                         onFinish: () => {
                             submitting.current = false;
                         },
