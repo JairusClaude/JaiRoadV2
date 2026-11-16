@@ -1,4 +1,4 @@
-import { router, usePage } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { useState } from 'react';
 import {
     DeletionCounts,
@@ -89,7 +89,7 @@ export function RecordDeletionDialog({
                     ? 'Delete maintenance record?'
                     : `Delete ${count} maintenance records?`
             }
-            description="Its monthly updates, media and maintenance documents will also be deleted. This cannot be undone. The parent project and other records are preserved."
+            description="Only maintenance records without related monthly updates or maintenance documents can be deleted. This cannot be undone. The parent project, other records and private files are preserved."
             confirmLabel={
                 count === 1 ? 'Delete Record' : `Delete ${count} Records`
             }
@@ -108,6 +108,7 @@ export function RecordDeletionDialog({
                         <DeletionCounts
                             counts={record?.deletion_counts}
                             includeRecords={false}
+                            preserve
                         />
                     </li>
                 ))}

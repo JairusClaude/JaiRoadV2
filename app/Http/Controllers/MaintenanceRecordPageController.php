@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Services\DuplicateMaintenancePeriod;
+use App\Services\OperationAudit;
 use App\Services\PreservedProjectDeletion;
 use App\Services\RoleAccess;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Response;
 
 /**
@@ -181,15 +185,7 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
         $actor = $this->actor($request);
         abort_unless(RoleAccess::canDeleteOperations($actor['role']), 403, 'Only administrators may delete maintenance records.');
 
-        DB::transaction(function () use ($id): void {
-            $updateIds = DB::table('jairoads_next.monthly_updates')->where('maintenance_id', $id)->pluck('id');
-            if ($updateIds->isNotEmpty()) {
-                DB::table('jairoads_next.media')->whereIn('monthly_update_id', $updateIds)->delete();
-                DB::table('jairoads_next.monthly_updates')->where('maintenance_id', $id)->delete();
-            }
-            DB::table('jairoads_next.maintenance_documents')->where('maintenance_id', $id)->delete();
-            DB::table('jairoads_next.maintenance_records')->where('id', $id)->delete();
-        });
+        $this->deleteEmptyRecords($actor, [$id]);
 
         return redirect(self::BASE.'/maintenance-records')->with('dd_operations_status', 'Maintenance record deleted successfully.');
     }
@@ -203,19 +199,57 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
         $actor = $this->actor($request);
         abort_unless(RoleAccess::canDeleteOperations($actor['role']), 403, 'Only administrators may delete maintenance records.');
 
-        $ids = $request->input('record_ids', []);
-        if (is_array($ids) && count($ids) > 0) {
-            DB::transaction(function () use ($ids): void {
-                $updateIds = DB::table('jairoads_next.monthly_updates')->whereIn('maintenance_id', $ids)->pluck('id');
-                if ($updateIds->isNotEmpty()) {
-                    DB::table('jairoads_next.media')->whereIn('monthly_update_id', $updateIds)->delete();
-                    DB::table('jairoads_next.monthly_updates')->whereIn('maintenance_id', $ids)->delete();
-                }
-                DB::table('jairoads_next.maintenance_documents')->whereIn('maintenance_id', $ids)->delete();
-                DB::table('jairoads_next.maintenance_records')->whereIn('id', $ids)->delete();
-            });
-        }
+        $validated = $request->validate([
+            'record_ids' => ['required', 'array', 'min:1', 'max:100'],
+            'record_ids.*' => ['required', 'integer', 'min:1', 'distinct'],
+        ]);
+        $ids = array_map('intval', $validated['record_ids']);
+        $this->deleteEmptyRecords($actor, $ids);
 
         return redirect(self::BASE.'/maintenance-records')->with('dd_operations_status', 'Selected maintenance records deleted successfully.');
+    }
+
+    /** Delete only empty, attached records; never cascade over private files or preserved history.
+     *
+     * @param  array{account_id:int,role:string,engineer_id:?int}  $actor
+     * @param  list<int>  $ids
+     */
+    private function deleteEmptyRecords(array $actor, array $ids): void
+    {
+        sort($ids);
+        try {
+            DB::transaction(function () use ($actor, $ids): void {
+                $records = DB::table('jairoads_next.maintenance_records')
+                    ->whereIn('id', $ids)->orderBy('id')->lockForUpdate()->get();
+                abort_unless($records->count() === count($ids), 404);
+                foreach ($records as $record) {
+                    $id = (int) $record->id;
+                    if ($record->project_id === null
+                        || DB::table('jairoads_next.monthly_updates')->where('maintenance_id', $id)->exists()
+                        || DB::table('jairoads_next.maintenance_documents')->where('maintenance_id', $id)->exists()) {
+                        throw ValidationException::withMessages([
+                            'delete' => "Maintenance Record #{$id} cannot be deleted while it has related monthly updates or documents, or is preserved history. Remove related data through its authorized workflow first.",
+                        ]);
+                    }
+                }
+
+                foreach ($records as $record) {
+                    $id = (int) $record->id;
+                    $deleted = DB::table('jairoads_next.maintenance_records')->where('id', $id)->delete();
+                    if ($deleted !== 1 || DB::table('jairoads_next.maintenance_records')->where('id', $id)->exists()) {
+                        throw ValidationException::withMessages(['delete' => "Maintenance Record #{$id} could not be deleted. No records were removed."]);
+                    }
+                    app(OperationAudit::class)->record($actor, 'DELETE', 'MaintenanceRecord', $id,
+                        'Empty maintenance record deleted after restrictive dependency checks.', [], (array) $record);
+                }
+            });
+        } catch (QueryException $error) {
+            if ((string) $error->getCode() === '23503') {
+                throw ValidationException::withMessages(['delete' => 'A selected maintenance record is still referenced by other data. No records were removed.']);
+            }
+
+            report($error);
+            throw ValidationException::withMessages(['delete' => 'Maintenance record deletion failed. No records were removed. Contact an administrator if the problem continues.']);
+        }
     }
 }

@@ -84,6 +84,47 @@ final class UnifiedFrontendTest extends PostgresTestCase
             ->where('managerChoicesByProject.'.$otherProject.'.0.id', $otherEngineer));
     }
 
+    public function test_empty_record_deletion_preserves_parent_siblings_and_audits(): void
+    {
+        $f = $this->fixture('SuperAdmin');
+        $record = $this->record($f);
+        $sibling = (int) DB::table('jairoads_next.maintenance_records')->insertGetId(
+            $this->recordData($f['project'], $f['engineer'], 'Q2') + ['created_by' => $f['user']->dd_user_account_id]
+        );
+
+        $this->delete(self::UI.'/maintenance-records/'.$record)->assertSessionHasNoErrors()
+            ->assertRedirect(self::UI.'/maintenance-records');
+        $this->assertDatabaseMissing('jairoads_next.maintenance_records', ['id' => $record]);
+        $this->assertDatabaseHas('jairoads_next.maintenance_records', ['id' => $sibling]);
+        $this->assertDatabaseHas('jairoads_next.maintenance_projects', ['id' => $f['project']]);
+        $this->assertDatabaseHas('jairoads_next.audit_logs', ['action' => 'DELETE', 'entity_type' => 'MaintenanceRecord', 'entity_id' => $record]);
+    }
+
+    public function test_record_deletion_rejects_dependencies_and_bulk_is_atomic(): void
+    {
+        $f = $this->fixture('SuperAdmin');
+        $record = $this->record($f);
+        $update = $this->monthly($f, $record);
+        $document = $this->document($f, $record);
+        $empty = (int) DB::table('jairoads_next.maintenance_records')->insertGetId(
+            $this->recordData($f['project'], $f['engineer'], 'Q2') + ['created_by' => $f['user']->dd_user_account_id]
+        );
+        Http::preventStrayRequests();
+
+        $this->deleteJson(self::UI.'/maintenance-records/'.$record)->assertUnprocessable()->assertJsonValidationErrors('delete');
+        $this->deleteJson(self::UI.'/maintenance-records/bulk', ['record_ids' => [$empty, $record]])
+            ->assertUnprocessable()->assertJsonValidationErrors('delete');
+        $this->assertDatabaseHas('jairoads_next.maintenance_records', ['id' => $record]);
+        $this->assertDatabaseHas('jairoads_next.maintenance_records', ['id' => $empty]);
+        $this->assertDatabaseHas('jairoads_next.monthly_updates', ['id' => $update]);
+        $this->assertDatabaseHas('jairoads_next.maintenance_documents', ['id' => $document]);
+        $this->assertSame(0, DB::table('jairoads_next.audit_logs')->where('action', 'DELETE')->count());
+        Http::assertNothingSent();
+
+        $this->withSession(['password_hash_web' => null])->actingAs($this->account('Viewer'))
+            ->deleteJson(self::UI.'/maintenance-records/'.$empty)->assertForbidden();
+    }
+
     public function test_new_frontend_payload_persists_road_geometry_and_canonical_project_creator(): void
     {
         $f = $this->fixture('Engineer');
