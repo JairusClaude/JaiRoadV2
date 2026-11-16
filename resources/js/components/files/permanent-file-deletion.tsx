@@ -120,6 +120,7 @@ export function usePermanentFileDeletion(
             setProcessing(true);
             setError('');
 
+            let completed = false;
             try {
                 const response = await fetch(selected.delete_url, {
                     method: 'DELETE',
@@ -148,7 +149,7 @@ export function usePermanentFileDeletion(
 
                 setSelected(null);
                 toast.success(result.message);
-                onCompleted();
+                completed = true;
             } catch {
                 setError(
                     'Deletion was not confirmed. It may be pending. Retry Delete or contact an administrator; do not assume the file is intact or permanently removed.',
@@ -156,6 +157,7 @@ export function usePermanentFileDeletion(
             } finally {
                 locked.current = false;
                 setProcessing(false);
+                if (completed) onCompleted();
             }
         },
     };
