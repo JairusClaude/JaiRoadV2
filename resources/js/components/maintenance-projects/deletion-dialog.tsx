@@ -1,4 +1,5 @@
 import * as Dialog from '@radix-ui/react-dialog';
+import { usePage } from '@inertiajs/react';
 import { useEffect, useId, useState } from 'react';
 import type { ReactNode, RefObject } from 'react';
 import { Button } from '@/components/ui/button';
@@ -56,6 +57,8 @@ export function DeletionCounts({
     );
 }
 
+export type DeleteConfirmation = { confirmation: string; captcha_token: string; captcha_answer: string };
+
 export function DeletionDialog({
     open,
     title,
@@ -66,6 +69,7 @@ export function DeletionDialog({
     confirmLabel,
     confirmDisabled = false,
     requireYes = false,
+    challengeScope,
     onClose,
     onConfirm,
     returnFocus,
@@ -79,16 +83,40 @@ export function DeletionDialog({
     confirmLabel: string;
     confirmDisabled?: boolean;
     requireYes?: boolean;
+    challengeScope?: 'project' | 'record';
     onClose: () => void;
-    onConfirm: () => void;
+    onConfirm: (confirmation?: DeleteConfirmation) => void;
     returnFocus?: RefObject<HTMLElement | null>;
 }) {
     const [confirmation, setConfirmation] = useState('');
     const confirmationId = useId();
+    const preview = usePage().props.previewOnly === true;
+    const needsChallenge = !!challengeScope && !preview;
+    const [challenge, setChallenge] = useState<{ question: string; token: string } | null>(null);
+    const [answer, setAnswer] = useState('');
+    const [challengeError, setChallengeError] = useState('');
+    const [revision, setRevision] = useState(0);
     useEffect(() => {
         setConfirmation('');
     }, [open, title]);
-    const confirmed = !requireYes || confirmation === 'YES';
+    useEffect(() => {
+        setChallenge(null);
+        setAnswer('');
+        setChallengeError('');
+        if (!open || !needsChallenge) return;
+        const controller = new AbortController();
+        fetch(`/dd-phase3/ui/deletion-challenge?scope=${challengeScope}`, {
+            headers: { Accept: 'application/json' }, cache: 'no-store', signal: controller.signal,
+        }).then(async (response) => {
+            if (!response.ok) throw new Error('Verification unavailable.');
+            const data = await response.json();
+            if (!controller.signal.aborted) setChallenge(data);
+        }).catch(() => {
+            if (!controller.signal.aborted) setChallengeError('Verification unavailable. Request a new challenge.');
+        });
+        return () => controller.abort();
+    }, [open, title, needsChallenge, challengeScope, revision]);
+    const confirmed = (!requireYes || confirmation === 'YES') && (!needsChallenge || (!!challenge && /^\d{1,3}$/.test(answer)));
 
     return (
         <Dialog.Root
@@ -129,6 +157,15 @@ export function DeletionDialog({
                             <input id={confirmationId} type="text" autoComplete="off" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Type YES" disabled={processing} className="w-full rounded-md border border-red-300 bg-white px-3 py-2 text-sm text-slate-900" />
                         </div>
                     )}
+                    {needsChallenge && (
+                        <div className="mt-3 grid gap-2 rounded-xl border border-slate-300 p-3">
+                            <label htmlFor={confirmationId + '-captcha'} className="text-sm font-semibold">Verification: solve the equation <span className="jr-required">*</span></label>
+                            <div className="rounded-md bg-slate-100 p-3 text-lg font-semibold" aria-live="polite">{challenge ? challenge.question + ' = ?' : 'Loading verification…'}</div>
+                            <input id={confirmationId + '-captcha'} inputMode="numeric" autoComplete="off" value={answer} onChange={(event) => setAnswer(event.target.value)} placeholder="Enter answer" disabled={processing || !challenge} className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+                            <Button type="button" variant="outline" disabled={processing} onClick={() => setRevision((value) => value + 1)}>New challenge</Button>
+                            {challengeError && <p role="alert" className="jr-field-error">{challengeError}</p>}
+                        </div>
+                    )}
                     {error && (
                         <p className="jr-field-error" role="alert">
                             {error}
@@ -148,7 +185,12 @@ export function DeletionDialog({
                             className="jr-danger"
                             variant="destructive"
                             disabled={processing || confirmDisabled || !confirmed}
-                            onClick={() => { if (confirmed && !confirmDisabled && !processing) onConfirm(); }}
+                            onClick={() => {
+                                if (confirmed && !confirmDisabled && !processing) {
+                                    onConfirm(needsChallenge && challenge ? { confirmation, captcha_token: challenge.token, captcha_answer: answer } : undefined);
+                                    if (needsChallenge) setRevision((value) => value + 1);
+                                }
+                            }}
                         >
                             {processing ? 'Deleting…' : confirmLabel}
                         </Button>

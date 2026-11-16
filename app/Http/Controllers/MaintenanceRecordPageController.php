@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Services\DuplicateMaintenancePeriod;
+use App\Services\DeletionChallenge;
 use App\Services\OperationAudit;
 use App\Services\PreservedProjectDeletion;
 use App\Services\RoleAccess;
@@ -188,6 +189,7 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
 
         $actor = $this->actor($request);
         abort_unless(RoleAccess::canDeleteOperations($actor['role']), 403, 'Only administrators may delete maintenance records.');
+        app(DeletionChallenge::class)->verify($request, $actor['account_id'], 'record');
 
         $this->deleteEmptyRecords($actor, [$id]);
 
@@ -202,6 +204,7 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
 
         $actor = $this->actor($request);
         abort_unless(RoleAccess::canDeleteOperations($actor['role']), 403, 'Only administrators may delete maintenance records.');
+        app(DeletionChallenge::class)->verify($request, $actor['account_id'], 'record');
 
         $validated = $request->validate([
             'record_ids' => ['required', 'array', 'min:1', 'max:100'],

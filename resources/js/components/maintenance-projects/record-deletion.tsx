@@ -3,6 +3,7 @@ import { useState } from 'react';
 import {
     DeletionCounts,
     DeletionDialog,
+    type DeleteConfirmation,
 } from '@/components/maintenance-projects/deletion-dialog';
 import type { MaintenanceRecordSummary } from '@/types/maintenance-records';
 
@@ -28,7 +29,7 @@ export function useRecordDeletion(returnUrl?: string) {
         setError('');
         setTargets(list);
     };
-    const confirm = () => {
+    const confirm = (verification?: DeleteConfirmation) => {
         if (!targets?.length || processing) {
             return;
         }
@@ -45,6 +46,7 @@ export function useRecordDeletion(returnUrl?: string) {
                     ? `${url}?${new URLSearchParams({ return_to: returnUrl })}`
                     : url,
                 {
+                    data: verification ?? {},
                     preserveScroll: true,
                     onError: (errors) =>
                         setError(Object.values(errors).join(' ')),
@@ -54,7 +56,7 @@ export function useRecordDeletion(returnUrl?: string) {
             );
         } else {
             router.delete(`/dd-phase3/ui/maintenance-records/bulk`, {
-                data: { record_ids: targets.map((t) => t.id) },
+                data: { ...verification, record_ids: targets.map((t) => t.id) },
                 preserveScroll: true,
                 onError: (errors) => setError(Object.values(errors).join(' ')),
                 onSuccess: () => setTargets(null),
@@ -84,6 +86,7 @@ export function RecordDeletionDialog({
     return (
         <DeletionDialog
             requireYes
+            challengeScope="record"
             open={targets !== null}
             title={
                 count === 1

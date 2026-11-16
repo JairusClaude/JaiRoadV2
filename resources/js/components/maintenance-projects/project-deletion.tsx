@@ -1,7 +1,7 @@
 import { router, usePage } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { DeletionCounts, DeletionDialog } from '@/components/maintenance-projects/deletion-dialog';
+import { DeletionCounts, DeletionDialog, type DeleteConfirmation } from '@/components/maintenance-projects/deletion-dialog';
 import { workspaceHref } from '@/lib/workspace-navigation';
 import type { DependentCounts, ProjectSummary } from '@/types/maintenance-projects';
 
@@ -58,7 +58,7 @@ export function useProjectDeletion(onDeleted?: () => void) {
             if (request === generation.current) setReviewing(false);
         }
     };
-    const confirm = async () => {
+    const confirm = async (verification?: DeleteConfirmation) => {
         if (!projects?.length || pending.current || reviewing ||
             (!preview && (impacts.length !== projects.length || impacts.some((item) => !item.can_delete)))) return;
         pending.current = true;
@@ -75,30 +75,30 @@ export function useProjectDeletion(onDeleted?: () => void) {
         }
         const cookie = document.cookie.split('; ').find((value) => value.startsWith('XSRF-TOKEN='));
         const xsrf = cookie ? decodeURIComponent(cookie.slice(11)) : '';
-        const completed: number[] = [];
         try {
-            for (const impact of impacts) {
-                try {
-                    const response = await fetch(`/dd-phase3/ui/maintenance-projects/${impact.project.id}`, {
-                        method: 'DELETE',
-                        headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-XSRF-TOKEN': xsrf },
-                        body: JSON.stringify({ confirmation_token: impact.confirmation_token, confirmation: 'YES' }),
-                    });
-                    const data = await response.json();
-                    if (!response.ok || data.state !== 'completed') {
-                        throw new Error(data.errors?.confirmation_token?.[0] ?? data.errors?.file?.[0] ?? data.message ?? 'Deletion not confirmed.');
-                    }
-                    completed.push(impact.project.id);
-                } catch (reason) {
-                    setError(`${completed.length} project(s) deleted. ${impact.project.project_title}: ${reason instanceof Error ? reason.message : 'Deletion not confirmed.'} Close and refresh the page to review remaining data.`);
-                    setImpacts([]);
-                    return;
-                }
+            if (!verification) throw new Error('Complete verification first.');
+            const single = impacts.length === 1;
+            const response = await fetch(single ? `/dd-phase3/ui/maintenance-projects/${impacts[0].project.id}` : '/dd-phase3/ui/maintenance-projects/bulk', {
+                method: 'DELETE',
+                headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-XSRF-TOKEN': xsrf },
+                body: JSON.stringify({
+                    ...verification,
+                    ...(single ? { confirmation_token: impacts[0].confirmation_token } : {
+                        project_ids: impacts.map((item) => item.project.id),
+                        confirmation_tokens: Object.fromEntries(impacts.map((item) => [item.project.id, item.confirmation_token])),
+                    }),
+                }),
+            });
+            const data = await response.json();
+            if (!response.ok || data.state !== 'completed') {
+                throw new Error(data.errors?.captcha_answer?.[0] ?? data.errors?.confirmation_token?.[0] ?? data.errors?.file?.[0] ?? data.message ?? 'Deletion not confirmed.');
             }
             setProjects(null);
-            toast.success(`Successfully deleted ${completed.length} project(s).`);
+            toast.success(data.message);
             onDeleted?.();
             router.visit(workspaceHref('/maintenance-projects'));
+        } catch (reason) {
+            setError(reason instanceof Error ? reason.message : 'Deletion not confirmed. Refresh and review remaining data.');
         } finally {
             pending.current = false;
             setProcessing(false);
@@ -113,6 +113,7 @@ export function ProjectDeletionDialog({ deletion }: { deletion: ReturnType<typeo
     return (
         <DeletionDialog
             requireYes
+            challengeScope="project"
             open={projects !== null}
             title={count === 1 ? 'Delete project?' : `Delete ${count} projects?`}
             description="Permanently delete the selected projects, their maintenance records, monthly updates, documents and private media. This cannot be undone. Road coverages, LGUs, engineers, user accounts and audit history remain."

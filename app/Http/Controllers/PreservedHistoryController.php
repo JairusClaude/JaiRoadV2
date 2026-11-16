@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Services\AccountIdentityResolver;
+use App\Services\DeletionChallenge;
 use App\Services\PreservedProjectDeletion;
 use App\Services\RoleAccess;
 use Illuminate\Database\Query\Builder;
@@ -30,6 +31,15 @@ final class PreservedHistoryController extends Controller
         return $login;
     }
 
+    public function challenge(Request $request): JsonResponse
+    {
+        $login = $this->login($request);
+        $v = $request->validate(['scope' => ['required', 'in:project,record']]);
+        $actor = $this->identities->resolve($login);
+        return response()->json(app(DeletionChallenge::class)->issue($actor['account_id'], $v['scope']))
+            ->header('Cache-Control', 'private, no-store');
+    }
+
     public function preview(Request $request, int $id): JsonResponse
     {
         return response()->json($this->deletions->preview($this->login($request), $id))->header('Cache-Control', 'private, no-store');
@@ -39,6 +49,7 @@ final class PreservedHistoryController extends Controller
     {
         $login = $this->login($request);
         $v = $request->validate(['confirmation_token' => ['required', 'string'], 'confirmation' => ['required', 'in:YES']]);
+        app(DeletionChallenge::class)->verify($request, $this->identities->resolve($login)['account_id'], 'project');
         $this->deletions->confirm($login, $id, $v['confirmation_token']);
 
         if ($request->expectsJson()) {
@@ -52,13 +63,14 @@ final class PreservedHistoryController extends Controller
     {
         $login = $this->login($request);
         $v = $request->validate([
-            'project_ids' => ['required', 'array'],
+            'project_ids' => ['required', 'array', 'min:1', 'max:100'],
             'project_ids.*' => ['integer', 'distinct'],
             'confirmation' => ['required', 'in:YES'],
             'confirmation_tokens' => ['required', 'array'],
             'confirmation_tokens.*' => ['required', 'string'],
         ]);
 
+        app(DeletionChallenge::class)->verify($request, $this->identities->resolve($login)['account_id'], 'project');
         foreach ($v['project_ids'] as $id) {
             if (! isset($v['confirmation_tokens'][(string) $id])) {
                 throw \Illuminate\Validation\ValidationException::withMessages(['confirmation_tokens' => 'Review all selected projects first.']);
