@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\User;
+use App\Services\Files\PermanentFileDeletion;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
@@ -12,10 +13,9 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Restrictive MaintenanceProject deletion.
+ * Explicit reviewed MaintenanceProject deletion.
  *
- * A project may be deleted only when it has no dependent
- * MaintenanceRecords. Required relationships are never detached.
+ * Delete reviewed dependencies first. Required relationships are never detached.
  *
  * Optional historical-context support is retained for reading
  * previously detached records, not for creating new detachments.
@@ -28,7 +28,8 @@ final class PreservedProjectDeletion
 
     public function __construct(
         private AccountIdentityResolver $identities,
-        private OperationAudit $audit
+        private OperationAudit $audit,
+        private PermanentFileDeletion $files
     ) {}
 
     /**
@@ -139,6 +140,10 @@ final class PreservedProjectDeletion
             'road' => $road,
             'lgu' => $lgu,
             'records' => $records,
+            'updates' => $updates,
+            'documents' => $documents,
+            'media' => $media,
+            'business_fingerprint' => hash('sha256', json_encode([$project, $road, $lgu, $records, $updates], JSON_THROW_ON_ERROR)),
             'fingerprint' => hash(
                 'sha256',
                 json_encode(
@@ -164,7 +169,7 @@ final class PreservedProjectDeletion
     }
 
     /**
-     * Generate a confirmation token only for an empty project.
+     * Generate a confirmation token for the project and its reviewed dependencies.
      *
      * @return array<string,mixed>
      */
@@ -179,13 +184,6 @@ final class PreservedProjectDeletion
 
             abort_unless($this->actor($login) === $actor, 403);
 
-            // Final DD: a referenced parent cannot be deleted.
-            abort_if(
-                $impact['records']->isNotEmpty(),
-                409,
-                'This project has MaintenanceRecords and cannot be deleted.'
-            );
-
             return [
                 'project' => [
                     'id' => $id,
@@ -196,6 +194,7 @@ final class PreservedProjectDeletion
                     'road_name' => $impact['road']->road_name,
                 ],
                 'counts' => $impact['counts'],
+                'can_delete' => ($impact['documents']->isEmpty() && $impact['media']->isEmpty()) || $this->files->operationallyEnabled(),
                 'confirmation_token' => Crypt::encryptString(
                     json_encode(
                         [
@@ -212,7 +211,7 @@ final class PreservedProjectDeletion
     }
 
     /**
-     * Delete only an empty MaintenanceProject after confirmation.
+     * Delete reviewed project data after confirmation.
      *
      * Never detach MaintenanceRecords or clear required foreign keys.
      */
@@ -242,22 +241,10 @@ final class PreservedProjectDeletion
             $this->stale();
         }
 
-        DB::transaction(function () use (
-            $login,
-            $actor,
-            $id,
-            $claim
-        ): void {
+        $approved = DB::transaction(function () use ($login, $actor, $id, $claim): array {
             DB::select('SELECT pg_advisory_xact_lock_shared(1927710916)');
 
             $impact = $this->inspect($login, $id);
-
-            // Never remove a project while records still reference it.
-            abort_if(
-                $impact['records']->isNotEmpty(),
-                409,
-                'This project has MaintenanceRecords and cannot be deleted.'
-            );
 
             $account = DB::table('jairoads_next.user_accounts')
                 ->where('id', $actor['account_id'])
@@ -283,6 +270,55 @@ final class PreservedProjectDeletion
                 $this->stale();
             }
 
+            return $impact;
+        });
+
+        // Each file has its own durable deletion intent. Do not wrap external
+        // Storage operations in the parent SQL transaction.
+        $targets = [];
+        foreach (['media' => 'media', 'documents' => 'document'] as $key => $kind) {
+            foreach ($approved[$key] as $file) {
+                $targets[] = [$kind, $file];
+            }
+        }
+        if ($targets !== []) {
+            abort_unless($this->files->operationallyEnabled(), 503, 'Private file deletion is unavailable. No project deletion has started.');
+            foreach ($targets as [$kind, $file]) {
+                $this->files->preflight($login, $kind, (int) $file->id, (string) $file->file_path);
+            }
+            foreach ($targets as [$kind, $file]) {
+                abort_unless($this->actor($login) === $actor, 403);
+                $result = $this->files->delete($login, $kind, (int) $file->id, (string) $file->file_path);
+                if ($result['state'] !== 'completed') {
+                    throw ValidationException::withMessages([
+                        'confirmation_token' => 'A file deletion is pending. The project and maintenance records remain. Some approved files may already be deleted; refresh the preview to retry.',
+                    ]);
+                }
+            }
+        }
+
+        DB::transaction(function () use ($login, $actor, $id, $approved): void {
+            DB::select('SELECT pg_advisory_xact_lock_shared(1927710916)');
+            $impact = $this->inspect($login, $id);
+            $account = DB::table('jairoads_next.user_accounts')->where('id', $actor['account_id'])->sharedLock()->first(['engineer_id']);
+            if ($account?->engineer_id !== null) {
+                DB::table('jairoads_next.engineers')->where('id', $account->engineer_id)->sharedLock()->first(['id']);
+            }
+            abort_unless($this->actor($login) === $actor, 403);
+            if (! hash_equals($approved['business_fingerprint'], $impact['business_fingerprint'])
+                || $impact['documents']->isNotEmpty() || $impact['media']->isNotEmpty()) {
+                throw ValidationException::withMessages([
+                    'confirmation_token' => 'Project data changed during deletion. The project and maintenance records remain; refresh to review remaining data. Approved files already removed cannot be restored.',
+                ]);
+            }
+            foreach (['updates' => ['monthly_updates', 'MonthlyUpdate'], 'records' => ['maintenance_records', 'MaintenanceRecord']] as $key => [$table, $entity]) {
+                foreach ($impact[$key] as $row) {
+                    $childId = (int) $row->id;
+                    $query = DB::table('jairoads_next.'.$table)->where('id', $childId);
+                    abort_unless($query->delete() === 1 && ! $query->exists(), 409, 'A related record could not be deleted.');
+                    $this->audit->record($actor, 'DELETE', $entity, $childId, 'Deleted as part of confirmed MaintenanceProject deletion.', [], (array) $row);
+                }
+            }
             // The database's restrictive foreign keys remain authoritative.
             try {
                 abort_unless(
@@ -309,7 +345,7 @@ final class PreservedProjectDeletion
                 'DELETE',
                 'MaintenanceProject',
                 $id,
-                'Empty MaintenanceProject deleted after restrictive FK validation.',
+                'MaintenanceProject and reviewed dependent data deleted.',
                 [],
                 (array) $impact['project']
             );

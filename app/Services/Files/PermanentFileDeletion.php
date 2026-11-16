@@ -101,8 +101,26 @@ final class PermanentFileDeletion
             'delete_url' => $enabled ? '/dd-phase3/files/'.$kind.'/'.$id : null];
     }
 
+    /** Verify the approved target without making a Storage deletion. */
+    public function preflight(User $login, string $kind, int $id, string $expectedPath): void
+    {
+        $this->actor($login);
+        abort_unless($this->operationallyEnabled(), 503);
+        $row = $this->file($kind, $id)->first();
+        abort_unless($row !== null && (string) $row->file_path === $expectedPath, 409, 'A reviewed file changed. Refresh the preview.');
+        $this->parentExists((int) $row->maintenance_id);
+        $storage = $this->storage($kind);
+        abort_unless($storage->configured(), 503, 'Private file deletion is unavailable.');
+        try {
+            $storage->permanentLocation($expectedPath, (int) ($row->monthly_update_id ?? $row->maintenance_id));
+            $this->exclusiveObject($kind, $id, $expectedPath);
+        } catch (\RuntimeException) {
+            throw ValidationException::withMessages(['confirmation_token' => 'A reviewed file requires administrator review before deletion.']);
+        }
+    }
+
     /** @return array{state:string,message:string} */
-    public function delete(User $login, string $kind, int $id): array
+    public function delete(User $login, string $kind, int $id, ?string $expectedPath = null): array
     {
         $this->actor($login);
         $this->table($kind);
@@ -110,7 +128,7 @@ final class PermanentFileDeletion
         // Preserve a durable request before external I/O. Every attempt also
         // checks live authority; another active administrator may explicitly
         // reconfirm a blocked request, preserving its original initiator.
-        $operation = DB::transaction(function () use ($login, $kind, $id): int {
+        $operation = DB::transaction(function () use ($login, $kind, $id, $expectedPath): int {
             DB::select('SELECT pg_advisory_xact_lock_shared(1927710916)');
             $existing = DB::table(self::TABLE)->where('kind', $kind)->where('entity_id', $id)->first(['id']);
             if ($existing !== null) {
@@ -129,6 +147,7 @@ final class PermanentFileDeletion
 
                 return (int) $existing->id;
             }
+            abort_unless($expectedPath === null || (string) $row->file_path === $expectedPath, 409, 'A reviewed file changed. Refresh the preview.');
             $actor = $this->actor($login); // Recheck after any lock wait.
             $this->parentExists((int) $row->maintenance_id);
             $storage = $this->storage($kind);

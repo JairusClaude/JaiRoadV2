@@ -38,14 +38,14 @@ final class PreservedHistoryController extends Controller
     public function delete(Request $request, int $id): JsonResponse|RedirectResponse
     {
         $login = $this->login($request);
-        $v = $request->validate(['confirmation_token' => ['required', 'string']]);
+        $v = $request->validate(['confirmation_token' => ['required', 'string'], 'confirmation' => ['required', 'in:YES']]);
         $this->deletions->confirm($login, $id, $v['confirmation_token']);
 
         if ($request->expectsJson()) {
-            return response()->json(['state' => 'completed', 'message' => 'Empty MaintenanceProject deleted successfully.']);
+            return response()->json(['state' => 'completed', 'message' => 'Maintenance project and reviewed dependent data deleted successfully.']);
         }
 
-        return redirect('/dd-phase3/ui/maintenance-projects')->with('dd_operations_status', 'Empty MaintenanceProject deleted successfully.');
+        return redirect('/dd-phase3/ui/maintenance-projects')->with('dd_operations_status', 'Maintenance project and reviewed dependent data deleted successfully.');
     }
 
     public function bulkDelete(Request $request): JsonResponse|RedirectResponse
@@ -53,26 +53,33 @@ final class PreservedHistoryController extends Controller
         $login = $this->login($request);
         $v = $request->validate([
             'project_ids' => ['required', 'array'],
-            'project_ids.*' => ['integer'],
+            'project_ids.*' => ['integer', 'distinct'],
+            'confirmation' => ['required', 'in:YES'],
+            'confirmation_tokens' => ['required', 'array'],
+            'confirmation_tokens.*' => ['required', 'string'],
         ]);
 
+        foreach ($v['project_ids'] as $id) {
+            if (! isset($v['confirmation_tokens'][(string) $id])) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['confirmation_tokens' => 'Review all selected projects first.']);
+            }
+        }
         $deletedCount = 0;
         $failedProjects = [];
 
         foreach ($v['project_ids'] as $id) {
             try {
-                $preview = $this->deletions->preview($login, (int) $id);
-                $this->deletions->confirm($login, (int) $id, $preview['confirmation_token']);
+                $this->deletions->confirm($login, (int) $id, $v['confirmation_tokens'][(string) $id]);
                 $deletedCount++;
             } catch (\Throwable $e) {
                 $failedProjects[] = $id;
             }
         }
 
-        $message = "Deleted {$deletedCount} project(s)." . (!empty($failedProjects) ? ' Some projects could not be deleted because they have associated records or were modified.' : '');
+        $message = "Deleted {$deletedCount} project(s)." . (!empty($failedProjects) ? ' Some projects could not be fully deleted. Refresh to review remaining data.' : '');
 
         if ($request->expectsJson()) {
-            return response()->json(['state' => 'completed', 'message' => $message]);
+            return response()->json(['state' => $failedProjects === [] ? 'completed' : 'partial', 'message' => $message]);
         }
 
         return redirect('/dd-phase3/ui/maintenance-projects')->with('dd_operations_status', $message);
