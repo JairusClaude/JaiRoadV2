@@ -22,10 +22,12 @@ export default function DdAccountLifecycle({
     accounts,
     actorId,
     initialAccountId,
+    onBusy,
 }: {
     accounts: Account[];
     actorId: number;
     initialAccountId?: number;
+    onBusy?: (busy: boolean) => void;
 }) {
     const [detail, setDetail] = useState<Details | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -147,6 +149,7 @@ export default function DdAccountLifecycle({
                                 )
                             ) {
                                 setBusy(true);
+                                onBusy?.(true);
                                 setErrors({});
                                 router.patch(
                                     `/dd-phase3/accounts/${detail.account.id}/status`,
@@ -164,7 +167,7 @@ export default function DdAccountLifecycle({
                                             });
                                             setNotice('Account status saved.');
                                         },
-                                        onFinish: () => setBusy(false),
+                                        onFinish: () => { setBusy(false); onBusy?.(false); },
                                     },
                                 );
                             }

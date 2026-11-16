@@ -36,12 +36,11 @@ try {
     const viewer = await signIn(f.viewer_email);
     const admin = await signIn(f.admin_email);
     await admin.goto(`${base}/dd-phase3/users`);
+    await admin.getByRole('button', { name: /^Engineers/ }).click();
+    await admin.locator(`[data-engineer-id="${f.former_id}"]`).getByRole('button', { name: /^Manage engineer/ }).click();
     const engineer = admin.getByRole('region', {
         name: 'Engineer profile lifecycle',
     });
-    await engineer
-        .getByLabel(/^Engineer profile/)
-        .selectOption(String(f.former_id));
     await engineer.getByLabel('Rank', { exact: true }).fill('Engineer IV');
     await engineer
         .getByRole('button', { name: 'Save profile', exact: true })
@@ -50,12 +49,12 @@ try {
         .getByRole('status')
         .filter({ hasText: 'Engineer profile saved.' })
         .waitFor();
+    await admin.getByRole('button', { name: 'Close dialog' }).click();
+    await admin.getByRole('button', { name: /^User Accounts/ }).click();
+    await admin.locator(`[data-account-id="${f.viewer_id}"]`).getByRole('button', { name: /^Manage account/ }).click();
     const accounts = admin.getByRole('region', {
         name: 'UserAccount lifecycle',
     });
-    await accounts
-        .getByLabel(/^Account to manage/)
-        .selectOption(String(f.viewer_id));
     await accounts
         .getByRole('button', { name: 'Deactivate account', exact: true })
         .click();
@@ -129,9 +128,8 @@ try {
     }
 
     await admin.goto(`${base}/dd-phase3/users`);
-    await engineer
-        .getByLabel(/^Engineer profile/)
-        .selectOption(String(f.former_id));
+    await admin.getByRole('button', { name: /^Engineers/ }).click();
+    await admin.locator(`[data-engineer-id="${f.former_id}"]`).getByRole('button', { name: /^Manage engineer/ }).click();
     await engineer
         .getByRole('button', { name: 'Retire Engineer', exact: true })
         .click();

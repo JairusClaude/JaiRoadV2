@@ -60,6 +60,7 @@ try {
         assert.ok(typeCells.some((value) => value.trim() === type));
     }
 
+    await page.getByRole('button', { name: 'Add Engineer', exact: true }).click();
     const rank = page.getByLabel('Rank', { exact: true });
     const engineerForm = page.locator('form').filter({ has: rank });
     await engineerForm
@@ -79,6 +80,8 @@ try {
     const engineerPayload = (await engineerRequest).postDataJSON();
     assert.equal(engineerPayload.rank, 'Engineer III');
     assert.equal(Object.hasOwn(engineerPayload, 'position'), false);
+    await page.getByRole('dialog', { name: 'Add Engineer', exact: true }).waitFor({ state: 'hidden' });
+    await page.getByRole('button', { name: 'Add Account', exact: true }).click();
     const accountForm = page
         .locator('form')
         .filter({ has: page.getByLabel(/^Account Type/) });
@@ -87,8 +90,8 @@ try {
     const engineerSelect = accountForm.getByLabel(/^Linked Engineer/);
     assert.equal(await engineerSelect.getAttribute('required'), '');
     await accountType.selectOption('Viewer');
-    assert.equal(await engineerSelect.isDisabled(), true);
-    assert.equal(await engineerSelect.getAttribute('required'), null);
+    assert.equal(await engineerSelect.isDisabled(), false);
+    assert.equal(await engineerSelect.getAttribute('required'), '');
     await accountType.selectOption('Admin');
     assert.equal(await engineerSelect.isDisabled(), false);
     assert.equal(await engineerSelect.getAttribute('required'), '');
@@ -123,12 +126,18 @@ try {
     assert.equal(String(accountPayload.engineer_id), engineerId);
     assert.equal(Object.hasOwn(accountPayload, 'position'), false);
     await page.getByText('Account created.', { exact: true }).waitFor();
+    await page.getByRole('textbox', { name: 'Search accounts' }).fill('ui-type-engineer@example.test');
+    await page.getByLabel('Filter account type').selectOption('Engineer');
     const row = page
         .getByRole('row')
         .filter({ hasText: 'ui-type-engineer@example.test' });
     await row.waitFor();
     assert.match(await row.innerText(), /Engineer/);
     assert.match(await row.innerText(), /UI Rank Fixture/);
+    await page.getByLabel('Filter status').selectOption('inactive');
+    await page.getByText('No accounts found', { exact: true }).waitFor();
+    await page.getByLabel('Filter status').selectOption('active');
+    await row.waitFor();
     await page.goto(`${base}/dd-phase3/settings`);
     await page.getByText('Account Type', { exact: true }).waitFor();
     assert.equal(await page.getByText('Role', { exact: true }).count(), 0);

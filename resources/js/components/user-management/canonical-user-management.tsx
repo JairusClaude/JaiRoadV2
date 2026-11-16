@@ -169,7 +169,7 @@ export default function CanonicalUserManagement({ accounts, engineers, eligibleE
                     <thead><tr><th>Account</th><th>Account Type</th><th>Linked Engineer</th><th>Status</th><th>Actions</th></tr></thead>
                     <tbody>{filteredAccounts.slice(start, start+pageSize).map(a => {
                         const e = a.engineer_id === null ? undefined : byEngineer.get(a.engineer_id);
-                        return <tr key={a.id}>
+                        return <tr key={a.id} data-account-id={a.id}>
                             <td><div className="um-person"><span className="um-avatar">{a.username.slice(0,2).toUpperCase()}</span><div><strong>{a.username}{a.id === actorId && <span className="um-you"> You</span>}</strong><small>{a.email}</small></div></div></td>
                             <td><span className="um-role" data-role={a.account_type}>{a.account_type}</span></td>
                             <td>{e ? <><strong>{nameOf(e)}</strong><small>{e.rank}</small></> : a.engineer_id ? 'Engineer #' + a.engineer_id : <span className="um-muted">Not linked</span>}</td>
@@ -181,7 +181,7 @@ export default function CanonicalUserManagement({ accounts, engineers, eligibleE
                     <thead><tr><th>Engineer</th><th>Rank</th><th>Linked Account</th><th>Status</th><th>Actions</th></tr></thead>
                     <tbody>{filteredEngineers.slice(start, start+pageSize).map(e => {
                         const account = linkedAccounts.get(e.id);
-                        return <tr key={e.id}>
+                        return <tr key={e.id} data-engineer-id={e.id}>
                             <td><div className="um-person"><span className="um-avatar">{(e.first_name.slice(0,1)+e.last_name.slice(0,1)).toUpperCase()}</span><div><strong>{nameOf(e)}</strong><small>{e.contact_no || 'No contact number'}</small></div></div></td>
                             <td>{e.rank}</td><td>{account ? <><strong>{account.username}</strong><small>{account.account_type}</small></> : eligibleEngineers.some(x => x.id === e.id) ? <span className="um-muted">Available to link</span> : <span className="um-muted">Not in loaded account list</span>}</td>
                             <td><Status active={e.engineer_status === 'Active'} label={e.engineer_status}/></td>
@@ -199,7 +199,7 @@ export default function CanonicalUserManagement({ accounts, engineers, eligibleE
             <Dialog.Portal><Dialog.Overlay className="um-overlay"/><Dialog.Content className="um-dialog" onEscapeKeyDown={e => {if(busy)e.preventDefault();}} onPointerDownOutside={e => {if(busy)e.preventDefault();}}>
                 <div className="um-dialog-head"><div><Dialog.Title>{modalTitle}</Dialog.Title><Dialog.Description>{modal?.kind === 'add-account' ? 'Set up sign-in details and account access.' : modal?.kind === 'add-engineer' ? 'Register a professional Engineer profile.' : 'Review details and make authorized changes.'}</Dialog.Description></div><Dialog.Close asChild><button type="button" aria-label="Close dialog" disabled={busy}><X size={20}/></button></Dialog.Close></div>
                 <div className="um-dialog-body">
-                    {modal?.kind === 'add-account' || modal?.kind === 'add-engineer' ? <CreateForm key={modal.kind} kind={modal.kind} eligible={eligibleEngineers} roles={canCreateRoles} onClose={() => {setModal(null);setBusy(false);setTab(modal.kind === 'add-account' ? 'accounts' : 'engineers');clear();}} onBusy={setBusy}/> : modal?.kind === 'account' ? <DdAccountLifecycle key={modal.id} accounts={accounts} actorId={actorId} initialAccountId={modal.id}/> : modal?.kind === 'engineer' ? <DdEngineerLifecycle key={modal.id} engineers={engineers} initialEngineerId={modal.id}/> : null}
+                    {modal?.kind === 'add-account' || modal?.kind === 'add-engineer' ? <CreateForm key={modal.kind} kind={modal.kind} eligible={eligibleEngineers} roles={canCreateRoles} onClose={() => {setModal(null);setBusy(false);setDismissed(null);setTab(modal.kind === 'add-account' ? 'accounts' : 'engineers');clear();}} onBusy={setBusy}/> : modal?.kind === 'account' ? <DdAccountLifecycle key={modal.id} accounts={accounts} actorId={actorId} initialAccountId={modal.id} onBusy={setBusy}/> : modal?.kind === 'engineer' ? <DdEngineerLifecycle key={modal.id} engineers={engineers} initialEngineerId={modal.id} onBusy={setBusy}/> : null}
                 </div>
             </Dialog.Content></Dialog.Portal>
         </Dialog.Root>

@@ -13,9 +13,11 @@ type Engineer = {
 export default function DdEngineerLifecycle({
     engineers,
     initialEngineerId,
+    onBusy,
 }: {
     engineers: Engineer[];
     initialEngineerId?: number;
+    onBusy?: (busy: boolean) => void;
 }) {
     const [selected, setSelected] = useState<Engineer | null>(() => engineers.find((e) => e.id === initialEngineerId) ?? null);
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -24,7 +26,7 @@ export default function DdEngineerLifecycle({
     const options = {
         preserveScroll: true,
         onError: setErrors,
-        onFinish: () => setBusy(false),
+        onFinish: () => { setBusy(false); onBusy?.(false); },
     };
 
     return (
@@ -65,7 +67,9 @@ export default function DdEngineerLifecycle({
                     className="grid gap-3 sm:grid-cols-2"
                     onSubmit={(e) => {
                         e.preventDefault();
+                        if (busy) return;
                         setBusy(true);
+                                onBusy?.(true);
                         setErrors({});
                         router.put(
                             `/dd-phase3/engineers/${selected.id}`,
@@ -140,6 +144,7 @@ export default function DdEngineerLifecycle({
                                     )
                                 ) {
                                     setBusy(true);
+                                onBusy?.(true);
                                     setErrors({});
                                     router.post(
                                         `/dd-phase3/engineers/${selected.id}/retirement`,
