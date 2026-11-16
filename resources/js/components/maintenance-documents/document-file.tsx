@@ -39,7 +39,6 @@ export function DocumentAttachment({
     onChange,
     onRemoveSaved,
     savedRemovalPending = false,
-    onUndoSavedRemoval,
 }: {
     file: File | null;
     savedName?: string;
@@ -48,7 +47,6 @@ export function DocumentAttachment({
     onChange: (file: File | null) => void;
     onRemoveSaved?: () => void;
     savedRemovalPending?: boolean;
-    onUndoSavedRemoval?: () => void;
 }) {
     const canonical = usePage().props.canonicalFrontend === true;
     const input = useRef<HTMLInputElement>(null);
@@ -140,7 +138,7 @@ export function DocumentAttachment({
                     {feedback || error}
                 </p>
             )}
-            {(file || savedName) && (
+            {(file || (savedName && !savedRemovalPending)) && (
                 <div className="jr-document-file-row mt-3">
                     <DocumentIcon name={file?.name ?? savedName!} />
                     <div className="min-w-0 flex-1">
@@ -154,9 +152,7 @@ export function DocumentAttachment({
                             {documentType(file?.name ?? savedName!)}
                             {file
                                 ? ` · ${(file.size / 1024).toFixed(1)} KB · Selected file`
-                                : savedRemovalPending
-                                  ? ' · Marked for removal when you save'
-                                  : ' · Existing attachment retained'}
+                                : ' · Existing attachment retained'}
                         </p>
                     </div>
                     {file ? (
@@ -173,16 +169,6 @@ export function DocumentAttachment({
                             }}
                         >
                             <X />
-                        </Button>
-                    ) : savedName && savedRemovalPending && onUndoSavedRemoval ? (
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            aria-label={`Undo removal of ${savedName}`}
-                            onClick={onUndoSavedRemoval}
-                        >
-                            Undo
                         </Button>
                     ) : savedName && onRemoveSaved ? (
                         <Button
