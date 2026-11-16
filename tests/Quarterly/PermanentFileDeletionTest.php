@@ -133,6 +133,46 @@ final class PermanentFileDeletionTest extends PostgresTestCase
         $this->assertDatabaseHas('jairoads_next.file_deletions', ['kind' => $kind, 'entity_id' => $id, 'state' => 'completed', 'object_path' => null]);
     }
 
+    public function test_edit_save_removes_only_selected_media_and_document_while_edit_get_is_read_only(): void
+    {
+        config(['jairoads_file_deletion.operationally_enabled' => true]);
+        $f = $this->files();
+        Http::fake(fn ($request) => $request->method() === 'DELETE' ? Http::response(['message' => 'Successfully deleted']) : null);
+        $ui = '/dd-phase3/ui';
+        $this->get($ui.'/monthly-updates/'.$f['update'].'/edit')->assertOk();
+        $this->get($ui.'/maintenance-documents/'.$f['documents'][0].'/edit')->assertOk();
+        Http::assertNothingSent();
+
+        $payload = ['maintenance_id' => $f['record'], 'update_month' => '2026-01', 'progress_percentage' => 10];
+        $this->put($ui.'/monthly-updates/'.$f['update'], $payload)->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertDatabaseHas('jairoads_next.media', ['id' => $f['media'][0]]);
+        $this->put($ui.'/monthly-updates/'.$f['update'], $payload + ['removed_media_ids' => [$f['media'][0]]])
+            ->assertSessionHasNoErrors()->assertRedirect($ui.'/monthly-updates/'.$f['update']);
+        $this->assertDatabaseMissing('jairoads_next.media', ['id' => $f['media'][0]]);
+        $this->assertDatabaseHas('jairoads_next.media', ['id' => $f['media'][1]]);
+        $this->put($ui.'/maintenance-documents/'.$f['documents'][0], ['document_title' => 'Selected document 1', 'remove_attachment' => true])
+            ->assertSessionHasNoErrors()->assertRedirect($ui.'/maintenance-documents');
+        $this->assertDatabaseMissing('jairoads_next.maintenance_documents', ['id' => $f['documents'][0]]);
+        $this->assertDatabaseHas('jairoads_next.maintenance_documents', ['id' => $f['documents'][1]]);
+        $this->assertDatabaseHas('jairoads_next.maintenance_records', ['id' => $f['record']]);
+        $this->assertDatabaseHas('jairoads_next.monthly_updates', ['id' => $f['update']]);
+        $this->assertDatabaseHas('jairoads_next.file_deletions', ['kind' => 'media', 'entity_id' => $f['media'][0], 'state' => 'completed']);
+        $this->assertDatabaseHas('jairoads_next.file_deletions', ['kind' => 'document', 'entity_id' => $f['documents'][0], 'state' => 'completed']);
+        Http::assertSent(fn ($request) => $request->method() === 'DELETE' && str_contains($request->url(), '/private-media/monthly-updates/'.$f['update'].'/00000000-0000-4000-8000-000000000001.png'));
+        Http::assertSent(fn ($request) => $request->method() === 'DELETE' && str_contains($request->url(), '/private-documents/maintenance-records/'.$f['record'].'/00000000-0000-4000-8000-000000000001.pdf'));
+    }
+
+    public function test_edit_save_rejects_another_updates_media_without_storage_mutation(): void
+    {
+        config(['jairoads_file_deletion.operationally_enabled' => true]);
+        $f = $this->files();
+        $other = (int) DB::table('jairoads_next.monthly_updates')->insertGetId(['maintenance_id' => $f['record'], 'update_month' => '2026-02', 'progress_percentage' => 20, 'created_by' => $f['user']->dd_user_account_id]);
+        $this->putJson('/dd-phase3/ui/monthly-updates/'.$other, ['maintenance_id' => $f['record'], 'update_month' => '2026-02', 'progress_percentage' => 20, 'removed_media_ids' => [$f['media'][0]]])
+            ->assertUnprocessable()->assertJsonValidationErrors('attachments');
+        $this->assertDatabaseHas('jairoads_next.media', ['id' => $f['media'][0]]);
+        Http::assertNothingSent();
+    }
+
     public static function forbidden(): iterable
     {
         foreach (['Engineer', 'Viewer', 'Admin', 'SuperAdmin'] as $role) {

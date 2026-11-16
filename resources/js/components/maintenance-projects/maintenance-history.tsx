@@ -228,9 +228,10 @@ export function MaintenanceHistory({
                                                                     <Pencil />{' '}
                                                                     Edit Record
                                                                     {!record.edit_url &&
-                                                                        ' — pending'}
+                                                                        ' — unavailable'}
                                                                 </DropdownMenuItem>
                                                                 <DropdownMenuItem
+                                                                    variant="destructive"
                                                                     disabled={
                                                                         !record.delete_url
                                                                     }

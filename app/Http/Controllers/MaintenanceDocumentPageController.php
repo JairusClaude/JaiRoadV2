@@ -89,11 +89,13 @@ final class MaintenanceDocumentPageController extends OperationsFrontendControll
             $this->write(fn () => $this->operations->uploadDocument($upload, $this->identities, $this->documents), ['file' => 'attachment']);
         } else {
             $request->validate(['attachment' => ['prohibited']]);
-            $this->operations->updateDocument($request, $this->identities, $id);
             if ($remove) {
+                // The document and its single file are one entity. Do not edit
+                // metadata first: a pending deletion must remain retryable.
                 $this->deletePrivateFile($request, 'document', $id);
                 return redirect(self::BASE.'/maintenance-documents')->with('dd_operations_status', 'Document permanently deleted.');
             }
+            $this->operations->updateDocument($request, $this->identities, $id);
         }
 
         return redirect(self::BASE.'/maintenance-documents'.($id === null ? '' : '/'.$id))->with('dd_operations_status', 'MaintenanceDocument saved.');

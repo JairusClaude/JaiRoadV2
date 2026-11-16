@@ -160,14 +160,14 @@ export async function verifyPermanentFileDeletion({
     );
     admin.off('request', count);
 
-    await superadmin.goto(`${ui}/monthly-updates/${report.id}`);
+    await superadmin.goto(`${ui}/monthly-updates/${report.id}/edit`);
     await superadmin.locator('input[type=file]').setInputFiles({
         name: 'retained.png',
         mimeType: 'image/png',
         buffer: png,
     });
     await superadmin
-        .getByRole('button', { name: 'Upload Media', exact: true })
+        .getByRole('button', { name: 'Save Changes', exact: true })
         .click();
     await superadmin
         .getByText('retained.png', { exact: true })
@@ -184,18 +184,15 @@ export async function verifyPermanentFileDeletion({
     const retainedBytes = await (
         await superadmin.request.get(`${base}${retained.preview_url}`)
     ).body();
-    await superadmin
-        .getByRole('button', { name: 'Delete unified.png', exact: true })
-        .click();
-    panel = superadmin.getByRole('dialog', {
-        name: 'Delete File Permanently?',
-    });
-    await panel.getByText('unified.png', { exact: true }).waitFor();
-    assert.match(await panel.innerText(), /MonthlyUpdate/);
-    await panel.getByRole('button', { name: 'Delete', exact: true }).click();
-    await superadmin
-        .getByText('File permanently deleted: unified.png', { exact: true })
-        .waitFor();
+    await superadmin.goto(`${ui}/monthly-updates/${report.id}/edit`);
+    await superadmin.getByRole('button', { name: 'Remove unified.png', exact: true }).click();
+    await superadmin.getByRole('button', { name: 'Cancel', exact: true }).click();
+    assert.ok((await props(superadmin, `/monthly-updates/${report.id}`)).media.some((file) => file.id === selected.id));
+    await superadmin.goto(`${ui}/monthly-updates/${report.id}/edit`);
+    await superadmin.getByRole('button', { name: 'Remove unified.png', exact: true }).click();
+    superadmin.once('dialog', (dialog) => dialog.accept());
+    await superadmin.getByRole('button', { name: 'Save Changes', exact: true }).click();
+    await superadmin.waitForURL(`${ui}/monthly-updates/${report.id}`);
     const after = await props(superadmin, `/monthly-updates/${report.id}`);
     const {
         media_count: beforeCount,

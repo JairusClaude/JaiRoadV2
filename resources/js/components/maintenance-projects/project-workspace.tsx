@@ -97,6 +97,7 @@ export function ProjectActions({
                     <Pencil /> Edit Project
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                    variant="destructive"
                     disabled={!project.can_delete}
                     onSelect={onDelete}
                 >

@@ -93,8 +93,16 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
         $removals = array_map('intval', $validated['removed_media_ids'] ?? []);
         if ($removals !== []) {
             $this->requirePrivateDeletion($request, $actor);
-            if ($id === null || DB::table('jairoads_next.media')->where('monthly_update_id', $id)->whereIn('id', $removals)->count() !== count($removals)) {
-                throw \Illuminate\Validation\ValidationException::withMessages(['attachments' => 'Selected media does not belong to this update. Refresh and retry.']);
+            if ($id === null) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['attachments' => 'Save the monthly update before removing existing media.']);
+            }
+            foreach ($removals as $mediaId) {
+                $row = DB::table('jairoads_next.media')->where('id', $mediaId)->first(['monthly_update_id']);
+                $alreadyCompleted = $row === null && DB::table('jairoads_next.file_deletions')->where('kind', 'media')
+                    ->where('entity_id', $mediaId)->where('monthly_update_id', $id)->where('state', 'completed')->exists();
+                if (! $alreadyCompleted && ($row === null || (int) $row->monthly_update_id !== $id)) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['attachments' => 'Selected media does not belong to this update. Refresh and retry.']);
+                }
             }
         }
         $this->operations->saveUpdate($request, $this->identities, $id);
@@ -167,13 +175,19 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
                 $this->deletePrivateFile($request, 'media', (int) $mediaId);
             }
         }
-        DB::transaction(function () use ($ids, $actor): void {
+        DB::transaction(function () use ($request, $ids, $actor): void {
+            DB::select('SELECT pg_advisory_xact_lock_shared(1927710916)');
+            DB::table('jairoads_next.user_accounts')->where('id', $actor['account_id'])->sharedLock()->first(['id']);
+            abort_unless($this->actor($request) === $actor && RoleAccess::canDeleteOperations($actor['role']), 403);
             $records = DB::table('jairoads_next.monthly_updates')->whereIn('id', $ids)->orderBy('id')->lockForUpdate()->get();
             if ($records->count() !== count($ids) || DB::table('jairoads_next.media')->whereIn('monthly_update_id', $ids)->exists()) {
                 throw \Illuminate\Validation\ValidationException::withMessages(['delete' => 'Updates changed during deletion. Refresh and retry.']);
             }
             foreach ($records as $row) {
-                DB::table('jairoads_next.monthly_updates')->where('id', $row->id)->delete();
+                $deleted = DB::table('jairoads_next.monthly_updates')->where('id', $row->id)->delete();
+                if ($deleted !== 1 || DB::table('jairoads_next.monthly_updates')->where('id', $row->id)->exists()) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['delete' => 'Monthly update deletion was not confirmed.']);
+                }
                 app(\App\Services\OperationAudit::class)->record($actor, 'DELETE', 'MonthlyUpdate', (int) $row->id, 'Monthly update deleted after private media removal.', [], (array) $row);
             }
         });

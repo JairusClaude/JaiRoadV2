@@ -120,7 +120,13 @@ export async function verifyPreservedRelationships({
     await admin.getByRole('button', { name: 'Delete Project', exact: true }).click();
     dialog = admin.getByRole('dialog', { name: 'Delete project?', exact: true });
     await dialog.getByText(/RoadCoverage:/).waitFor();
-    await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
+    const confirm = dialog.getByRole('button', { name: 'Delete Project', exact: true });
+    assert.equal(await confirm.isDisabled(), true);
+    const input = dialog.getByPlaceholder('Type YES');
+    await input.fill('NO');
+    assert.equal(await confirm.isDisabled(), true);
+    await input.fill('YES');
+    await confirm.click();
     await admin.waitForURL(`${ui}/maintenance-projects`);
     assert.equal((await admin.request.get(`${ui}${emptyPath}`)).status(), 404);
     assert.equal((await props(admin, recordPath)).record.engineers_id, fixture.engineer_id);

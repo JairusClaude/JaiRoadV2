@@ -45,6 +45,23 @@ final class UnifiedFrontendTest extends PostgresTestCase
         }
     }
 
+    public function test_record_search_by_engineer_and_document_form_source_context(): void
+    {
+        $f = $this->fixture('SuperAdmin');
+        $record = $this->record($f);
+        $name = 'UniqueSearchEngineer';
+        DB::table('jairoads_next.engineers')->where('id', $f['engineer'])->update(['first_name' => $name]);
+        $this->get(self::UI.'/maintenance-records?search='.$name.'&quarter=Q1')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('records.data', 1)->where('records.data.0.id', $record)->where('filters.search', $name));
+        foreach (['maintenance_id', 'record'] as $key) {
+            $this->get(self::UI.'/maintenance-documents/create?'.$key.'='.$record)->assertOk()->assertInertia(fn (Assert $page) => $page
+                ->component('MaintenanceDocuments/Form')->where('contextRecordId', $record)->has('records', 1)
+                ->where('records.0.id', $record)->where('projects.0.id', $f['project']));
+        }
+        $this->get(self::UI.'/maintenance-projects/'.$f['project'])->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('records.0.delete_url', self::UI.'/maintenance-records/'.$record));
+    }
+
     public function test_engineer_roads_projects_and_parent_choices_are_available_across_municipalities(): void
     {
         $f = $this->fixture('Engineer');
