@@ -1,6 +1,7 @@
 import '../../../css/maintenance-projects.css';
-import { Head, Link, router, usePage } from '@inertiajs/react';
-import { ArrowLeft, ArrowRight, Pencil, Trash2 } from 'lucide-react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { ArrowLeft, ArrowRight, Pencil, Trash2, UploadCloud } from 'lucide-react';
+import { useRef } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { MediaGallery } from '@/components/monthly-updates/media-gallery';
 import { MonthlyProgress } from '@/components/monthly-updates/monthly-progress';
@@ -20,6 +21,7 @@ export default function Show({
     backUrl,
     backLabel,
     directoryUrl,
+    canUploadMedia = false,
 }: MonthlyDetailProps) {
     const page = usePage();
     const preview =
@@ -27,6 +29,11 @@ export default function Show({
         (page.props.canonicalFrontend === true && page.props.canWrite === true);
     const canEdit = update.can_edit ?? preview;
     const deletion = useMonthlyDeletion(directoryUrl.split('?')[1] ?? '');
+    const mediaInput = useRef<HTMLInputElement>(null);
+    const mediaForm = useForm<{ monthly_update_id: number; file: File | null }>({
+        monthly_update_id: update.id,
+        file: null,
+    });
     const photos = media.filter((file) =>
         file.mime_type?.startsWith('image/'),
     ).length;
@@ -188,6 +195,46 @@ export default function Show({
                             </h2>
                             <p className="jr-field-hint">{mediaBreakdown}</p>
                         </div>
+                        {canUploadMedia && (
+                            <form
+                                className="jr-monthly-upload"
+                                onSubmit={(event) => {
+                                    event.preventDefault();
+                                    if (!mediaForm.data.file || mediaForm.processing) return;
+                                    mediaForm.clearErrors();
+                                    mediaForm.post('/dd-phase3/ops/media', {
+                                        forceFormData: true,
+                                        preserveScroll: true,
+                                        onSuccess: () => {
+                                            mediaForm.reset('file');
+                                            if (mediaInput.current) mediaInput.current.value = '';
+                                        },
+                                    });
+                                }}
+                            >
+                                <label htmlFor="monthly-media-file">Add photos or videos</label>
+                                <div className="jr-monthly-upload-controls">
+                                    <input
+                                        ref={mediaInput}
+                                        id="monthly-media-file"
+                                        name="file"
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"
+                                        disabled={mediaForm.processing}
+                                        onChange={(event) => mediaForm.setData('file', event.target.files?.[0] ?? null)}
+                                    />
+                                    <Button type="submit" disabled={!mediaForm.data.file || mediaForm.processing}>
+                                        <UploadCloud className="size-4" />
+                                        {mediaForm.processing ? 'Uploading…' : 'Upload media'}
+                                    </Button>
+                                </div>
+                                <p className="jr-field-hint">JPEG, PNG, WebP, MP4, or WebM · Maximum 20 MB per file. Files are stored privately.</p>
+                                {mediaForm.progress && (
+                                    <p className="jr-field-hint" role="status">Uploading {mediaForm.progress.percentage}%</p>
+                                )}
+                                {mediaForm.errors.file && <p className="jr-field-error" role="alert">{mediaForm.errors.file}</p>}
+                            </form>
+                        )}
                         <MediaGallery key={update.id} media={media} />
                     </section>
                     <footer className="jr-report-footer">
