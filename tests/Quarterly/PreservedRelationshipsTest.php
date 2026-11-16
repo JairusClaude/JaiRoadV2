@@ -157,6 +157,14 @@ final class PreservedRelationshipsTest extends PostgresTestCase
         $token = $this->getJson($url.'/deletion-preview')->assertOk()->json('confirmation_token');
         $this->deleteJson($url, ['confirmation' => 'YES', 'confirmation_token' => $token])->assertUnprocessable()->assertJsonValidationErrors('captcha_token');
         $verification = $this->deletionVerification('project');
+        $withoutPhoto = $verification;
+        unset($withoutPhoto['camera_receipt']);
+        $this->deleteJson($url, $withoutPhoto + ['confirmation_token' => $token])->assertUnprocessable()->assertJsonValidationErrors('camera_receipt');
+        $this->deleteJson($url, array_replace($verification, ['camera_receipt' => 'forged', 'confirmation_token' => $token]))
+            ->assertUnprocessable()->assertJsonValidationErrors('camera_receipt');
+        $other = $this->deletionVerification('project');
+        $this->deleteJson($url, array_replace($verification, ['camera_receipt' => $other['camera_receipt'], 'confirmation_token' => $token]))
+            ->assertUnprocessable()->assertJsonValidationErrors('camera_receipt');
         $this->deleteJson($url, array_replace($verification, ['captcha_answer' => 999, 'confirmation_token' => $token]))
             ->assertUnprocessable()->assertJsonValidationErrors('captcha_answer');
         $this->deleteJson($url, $verification + ['confirmation_token' => $token])->assertUnprocessable()->assertJsonValidationErrors('captcha_answer');

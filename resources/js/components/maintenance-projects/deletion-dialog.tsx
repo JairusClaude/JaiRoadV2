@@ -3,6 +3,7 @@ import { usePage } from '@inertiajs/react';
 import { useEffect, useId, useState } from 'react';
 import type { ReactNode, RefObject } from 'react';
 import { Button } from '@/components/ui/button';
+import { DeletionCamera } from './deletion-camera';
 import type { DependentCounts } from '@/types/maintenance-projects';
 
 export function DeletionCounts({
@@ -57,7 +58,7 @@ export function DeletionCounts({
     );
 }
 
-export type DeleteConfirmation = { confirmation: string; captcha_token: string; captcha_answer: string };
+export type DeleteConfirmation = { confirmation: string; captcha_token: string; captcha_answer: string; camera_receipt: string };
 
 export function DeletionDialog({
     open,
@@ -94,6 +95,7 @@ export function DeletionDialog({
     const needsChallenge = !!challengeScope && !preview;
     const [challenge, setChallenge] = useState<{ question: string; token: string } | null>(null);
     const [answer, setAnswer] = useState('');
+    const [cameraReceipt, setCameraReceipt] = useState('');
     const [challengeError, setChallengeError] = useState('');
     const [revision, setRevision] = useState(0);
     useEffect(() => {
@@ -102,6 +104,7 @@ export function DeletionDialog({
     useEffect(() => {
         setChallenge(null);
         setAnswer('');
+        setCameraReceipt('');
         setChallengeError('');
         if (!open || !needsChallenge) return;
         const controller = new AbortController();
@@ -116,7 +119,7 @@ export function DeletionDialog({
         });
         return () => controller.abort();
     }, [open, title, needsChallenge, challengeScope, revision]);
-    const confirmed = (!requireYes || confirmation === 'YES') && (!needsChallenge || (!!challenge && /^\d{1,3}$/.test(answer)));
+    const confirmed = (!requireYes || confirmation === 'YES') && (!needsChallenge || (!!challenge && /^\d{1,3}$/.test(answer) && !!cameraReceipt));
 
     return (
         <Dialog.Root
@@ -166,6 +169,9 @@ export function DeletionDialog({
                             {challengeError && <p role="alert" className="jr-field-error">{challengeError}</p>}
                         </div>
                     )}
+                    {open && needsChallenge && challenge && challengeScope && (
+                        <DeletionCamera key={challenge.token} token={challenge.token} scope={challengeScope} disabled={processing} onReceipt={setCameraReceipt} />
+                    )}
                     {error && (
                         <p className="jr-field-error" role="alert">
                             {error}
@@ -187,7 +193,7 @@ export function DeletionDialog({
                             disabled={processing || confirmDisabled || !confirmed}
                             onClick={() => {
                                 if (confirmed && !confirmDisabled && !processing) {
-                                    onConfirm(needsChallenge && challenge ? { confirmation, captcha_token: challenge.token, captcha_answer: answer } : undefined);
+                                    onConfirm(needsChallenge && challenge ? { confirmation, captcha_token: challenge.token, captcha_answer: answer, camera_receipt: cameraReceipt } : undefined);
                                     if (needsChallenge) setRevision((value) => value + 1);
                                 }
                             }}

@@ -424,7 +424,7 @@ export function MonthlyUpdateDirectory({
                                                         <Pencil />
                                                         Edit Monthly Update
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem
+                                                    <DropdownMenuItem variant="destructive"
                                                         disabled={busy}
                                                         className="text-red-600 focus:bg-red-50 focus:text-red-700"
                                                         onSelect={() =>

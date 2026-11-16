@@ -355,7 +355,7 @@ export default function Index({
                                                         Edit Maintenance
                                                         Document
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem
+                                                    <DropdownMenuItem variant="destructive"
                                                         disabled={
                                                             page.props
                                                                 .canonicalFrontend ===

@@ -32,7 +32,9 @@ abstract class PostgresTestCase extends TestCase
         $account = (int) auth()->user()->dd_user_account_id;
         $challenge = app(\App\Services\DeletionChallenge::class)->issue($account, $scope);
         preg_match('/^(\d+) \+ (\d+)$/', $challenge['question'], $parts);
-        return ['confirmation' => 'YES', 'captcha_token' => $challenge['token'], 'captcha_answer' => (int) $parts[1] + (int) $parts[2]];
+        $jpeg = base64_decode('/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABIMDRANCxIQDhAUExIVGywdGxgYGzYnKSAsQDlEQz85Pj1HUGZXR0thTT0+WXlaYWltcnNyRVV9hnxvhWZwcm7/2wBDARMUFBsXGzQdHTRuST5Jbm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm7/wAARCAB4AKADASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAP/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAT/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCoCpOAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//Z', true);
+        $receipt = app(\App\Services\DeletionChallenge::class)->cameraReceipt($account, $scope, $challenge['token'], $jpeg);
+        return ['confirmation' => 'YES', 'captcha_token' => $challenge['token'], 'captcha_answer' => (int) $parts[1] + (int) $parts[2], 'camera_receipt' => $receipt];
     }
 
     protected function engineer(string $status = 'Active'): int

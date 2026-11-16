@@ -28,6 +28,7 @@ Route::middleware(['auth'])->prefix('dd-phase3/ui')->name('jairoads.ui.')->group
     Route::get('/maintenance-projects/{id}', [MaintenanceProjectPageController::class, 'projectShow'])->whereNumber('id')->name('projects.show');
     Route::get('/maintenance-projects/{id}/edit', [MaintenanceProjectPageController::class, 'projectForm'])->whereNumber('id')->name('projects.edit');
     Route::get('/deletion-challenge', [PreservedHistoryController::class, 'challenge'])->middleware('throttle:20,1');
+    Route::post('/deletion-challenge/camera', [PreservedHistoryController::class, 'camera'])->middleware('throttle:20,1');
     Route::get('/maintenance-projects/{id}/deletion-preview', [PreservedHistoryController::class, 'preview'])->whereNumber('id');
     Route::delete('/maintenance-projects/bulk', [PreservedHistoryController::class, 'bulkDelete'])->name('projects.bulk-destroy');
     Route::delete('/maintenance-projects/{id}', [PreservedHistoryController::class, 'delete'])->whereNumber('id')->middleware('throttle:6,1');

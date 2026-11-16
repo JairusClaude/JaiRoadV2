@@ -60,23 +60,32 @@ function DropdownMenuGroup({
 function DropdownMenuItem({
   className,
   inset,
-  variant = "default",
+  variant,
+  children,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Item> & {
   inset?: boolean
   variant?: "default" | "destructive"
 }) {
+  // Legacy menus may omit variant. Keep every action labelled Delete destructive.
+  const labelText = (node: React.ReactNode): string => {
+    if (typeof node === "string" || typeof node === "number") return String(node)
+    if (Array.isArray(node)) return node.map(labelText).join(" ")
+    if (React.isValidElement<{ children?: React.ReactNode }>(node)) return labelText(node.props.children)
+    return ""
+  }
+  const destructive = variant === "destructive" || /^delete\b/i.test(labelText(children).trim()) || /^delete\b/i.test(props["aria-label"] ?? "")
   return (
     <DropdownMenuPrimitive.Item
       data-slot="dropdown-menu-item"
       data-inset={inset}
-      data-variant={variant}
+      data-variant={destructive ? "destructive" : "default"}
       className={cn(
         "focus:bg-accent focus:text-accent-foreground data-[variant=destructive]:text-red-700 data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/40 data-[variant=destructive]:focus:text-red-800 data-[variant=destructive]:*:[svg]:!text-red-700 [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}
       {...props}
-    />
+    >{children}</DropdownMenuPrimitive.Item>
   )
 }
 
