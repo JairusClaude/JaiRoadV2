@@ -244,7 +244,7 @@ final class PermanentFileDeletion
                     }
                     $this->audit->record($actor, 'UPDATE', 'MaintenanceDocument', (int) $intent->entity_id,
                         'Attachment permanently removed; document information retained.',
-                        app(\App\Services\AuditValues::class)->persisted('MaintenanceDocument', (int) $intent->entity_id), $before);
+                        app(\App\Services\AuditValues::class)->persisted('MaintenanceDocument', (int) $intent->entity_id), $before + ['initiated_by' => (int) $intent->initiated_by]);
                 } elseif ($intent->kind === 'media') {
                     $target->delete();
                     if ($target->exists()) {

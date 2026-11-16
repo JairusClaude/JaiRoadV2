@@ -126,6 +126,11 @@ export async function verifyPreservedRelationships({
     await input.fill('NO');
     assert.equal(await confirm.isDisabled(), true);
     await input.fill('YES');
+    assert.equal(await confirm.isDisabled(), true);
+    const equation = dialog.getByText(/^\d+ \+ \d+ = \?$/);
+    await equation.waitFor();
+    const numbers = (await equation.innerText()).match(/\d+/g).map(Number);
+    await dialog.getByPlaceholder('Enter answer').fill(String(numbers[0] + numbers[1]));
     await confirm.click();
     await admin.waitForURL(`${ui}/maintenance-projects`);
     assert.equal((await admin.request.get(`${ui}${emptyPath}`)).status(), 404);

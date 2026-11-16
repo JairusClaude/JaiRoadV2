@@ -116,7 +116,7 @@ export default function Create(parents: MonthlyCreateProps) {
                         return;
                     }
 
-                    if (page.props.canonicalFrontend === true && form.data.removed_media_ids.length && !window.confirm('Save changes and permanently delete the selected media from private Storage?')) return;
+                    if (page.props.canonicalFrontend === true && form.data.removed_media_ids.length && !window.confirm('Save changes and permanently remove the selected media? The monthly update and its information will be retained.')) return;
 
                     submitting.current = true;
 
@@ -130,7 +130,7 @@ export default function Create(parents: MonthlyCreateProps) {
                     }
 
                     form.submit(update ? 'put' : 'post', parents.submitUrl, {
-                        forceFormData: true,
+                        forceFormData: page.props.canonicalFrontend !== true,
                         preserveScroll: true,
                         onSuccess: (responsePage) => {
                             if (page.props.canonicalFrontend !== true) return;

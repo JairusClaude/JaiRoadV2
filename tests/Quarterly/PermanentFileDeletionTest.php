@@ -118,12 +118,18 @@ final class PermanentFileDeletionTest extends PostgresTestCase
         Http::assertSentCount(2); // One bucket verification and one exact-object DELETE.
         $this->assertArrayNotHasKey($path, $objects);
         $this->assertSame('unchanged sibling bytes', $objects['untouched-sibling']);
-        $this->assertDatabaseMissing($table, ['id' => $id]);
+        if ($kind === 'document') {
+            $this->assertDatabaseHas($table, ['id' => $id, 'file_name' => '', 'file_path' => '']);
+        } else {
+            $this->assertDatabaseMissing($table, ['id' => $id]);
+        }
         foreach ($snapshots as $name => $snapshot) {
-            $this->assertSame($snapshot, DB::table('jairoads_next.'.$name)->orderBy('id')->get()->toJson());
+            $q = DB::table('jairoads_next.'.$name)->orderBy('id');
+            if ('jairoads_next.'.$name === $table) $q->where('id', '!=', $id);
+            $this->assertSame($snapshot, $q->get()->toJson());
         }
         $this->assertSame($history, $this->history());
-        $event = DB::table('jairoads_next.audit_logs')->where('action', 'DELETE')->sole();
+        $event = DB::table('jairoads_next.audit_logs')->where('action', isset($kind) && $kind === 'media' ? 'DELETE' : 'UPDATE')->sole();
         $this->assertSame($kind === 'document' ? 'MaintenanceDocument' : 'Media', $event->entity_type);
         $this->assertSame($id, (int) $event->entity_id);
         $this->assertSame((int) $f['user']->dd_user_account_id, (int) $event->user_id);
@@ -151,8 +157,14 @@ final class PermanentFileDeletionTest extends PostgresTestCase
         $this->assertDatabaseMissing('jairoads_next.media', ['id' => $f['media'][0]]);
         $this->assertDatabaseHas('jairoads_next.media', ['id' => $f['media'][1]]);
         $this->put($ui.'/maintenance-documents/'.$f['documents'][0], ['document_title' => 'Selected document 1', 'remove_attachment' => true])
-            ->assertSessionHasNoErrors()->assertRedirect($ui.'/maintenance-documents');
-        $this->assertDatabaseMissing('jairoads_next.maintenance_documents', ['id' => $f['documents'][0]]);
+            ->assertSessionHasNoErrors()->assertRedirect($ui.'/maintenance-documents/'.$f['documents'][0]);
+        $this->assertDatabaseHas('jairoads_next.maintenance_documents', ['id' => $f['documents'][0], 'document_title' => 'Selected document 1', 'file_name' => '', 'file_path' => '']);
+        $this->put($ui.'/monthly-updates/'.$f['update'], $payload + ['removed_media_ids' => [$f['media'][1]]])
+            ->assertSessionHasNoErrors()->assertRedirect($ui.'/monthly-updates/'.$f['update']);
+        $this->assertDatabaseHas('jairoads_next.monthly_updates', ['id' => $f['update'], 'update_month' => '2026-01', 'progress_percentage' => 10]);
+        $this->assertDatabaseMissing('jairoads_next.media', ['id' => $f['media'][1]]);
+        $this->get($ui.'/monthly-updates/'.$f['update'])->assertOk()->assertInertia(fn ($page) => $page->where('update.media_count', 0)->where('update.update_month', '2026-01')->has('media', 0));
+        $this->get($ui.'/maintenance-documents/'.$f['documents'][0])->assertOk()->assertInertia(fn ($page) => $page->where('document.file_name', '')->where('document.available', false));
         $this->assertDatabaseHas('jairoads_next.maintenance_documents', ['id' => $f['documents'][1]]);
         $this->assertDatabaseHas('jairoads_next.maintenance_records', ['id' => $f['record']]);
         $this->assertDatabaseHas('jairoads_next.monthly_updates', ['id' => $f['update']]);
@@ -229,7 +241,7 @@ final class PermanentFileDeletionTest extends PostgresTestCase
         // A new process/service need not know whether the timed-out request removed bytes.
         $this->app->make(PermanentFileDeletion::class); // No in-memory deletion state.
         $this->deleteJson($url)->assertOk()->assertJsonPath('state', 'completed');
-        $this->assertSame(1, DB::table('jairoads_next.audit_logs')->where('action', 'DELETE')->count());
+        $this->assertSame(1, DB::table('jairoads_next.audit_logs')->where('action', 'UPDATE')->count());
     }
 
     public static function unsafeBuckets(): iterable
@@ -295,8 +307,12 @@ final class PermanentFileDeletionTest extends PostgresTestCase
         Http::fake(['*/storage/v1/object/*' => fn () => Http::response(['code' => 'NoSuchKey'], 404)]);
         $this->artisan('jairoads:resume-file-deletions')->assertSuccessful();
         $this->deleteJson($url)->assertOk()->assertJsonPath('state', 'completed');
-        $this->assertDatabaseMissing($table, ['id' => $id]);
-        $event = DB::table('jairoads_next.audit_logs')->where('action', 'DELETE')->sole();
+        if ($kind === 'document') {
+            $this->assertDatabaseHas($table, ['id' => $id, 'file_name' => '', 'file_path' => '']);
+        } else {
+            $this->assertDatabaseMissing($table, ['id' => $id]);
+        }
+        $event = DB::table('jairoads_next.audit_logs')->where('action', isset($kind) && $kind === 'media' ? 'DELETE' : 'UPDATE')->sole();
         $deliveries = DB::table('jairoads_next.audit_notification_recipients')->where('audit_log_id', $event->id)->pluck('recipient_user_id')->all();
         $this->assertCount(2, $deliveries); // Admin actor and eligible fixture bootstrap root.
         $this->assertSame(count($deliveries), count(array_unique($deliveries)));
@@ -363,7 +379,7 @@ final class PermanentFileDeletionTest extends PostgresTestCase
         $this->deleteJson($url)->assertForbidden();
         $replacement = $this->account('SuperAdmin');
         $this->withSession(['password_hash_web' => null])->actingAs($replacement)->deleteJson($url)->assertOk();
-        $event = DB::table('jairoads_next.audit_logs')->where('action', 'DELETE')->sole();
+        $event = DB::table('jairoads_next.audit_logs')->where('action', isset($kind) && $kind === 'media' ? 'DELETE' : 'UPDATE')->sole();
         $this->assertSame((int) $replacement->dd_user_account_id, (int) $event->user_id);
         $this->assertSame((int) $f['user']->dd_user_account_id, json_decode($event->old_value, true)['initiated_by']);
     }
@@ -398,7 +414,7 @@ final class PermanentFileDeletionTest extends PostgresTestCase
     public function test_a_silent_database_delete_refusal_does_not_report_success(): void
     {
         $f = $this->files();
-        DB::unprepared('CREATE FUNCTION jairoads_next.retain_test_document() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NULL; END $$; CREATE TRIGGER retain_test_document BEFORE DELETE ON jairoads_next.maintenance_documents FOR EACH ROW EXECUTE FUNCTION jairoads_next.retain_test_document()');
+        DB::unprepared('CREATE FUNCTION jairoads_next.retain_test_document() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NULL; END $$; CREATE TRIGGER retain_test_document BEFORE UPDATE ON jairoads_next.maintenance_documents FOR EACH ROW EXECUTE FUNCTION jairoads_next.retain_test_document()');
         Http::fakeSequence('*/storage/v1/object/*')->push(['message' => 'Successfully deleted'])->push(['code' => 'NoSuchKey'], 404);
         $url = '/dd-phase3/files/document/'.$f['documents'][0];
         $this->deleteJson($url)->assertStatus(202)->assertJsonPath('state', 'pending');
@@ -513,10 +529,10 @@ final class PermanentFileDeletionTest extends PostgresTestCase
                 }
             }
             $this->deleteJson($url)->assertOk();
-            $this->assertDatabaseMissing('jairoads_next.maintenance_documents', ['id' => $f['documents'][0]]);
-            $this->assertSame(1, DB::table('jairoads_next.audit_logs')->where('action', 'DELETE')->count());
+            $this->assertDatabaseHas('jairoads_next.maintenance_documents', ['id' => $f['documents'][0], 'file_name' => '', 'file_path' => '']);
+            $this->assertSame(1, DB::table('jairoads_next.audit_logs')->where('action', 'UPDATE')->count());
             $this->assertSame("object removed\n", file_get_contents($marker));
-            $this->assertSame(1, DB::table('jairoads_next.maintenance_documents')->count());
+            $this->assertSame(2, DB::table('jairoads_next.maintenance_documents')->count());
             $this->assertSame(2, DB::table('jairoads_next.media')->count());
         } finally {
             foreach ($workers as $worker) {

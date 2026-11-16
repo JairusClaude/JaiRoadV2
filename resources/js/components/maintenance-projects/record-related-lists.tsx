@@ -293,7 +293,7 @@ export function RecordRelatedLists({
                                             className="jr-project-id"
                                             title={doc.file_name}
                                         >
-                                            {doc.file_name}
+                                            {doc.file_name || 'No attachment'}
                                         </span>
                                         <time
                                             className="jr-project-id"

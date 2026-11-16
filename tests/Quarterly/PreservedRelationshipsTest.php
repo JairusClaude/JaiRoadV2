@@ -56,7 +56,7 @@ final class PreservedRelationshipsTest extends PostgresTestCase
         $this->deleteJson($url)->assertUnprocessable();
         $preview = $this->getJson($url.'/deletion-preview')->assertOk()
             ->assertJsonPath('counts.maintenance_records', 0)->json();
-        $this->deleteJson($url, ['confirmation' => 'YES', 'confirmation_token' => $preview['confirmation_token']])
+        $this->deleteJson($url, $this->deletionVerification('project') + ['confirmation_token' => $preview['confirmation_token']])
             ->assertOk()->assertJsonPath('state', 'completed');
         $this->assertDatabaseMissing('jairoads_next.maintenance_projects', ['id' => $f['project']]);
         $this->assertDatabaseHas('jairoads_next.road_coverages', ['id' => $f['road']]);
@@ -72,7 +72,7 @@ final class PreservedRelationshipsTest extends PostgresTestCase
         $url = '/dd-phase3/ui/maintenance-projects/'.$f['project'];
         config(['jairoads_file_deletion.operationally_enabled' => false]);
         $token = $this->getJson($url.'/deletion-preview')->assertOk()->assertJsonPath('can_delete', false)->json('confirmation_token');
-        $this->deleteJson($url, ['confirmation' => 'YES', 'confirmation_token' => $token])->assertStatus(503);
+        $this->deleteJson($url, $this->deletionVerification('project') + ['confirmation_token' => $token])->assertStatus(503);
         $this->assertDatabaseHas('jairoads_next.maintenance_projects', ['id' => $f['project']]);
         $this->assertDatabaseHas('jairoads_next.maintenance_records', [
             'id' => $f['record'], 'project_id' => $f['project'], 'managing_engineer_id' => $f['engineer'],
@@ -110,7 +110,7 @@ final class PreservedRelationshipsTest extends PostgresTestCase
             ->assertJsonPath('counts.media', 1)->json();
         $this->deleteJson($url, ['confirmation_token' => $preview['confirmation_token'], 'confirmation' => 'NO'])->assertUnprocessable();
         Http::assertNothingSent();
-        $this->deleteJson($url, ['confirmation_token' => $preview['confirmation_token'], 'confirmation' => 'YES'])
+        $this->deleteJson($url, $this->deletionVerification('project') + ['confirmation_token' => $preview['confirmation_token']])
             ->assertOk()->assertJsonPath('state', 'completed');
         foreach (['maintenance_projects' => $f['project'], 'maintenance_records' => $f['record'], 'monthly_updates' => $f['update'], 'maintenance_documents' => $f['document'], 'media' => $f['media']] as $table => $id) {
             $this->assertDatabaseMissing('jairoads_next.'.$table, ['id' => $id]);
@@ -118,6 +118,7 @@ final class PreservedRelationshipsTest extends PostgresTestCase
         $this->assertDatabaseHas('jairoads_next.road_coverages', ['id' => $f['road']]);
         $this->assertDatabaseHas('jairoads_next.engineers', ['id' => $f['engineer']]);
         $this->assertSame(5, DB::table('jairoads_next.audit_logs')->where('action', 'DELETE')->count());
+        $this->assertSame(1, DB::table('jairoads_next.audit_logs')->where('action', 'UPDATE')->where('entity_type', 'MaintenanceDocument')->count());
         Http::assertSent(fn ($request) => $request->method() === 'DELETE' && str_contains($request->url(), '/private-media/monthly-updates/'.$f['update'].'/'));
         Http::assertSent(fn ($request) => $request->method() === 'DELETE' && str_contains($request->url(), '/private-documents/maintenance-records/'.$f['record'].'/'));
     }
@@ -130,7 +131,7 @@ final class PreservedRelationshipsTest extends PostgresTestCase
         $record = (int) DB::table('jairoads_next.maintenance_records')->insertGetId(
             $this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->dd_user_account_id]
         );
-        $this->deleteJson($url, ['confirmation' => 'YES', 'confirmation_token' => $token])->assertUnprocessable();
+        $this->deleteJson($url, $this->deletionVerification('project') + ['confirmation_token' => $token])->assertUnprocessable();
         $this->assertDatabaseHas('jairoads_next.maintenance_projects', ['id' => $f['project']]);
         $this->assertDatabaseHas('jairoads_next.maintenance_records', ['id' => $record, 'project_id' => $f['project']]);
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->where('action', 'DELETE')->count());
@@ -154,9 +155,9 @@ final class PreservedRelationshipsTest extends PostgresTestCase
         $f = $this->fixture();
         $url = '/dd-phase3/ui/maintenance-projects/'.$f['project'];
         $token = $this->getJson($url.'/deletion-preview')->assertOk()->json('confirmation_token');
-        $this->deleteJson($url, ['confirmation' => 'YES', 'confirmation_token' => 'corrupt'])->assertUnprocessable();
+        $this->deleteJson($url, $this->deletionVerification('project') + ['confirmation_token' => 'corrupt'])->assertUnprocessable();
         DB::table('jairoads_next.maintenance_projects')->where('id', $f['project'])->update(['project_title' => 'Changed']);
-        $this->deleteJson($url, ['confirmation' => 'YES', 'confirmation_token' => $token])->assertUnprocessable();
+        $this->deleteJson($url, $this->deletionVerification('project') + ['confirmation_token' => $token])->assertUnprocessable();
         $this->assertDatabaseHas('jairoads_next.maintenance_projects', ['id' => $f['project']]);
     }
 

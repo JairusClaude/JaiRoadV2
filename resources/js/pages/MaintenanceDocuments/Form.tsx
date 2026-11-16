@@ -178,7 +178,7 @@ export default function Form(parents: DocumentParents) {
                                 doc ? 'put' : 'post',
                                 parents.submitUrl,
                                 {
-                                    forceFormData: true,
+                                    forceFormData: !doc || page.props.canonicalFrontend !== true,
                                     preserveScroll: true,
                                     onFinish: () => {
                                         lock.current = false;

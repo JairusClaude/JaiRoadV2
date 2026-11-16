@@ -27,6 +27,14 @@ abstract class PostgresTestCase extends TestCase
         parent::tearDown();
     }
 
+    protected function deletionVerification(string $scope): array
+    {
+        $account = (int) auth()->user()->dd_user_account_id;
+        $challenge = app(\App\Services\DeletionChallenge::class)->issue($account, $scope);
+        preg_match('/^(\d+) \+ (\d+)$/', $challenge['question'], $parts);
+        return ['confirmation' => 'YES', 'captcha_token' => $challenge['token'], 'captcha_answer' => (int) $parts[1] + (int) $parts[2]];
+    }
+
     protected function engineer(string $status = 'Active'): int
     {
         return (int) DB::table('jairoads_next.engineers')->insertGetId([

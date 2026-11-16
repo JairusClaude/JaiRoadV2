@@ -114,7 +114,7 @@ final class UnifiedFrontendTest extends PostgresTestCase
             $this->recordData($f['project'], $f['engineer'], 'Q2') + ['created_by' => $f['user']->dd_user_account_id]
         );
 
-        $this->delete(self::UI.'/maintenance-records/'.$record)->assertSessionHasNoErrors()
+        $this->delete(self::UI.'/maintenance-records/'.$record, $this->deletionVerification('record'))->assertSessionHasNoErrors()
             ->assertRedirect(self::UI.'/maintenance-records');
         $this->assertDatabaseMissing('jairoads_next.maintenance_records', ['id' => $record]);
         $this->assertDatabaseHas('jairoads_next.maintenance_records', ['id' => $sibling]);
@@ -133,8 +133,8 @@ final class UnifiedFrontendTest extends PostgresTestCase
         );
         Http::preventStrayRequests();
 
-        $this->deleteJson(self::UI.'/maintenance-records/'.$record)->assertUnprocessable()->assertJsonValidationErrors('delete');
-        $this->deleteJson(self::UI.'/maintenance-records/bulk', ['record_ids' => [$empty, $record]])
+        $this->deleteJson(self::UI.'/maintenance-records/'.$record, $this->deletionVerification('record'))->assertUnprocessable()->assertJsonValidationErrors('delete');
+        $this->deleteJson(self::UI.'/maintenance-records/bulk', $this->deletionVerification('record') + ['record_ids' => [$empty, $record]])
             ->assertUnprocessable()->assertJsonValidationErrors('delete');
         $this->assertDatabaseHas('jairoads_next.maintenance_records', ['id' => $record]);
         $this->assertDatabaseHas('jairoads_next.maintenance_records', ['id' => $empty]);
