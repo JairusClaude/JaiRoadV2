@@ -156,8 +156,8 @@ export function DeletionDialog({
                     {children}
                     {requireYes && (
                         <div className="mt-4 grid gap-2 rounded-xl border border-red-200 bg-red-50 p-3">
-                            <label htmlFor={confirmationId} className="text-sm font-semibold text-red-800">Type YES to confirm permanent deletion <span className="jr-required">*</span></label>
-                            <input id={confirmationId} type="text" autoComplete="off" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Type YES" disabled={processing} className="w-full rounded-md border border-red-300 bg-white px-3 py-2 text-sm text-slate-900" />
+                            <label htmlFor={confirmationId} className="text-sm font-semibold text-red-800">Type YES to confirm permanent deletion <span className="jr-required">* Required</span></label>
+                            <input id={confirmationId} type="text" autoComplete="off" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Type YES" disabled={processing} required aria-required="true" className="w-full min-h-11 rounded-lg border-2 border-red-300 bg-white px-4 py-3 text-base text-slate-900 focus:border-red-600 focus:outline-none focus:ring-2 focus:ring-red-200" />
                         </div>
                     )}
                     {needsChallenge && (
