@@ -70,7 +70,10 @@ final class MaintenanceProjectPageController extends OperationsFrontendControlle
         $this->writer($this->actor($request));
         $this->operations->saveProject($request, $this->identities, $id);
 
-        return redirect(self::BASE.'/maintenance-projects'.($id === null ? '' : '/'.$id))->with('dd_operations_status', 'Maintenance Project saved to the database.');
+        $directory = self::BASE.'/maintenance-projects';
+        $fallback = $id === null ? $directory : $directory.'/'.$id;
+        $return = $this->editReturn($request, $fallback, [$directory, $fallback]);
+        return redirect($return)->with('dd_operations_status', 'Maintenance Project saved to the database.');
     }
 
     public function projectShow(Request $request, int $id): Response
