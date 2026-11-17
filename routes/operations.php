@@ -38,6 +38,7 @@ Route::middleware(['auth'])->prefix('dd-phase3')->name('jairoads.dd-phase3.')->g
 
     Route::get('/accounts/{id}', [PeopleLifecycleController::class, 'accountDetails'])->whereNumber('id');
     Route::patch('/accounts/{id}/status', [PeopleLifecycleController::class, 'accountStatus'])->whereNumber('id');
+    Route::post('/accounts/{id}/password-reset', [PeopleLifecycleController::class, 'resetAccountPassword'])->whereNumber('id')->middleware('throttle:5,1')->name('accounts.password-reset');
 
     Route::get('/history/records', [PreservedHistoryController::class, 'index'])->name('history.index');
     Route::get('/history/records/{id}', [PreservedHistoryController::class, 'show'])->whereNumber('id')->name('history.show');

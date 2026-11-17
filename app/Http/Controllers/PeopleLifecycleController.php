@@ -7,6 +7,10 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Services\AccountIdentityResolver;
 use App\Services\OperationAudit;
+use App\Services\LinkedPasswordUpdater;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 use App\Services\RoleAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -139,14 +143,66 @@ final class PeopleLifecycleController extends Controller
 
     public function accountDetails(Request $request, AccountIdentityResolver $resolver, int $id): JsonResponse
     {
-        $this->admin($request, $resolver);
+        $actor = $this->admin($request, $resolver);
         $account = DB::table('jairoads_next.user_accounts')->where('id', $id)
             ->first(['id', 'username', 'email', 'account_type', 'engineer_id', 'is_active', 'created_at', 'updated_at']);
         abort_unless($account instanceof stdClass, 404);
         $engineer = $account->engineer_id === null ? null : DB::table('jairoads_next.engineers')->where('id', $account->engineer_id)
             ->first(['id', 'first_name', 'middle_name', 'last_name', 'contact_no', 'rank', 'engineer_status']);
 
-        return response()->json(['account' => $account, 'engineer' => $engineer])->header('Cache-Control', 'private, no-store');
+        $canReset = false;
+        if ($actor['role'] === 'SuperAdmin' && $actor['account_id'] !== $id && $account->account_type !== 'SuperAdmin') {
+            $target = User::query()->where('dd_user_account_id', $id)->first();
+            $canReset = $target !== null && $resolver->resolveForRecovery($target) !== null;
+        }
+
+        return response()->json(['account' => $account, 'engineer' => $engineer, 'can_reset_password' => $canReset])->header('Cache-Control', 'private, no-store');
+    }
+
+    /** SuperAdmin-assisted recovery, independent of mailbox access. */
+    public function resetAccountPassword(Request $request, AccountIdentityResolver $resolver, LinkedPasswordUpdater $passwords, int $id): JsonResponse
+    {
+        $actor = $this->admin($request, $resolver);
+        abort_unless($actor['role'] === 'SuperAdmin' && $actor['account_id'] !== $id, 403);
+        $v = $request->validate([
+            'current_password' => ['required', 'string', 'max:1024'],
+            'password' => ['required', 'string', 'max:72', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols(),
+                function ($attribute, $value, $fail) {
+                    if (is_string($value) && strlen($value) > 72) {
+                        $fail('The new password must not exceed 72 bytes.');
+                    }
+                }],
+        ]);
+        try {
+            DB::transaction(function () use ($actor, $request, $resolver, $passwords, $id, $v): void {
+                $this->currentActor($actor, $request, $resolver);
+                $administrator = User::query()->whereKey($request->user()->getKey())->lockForUpdate()->first();
+                abort_unless($administrator !== null && $resolver->resolve($administrator) === $actor, 403);
+                if (! Hash::check($v['current_password'], $administrator->getAuthPassword())) {
+                    throw ValidationException::withMessages(['current_password' => 'Your SuperAdmin password is incorrect.']);
+                }
+                $target = User::query()->where('dd_user_account_id', $id)->lockForUpdate()->first();
+                $account = DB::table('jairoads_next.user_accounts')->where('id', $id)->lockForUpdate()->first();
+                abort_unless($account !== null, 404);
+                abort_unless(in_array($account->account_type, ['Admin', 'Engineer', 'Viewer'], true), 403);
+                if ($target === null || $resolver->resolveForRecovery($target) === null) {
+                    throw ValidationException::withMessages(['password' => 'This account is inactive, retired or has an invalid login link. Review its account status before recovery.']);
+                }
+                // Reuse the existing synchronized hash write and session revocation.
+                $passwords->reset($target, $v['password']);
+                // Invalidate any outstanding email recovery token as part of the same transaction.
+                $broker = (string) config('auth.defaults.passwords', 'users');
+                DB::table(config('auth.passwords.'.$broker.'.table', 'password_reset_tokens'))
+                    ->where('email', $target->getEmailForPasswordReset())->delete();
+                app(OperationAudit::class)->recordAdministratorPasswordReset($actor, $id);
+            }, 3);
+        } catch (QueryException) {
+            // Never return SQL bindings, passwords or hashes in an error.
+            throw ValidationException::withMessages(['password' => 'Password reset could not be completed. No successful reset was confirmed.']);
+        }
+
+        return response()->json(['message' => 'Password reset successfully. The account can sign in with the new password.'])
+            ->header('Cache-Control', 'private, no-store');
     }
 
     public function accountStatus(Request $request, AccountIdentityResolver $resolver, int $id): RedirectResponse

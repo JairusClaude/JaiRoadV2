@@ -14,7 +14,7 @@ use SensitiveParameter;
 /** Password writes only; never provisions identities or changes account permissions. */
 final class LinkedPasswordUpdater
 {
-    /** Called only after Fortify's password broker has verified the reset token. */
+    /** Called after token verification or explicit, reauthenticated SuperAdmin recovery. */
     public function reset(User $login, #[SensitiveParameter] string $password): void
     {
         $this->write($login, $password, null, recover: true);
@@ -76,7 +76,7 @@ final class LinkedPasswordUpdater
                             $this->unavailable();
                         }
                     }
-                    // Only token-verified recovery may repair previously desynchronized hashes.
+                    // Only authorized recovery may repair previously desynchronized hashes.
                     if (! $recover && ! hash_equals($fresh->password, (string) $account->password)) {
                         $this->unavailable();
                     }
