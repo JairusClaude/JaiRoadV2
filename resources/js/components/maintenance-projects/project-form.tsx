@@ -452,17 +452,16 @@ export function ProjectForm({
                             </Label>
                             <Input
                                 id="project-municipality"
-                                className="mt-2"
+                                className="mt-2 !bg-slate-100 !text-slate-600 dark:!bg-slate-800 dark:!text-slate-300 cursor-not-allowed"
                                 value={selected?.municipality ?? ''}
                                 readOnly
-                                aria-describedby={
-                                    create ? 'municipality-hint' : undefined
-                                }
+                                tabIndex={-1}
+                                aria-describedby="municipality-hint"
                                 placeholder="From selected RoadCoverage"
                             />
                             <p
                                 className="jr-field-hint mt-2"
-                                id={create ? 'municipality-hint' : undefined}
+                                id="municipality-hint"
                             >
                                 Filled automatically from the linked LGU.
                             </p>
