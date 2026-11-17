@@ -1,6 +1,6 @@
 import L from 'leaflet';
 import { MapPin } from 'lucide-react';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { savedRoadLines } from '@/lib/road-coverages/saved-lines';
 import 'leaflet/dist/leaflet.css';
 import '../../../css/jairoads-road-map.css';
@@ -19,21 +19,28 @@ export type SimplifiedCoverageItem = {
     assigned?: boolean;
     has_projects?: boolean;
     geojson: unknown;
+    project_id?: number | null;
+    project_title?: string | null;
+    my_project?: boolean;
+    my_record_count?: number;
 };
 
 export type SimplifiedCoverageMapProps = {
     coverages: SimplifiedCoverageItem[];
     className?: string;
     height?: number | string;
+    engineerView?: boolean;
 };
 
 export function SimplifiedCoverageMap({
     coverages,
     className = '',
     height = 360,
+    engineerView = false,
 }: SimplifiedCoverageMapProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<L.Map | null>(null);
+    const [mineOnly, setMineOnly] = useState(false);
 
     const mappedCoverages = useMemo(() => {
         return coverages.map((coverage) => {
@@ -54,14 +61,22 @@ export function SimplifiedCoverageMap({
                 name: coverage.road_name,
                 municipality,
                 assigned,
+                projectId: coverage.project_id,
+                projectTitle: coverage.project_title,
+                mine: coverage.my_project === true,
+                recordCount: coverage.my_record_count ?? 0,
                 lines: latLngLines,
             };
         });
     }, [coverages]);
 
-    const mappedCount = useMemo(
-        () => mappedCoverages.filter((c) => c.lines.length > 0).length,
-        [mappedCoverages],
+    const mappedCount = mappedCoverages.filter((c) => c.lines.length > 0).length;
+    const myMappedCount = mappedCoverages.filter((c) => c.mine && c.lines.length > 0).length;
+    const myProjectCount = mappedCoverages.filter((c) => c.mine).length;
+    const myOnly = engineerView && mineOnly;
+    const visibleCoverages = useMemo(
+        () => mappedCoverages.filter((c) => !myOnly || c.mine),
+        [mappedCoverages, myOnly],
     );
 
     useEffect(() => {
@@ -84,21 +99,39 @@ export function SimplifiedCoverageMap({
         // Metric scale indicator in bottom-left
         L.control.scale({ imperial: false, maxWidth: 120 }).addTo(map);
 
-        // Feature group for all rendered coverage lines
+        map.fitBounds(PROVINCE_BOUNDS);
+        const observer = new ResizeObserver(() => map.invalidateSize());
+        observer.observe(containerRef.current);
+        return () => {
+            observer.disconnect();
+            map.remove();
+            mapRef.current = null;
+        };
+    }, []);
+
+    useEffect(() => {
+        const map = mapRef.current;
+        if (!map) return;
         const roadGroup = L.featureGroup();
 
-        for (const item of mappedCoverages) {
+        // Draw background roads first so the engineer's highlighted roads stay on top.
+        const ordered = engineerView
+            ? [...visibleCoverages].sort((a, b) => Number(a.mine) - Number(b.mine))
+            : visibleCoverages;
+        for (const item of ordered) {
             if (!item.lines.length) continue;
 
             // Use the canonical road brown (#843b12) from the Add Road Coverage editor and Details view
-            const lineColor = '#843b12';
+            const highlighted = engineerView && item.mine;
+            const muted = engineerView && !item.mine;
+            const lineColor = muted ? '#64748b' : '#843b12';
 
             for (const segment of item.lines) {
                 // White halo background line for contrast and legibility
                 L.polyline(segment, {
                     color: '#ffffff',
-                    weight: 8,
-                    opacity: 0.9,
+                    weight: highlighted ? 11 : muted ? 6 : 8,
+                    opacity: muted ? 0.55 : 0.9,
                     smoothFactor: 0,
                     interactive: false,
                 }).addTo(roadGroup);
@@ -106,21 +139,39 @@ export function SimplifiedCoverageMap({
                 // Main colored road polyline matching Add Road Coverage page
                 const line = L.polyline(segment, {
                     color: lineColor,
-                    weight: 5,
-                    opacity: 0.95,
+                    weight: highlighted ? 7 : muted ? 3 : 5,
+                    opacity: muted ? 0.75 : 0.95,
+                    className: engineerView ? (item.mine ? 'jr-dashboard-road-mine' : 'jr-dashboard-road-other') : undefined,
                     smoothFactor: 0,
                     interactive: true,
                 });
 
-                // Read-only click popup with road and municipality details
-                line.bindPopup(
-                    `<div style="font-family: inherit; padding: 2px 4px; font-size: 13px; min-width: 170px;">
-                        <strong style="color: #1e293b; font-size: 13px; display: block; margin-bottom: 2px;">${item.name}</strong>
-                        <div style="color: #64748b; font-size: 12px;">${item.municipality}</div>
-                        ${item.assigned ? '<div style="font-size: 11px; margin-top: 5px; font-weight: 500; color: #64748b;">Linked to maintenance project</div>' : ''}
-                    </div>`,
-                    { closeButton: true },
-                );
+                // Use DOM text nodes: road/project names are user-entered.
+                const popup = document.createElement('div');
+                popup.className = 'jr-coverage-map-popup';
+                const title = document.createElement('strong');
+                title.textContent = item.name;
+                popup.append(title);
+                const detail = document.createElement('p');
+                detail.textContent = item.municipality;
+                popup.append(detail);
+                if (engineerView) {
+                    const status = document.createElement('p');
+                    status.className = item.mine ? 'jr-map-popup-mine' : '';
+                    status.textContent = item.mine ? 'My project · ' + item.recordCount + ' managed record(s)' : item.assigned ? 'Other maintenance project' : 'No linked maintenance project';
+                    popup.append(status);
+                    if (item.projectId && item.projectTitle) {
+                        const link = document.createElement('a');
+                        link.href = '/dd-phase3/ui/maintenance-projects/' + item.projectId;
+                        link.textContent = item.projectTitle;
+                        popup.append(link);
+                    }
+                } else if (item.assigned) {
+                    const status = document.createElement('p');
+                    status.textContent = 'Linked to maintenance project';
+                    popup.append(status);
+                }
+                line.bindPopup(popup, { closeButton: true });
 
                 line.addTo(roadGroup);
             }
@@ -140,13 +191,12 @@ export function SimplifiedCoverageMap({
             map.fitBounds(PROVINCE_BOUNDS);
         }
 
-        // Handle container resizing smoothly
-        const observer = new ResizeObserver(() => {
-            map.invalidateSize();
-        });
-        observer.observe(containerRef.current);
-
         return () => {
+            roadGroup.removeFrom(map);
+        };
+    }, [visibleCoverages, engineerView]);
+
+    return () => {
             observer.disconnect();
             map.remove();
             mapRef.current = null;
@@ -160,10 +210,27 @@ export function SimplifiedCoverageMap({
                     <MapPin size={17} />
                     <strong>Davao de Oro · Road Coverage Map</strong>
                     <span className="jr-road-map-count">
-                        {mappedCount} mapped road line{mappedCount === 1 ? '' : 's'}
+                        {myOnly ? myMappedCount : mappedCount} mapped road line{(myOnly ? myMappedCount : mappedCount) === 1 ? '' : 's'}
                     </span>
                 </div>
+                {engineerView && (
+                    <label className="jr-engineer-map-toggle">
+                        <input type="checkbox" role="switch" checked={mineOnly} onChange={(event) => setMineOnly(event.target.checked)} />
+                        My projects only
+                    </label>
+                )}
             </div>
+            {engineerView && (
+                <div className="jr-road-map-toolbar" role="status">
+                    <span>{myProjectCount} assigned project{myProjectCount === 1 ? '' : 's'} · {myMappedCount} mapped · {mappedCount - myMappedCount} other mapped roads</span>
+                    <span>{myOnly ? 'Showing only your projects' : 'Showing all roads; your projects are highlighted'}</span>
+                </div>
+            )}
+            {engineerView && myMappedCount === 0 && (
+                <p className="jr-engineer-map-empty" role="status">
+                    {myProjectCount ? 'Your assigned projects do not have valid mapped road lines yet.' : 'No projects are assigned to you yet.'} {myOnly ? 'Turn off My projects only to see all mapped roads.' : ''}
+                </p>
+            )}
 
             <div
                 ref={containerRef}
@@ -176,11 +243,12 @@ export function SimplifiedCoverageMap({
             <div className="jr-road-map-footer">
                 <div className="jr-road-map-legend">
                     <span>
-                        <i style={{ background: '#843b12' }} /> Road Coverage
+                        <i style={{ background: '#843b12' }} /> {engineerView ? 'My projects' : 'Road Coverage'}
                     </span>
+                    {engineerView && !myOnly && <span><i style={{ background: '#64748b' }} /> Other roads</span>}
                 </div>
                 <small>
-                    Clean, read-only Leaflet display map consistent with Add & Details pages.
+                    {engineerView ? 'Click a road to view its project. Map filtering does not change access or assignments.' : 'Clean, read-only Leaflet display map consistent with Add & Details pages.'}
                 </small>
             </div>
         </div>

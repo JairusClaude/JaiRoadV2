@@ -13,6 +13,8 @@ import type { ReactNode } from 'react';
 import { DdDashboardAnalytics } from '@/components/dd-dashboard-analytics';
 import type { DdDashboardSummary } from '@/components/dd-dashboard-analytics';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
+import { SimplifiedCoverageMap } from '@/components/road-coverages/simplified-coverage-map';
+import type { SimplifiedCoverageItem } from '@/components/road-coverages/simplified-coverage-map';
 import '../../../css/maintenance-projects-exploration.css';
 
 type Role = 'engineer' | 'viewer';
@@ -26,6 +28,7 @@ type StatKey =
 type Props = {
     role: Role;
     analytics: DdDashboardSummary;
+    mapCoverages: SimplifiedCoverageItem[];
     name: string;
     username: string;
     engineer: { id: number; name: string; rank: string; status: string } | null;
@@ -79,6 +82,7 @@ export default function RoleDashboard({
     records,
     notifications,
     analytics,
+    mapCoverages = [],
 }: Props) {
     const isEngineer = role === 'engineer';
 
@@ -199,6 +203,12 @@ export default function RoleDashboard({
                         )}
                     </div>
                 </section>
+
+                {isEngineer && (
+                    <section aria-label="My projects road map">
+                        <SimplifiedCoverageMap coverages={mapCoverages} engineerView height={450} />
+                    </section>
+                )}
 
                 <DdDashboardAnalytics data={analytics} compact />
 

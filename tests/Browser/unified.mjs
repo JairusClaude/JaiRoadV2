@@ -151,6 +151,19 @@ try {
     const superadmin = await signIn(f.superadmin_email);
     lastPage = engineer;
 
+    const dashboardMap = engineer.getByRole('region', { name: 'My projects road map' });
+    await dashboardMap.waitFor();
+    const myProjects = dashboardMap.getByRole('switch', { name: 'My projects only' });
+    await dashboardMap.locator('.jr-dashboard-road-mine').first().waitFor();
+    await dashboardMap.locator('.jr-dashboard-road-other').first().waitFor();
+    const mineCount = await dashboardMap.locator('.jr-dashboard-road-mine').count();
+    await myProjects.check();
+    assert.equal(await dashboardMap.locator('.jr-dashboard-road-other').count(), 0);
+    assert.equal(await dashboardMap.locator('.jr-dashboard-road-mine').count(), mineCount);
+    await myProjects.uncheck();
+    await dashboardMap.locator('.jr-dashboard-road-other').first().waitFor();
+    assert.equal(await viewer.getByRole('region', { name: 'My projects road map' }).count(), 0);
+
     await verifyRoleAcceptanceMatrix({
         browser,
         base,

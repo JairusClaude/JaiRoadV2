@@ -279,3 +279,17 @@
     background: #42321f;
     color: #ffd89e;
 }
+
+/* Engineer dashboard map: a display filter, never an access-control toggle. */
+.jr-engineer-map-toggle { display:flex; align-items:center; gap:9px; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; }
+.jr-engineer-map-toggle input { appearance:none; width:36px; height:20px; border-radius:999px; background:#94a3b8; position:relative; cursor:pointer; flex:none; }
+.jr-engineer-map-toggle input::after { content:''; position:absolute; top:3px; left:3px; width:14px; height:14px; border-radius:50%; background:#fff; transition:transform .15s; }
+.jr-engineer-map-toggle input:checked { background:#843b12; }
+.jr-engineer-map-toggle input:checked::after { transform:translateX(16px); }
+.jr-engineer-map-empty { padding:10px 12px; font-size:12px; color:#79573d; background:#fff7eb; }
+.jr-coverage-map-popup { font-family:inherit; font-size:12px; min-width:170px; }
+.jr-coverage-map-popup strong { display:block; font-size:13px; color:#1e293b; }
+.jr-coverage-map-popup p { margin:4px 0; color:#64748b; }
+.jr-coverage-map-popup .jr-map-popup-mine { color:#843b12; font-weight:700; }
+.jr-coverage-map-popup a { display:block; margin-top:6px; text-decoration:underline; }
+.jr-road-map-legend { flex-wrap:wrap; }

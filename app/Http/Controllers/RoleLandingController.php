@@ -29,6 +29,7 @@ final class RoleLandingController extends Controller
         $engineer = null;
         $assigned = [];
         $records = [];
+        $mapCoverages = [];
         $stats = [
             'assignedLgus' => 0, 'managedRecords' => 0, 'ongoingRecords' => 0,
             'roadCoverages' => 0, 'projects' => 0, 'lgus' => 0,
@@ -58,6 +59,29 @@ final class RoleLandingController extends Controller
             $stats['lgus'] = count($assigned);
             $stats['roadCoverages'] = (int) DB::table('jairoads_next.road_coverages')->count();
             $stats['projects'] = (int) DB::table('jairoads_next.maintenance_projects')->count();
+
+            // All visible road coverages, including roads with no project. A road
+            // is "mine" only if its linked project has a record managed by this
+            // authenticated Engineer. Counting via a correlated subquery avoids
+            // duplicating roads with multiple quarterly records.
+            $mapCoverages = DB::table('jairoads_next.road_coverages as rc')
+                ->join('jairoads_next.lgus as l', 'l.id', '=', 'rc.lgu_id')
+                ->leftJoin('jairoads_next.maintenance_projects as p', 'p.road_coverage_id', '=', 'rc.id')
+                ->select(['rc.id', 'rc.road_name', 'rc.geojson', 'l.municipality_name', 'p.id as project_id', 'p.project_title'])
+                ->selectSub(DB::table('jairoads_next.maintenance_records as mr')
+                    ->selectRaw('count(*)')->whereColumn('mr.project_id', 'p.id')
+                    ->where('mr.managing_engineer_id', $id), 'my_record_count')
+                ->orderBy('rc.id')->get()->map(static fn ($r): array => [
+                    'id' => (int) $r->id,
+                    'road_name' => (string) $r->road_name,
+                    'municipality' => (string) $r->municipality_name,
+                    'geojson' => json_decode((string) $r->geojson, true),
+                    'assigned' => $r->project_id !== null,
+                    'project_id' => $r->project_id === null ? null : (int) $r->project_id,
+                    'project_title' => $r->project_title,
+                    'my_project' => (int) $r->my_record_count > 0,
+                    'my_record_count' => (int) $r->my_record_count,
+                ])->all();
 
             // Dashboard lists own managed records across municipalities.
             $scope = DB::table('jairoads_next.maintenance_records as mr')
@@ -104,6 +128,7 @@ final class RoleLandingController extends Controller
             'stats' => $stats,
             'analytics' => app(DashboardAnalytics::class)->summary($actor),
             'records' => $records,
+            'mapCoverages' => $mapCoverages,
             'notifications' => $notifications,
             'canonicalFrontend' => true,
             'jairoadsIdentity' => ['role' => strtolower($actor['role'])],

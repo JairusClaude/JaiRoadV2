@@ -45,6 +45,35 @@ final class UnifiedFrontendTest extends PostgresTestCase
         }
     }
 
+    public function test_engineer_dashboard_map_highlights_managed_projects_not_road_creators(): void
+    {
+        $f = $this->fixture('Engineer');
+        $this->record($f);
+        $other = $this->engineer();
+        $otherLogin = $this->account('Engineer', $other);
+        $road = $this->road($f['engineer']);
+        $project = (int) DB::table('jairoads_next.maintenance_projects')->insertGetId([
+            'project_title' => 'Other project', 'road_coverage_id' => $road,
+            'created_by' => $f['user']->dd_user_account_id,
+        ]);
+        $unassigned = $this->road($f['engineer']);
+        DB::table('jairoads_next.maintenance_records')->insert([
+            $this->recordData($f['project'], $f['engineer'], 'Q2') + ['created_by' => $f['user']->dd_user_account_id],
+            $this->recordData($project, $other) + ['created_by' => $f['user']->dd_user_account_id],
+        ]);
+        $this->get('/dd-phase3/dashboard?engineer_id='.$other)->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->component('dd-phase3/RoleDashboard')->has('mapCoverages', 3)
+            ->where('mapCoverages.0.id', $f['road'])->where('mapCoverages.0.my_project', true)
+            ->where('mapCoverages.0.my_record_count', 2)->where('mapCoverages.0.project_id', $f['project'])
+            ->where('mapCoverages.1.id', $road)->where('mapCoverages.1.my_project', false)
+            ->where('mapCoverages.2.id', $unassigned)->where('mapCoverages.2.my_project', false)
+            ->where('mapCoverages.2.project_id', null));
+        $this->actingAs($otherLogin)->get('/dd-phase3/dashboard')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('mapCoverages.0.my_project', false)->where('mapCoverages.1.my_project', true));
+        $this->actingAs($this->account('Viewer'))->get('/dd-phase3/dashboard')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('mapCoverages', 0));
+    }
+
     public function test_record_search_by_engineer_and_document_form_source_context(): void
     {
         $f = $this->fixture('SuperAdmin');
