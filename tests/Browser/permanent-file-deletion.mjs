@@ -72,8 +72,22 @@ export async function verifyPermanentFileDeletion({
     assert.equal((await admin.request.get(`${base}${doc.download_url}`)).status(), 200);
     await admin.goto(`${ui}/maintenance-documents/${doc.id}/edit`);
     await admin.getByRole('button', { name: `Mark ${doc.file_name} for deletion` }).click();
-    admin.once('dialog', (dialog) => dialog.accept());
     await admin.getByRole('button', { name: 'Save Changes', exact: true }).click();
+    const documentModal = admin.getByRole('dialog', { name: 'Remove attachment permanently?' });
+    await documentModal.waitFor();
+    assert.equal(await documentModal.getByRole('button', { name: 'Cancel', exact: true }).evaluate(el => el === document.activeElement), true);
+    const previousViewport = admin.viewportSize();
+    await admin.setViewportSize({ width: 390, height: 844 });
+    const bounds = await documentModal.evaluate(el => {
+        const r = el.getBoundingClientRect();
+        return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: innerWidth, height: innerHeight };
+    });
+    assert.ok(bounds.left >= 0 && bounds.right <= bounds.width && bounds.top >= 0 && bounds.bottom <= bounds.height);
+    await documentModal.getByRole('button', { name: 'Cancel', exact: true }).click();
+    assert.equal((await admin.request.get(`${base}${doc.download_url}`)).status(), 200);
+    if (previousViewport) await admin.setViewportSize(previousViewport);
+    await admin.getByRole('button', { name: 'Save Changes', exact: true }).click();
+    await admin.getByRole('dialog', { name: 'Remove attachment permanently?' }).getByRole('button', { name: 'Save and Remove', exact: true }).click();
     await admin.waitForURL(`${ui}/maintenance-documents/${doc.id}`);
     const retainedDocument = (await props(admin, `/maintenance-documents/${doc.id}`)).document;
     assert.equal(retainedDocument.id, doc.id);
@@ -113,8 +127,8 @@ export async function verifyPermanentFileDeletion({
     assert.ok((await props(superadmin, `/monthly-updates/${report.id}`)).media.some((file) => file.id === selected.id));
     await superadmin.goto(`${ui}/monthly-updates/${report.id}/edit`);
     await superadmin.getByRole('button', { name: 'Remove unified.png', exact: true }).click();
-    superadmin.once('dialog', (dialog) => dialog.accept());
     await superadmin.getByRole('button', { name: 'Save Changes', exact: true }).click();
+    await superadmin.getByRole('dialog', { name: 'Remove selected media permanently?' }).getByRole('button', { name: 'Save and Remove', exact: true }).click();
     await superadmin.waitForURL(`${ui}/monthly-updates/${report.id}`);
     const after = await props(superadmin, `/monthly-updates/${report.id}`);
     const {

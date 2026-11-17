@@ -1,6 +1,7 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import { useRef, useState } from 'react';
+import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialog';
 import { DocumentAttachment } from '@/components/maintenance-documents/document-file';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { ProjectSelector } from '@/components/monthly-updates/project-selector';
@@ -34,6 +35,7 @@ export default function Form(parents: DocumentParents) {
         (page.props.canonicalFrontend === true && page.props.canWrite === true);
     const doc = parents.document;
     const [savedRemovalPending, setSavedRemovalPending] = useState(false);
+    const [confirmRemoval, setConfirmRemoval] = useState(false);
     const fixed = parents.records.find((r) => r.id === parents.contextRecordId);
     const back = formReturn(page.url, parents.cancelUrl, [
         workspaceHref('/maintenance-documents'),
@@ -84,6 +86,75 @@ export default function Form(parents: DocumentParents) {
         'aria-describedby': form.errors[key] ? `${key}-error` : undefined,
     });
     const cancel = () => router.visit(back);
+    const save = (confirmed = false) => {
+
+        if (disabled || lock.current) {
+            return;
+        }
+
+        form.clearErrors();
+        const errors: Partial<
+            Record<keyof Values, string>
+        > = {};
+
+        if (!project) {
+            errors.project_id =
+                'Select a Maintenance Project.';
+        }
+
+        if (!record || record.project_id !== project?.id) {
+            errors.maintenance_id =
+                'Select a Maintenance Record for this project.';
+        }
+
+        if (
+            !form.data.document_title.trim() ||
+            form.data.document_title.trim().length > 255
+        ) {
+            errors.document_title =
+                'Enter a document title of 255 characters or fewer.';
+        }
+
+        if (!doc && !form.data.attachment) {
+            errors.attachment = 'Select one document file.';
+        }
+
+        if (form.data.attachment) {
+            const problem = documentFileError(
+                form.data.attachment,
+            );
+
+            if (problem) {
+                errors.attachment = problem;
+            }
+        }
+
+        if (Object.keys(errors).length) {
+            form.setError(errors);
+            document
+                .getElementById(Object.keys(errors)[0])
+                ?.focus();
+
+            return;
+        }
+
+        if (savedRemovalPending && !confirmed) { setConfirmRemoval(true); return; }
+        form.transform((data) => ({ ...data, remove_attachment: savedRemovalPending }));
+        lock.current = true;
+        form.submit(
+            doc ? 'put' : 'post',
+            parents.submitUrl,
+            {
+                forceFormData: !doc || page.props.canonicalFrontend !== true,
+                preserveScroll: true,
+                onSuccess: () => setConfirmRemoval(false),
+                onFinish: () => {
+                    lock.current = false;
+                },
+            },
+        );
+
+    };
 
     return (
         <>
@@ -118,74 +189,7 @@ export default function Form(parents: DocumentParents) {
                     </div>
                     <form
                         noValidate
-                        onSubmit={(e) => {
-                            e.preventDefault();
-
-                            if (disabled || lock.current) {
-                                return;
-                            }
-
-                            form.clearErrors();
-                            const errors: Partial<
-                                Record<keyof Values, string>
-                            > = {};
-
-                            if (!project) {
-                                errors.project_id =
-                                    'Select a Maintenance Project.';
-                            }
-
-                            if (!record || record.project_id !== project?.id) {
-                                errors.maintenance_id =
-                                    'Select a Maintenance Record for this project.';
-                            }
-
-                            if (
-                                !form.data.document_title.trim() ||
-                                form.data.document_title.trim().length > 255
-                            ) {
-                                errors.document_title =
-                                    'Enter a document title of 255 characters or fewer.';
-                            }
-
-                            if (!doc && !form.data.attachment) {
-                                errors.attachment = 'Select one document file.';
-                            }
-
-                            if (form.data.attachment) {
-                                const problem = documentFileError(
-                                    form.data.attachment,
-                                );
-
-                                if (problem) {
-                                    errors.attachment = problem;
-                                }
-                            }
-
-                            if (Object.keys(errors).length) {
-                                form.setError(errors);
-                                document
-                                    .getElementById(Object.keys(errors)[0])
-                                    ?.focus();
-
-                                return;
-                            }
-
-                            if (savedRemovalPending && !window.confirm('Save changes and permanently remove the attachment? Document information will be retained.')) return;
-                            form.transform((data) => ({ ...data, remove_attachment: savedRemovalPending }));
-                            lock.current = true;
-                            form.submit(
-                                doc ? 'put' : 'post',
-                                parents.submitUrl,
-                                {
-                                    forceFormData: !doc || page.props.canonicalFrontend !== true,
-                                    preserveScroll: true,
-                                    onFinish: () => {
-                                        lock.current = false;
-                                    },
-                                },
-                            );
-                        }}
+                        onSubmit={(e) => { e.preventDefault(); save(); }}
                     >
                         <section>
                             <h2>Maintenance Information</h2>
@@ -399,6 +403,9 @@ export default function Form(parents: DocumentParents) {
                         </footer>
                     </form>
                 </div>
+                <DeletionDialog open={confirmRemoval} title="Remove attachment permanently?" description="Save the changes and permanently remove the selected private Storage file. The document title and information will be retained." selectionLabel="Selected attachment" processing={form.processing} error={Object.values(form.errors).join(' ')} confirmLabel="Save and Remove" busyLabel="Saving…" onClose={() => { if (!form.processing) setConfirmRemoval(false); }} onConfirm={() => save(true)}>
+                    <p className="jr-delete-target-title">{doc?.file_name}</p>
+                </DeletionDialog>
             </ProjectWorkspace>
         </>
     );

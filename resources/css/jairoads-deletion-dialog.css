@@ -84,3 +84,13 @@ html.dark .jr-delete-premium[data-blocked='true'] .jr-delete-eyebrow { color:#fd
 @keyframes jr-delete-overlay-exit { from { opacity:1; } to { opacity:0; } }
 @media(prefers-reduced-motion:reduce) { .jr-delete-premium,.jr-delete-overlay { animation:none!important; } }
 html.jr-reduce-motion :is(.jr-delete-premium,.jr-delete-overlay) { animation:none!important; }
+
+/* Standalone positioning for any route, including security settings and file previews. */
+.jr-delete-overlay { position:fixed; inset:0; z-index:60; }
+.jr-delete-dialog.jr-delete-premium { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:61; }
+.jr-delete-premium .jr-delete-counts { display:grid; }
+.jr-delete-premium .jr-delete-counts > div { display:flex; align-items:baseline; justify-content:space-between; }
+.jr-delete-premium .jr-delete-list { list-style:none; }
+@keyframes jr-delete-enter { from{opacity:0;transform:translate(-50%,-48%) scale(.98)} to{opacity:1;transform:translate(-50%,-50%) scale(1)} }
+@media(prefers-reduced-motion:reduce) { .jr-delete-premium .animate-spin { animation:none; } }
+html.jr-reduce-motion .jr-delete-premium .animate-spin { animation:none; }
