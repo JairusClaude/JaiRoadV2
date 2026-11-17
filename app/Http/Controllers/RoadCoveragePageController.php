@@ -159,7 +159,9 @@ final class RoadCoveragePageController extends OperationsFrontendController
         }
         $this->write(fn () => $this->operations->saveRoad($request, $this->identities, $id), ['lgu_id' => 'lgus_id']);
 
-        return redirect(self::BASE.'/road-coverages'.($id === null ? '' : '/'.$id))->with('dd_operations_status', 'Road coverage saved to the database.');
+        $directory = self::BASE.'/road-coverages';
+        $fallback = $id === null ? $directory : $directory.'/'.$id;
+        return redirect($this->editReturn($request, $fallback, [$directory, $fallback]))->with('dd_operations_status', 'Road coverage saved to the database.');
     }
 
     public function deleteRoad(Request $request, int $id): RedirectResponse
