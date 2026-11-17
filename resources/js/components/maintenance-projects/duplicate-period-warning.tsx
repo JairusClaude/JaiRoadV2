@@ -33,16 +33,14 @@ export function DuplicatePeriodWarning({
             >
                 <DialogHeader>
                     <DialogTitle>
-                        Maintenance period already occupied
+                        Quarter already has a maintenance record
                     </DialogTitle>
                     <DialogDescription>
-                        Only one MaintenanceRecord may exist for each project,
-                        maintenance year, and quarter. No new record was
-                        created.
+                        Only one record is allowed per project, year and quarter. Your changes have not been saved.
                     </DialogDescription>
                 </DialogHeader>
                 {conflict && (
-                    <dl className="grid gap-2 text-sm">
+                    <dl className="grid gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100">
                         <div>
                             <dt>Project</dt>
                             <dd className="font-semibold">
