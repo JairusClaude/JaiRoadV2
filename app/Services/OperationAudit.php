@@ -11,20 +11,23 @@ use Illuminate\Support\Facades\DB;
 final class OperationAudit
 {
     /** Credential reset audit: record the event, never a credential or hash. */
-    public function recordAdministratorPasswordReset(array $actor, int $id): void
+    public function recordAdministratorPasswordReset(array $actor, int $id, bool $operatorRoot = false): void
     {
         $login = User::where('dd_user_account_id', $actor['account_id'])->first();
         abort_unless(DB::transactionLevel() > 0 && $actor['role'] === 'SuperAdmin'
             && $actor['account_id'] !== $id && $login instanceof User
             && app(AccountIdentityResolver::class)->resolve($login) === $actor, 403);
         $account = app(AuditValues::class)->persisted('UserAccount', $id);
-        abort_unless(in_array($account['account_type'] ?? null, ['Admin', 'Engineer', 'Viewer'], true), 403);
+        abort_unless($operatorRoot
+            ? app()->runningInConsole() && ($account['account_type'] ?? null) === 'SuperAdmin'
+            : in_array($account['account_type'] ?? null, ['Admin', 'Engineer', 'Viewer'], true), 403);
         $safe = json_encode(app(AuditValues::class)->safe('UserAccount', $account), JSON_THROW_ON_ERROR);
         $username = DB::table('jairoads_next.user_accounts')->where('id', $actor['account_id'])->value('username');
         $event = (int) DB::table('jairoads_next.audit_logs')->insertGetId([
             'user_id' => $actor['account_id'], 'actor_identifier' => 'DD-UserAccount#'.$actor['account_id'].' ('.$username.')',
             'action' => 'UPDATE', 'entity_type' => 'UserAccount', 'entity_id' => $id,
-            'description' => 'SuperAdmin reset account password without email recovery. No credentials recorded.',
+            'description' => $operatorRoot ? 'Trusted operator recovered a separately reviewed SuperAdmin password. No credentials recorded.'
+                : 'SuperAdmin reset account password without email recovery. No credentials recorded.',
             'old_value' => $safe, 'new_value' => $safe,
             'recipient_user_id' => null, 'notification_message' => null, 'created_at' => now(),
         ]);

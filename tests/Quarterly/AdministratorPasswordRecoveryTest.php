@@ -10,6 +10,31 @@ use Illuminate\Support\Facades\Hash;
 
 final class AdministratorPasswordRecoveryTest extends PostgresTestCase
 {
+    public function test_trusted_operator_recovers_another_root_but_web_route_remains_forbidden(): void
+    {
+        $root = $this->account('SuperAdmin');
+        $target = $this->account('SuperAdmin');
+        $this->actingAs($root)->postJson('/dd-phase3/accounts/'.$target->dd_user_account_id.'/password-reset', [
+            'current_password' => 'Disposable-Test!123',
+            'password' => 'New-Root-Disposable!456',
+            'password_confirmation' => 'New-Root-Disposable!456',
+        ])->assertForbidden();
+
+        $this->artisan('jairoads:recover-superadmin')
+            ->expectsQuestion('Type TRUSTED DATABASE OPERATOR to proceed', 'TRUSTED DATABASE OPERATOR')
+            ->expectsQuestion('Working SuperAdmin canonical account ID', (string) $root->dd_user_account_id)
+            ->expectsQuestion('Reviewed target SuperAdmin canonical account ID', (string) $target->dd_user_account_id)
+            ->expectsQuestion('Private approved recovery reference', 'synthetic-review-001')
+            ->expectsConfirmation('I have independently verified the target SuperAdmin identity and authorization, and have a tested recovery plan.', 'yes')
+            ->expectsQuestion('Working SuperAdmin password', 'Disposable-Test!123')
+            ->expectsQuestion('New target password', 'New-Root-Disposable!456')
+            ->expectsQuestion('Confirm new target password', 'New-Root-Disposable!456')
+            ->assertSuccessful();
+        $this->assertTrue(Hash::check('New-Root-Disposable!456', $target->fresh()->password));
+        $this->assertSame($root->password, $root->fresh()->password);
+        $this->assertSame($target->fresh()->password, DB::table('jairoads_next.user_accounts')->where('id', $target->dd_user_account_id)->value('password'));
+    }
+
     public function test_superadmin_can_reset_eligible_account_without_email_and_preserve_identity(): void
     {
         $root = $this->account('SuperAdmin');
