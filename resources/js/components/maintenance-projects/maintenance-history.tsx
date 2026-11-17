@@ -39,7 +39,7 @@ export function MaintenanceHistory({
     expandedYear?: number;
 }) {
     const page = usePage();
-    const deletion = useRecordDeletion();
+    const deletion = useRecordDeletion(page.url);
     const years = [...new Set(records.map((record) => record.year))].sort(
         (a, b) => b - a,
     );
