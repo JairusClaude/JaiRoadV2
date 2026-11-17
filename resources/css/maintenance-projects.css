@@ -1290,8 +1290,8 @@
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 61;
-    width: min(440px, calc(100vw - 32px));
-    max-height: calc(100dvh - 48px);
+    width: min(560px, calc(100vw - 32px));
+    max-height: calc(100dvh - 32px);
     overflow-y: auto;
     border: 1px solid #e2e8f0;
     border-radius: 18px;
@@ -1300,12 +1300,12 @@
     box-shadow: 0 20px 60px #0f172a26;
 }
 .jr-delete-dialog h2 {
-    font-size: 16px;
+    font-size: 19px;
     font-weight: 600;
     margin-bottom: 8px;
 }
 .jr-delete-dialog > p {
-    font-size: 12.5px;
+    font-size: 14px;
     color: #64748b;
     line-height: 1.6;
 }
@@ -2383,3 +2383,13 @@
 [data-slot='dropdown-menu-item'][data-variant='destructive'][data-disabled] { opacity: .5; }
 .jr-deletion-camera { display: grid; gap: 10px; margin-top: 12px; border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px; }
 .jr-deletion-camera-preview { display: block; width: 100%; max-height: 180px; object-fit: contain; background: #0f172a; border-radius: 8px; }
+
+/* Keep destructive actions reachable even with CAPTCHA and camera verification. */
+.jr-delete-dialog .jr-dialog-actions {
+    position: sticky;
+    bottom: -24px;
+    background: var(--popover, #fff);
+    padding: 12px 0;
+    border-top: 1px solid var(--border, #e2e8f0);
+    z-index: 2;
+}
