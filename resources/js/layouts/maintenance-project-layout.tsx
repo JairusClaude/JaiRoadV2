@@ -84,7 +84,7 @@ export function MaintenanceProjectShell({
     const page = usePage();
     const preview = page.props.previewOnly === true;
     const canonical = page.props.canonicalFrontend === true;
-    const operationPage = canonical && /^(MaintenanceProjects|MaintenanceRecords|MonthlyUpdates|MaintenanceDocuments|RoadCoverages|LGUs)\//.test(page.component);
+    const operationPage = /^(MaintenanceProjects|MaintenanceRecords|MonthlyUpdates|MaintenanceDocuments|RoadCoverages|LGUs)\//.test(page.component);
     useEffect(() => {
         if (operationPage && typeof page.props.status === 'string' && page.props.status) {
             toast.success(page.props.status, { id: 'jr-operation-status', duration: 4500 });

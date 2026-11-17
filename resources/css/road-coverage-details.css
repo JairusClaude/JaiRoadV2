@@ -117,3 +117,10 @@
         height: 360px;
     }
 }
+
+/* Give the road overview and its linked project a clearer visual hierarchy. */
+.jr-road-coverage-details .jr-detail-grid { gap:24px; }
+.jr-road-coverage-details .jr-detail-fields > div { padding:12px 14px; border:1px solid var(--border,#e2e8f0); border-radius:10px; }
+.jr-road-coverage-details .jr-coverage-map-preview:not(:fullscreen) { height:clamp(360px,48vh,560px); }
+.jr-road-coverage-details .jr-associated-project .jr-record-row { padding:14px; border:1px solid var(--border,#e2e8f0); border-radius:10px; }
+.jr-road-coverage-details .jr-associated-project .jr-project-title { text-decoration:underline; text-underline-offset:3px; }

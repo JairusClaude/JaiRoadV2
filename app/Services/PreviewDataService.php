@@ -289,7 +289,9 @@ final class PreviewDataService
         $store['road_coverages'] = $coverages;
         self::saveStore($store);
 
-        return redirect('/dd-phase3/ui/road-coverages' . ($id === null ? '' : '/' . $targetId))
+        $directory = '/dd-phase3/ui/road-coverages';
+        $detail = $directory.'/'.$targetId;
+        return redirect($id === null ? $directory : self::previewReturn($request, $detail, [$directory, $detail]))
             ->with('dd_operations_status', 'Road coverage saved successfully (Preview Mode).');
     }
 
@@ -485,17 +487,17 @@ final class PreviewDataService
         ])->all();
 
         $assignedEngineers = $assignments->map(fn ($e): array => [
-            'id' => (int) $e['id'],
-            'first_name' => $e['first_name'] ?? 'Engineer',
-            'last_name' => $e['last_name'] ?? 'User',
-            'rank' => $e['rank'] ?? 'Municipal Engineer',
+            'engineer_id' => (int) $e['id'],
+            'full_name' => trim(implode(' ', array_filter([$e['first_name'] ?? '', $e['middle_name'] ?? '', $e['last_name'] ?? '']))),
+            'rank' => $e['rank'] ?? null,
+            'assignment_is_active' => isset($e['assignment_is_active']) ? (bool) $e['assignment_is_active'] : null,
         ])->all();
 
         return self::render('LGUs/Show', $request, [
             'lgu' => $lguDetail,
             'roadCoverages' => $roadCoverages,
             'assignedEngineers' => $assignedEngineers,
-            'relationshipDataAvailable' => true,
+            'relationshipDataAvailable' => ['roadCoverages' => true, 'engineerAssignments' => true],
             'directoryUrl' => '/dd-phase3/ui/lgus',
             'lguPermissions' => [
                 'can_edit' => true,
@@ -515,6 +517,17 @@ final class PreviewDataService
             'canEdit' => true,
             'backUrl' => '/dd-phase3/ui/lgus',
         ]);
+    }
+
+    /** Accept only explicit local destinations for preview form navigation. */
+    private static function previewReturn(Request $request, string $fallback, array $allowed): string
+    {
+        $return = $request->input('return_to');
+        if (! is_string($return) || ! str_starts_with($return, '/dd-phase3/ui/')) {
+            return $fallback;
+        }
+        $path = parse_url($return, PHP_URL_PATH);
+        return in_array($path, $allowed, true) ? $return : $fallback;
     }
 
     public static function saveLgu(Request $request, ?int $id = null): RedirectResponse
@@ -542,8 +555,8 @@ final class PreviewDataService
             $lgus[] = [
                 'id' => $newId,
                 'municipality_name' => $request->input('municipality_name', 'New LGU #' . $newId),
-                'province' => $request->input('province', 'Davao de Oro'),
-                'region' => $request->input('region', 'XI'),
+                'province' => 'Davao de Oro',
+                'region' => 'XI',
                 'mayor_first_name' => $request->input('mayor_first_name', ''),
                 'mayor_middle_name' => $request->input('mayor_middle_name', ''),
                 'mayor_last_name' => $request->input('mayor_last_name', ''),
@@ -554,7 +567,9 @@ final class PreviewDataService
         $store['lgus'] = $lgus;
         self::saveStore($store);
 
-        return redirect('/dd-phase3/ui/lgus')->with('dd_operations_status', 'LGU saved successfully (Preview Mode).');
+        $directory = '/dd-phase3/ui/lgus';
+        $detail = $directory.'/'.$id;
+        return redirect($id === null ? $directory : self::previewReturn($request, $detail, [$directory, $detail]))->with('dd_operations_status', 'LGU saved successfully (Preview Mode).');
     }
 
     public static function deleteLgu(Request $request, int $id): RedirectResponse
@@ -645,7 +660,7 @@ final class PreviewDataService
             'project' => self::formatProjectData($p),
             'records' => $records,
             'recordCreateUrl' => '/dd-phase3/ui/maintenance-projects/' . $id . '/records/create',
-            'expandedYear' => (int) date('Y'),
+            'expandedYear' => $request->integer('record_year', (int) ($records->max('year') ?? date('Y'))),
         ]);
     }
 
@@ -721,7 +736,9 @@ final class PreviewDataService
         $store['maintenance_projects'] = $projects;
         self::saveStore($store);
 
-        return redirect('/dd-phase3/ui/maintenance-projects/' . $targetId)->with('dd_operations_status', 'Maintenance Project saved successfully (Preview Mode).');
+        $directory = '/dd-phase3/ui/maintenance-projects';
+        $detail = $directory.'/'.$targetId;
+        return redirect($id === null ? $detail : self::previewReturn($request, $detail, [$directory, $detail]))->with('dd_operations_status', 'Maintenance Project saved successfully (Preview Mode).');
     }
 
     private static function formatProjectData(array $row): array
@@ -983,7 +1000,9 @@ final class PreviewDataService
         $store['maintenance_records'] = $records;
         self::saveStore($store);
 
-        return redirect('/dd-phase3/ui/maintenance-projects/' . $project . '/records/' . $targetId)
+        $parent = '/dd-phase3/ui/maintenance-projects/'.$project;
+        $detail = $parent.'/records/'.$targetId;
+        return redirect(self::previewReturn($request, $id === null ? $parent : $detail, [$parent, $detail, '/dd-phase3/ui/maintenance-records']))
             ->with('dd_operations_status', 'Maintenance record saved successfully (Preview Mode).');
     }
 
@@ -991,10 +1010,14 @@ final class PreviewDataService
     {
         $store = self::getStore();
         $records = $store['maintenance_records'] ?? [];
+        $record = collect($records)->firstWhere('id', $id);
+        abort_unless($record !== null, 404);
         $store['maintenance_records'] = array_values(array_filter($records, fn ($r) => (int) $r['id'] !== $id));
         self::saveStore($store);
 
-        return redirect('/dd-phase3/ui/maintenance-records')
+        $directory = '/dd-phase3/ui/maintenance-records';
+        $parent = '/dd-phase3/ui/maintenance-projects/'.$record['project_id'];
+        return redirect(self::previewReturn($request, $directory, [$directory, $parent]))
             ->with('dd_operations_status', 'Maintenance record deleted successfully (Preview Mode).');
     }
 

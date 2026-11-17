@@ -25,7 +25,7 @@ export function DuplicatePeriodWarning({
             onOpenChange={(open) => !open && onClose()}
         >
             <DialogContent
-                className="jr-theme"
+                className="jr-theme max-w-[min(560px,calc(100vw-32px))] max-h-[calc(100dvh-32px)] overflow-y-auto"
                 onCloseAutoFocus={(event) => {
                     event.preventDefault();
                     document.getElementById('quarter')?.focus();

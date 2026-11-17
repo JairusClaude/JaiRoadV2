@@ -55,7 +55,8 @@ export default function Show({
             onSuccess: () => {
                 setDeleting(false);
                 setConfirmDeleteOpen(false);
-                router.visit(workspaceHref(backUrl || '/road-coverages'));
+                // The delete response already redirects to the directory.
+                // A second visit consumes the flashed success notification.
             },
             onError: (errors) => {
                 setDeleting(false);

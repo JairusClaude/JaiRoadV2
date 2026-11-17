@@ -2,6 +2,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { usePage } from '@inertiajs/react';
 import { useEffect, useId, useState } from 'react';
 import type { ReactNode, RefObject } from 'react';
+import { TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DeletionCamera } from './deletion-camera';
 import type { DependentCounts } from '@/types/maintenance-projects';
@@ -151,8 +152,14 @@ export function DeletionDialog({
                         }
                     }}
                 >
-                    <Dialog.Title>{title}</Dialog.Title>
-                    <Dialog.Description>{description}</Dialog.Description>
+                    <div className="jr-delete-heading">
+                        <span className="jr-delete-warning-icon" aria-hidden="true"><TriangleAlert size={22} /></span>
+                        <div>
+                            <Dialog.Title>{title}</Dialog.Title>
+                            <Dialog.Description>{description}</Dialog.Description>
+                        </div>
+                    </div>
+                    <div className="jr-delete-body">
                     {children}
                     {requireYes && (
                         <div className="mt-4 grid gap-2 rounded-xl border border-red-200 bg-red-50 p-3">
@@ -177,6 +184,7 @@ export function DeletionDialog({
                             {error}
                         </p>
                     )}
+                    </div>
                     <div className="jr-dialog-actions">
                         <Button
                             type="button"

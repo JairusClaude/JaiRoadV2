@@ -31,8 +31,12 @@ function Status({ active, label }: { active: boolean; label?: string }) {
 function Field({ label, value, onChange, error, type = 'text', optional = false, help }: {
     label: string; value: string; onChange: (value: string) => void; error?: string; type?: string; optional?: boolean; help?: string;
 }) {
+    const [visible, setVisible] = useState(false);
     return <label className="um-field">{label}{optional ? <span className="um-optional"> (optional)</span> : <span className="um-required" aria-hidden="true"> *</span>}
-        <input aria-label={label} className="um-input" type={type} value={value} required={!optional} aria-invalid={!!error} autoComplete={type === 'password' ? 'new-password' : 'off'} onChange={(e) => onChange(e.target.value)} />
+        <div className={type === 'password' ? 'um-password-field' : undefined}>
+            <input aria-label={label} className="um-input" type={type === 'password' && visible ? 'text' : type} value={value} required={!optional} aria-invalid={!!error} autoComplete={type === 'password' ? 'new-password' : 'off'} onChange={(e) => onChange(e.target.value)} />
+            {type === 'password' && <button type="button" className="um-password-toggle" aria-label={(visible ? 'Hide ' : 'Show ') + label.toLowerCase()} aria-pressed={visible} onClick={() => setVisible(v => !v)}>{visible ? 'Hide' : 'Show'}</button>}
+        </div>
         {help && <small>{help}</small>}
         {error && <small role="alert" className="um-required">{error}</small>}
     </label>;
@@ -48,6 +52,10 @@ function CreateForm({ kind, eligible, roles: allowed, onClose, onBusy }: {
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         if (busy || (isAccount && (!allowed.includes(account.account_type) || !eligible.some(e => String(e.id) === account.engineer_id)))) return;
+        if (isAccount && account.password !== account.password_confirmation) {
+            setErrors({ password_confirmation: 'Passwords do not match.' });
+            return;
+        }
         setBusy(true);
         onBusy(true);
         setErrors({});

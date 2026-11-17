@@ -2393,3 +2393,18 @@
     border-top: 1px solid var(--border, #e2e8f0);
     z-index: 2;
 }
+
+/* Deletion confirmation: fixed heading/actions, independently scrollable verification. */
+.jr-delete-overlay { background:#0f172a80; }
+.jr-delete-dialog { display:flex; flex-direction:column; overflow:hidden; padding:0; width:min(620px,calc(100vw - 24px)); background:var(--popover,#fff); color:var(--popover-foreground,#172033); border-color:var(--border,#e2e8f0); }
+.jr-delete-heading { display:flex; flex:none; gap:14px; align-items:flex-start; padding:20px 24px; border-bottom:1px solid var(--border,#e2e8f0); }
+.jr-delete-warning-icon { display:grid; place-items:center; flex:none; width:44px; height:44px; border-radius:12px; background:#fee2e2; color:#b91c1c; }
+.jr-delete-heading h2 { margin:0 0 5px; line-height:1.3; }
+.jr-delete-heading p { font-size:13px; line-height:1.55; color:var(--muted-foreground,#64748b); }
+.jr-delete-body { min-height:0; overflow:auto; padding:16px 24px; overscroll-behavior:contain; }
+.jr-delete-dialog .jr-dialog-actions { flex:none; position:static; margin:0; padding:14px 24px; background:var(--popover,#fff); }
+.jr-delete-counts > div { padding:8px 10px; border:1px solid var(--border,#e2e8f0); border-radius:8px; }
+@media(max-width:480px){.jr-delete-heading,.jr-delete-body,.jr-delete-dialog .jr-dialog-actions{padding:14px 16px}.jr-delete-dialog .jr-dialog-actions button{flex:1}}
+@media(prefers-reduced-motion:no-preference){html:not(.jr-reduce-motion) .jr-delete-overlay[data-state='open']{animation:jr-delete-fade .16s ease-out}html:not(.jr-reduce-motion) .jr-delete-dialog[data-state='open']{animation:jr-delete-enter .18s ease-out}}
+@keyframes jr-delete-fade { from{opacity:0} to{opacity:1} }
+@keyframes jr-delete-enter { from{opacity:0;transform:translate(-50%,-48%) scale(.98)} to{opacity:1;transform:translate(-50%,-50%) scale(1)} }

@@ -1686,6 +1686,8 @@ function EditableCoverageMapEditor({
                         type="button"
                         onClick={() => setLayers(!layers)}
                         aria-label="Existing road layers"
+                        aria-expanded={layers}
+                        aria-controls="jr-reference-road-layers"
                     >
                         <Layers size={18} />
                     </button>
@@ -1706,7 +1708,8 @@ function EditableCoverageMapEditor({
                     </button>
                 </div>
                 {layers && (
-                    <div className="jr-map-layers">
+                    <div className="jr-map-layers" id="jr-reference-road-layers">
+                        <strong>Reference road layers</strong>
                         <label>
                             <input
                                 type="checkbox"
@@ -1715,6 +1718,7 @@ function EditableCoverageMapEditor({
                             />{' '}
                             Show mapped roads
                         </label>
+                        <small>Overlay existing saved road lines for reference while editing your coverage.</small>
                         <label>
                             <input
                                 type="checkbox"
@@ -1723,6 +1727,7 @@ function EditableCoverageMapEditor({
                             />{' '}
                             All municipalities
                         </label>
+                        <small>Show roads across municipalities; uncheck to limit the overlay to the selected municipality.</small>
                         <small>Only saved, valid geometry is shown.</small>
                     </div>
                 )}

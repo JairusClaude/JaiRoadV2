@@ -81,3 +81,8 @@
 .um-dialog dt { color:#64758c; font-size:12px; }.um-dialog dd { color:#18263a; font-weight:600; overflow-wrap:anywhere; }
 @media(max-width:1050px){.um-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.um-metrics{gap:9px}.um-metric{padding:12px}.um-metric strong{font-size:24px}.um-metric-top{font-size:10px}.um-stat-icon{width:28px;height:28px}.um-directory-head,.um-toolbar{padding:14px}.um-tabs{padding:0 14px;gap:12px}.um-table-scroll{margin:0 12px}.um-filter{flex:1 1 130px}.um-form-grid{grid-template-columns:1fr}.um-dialog-body,.um-dialog-head{padding:16px}.um-header-actions{width:100%}.um-header-actions button{flex:1}}
+
+.um-password-field{position:relative}.um-password-field .um-input{padding-right:66px}.um-password-toggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);padding:5px 7px;border-radius:6px;font-size:12px;color:#435773}.um-password-toggle:hover{background:#f0f3f6}.um-input[aria-invalid=true]{border-color:#dc2626}.um-dialog-head{position:sticky;top:0;background:inherit;z-index:2}.um-dialog-actions{position:sticky;bottom:0;background:#fff;padding-bottom:8px;z-index:1}.um-dialog button:focus-visible{outline:2px solid #c79576;outline-offset:2px}
+html.dark .um-dialog,html.dark .um-dialog-actions{background:var(--popover);color:var(--popover-foreground)}
+html.dark .um-dialog :is(.um-field,.um-dialog-head p,.um-field small){color:var(--popover-foreground)}
+html.dark .um-dialog .um-input{background:var(--background);color:var(--foreground);border-color:var(--border)}

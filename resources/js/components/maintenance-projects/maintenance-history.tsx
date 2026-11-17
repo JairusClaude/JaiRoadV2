@@ -81,7 +81,7 @@ export function MaintenanceHistory({
                                 <details
                                     key={year}
                                     data-year={year}
-                                    open={expandedYear === year}
+                                    open={(years.includes(expandedYear ?? NaN) ? expandedYear : years[0]) === year}
                                 >
                                     <summary>
                                         <span className="jr-year-title">
