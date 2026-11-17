@@ -135,63 +135,77 @@ export default function Show({ document: doc }: { document: DocumentSummary }) {
                             {doc.description || 'No description provided.'}
                         </p>
                     </section>
-                    {hasAttachment && (
-                        <section className="jr-report-section">
-                            <h2>Document Attachment</h2>
-                            <div className="jr-document-file-row mt-3">
-                                <DocumentIcon name={doc.file_name} />
-                                <div className="min-w-0 flex-1">
-                                    <strong
-                                        className="block truncate"
-                                        title={doc.file_name}
-                                    >
-                                        {doc.file_name}
-                                    </strong>
-                                    <p className="jr-field-hint">
-                                        {documentType(doc.file_name)}
-                                    </p>
-                                </div>
-                                <div className="jr-document-file-actions">
-                                    <Button
-                                        variant="outline"
-                                        disabled={!doc.available}
-                                        onClick={() => {
-                                            viewerFocus.current = window.document
-                                                .activeElement as HTMLElement;
-                                            setViewer(true);
-                                        }}
-                                    >
-                                        <Eye />
-                                        View
-                                    </Button>
-                                    {doc.available ? (
-                                        <Button variant="outline" asChild>
-                                            <a
-                                                href={workspaceHref(
-                                                    `/preview-documents/${doc.id}?download`,
-                                                )}
-                                                download={doc.file_name}
-                                            >
+                    <section
+                        className="jr-report-section"
+                        aria-labelledby="document-attachment-title"
+                    >
+                        <div className="jr-report-media-heading">
+                            <h2 id="document-attachment-title">Document Attachment</h2>
+                            <p className="jr-field-hint">
+                                {hasAttachment ? '1 file' : '0 files'}
+                            </p>
+                        </div>
+                        {hasAttachment ? (
+                            <>
+                                <div className="jr-document-file-row mt-3">
+                                    <DocumentIcon name={doc.file_name} />
+                                    <div className="min-w-0 flex-1">
+                                        <strong
+                                            className="block truncate"
+                                            title={doc.file_name}
+                                        >
+                                            {doc.file_name}
+                                        </strong>
+                                        <p className="jr-field-hint">
+                                            {documentType(doc.file_name)}
+                                        </p>
+                                    </div>
+                                    <div className="jr-document-file-actions">
+                                        <Button
+                                            variant="outline"
+                                            disabled={!doc.available}
+                                            onClick={() => {
+                                                viewerFocus.current = window.document
+                                                    .activeElement as HTMLElement;
+                                                setViewer(true);
+                                            }}
+                                        >
+                                            <Eye />
+                                            View
+                                        </Button>
+                                        {doc.available ? (
+                                            <Button variant="outline" asChild>
+                                                <a
+                                                    href={workspaceHref(
+                                                        `/preview-documents/${doc.id}?download`,
+                                                    )}
+                                                    download={doc.file_name}
+                                                >
+                                                    <Download />
+                                                    Download
+                                                </a>
+                                            </Button>
+                                        ) : (
+                                            <Button variant="outline" disabled>
                                                 <Download />
                                                 Download
-                                            </a>
-                                        </Button>
-                                    ) : (
-                                        <Button variant="outline" disabled>
-                                            <Download />
-                                            Download
-                                        </Button>
-                                    )}
+                                            </Button>
+                                        )}
+                                    </div>
                                 </div>
+                                {!doc.available && (
+                                    <p className="jr-field-error" role="status">
+                                        This private file is currently unavailable.
+                                        Contact your administrator.
+                                    </p>
+                                )}
+                            </>
+                        ) : (
+                            <div className="jr-related-empty">
+                                No document attachment for this maintenance document.
                             </div>
-                            {!doc.available && (
-                                <p className="jr-field-error" role="status">
-                                    This private file is currently unavailable.
-                                    Contact your administrator.
-                                </p>
-                            )}
-                        </section>
-                    )}
+                        )}
+                    </section>
                     <footer className="jr-report-footer">
                         <dl className="jr-metadata">
                             <div>
