@@ -27,6 +27,11 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
     public function test_one_event_notifies_every_eligible_administrator_and_engineer_actor_once(string $role): void
     {
         $f = $this->fixture($role);
+        if ($role === 'Engineer') {
+            DB::table('jairoads_next.engineers')->where('id', $f['engineer'])->update([
+                'first_name' => 'Test', 'middle_name' => 'Sample', 'last_name' => 'Engineer',
+            ]);
+        }
         $admins = [$this->account('Admin'), $this->account('Admin'), $this->account('SuperAdmin')];
         $viewer = $this->account('Viewer');
         $unrelated = $this->account('Engineer');
@@ -40,6 +45,13 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
         $this->post('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer']))->assertRedirect();
         $event = DB::table('jairoads_next.audit_logs')->sole();
         $this->assertSame('CREATE', $event->action);
+        $this->assertSame((int) $f['user']->dd_user_account_id, (int) $event->user_id);
+        if ($role === 'Engineer') {
+            $this->assertSame('Test Sample Engineer', $event->actor_identifier);
+        } else {
+            $username = DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->value('username');
+            $this->assertSame('DD-UserAccount#'.$f['user']->dd_user_account_id.' ('.$username.')', $event->actor_identifier);
+        }
         $this->assertNull($event->old_value);
         $this->assertSame($f['project'], json_decode($event->new_value, true)['project_id']);
         $this->assertNull($event->recipient_user_id);

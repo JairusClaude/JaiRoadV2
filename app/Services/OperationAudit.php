@@ -10,6 +10,31 @@ use Illuminate\Support\Facades\DB;
 /** One canonical event plus deduplicated deliveries in the mutation transaction. */
 final class OperationAudit
 {
+    /** Store the verified actor's name at the time of the event, never the target's name. */
+    private function actorIdentifier(array $actor): string
+    {
+        if ($actor['role'] === 'Engineer' && $actor['engineer_id'] !== null) {
+            $engineer = DB::table('jairoads_next.engineers')
+                ->where('id', $actor['engineer_id'])
+                ->first(['first_name', 'middle_name', 'last_name']);
+
+            if ($engineer !== null) {
+                $parts = array_map(static fn ($part): string => trim((string) $part),
+                    [$engineer->first_name, $engineer->middle_name, $engineer->last_name]);
+                $name = implode(' ', array_filter($parts, static fn (string $part): bool => $part !== ''));
+
+                if ($name !== '') {
+                    // Match the existing actor_identifier varchar(255) column.
+                    return mb_substr($name, 0, 255);
+                }
+            }
+        }
+
+        $username = DB::table('jairoads_next.user_accounts')->where('id', $actor['account_id'])->value('username');
+
+        return 'DD-UserAccount#'.$actor['account_id'].' ('.$username.')';
+    }
+
     /** Credential reset audit: record the event, never a credential or hash. */
     public function recordAdministratorPasswordReset(array $actor, int $id, bool $operatorRoot = false): void
     {
@@ -22,9 +47,8 @@ final class OperationAudit
             ? app()->runningInConsole() && ($account['account_type'] ?? null) === 'SuperAdmin'
             : in_array($account['account_type'] ?? null, ['Admin', 'Engineer', 'Viewer'], true), 403);
         $safe = json_encode(app(AuditValues::class)->safe('UserAccount', $account), JSON_THROW_ON_ERROR);
-        $username = DB::table('jairoads_next.user_accounts')->where('id', $actor['account_id'])->value('username');
         $event = (int) DB::table('jairoads_next.audit_logs')->insertGetId([
-            'user_id' => $actor['account_id'], 'actor_identifier' => 'DD-UserAccount#'.$actor['account_id'].' ('.$username.')',
+            'user_id' => $actor['account_id'], 'actor_identifier' => $this->actorIdentifier($actor),
             'action' => 'UPDATE', 'entity_type' => 'UserAccount', 'entity_id' => $id,
             'description' => $operatorRoot ? 'Trusted operator recovered a separately reviewed SuperAdmin password. No credentials recorded.'
                 : 'SuperAdmin reset account password without email recovery. No credentials recorded.',
@@ -122,9 +146,8 @@ final class OperationAudit
         if (($action === 'CREATE' && $new === []) || ($action === 'DELETE' && $old === [])) {
             throw new \LogicException('Business auditing requires a safe entity snapshot.');
         }
-        $username = DB::table('jairoads_next.user_accounts')->where('id', $actor['account_id'])->value('username');
         $event = (int) DB::table('jairoads_next.audit_logs')->insertGetId([
-            'user_id' => $actor['account_id'], 'actor_identifier' => 'DD-UserAccount#'.$actor['account_id'].' ('.$username.')',
+            'user_id' => $actor['account_id'], 'actor_identifier' => $this->actorIdentifier($actor),
             'action' => $action, 'entity_type' => $entity, 'entity_id' => $id, 'description' => $description,
             'old_value' => $action === 'CREATE' ? null : json_encode($old, JSON_THROW_ON_ERROR),
             'new_value' => $action === 'DELETE' ? null : json_encode($new, JSON_THROW_ON_ERROR),

@@ -2408,3 +2408,43 @@
 @media(prefers-reduced-motion:no-preference){html:not(.jr-reduce-motion) .jr-delete-overlay[data-state='open']{animation:jr-delete-fade .16s ease-out}html:not(.jr-reduce-motion) .jr-delete-dialog[data-state='open']{animation:jr-delete-enter .18s ease-out}}
 @keyframes jr-delete-fade { from{opacity:0} to{opacity:1} }
 @keyframes jr-delete-enter { from{opacity:0;transform:translate(-50%,-48%) scale(.98)} to{opacity:1;transform:translate(-50%,-50%) scale(1)} }
+
+/* Compact branded icon rail: no invisible caption spacer, consistent center line.
+   The expanded sidebar, role palette and animated artwork remain unchanged. */
+.jr-app [data-state='collapsed'] .jr-sidebar-container:is(.jr-viewer-sidebar,.jr-engineer-sidebar,.jr-admin-sidebar,.jr-superadmin-sidebar) .jr-brand-header {
+    height:72px;
+}
+.jr-app [data-state='collapsed'] .jr-sidebar-container:is(.jr-viewer-sidebar,.jr-engineer-sidebar,.jr-admin-sidebar,.jr-superadmin-sidebar) .jr-brand {
+    top:12px;
+    left:0;
+    width:100%;
+    height:44px;
+    align-items:center;
+    justify-content:center;
+}
+.jr-app [data-state='collapsed'] .jr-sidebar-container:is(.jr-viewer-sidebar,.jr-engineer-sidebar,.jr-admin-sidebar,.jr-superadmin-sidebar) .jr-brand-control {
+    width:44px;
+    height:44px;
+    flex:0 0 44px;
+}
+.jr-app [data-state='collapsed'] .jr-sidebar-container:is(.jr-viewer-sidebar,.jr-engineer-sidebar,.jr-admin-sidebar,.jr-superadmin-sidebar) .jr-brand-icon {
+    width:44px;
+    height:44px;
+}
+.jr-app [data-state='collapsed'] .jr-sidebar-container:is(.jr-viewer-sidebar,.jr-engineer-sidebar,.jr-admin-sidebar,.jr-superadmin-sidebar) .jr-nav-caption {
+    display:none;
+}
+.jr-app [data-state='collapsed'] .jr-sidebar-container:is(.jr-viewer-sidebar,.jr-engineer-sidebar,.jr-admin-sidebar,.jr-superadmin-sidebar) .jr-nav-content {
+    padding-inline:13px;
+    padding-top:4px;
+}
+.jr-app [data-state='collapsed'] .jr-sidebar-container:is(.jr-viewer-sidebar,.jr-engineer-sidebar,.jr-admin-sidebar,.jr-superadmin-sidebar) .jr-nav-link {
+    justify-content:center;
+    padding-inline:0;
+}
+.jr-app [data-state='collapsed'] .jr-sidebar-container:is(.jr-viewer-sidebar,.jr-engineer-sidebar,.jr-admin-sidebar,.jr-superadmin-sidebar) .jr-sidebar-footer {
+    padding-inline:13px;
+}
+.jr-app [data-state='collapsed'] .jr-sidebar-container:is(.jr-viewer-sidebar,.jr-engineer-sidebar,.jr-admin-sidebar,.jr-superadmin-sidebar) .jr-identity {
+    justify-content:center;
+}
