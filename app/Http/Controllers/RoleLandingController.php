@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\AccountIdentityResolver;
 use App\Services\ActivityNotifications;
 use App\Services\DashboardAnalytics;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -19,6 +20,74 @@ use Inertia\Response;
  */
 final class RoleLandingController extends Controller
 {
+    /** Read-only, on-demand summary for the Engineer dashboard map. */
+    public function roadDetails(Request $request, AccountIdentityResolver $resolver, int $road): JsonResponse
+    {
+        $user = $request->user();
+        abort_unless($user instanceof User && $user->getAttribute('dd_user_account_id') !== null, 403);
+        $actor = $resolver->resolve($user);
+        abort_unless($actor !== null && $actor['role'] === 'Engineer' && $actor['engineer_id'] !== null, 403);
+
+        // Same cross-municipality read access as the canonical road/project pages.
+        $coverage = DB::table('jairoads_next.road_coverages as rc')
+            ->join('jairoads_next.lgus as l', 'l.id', '=', 'rc.lgu_id')
+            ->leftJoin('jairoads_next.maintenance_projects as p', 'p.road_coverage_id', '=', 'rc.id')
+            ->where('rc.id', $road)
+            ->first(['rc.id', 'rc.road_name', 'rc.kilometers', 'rc.pavement_type', 'rc.state_category',
+                'l.municipality_name', 'p.id as project_id', 'p.project_title']);
+        abort_unless($coverage !== null, 404);
+
+        $project = null;
+        if ($coverage->project_id !== null) {
+            $projectId = (int) $coverage->project_id;
+            $records = DB::table('jairoads_next.maintenance_records as m')->where('m.project_id', $projectId);
+            $updates = DB::table('jairoads_next.monthly_updates as u')
+                ->join('jairoads_next.maintenance_records as m', 'm.id', '=', 'u.maintenance_id')
+                ->where('m.project_id', $projectId);
+            $documents = DB::table('jairoads_next.maintenance_documents as d')
+                ->join('jairoads_next.maintenance_records as m', 'm.id', '=', 'd.maintenance_id')
+                ->where('m.project_id', $projectId);
+            $latestUpdate = (clone $updates)->orderByDesc('u.update_month')->orderByDesc('u.id')
+                ->first(['u.id', 'u.update_month', 'u.progress_percentage']);
+            $latestDocument = (clone $documents)->orderByDesc('d.uploaded_at')->orderByDesc('d.id')
+                ->first(['d.id', 'd.document_title', 'd.uploaded_at']);
+            $project = [
+                'id' => $projectId,
+                'title' => $coverage->project_title,
+                'my_project' => (clone $records)->where('m.managing_engineer_id', $actor['engineer_id'])->exists(),
+                'record_count' => (clone $records)->count(),
+                'recent_records' => (clone $records)
+                    ->leftJoin('jairoads_next.engineers as e', 'e.id', '=', 'm.managing_engineer_id')
+                    ->orderByDesc('m.maintenance_year')->orderByDesc('m.quarter')->orderByDesc('m.id')
+                    ->limit(3)->get(['m.id', 'm.maintenance_year', 'm.quarter', 'm.status', 'e.first_name', 'e.last_name'])
+                    ->map(static fn ($record): array => [
+                        'id' => (int) $record->id,
+                        'year' => (int) $record->maintenance_year,
+                        'quarter' => $record->quarter,
+                        'status' => $record->status,
+                        'engineer' => trim(($record->first_name ?? '').' '.($record->last_name ?? '')),
+                    ])->all(),
+                'update_count' => (clone $updates)->count(),
+                'latest_update' => $latestUpdate === null ? null : [
+                    'id' => (int) $latestUpdate->id, 'month' => $latestUpdate->update_month,
+                    'progress' => (float) $latestUpdate->progress_percentage,
+                ],
+                'document_count' => (clone $documents)->count(),
+                'latest_document' => $latestDocument === null ? null : [
+                    'id' => (int) $latestDocument->id, 'title' => $latestDocument->document_title,
+                ],
+            ];
+        }
+
+        // No private storage paths or download URLs are sent to the dashboard.
+        return response()->json([
+            'id' => (int) $coverage->id, 'name' => $coverage->road_name,
+            'municipality' => $coverage->municipality_name,
+            'kilometers' => $coverage->kilometers, 'pavement_type' => $coverage->pavement_type,
+            'condition' => $coverage->state_category, 'project' => $project,
+        ])->header('Cache-Control', 'private, no-store');
+    }
+
     public function show(Request $request, AccountIdentityResolver $resolver): Response
     {
         $user = $request->user();

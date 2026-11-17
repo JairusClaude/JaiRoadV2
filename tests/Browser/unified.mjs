@@ -157,6 +157,13 @@ try {
     await dashboardMap.locator('.jr-dashboard-road-mine').first().waitFor();
     await dashboardMap.locator('.jr-dashboard-road-other').first().waitFor();
     const mineCount = await dashboardMap.locator('.jr-dashboard-road-mine').count();
+    const roadSelect = dashboardMap.getByRole('combobox', { name: 'Inspect a road' });
+    await roadSelect.selectOption({ index: 1 });
+    const roadDetails = dashboardMap.getByRole('complementary', { name: 'Road details' });
+    await roadDetails.waitFor();
+    await roadDetails.getByRole('heading', { name: 'Maintenance project', exact: true }).waitFor();
+    await roadDetails.getByRole('button', { name: 'Close road details' }).click();
+    await roadDetails.waitFor({ state: 'hidden' });
     await myProjects.check();
     assert.equal(await dashboardMap.locator('.jr-dashboard-road-other').count(), 0);
     assert.equal(await dashboardMap.locator('.jr-dashboard-road-mine').count(), mineCount);

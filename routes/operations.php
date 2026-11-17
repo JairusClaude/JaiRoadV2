@@ -11,11 +11,13 @@ use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\PeopleLifecycleController;
 use App\Http\Controllers\PreservedHistoryController;
 use App\Http\Controllers\RoadMunicipalityChangeController;
+use App\Http\Controllers\RoleLandingController;
 use App\Http\Controllers\SectionController;
 use Illuminate\Support\Facades\Route;
 
 // Explicit Data Dictionary-only routes. Never share legacy controller/permission paths.
 Route::middleware(['auth'])->prefix('dd-phase3')->name('jairoads.dd-phase3.')->group(function (): void {
+    Route::get('/dashboard/roads/{road}', [RoleLandingController::class, 'roadDetails'])->whereNumber('road')->name('dashboard.road-details');
     Route::get('/audit-logs', AuditHistoryController::class)->name('audit.index');
     // A single GET section router: registration of two /{section} routes
     // previously replaced the named dashboard route and caused routing failures.

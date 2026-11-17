@@ -74,6 +74,32 @@ final class UnifiedFrontendTest extends PostgresTestCase
             ->has('mapCoverages', 0));
     }
 
+    public function test_engineer_road_inspector_returns_only_related_summary_and_no_private_paths(): void
+    {
+        $f = $this->fixture('Engineer');
+        $record = $this->record($f);
+        $update = $this->monthly($f, $record);
+        $document = $this->document($f, $record);
+        $unassigned = $this->road();
+        $url = '/dd-phase3/dashboard/roads/';
+        $this->getJson($url.$f['road'])->assertOk()
+            ->assertJsonPath('id', $f['road'])
+            ->assertJsonPath('project.id', $f['project'])
+            ->assertJsonPath('project.my_project', true)
+            ->assertJsonPath('project.record_count', 1)
+            ->assertJsonPath('project.recent_records.0.id', $record)
+            ->assertJsonPath('project.update_count', 1)
+            ->assertJsonPath('project.latest_update.id', $update)
+            ->assertJsonPath('project.document_count', 1)
+            ->assertJsonPath('project.latest_document.id', $document)
+            ->assertJsonMissingPath('project.latest_document.file_path');
+        $this->getJson($url.$unassigned)->assertOk()->assertJsonPath('project', null);
+        $this->getJson($url.'99999999')->assertNotFound();
+        $other = $this->account('Engineer');
+        $this->actingAs($other)->getJson($url.$f['road'])->assertOk()->assertJsonPath('project.my_project', false);
+        $this->actingAs($this->account('Viewer'))->getJson($url.$f['road'])->assertForbidden();
+    }
+
     public function test_record_search_by_engineer_and_document_form_source_context(): void
     {
         $f = $this->fixture('SuperAdmin');

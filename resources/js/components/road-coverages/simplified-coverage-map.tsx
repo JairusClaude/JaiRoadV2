@@ -2,6 +2,7 @@ import L from 'leaflet';
 import { MapPin } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { savedRoadLines } from '@/lib/road-coverages/saved-lines';
+import { RoadDetailsPanel } from './road-details-panel';
 import 'leaflet/dist/leaflet.css';
 import '../../../css/jairoads-road-map.css';
 
@@ -41,6 +42,8 @@ export function SimplifiedCoverageMap({
     const containerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<L.Map | null>(null);
     const [mineOnly, setMineOnly] = useState(false);
+    const [selectedId, setSelectedId] = useState<number | null>(null);
+    const roadLayers = useRef<{ id: number; line: L.Polyline }[]>([]);
 
     const mappedCoverages = useMemo(() => {
         return coverages.map((coverage) => {
@@ -79,6 +82,8 @@ export function SimplifiedCoverageMap({
         [mappedCoverages, myOnly],
     );
 
+    const selected = engineerView ? visibleCoverages.find((item) => item.id === selectedId) : undefined;
+
     useEffect(() => {
         if (!containerRef.current) return;
 
@@ -113,6 +118,7 @@ export function SimplifiedCoverageMap({
         const map = mapRef.current;
         if (!map) return;
         const roadGroup = L.featureGroup();
+        roadLayers.current = [];
 
         // Draw background roads first so the engineer's highlighted roads stay on top.
         const ordered = engineerView
@@ -146,32 +152,26 @@ export function SimplifiedCoverageMap({
                     interactive: true,
                 });
 
-                // Use DOM text nodes: road/project names are user-entered.
-                const popup = document.createElement('div');
-                popup.className = 'jr-coverage-map-popup';
-                const title = document.createElement('strong');
-                title.textContent = item.name;
-                popup.append(title);
-                const detail = document.createElement('p');
-                detail.textContent = item.municipality;
-                popup.append(detail);
                 if (engineerView) {
-                    const status = document.createElement('p');
-                    status.className = item.mine ? 'jr-map-popup-mine' : '';
-                    status.textContent = item.mine ? 'My project · ' + item.recordCount + ' managed record(s)' : item.assigned ? 'Other maintenance project' : 'No linked maintenance project';
-                    popup.append(status);
-                    if (item.projectId && item.projectTitle) {
-                        const link = document.createElement('a');
-                        link.href = '/dd-phase3/ui/maintenance-projects/' + item.projectId;
-                        link.textContent = item.projectTitle;
-                        popup.append(link);
+                    line.on('click', () => setSelectedId(item.id));
+                    roadLayers.current.push({ id: item.id, line });
+                } else {
+                    // Preserve the read-only popup for every other map.
+                    const popup = document.createElement('div');
+                    popup.className = 'jr-coverage-map-popup';
+                    const title = document.createElement('strong');
+                    title.textContent = item.name;
+                    popup.append(title);
+                    const detail = document.createElement('p');
+                    detail.textContent = item.municipality;
+                    popup.append(detail);
+                    if (item.assigned) {
+                        const status = document.createElement('p');
+                        status.textContent = 'Linked to maintenance project';
+                        popup.append(status);
                     }
-                } else if (item.assigned) {
-                    const status = document.createElement('p');
-                    status.textContent = 'Linked to maintenance project';
-                    popup.append(status);
+                    line.bindPopup(popup, { closeButton: true });
                 }
-                line.bindPopup(popup, { closeButton: true });
 
                 line.addTo(roadGroup);
             }
@@ -193,8 +193,16 @@ export function SimplifiedCoverageMap({
 
         return () => {
             roadGroup.removeFrom(map);
+            roadLayers.current = [];
         };
     }, [visibleCoverages, engineerView]);
+
+    useEffect(() => {
+        for (const { id, line } of roadLayers.current) {
+            line.getElement()?.classList.toggle('jr-dashboard-road-selected', id === selected?.id);
+            if (id === selected?.id) line.bringToFront();
+        }
+    }, [selected?.id, visibleCoverages]);
 
     return (
         <div className={`jr-road-map-panel w-full ${className}`}>
@@ -208,7 +216,10 @@ export function SimplifiedCoverageMap({
                 </div>
                 {engineerView && (
                     <label className="jr-engineer-map-toggle">
-                        <input type="checkbox" role="switch" checked={mineOnly} onChange={(event) => setMineOnly(event.target.checked)} />
+                        <input type="checkbox" role="switch" checked={mineOnly} onChange={(event) => {
+                            setMineOnly(event.target.checked);
+                            if (event.target.checked && selected && !selected.mine) setSelectedId(null);
+                        }} />
                         My projects only
                     </label>
                 )}
@@ -216,7 +227,10 @@ export function SimplifiedCoverageMap({
             {engineerView && (
                 <div className="jr-road-map-toolbar" role="status">
                     <span>{myProjectCount} assigned project{myProjectCount === 1 ? '' : 's'} · {myMappedCount} mapped · {mappedCount - myMappedCount} other mapped roads</span>
-                    <span>{myOnly ? 'Showing only your projects' : 'Showing all roads; your projects are highlighted'}</span>
+                    <select className="jr-road-inspect-select" aria-label="Inspect a road" value={selected?.id ?? ''} onChange={(event) => setSelectedId(event.target.value ? Number(event.target.value) : null)}>
+                        <option value="">Inspect a road…</option>
+                        {visibleCoverages.filter(item => item.lines.length > 0).map(item => <option key={item.id} value={item.id}>{item.name} · {item.municipality}</option>)}
+                    </select>
                 </div>
             )}
             {engineerView && myMappedCount === 0 && (
@@ -225,13 +239,16 @@ export function SimplifiedCoverageMap({
                 </p>
             )}
 
-            <div
-                ref={containerRef}
-                className="jr-road-map-canvas"
-                style={{ height, minHeight: 280 }}
-                role="application"
-                aria-label="Read-only Leaflet road coverage map"
-            />
+            <div className={selected ? 'jr-road-map-content jr-road-map-content--selected' : 'jr-road-map-content'}>
+                <div
+                    ref={containerRef}
+                    className="jr-road-map-canvas"
+                    style={{ height, minHeight: 280 }}
+                    role="application"
+                    aria-label="Read-only Leaflet road coverage map"
+                />
+                {selected && <RoadDetailsPanel key={selected.id} roadId={selected.id} name={selected.name} municipality={selected.municipality} height={height} onClose={() => setSelectedId(null)} />}
+            </div>
 
             <div className="jr-road-map-footer">
                 <div className="jr-road-map-legend">
@@ -241,7 +258,7 @@ export function SimplifiedCoverageMap({
                     {engineerView && !myOnly && <span><i style={{ background: '#64748b' }} /> Other roads</span>}
                 </div>
                 <small>
-                    {engineerView ? 'Click a road to view its project. Map filtering does not change access or assignments.' : 'Clean, read-only Leaflet display map consistent with Add & Details pages.'}
+                    {engineerView ? 'Select a road to inspect its connected maintenance data.' : 'Clean, read-only Leaflet display map consistent with Add & Details pages.'}
                 </small>
             </div>
         </div>
