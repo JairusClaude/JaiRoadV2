@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Services\RoleAccess;
+use App\Services\OperationAudit;
+use Illuminate\Database\QueryException;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -55,7 +58,7 @@ final class LguPageController extends OperationsFrontendController
         $lgus = [
             'data' => collect($paginated->items())->map(function (\stdClass $lgu): array {
                 $roadCount = DB::table('jairoads_next.road_coverages')->where('lgu_id', $lgu->id)->count();
-                $assignmentCount = DB::table('jairoads_next.engineer_lgus')->where('lgu_id', $lgu->id)->where('is_active', true)->count();
+                $assignmentCount = DB::table('jairoads_next.engineer_lgus')->where('lgu_id', $lgu->id)->count();
 
                 return [
                     'id' => (int) $lgu->id,
@@ -121,8 +124,8 @@ final class LguPageController extends OperationsFrontendController
         $assignments = DB::table('jairoads_next.engineer_lgus as el')
             ->join('jairoads_next.engineers as e', 'e.id', '=', 'el.engineer_id')
             ->where('el.lgu_id', $id)
-            ->where('el.is_active', true)
-            ->get(['e.id', 'e.first_name', 'e.last_name', 'e.rank']);
+            ->orderByDesc('el.is_active')->orderBy('e.last_name')->orderBy('e.id')
+            ->get(['e.id', 'e.first_name', 'e.last_name', 'e.rank', 'el.is_active']);
 
         $canDelete = RoleAccess::canDeleteOperations($actor['role']);
         $canEdit = $this->writable($actor);
@@ -150,12 +153,12 @@ final class LguPageController extends OperationsFrontendController
                 'state_category' => $r->state_category,
             ])->all(),
             'assignedEngineers' => $assignments->map(fn ($e): array => [
-                'id' => (int) $e->id,
-                'first_name' => $e->first_name,
-                'last_name' => $e->last_name,
+                'engineer_id' => (int) $e->id,
+                'full_name' => trim($e->first_name.' '.$e->last_name),
                 'rank' => $e->rank,
+                'assignment_is_active' => (bool) $e->is_active,
             ])->all(),
-            'relationshipDataAvailable' => true,
+            'relationshipDataAvailable' => ['roadCoverages' => true, 'engineerAssignments' => true],
             'directoryUrl' => self::BASE.'/lgus',
             'lguPermissions' => [
                 'can_edit' => $canEdit,
@@ -195,6 +198,10 @@ final class LguPageController extends OperationsFrontendController
         $actor = $this->actor($request);
         $this->writer($actor);
 
+        if ($id === null) {
+            // New LGUs are within the system's fixed provincial coverage.
+            $request->merge(['province' => 'Davao De Oro', 'region' => 'XI']);
+        }
         $v = $request->validate([
             'municipality_name' => ['required', 'string', 'max:100'],
             'province' => ['required', 'string', 'max:100'],
@@ -210,7 +217,9 @@ final class LguPageController extends OperationsFrontendController
         }
 
         DB::table('jairoads_next.lgus')->where('id', $id)->update($v);
-        return redirect(self::BASE.'/lgus')->with('dd_operations_status', 'LGU updated successfully.');
+        $directory = self::BASE.'/lgus';
+        $detail = $directory.'/'.$id;
+        return redirect($this->editReturn($request, $detail, [$directory, $detail]))->with('dd_operations_status', 'LGU updated successfully.');
     }
 
     public function deleteLgu(Request $request, int $id): RedirectResponse
@@ -222,15 +231,8 @@ final class LguPageController extends OperationsFrontendController
         $actor = $this->actor($request);
         abort_unless(RoleAccess::canDeleteOperations($actor['role']), 403, 'Only administrators may delete LGUs.');
 
-        $roads = DB::table('jairoads_next.road_coverages')->where('lgu_id', $id)->count();
-        $assignments = DB::table('jairoads_next.engineer_lgus')->where('lgu_id', $id)->where('is_active', true)->count();
-        if ($roads > 0 || $assignments > 0) {
-            return back()->withErrors([
-                'delete' => 'Cannot delete LGU: it is referenced by road coverages or engineer assignments.',
-            ]);
-        }
+        $this->deleteCheckedLgus($actor, [$id]);
 
-        DB::table('jairoads_next.lgus')->where('id', $id)->delete();
         return redirect(self::BASE.'/lgus')->with('dd_operations_status', 'LGU deleted successfully.');
     }
 
@@ -243,27 +245,42 @@ final class LguPageController extends OperationsFrontendController
         $actor = $this->actor($request);
         abort_unless(RoleAccess::canDeleteOperations($actor['role']), 403, 'Only administrators may delete LGUs.');
 
-        $ids = $request->input('ids', []);
-        if (is_array($ids) && count($ids) > 0) {
-            $blocked = [];
-            foreach ($ids as $id) {
-                $roads = DB::table('jairoads_next.road_coverages')->where('lgu_id', $id)->count();
-                $assignments = DB::table('jairoads_next.engineer_lgus')->where('lgu_id', $id)->where('is_active', true)->count();
-                if ($roads > 0 || $assignments > 0) {
-                    $lgu = DB::table('jairoads_next.lgus')->where('id', $id)->first();
-                    $blocked[] = $lgu ? $lgu->municipality_name : "ID {$id}";
-                }
-            }
-
-            if (!empty($blocked)) {
-                return back()->withErrors([
-                    'ids' => 'Cannot delete the following LGUs because they have active road coverages or assignments: ' . implode(', ', $blocked),
-                ]);
-            }
-
-            DB::table('jairoads_next.lgus')->whereIn('id', $ids)->delete();
-        }
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:100'],
+            'ids.*' => ['required', 'integer', 'min:1', 'distinct'],
+        ]);
+        $this->deleteCheckedLgus($actor, array_map('intval', $validated['ids']));
 
         return redirect(self::BASE.'/lgus')->with('dd_operations_status', 'Selected LGUs deleted successfully.');
+    }
+
+    /** Dependency checks, removal and canonical audit/notification delivery are atomic. */
+    private function deleteCheckedLgus(array $actor, array $ids): void
+    {
+        try {
+            DB::transaction(function () use ($actor, $ids): void {
+                $rows = DB::table('jairoads_next.lgus')->whereIn('id', $ids)
+                    ->orderBy('id')->lockForUpdate()->get();
+                abort_unless($rows->count() === count($ids), 404);
+
+                foreach ($rows as $row) {
+                    $roads = DB::table('jairoads_next.road_coverages')->where('lgu_id', $row->id)->exists();
+                    $assignments = DB::table('jairoads_next.engineer_lgus')->where('lgu_id', $row->id)->exists();
+                    if ($roads || $assignments) {
+                        throw ValidationException::withMessages(['delete' => 'Cannot delete '.$row->municipality_name.': it still has road coverage or historical engineer assignment references.']);
+                    }
+                }
+                foreach ($rows as $row) {
+                    DB::table('jairoads_next.lgus')->where('id', $row->id)->delete();
+                    app(OperationAudit::class)->record($actor, 'DELETE', 'LGU', (int) $row->id,
+                        'Authorized LGU deleted after dependency checks.', [], (array) $row);
+                }
+            });
+        } catch (QueryException $error) {
+            if ($error->getCode() === '23503') {
+                throw ValidationException::withMessages(['delete' => 'An associated record prevents deletion. Refresh and review the LGU dependencies.']);
+            }
+            throw $error;
+        }
     }
 }
