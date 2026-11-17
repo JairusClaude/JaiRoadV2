@@ -398,6 +398,20 @@ class OperationsFrontendController extends Controller
         }
     }
 
+    /** Return to a known source page after a successful mutation; never redirect to arbitrary URLs. */
+    protected function editReturn(Request $request, string $fallback, array $allowed): string
+    {
+        $origin = $request->query('return_to');
+        if (! is_string($origin) || ! str_starts_with($origin, self::BASE.'/')) {
+            return $fallback;
+        }
+        $path = parse_url($origin, PHP_URL_PATH);
+        if (! is_string($path) || ! in_array($path, $allowed, true)) {
+            return $fallback;
+        }
+        return $path;
+    }
+
     protected function relatedReturn(Request $request, array $actor, string $fallback): string
     {
         $id = $request->integer('record');
