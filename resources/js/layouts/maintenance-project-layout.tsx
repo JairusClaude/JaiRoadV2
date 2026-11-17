@@ -48,6 +48,7 @@ import '../../css/jairoads-viewer-workspace.css';
 import '../../css/jairoads-engineer-workspace.css';
 import '../../css/jairoads-superadmin-workspace.css';
 import '../../css/jairoads-admin-workspace.css';
+import '../../css/jairoads-sidebar-waves.css';
 
 const navigation = [
     { title: 'Dashboard', href: '/dashboard', icon: House },
@@ -172,6 +173,12 @@ export function MaintenanceProjectShell({
                             : 'contents'
                     }
                 >
+                    {brandedTheme && (
+                        <div className="jr-sidebar-waves" aria-hidden="true">
+                            <span className="jr-sidebar-wave jr-sidebar-wave--primary" />
+                            <span className="jr-sidebar-wave jr-sidebar-wave--secondary" />
+                        </div>
+                    )}
                     <SidebarHeader className="jr-brand-header">
                         <div className="jr-brand">
                             <button

@@ -44,11 +44,6 @@ body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-copy small {
 body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-sidebar-collapse { top:15px; right:10px; }
 body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-nav-content { position:relative; }
 body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-sidebar-footer { position:relative; }
-/* Layered road curves beneath navigation, never intercept clicks. */
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-nav-content::after {
-    content:''; position:absolute; bottom:0; left:0; right:0; height:36%; pointer-events:none;
-    background:radial-gradient(ellipse at 0% 115%,transparent 48%,#a78bfa1a 49%,#a78bfa1a 59%,transparent 60%),radial-gradient(ellipse at 100% 100%,#38166b90 0%,transparent 72%); z-index:-1;
-}
 body:has(.jr-superadmin-workspace) [data-state='collapsed'] .jr-superadmin-sidebar .jr-brand-header { height:96px; }
 body:has(.jr-superadmin-workspace) [data-state='collapsed'] .jr-superadmin-sidebar .jr-brand { top:19px; left:22px; width:40px; height:40px; }
 body:has(.jr-superadmin-workspace) [data-state='collapsed'] .jr-superadmin-sidebar .jr-brand-control { width:40px; height:40px; flex-basis:40px; }
@@ -118,7 +113,7 @@ html.dark .jr-superadmin-workspace .jr-superadmin-dashboard a:hover { background
 .jr-superadmin-workspace .jr-superadmin-dashboard .jr-page-head > div { min-width:0; }
 body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar.jr-mobile-shell,
 body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar.jr-sidebar-container {
-    background-image:radial-gradient(ellipse at -25% 115%,transparent 40%,#a78bfa22 40.5%,#a78bfa22 48%,transparent 48.5%,transparent 56%,#a78bfa17 56.5%,#a78bfa17 64%,transparent 64.5%),radial-gradient(ellipse at 90% 20%,#38166b88,transparent 60%),linear-gradient(160deg,#1c0a3b,#26104d 53%,#38166b);
+    background-image:radial-gradient(ellipse at 90% 20%,#38166b88,transparent 60%),linear-gradient(160deg,#1c0a3b,#26104d 53%,#38166b);
 }
 html.dark .jr-app.jr-superadmin-workspace:has(.jr-directory-exploration) { background:#190f2a!important; }
 html.dark .jr-superadmin-workspace .jr-superadmin-dashboard .border-slate-200 { border-color:#644c7d; }

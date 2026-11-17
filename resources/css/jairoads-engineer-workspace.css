@@ -44,11 +44,6 @@ body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-brand-copy small { fon
 body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-sidebar-collapse { top:15px; right:10px; }
 body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-nav-content { position:relative; }
 body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-sidebar-footer { position:relative; }
-/* Layered road curves beneath navigation, never intercept clicks. */
-body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-nav-content::after {
-    content:''; position:absolute; bottom:0; left:0; right:0; height:36%; pointer-events:none;
-    background:radial-gradient(ellipse at 0% 115%,transparent 48%,#fb923c1a 49%,#fb923c1a 59%,transparent 60%),radial-gradient(ellipse at 100% 100%,#873a0d90 0%,transparent 72%); z-index:-1;
-}
 body:has(.jr-engineer-workspace) [data-state='collapsed'] .jr-engineer-sidebar .jr-brand-header { height:96px; }
 body:has(.jr-engineer-workspace) [data-state='collapsed'] .jr-engineer-sidebar .jr-brand { top:19px; left:22px; width:40px; height:40px; }
 body:has(.jr-engineer-workspace) [data-state='collapsed'] .jr-engineer-sidebar .jr-brand-control { width:40px; height:40px; flex-basis:40px; }
@@ -126,7 +121,7 @@ html.dark .jr-engineer-workspace .jr-engineer-dashboard a:hover { background:#50
 .jr-engineer-workspace .jr-engineer-dashboard .jr-page-head > div { min-width:0; }
 body:has(.jr-engineer-workspace) .jr-engineer-sidebar.jr-mobile-shell,
 body:has(.jr-engineer-workspace) .jr-engineer-sidebar.jr-sidebar-container {
-    background-image:radial-gradient(ellipse at -25% 115%,transparent 40%,#fb923c22 40.5%,#fb923c22 48%,transparent 48.5%,transparent 56%,#fb923c17 56.5%,#fb923c17 64%,transparent 64.5%),radial-gradient(ellipse at 90% 20%,#873a0d88,transparent 60%),linear-gradient(160deg,#421b09,#692b0b 53%,#873a0d);
+    background-image:radial-gradient(ellipse at 90% 20%,#873a0d88,transparent 60%),linear-gradient(160deg,#421b09,#692b0b 53%,#873a0d);
 }
 html.dark .jr-app.jr-engineer-workspace:has(.jr-directory-exploration) { background:#211610!important; }
 html.dark .jr-engineer-workspace .jr-engineer-dashboard .border-slate-200 { border-color:#75513b; }

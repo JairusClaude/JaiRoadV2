@@ -1,0 +1,72 @@
+/* Decorative layers only. The sidebar's actual content never moves. */
+body:has(.jr-viewer-workspace) .jr-viewer-sidebar { --jr-wave-rgb:96 165 250; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar { --jr-wave-rgb:251 146 60; }
+body:has(.jr-admin-workspace) .jr-admin-sidebar { --jr-wave-rgb:241 107 118; }
+body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar { --jr-wave-rgb:167 139 250; }
+
+:is(.jr-viewer-sidebar,.jr-engineer-sidebar,.jr-admin-sidebar,.jr-superadmin-sidebar).jr-mobile-shell {
+    position:relative;
+    isolation:isolate;
+}
+:is(.jr-viewer-sidebar,.jr-engineer-sidebar,.jr-admin-sidebar,.jr-superadmin-sidebar).jr-sidebar-container {
+    isolation:isolate;
+}
+.jr-sidebar-waves {
+    position:absolute;
+    inset:0;
+    overflow:hidden;
+    pointer-events:none;
+    z-index:0;
+}
+.jr-sidebar-wave {
+    position:absolute;
+    inset:-28% -85%;
+    pointer-events:none;
+    transform-origin:50% 65%;
+}
+.jr-sidebar-wave--primary {
+    background:radial-gradient(ellipse at 5% 100%,
+        transparent 39%,
+        rgb(var(--jr-wave-rgb) / .12) 39.8%,
+        rgb(var(--jr-wave-rgb) / .12) 46%,
+        transparent 47%,
+        transparent 53%,
+        rgb(var(--jr-wave-rgb) / .085) 54%,
+        rgb(var(--jr-wave-rgb) / .085) 61%,
+        transparent 62%);
+    animation:jr-sidebar-wave-flow 18s ease-in-out infinite;
+}
+.jr-sidebar-wave--secondary {
+    background:radial-gradient(ellipse at 18% 110%,
+        transparent 43%,
+        rgb(var(--jr-wave-rgb) / .085) 44%,
+        rgb(var(--jr-wave-rgb) / .085) 51%,
+        transparent 52%,
+        transparent 58%,
+        rgb(var(--jr-wave-rgb) / .055) 59%,
+        rgb(var(--jr-wave-rgb) / .055) 65%,
+        transparent 66%);
+    animation:jr-sidebar-wave-drift 26s ease-in-out infinite;
+}
+@keyframes jr-sidebar-wave-flow {
+    0%,100% { transform:translate3d(-4%,3%,0) rotate(-6deg) scale(1.04); }
+    50% { transform:translate3d(9%,-7%,0) rotate(8deg) scale(1.12); }
+}
+@keyframes jr-sidebar-wave-drift {
+    0%,100% { transform:translate3d(9%,8%,0) rotate(5deg) scale(1.05); }
+    50% { transform:translate3d(-8%,-5%,0) rotate(-9deg) scale(1.13); }
+}
+:is(.jr-viewer-sidebar,.jr-engineer-sidebar,.jr-admin-sidebar,.jr-superadmin-sidebar)
+    :is(.jr-brand-header,.jr-nav-content,.jr-sidebar-footer) {
+    position:relative;
+    z-index:1;
+}
+/* Use the same resting artwork, without motion, for both accessibility preferences. */
+@media (prefers-reduced-motion: reduce) {
+    .jr-sidebar-wave { animation:none!important; }
+    .jr-sidebar-wave--primary { transform:translate3d(-4%,3%,0) rotate(-6deg) scale(1.04); }
+    .jr-sidebar-wave--secondary { transform:translate3d(9%,8%,0) rotate(5deg) scale(1.05); }
+}
+html.jr-reduce-motion .jr-sidebar-wave { animation:none!important; }
+html.jr-reduce-motion .jr-sidebar-wave--primary { transform:translate3d(-4%,3%,0) rotate(-6deg) scale(1.04); }
+html.jr-reduce-motion .jr-sidebar-wave--secondary { transform:translate3d(9%,8%,0) rotate(5deg) scale(1.05); }

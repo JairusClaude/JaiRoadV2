@@ -44,11 +44,6 @@ body:has(.jr-admin-workspace) .jr-admin-sidebar .jr-brand-copy small { font-size
 body:has(.jr-admin-workspace) .jr-admin-sidebar .jr-sidebar-collapse { top:15px; right:10px; }
 body:has(.jr-admin-workspace) .jr-admin-sidebar .jr-nav-content { position:relative; }
 body:has(.jr-admin-workspace) .jr-admin-sidebar .jr-sidebar-footer { position:relative; }
-/* Layered road curves beneath navigation, never intercept clicks. */
-body:has(.jr-admin-workspace) .jr-admin-sidebar .jr-nav-content::after {
-    content:''; position:absolute; bottom:0; left:0; right:0; height:36%; pointer-events:none;
-    background:radial-gradient(ellipse at 0% 115%,transparent 48%,#f16b761a 49%,#f16b761a 59%,transparent 60%),radial-gradient(ellipse at 100% 100%,#a8142490 0%,transparent 72%); z-index:-1;
-}
 body:has(.jr-admin-workspace) [data-state='collapsed'] .jr-admin-sidebar .jr-brand-header { height:96px; }
 body:has(.jr-admin-workspace) [data-state='collapsed'] .jr-admin-sidebar .jr-brand { top:19px; left:22px; width:40px; height:40px; }
 body:has(.jr-admin-workspace) [data-state='collapsed'] .jr-admin-sidebar .jr-brand-control { width:40px; height:40px; flex-basis:40px; }
@@ -118,7 +113,7 @@ html.dark .jr-admin-workspace .jr-admin-dashboard a:hover { background:#57343e; 
 .jr-admin-workspace .jr-admin-dashboard .jr-page-head > div { min-width:0; }
 body:has(.jr-admin-workspace) .jr-admin-sidebar.jr-mobile-shell,
 body:has(.jr-admin-workspace) .jr-admin-sidebar.jr-sidebar-container {
-    background-image:radial-gradient(ellipse at -25% 115%,transparent 40%,#f16b7622 40.5%,#f16b7622 48%,transparent 48.5%,transparent 56%,#f16b7617 56.5%,#f16b7617 64%,transparent 64.5%),radial-gradient(ellipse at 90% 20%,#a8142488,transparent 60%),linear-gradient(160deg,#54060d,#800d18 53%,#a81424);
+    background-image:radial-gradient(ellipse at 90% 20%,#a8142488,transparent 60%),linear-gradient(160deg,#54060d,#800d18 53%,#a81424);
 }
 html.dark .jr-app.jr-admin-workspace:has(.jr-directory-exploration) { background:#251217!important; }
 html.dark .jr-admin-workspace .jr-admin-dashboard .border-slate-200 { border-color:#784b56; }

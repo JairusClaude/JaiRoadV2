@@ -44,11 +44,6 @@ body:has(.jr-viewer-workspace) .jr-viewer-sidebar .jr-brand-copy small { font-si
 body:has(.jr-viewer-workspace) .jr-viewer-sidebar .jr-sidebar-collapse { top:15px; right:10px; }
 body:has(.jr-viewer-workspace) .jr-viewer-sidebar .jr-nav-content { position:relative; }
 body:has(.jr-viewer-workspace) .jr-viewer-sidebar .jr-sidebar-footer { position:relative; }
-/* Layered road curves beneath navigation, never intercept clicks. */
-body:has(.jr-viewer-workspace) .jr-viewer-sidebar .jr-nav-content::after {
-    content:''; position:absolute; bottom:0; left:0; right:0; height:36%; pointer-events:none;
-    background:radial-gradient(ellipse at 0% 115%,transparent 48%,#60a5fa1a 49%,#60a5fa1a 59%,transparent 60%),radial-gradient(ellipse at 100% 100%,#124a9c90 0%,transparent 72%); z-index:-1;
-}
 body:has(.jr-viewer-workspace) [data-state='collapsed'] .jr-viewer-sidebar .jr-brand-header { height:96px; }
 body:has(.jr-viewer-workspace) [data-state='collapsed'] .jr-viewer-sidebar .jr-brand { top:19px; left:22px; width:40px; height:40px; }
 body:has(.jr-viewer-workspace) [data-state='collapsed'] .jr-viewer-sidebar .jr-brand-control { width:40px; height:40px; flex-basis:40px; }
@@ -126,7 +121,7 @@ html.dark .jr-viewer-workspace .jr-viewer-dashboard a:hover { background:#243d5f
 .jr-viewer-workspace .jr-viewer-dashboard .jr-page-head > div { min-width:0; }
 body:has(.jr-viewer-workspace) .jr-viewer-sidebar.jr-mobile-shell,
 body:has(.jr-viewer-workspace) .jr-viewer-sidebar.jr-sidebar-container {
-    background-image:radial-gradient(ellipse at -25% 115%,transparent 40%,#60a5fa22 40.5%,#60a5fa22 48%,transparent 48.5%,transparent 56%,#60a5fa17 56.5%,#60a5fa17 64%,transparent 64.5%),radial-gradient(ellipse at 90% 20%,#124a9c88,transparent 60%),linear-gradient(160deg,#071f49,#0b2e66 53%,#124a9c);
+    background-image:radial-gradient(ellipse at 90% 20%,#124a9c88,transparent 60%),linear-gradient(160deg,#071f49,#0b2e66 53%,#124a9c);
 }
 html.dark .jr-app.jr-viewer-workspace:has(.jr-directory-exploration) { background:#0b1730!important; }
 html.dark .jr-viewer-workspace .jr-viewer-dashboard .border-slate-200 { border-color:#355273; }

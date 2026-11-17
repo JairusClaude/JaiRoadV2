@@ -219,6 +219,26 @@ try {
     for (const other of [viewer, engineer, superadmin]) {
         assert.equal(await other.locator('.jr-admin-workspace').count(), 0);
     }
+    // Decorative motion uses each authenticated role's accent and obeys both preferences.
+    for (const [page, rgb] of [[viewer, '96 165 250'], [engineer, '251 146 60'], [admin, '241 107 118'], [superadmin, '167 139 250']]) {
+        const layer = page.locator('.jr-sidebar-waves');
+        const wave = layer.locator('.jr-sidebar-wave--primary');
+        await layer.waitFor();
+        assert.equal(await layer.getAttribute('aria-hidden'), 'true');
+        assert.equal(await layer.evaluate(el => getComputedStyle(el).pointerEvents), 'none');
+        assert.equal(await wave.evaluate(el => getComputedStyle(el).getPropertyValue('--jr-wave-rgb').trim()), rgb);
+        // signIn creates a reduced-motion context.
+        assert.equal(await wave.evaluate(el => getComputedStyle(el).animationName), 'none');
+        await page.emulateMedia({ reducedMotion: 'no-preference' });
+        await wave.evaluate(el => {
+            if (getComputedStyle(el).animationName !== 'jr-sidebar-wave-flow') throw new Error('Wave animation missing');
+            if (getComputedStyle(el).animationIterationCount !== 'infinite') throw new Error('Wave does not loop');
+        });
+        await page.evaluate(() => document.documentElement.classList.add('jr-reduce-motion'));
+        assert.equal(await wave.evaluate(el => getComputedStyle(el).animationName), 'none');
+        await page.evaluate(() => document.documentElement.classList.remove('jr-reduce-motion'));
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+    }
     const dashboardMap = engineer.getByRole('region', { name: 'My projects road map' });
     await dashboardMap.waitFor();
     const myProjects = dashboardMap.getByRole('switch', { name: 'My projects only' });
