@@ -46,6 +46,7 @@ import '../../css/maintenance-projects-espresso-sidebar.css';
 import '../../css/maintenance-projects-main-design.css';
 import '../../css/jairoads-viewer-workspace.css';
 import '../../css/jairoads-engineer-workspace.css';
+import '../../css/jairoads-superadmin-workspace.css';
 
 const navigation = [
     { title: 'Dashboard', href: '/dashboard', icon: House },
@@ -83,8 +84,9 @@ export function MaintenanceProjectShell({
     const role = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role;
     const viewerTheme = canonical && role === 'viewer';
     const engineerTheme = canonical && role === 'engineer';
-    const brandedTheme = viewerTheme || engineerTheme;
-    const sidebarTheme = viewerTheme ? ' jr-viewer-sidebar' : engineerTheme ? ' jr-engineer-sidebar' : '';
+    const superadminTheme = canonical && role === 'superadmin';
+    const brandedTheme = viewerTheme || engineerTheme || superadminTheme;
+    const sidebarTheme = viewerTheme ? ' jr-viewer-sidebar' : engineerTheme ? ' jr-engineer-sidebar' : superadminTheme ? ' jr-superadmin-sidebar' : '';
     const path = page.url.split('?')[0].replace(/^\/dd-phase3\/ui/, '');
     const alternativeNavigation = isAlternativeNavigation(page.component);
     const documentPageName = path.startsWith('/maintenance-documents')
@@ -189,7 +191,7 @@ export function MaintenanceProjectShell({
                                     aria-hidden="true"
                                 >
                                     {brandedTheme ? (
-                                        <img src="/images/jairoads/peo-ddo-transparent.webp" alt="" className={viewerTheme ? "jr-viewer-brand-logo" : "jr-engineer-brand-logo"} width={144} height={144} />
+                                        <img src="/images/jairoads/peo-ddo-transparent.webp" alt="" className={viewerTheme ? "jr-viewer-brand-logo" : engineerTheme ? "jr-engineer-brand-logo" : "jr-superadmin-brand-logo"} width={144} height={144} />
                                     ) : (
                                         <svg viewBox="0 0 24 24">
                                             <path d="M7 3c-1 4 2 5 2 8s-3 4-2 10M17 3c1 4-2 5-2 8s3 4 2 10M12 4v2m0 4v2m0 4v2" />
@@ -216,7 +218,7 @@ export function MaintenanceProjectShell({
                                 <strong>JaiROADS</strong>
                                 <small>
                                     {canonical
-                                        ? viewerTheme ? 'Viewer Workspace' : engineerTheme ? 'Engineer Workspace' : `${String((page.props.jairoadsIdentity as { role?: string } | undefined)?.role ?? 'User')} Workspace`
+                                        ? viewerTheme ? 'Viewer Workspace' : engineerTheme ? 'Engineer Workspace' : superadminTheme ? 'SuperAdmin Workspace' : `${String((page.props.jairoadsIdentity as { role?: string } | undefined)?.role ?? 'User')} Workspace`
                                         : 'Admin Console'}
                                 </small>
                             </span>
@@ -412,6 +414,7 @@ export default function MaintenanceProjectLayout({
     const role = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role;
     const viewerTheme = page.props.canonicalFrontend === true && role === 'viewer';
     const engineerTheme = page.props.canonicalFrontend === true && role === 'engineer';
+    const superadminTheme = page.props.canonicalFrontend === true && role === 'superadmin';
 
     return (
         <SidebarProvider
@@ -421,9 +424,11 @@ export default function MaintenanceProjectLayout({
                     ? 'jr-app jr-theme jr-main-design jr-viewer-workspace'
                     : engineerTheme
                       ? 'jr-app jr-theme jr-main-design jr-engineer-workspace'
-                      : mainDesign
-                        ? 'jr-app jr-theme jr-main-design jr-espresso-exploration'
-                        : 'jr-app jr-theme'
+                      : superadminTheme
+                        ? 'jr-app jr-theme jr-main-design jr-superadmin-workspace'
+                        : mainDesign
+                          ? 'jr-app jr-theme jr-main-design jr-espresso-exploration'
+                          : 'jr-app jr-theme'
             }
             style={
                 {

@@ -83,12 +83,12 @@ export default function DdSuperAdminCommandCenter({
     const [refreshing, setRefreshing] = useState(false);
 
     return (
-        <div className="jr-directory-exploration">
+        <div className="jr-directory-exploration jr-superadmin-dashboard">
             <Head title="System Command Center - Dashboard" />
             <ProjectWorkspace>
                 <div className="jr-page-head">
                     <div>
-                        <div className="inline-flex items-center gap-1.5 rounded-full bg-[#FFF0E2] px-2.5 py-0.5 text-xs font-semibold text-[#995321] mb-2">
+                        <div className="jr-superadmin-access">
                             <Crown className="h-3.5 w-3.5" /> Highest Authority · SuperAdmin
                         </div>
                         <h1>System Command Center</h1>
@@ -98,7 +98,7 @@ export default function DdSuperAdminCommandCenter({
                     </div>
                     <div className="jr-page-actions">
                         <Button
-                            className="jr-primary"
+                            className="jr-superadmin-refresh"
                             disabled={refreshing}
                             onClick={() =>
                                 router.reload({
@@ -175,7 +175,7 @@ export default function DdSuperAdminCommandCenter({
                                     <Link
                                         key={name}
                                         href={url}
-                                        className="flex items-center justify-between rounded-xl border border-slate-200 bg-[#fdfcfb] px-4 py-3 text-sm font-semibold text-slate-800 transition hover:border-amber-400 hover:bg-[#fff9f4]"
+                                        className="flex items-center justify-between rounded-xl border border-slate-200 bg-[#FCFAFF] px-4 py-3 text-sm font-semibold text-slate-800 transition hover:border-amber-400 hover:bg-[#F4EDFF]"
                                     >
                                         <span>{name}</span>
                                         <ArrowRight className="h-4 w-4 text-slate-400" />
@@ -252,7 +252,7 @@ export default function DdSuperAdminCommandCenter({
                         </div>
                         <div className="mt-4 overflow-x-auto">
                             <table className="w-full text-left text-sm">
-                                <thead className="border-b border-slate-200 bg-[#fbf9f7] text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                                <thead className="border-b border-slate-200 bg-[#F5F0FC] text-xs font-semibold text-slate-600 uppercase tracking-wider">
                                     <tr>
                                         <th className="px-5 py-3.5">Username</th>
                                         <th className="px-4 py-3.5">Role</th>
@@ -267,7 +267,7 @@ export default function DdSuperAdminCommandCenter({
                                                 {a.username}
                                             </td>
                                             <td className="px-4 py-3">
-                                                <span className="inline-flex rounded-full bg-[#FFF0E2] px-2.5 py-0.5 text-xs font-semibold text-[#995321]">
+                                                <span className="inline-flex rounded-full bg-[#EDE5FF] px-2.5 py-0.5 text-xs font-semibold text-[#51269B]">
                                                     {a.role}
                                                 </span>
                                             </td>
