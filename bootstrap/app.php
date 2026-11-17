@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnforceCanonicalSession;
+use App\Http\Middleware\EnsurePasswordRecoveryDelivery;
 use App\Http\Middleware\GuardLegacyRoutesForCanonicalAccounts;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -35,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
             AuthenticateSession::class,
             HandleInertiaRequests::class,
             GuardLegacyRoutesForCanonicalAccounts::class,
+            EnsurePasswordRecoveryDelivery::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
     })

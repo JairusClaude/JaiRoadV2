@@ -35,7 +35,7 @@ const slides = [
 export default function AuthShowcase() {
     const [activeSlide, setActiveSlide] = useState(0);
     const [playing, setPlaying] = useState(() => typeof window === 'undefined' || (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && !document.documentElement.classList.contains('jr-reduce-motion')));
-    const [failedImages, setFailedImages] = useState<number[]>([]);
+    const [loadedImages, setLoadedImages] = useState<number[]>([]);
     useEffect(() => {
         const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
         const update = () => { if (preference.matches) setPlaying(false); };
@@ -56,20 +56,13 @@ export default function AuthShowcase() {
                         data-active-slide={activeSlide}
                     >
                         {slides.map((item, index) => (
-                            <img
-                                key={item.image}
-                                src={failedImages.includes(index) && 'fallback' in item ? item.fallback : item.image}
-                                alt=""
-                                aria-hidden="true"
-                                loading="eager"
-                                decoding="async"
-                                onError={() => {
-                                    if ('fallback' in item) {
-                                        setFailedImages((previous) => previous.includes(index) ? previous : [...previous, index]);
-                                    }
-                                }}
-                                className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-1000 motion-reduce:transition-none ${index === activeSlide ? 'opacity-100' : 'opacity-0'}`}
-                            />
+                            <div key={item.image} className={`absolute inset-0 transition-opacity duration-1000 motion-reduce:transition-none ${index === activeSlide ? 'opacity-100' : 'opacity-0'}`}>
+                                {'fallback' in item && <img src={item.fallback} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover object-center" />}
+                                <img src={item.image} alt="" aria-hidden="true" loading="eager" decoding="async"
+                                    onLoad={() => setLoadedImages((previous) => previous.includes(index) ? previous : [...previous, index])}
+                                    onError={() => setLoadedImages((previous) => previous.filter((value) => value !== index))}
+                                    className={`absolute inset-0 h-full w-full object-cover object-center ${'fallback' in item && !loadedImages.includes(index) ? 'opacity-0' : 'opacity-100'}`} />
+                            </div>
                         ))}
                         <div
                             aria-hidden="true"
@@ -144,7 +137,7 @@ export default function AuthShowcase() {
                                         ))}
                                     </div>
                                     <p className="hidden text-[11px] text-white/65 md:block">
-                                        {failedImages.includes(activeSlide) ? 'JaiROADS illustrative artwork' : slide.credit}
+                                        {'fallback' in slide && !loadedImages.includes(activeSlide) ? 'JaiROADS illustrative artwork' : slide.credit}
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-2">

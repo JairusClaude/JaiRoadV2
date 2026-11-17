@@ -92,12 +92,11 @@ export default function Security(props: Props) {
                             Account & Security
                         </h1>
                         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                            Protect your JaiROADS sign-in account with Laravel
-                            Fortify.
+                            Protect your JaiROADS sign-in account with passkeys and two-factor authentication.
                         </p>
                     </div>
                     <Link
-                        href="/settings-preview"
+                        href="/dd-phase3/settings"
                         className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
                     >
                         <ArrowLeft className="size-4" />

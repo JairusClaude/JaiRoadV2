@@ -1,5 +1,5 @@
-import { Head, router, usePage } from '@inertiajs/react';
-import { Settings2, ShieldCheck } from 'lucide-react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { KeyRound, Settings2, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import type { ComponentProps } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
@@ -422,6 +422,12 @@ export default function Operations({
                                                 ? 'Your operational identity and local appearance preferences. Account changes require an administrator.'
                                                 : 'Your read-only identity and personal display preferences.'}
                                     </p>
+                                    <div className="flex flex-wrap items-center gap-3 pt-2">
+                                        <Link href="/settings/security?tab=passkeys" className="inline-flex items-center gap-2 rounded-xl bg-[#90451f] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#773917]">
+                                            <KeyRound className="size-4" /> Manage passkeys
+                                        </Link>
+                                        <span className="text-xs text-slate-500">Register a device for passwordless sign-in. Recent password confirmation is required.</span>
+                                    </div>
                                     <div className="grid gap-3 pt-2 sm:grid-cols-3">
                                         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
                                             <div className="text-xs font-semibold tracking-wider text-slate-500 uppercase">

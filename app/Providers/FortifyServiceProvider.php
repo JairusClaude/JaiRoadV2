@@ -6,7 +6,9 @@ use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Models\User;
 use App\Services\AccountIdentityResolver;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -37,6 +39,7 @@ class FortifyServiceProvider extends ServiceProvider
         $this->configureActions();
         $this->configureViews();
         $this->configureRateLimiting();
+        $this->configureRecoveryMail();
         Passkeys::authorizeLoginUsing(static function (Request $request, PasskeyUser $user, Passkey $passkey): bool {
             if (! $user instanceof User || ! $user->exists || (string) $passkey->user_id !== (string) $user->getKey()) {
                 return false;
@@ -62,6 +65,7 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Fortify::loginView(fn (Request $request) => Inertia::render('auth/login', [
             'canResetPassword' => Features::enabled(Features::resetPasswords()),
+            'passkeyReady' => Features::canManagePasskeys() && in_array($request->getSchemeAndHttpHost(), config('fortify.passkeys.allowed_origins', []), true),
             'status' => $request->session()->get('status'),
         ]));
 
@@ -86,6 +90,24 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::twoFactorChallengeView(fn () => Inertia::render('auth/two-factor-challenge'));
 
         Fortify::confirmPasswordView(fn () => Inertia::render('auth/confirm-password'));
+    }
+
+    private function configureRecoveryMail(): void
+    {
+        // Use the configured canonical origin, not an arbitrary incoming Host.
+        ResetPassword::toMailUsing(static function (User $user, string $token): MailMessage {
+            $path = route('password.reset', ['token' => $token, 'email' => $user->getEmailForPasswordReset()], false);
+            $url = rtrim((string) config('app.url'), '/').$path;
+
+            return (new MailMessage)
+                ->subject('Reset your JaiROADS password')
+                ->greeting('JaiROADS account recovery')
+                ->line('A password reset was requested for your JaiROADS account.')
+                ->action('Reset password', $url)
+                ->line('This link expires in '.config('auth.passwords.users.expire').' minutes and can only be used once.')
+                ->line('If you did not request this change, ignore this email. Do not share this link or your password.')
+                ->salutation('JaiROADS · Road infrastructure management');
+        });
     }
 
     /**
