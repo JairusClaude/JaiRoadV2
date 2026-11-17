@@ -158,6 +158,18 @@ try {
         const logo = document.querySelector('.jr-viewer-brand-logo');
         return logo instanceof HTMLImageElement && logo.complete && logo.naturalWidth > 0;
     });
+    const viewerLogo = await viewer.locator('.jr-viewer-brand-logo').first().evaluate(img => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        return { path: new URL(img.src).pathname, cornerAlpha: ctx.getImageData(0, 0, 1, 1).data[3], tile: getComputedStyle(img.parentElement).backgroundColor, shadow: getComputedStyle(img.parentElement).boxShadow };
+    });
+    assert.equal(viewerLogo.path, '/images/jairoads/peo-ddo-transparent.webp');
+    assert.equal(viewerLogo.cornerAlpha, 0);
+    assert.equal(viewerLogo.tile, 'rgba(0, 0, 0, 0)');
+    assert.equal(viewerLogo.shadow, 'none');
     await viewer.getByRole('heading', { name: 'Road Maintenance Overview' }).waitFor();
     await viewer.getByText('Read-Only Access', { exact: true }).waitFor();
     await viewer.getByRole('button', { name: 'Refresh dashboard' }).waitFor();
