@@ -13,6 +13,7 @@ type Account = {
 type Details = {
     account: Account;
     can_reset_password: boolean;
+    password_reset_blocker?: string | null;
     engineer: {
         first_name: string;
         last_name: string;
@@ -199,14 +200,7 @@ export default function DdAccountLifecycle({
                                         preserveScroll: true,
                                         onError: setErrors,
                                         onSuccess: () => {
-                                            setDetail({
-                                                ...detail,
-                                                account: {
-                                                    ...detail.account,
-                                                    is_active: active,
-                                                },
-                                            });
-                                            setNotice('Account status saved.');
+                                            void load(String(detail.account.id)).then(() => setNotice('Account status saved.'));
                                         },
                                         onFinish: () => { setBusy(false); onBusy?.(false); },
                                     },
@@ -218,11 +212,11 @@ export default function DdAccountLifecycle({
                             ? 'Deactivate account'
                             : 'Reactivate account'}
                     </button>
-                    {detail.can_reset_password && (
-                        <div className="rounded-xl border border-slate-200 p-4 space-y-3">
+                    <div className="rounded-xl border border-slate-200 p-4 space-y-3">
                             <div className="flex items-center gap-2 font-semibold text-slate-900"><KeyRound className="size-4" /> Password recovery</div>
                             <p className="text-sm text-slate-600">Set a new password for this account without sending an email. Existing sign-in sessions are revoked; registered passkeys and two-factor authentication are unchanged.</p>
-                            {!resetOpen ? <button type="button" className="um-secondary" disabled={busy} onClick={() => { setErrors({}); setNotice(''); setResetOpen(true); }}>Reset Password</button> :
+                            {!detail.can_reset_password && <p role="status" className="um-form-note">{detail.password_reset_blocker || 'Password recovery eligibility is unavailable. Refresh the page and check that the latest backend has been deployed.'}</p>}
+                            {!resetOpen || !detail.can_reset_password ? <button type="button" className="um-primary" disabled={busy || !detail.can_reset_password} onClick={() => { setErrors({}); setNotice(''); setResetOpen(true); }}> <KeyRound className="size-4" /> Reset Password</button> :
                                 <form className="um-form" onSubmit={resetPassword}>
                                     <p className="um-form-note">Resetting password for <strong>{detail.account.username}</strong> ({detail.account.email}). Confirm your own SuperAdmin password before continuing.</p>
                                     <label className="um-field">Your SuperAdmin password <span className="um-required">*</span>
@@ -241,7 +235,6 @@ export default function DdAccountLifecycle({
                                     </div>
                                 </form>}
                         </div>
-                    )}
                     {detail.account.id === actorId && (
                         <p className="text-sm text-slate-600">
                             Your own account cannot be deactivated here.

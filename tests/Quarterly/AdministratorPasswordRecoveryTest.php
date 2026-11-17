@@ -19,7 +19,7 @@ final class AdministratorPasswordRecoveryTest extends PostgresTestCase
         $target->forceFill(['remember_token' => 'old-remember-token'])->save();
         DB::table('public.password_reset_tokens')->insert(['email' => $target->email, 'token' => Hash::make('old-token'), 'created_at' => now()]);
         $this->actingAs($root);
-        $this->getJson('/dd-phase3/accounts/'.$id)->assertOk()->assertJsonPath('can_reset_password', true);
+        $this->getJson('/dd-phase3/accounts/'.$id)->assertOk()->assertJsonPath('can_reset_password', true)->assertJsonPath('password_reset_blocker', null);
         $this->postJson('/dd-phase3/accounts/'.$id.'/password-reset', [
             'current_password' => 'Disposable-Test!123',
             'password' => 'Replacement-Disposable!456',
@@ -36,6 +36,23 @@ final class AdministratorPasswordRecoveryTest extends PostgresTestCase
         $this->assertStringContainsString('SuperAdmin reset account password', $audit->description);
         $this->assertStringNotContainsString('Replacement-Disposable', json_encode($audit));
         $this->assertStringNotContainsString($fresh->password, json_encode($audit));
+    }
+
+    public function test_unapproved_account_explains_recovery_blocker_without_changing_eligibility(): void
+    {
+        $root = $this->account('SuperAdmin');
+        // An existing active Viewer without reviewed provenance is not a valid login.
+        $target = $this->account('Viewer', null, true, false);
+        $id = (int) $target->dd_user_account_id;
+        $this->actingAs($root)->getJson('/dd-phase3/accounts/'.$id)
+            ->assertOk()->assertJsonPath('can_reset_password', false)
+            ->assertJsonPath('password_reset_blocker', 'This existing account lacks matching administrator provisioning approval. A database administrator must complete the approved account review before password recovery.');
+        $this->postJson('/dd-phase3/accounts/'.$id.'/password-reset', [
+            'current_password' => 'Disposable-Test!123',
+            'password' => 'Replacement-Disposable!456',
+            'password_confirmation' => 'Replacement-Disposable!456',
+        ])->assertUnprocessable();
+        $this->assertSame($target->password, $target->fresh()->password);
     }
 
     public function test_recovery_requires_superadmin_reauthentication_and_eligible_target(): void

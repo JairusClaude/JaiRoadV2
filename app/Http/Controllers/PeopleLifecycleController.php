@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Services\AccountIdentityResolver;
+use App\Services\AccountProvisioning;
 use App\Services\OperationAudit;
 use App\Services\LinkedPasswordUpdater;
 use Illuminate\Database\QueryException;
@@ -150,13 +151,51 @@ final class PeopleLifecycleController extends Controller
         $engineer = $account->engineer_id === null ? null : DB::table('jairoads_next.engineers')->where('id', $account->engineer_id)
             ->first(['id', 'first_name', 'middle_name', 'last_name', 'contact_no', 'rank', 'engineer_status']);
 
-        $canReset = false;
-        if ($actor['role'] === 'SuperAdmin' && $actor['account_id'] !== $id && $account->account_type !== 'SuperAdmin') {
-            $target = User::query()->where('dd_user_account_id', $id)->first();
-            $canReset = $target !== null && $resolver->resolveForRecovery($target) !== null;
-        }
+        $reason = $this->passwordRecoveryBlocker($actor, $account, $engineer, $resolver);
 
-        return response()->json(['account' => $account, 'engineer' => $engineer, 'can_reset_password' => $canReset])->header('Cache-Control', 'private, no-store');
+        return response()->json([
+            'account' => $account, 'engineer' => $engineer,
+            'can_reset_password' => $reason === null,
+            'password_reset_blocker' => $reason,
+        ])->header('Cache-Control', 'private, no-store');
+    }
+
+    /** Explain an unavailable reset without exposing credentials or weakening identity checks. */
+    private function passwordRecoveryBlocker(array $actor, stdClass $account, ?stdClass $engineer, AccountIdentityResolver $resolver): ?string
+    {
+        if ($actor['role'] !== 'SuperAdmin') {
+            return 'Only a SuperAdmin can reset another account without email.';
+        }
+        if ($actor['account_id'] === (int) $account->id || $account->account_type === 'SuperAdmin') {
+            return 'SuperAdmin passwords must be changed through the account security settings or the approved recovery procedure.';
+        }
+        if (! $this->active($account->is_active)) {
+            return 'This account is inactive. Reactivate it before resetting its password.';
+        }
+        $engineerId = $account->engineer_id === null ? null : (int) $account->engineer_id;
+        if (! AccountIdentityResolver::roleLinkValid((string) $account->account_type, $engineerId)
+            || ($engineerId !== null && ($engineer === null || $engineer->engineer_status !== 'Active'))) {
+            return 'The account needs a valid active Engineer profile before password recovery.';
+        }
+        $logins = User::query()->where('dd_user_account_id', $account->id)->limit(2)->get();
+        if ($logins->count() !== 1) {
+            return 'The account has a missing or duplicate sign-in link. A database administrator must review the existing login link before recovery.';
+        }
+        $target = $logins->first();
+        if (strcasecmp((string) $target->email, (string) $account->email) !== 0) {
+            return 'The registered email differs between the account and its sign-in record. A database administrator must review the link.';
+        }
+        if ($resolver->resolveForRecovery($target) !== null) {
+            return null;
+        }
+        $provisioning = app(AccountProvisioning::class);
+        if (! $provisioning->available()) {
+            return 'The account authorization registry is unavailable. The database administrator must check its configuration and permissions.';
+        }
+        if (! $provisioning->verified((int) $account->id, (string) $account->account_type, $engineerId)) {
+            return 'This existing account lacks matching administrator provisioning approval. A database administrator must complete the approved account review before password recovery.';
+        }
+        return 'This account did not pass the sign-in eligibility checks. A database administrator must review its authorization record.';
     }
 
     /** SuperAdmin-assisted recovery, independent of mailbox access. */
