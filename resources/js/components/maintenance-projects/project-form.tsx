@@ -69,6 +69,8 @@ export function ProjectForm({
               .filter((coverage) => showAssigned || !coverage.assigned)
               .sort((a, b) => Number(a.assigned) - Number(b.assigned))
         : matches;
+    const assignedCount = matches.filter((coverage) => coverage.assigned).length;
+    const availableCount = matches.length - assignedCount;
     const error = (field: keyof ProjectFormValues) =>
         localErrors[field] ??
         (create &&
@@ -180,12 +182,7 @@ export function ProjectForm({
                         {create ? (
                             <div className="jr-coverage-info">
                                 <p className="jr-field-hint" role="status">
-                                    {
-                                        matches.filter(
-                                            (coverage) => !coverage.assigned,
-                                        ).length
-                                    }{' '}
-                                    available · {matches.length} total coverages
+                                    {availableCount} available · {assignedCount} assigned · {matches.length} total coverages
                                 </p>
                                 <label className="jr-show-assigned">
                                     <input
@@ -213,6 +210,13 @@ export function ProjectForm({
                                     ).length
                                 }{' '}
                                 available
+                            </p>
+                        )}
+                        {create && showAssigned && (
+                            <p className="jr-field-hint mb-2" role="status">
+                                {assignedCount === 0
+                                    ? 'No assigned road coverages match the current list.'
+                                    : 'Assigned roads are shown for reference only and cannot be selected for a new project.'}
                             </p>
                         )}
                         <div
@@ -249,6 +253,9 @@ export function ProjectForm({
                                                 'Municipality unavailable'}{' '}
                                             · {coverage.kilometers} km
                                         </small>
+                                        {coverage.assigned && coverage.assigned_project_title && (
+                                            <small>Linked project: {coverage.assigned_project_title}</small>
+                                        )}
                                     </span>
                                     {(!create || coverage.assigned) && (
                                         <span className="jr-availability">
@@ -268,7 +275,9 @@ export function ProjectForm({
                                               ? create && !showAssigned
                                                   ? 'No available coverages match your search. Turn on Show assigned to include unavailable entries.'
                                                   : 'No coverages match your search.'
-                                              : 'No road coverages are available to this account.'}
+                                              : create && !showAssigned && assignedCount > 0
+                                                ? 'All road coverages are already assigned. Turn on Show assigned to view them.'
+                                                : 'No road coverages are available to this account.'}
                                     </p>
                                 </div>
                             )}

@@ -147,6 +147,35 @@ final class UnifiedFrontendTest extends PostgresTestCase
             ->deleteJson(self::UI.'/maintenance-records/'.$empty)->assertForbidden();
     }
 
+    public function test_project_form_includes_assigned_roads_as_reference_only_and_preserves_current_edit_selection(): void
+    {
+        $f = $this->fixture('Admin');
+        $available = $this->road();
+        $other = $this->road();
+        DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->update(['road_name' => 'A assigned road']);
+        DB::table('jairoads_next.road_coverages')->where('id', $available)->update(['road_name' => 'B available road']);
+        DB::table('jairoads_next.road_coverages')->where('id', $other)->update(['road_name' => 'C assigned road']);
+        DB::table('jairoads_next.maintenance_projects')->insert([
+            'project_title' => 'Other project', 'road_coverage_id' => $other,
+            'created_by' => $f['user']->dd_user_account_id,
+        ]);
+
+        $this->get(self::UI.'/maintenance-projects/create')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->component('MaintenanceProjects/Create')->has('coverages', 3)
+            ->where('coverages.0.id', $f['road'])->where('coverages.0.assigned', true)
+            ->where('coverages.0.assigned_project_title', 'Test project')
+            ->where('coverages.1.id', $available)->where('coverages.1.assigned', false)
+            ->where('coverages.2.id', $other)->where('coverages.2.assigned', true));
+        $this->get(self::UI.'/maintenance-projects/'.$f['project'].'/edit')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->component('MaintenanceProjects/Edit')->has('coverages', 3)
+            ->where('coverages.0.id', $f['road'])->where('coverages.0.assigned', false)
+            ->where('coverages.2.assigned', true));
+
+        $this->postJson(self::UI.'/maintenance-projects', ['road_coverage_id' => $f['road'], 'project_title' => 'Duplicate'])
+            ->assertUnprocessable()->assertJsonValidationErrors('road_coverage_id');
+        $this->assertSame(2, DB::table('jairoads_next.maintenance_projects')->count());
+    }
+
     public function test_new_frontend_payload_persists_road_geometry_and_canonical_project_creator(): void
     {
         $f = $this->fixture('Engineer');

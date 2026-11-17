@@ -344,7 +344,17 @@ try {
     await engineer.locator('.jr-saved-coverage-line').waitFor();
     assert.equal(await engineer.locator('.jr-saved-location').count(), 3);
     await engineer.goto(`${ui}/maintenance-projects/create`);
+    const assignedSwitch = engineer.getByRole('switch', { name: 'Show assigned' });
+    const assignedRoad = engineer.locator(`input[name="road_coverage_id"][value="${f.road_id}"]`);
+    assert.equal(await assignedRoad.count(), 0);
+    await assignedSwitch.check();
+    await assignedRoad.waitFor({ state: 'visible' });
+    assert.equal(await assignedRoad.isDisabled(), true);
+    await engineer.getByText('Linked project: Test project', { exact: true }).waitFor();
     await engineer.getByRole('radio', { name: /Unified browser road/ }).check();
+    await assignedSwitch.uncheck();
+    assert.equal(await assignedRoad.count(), 0);
+    assert.equal(await engineer.getByRole('radio', { name: /Unified browser road/ }).isChecked(), true);
     await engineer
         .getByLabel(/^Project title/i)
         .fill('Unified browser project');

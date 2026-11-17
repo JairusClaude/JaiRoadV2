@@ -51,9 +51,16 @@ final class MaintenanceProjectPageController extends OperationsFrontendControlle
 
         return $this->render('MaintenanceProjects/'.($id === null ? 'Create' : 'Edit'), $request, [
             'project' => $p === null ? null : $this->projectData($p, $actor),
-            'coverages' => $this->roads($actor)->where(fn (Builder $q) => $q->whereNull('p.id')->when($id !== null, fn (Builder $q) => $q->orWhere('p.id', $id)))
-                ->orderBy('rc.road_name')->get()->map(fn (\stdClass $r): array => ['id' => (int) $r->id, 'road_name' => $r->road_name,
-                    'municipality' => $r->municipality_name, 'kilometers' => $r->kilometers, 'assigned' => false, 'geojson' => json_decode($r->geojson, true, 512, JSON_THROW_ON_ERROR)]),
+            // Include assigned roads for the reference-only toggle. In edit mode
+            // the current project's own road remains selectable.
+            'coverages' => $this->roads($actor)
+                ->orderBy('rc.road_name')->orderBy('rc.id')->get()->map(fn (\stdClass $r): array => [
+                    'id' => (int) $r->id, 'road_name' => $r->road_name,
+                    'municipality' => $r->municipality_name, 'kilometers' => $r->kilometers,
+                    'assigned' => $r->project_id !== null && ($id === null || (int) $r->project_id !== $id),
+                    'assigned_project_title' => $r->project_id !== null && ($id === null || (int) $r->project_id !== $id) ? $r->project_title : null,
+                    'geojson' => json_decode($r->geojson, true, 512, JSON_THROW_ON_ERROR),
+                ]),
             'integration' => ['ready' => true, 'message' => null],
         ]);
     }

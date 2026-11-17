@@ -42,6 +42,7 @@ export type CoverageChoice = {
     municipality: string | null;
     kilometers: string;
     assigned: boolean;
+    assigned_project_title?: string | null;
     geojson: unknown | null;
 };
 export type ProjectFormValues = {
