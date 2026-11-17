@@ -94,3 +94,9 @@ html.jr-reduce-motion :is(.jr-delete-premium,.jr-delete-overlay) { animation:non
 @keyframes jr-delete-enter { from{opacity:0;transform:translate(-50%,-48%) scale(.98)} to{opacity:1;transform:translate(-50%,-50%) scale(1)} }
 @media(prefers-reduced-motion:reduce) { .jr-delete-premium .animate-spin { animation:none; } }
 html.jr-reduce-motion .jr-delete-premium .animate-spin { animation:none; }
+
+.jr-delete-account.jr-delete-premium { translate:none; }
+.jr-delete-account .jr-delete-heading { padding-right:42px; }
+.jr-delete-account-form { display:flex; flex-direction:column; min-height:0; flex:1 1 auto; }
+.jr-delete-account .jr-delete-input { padding-right:42px; }
+.jr-delete-account[aria-busy='true'] > button { pointer-events:none; }

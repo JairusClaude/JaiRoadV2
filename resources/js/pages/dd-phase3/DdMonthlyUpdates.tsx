@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
+import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialog';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { requestOperation } from '@/pages/dd-phase3/requests';
 type MediaItem = {
@@ -179,6 +180,24 @@ export default function DdMonthlyUpdates({
         null,
     );
     const [toast, setToast] = useState('');
+    const [deleteTarget, setDeleteTarget] = useState<MonthlyUpdate | null>(null);
+    const [deleting, setDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState('');
+    const confirmRemoval = async () => {
+        if (!canManage || !deleteTarget || deleting) return;
+        setDeleting(true);
+        setDeleteError('');
+        try {
+            await requestOperation(`/dd-phase3/ops/updates/${deleteTarget.id}`, {}, 'delete');
+            setDeleteTarget(null);
+            setSelectedUpdate(null);
+            setToast('Monthly update deleted.');
+        } catch (failure) {
+            setDeleteError(failure instanceof Error ? failure.message : 'Unable to delete update.');
+        } finally {
+            setDeleting(false);
+        }
+    };
     const allUpdates = useMemo(
         () =>
             [...initialUpdates].sort(
@@ -1081,31 +1100,7 @@ export default function DdMonthlyUpdates({
                                 <button
                                     type="button"
                                     className={`${neutral} text-red-700`}
-                                    onClick={async () => {
-                                        if (
-                                            !window.confirm(
-                                                'Delete this monthly update? Attached files will prevent deletion.',
-                                            )
-                                        ) {
-                                            return;
-                                        }
-
-                                        try {
-                                            await requestOperation(
-                                                `/dd-phase3/ops/updates/${selectedUpdate.id}`,
-                                                {},
-                                                'delete',
-                                            );
-                                            setSelectedUpdate(null);
-                                            setToast('Monthly update deleted.');
-                                        } catch (failure) {
-                                            setUploadError(
-                                                failure instanceof Error
-                                                    ? failure.message
-                                                    : 'Unable to delete update.',
-                                            );
-                                        }
-                                    }}
+                                    onClick={() => { setDeleteError(''); setDeleteTarget(selectedUpdate); }}
                                 >
                                     Delete update
                                 </button>
@@ -1122,6 +1117,20 @@ export default function DdMonthlyUpdates({
                     </section>
                 </div>
             )}
+            <DeletionDialog
+                open={deleteTarget !== null}
+                title="Delete monthly update?"
+                description="Permanently delete the selected update. Attached files prevent deletion."
+                selectionLabel="Selected monthly update"
+                processing={deleting}
+                error={deleteError}
+                confirmLabel="Delete Monthly Update"
+                blocked={(deleteTarget?.mediaCount ?? 0) > 0}
+                onClose={() => { if (!deleting) setDeleteTarget(null); }}
+                onConfirm={confirmRemoval}
+            >
+                {deleteTarget && <><p className="jr-delete-target-title">{niceMonth(deleteTarget.month)} · {recordName(deleteTarget.maintenanceRecordId)}</p><dl className="jr-delete-counts"><div><dt>Attached files</dt><dd>{deleteTarget.mediaCount}</dd></div></dl></>}
+            </DeletionDialog>
         </ProjectWorkspace>
     );
 }

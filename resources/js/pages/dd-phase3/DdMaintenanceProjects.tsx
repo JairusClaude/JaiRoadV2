@@ -1,5 +1,7 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Pencil } from 'lucide-react';
+import { useState } from 'react';
+import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialog';
 import { ProjectForm } from '@/components/maintenance-projects/project-form';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { RoadCoverageMap } from '@/components/maintenance-projects/road-coverage-map';
@@ -62,6 +64,9 @@ export default function DdMaintenanceProjects({
     records,
 }: Props) {
     const page = usePage();
+    const [deleteTarget, setDeleteTarget] = useState<ProjectSummary | null>(null);
+    const [deleting, setDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState('');
     const qs = new URLSearchParams(page.url.split('?')[1] ?? '');
     const view = qs.get('view') ?? 'directory';
     const id = Number(qs.get('project') ?? 0);
@@ -146,18 +151,18 @@ export default function DdMaintenanceProjects({
             return;
         }
 
-        const project = rows[0];
-
-        if (
-            !window.confirm(
-                `Delete ${project.project_title}? Related records prevent deletion.`,
-            )
-        ) {
-            return;
-        }
-
-        router.delete(`/dd-phase3/ops/projects/${project.id}`, {
+        setDeleteError('');
+        setDeleteTarget(rows[0]);
+    };
+    const confirmRemoval = () => {
+        if (!canManage || !deleteTarget || deleting) return;
+        setDeleting(true);
+        setDeleteError('');
+        router.delete(`/dd-phase3/ops/projects/${deleteTarget.id}`, {
             preserveScroll: true,
+            onSuccess: () => setDeleteTarget(null),
+            onError: errors => setDeleteError(Object.values(errors).join(' ')),
+            onFinish: () => setDeleting(false),
         });
     };
     const title = 'Maintenance Projects';
@@ -321,6 +326,21 @@ export default function DdMaintenanceProjects({
                     navigate(`${HOME}?${params.toString()}`);
                 }}
             />
+            <DeletionDialog
+                open={deleteTarget !== null}
+                title="Delete project?"
+                description="Permanently delete the selected project. Related maintenance records prevent deletion."
+                selectionLabel="Selected project"
+                processing={deleting}
+                error={deleteError}
+                confirmLabel="Delete Project"
+                blocked={!!deleteTarget?.maintenance_records_count}
+                onClose={() => { if (!deleting) setDeleteTarget(null); }}
+                onConfirm={confirmRemoval}
+            >
+                <p className="jr-delete-target-title">{deleteTarget?.project_title}</p>
+                <dl className="jr-delete-counts"><div><dt>Maintenance records</dt><dd>{deleteTarget?.maintenance_records_count ?? 0}</dd></div></dl>
+            </DeletionDialog>
         </>
     );
 }

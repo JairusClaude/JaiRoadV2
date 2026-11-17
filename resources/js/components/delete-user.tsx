@@ -1,5 +1,8 @@
 import { Form } from '@inertiajs/react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
+import { TriangleAlert, Trash2 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
+import '../../css/jairoads-deletion-dialog.css';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -18,6 +21,8 @@ import { Label } from '@/components/ui/label';
 
 export default function DeleteUser() {
     const passwordInput = useRef<HTMLInputElement>(null);
+    const cancelRef = useRef<HTMLButtonElement>(null);
+    const [busy, setBusy] = useState(false);
 
     return (
         <div className="space-y-6">
@@ -43,16 +48,20 @@ export default function DeleteUser() {
                             Delete account
                         </Button>
                     </DialogTrigger>
-                    <DialogContent>
-                        <DialogTitle>
-                            Are you sure you want to delete your account?
-                        </DialogTitle>
-                        <DialogDescription>
-                            Once your account is deleted, all of its resources
-                            and data will also be permanently deleted. Please
-                            enter your password to confirm you would like to
-                            permanently delete your account.
-                        </DialogDescription>
+                    <DialogContent
+                        className="jr-delete-dialog jr-delete-premium jr-delete-account"
+                        onOpenAutoFocus={event => { event.preventDefault(); cancelRef.current?.focus(); }}
+                        onEscapeKeyDown={event => { if (busy) event.preventDefault(); }}
+                        onPointerDownOutside={event => { if (busy) event.preventDefault(); }}
+                    >
+                        <div className="jr-delete-heading">
+                            <span className="jr-delete-warning-icon" aria-hidden="true"><TriangleAlert size={24} /></span>
+                            <div className="jr-delete-heading-copy">
+                                <span className="jr-delete-eyebrow">Permanent action</span>
+                                <DialogTitle>Are you sure you want to delete your account?</DialogTitle>
+                                <DialogDescription>Once your account is deleted, all of its resources and data will also be permanently deleted. Enter your password to confirm.</DialogDescription>
+                            </div>
+                        </div>
 
                         <Form
                             {...ProfileController.destroy.form()}
@@ -60,17 +69,19 @@ export default function DeleteUser() {
                                 preserveScroll: true,
                             }}
                             onError={() => passwordInput.current?.focus()}
+                            onStart={() => setBusy(true)}
+                            onFinish={() => setBusy(false)}
                             resetOnSuccess
-                            className="space-y-6"
+                            className="jr-delete-account-form"
                         >
                             {({ resetAndClearErrors, processing, errors }) => (
                                 <>
-                                    <div className="grid gap-2">
+                                    <div className="jr-delete-body"><div className="jr-delete-notice">This action cannot be undone.</div><div className="jr-delete-verification">
                                         <Label
                                             htmlFor="password"
-                                            className="sr-only"
+                                            className="jr-delete-verification-label"
                                         >
-                                            Password
+                                            Confirm with your password
                                         </Label>
 
                                         <PasswordInput
@@ -79,15 +90,21 @@ export default function DeleteUser() {
                                             ref={passwordInput}
                                             placeholder="Password"
                                             autoComplete="current-password"
+                                            disabled={processing}
+                                            required
+                                            className="jr-delete-input"
                                         />
 
-                                        <InputError message={errors.password} />
-                                    </div>
+                                        <InputError message={errors.password} role="alert" />
+                                    </div></div>
 
-                                    <DialogFooter className="gap-2">
+                                    <DialogFooter className="jr-dialog-actions">
                                         <DialogClose asChild>
                                             <Button
-                                                variant="secondary"
+                                                ref={cancelRef}
+                                                variant="outline"
+                                                className="jr-delete-cancel"
+                                                disabled={processing}
                                                 onClick={() =>
                                                     resetAndClearErrors()
                                                 }
@@ -98,6 +115,7 @@ export default function DeleteUser() {
 
                                         <Button
                                             variant="destructive"
+                                            className="jr-danger jr-delete-confirm"
                                             disabled={processing}
                                             asChild
                                         >
@@ -105,7 +123,7 @@ export default function DeleteUser() {
                                                 type="submit"
                                                 data-test="confirm-delete-user-button"
                                             >
-                                                Delete account
+                                                {processing ? <><Spinner /> Deleting…</> : <><Trash2 size={16} aria-hidden="true" /> Delete account</>}
                                             </button>
                                         </Button>
                                     </DialogFooter>
