@@ -50,6 +50,7 @@ import '../../css/jairoads-engineer-workspace.css';
 import '../../css/jairoads-superadmin-workspace.css';
 import '../../css/jairoads-admin-workspace.css';
 import '../../css/jairoads-sidebar-waves.css';
+import '../../css/jairoads-responsive-workspace.css';
 
 const navigation = [
     { title: 'Dashboard', href: '/dashboard', icon: House },
@@ -78,7 +79,7 @@ export function MaintenanceProjectShell({
     children: ReactNode;
     user: User;
 }) {
-    const { state, toggleSidebar, isMobile, openMobile } = useSidebar();
+    const { state, toggleSidebar, isMobile, openMobile, setOpenMobile } = useSidebar();
     const expanded = isMobile ? openMobile : state === 'expanded';
     const initials = useInitials()(user.name);
     const page = usePage();
@@ -246,7 +247,7 @@ export function MaintenanceProjectShell({
                         <button
                             type="button"
                             className="jr-sidebar-collapse"
-                            aria-label="Collapse sidebar"
+                            aria-label={isMobile ? "Close navigation" : "Collapse sidebar"}
                             aria-expanded={expanded}
                             aria-controls="jr-sidebar-nav"
                             aria-hidden={!expanded}
@@ -309,6 +310,7 @@ export function MaintenanceProjectShell({
                                 }))}
                             expanded={expanded}
                             mainNavigation={!alternativeNavigation}
+                            onNavigate={isMobile ? () => setOpenMobile(false) : undefined}
                         />
                     </SidebarContent>
                     <SidebarFooter className="jr-sidebar-footer">
@@ -333,14 +335,16 @@ export function MaintenanceProjectShell({
                                 variant="ghost"
                                 size="icon"
                                 aria-label="Open navigation"
+                                aria-expanded={openMobile}
+                                data-jr-mobile-menu
                                 onClick={toggleSidebar}
                             >
                                 <PanelLeftOpen />
                             </Button>
                         )}
-                        <span>JaiROADS</span>
-                        <ChevronRight className="size-3" />
-                        <strong className="truncate">{pageName}</strong>
+                        <span className="jr-header-brand">JaiROADS</span>
+                        <ChevronRight className="jr-header-chevron size-3" aria-hidden="true" />
+                        <strong className="jr-header-page-title truncate">{pageName}</strong>
                     </div>
                     <div className="jr-top-actions">
                         {canonical ? (

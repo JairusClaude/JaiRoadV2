@@ -132,7 +132,7 @@ export default function ViewerProjectDirectory({
                 <span className="text-xs">Read-only access</span>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto" role="region" aria-label="Maintenance Projects table" tabIndex={0}>
                 <table className="w-full min-w-[490px] border-collapse text-left text-sm">
                     <thead>
                         <tr className="bg-[#F2F4F8] text-xs font-semibold tracking-wide text-[#6E829D] uppercase">

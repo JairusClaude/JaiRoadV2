@@ -179,10 +179,6 @@ function Sidebar({
   if (isMobile) {
     return (
       <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
-        <SheetHeader className="sr-only">
-          <SheetTitle>Sidebar</SheetTitle>
-          <SheetDescription>Displays the mobile sidebar.</SheetDescription>
-        </SheetHeader>
         <SheetContent
           data-sidebar="sidebar"
           data-slot="sidebar"
@@ -194,8 +190,19 @@ function Sidebar({
             } as React.CSSProperties
           }
           side={side}
+          onCloseAutoFocus={(event) => {
+            const trigger = document.querySelector<HTMLElement>("[data-jr-mobile-menu]")
+            if (trigger?.isConnected) {
+              event.preventDefault()
+              trigger.focus({ preventScroll: true })
+            }
+          }}
         >
-          <div className="flex h-full w-full flex-col">{children}</div>
+          <SheetHeader className="sr-only">
+            <SheetTitle>Workspace navigation</SheetTitle>
+            <SheetDescription>Choose a JaiROADS module.</SheetDescription>
+          </SheetHeader>
+          <div className="flex min-h-0 h-full w-full flex-col">{children}</div>
         </SheetContent>
       </Sheet>
     )

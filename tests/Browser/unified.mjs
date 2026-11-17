@@ -9,6 +9,7 @@ import { verifyPermanentFileDeletion } from './permanent-file-deletion.mjs';
 import { verifyPreservedRelationships } from './preserved-relationships.mjs';
 import { pdf, png, startStorageMock } from './private-storage-mock.mjs';
 import { verifyDirectoryLayouts } from './responsive-directories.mjs';
+import { verifyMobileWorkspaces } from './responsive-workspaces.mjs';
 import { verifyRoleAcceptanceMatrix } from './role-acceptance.mjs';
 const { chromium } = await import(
     process.env.PLAYWRIGHT_MODULE || 'playwright'
@@ -796,6 +797,7 @@ try {
     lastPage = admin;
 
     await verifyDirectoryLayouts(admin, ui);
+    await verifyMobileWorkspaces({ base, admin, superadmin, engineer, viewer, projectId: project.id, recordId: record.id, monthlyId: january.id, documentId: doc.id });
 
     await verifyAuditNotifications({
         admin,

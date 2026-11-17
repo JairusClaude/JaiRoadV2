@@ -42,7 +42,7 @@ export async function verifyDirectoryLayouts(page, ui) {
                 `${path} at ${width}px overflows: ${JSON.stringify(size)}`,
             );
 
-            if (width >= 768) {
+            if (width >= 1024) {
                 assert.ok(
                     size.sidebarVisible,
                     'The desktop sidebar must be measured',

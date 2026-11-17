@@ -18,6 +18,8 @@ import {
     X,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import '../../css/jairoads-responsive-workspace.css';
 import type { ReactNode } from 'react';
 
 type Identity = { role: string; username: string; name: string } | null;
@@ -90,6 +92,7 @@ export default function SuperAdminCommandLayout({
     const page = usePage<{ jairoadsIdentity?: Identity }>();
     const identity = page.props.jairoadsIdentity ?? null;
     const [menuOpen, setMenuOpen] = useState(false);
+    const isMobile = useIsMobile();
     const [accountOpen, setAccountOpen] = useState(false);
 
     if (identity?.role !== 'superadmin') {
@@ -132,7 +135,7 @@ export default function SuperAdminCommandLayout({
             });
 
     return (
-        <div className="min-h-screen bg-[#f4f5f8] text-slate-900 lg:flex">
+        <div className="jr-responsive-shell min-h-screen bg-[#f4f5f8] text-slate-900 lg:flex">
             {menuOpen && (
                 <button
                     aria-label="Close SuperAdmin navigation"
@@ -141,6 +144,7 @@ export default function SuperAdminCommandLayout({
                 />
             )}
             <aside
+                inert={isMobile && !menuOpen}
                 className={`fixed inset-y-0 left-0 z-50 flex w-[285px] flex-col bg-[#10182b] text-white shadow-[16px_0_48px_rgba(7,14,29,.16)] transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}
                 aria-label="SuperAdmin navigation"
             >
@@ -201,7 +205,7 @@ export default function SuperAdminCommandLayout({
                 </div>
             </aside>
             <div className="min-w-0 flex-1">
-                <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between border-b border-slate-200 bg-white/95 px-5 backdrop-blur lg:px-8">
+                <header className="jr-responsive-header sticky top-0 z-30 flex h-[72px] items-center justify-between border-b border-slate-200 bg-white/95 px-5 backdrop-blur lg:px-8">
                     <div className="flex items-center gap-3">
                         <button
                             className="rounded-lg p-2 lg:hidden"
@@ -255,7 +259,7 @@ export default function SuperAdminCommandLayout({
                         )}
                     </div>
                 </header>
-                <main className="mx-auto w-full max-w-[1680px] p-4 sm:p-6 lg:p-8">
+                <main className="jr-responsive-main mx-auto w-full max-w-[1680px] p-4 sm:p-6 lg:p-8">
                     {children}
                 </main>
             </div>

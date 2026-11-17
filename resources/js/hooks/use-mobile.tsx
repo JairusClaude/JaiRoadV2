@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 
-const MOBILE_BREAKPOINT = 768;
+// Tablets use the drawer too, leaving the full width for data tables and forms.
+const MOBILE_BREAKPOINT = 1024;
 
 const mql =
     typeof window === 'undefined'

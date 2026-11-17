@@ -24,10 +24,12 @@ export function AlternativeNavigation({
     items,
     expanded,
     mainNavigation = false,
+    onNavigate,
 }: {
     items: { title: string; href: string; icon: LucideIcon }[];
     expanded: boolean;
     mainNavigation?: boolean;
+    onNavigate?: () => void;
 }) {
     const page = usePage();
     const canonical = page.props.canonicalFrontend === true;
@@ -174,6 +176,7 @@ export function AlternativeNavigation({
                             if (parent) {
                                 setSubmenu(true);
                             }
+                            if (!event.defaultPrevented && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) onNavigate?.();
                         }}
                         className={`jr-nav-link ${active ? 'jr-active' : ''}`}
                         aria-current={active ? 'page' : undefined}
@@ -264,6 +267,9 @@ export function AlternativeNavigation({
                                                       )
                                                     : `${directoryUrl}/navigation/maintenance-records`
                                             }
+                                            onClick={(event) => {
+                                                if (!event.defaultPrevented && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) onNavigate?.();
+                                            }}
                                             className={`jr-nav-link ${recordsActive ? 'jr-active' : ''}`}
                                             aria-current={
                                                 recordsActive

@@ -1,4 +1,6 @@
 import '../../css/jairoads-workspace-surfaces.css';
+import '../../css/jairoads-responsive-workspace.css';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Link, usePage } from '@inertiajs/react';
 import {
     Building2,
@@ -138,6 +140,7 @@ export default function PolishedWorkspaceLayout({
     const role = identity?.role;
     const isDdWorkspace = page.url.split('?')[0].startsWith('/dd-phase3/');
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
+    const isMobile = useIsMobile();
     // Read the persisted icon rail preference once; subsequent writes use its event handler.
     const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
         try {
@@ -200,7 +203,7 @@ export default function PolishedWorkspaceLayout({
         .toUpperCase();
 
     return (
-        <div className="min-h-screen bg-[#f4f5f8] font-sans text-[#15253b] lg:flex dark:bg-slate-950 dark:text-slate-100">
+        <div className="jr-responsive-shell min-h-screen bg-[#f4f5f8] font-sans text-[#15253b] lg:flex dark:bg-slate-950 dark:text-slate-100">
             {mobileNavOpen && (
                 <button
                     type="button"
@@ -212,6 +215,7 @@ export default function PolishedWorkspaceLayout({
 
             <aside
                 aria-label="JaiROADS navigation"
+                inert={isMobile && !mobileNavOpen}
                 className={`fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col border-r border-[#e9e6e2] bg-[#fcfaf7] shadow-xl transition-[width,transform] duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 lg:shadow-none dark:border-slate-700 dark:bg-slate-900 ${sidebarCollapsed ? 'lg:w-[76px]' : 'lg:w-[280px]'} ${mobileNavOpen ? 'translate-x-0' : '-translate-x-full'}`}
             >
                 {/* Center is y=44px, matching the header bar's center at y=44px. */}
@@ -352,17 +356,18 @@ export default function PolishedWorkspaceLayout({
             <div className="min-w-0 flex-1">
                 {/* 16px top padding + 56px header produces the same 44px vertical center as sidebar branding. */}
                 <div className="sticky top-0 z-30 bg-[#f4f5f8]/95 px-4 pt-4 pb-3 backdrop-blur sm:px-6 lg:px-7 dark:bg-slate-950/95">
-                    <header className="flex h-14 items-center justify-between gap-3 rounded-2xl border border-[#e9e6e2] bg-white px-3 shadow-[0_3px_16px_rgba(32,39,55,.04)] sm:px-5 dark:border-slate-700 dark:bg-slate-900">
+                    <header className="jr-responsive-header flex h-14 items-center justify-between gap-3 rounded-2xl border border-[#e9e6e2] bg-white px-3 shadow-[0_3px_16px_rgba(32,39,55,.04)] sm:px-5 dark:border-slate-700 dark:bg-slate-900">
                         <div className="flex min-w-0 items-center gap-3">
                             <button
                                 type="button"
                                 className="rounded-lg p-1.5 text-slate-600 hover:bg-slate-100 lg:hidden dark:text-slate-300"
                                 aria-label="Open navigation"
+                                aria-expanded={mobileNavOpen}
                                 onClick={() => setMobileNavOpen(true)}
                             >
                                 <Menu className="h-5 w-5" />
                             </button>
-                            <span className="truncate text-sm font-medium text-slate-400">
+                            <span className="jr-responsive-breadcrumb truncate text-sm font-medium text-slate-400">
                                 {activeRole === 'admin'
                                     ? 'Admin Operations'
                                     : activeRole === 'engineer'
@@ -370,7 +375,7 @@ export default function PolishedWorkspaceLayout({
                                       : 'Viewer Workspace'}
                             </span>
                             <ChevronRight
-                                className="h-4 w-4 shrink-0 text-slate-300"
+                                className="jr-responsive-breadcrumb h-4 w-4 shrink-0 text-slate-300"
                                 aria-hidden="true"
                             />
                             <span className="truncate text-sm font-semibold text-[#15253b] dark:text-slate-100">
@@ -436,7 +441,7 @@ export default function PolishedWorkspaceLayout({
                     </header>
                 </div>
                 <main
-                    className={`jr-normal-workspace mx-auto w-full max-w-[1680px] px-4 pt-1 pb-8 sm:px-6 lg:px-7 ${path === '/dashboard' || path === '/dd-phase3/dashboard' || path.startsWith('/admin-dashboard') || path.startsWith('/role-dashboard') ? 'jr-dashboard-view' : 'jr-content-view'} ${path === '/maintenance-projects' || path === '/dd-phase3/ui/maintenance-projects' ? 'jr-projects-directory' : ''}`}
+                    className={`jr-responsive-main jr-normal-workspace mx-auto w-full max-w-[1680px] px-4 pt-1 pb-8 sm:px-6 lg:px-7 ${path === '/dashboard' || path === '/dd-phase3/dashboard' || path.startsWith('/admin-dashboard') || path.startsWith('/role-dashboard') ? 'jr-dashboard-view' : 'jr-content-view'} ${path === '/maintenance-projects' || path === '/dd-phase3/ui/maintenance-projects' ? 'jr-projects-directory' : ''}`}
                     id="jairoads-main-content"
                 >
                     {children}
