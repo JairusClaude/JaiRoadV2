@@ -32,8 +32,8 @@ BEGIN
         RAISE EXCEPTION 'Complete the verified account IDs and actual review reference first.';
     END IF;
     -- Coordinate with account lifecycle/provisioning and identity changes.
+    PERFORM pg_advisory_xact_lock_shared(1927710916);
     PERFORM pg_advisory_xact_lock(1927710914);
-    PERFORM pg_advisory_xact_lock(1927710916);
     PERFORM id FROM public.users WHERE dd_user_account_id IN (target_id, approving_id)
         ORDER BY id FOR UPDATE;
     PERFORM id FROM jairoads_next.user_accounts WHERE id IN (target_id, approving_id)
