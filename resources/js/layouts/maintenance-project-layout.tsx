@@ -233,7 +233,9 @@ export function MaintenanceProjectShell({
                                 </span>
                             </button>
                             <span className="jr-brand-copy">
-                                <strong>JaiROADS</strong>
+                                <strong className="jr-brand-wordmark">
+                                    <span>Jai</span><span>ROADS</span>
+                                </strong>
                                 <small>
                                     {canonical
                                         ? viewerTheme ? 'Viewer Workspace' : engineerTheme ? 'Engineer Workspace' : superadminTheme ? 'SuperAdmin Workspace' : adminTheme ? 'Admin Workspace' : `${String((page.props.jairoadsIdentity as { role?: string } | undefined)?.role ?? 'User')} Workspace`

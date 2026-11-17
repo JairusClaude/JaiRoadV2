@@ -2448,3 +2448,18 @@
 .jr-app [data-state='collapsed'] .jr-sidebar-container:is(.jr-viewer-sidebar,.jr-engineer-sidebar,.jr-admin-sidebar,.jr-superadmin-sidebar) .jr-identity {
     justify-content:center;
 }
+
+/* Match the login showcase's Instrument Sans, two-tone JaiROADS wordmark.
+   Only branded sidebar titles change; role subtitles and rail layout stay intact. */
+body:has(:is(.jr-viewer-workspace,.jr-engineer-workspace,.jr-admin-workspace,.jr-superadmin-workspace))
+:is(.jr-viewer-sidebar,.jr-engineer-sidebar,.jr-admin-sidebar,.jr-superadmin-sidebar)
+.jr-brand-copy strong.jr-brand-wordmark {
+    font-family: var(--font-sans, 'Instrument Sans', ui-sans-serif, system-ui, sans-serif);
+    font-size: 23px;
+    font-weight: 700;
+    letter-spacing: -.045em;
+    line-height: 1.25;
+}
+:is(.jr-viewer-sidebar,.jr-engineer-sidebar,.jr-admin-sidebar,.jr-superadmin-sidebar) .jr-brand-wordmark > span:first-child { color: #fff; }
+:is(.jr-viewer-sidebar,.jr-engineer-sidebar,.jr-admin-sidebar,.jr-superadmin-sidebar) .jr-brand-wordmark > span:last-child { color: #ffd29c; }
+.jr-brand-copy .jr-brand-wordmark > span { display: inline; }
