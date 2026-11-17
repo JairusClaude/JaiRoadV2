@@ -35,7 +35,7 @@ export function formReturn(
 }
 
 export function returnLabel(url: string, fallback: string) {
-    const path = url.split('?')[0];
+    const path = url.split('?')[0].replace(/^\/dd-phase3\/ui/, '');
 
     return (
         (
@@ -43,6 +43,8 @@ export function returnLabel(url: string, fallback: string) {
                 '/maintenance-projects': 'Maintenance Projects',
                 '/maintenance-records': 'Maintenance Records',
                 '/monthly-updates': 'Monthly Updates',
+                '/road-coverages': 'Road Coverages',
+                '/lgus': 'LGU Directory',
             } as Record<string, string>
         )[path] ?? fallback
     );
