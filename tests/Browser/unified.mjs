@@ -153,6 +153,11 @@ try {
 
     // Viewer palette is selected from the signed-in canonical role, not URL or preference.
     await viewer.locator('.jr-viewer-workspace').waitFor();
+    await viewer.locator('.jr-viewer-brand-logo').first().waitFor();
+    await viewer.waitForFunction(() => {
+        const logo = document.querySelector('.jr-viewer-brand-logo');
+        return logo instanceof HTMLImageElement && logo.complete && logo.naturalWidth > 0;
+    });
     await viewer.getByRole('heading', { name: 'Road Maintenance Overview' }).waitFor();
     await viewer.getByText('Read-Only Access', { exact: true }).waitFor();
     await viewer.getByRole('button', { name: 'Refresh dashboard' }).waitFor();

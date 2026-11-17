@@ -183,9 +183,13 @@ export function MaintenanceProjectShell({
                                     className="jr-brand-icon"
                                     aria-hidden="true"
                                 >
-                                    <svg viewBox="0 0 24 24">
-                                        <path d="M7 3c-1 4 2 5 2 8s-3 4-2 10M17 3c1 4-2 5-2 8s3 4 2 10M12 4v2m0 4v2m0 4v2" />
-                                    </svg>
+                                    {viewerTheme ? (
+                                        <img src="/images/jairoads/peo-ddo-logo.webp" alt="" className="jr-viewer-brand-logo" width={144} height={144} />
+                                    ) : (
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M7 3c-1 4 2 5 2 8s-3 4-2 10M17 3c1 4-2 5-2 8s3 4 2 10M12 4v2m0 4v2m0 4v2" />
+                                        </svg>
+                                    )}
                                 </span>
                                 <span
                                     className="jr-brand-toggle"
