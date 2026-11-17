@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Pause, Play, Route } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 // Photographs are illustrative. This application does not claim to be an official DPWH website.
@@ -69,16 +69,16 @@ export default function AuthShowcase() {
                             className="jr-login-shade absolute inset-0"
                         />
                         <div className="jr-login-slide-content relative z-10">
-                            <div className="flex items-center justify-between gap-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-amber-100/30 bg-white/15 backdrop-blur-sm">
-                                        <Route
-                                            aria-hidden="true"
-                                            className="size-6 text-[#ffd293]"
-                                            strokeWidth={2.2}
-                                        />
-                                    </div>
-                                    <div className="leading-tight">
+                            <div className="flex flex-wrap items-center justify-between gap-4">
+                                <div className="flex min-w-0 items-center gap-3">
+                                    <img
+                                        src="/images/jairoads/peo-ddo-transparent.webp"
+                                        alt="PEO-DDO"
+                                        width={144}
+                                        height={144}
+                                        className="size-12 shrink-0 object-contain sm:size-14 xl:size-16"
+                                    />
+                                    <div className="min-w-0 leading-tight">
                                         <div className="text-[23px] font-bold tracking-[-.045em]">
                                             Jai
                                             <span className="text-[#ffd29c]">
