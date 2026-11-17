@@ -205,6 +205,20 @@ try {
     for (const other of [viewer, engineer, admin]) {
         assert.equal(await other.locator('.jr-superadmin-workspace').count(), 0);
     }
+    await admin.locator('.jr-admin-workspace').waitFor();
+    await admin.getByRole('heading', { name: 'Administration Dashboard', exact: true }).waitFor();
+    await admin.getByText('Administration Panel', { exact: true }).waitFor();
+    await admin.getByRole('button', { name: 'Refresh dashboard' }).waitFor();
+    await admin.waitForFunction(() => {
+        const logo = document.querySelector('.jr-admin-brand-logo');
+        return logo instanceof HTMLImageElement && logo.complete && logo.naturalWidth > 0;
+    });
+    assert.equal(await admin.locator('.jr-admin-sidebar .jr-nav-link.jr-active').first().evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(200, 41, 61)');
+    assert.equal(await admin.locator('.jr-admin-brand-logo').first().evaluate(el => new URL(el.src).pathname), '/images/jairoads/peo-ddo-transparent.webp');
+    assert.equal(await admin.locator('.jr-admin-brand-logo').first().evaluate(el => getComputedStyle(el.parentElement).backgroundColor), 'rgba(0, 0, 0, 0)');
+    for (const other of [viewer, engineer, superadmin]) {
+        assert.equal(await other.locator('.jr-admin-workspace').count(), 0);
+    }
     const dashboardMap = engineer.getByRole('region', { name: 'My projects road map' });
     await dashboardMap.waitFor();
     const myProjects = dashboardMap.getByRole('switch', { name: 'My projects only' });
@@ -242,6 +256,8 @@ try {
         else assert.equal(await page.locator('.jr-engineer-workspace').count(), 0);
         if (page === superadmin) await page.locator('.jr-superadmin-workspace').waitFor();
         else assert.equal(await page.locator('.jr-superadmin-workspace').count(), 0);
+        if (page === admin) await page.locator('.jr-admin-workspace').waitFor();
+        else assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         await page
             .getByRole('heading', { name: 'Road Coverages', exact: true })
             .waitFor();

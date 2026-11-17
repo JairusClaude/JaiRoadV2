@@ -8,7 +8,9 @@ import {
     ShieldCheck,
     Users,
     Wrench,
+    RefreshCw,
 } from 'lucide-react';
+import { useState } from 'react';
 import { DdDashboardAnalytics } from '@/components/dd-dashboard-analytics';
 import type { DdDashboardSummary } from '@/components/dd-dashboard-analytics';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
@@ -109,6 +111,8 @@ export default function DdPhase3Workspace({
     analytics,
     historyUrl,
 }: Props) {
+    const [refreshing, setRefreshing] = useState(false);
+    const adminDashboard = section === 'dashboard' && identity.role === 'Admin';
     if (section === 'lgus') {
         return (
             <>
@@ -148,31 +152,34 @@ export default function DdPhase3Workspace({
     }
 
     return (
-        <div className="jr-directory-exploration">
+        <div className={`jr-directory-exploration${adminDashboard ? " jr-admin-dashboard" : ""}`}>
             <ProjectWorkspace>
                 <Head
                     title={`JaiROADS — ${section === 'users' ? 'User Management' : 'Dashboard'}`}
                 />
                 <div className="jr-page-head">
                     <div>
+                        {adminDashboard && <span className="jr-admin-access"><ShieldCheck className="size-4" aria-hidden="true" /> Administration Panel</span>}
                         <h1>
-                            {section === 'users' ? 'User Management' : 'Dashboard'}
+                            {section === 'users' ? 'User Management' : adminDashboard ? 'Administration Dashboard' : 'Dashboard'}
                         </h1>
                         <p>
                             {section === 'users'
                                 ? 'Manage user access and Engineer profiles.'
                                 : identity.role === 'Admin'
-                                  ? 'Coordinate day-to-day road maintenance operations and staff assignments.'
+                                  ? `Welcome, ${identity.username}. Coordinate day-to-day road maintenance operations and staff assignments.`
                                   : 'An overview of your road maintenance workspace.'}
                         </p>
                     </div>
                     {section === 'dashboard' && (
                         <button
                             type="button"
-                            className="jr-primary rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
-                            onClick={() => router.reload()}
+                            className={adminDashboard ? "jr-admin-refresh" : "jr-primary rounded-xl px-4 py-2.5 text-sm font-semibold text-white"}
+                            disabled={refreshing}
+                            onClick={() => router.reload({ onStart: () => setRefreshing(true), onFinish: () => setRefreshing(false) })}
                         >
-                            Refresh data
+                            <RefreshCw className={`size-4 ${refreshing ? "animate-spin" : ""}`} aria-hidden="true" />
+                            {refreshing ? "Refreshing…" : "Refresh dashboard"}
                         </button>
                     )}
                 </div>
@@ -205,7 +212,7 @@ export default function DdPhase3Workspace({
             )}
             {section === 'dashboard' && identity.role === 'Admin' && (
                 <div className="space-y-6">
-                    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <section aria-label="Administration metrics" className="jr-admin-metrics grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                         <StatCard
                             label="Maintenance projects"
                             value={counts.maintenanceProjects ?? 0}
