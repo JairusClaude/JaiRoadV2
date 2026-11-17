@@ -89,6 +89,37 @@ export default function RoleDashboard({
 }: Props) {
     const isEngineer = role === 'engineer';
     const [refreshing, setRefreshing] = useState(false);
+    const notificationPanel = (
+    <section
+        className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm"
+        id="notifications"
+    >
+        <h2 className="flex items-center gap-2 text-lg font-bold text-slate-950">
+            <Bell className="h-5 w-5 text-amber-800" /> My
+            notifications
+        </h2>
+        <p className="mt-1 text-sm text-slate-500">
+            Updates and messages for your account.
+        </p>
+        <div className="mt-4 divide-y divide-slate-100">
+            {notifications.map((notice) => (
+                <div key={notice.id} className="py-3">
+                    <p className="text-sm text-slate-700">
+                        {notice.message}
+                    </p>
+                    <time className="mt-1 block text-xs text-slate-500">
+                        {notice.createdAt}
+                    </time>
+                </div>
+            ))}
+        </div>
+        {notifications.length === 0 && (
+            <p className="mt-4 text-sm text-slate-500">
+                No personal notifications.
+            </p>
+        )}
+    </section>
+    );
 
     return (
         <div className={`jr-directory-exploration${isEngineer ? '' : ' jr-viewer-dashboard'}`}>
@@ -220,7 +251,7 @@ export default function RoleDashboard({
                     </section>
                 )}
 
-                <DdDashboardAnalytics data={analytics} compact={isEngineer} omitInventoryMetrics={!isEngineer} showActivity={isEngineer} />
+                <DdDashboardAnalytics data={analytics} compact={isEngineer} omitInventoryMetrics={!isEngineer} showActivity={isEngineer} activityReplacement={!isEngineer ? notificationPanel : undefined} />
 
                 <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -296,7 +327,7 @@ export default function RoleDashboard({
                     </div>
                 </section>
 
-                <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,.75fr)]">
+                <div className={`grid gap-6${isEngineer ? ' xl:grid-cols-[minmax(0,1fr)_minmax(320px,.75fr)]' : ''}`}>
                     <section className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
                         <h2 className="text-lg font-bold text-slate-950">
                             {isEngineer
@@ -350,7 +381,7 @@ export default function RoleDashboard({
                         </Link>
                     </section>
 
-                    <div className="space-y-6">
+                    {isEngineer && <div className="space-y-6">
                         {isEngineer && (
                             <section className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
                                 <h2 className="text-lg font-bold text-slate-950">
@@ -377,36 +408,8 @@ export default function RoleDashboard({
                                 )}
                             </section>
                         )}
-                        <section
-                            className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm"
-                            id="notifications"
-                        >
-                            <h2 className="flex items-center gap-2 text-lg font-bold text-slate-950">
-                                <Bell className="h-5 w-5 text-amber-800" /> My
-                                notifications
-                            </h2>
-                            <p className="mt-1 text-sm text-slate-500">
-                                Updates and messages for your account.
-                            </p>
-                            <div className="mt-4 divide-y divide-slate-100">
-                                {notifications.map((notice) => (
-                                    <div key={notice.id} className="py-3">
-                                        <p className="text-sm text-slate-700">
-                                            {notice.message}
-                                        </p>
-                                        <time className="mt-1 block text-xs text-slate-500">
-                                            {notice.createdAt}
-                                        </time>
-                                    </div>
-                                ))}
-                            </div>
-                            {notifications.length === 0 && (
-                                <p className="mt-4 text-sm text-slate-500">
-                                    No personal notifications.
-                                </p>
-                            )}
-                        </section>
-                    </div>
+                        {notificationPanel}
+                    </div>}
                 </div>
                     <div className="text-xs text-slate-500">
                         Signed in as {username}.{' '}

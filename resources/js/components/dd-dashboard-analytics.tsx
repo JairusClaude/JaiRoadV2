@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import type { ReactNode } from 'react';
 import {
     Activity,
     BarChart3,
@@ -51,11 +52,13 @@ export function DdDashboardAnalytics({
     compact = false,
     omitInventoryMetrics = false,
     showActivity = true,
+    activityReplacement,
 }: {
     data: DdDashboardSummary;
     compact?: boolean;
     omitInventoryMetrics?: boolean;
     showActivity?: boolean;
+    activityReplacement?: ReactNode;
 }) {
     const max = Math.max(1, ...data.trend.map((item) => item.count));
     const cards = [
@@ -131,7 +134,7 @@ export function DdDashboardAnalytics({
                     ? 'Not applicable (no ongoing records)'
                     : `${data.metrics.reportingCoverage}% of ongoing maintenance records have an update`}
             </div>
-            <div className={`grid gap-5${showActivity ? ' xl:grid-cols-[1.15fr_.85fr]' : ''}`}>
+            <div className={`grid gap-5${showActivity || activityReplacement ? ' xl:grid-cols-[1.15fr_.85fr]' : ''}`}>
                 <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                     <h3 className="text-base font-bold text-slate-900">
                         Monthly progress reports
@@ -235,6 +238,7 @@ export function DdDashboardAnalytics({
                         {data.trackingNote}
                     </p>
                 </div>}
+                {activityReplacement}
             </div>
         </section>
     );

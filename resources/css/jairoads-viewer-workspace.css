@@ -113,3 +113,22 @@ html.dark .jr-viewer-workspace .jr-viewer-dashboard a:hover { background:#243d5f
     .jr-viewer-workspace .jr-viewer-dashboard .jr-page-head::before { opacity:.48; }
     .jr-viewer-workspace .jr-viewer-dashboard main { margin-inline:calc(-1 * var(--jr-exploration-gutter)); padding-inline:var(--jr-exploration-gutter); }
 }
+
+/* Explicit Viewer accents also survive module-specific style import order. */
+.jr-app.jr-viewer-workspace:has(.jr-directory-exploration) { background:#eff4ff; }
+.jr-app.jr-viewer-workspace .jr-primary { background:#1d5db5; border-color:#1d5db5; box-shadow:0 3px 10px #1d5db525; }
+.jr-app.jr-viewer-workspace .jr-primary:hover { background:#124a9c; border-color:#124a9c; }
+.jr-app.jr-viewer-workspace :is(.jr-project-title:hover,.jr-availability,.jr-directory-exploration .jr-exploration-version a) { color:#124a9c; }
+.jr-app.jr-viewer-workspace .jr-table-footer [data-slot='button'][aria-current='page'] { background:#e6efff; border-color:#bcd4fb; color:#124a9c; }
+.jr-app.jr-viewer-workspace :is(.jr-filter-row [data-slot='select-trigger'],.jr-monthly-context-links a):focus-visible { outline-color:#60a5fa; }
+.jr-app.jr-viewer-workspace .jr-viewer-dashboard #notifications { min-width:0; }
+.jr-viewer-workspace .jr-viewer-dashboard #notifications > div { max-height:250px; overflow-y:auto; }
+.jr-viewer-workspace .jr-viewer-dashboard .jr-page-head > div { min-width:0; }
+body:has(.jr-viewer-workspace) .jr-viewer-sidebar.jr-mobile-shell,
+body:has(.jr-viewer-workspace) .jr-viewer-sidebar.jr-sidebar-container {
+    background-image:radial-gradient(ellipse at -25% 115%,transparent 40%,#60a5fa22 40.5%,#60a5fa22 48%,transparent 48.5%,transparent 56%,#60a5fa17 56.5%,#60a5fa17 64%,transparent 64.5%),radial-gradient(ellipse at 90% 20%,#124a9c88,transparent 60%),linear-gradient(160deg,#071f49,#0b2e66 53%,#124a9c);
+}
+html.dark .jr-app.jr-viewer-workspace:has(.jr-directory-exploration) { background:#0b1730!important; }
+html.dark .jr-viewer-workspace .jr-viewer-dashboard .border-slate-200 { border-color:#355273; }
+html.dark .jr-viewer-workspace .jr-viewer-dashboard .bg-slate-100 { background:#243d5f; color:#dbeafe; }
+html.dark .jr-viewer-workspace .jr-viewer-dashboard .bg-amber-50 { border-color:#436d9f; }
