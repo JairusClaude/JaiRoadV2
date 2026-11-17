@@ -196,13 +196,6 @@ export function SimplifiedCoverageMap({
         };
     }, [visibleCoverages, engineerView]);
 
-    return () => {
-            observer.disconnect();
-            map.remove();
-            mapRef.current = null;
-        };
-    }, [mappedCoverages]);
-
     return (
         <div className={`jr-road-map-panel w-full ${className}`}>
             <div className="jr-road-map-header">
