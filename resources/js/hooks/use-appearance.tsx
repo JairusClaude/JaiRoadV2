@@ -76,8 +76,8 @@ export function initializeTheme(): void {
     }
 
     if (!localStorage.getItem('appearance')) {
-        localStorage.setItem('appearance', 'system');
-        setCookie('appearance', 'system');
+        localStorage.setItem('appearance', 'light');
+        setCookie('appearance', 'light');
     }
 
     currentAppearance = getStoredAppearance();
@@ -91,7 +91,7 @@ export function useAppearance(): UseAppearanceReturn {
     const appearance: Appearance = useSyncExternalStore(
         subscribe,
         () => currentAppearance,
-        () => 'system',
+        () => 'light',
     );
 
     const resolvedAppearance: ResolvedAppearance = isDarkMode(appearance)
