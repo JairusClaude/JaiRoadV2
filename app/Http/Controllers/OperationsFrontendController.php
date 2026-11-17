@@ -113,7 +113,7 @@ class OperationsFrontendController extends Controller
         return Inertia::render($component, $props + [
             'canonicalFrontend' => true,
             'jairoadsIdentity' => ['role' => strtolower($this->actor($request)['role'])],
-            'status' => $request->session()->get('dd_operations_status'),
+            'status' => $request->session()->pull('dd_operations_status'),
         ]);
     }
 
