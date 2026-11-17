@@ -135,9 +135,9 @@ export default function Show({
                                         data-lgu-coverage-id={coverage.id}
                                     >
                                         <div>
-                                            <strong>
+                                            <Link className="jr-project-title" href={workspaceHref(`/road-coverages/${coverage.id}`)}>
                                                 {coverage.road_name}
-                                            </strong>
+                                            </Link>
                                             <p className="jr-project-id">
                                                 Length:{' '}
                                                 {coverage.kilometers == null
