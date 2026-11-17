@@ -27,6 +27,9 @@ export default function Show({ document: doc }: { document: DocumentSummary }) {
         page.props.previewOnly === true ||
         (page.props.canonicalFrontend === true && page.props.canWrite === true);
     const deletion = useDocumentDeletion();
+    // Attachment removal retains the document record but clears its file name.
+    // A named but temporarily unavailable attachment is a separate state.
+    const hasAttachment = Boolean(doc.file_name?.trim());
     const [viewer, setViewer] = useState(false);
     const viewerFocus = useRef<HTMLElement | null>(null);
     const projectUrl = workspaceHref(`/maintenance-projects/${doc.project.id}`);
@@ -132,63 +135,63 @@ export default function Show({ document: doc }: { document: DocumentSummary }) {
                             {doc.description || 'No description provided.'}
                         </p>
                     </section>
-                    <section className="jr-report-section">
-                        <h2>Document Attachment</h2>
-                        <div className="jr-document-file-row mt-3">
-                            <DocumentIcon name={doc.file_name} />
-                            <div className="min-w-0 flex-1">
-                                <strong
-                                    className="block truncate"
-                                    title={doc.file_name}
-                                >
-                                    {doc.file_name || 'No attachment'}
-                                </strong>
-                                <p className="jr-field-hint">
-                                    {documentType(doc.file_name)}
-                                </p>
-                            </div>
-                            <div className="jr-document-file-actions">
-                                <Button
-                                    variant="outline"
-                                    disabled={!doc.available}
-                                    onClick={() => {
-                                        viewerFocus.current = window.document
-                                            .activeElement as HTMLElement;
-                                        setViewer(true);
-                                    }}
-                                >
-                                    <Eye />
-                                    View
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    disabled={!doc.available}
-                                    asChild
-                                >
-                                    <a
-                                        href={
-                                            doc.available
-                                                ? workspaceHref(
-                                                      `/preview-documents/${doc.id}?download`,
-                                                  )
-                                                : undefined
-                                        }
-                                        download={doc.file_name}
-                                        aria-disabled={!doc.available}
+                    {hasAttachment && (
+                        <section className="jr-report-section">
+                            <h2>Document Attachment</h2>
+                            <div className="jr-document-file-row mt-3">
+                                <DocumentIcon name={doc.file_name} />
+                                <div className="min-w-0 flex-1">
+                                    <strong
+                                        className="block truncate"
+                                        title={doc.file_name}
                                     >
-                                        <Download />
-                                        Download
-                                    </a>
-                                </Button>
+                                        {doc.file_name}
+                                    </strong>
+                                    <p className="jr-field-hint">
+                                        {documentType(doc.file_name)}
+                                    </p>
+                                </div>
+                                <div className="jr-document-file-actions">
+                                    <Button
+                                        variant="outline"
+                                        disabled={!doc.available}
+                                        onClick={() => {
+                                            viewerFocus.current = window.document
+                                                .activeElement as HTMLElement;
+                                            setViewer(true);
+                                        }}
+                                    >
+                                        <Eye />
+                                        View
+                                    </Button>
+                                    {doc.available ? (
+                                        <Button variant="outline" asChild>
+                                            <a
+                                                href={workspaceHref(
+                                                    `/preview-documents/${doc.id}?download`,
+                                                )}
+                                                download={doc.file_name}
+                                            >
+                                                <Download />
+                                                Download
+                                            </a>
+                                        </Button>
+                                    ) : (
+                                        <Button variant="outline" disabled>
+                                            <Download />
+                                            Download
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                        {doc.file_name && !doc.available && (
-                            <p className="jr-field-error" role="status">
-                                This private file is currently unavailable.
-                                Contact your administrator.
-                            </p>
-                        )}
-                    </section>
+                            {!doc.available && (
+                                <p className="jr-field-error" role="status">
+                                    This private file is currently unavailable.
+                                    Contact your administrator.
+                                </p>
+                            )}
+                        </section>
+                    )}
                     <footer className="jr-report-footer">
                         <dl className="jr-metadata">
                             <div>
@@ -207,13 +210,15 @@ export default function Show({ document: doc }: { document: DocumentSummary }) {
                     </footer>
                 </article>
             </ProjectWorkspace>
-            <DocumentViewer
-                key={String(viewer)}
-                document={doc}
-                open={viewer}
-                returnFocus={viewerFocus}
-                onOpenChange={setViewer}
-            />
+            {hasAttachment && doc.available && (
+                <DocumentViewer
+                    key={`${doc.id}-${doc.file_name}-${viewer}`}
+                    document={doc}
+                    open={viewer}
+                    returnFocus={viewerFocus}
+                    onOpenChange={setViewer}
+                />
+            )}
             <DocumentDeletionDialog deletion={deletion} />
         </>
     );

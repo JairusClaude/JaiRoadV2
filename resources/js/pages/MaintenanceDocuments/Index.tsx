@@ -299,12 +299,14 @@ export default function Index({
                                                 >
                                                     {doc.document_title}
                                                 </Link>
-                                                <div
-                                                    className="jr-project-id truncate"
-                                                    title={doc.file_name}
-                                                >
-                                                    {doc.file_name || 'No attachment'}
-                                                </div>
+                                                {Boolean(doc.file_name?.trim()) && (
+                                                    <div
+                                                        className="jr-project-id truncate"
+                                                        title={doc.file_name}
+                                                    >
+                                                        {doc.file_name}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </td>

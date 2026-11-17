@@ -63,6 +63,10 @@ export async function verifyPermanentFileDeletion({
             '/maintenance-documents?search=Retained sibling inspection',
         )
     ).documents.data[0];
+    await admin.goto(`${ui}/maintenance-documents/${sibling.id}`);
+    await admin.getByRole('heading', { name: 'Document Attachment', exact: true }).waitFor();
+    assert.equal(await admin.getByRole('button', { name: 'View', exact: true }).isEnabled(), true);
+    assert.equal(await admin.getByRole('link', { name: 'Download', exact: true }).isVisible(), true);
     const siblingBytes = await (
         await admin.request.get(`${base}${sibling.download_url}`)
     ).body();
@@ -94,6 +98,22 @@ export async function verifyPermanentFileDeletion({
     assert.equal(retainedDocument.document_title, doc.document_title);
     assert.equal(retainedDocument.file_name, '');
     assert.equal(retainedDocument.available, false);
+    assert.equal(retainedDocument.download_url, null);
+    // The retained metadata must not render a phantom attachment or file actions.
+    await admin.getByRole('heading', { name: retainedDocument.document_title, exact: true }).waitFor();
+    for (const width of [1440, 390]) {
+        const viewport = admin.viewportSize();
+        await admin.setViewportSize({ width, height: 844 });
+        assert.equal(await admin.getByRole('heading', { name: 'Document Attachment', exact: true }).count(), 0);
+        assert.equal(await admin.locator('.jr-document-file-row').count(), 0);
+        assert.equal(await admin.getByRole('link', { name: 'Download', exact: true }).count(), 0);
+        assert.equal(await admin.getByRole('button', { name: /^(View|Download)$/ }).count(), 0);
+        assert.equal(await admin.getByRole('heading', { name: 'Document Information', exact: true }).isVisible(), true);
+        if (viewport) await admin.setViewportSize(viewport);
+    }
+    await admin.reload();
+    await admin.getByRole('heading', { name: retainedDocument.document_title, exact: true }).waitFor();
+    assert.equal(await admin.getByRole('heading', { name: 'Document Attachment', exact: true }).count(), 0);
     assert.equal((await admin.request.get(`${base}${doc.download_url}`)).status(), 404);
     assert.deepEqual(await (await admin.request.get(`${base}${sibling.download_url}`)).body(), siblingBytes);
 
