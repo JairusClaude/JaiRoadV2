@@ -233,6 +233,15 @@ try {
         await wave.evaluate(el => {
             if (getComputedStyle(el).animationName !== 'jr-sidebar-wave-flow') throw new Error('Wave animation missing');
             if (getComputedStyle(el).animationIterationCount !== 'infinite') throw new Error('Wave does not loop');
+            const animation = el.getAnimations()[0];
+            if (!animation) throw new Error('Wave has no running animation');
+            animation.pause();
+            animation.currentTime = 0;
+            const start = getComputedStyle(el).transform;
+            animation.currentTime = 5000;
+            const middle = getComputedStyle(el).transform;
+            animation.play();
+            if (start === middle) throw new Error('Wave transform is static');
         });
         await page.evaluate(() => document.documentElement.classList.add('jr-reduce-motion'));
         assert.equal(await wave.evaluate(el => getComputedStyle(el).animationName), 'none');
