@@ -78,7 +78,9 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
             }
         }, ['managing_engineer_id' => 'engineers_id']);
 
-        return redirect(self::BASE.'/maintenance-projects/'.$project)->with('dd_operations_status', 'MaintenanceRecord saved to the database.');
+        $parent = self::BASE.'/maintenance-projects/'.$project;
+        $detail = $id === null ? $parent : $parent.'/records/'.$id;
+        return redirect($this->editReturn($request, $id === null ? $parent : $detail, [$parent, $detail, self::BASE.'/maintenance-records']))->with('dd_operations_status', 'MaintenanceRecord saved to the database.');
     }
 
     public function recordShow(Request $request, int $project, int $id): Response
@@ -191,9 +193,15 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
         abort_unless(RoleAccess::canDeleteOperations($actor['role']), 403, 'Only administrators may delete maintenance records.');
         app(DeletionChallenge::class)->verify($request, $actor['account_id'], 'record');
 
+        $record = $this->records($actor)->where('m.id', $id)->first();
         $this->deleteEmptyRecords($actor, [$id]);
 
-        return redirect(self::BASE.'/maintenance-records')->with('dd_operations_status', 'Maintenance record deleted successfully.');
+        $directory = self::BASE.'/maintenance-records';
+        $allowed = [$directory];
+        if ($record?->project_id !== null) {
+            $allowed[] = self::BASE.'/maintenance-projects/'.$record->project_id;
+        }
+        return redirect($this->editReturn($request, $directory, $allowed))->with('dd_operations_status', 'Maintenance record deleted successfully.');
     }
 
     public function bulkDeleteRecord(Request $request): RedirectResponse
