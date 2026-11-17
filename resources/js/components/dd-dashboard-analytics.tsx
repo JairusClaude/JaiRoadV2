@@ -51,12 +51,14 @@ export function DdDashboardAnalytics({
     data,
     compact = false,
     omitInventoryMetrics = false,
+    omitOngoingMetric = false,
     showActivity = true,
     activityReplacement,
 }: {
     data: DdDashboardSummary;
     compact?: boolean;
     omitInventoryMetrics?: boolean;
+    omitOngoingMetric?: boolean;
     showActivity?: boolean;
     activityReplacement?: ReactNode;
 }) {
@@ -89,7 +91,10 @@ export function DdDashboardAnalytics({
         },
         { label: 'Road coverages', value: data.metrics.roads, icon: MapPinned },
     ];
-    const visibleCards = omitInventoryMetrics ? cards.filter(({ label }) => label !== 'Maintenance projects' && label !== 'Road coverages') : cards;
+    const visibleCards = cards.filter(({ label }) =>
+        !(omitInventoryMetrics && (label === 'Maintenance projects' || label === 'Road coverages')) &&
+        !(omitOngoingMetric && label === 'Ongoing records'),
+    );
     const items = data.activity;
 
     return (
@@ -110,7 +115,7 @@ export function DdDashboardAnalytics({
                 </span>
             </div>
             <div
-                className={`grid gap-3 sm:grid-cols-2 ${omitInventoryMetrics ? 'xl:grid-cols-4' : compact ? 'xl:grid-cols-3' : 'xl:grid-cols-6'}`}
+                className={`grid gap-3 sm:grid-cols-2 ${omitOngoingMetric ? 'xl:grid-cols-3' : omitInventoryMetrics ? 'xl:grid-cols-4' : compact ? 'xl:grid-cols-3' : 'xl:grid-cols-6'}`}
             >
                 {visibleCards.map(({ label, value, icon: Icon }) => (
                     <div

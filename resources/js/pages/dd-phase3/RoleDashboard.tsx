@@ -7,7 +7,7 @@ import {
     FileText,
     FolderKanban,
     MapPinned,
-    ShieldCheck,
+    Wrench,
     Route,
     Users,
 } from 'lucide-react';
@@ -122,79 +122,33 @@ export default function RoleDashboard({
     );
 
     return (
-        <div className={`jr-directory-exploration${isEngineer ? '' : ' jr-viewer-dashboard'}`}>
+        <div className={`jr-directory-exploration${isEngineer ? ' jr-engineer-dashboard' : ' jr-viewer-dashboard'}`}>
             <Head
                 title={`${isEngineer ? 'Engineer' : 'Viewer'} Dashboard · JaiROADS`}
             />
             <ProjectWorkspace>
                 <div className="jr-page-head">
                     <div>
-                        {!isEngineer && <span className="jr-viewer-access"><Eye className="size-4" aria-hidden="true" /> Read-Only Access</span>}
-                        <h1>{isEngineer ? 'Dashboard' : 'Road Maintenance Overview'}</h1>
+                        {isEngineer
+                            ? <span className="jr-engineer-access"><Wrench className="size-4" aria-hidden="true" /> Technical Workspace</span>
+                            : <span className="jr-viewer-access"><Eye className="size-4" aria-hidden="true" /> Read-Only Access</span>}
+                        <h1>{isEngineer ? 'Engineering Dashboard' : 'Road Maintenance Overview'}</h1>
                         <p>
                             {isEngineer
-                                ? 'Your managed maintenance activities and road coverage across municipalities.'
+                                ? `Welcome, ${engineer?.name || name}. Manage your maintenance activities and explore road coverage across municipalities.`
                                 : `Welcome, ${username || name}. Explore road coverage, maintenance projects and progress across JaiROADS.`}
                         </p>
                     </div>
-                    {!isEngineer && <button type="button" className="jr-viewer-refresh" disabled={refreshing}
+                    <button type="button" className={isEngineer ? 'jr-engineer-refresh' : 'jr-viewer-refresh'} disabled={refreshing}
                         onClick={() => router.reload({ onStart: () => setRefreshing(true), onFinish: () => setRefreshing(false) })}>
                         <RefreshCw className={`size-4${refreshing ? ' animate-spin' : ''}`} aria-hidden="true"/>
                         {refreshing ? 'Refreshing…' : 'Refresh dashboard'}
-                    </button>}
+                    </button>
                 </div>
 
                 <main className="relative -mt-3.5 -mx-7 rounded-t-[20px] bg-white px-7 pt-7 pb-10 shadow-sm min-w-0 space-y-6">
-                <section className={isEngineer ? 'rounded-[26px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8' : 'jr-viewer-overview'} aria-label={isEngineer ? undefined : 'Road maintenance summary'}>
-                    {isEngineer && <div className="flex flex-wrap items-start justify-between gap-4">
-                        <div>
-                            <p className="text-xs font-bold tracking-[.16em] text-amber-800 uppercase">
-                                JaiROADS ·{' '}
-                                {isEngineer
-                                    ? 'Engineer Workspace'
-                                    : 'Viewer Workspace'}
-                            </p>
-                            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 sm:text-[28px]">
-                                Welcome, {engineer?.name || name}
-                            </h1>
-                            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                                {isEngineer
-                                    ? 'Your managed maintenance activities and road coverage across municipalities.'
-                                    : 'A read-only view of road coverage, projects, and maintenance progress.'}
-                            </p>
-                        </div>
-                        <span className="inline-flex items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900">
-                            <ShieldCheck className="h-4 w-4" />{' '}
-                            {isEngineer ? 'Engineer' : 'Read-only Viewer'}{' '}
-                            account
-                        </span>
-                    </div>}
-
-                    {isEngineer && (
-                        <div
-                            className={`mt-6 flex items-start gap-3 rounded-xl border p-4 ${limitedAccess ? 'border-amber-200 bg-amber-50' : 'border-emerald-200 bg-emerald-50'}`}
-                        >
-                            <CircleAlert
-                                className={`mt-0.5 h-5 w-5 shrink-0 ${limitedAccess ? 'text-amber-800' : 'text-emerald-700'}`}
-                            />
-                            <div className="text-sm leading-6 text-slate-700">
-                                <strong className="block">
-                                    {limitedAccess
-                                        ? engineer === null
-                                            ? 'Engineer profile not linked'
-                                            : 'Engineer profile unavailable'
-                                        : 'All municipalities available'}
-                                </strong>
-                                {limitedAccess
-                                    ? engineer === null
-                                        ? 'Your account requires an active linked Engineer profile. Contact your administrator.'
-                                        : 'Your Engineer profile is unavailable. Contact your administrator.'
-                                    : 'You may work across municipalities and edit the maintenance records you manage.'}
-                            </div>
-                        </div>
-                    )}
-
-                    <div className={`grid gap-3 sm:grid-cols-2 xl:grid-cols-4${isEngineer ? ' mt-6' : ' jr-viewer-metrics'}`}>
+                <section className={isEngineer ? 'jr-engineer-overview' : 'jr-viewer-overview'} aria-label="Road maintenance summary">
+                    <div className={`grid gap-3 sm:grid-cols-2 xl:grid-cols-4${isEngineer ? ' jr-engineer-metrics' : ' jr-viewer-metrics'}`}>
                         {isEngineer ? (
                             <>
                                 <Metric
@@ -243,6 +197,30 @@ export default function RoleDashboard({
                             </>
                         )}
                     </div>
+                    {isEngineer && (
+                        <div
+                            className={`mt-4 flex items-start gap-3 rounded-xl border px-4 py-3 ${limitedAccess ? 'border-amber-200 bg-amber-50' : 'border-emerald-200 bg-emerald-50'}`}
+                        >
+                            <CircleAlert
+                                className={`mt-0.5 h-5 w-5 shrink-0 ${limitedAccess ? 'text-amber-800' : 'text-emerald-700'}`}
+                            />
+                            <div className="text-sm leading-6 text-slate-700">
+                                <strong className="block">
+                                    {limitedAccess
+                                        ? engineer === null
+                                            ? 'Engineer profile not linked'
+                                            : 'Engineer profile unavailable'
+                                        : 'All municipalities available'}
+                                </strong>
+                                {limitedAccess
+                                    ? engineer === null
+                                        ? 'Your account requires an active linked Engineer profile. Contact your administrator.'
+                                        : 'Your Engineer profile is unavailable. Contact your administrator.'
+                                    : 'You may work across municipalities and edit the maintenance records you manage.'}
+                            </div>
+                        </div>
+                    )}
+
                 </section>
 
                 {isEngineer && (
@@ -251,14 +229,14 @@ export default function RoleDashboard({
                     </section>
                 )}
 
-                <DdDashboardAnalytics data={analytics} compact={isEngineer} omitInventoryMetrics={!isEngineer} showActivity={isEngineer} activityReplacement={!isEngineer ? notificationPanel : undefined} />
+                <DdDashboardAnalytics data={analytics} compact={isEngineer} omitInventoryMetrics omitOngoingMetric={isEngineer} showActivity={false} activityReplacement={notificationPanel} />
 
                 <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                             <h2 className="text-lg font-bold text-slate-950">
                                 {isEngineer
-                                    ? 'My workspaces'
+                                    ? 'Quick access'
                                     : 'Explore operations'}
                             </h2>
                             <p className="mt-1 text-sm text-slate-500">
@@ -270,7 +248,7 @@ export default function RoleDashboard({
                             </p>
                         </div>
                         <span
-                            className={`rounded-full border px-3 py-1 text-xs font-bold ${isEngineer ? 'border-sky-200 bg-sky-50 text-sky-800' : 'border-slate-200 bg-slate-50 text-slate-600'}`}
+                            className={`rounded-full border px-3 py-1 text-xs font-bold ${isEngineer ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-slate-200 bg-slate-50 text-slate-600'}`}
                         >
                             {isEngineer
                                 ? 'Create / Update across municipalities'
@@ -358,7 +336,7 @@ export default function RoleDashboard({
                                         )}
                                     </div>
                                     <Link
-                                        href={!isEngineer && record.projectId ? `/dd-phase3/ui/maintenance-projects/${record.projectId}` : '/dd-phase3/projects'}
+                                        href={record.projectId ? `/dd-phase3/ui/maintenance-projects/${record.projectId}${isEngineer ? `/records/${record.id}` : ''}` : '/dd-phase3/projects'}
                                         className={cardLink}
                                     >
                                         View
@@ -408,7 +386,6 @@ export default function RoleDashboard({
                                 )}
                             </section>
                         )}
-                        {notificationPanel}
                     </div>}
                 </div>
                     <div className="text-xs text-slate-500">

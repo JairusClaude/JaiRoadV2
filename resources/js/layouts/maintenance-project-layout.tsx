@@ -45,6 +45,7 @@ import '../../css/maintenance-projects-exploration.css';
 import '../../css/maintenance-projects-espresso-sidebar.css';
 import '../../css/maintenance-projects-main-design.css';
 import '../../css/jairoads-viewer-workspace.css';
+import '../../css/jairoads-engineer-workspace.css';
 
 const navigation = [
     { title: 'Dashboard', href: '/dashboard', icon: House },
@@ -79,7 +80,11 @@ export function MaintenanceProjectShell({
     const page = usePage();
     const preview = page.props.previewOnly === true;
     const canonical = page.props.canonicalFrontend === true;
-    const viewerTheme = canonical && (page.props.jairoadsIdentity as { role?: string } | undefined)?.role === 'viewer';
+    const role = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role;
+    const viewerTheme = canonical && role === 'viewer';
+    const engineerTheme = canonical && role === 'engineer';
+    const brandedTheme = viewerTheme || engineerTheme;
+    const sidebarTheme = viewerTheme ? ' jr-viewer-sidebar' : engineerTheme ? ' jr-engineer-sidebar' : '';
     const path = page.url.split('?')[0].replace(/^\/dd-phase3\/ui/, '');
     const alternativeNavigation = isAlternativeNavigation(page.component);
     const documentPageName = path.startsWith('/maintenance-documents')
@@ -155,11 +160,11 @@ export function MaintenanceProjectShell({
 
     return (
         <>
-            <Sidebar collapsible="icon" className={`jr-sidebar-container${viewerTheme ? ' jr-viewer-sidebar' : ''}`}>
+            <Sidebar collapsible="icon" className={`jr-sidebar-container${sidebarTheme}`}>
                 <div
                     className={
                         isMobile
-                            ? `jr-app jr-theme jr-mobile-shell${viewerTheme ? ' jr-viewer-sidebar' : ''}`
+                            ? `jr-app jr-theme jr-mobile-shell${sidebarTheme}`
                             : 'contents'
                     }
                 >
@@ -183,8 +188,8 @@ export function MaintenanceProjectShell({
                                     className="jr-brand-icon"
                                     aria-hidden="true"
                                 >
-                                    {viewerTheme ? (
-                                        <img src="/images/jairoads/peo-ddo-transparent.webp" alt="" className="jr-viewer-brand-logo" width={144} height={144} />
+                                    {brandedTheme ? (
+                                        <img src="/images/jairoads/peo-ddo-transparent.webp" alt="" className={viewerTheme ? "jr-viewer-brand-logo" : "jr-engineer-brand-logo"} width={144} height={144} />
                                     ) : (
                                         <svg viewBox="0 0 24 24">
                                             <path d="M7 3c-1 4 2 5 2 8s-3 4-2 10M17 3c1 4-2 5-2 8s3 4 2 10M12 4v2m0 4v2m0 4v2" />
@@ -211,7 +216,7 @@ export function MaintenanceProjectShell({
                                 <strong>JaiROADS</strong>
                                 <small>
                                     {canonical
-                                        ? viewerTheme ? 'Viewer Workspace' : `${String((page.props.jairoadsIdentity as { role?: string } | undefined)?.role ?? 'User')} Workspace`
+                                        ? viewerTheme ? 'Viewer Workspace' : engineerTheme ? 'Engineer Workspace' : `${String((page.props.jairoadsIdentity as { role?: string } | undefined)?.role ?? 'User')} Workspace`
                                         : 'Admin Console'}
                                 </small>
                             </span>
@@ -404,7 +409,9 @@ export default function MaintenanceProjectLayout({
     const page = usePage();
     const { auth, sidebarOpen } = page.props;
     const mainDesign = !isAlternativeNavigation(page.component);
-    const viewerTheme = page.props.canonicalFrontend === true && (page.props.jairoadsIdentity as { role?: string } | undefined)?.role === 'viewer';
+    const role = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role;
+    const viewerTheme = page.props.canonicalFrontend === true && role === 'viewer';
+    const engineerTheme = page.props.canonicalFrontend === true && role === 'engineer';
 
     return (
         <SidebarProvider
@@ -412,9 +419,11 @@ export default function MaintenanceProjectLayout({
             className={
                 viewerTheme
                     ? 'jr-app jr-theme jr-main-design jr-viewer-workspace'
-                    : mainDesign
-                      ? 'jr-app jr-theme jr-main-design jr-espresso-exploration'
-                      : 'jr-app jr-theme'
+                    : engineerTheme
+                      ? 'jr-app jr-theme jr-main-design jr-engineer-workspace'
+                      : mainDesign
+                        ? 'jr-app jr-theme jr-main-design jr-espresso-exploration'
+                        : 'jr-app jr-theme'
             }
             style={
                 {

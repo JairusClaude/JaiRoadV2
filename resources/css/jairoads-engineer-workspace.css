@@ -1,0 +1,155 @@
+/* Canonical Engineer-only presentation. Orange palette from the approved reference; no access rules. */
+.jr-engineer-workspace, body:has(.jr-engineer-workspace) .jr-theme {
+    --primary:#a94b0c; --primary-foreground:#fff7ed; --secondary:#fff0e3;
+    --secondary-foreground:#692b0b; --ring:#fb923c; --sidebar:#692b0b;
+    --color-primary:var(--primary); --color-secondary:var(--secondary);
+    --color-ring:var(--ring); --color-sidebar:var(--sidebar);
+    --engineer-navy:#692b0b; --engineer-blue:#873a0d; --engineer-active:#a94b0c;
+    --engineer-accent:#fb923c; --engineer-ink:#3b2418;
+}
+.jr-app.jr-engineer-workspace { background:#fff5ed; }
+.jr-engineer-workspace .jr-stage { background:linear-gradient(150deg,#fffaf6 0%,#fff3e9 70%,#fbe8d9 100%); }
+body:has(.jr-engineer-workspace) :is(.jr-engineer-sidebar,.jr-engineer-sidebar [data-sidebar='sidebar']) {
+    --sidebar:#692b0b; --color-sidebar:#692b0b;
+    background-color:#692b0b;
+    background-image:radial-gradient(ellipse at 90% 20%,#873a0d88,transparent 60%),linear-gradient(160deg,#421b09,#692b0b 53%,#873a0d);
+    color:#fff7ed;
+}
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar [data-sidebar='sidebar'] { background:transparent; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar :is(.jr-brand-copy strong,.jr-identity-copy strong) { color:#fff7ed; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar :is(.jr-brand-copy small,.jr-identity-copy small,.jr-nav-caption) { color:#ffe6cc; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar :is(.jr-brand-icon,.jr-brand-toggle) { background:#873a0d; color:#fff; border-color:#ffffff26; box-shadow:none; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar :is(.jr-sidebar-collapse,.jr-alternative-chevron) { color:#ffe6cc; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar :is(.jr-sidebar-collapse,.jr-alternative-chevron):hover { background:#ffffff16; color:#fff; border-color:transparent; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-nav-link { color:#fff7ed; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-nav-link svg { color:#ffedd5; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-nav-link:hover { background:#ffffff14; color:#fff; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-nav-link.jr-active { background:#a94b0c; color:#fff; border-color:#fb923c40; box-shadow:0 4px 12px #35160533; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-nav-link.jr-active svg { color:#fff; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-nav-link.jr-active::before { content:none; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-alternative-submenu::before { border-color:#fdba7475; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-alternative-parent .jr-nav-link>span { left:39px; letter-spacing:-.2px; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-alternative-chevron { right:11px; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-alternative-submenu .jr-alternative-record-label { left:0; right:0; text-align:center; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-identity { background:#4e2009bd; border-color:#ffffff20; box-shadow:none; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-initial { background:#a94b0c; color:white; border-radius:50%; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-brand-header { height:180px; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-brand { top:18px; left:0; width:100%; height:148px; flex-direction:column; align-items:center; justify-content:flex-start; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-brand-control { width:90px; height:90px; flex:0 0 90px; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-brand-icon { width:90px; height:90px; background:transparent; border:0; border-radius:0; overflow:visible; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-engineer-brand-logo { display:block; width:100%; height:100%; object-fit:contain; border-radius:0; background:transparent; border:0; box-shadow:none; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-brand-copy { position:static; text-align:center; margin-top:5px; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-brand-copy strong { font-size:22px; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-brand-copy small { font-size:12px; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-sidebar-collapse { top:15px; right:10px; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-nav-content { position:relative; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-sidebar-footer { position:relative; }
+/* Layered road curves beneath navigation, never intercept clicks. */
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-nav-content::after {
+    content:''; position:absolute; bottom:0; left:0; right:0; height:36%; pointer-events:none;
+    background:radial-gradient(ellipse at 0% 115%,transparent 48%,#fb923c1a 49%,#fb923c1a 59%,transparent 60%),radial-gradient(ellipse at 100% 100%,#873a0d90 0%,transparent 72%); z-index:-1;
+}
+body:has(.jr-engineer-workspace) [data-state='collapsed'] .jr-engineer-sidebar .jr-brand-header { height:96px; }
+body:has(.jr-engineer-workspace) [data-state='collapsed'] .jr-engineer-sidebar .jr-brand { top:19px; left:22px; width:40px; height:40px; }
+body:has(.jr-engineer-workspace) [data-state='collapsed'] .jr-engineer-sidebar .jr-brand-control { width:40px; height:40px; flex-basis:40px; }
+body:has(.jr-engineer-workspace) [data-state='collapsed'] .jr-engineer-sidebar .jr-brand-icon { width:40px; height:40px; }
+body:has(.jr-engineer-workspace) [data-state='collapsed'] .jr-engineer-sidebar .jr-brand-copy { display:none; }
+body:has(.jr-engineer-workspace) [data-state='collapsed'] .jr-engineer-sidebar .jr-alternative-parent .jr-nav-link>span { left:45px; }
+.jr-engineer-workspace .jr-global-header { background:#fffaf6; border-color:#eddccc; color:#873a0d; }
+.jr-engineer-workspace .jr-global-header strong { color:#3b2418; }
+.jr-engineer-workspace .jr-global-header :is(.jr-icon-button,.jr-account-trigger) { color:#873a0d; }
+.jr-engineer-workspace .jr-account-trigger .jr-initial { background:#a94b0c; color:#fff; border-color:#fb923c; }
+.jr-engineer-workspace .jr-content { border-color:#efdfd1; }
+.jr-engineer-workspace .jr-workspace { border-color:#eddccc; }
+.jr-engineer-workspace .jr-workspace .jr-page-head h1 { color:#3b2418; }
+.jr-engineer-workspace .jr-workspace .jr-page-head p { color:#72523f; }
+.jr-engineer-workspace .jr-primary, .jr-engineer-refresh { background:#a94b0c; color:#fff; border:1px solid #a94b0c; box-shadow:0 3px 10px #a94b0c25; }
+.jr-engineer-workspace .jr-primary:hover,.jr-engineer-refresh:hover:not(:disabled) { background:#873a0d; border-color:#873a0d; }
+.jr-engineer-workspace :is(button,a,input,textarea,select):focus-visible { outline-color:#fb923c; }
+.jr-engineer-workspace .jr-search input:focus { border-color:#a94b0c; box-shadow:0 0 0 3px #fb923c30; }
+.jr-engineer-workspace .jr-directory-exploration .jr-page-head { background:#fff0e4; }
+.jr-engineer-workspace .jr-directory-exploration .jr-page-head::before { background-image:url('../images/engineer-road-landscape.svg'); opacity:1; }
+.jr-engineer-workspace .jr-engineer-dashboard .jr-page-head { min-height:184px; align-items:center; padding-bottom:42px; }
+.jr-engineer-workspace .jr-engineer-dashboard .jr-page-head h1 { font-size:clamp(25px,2.7vw,36px); letter-spacing:-.035em; font-weight:750; }
+.jr-engineer-access { display:inline-flex; align-items:center; gap:7px; background:#ffead8; color:#873a0d; padding:7px 12px; border-radius:11px; font-size:12px; font-weight:700; margin-bottom:12px; }
+.jr-engineer-refresh { display:inline-flex; align-items:center; justify-content:center; gap:9px; min-height:42px; padding:9px 18px; border-radius:999px; font-size:13px; font-weight:650; white-space:nowrap; }
+.jr-engineer-refresh:disabled { opacity:.65; cursor:wait; }
+.jr-engineer-workspace .jr-engineer-dashboard main { margin-top:-22px; border:1px solid #eddccc; background:#fffaf6; border-radius:22px; padding-top:22px; }
+.jr-engineer-workspace .jr-engineer-overview { padding:0; }
+.jr-engineer-workspace .jr-engineer-metrics > div { border-color:#efd9c6; box-shadow:0 3px 12px #873a0d08; }
+.jr-engineer-workspace .jr-engineer-metrics > div > div:first-child > span:first-child { font-size:11px; text-transform:uppercase; font-weight:650; color:#72523f; }
+.jr-engineer-workspace .jr-engineer-metrics > div > div:last-child { color:#692b0b; font-weight:750; font-size:34px; }
+.jr-engineer-workspace .jr-engineer-dashboard :is(.text-amber-700,.text-amber-800,.text-amber-900) { color:#873a0d; }
+.jr-engineer-workspace .jr-engineer-dashboard .bg-amber-50 { background:#fff1e3; }
+.jr-engineer-workspace .jr-engineer-dashboard .border-amber-200 { border-color:#f6d3b5; }
+.jr-engineer-workspace .jr-engineer-dashboard [class~="from-amber-700"][class~="to-amber-400"] { background:linear-gradient(to top,#873a0d,#fb923c); }
+.jr-engineer-workspace .jr-engineer-dashboard a:hover { border-color:#edb184; background:#fff3e7; }
+.jr-engineer-workspace .jr-engineer-dashboard :is(h2,h3) { color:#3b2418; }
+.jr-engineer-workspace .jr-engineer-dashboard .border-slate-200 { border-color:#eddccc; }
+.jr-engineer-workspace .jr-engineer-dashboard .text-slate-500 { color:#735b49; }
+.jr-engineer-workspace .jr-engineer-dashboard .text-slate-950 { color:#3b2418; }
+.jr-engineer-workspace .jr-engineer-dashboard .text-slate-900 { color:#3b2418; }
+.jr-engineer-workspace .jr-engineer-dashboard .text-slate-700 { color:#604737; }
+body:has(.jr-engineer-workspace) .jr-menu [data-highlighted] { background:#fff0e2; color:#692b0b; }
+/* Respect dark preference without reverting the Engineer sidebar to brown. */
+html.dark body:has(.jr-engineer-workspace) .jr-engineer-sidebar { background-color:#421b09!important; }
+html.dark body:has(.jr-engineer-workspace) .jr-engineer-sidebar [data-sidebar='sidebar'] { background-color:transparent!important; }
+html.dark body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-nav-link.jr-active { background-color:#a94b0c!important; color:#fff!important; }
+html.dark body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-identity { background-color:#4e2009!important; border-color:#ffffff20!important; }
+html.dark .jr-engineer-workspace :is(.jr-stage,.jr-content) { background:#211610!important; }
+html.dark .jr-engineer-workspace .jr-global-header { background:#352218!important; border-color:#69462e!important; }
+html.dark .jr-engineer-workspace .jr-engineer-dashboard .jr-page-head { background:#422a1b; }
+html.dark .jr-engineer-workspace .jr-engineer-dashboard .jr-page-head::before { opacity:.26; }
+html.dark .jr-engineer-workspace .jr-engineer-dashboard main { background:#2c2019; border-color:#64452f; }
+html.dark .jr-engineer-workspace .jr-engineer-dashboard .bg-white { background:#3a2a20; border-color:#75513b; }
+html.dark .jr-engineer-workspace .jr-engineer-dashboard :is(h2,h3,.text-slate-950,.text-slate-900,.text-slate-800,.text-slate-700,.jr-engineer-metrics > div > div:last-child) { color:#fff3e8; }
+html.dark .jr-engineer-workspace .jr-engineer-dashboard :is(.text-slate-500,.text-slate-600,.jr-engineer-metrics > div > div:first-child > span:first-child) { color:#e5cdb7; }
+html.dark .jr-engineer-workspace .jr-engineer-dashboard .bg-slate-50 { background:#503725; }
+html.dark .jr-engineer-workspace .jr-engineer-dashboard :is(.text-amber-700,.text-amber-800,.text-amber-900) { color:#fdba74; }
+html.dark .jr-engineer-workspace .jr-engineer-dashboard .bg-amber-50 { background:#57351d; }
+html.dark .jr-engineer-workspace .jr-engineer-dashboard a:hover { background:#503725; }
+@media(max-width:767px) {
+    .jr-engineer-workspace .jr-engineer-dashboard .jr-page-head { min-height:unset; padding-bottom:42px; }
+    .jr-engineer-workspace .jr-engineer-dashboard .jr-page-head::before { opacity:.48; }
+    .jr-engineer-workspace .jr-engineer-dashboard main { margin-inline:calc(-1 * var(--jr-exploration-gutter)); padding-inline:var(--jr-exploration-gutter); }
+}
+
+/* Explicit Engineer accents also survive module-specific style import order. */
+.jr-app.jr-engineer-workspace:has(.jr-directory-exploration) { background:#fff5ed; }
+.jr-app.jr-engineer-workspace .jr-primary { background:#a94b0c; border-color:#a94b0c; box-shadow:0 3px 10px #a94b0c25; }
+.jr-app.jr-engineer-workspace .jr-primary:hover { background:#873a0d; border-color:#873a0d; }
+.jr-app.jr-engineer-workspace :is(.jr-project-title:hover,.jr-availability,.jr-directory-exploration .jr-exploration-version a) { color:#873a0d; }
+.jr-app.jr-engineer-workspace .jr-table-footer [data-slot='button'][aria-current='page'] { background:#fff0e3; border-color:#f2ceae; color:#873a0d; }
+.jr-app.jr-engineer-workspace :is(.jr-filter-row [data-slot='select-trigger'],.jr-monthly-context-links a):focus-visible { outline-color:#fb923c; }
+.jr-app.jr-engineer-workspace .jr-engineer-dashboard #notifications { min-width:0; }
+.jr-engineer-workspace .jr-engineer-dashboard #notifications > div { max-height:250px; overflow-y:auto; }
+.jr-engineer-workspace .jr-engineer-dashboard .jr-page-head > div { min-width:0; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar.jr-mobile-shell,
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar.jr-sidebar-container {
+    background-image:radial-gradient(ellipse at -25% 115%,transparent 40%,#fb923c22 40.5%,#fb923c22 48%,transparent 48.5%,transparent 56%,#fb923c17 56.5%,#fb923c17 64%,transparent 64.5%),radial-gradient(ellipse at 90% 20%,#873a0d88,transparent 60%),linear-gradient(160deg,#421b09,#692b0b 53%,#873a0d);
+}
+html.dark .jr-app.jr-engineer-workspace:has(.jr-directory-exploration) { background:#211610!important; }
+html.dark .jr-engineer-workspace .jr-engineer-dashboard .border-slate-200 { border-color:#75513b; }
+html.dark .jr-engineer-workspace .jr-engineer-dashboard .bg-slate-100 { background:#503725; color:#ffedd5; }
+html.dark .jr-engineer-workspace .jr-engineer-dashboard .bg-amber-50 { border-color:#9d6641; }
+
+/* The supplied PEO-DDO logo keeps its original color and proportions. */
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-brand-control { isolation:isolate; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-brand-icon { box-shadow:none; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-brand-toggle { width:100%; height:100%; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-brand-copy small { letter-spacing:.02em; }
+
+/* Preserve alpha transparency: no rectangular logo tile on the Engineer sidebar. */
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-brand-control { background:transparent; border:0; box-shadow:none; }
+body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-brand-toggle { background:transparent; border:0; box-shadow:none; }
+
+/* Engineer road inspection keeps the same geometry and assignment semantics. */
+.jr-engineer-workspace .jr-engineer-map-toggle input:checked { background:#a94b0c; }
+.jr-engineer-workspace .jr-dashboard-road-mine { stroke:#a94b0c; }
+.jr-engineer-workspace .jr-road-details-assignment.is-mine { background:#ffead8; color:#873a0d; }
+.jr-engineer-workspace .jr-road-details-footer a { background:#a94b0c; }
+.jr-engineer-workspace .jr-road-details-footer a:hover { background:#873a0d; }
+.jr-engineer-workspace :is(.jr-road-details-eyebrow,.jr-road-details-retry,.jr-road-details-record:hover,.jr-road-details-related:hover) { color:#873a0d; }
+.jr-engineer-workspace .jr-engineer-dashboard a:focus-visible { outline:2px solid #fb923c; }
+html.dark .jr-engineer-workspace .jr-engineer-dashboard .bg-emerald-50 { background:#183c31; border-color:#35755b; }
+html.dark .jr-engineer-workspace .jr-engineer-dashboard .text-emerald-700 { color:#6ee7b7; }

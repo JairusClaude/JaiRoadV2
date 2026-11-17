@@ -177,6 +177,20 @@ try {
     for (const other of [engineer, admin, superadmin]) {
         assert.equal(await other.locator('.jr-viewer-workspace').count(), 0);
     }
+    await engineer.locator('.jr-engineer-workspace').waitFor();
+    await engineer.getByRole('heading', { name: 'Engineering Dashboard', exact: true }).waitFor();
+    await engineer.getByText('Technical Workspace', { exact: true }).waitFor();
+    await engineer.getByRole('button', { name: 'Refresh dashboard' }).waitFor();
+    await engineer.waitForFunction(() => {
+        const logo = document.querySelector('.jr-engineer-brand-logo');
+        return logo instanceof HTMLImageElement && logo.complete && logo.naturalWidth > 0;
+    });
+    assert.equal(await engineer.locator('.jr-engineer-sidebar .jr-nav-link.jr-active').first().evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(169, 75, 12)');
+    assert.equal(await engineer.locator('.jr-engineer-brand-logo').first().evaluate(el => new URL(el.src).pathname), '/images/jairoads/peo-ddo-transparent.webp');
+    assert.equal(await engineer.locator('.jr-engineer-brand-logo').first().evaluate(el => getComputedStyle(el.parentElement).backgroundColor), 'rgba(0, 0, 0, 0)');
+    for (const other of [viewer, admin, superadmin]) {
+        assert.equal(await other.locator('.jr-engineer-workspace').count(), 0);
+    }
     const dashboardMap = engineer.getByRole('region', { name: 'My projects road map' });
     await dashboardMap.waitFor();
     const myProjects = dashboardMap.getByRole('switch', { name: 'My projects only' });
@@ -210,6 +224,8 @@ try {
         await page.goto(`${ui}/road-coverages`);
         if (page === viewer) await page.locator('.jr-viewer-workspace').waitFor();
         else assert.equal(await page.locator('.jr-viewer-workspace').count(), 0);
+        if (page === engineer) await page.locator('.jr-engineer-workspace').waitFor();
+        else assert.equal(await page.locator('.jr-engineer-workspace').count(), 0);
         await page
             .getByRole('heading', { name: 'Road Coverages', exact: true })
             .waitFor();
