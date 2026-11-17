@@ -412,6 +412,30 @@ class OperationsFrontendController extends Controller
         return $path;
     }
 
+    /**
+     * Related-item edits may return only to their own directory, details,
+     * or the actual parent maintenance record. Keep directory filters.
+     */
+    protected function relatedEditReturn(Request $request, string $module, int $id, int $projectId, int $recordId): string
+    {
+        $directory = self::BASE.'/'.$module;
+        $detail = $directory.'/'.$id;
+        $parent = self::BASE.'/maintenance-projects/'.$projectId.'/records/'.$recordId;
+        $origin = $request->query('return_to');
+        if (! is_string($origin) || ! str_starts_with($origin, self::BASE.'/')
+            || preg_match('/[\\x00-\\x20\\x7f]/', $origin) || str_contains($origin, chr(92))) {
+            return $detail;
+        }
+        $path = parse_url($origin, PHP_URL_PATH);
+        if (! in_array($path, [$directory, $detail, $parent], true)) {
+            return $detail;
+        }
+
+        // The path is allowlisted and relative. Retain the original query only.
+        $query = parse_url($origin, PHP_URL_QUERY);
+        return $path.(is_string($query) && $query !== '' ? '?'.$query : '');
+    }
+
     protected function relatedReturn(Request $request, array $actor, string $fallback): string
     {
         $id = $request->integer('record');

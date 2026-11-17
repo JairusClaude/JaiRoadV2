@@ -15,7 +15,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { formReturn } from '@/lib/form-navigation';
+import { editUrl, formReturn } from '@/lib/form-navigation';
 import { documentFileError } from '@/lib/maintenance-documents';
 import { workspaceHref } from '@/lib/workspace-navigation';
 import type { DocumentParents } from '@/types/maintenance-documents';
@@ -143,7 +143,7 @@ export default function Form(parents: DocumentParents) {
         lock.current = true;
         form.submit(
             doc ? 'put' : 'post',
-            parents.submitUrl,
+            doc ? editUrl(parents.submitUrl, back) : parents.submitUrl,
             {
                 forceFormData: !doc || page.props.canonicalFrontend !== true,
                 preserveScroll: true,

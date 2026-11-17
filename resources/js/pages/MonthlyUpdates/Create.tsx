@@ -1,9 +1,10 @@
 import '../../../css/maintenance-projects.css';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialog';
 import { MonthlyUpdateForm } from '@/components/monthly-updates/monthly-update-form';
-import { formReturn, returnLabel } from '@/lib/form-navigation';
+import { editUrl, formReturn, returnLabel } from '@/lib/form-navigation';
 import { validateMonthlyUpdate } from '@/lib/monthly-updates';
 import { workspaceHref } from '@/lib/workspace-navigation';
 import type {
@@ -74,7 +75,7 @@ export default function Create(parents: MonthlyCreateProps) {
             }));
         }
 
-        form.submit(update ? 'put' : 'post', parents.submitUrl, {
+        form.submit(update ? 'put' : 'post', update ? editUrl(parents.submitUrl, cancel) : parents.submitUrl, {
             forceFormData: page.props.canonicalFrontend !== true,
             preserveScroll: true,
             onSuccess: (responsePage) => {
@@ -91,13 +92,18 @@ export default function Create(parents: MonthlyCreateProps) {
                     if (index >= selectedAttachments.length) {
                         return;
                     }
-                    router.post(workspaceHref(`/monthly-updates/${savedId}/media`), {
+                    const mediaUrl = workspaceHref(`/monthly-updates/${savedId}/media`);
+                    router.post(update ? editUrl(mediaUrl, cancel) : mediaUrl, {
                         file: selectedAttachments[index],
                     }, {
                         forceFormData: true,
                         preserveScroll: true,
                         onSuccess: () => uploadNext(index + 1),
-                        onError: (errors) => form.setError('attachments', errors.file ?? 'The update was saved, but a media file could not be uploaded. Open the saved update and retry.'),
+                        onError: (errors) => {
+                            const message = errors.file ?? 'The update was saved, but a media file could not be uploaded. Open the saved update and retry.';
+                            form.setError('attachments', message);
+                            toast.error(message);
+                        },
                     });
                 };
                 uploadNext(0);

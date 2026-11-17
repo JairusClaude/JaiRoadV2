@@ -1,4 +1,5 @@
 import { Buffer } from 'node:buffer';
+import { relatedEditReturn } from './related-edit-return.mjs';
 import { readFile } from 'node:fs/promises';
 import { documentFormats, documentExtension } from './document-formats.mjs';
 import { maintenanceDocuments as documents, records } from './records.mjs';
@@ -171,7 +172,7 @@ return { location, errors };
 documents.push(doc);
 }
 
-    return { location:`${base}/${doc.id}` };
+    return { location: current ? relatedEditReturn(url, base, doc.id, record) : `${base}/${doc.id}` };
 }
 export function pruneDocumentBytes() {
  for (const id of bytes.keys()) {

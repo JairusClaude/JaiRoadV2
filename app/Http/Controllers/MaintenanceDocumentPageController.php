@@ -97,7 +97,14 @@ final class MaintenanceDocumentPageController extends OperationsFrontendControll
             $this->operations->updateDocument($request, $this->identities, $id);
         }
 
-        return redirect(self::BASE.'/maintenance-documents'.($id === null ? '' : '/'.$id))->with('dd_operations_status', 'MaintenanceDocument saved.');
+        $destination = self::BASE.'/maintenance-documents';
+        if ($id !== null) {
+            $document = $this->documentQuery($actor)->where('d.id', $id)->first();
+            abort_unless($document !== null, 404);
+            $destination = $this->relatedEditReturn($request, 'maintenance-documents', $id, (int) $document->project_id, (int) $document->maintenance_id);
+        }
+
+        return redirect($destination)->with('dd_operations_status', 'MaintenanceDocument saved.');
     }
 
     public function bulkDeleteDocument(Request $request): RedirectResponse

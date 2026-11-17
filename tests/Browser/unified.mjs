@@ -651,6 +651,26 @@ try {
         .getByRole('button', { name: /Save Changes|Save Update/ })
         .click();
     await engineer.waitForURL(`${ui}/monthly-updates/${january.id}`);
+    // Both modules must return to all three explicit edit origins and keep filters.
+    const parentOrigin = `/dd-phase3/ui/maintenance-projects/${project.id}/records/${record.id}`;
+    for (const [module, entity, directoryQuery] of [
+        ['monthly-updates', january, `?project=${project.id}&year=2026&sort=oldest&page=1`],
+        ['maintenance-documents', doc, `?project=${project.id}&sort=oldest&page=1`],
+    ]) {
+        const directory = `/dd-phase3/ui/${module}`;
+        const detail = `${directory}/${entity.id}`;
+        for (const origin of [directory + directoryQuery, detail, parentOrigin]) {
+            await engineer.goto(base + detail + '/edit?' + new URLSearchParams({ return_to: origin }));
+            if (module === 'monthly-updates') {
+                await engineer.getByLabel(/^Progress Percentage/).fill('17');
+            } else {
+                await engineer.getByLabel(/^Document Title/).fill(doc.document_title);
+            }
+            await engineer.getByRole('button', { name: 'Save Changes', exact: true }).click();
+            await engineer.waitForURL(base + origin);
+        }
+    }
+    console.log('PASS: both related modules return to directory, own details and parent record after editing.');
     await engineer.goto(`${ui}/monthly-updates?project=${project.id}`);
     const firstMonth = () =>
         engineer

@@ -1,4 +1,5 @@
 import { Buffer } from 'node:buffer';
+import { relatedEditReturn } from './related-edit-return.mjs';
 import { randomUUID } from 'node:crypto';
 import { readFile, stat } from 'node:fs/promises';
 import { createServer } from 'node:http';
@@ -609,11 +610,13 @@ async function mutate(method, url, data, files = []) {
             Number(monthlyEdit[1]),
         );
 
-        return result?.errors
-            ? {
-                  ...result,
-                  location: `/monthly-updates/${monthlyEdit[1]}/edit${url.search}`,
-              }
+        if (result?.errors) {
+            return { ...result, location: `/monthly-updates/${monthlyEdit[1]}/edit${url.search}` };
+        }
+        const update = monthlyUpdates.find(item => Number(item.id) === Number(monthlyEdit[1]));
+        const record = records.find(item => Number(item.id) === Number(update?.maintenance_id));
+        return result && record
+            ? { ...result, location: relatedEditReturn(url, '/monthly-updates', update.id, record) }
             : result;
     }
 

@@ -91,6 +91,7 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
         $this->writer($actor);
         $validated = $request->validate(['attachments' => ['prohibited'], 'removed_media_ids' => ['sometimes', 'array', 'max:100'], 'removed_media_ids.*' => ['integer', 'min:1', 'distinct']]);
         $removals = array_map('intval', $validated['removed_media_ids'] ?? []);
+        $editing = $id !== null;
         if ($removals !== []) {
             $this->requirePrivateDeletion($request, $actor);
             if ($id === null) {
@@ -112,7 +113,14 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
         $id ??= (int) DB::table('jairoads_next.monthly_updates')->where('maintenance_id', $request->input('maintenance_id'))
             ->where('update_month', $request->input('update_month'))->value('id');
 
-        return redirect(self::BASE.'/monthly-updates/'.$id)->with('dd_operations_status', 'Monthly update saved.');
+        $destination = self::BASE.'/monthly-updates/'.$id;
+        if ($editing) {
+            $update = $this->updateQuery($actor)->where('u.id', $id)->first();
+            abort_unless($update !== null, 404);
+            $destination = $this->relatedEditReturn($request, 'monthly-updates', $id, (int) $update->project_id, (int) $update->maintenance_id);
+        }
+
+        return redirect($destination)->with('dd_operations_status', 'Monthly update saved.');
     }
 
     public function updateShow(Request $request, int $id): Response
@@ -141,7 +149,7 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
         $request->merge(['monthly_update_id' => $id]);
         $this->operations->uploadMedia($request, $this->identities, $this->media);
 
-        return redirect(self::BASE.'/monthly-updates/'.$id)->with('dd_operations_status', 'Private media uploaded.');
+        return redirect($this->relatedEditReturn($request, 'monthly-updates', $id, (int) $u->project_id, (int) $u->maintenance_id))->with('dd_operations_status', 'Private media uploaded.');
     }
 
     public function deleteUpdate(Request $request, int $id): RedirectResponse
