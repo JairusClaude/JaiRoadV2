@@ -113,3 +113,6 @@
         transition: none;
     }
 }
+
+.jr-recovery-note { display:flex; align-items:flex-start; gap:10px; margin-top:20px; padding:14px; border:1px solid #eadfce; border-radius:12px; background:#fbf6ee; color:#79573d; font-size:12px; line-height:1.65; }
+.jr-login-showcase button { cursor:pointer; }

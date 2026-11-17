@@ -15,6 +15,8 @@ type Props = {
     label?: string;
     loadingLabel?: string;
     separator?: string;
+    hideSeparator?: boolean;
+    loginMode?: boolean;
 };
 
 export default function PasskeyVerify({
@@ -22,6 +24,8 @@ export default function PasskeyVerify({
     label,
     loadingLabel,
     separator,
+    hideSeparator = false,
+    loginMode = false,
 }: Props = {}) {
     const { verify, isLoading, error, isSupported } = usePasskeyVerify({
         ...(routes && {
@@ -31,12 +35,17 @@ export default function PasskeyVerify({
             },
         }),
         onSuccess: (response) => {
-            router.visit(response.redirect ?? '/dashboard');
+            if (loginMode) {
+                // A fresh document receives the authenticated session and clears guest history.
+                window.location.assign('/dashboard');
+            } else {
+                router.visit(response.redirect ?? '/dashboard');
+            }
         },
     });
 
     if (!isSupported) {
-        return null;
+        return loginMode ? <p role="status" className="text-sm text-[#697b90]">Passkeys require a supported browser and secure connection. You can still sign in with your password.</p> : null;
     }
 
     return (
@@ -59,7 +68,7 @@ export default function PasskeyVerify({
                 )}
             </div>
 
-            <div className="relative my-6">
+            {!hideSeparator && <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
                     <Separator className="w-full" />
                 </div>
@@ -68,7 +77,7 @@ export default function PasskeyVerify({
                         {separator ?? 'Or continue with email'}
                     </span>
                 </div>
-            </div>
+            </div>}
         </>
     );
 }
