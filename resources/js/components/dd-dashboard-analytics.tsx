@@ -98,7 +98,7 @@ export function DdDashboardAnalytics({
     const items = data.activity;
 
     return (
-        <section aria-label={`${data.scope} analytics`} className="space-y-5">
+        <section aria-label={`${data.scope} analytics`} className="jr-dashboard-analytics space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <h2 className="flex items-center gap-2 text-xl font-bold tracking-tight text-slate-900">
@@ -115,7 +115,7 @@ export function DdDashboardAnalytics({
                 </span>
             </div>
             <div
-                className={`grid gap-3 sm:grid-cols-2 ${omitOngoingMetric ? 'xl:grid-cols-3' : omitInventoryMetrics ? 'xl:grid-cols-4' : compact ? 'xl:grid-cols-3' : 'xl:grid-cols-6'}`}
+                className={`jr-dashboard-analytics-metrics grid gap-3 sm:grid-cols-2 ${omitOngoingMetric ? 'xl:grid-cols-3' : omitInventoryMetrics ? 'xl:grid-cols-4' : compact ? 'xl:grid-cols-3' : 'xl:grid-cols-6'}`}
             >
                 {visibleCards.map(({ label, value, icon: Icon }) => (
                     <div
@@ -149,7 +149,7 @@ export function DdDashboardAnalytics({
                         {data.scope}
                     </p>
                     <div
-                        className="mt-5 grid h-44 grid-cols-6 items-end gap-2 sm:gap-4"
+                        className="jr-dashboard-trend mt-5 grid h-44 grid-cols-6 items-end gap-2 sm:gap-4"
                         role="img"
                         aria-label={data.trend
                             .map(

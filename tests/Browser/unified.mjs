@@ -797,7 +797,7 @@ try {
     lastPage = admin;
 
     await verifyDirectoryLayouts(admin, ui);
-    await verifyMobileWorkspaces({ base, admin, superadmin, engineer, viewer, projectId: project.id, recordId: record.id, monthlyId: january.id, documentId: doc.id });
+    await verifyMobileWorkspaces({ browser, base, admin, superadmin, engineer, viewer, projectId: project.id, recordId: record.id, monthlyId: january.id, documentId: doc.id, roadId: road.id, lguId: road.lgu_id });
 
     await verifyAuditNotifications({
         admin,

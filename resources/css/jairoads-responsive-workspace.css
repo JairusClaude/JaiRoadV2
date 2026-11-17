@@ -5,7 +5,6 @@
 .jr-app > .jr-stage .jr-workspace,
 .jr-responsive-shell .jr-responsive-main {
     min-width:0;
-    max-width:100%;
 }
 .jr-stage :is(.jr-table-wrap,.um-table-scroll,div.overflow-x-auto:has(> table)),
 .jr-responsive-main :is(.jr-table-wrap,.um-table-scroll,div.overflow-x-auto:has(> table)) {
@@ -21,6 +20,10 @@
     min-width:0;
 }
 @media (max-width:1023px) {
+    .jr-app > .jr-stage,
+    .jr-app > .jr-stage > .jr-content,
+    .jr-app > .jr-stage .jr-workspace,
+    .jr-responsive-shell .jr-responsive-main { max-width:100%; }
     /* The desktop sidebar is replaced by a modal drawer at tablet widths. */
     body:has(.jr-app > .jr-stage) [data-slot='sidebar'][data-mobile='true'] {
         width:min(300px,calc(100vw - 36px));
@@ -121,8 +124,9 @@
     .jr-stage :is(.jr-header-actions,.jr-lgu-detail-actions) > :is(button,a) { flex:1 1 auto; min-height:44px; white-space:normal; }
     .jr-stage .jr-filters { min-width:0; gap:10px; }
     .jr-stage .jr-filters .jr-search { flex:1 1 100%; width:100%; }
-    .jr-stage .jr-filter-row { display:grid; width:100%; grid-template-columns:minmax(0,1fr); gap:8px; }
+    .jr-stage .jr-filter-row,.jr-stage .jr-directory-exploration .jr-filter-row,.jr-stage .jr-monthly-directory .jr-filter-row { display:grid; width:100%; grid-template-columns:minmax(0,1fr); gap:8px; }
     .jr-stage .jr-filter-row > * { min-width:0; width:100%; max-width:100%; }
+    .jr-stage .jr-monthly-directory :is(.jr-monthly-project-filter,.jr-monthly-year-filter,.jr-monthly-sort-filter) { width:100%; min-width:0; max-width:100%; }
     .jr-stage :is(.jr-filter-row [data-slot='select-trigger'],.jr-filter-row select,.jr-search input) { min-height:44px; height:auto; }
     .jr-stage :is(.jr-table-toolbar,.jr-table-footer) { gap:10px; align-items:flex-start; }
     .jr-stage .jr-table-footer nav { display:flex; flex-wrap:wrap; gap:6px; max-width:100%; }
@@ -161,6 +165,26 @@
     .jr-stage .jr-road-details-facts { grid-template-columns:repeat(2,minmax(0,1fr)); }
     .jr-stage .jr-road-details { max-width:100%; }
     .jr-stage .jr-settings { overflow-wrap:anywhere; }
+    .jr-stage .jr-settings nav[aria-label='Settings sections'] button { padding:10px 9px; min-width:0; }
+    .jr-stage .jr-settings nav[aria-label='Settings sections'] button .truncate { white-space:normal; overflow-wrap:anywhere; text-overflow:clip; }
+    .jr-stage .jr-settings nav[aria-label='Settings sections'] button > span { gap:6px; }
+    .jr-stage .jr-lgu-detail-actions { justify-items:stretch; }
+    .jr-stage :is(.jr-record-related-columns,.jr-lgu-related-columns) { grid-template-columns:minmax(0,1fr); gap:16px; }
+    .jr-stage .jr-related-list .jr-related-row-title { white-space:normal; overflow-wrap:anywhere; }
+    .jr-stage .jr-related-list .jr-related-monthly-row {
+        grid-template-columns:20px minmax(0,1fr) 40px; gap:8px; align-items:start;
+    }
+    .jr-stage .jr-related-list .jr-related-monthly-row .jr-related-monthly-progress { grid-column:2; grid-row:2; }
+    .jr-stage .jr-related-list .jr-related-monthly-row > :last-child { grid-column:3; grid-row:1 / span 2; }
+    .jr-stage .jr-related-list .jr-related-document-row { grid-template-columns:20px minmax(0,1fr) 40px; gap:8px; }
+    .jr-stage .jr-directory-exploration > main,.jr-stage .jr-directory-exploration main > * { min-width:0; }
+    .jr-stage .jr-dashboard-analytics > * { min-width:0; }
+    .jr-stage .jr-dashboard-analytics .jr-dashboard-analytics-metrics {
+        grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px;
+    }
+    .jr-stage .jr-dashboard-analytics-metrics > div { padding:12px; min-width:0; overflow-wrap:anywhere; }
+    .jr-stage .jr-dashboard-analytics-metrics > div p { font-size:26px; }
+    .jr-stage .jr-dashboard-analytics .jr-dashboard-trend { min-width:0; gap:4px; }
     .jr-stage .um-directory-head { flex-wrap:wrap; gap:10px; }
     .jr-stage .um-header-actions { width:100%; }
     .jr-stage .um-header-actions > button { min-height:44px; }
@@ -168,7 +192,7 @@
     .jr-stage .um-toolbar :is(.um-search,.um-filter) { flex:1 1 100%; min-width:0; max-width:100%; }
     .jr-stage .um-table-scroll { margin-inline:10px; }
     .jr-stage .um-tabs { flex-wrap:wrap; gap:6px 12px; }
-    .um-dialog { width:calc(100vw - 20px); max-height:calc(100dvh - 20px); }
+    .um-dialog.um-dialog { width:calc(100vw - 20px); max-height:calc(100dvh - 20px); }
     .um-dialog .um-form-grid { grid-template-columns:minmax(0,1fr); }
     .um-dialog .um-input { font-size:16px; min-height:44px; max-width:100%; }
     .um-dialog .um-dialog-actions > button { flex:1 1 110px; min-height:44px; }
@@ -180,7 +204,9 @@
     [data-slot='select-content'],[data-slot='dropdown-menu-content'],[data-slot='popover-content'] { max-width:calc(100vw - 16px); }
 }
 @media (max-width:359px) {
-    .jr-stage :is(.jr-metrics-grid,.jr-admin-metrics,.jr-engineer-metrics,.jr-viewer-metrics,.jr-superadmin-metrics,.um-metrics) { grid-template-columns:minmax(0,1fr); }
+    .jr-stage :is(.jr-metrics-grid,.jr-admin-metrics,.jr-engineer-metrics,.jr-viewer-metrics,.jr-superadmin-metrics,.um-metrics),
+    .jr-stage .jr-dashboard-analytics .jr-dashboard-analytics-metrics { grid-template-columns:minmax(0,1fr); }
+    .jr-stage .jr-settings nav[aria-label='Settings sections'] > div { grid-template-columns:minmax(0,1fr); }
     body:has(.jr-app > .jr-stage) .jr-mobile-shell .jr-brand-header { padding-inline:10px; gap:5px; }
     body:has(.jr-app > .jr-stage) .jr-mobile-shell :is(.jr-brand-control,.jr-brand-icon) { width:44px; height:44px; flex-basis:44px; }
     body:has(.jr-app > .jr-stage) .jr-mobile-shell .jr-brand-copy strong { font-size:18px; }

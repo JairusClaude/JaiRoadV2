@@ -3,7 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import process from 'node:process';
 
 // Runs on the existing real-session disposable browser fixture, never production.
-export async function verifyMobileWorkspaces({ base, admin, superadmin, engineer, viewer, projectId, recordId, monthlyId, documentId }) {
+export async function verifyMobileWorkspaces({ browser, base, admin, superadmin, engineer, viewer, projectId, recordId, monthlyId, documentId, roadId, lguId }) {
     assert.match(base, /^http:\/\/127\.0\.0\.1:\d+$/);
     const ui = '/dd-phase3/ui';
     const common = [
@@ -13,10 +13,15 @@ export async function verifyMobileWorkspaces({ base, admin, superadmin, engineer
         ui + '/maintenance-projects/' + projectId,
         ui + '/maintenance-projects/' + projectId + '/records/' + recordId,
         ui + '/monthly-updates/' + monthlyId, ui + '/maintenance-documents/' + documentId,
+        ...(roadId ? [ui + '/road-coverages/' + roadId] : []),
+        ...(lguId ? [ui + '/lgus/' + lguId] : []),
     ];
     const forms = [
         ui + '/maintenance-projects/create', ui + '/road-coverages/create',
         ui + '/monthly-updates/' + monthlyId + '/edit', ui + '/maintenance-documents/' + documentId + '/edit',
+        ui + '/maintenance-projects/' + projectId + '/records/create',
+        ui + '/monthly-updates/create?maintenance_id=' + recordId,
+        ui + '/maintenance-documents/create?maintenance_id=' + recordId,
     ];
     const evidence = process.env.UNIFIED_BROWSER_EVIDENCE_DIR;
     if (evidence) await mkdir(evidence, { recursive:true });
@@ -49,6 +54,9 @@ export async function verifyMobileWorkspaces({ base, admin, superadmin, engineer
                         });
                         assert.ok(result.width <= result.visible + 1 || result.scroll > 0, 'Table must scroll: ' + role + ' ' + path);
                     }
+                    if (evidence && width === 390 && [ui+'/maintenance-projects',ui+'/maintenance-documents','/dd-phase3/users','/dd-phase3/dashboard'].includes(path)) {
+                        await page.screenshot({path:evidence+'/mobile-'+role+'-'+path.split('/').at(-1)+'.png',fullPage:true});
+                    }
                     if (width < 1024 && path === '/dd-phase3/dashboard') {
                         const trigger = page.getByRole('button',{ name:'Open navigation', exact:true });
                         await trigger.click();
@@ -65,9 +73,6 @@ export async function verifyMobileWorkspaces({ base, admin, superadmin, engineer
                         await page.keyboard.press('Escape');
                         await drawer.waitFor({state:'hidden'});
                     }
-                    if (evidence && width === 390 && [ui+'/maintenance-projects',ui+'/maintenance-documents','/dd-phase3/users','/dd-phase3/dashboard'].includes(path)) {
-                        await page.screenshot({path:evidence+'/mobile-'+role+'-'+path.split('/').at(-1)+'.png',fullPage:true});
-                    }
                     count++;
                 }
             }
@@ -75,5 +80,34 @@ export async function verifyMobileWorkspaces({ base, admin, superadmin, engineer
             if(previous) await page.setViewportSize(previous);
         }
     }
-    console.log('PASS: '+count+' all-role workspace viewport checks, mobile menu navigation, local table scrolling and desktop separation.');
+    // Real Chromium mobile emulation, with touch and the same authenticated
+    // disposable sessions. Read-only; the original role contexts stay intact.
+    for (const [role, page] of Object.entries({ admin, superadmin, engineer, viewer })) {
+        const context = await browser.newContext({
+            viewport:{width:390,height:844}, deviceScaleFactor:2, isMobile:true,
+            hasTouch:true, reducedMotion:'reduce', storageState:await page.context().storageState(),
+        });
+        try {
+            const phone = await context.newPage();
+            await phone.goto(base + ui + '/maintenance-projects');
+            await phone.locator('.jr-stage').waitFor();
+            const geometry = await phone.evaluate(() => ({
+                layout:innerWidth, scroll:document.documentElement.scrollWidth,
+                touch:navigator.maxTouchPoints, dark:document.documentElement.classList.contains('dark'),
+            }));
+            assert.equal(geometry.layout,390,role+' mobile viewport meta');
+            assert.ok(geometry.touch>0 && geometry.scroll<=391,role+' touch layout');
+            await phone.getByRole('button',{name:'Open navigation',exact:true}).tap();
+            const drawer = phone.locator('[data-slot="sidebar"][data-mobile="true"]');
+            await drawer.waitFor({state:'visible'});
+            await drawer.getByRole('button',{name:'Close navigation',exact:true}).tap();
+            await drawer.waitFor({state:'hidden'});
+            await phone.locator('html').evaluate(el=>el.classList.add('dark'));
+            assert.ok(await phone.evaluate(()=>document.documentElement.scrollWidth<=391),role+' mobile dark mode');
+            if(evidence) await phone.screenshot({path:evidence+'/touch-dark-'+role+'.png',fullPage:true});
+        } finally {
+            await context.close();
+        }
+    }
+    console.log('PASS: '+count+' all-role workspace viewport checks, mobile menu navigation, local table scrolling, desktop separation and four touch/dark-mode checks.');
 }
