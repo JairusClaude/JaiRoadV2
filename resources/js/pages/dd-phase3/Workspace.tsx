@@ -62,6 +62,7 @@ type Props = {
     lgus: Lgu[];
     accounts: Account[];
     engineers: Engineer[];
+    initialEngineerId?: number | null;
     eligibleEngineers: Engineer[];
     assignments: Assignment[];
     canManage: boolean;
@@ -104,6 +105,7 @@ export default function DdPhase3Workspace({
     lgus,
     accounts,
     engineers,
+    initialEngineerId,
     eligibleEngineers,
     canManage,
     canCreateRoles,
@@ -187,7 +189,7 @@ export default function DdPhase3Workspace({
                 <main className="relative -mt-3.5 -mx-7 rounded-t-[20px] bg-white px-7 pt-7 pb-10 shadow-sm min-w-0 space-y-6">
 
             {section === 'users' && canManage && (
-                <CanonicalUserManagement accounts={accounts} engineers={engineers}
+                <CanonicalUserManagement key={initialEngineerId ?? 'directory'} initialEngineerId={initialEngineerId} accounts={accounts} engineers={engineers}
                     eligibleEngineers={eligibleEngineers} actorId={identity.accountId}
                     canCreateRoles={canCreateRoles} accountTotal={counts.userAccounts}
                     status={status} />

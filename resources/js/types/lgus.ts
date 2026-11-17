@@ -44,6 +44,7 @@ export type LguDetailProps = {
         roadCoverages: boolean;
         engineerAssignments: boolean;
     };
+    engineerDetailsAvailable?: boolean;
     directoryUrl: string;
     message?: string;
     lguPermissions: LguPermissions;

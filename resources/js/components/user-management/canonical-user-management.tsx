@@ -15,6 +15,7 @@ type Modal = { kind: 'add-account' | 'add-engineer' } | { kind: 'account' | 'eng
 type Props = {
     accounts: Account[];
     engineers: Engineer[];
+    initialEngineerId?: number | null;
     eligibleEngineers: EligibleEngineer[];
     actorId: number;
     canCreateRoles: Role[];
@@ -110,13 +111,13 @@ function CreateForm({ kind, eligible, roles: allowed, onClose, onBusy }: {
     </form>;
 }
 
-export default function CanonicalUserManagement({ accounts, engineers, eligibleEngineers, actorId, canCreateRoles, accountTotal, status }: Props) {
-    const [tab, setTab] = useState<'accounts' | 'engineers'>('accounts');
+export default function CanonicalUserManagement({ accounts, engineers, initialEngineerId, eligibleEngineers, actorId, canCreateRoles, accountTotal, status }: Props) {
+    const [tab, setTab] = useState<'accounts' | 'engineers'>(initialEngineerId ? 'engineers' : 'accounts');
     const [search, setSearch] = useState('');
     const [role, setRole] = useState('all');
     const [state, setState] = useState('all');
     const [page, setPage] = useState(1);
-    const [modal, setModal] = useState<Modal | null>(null);
+    const [modal, setModal] = useState<Modal | null>(() => initialEngineerId && engineers.some(e => e.id === initialEngineerId) ? { kind: 'engineer', id: initialEngineerId } : null);
     const [busy, setBusy] = useState(false);
     const [dismissed, setDismissed] = useState<string | null>(null);
     const activeAccounts = accounts.filter(a => a.is_active).length;

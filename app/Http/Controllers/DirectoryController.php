@@ -54,9 +54,17 @@ class DirectoryController extends Controller
         $accounts = $allowedManager ? $t('user_accounts')->orderBy('id')->limit(200)->get([
             'id', 'username', 'email', 'account_type', 'engineer_id', 'is_active',
         ]) : collect();
-        $engineers = $allowedManager ? $t('engineers')->orderBy('id')->limit(200)->get([
+        // An authorized LGU profile link can open a specific engineer, even outside the first 200.
+        $requestedEngineerId = $section === 'users' && $allowedManager ? $request->integer('engineer_id') : 0;
+        $engineerQuery = $t('engineers');
+        if ($requestedEngineerId > 0) {
+            $engineerQuery->orderByRaw('CASE WHEN id = ? THEN 0 ELSE 1 END', [$requestedEngineerId]);
+        }
+        $engineers = $allowedManager ? $engineerQuery->orderBy('id')->limit(200)->get([
             'id', 'first_name', 'middle_name', 'last_name', 'contact_no', 'rank', 'engineer_status',
         ]) : collect();
+        $initialEngineerId = $requestedEngineerId > 0 && $engineers->contains('id', $requestedEngineerId)
+            ? $requestedEngineerId : null;
         // Do not infer availability from the paginated account directory.
         $eligibleEngineers = $allowedManager ? $t('engineers as e')
             ->where('e.engineer_status', 'Active')
@@ -84,6 +92,7 @@ class DirectoryController extends Controller
             'analytics' => $section === 'dashboard' ? app(DashboardAnalytics::class)->summary($actor) : null,
             'lgus' => $lgus, 'accounts' => $accounts,
             'engineers' => $engineers,
+            'initialEngineerId' => $initialEngineerId,
             'eligibleEngineers' => $eligibleEngineers, 'assignments' => [],
             'canManage' => $allowedManager,
             // Both authorized administrative roles can create standard DD accounts.

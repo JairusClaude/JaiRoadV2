@@ -17,6 +17,7 @@ export default function Show({
     roadCoverages,
     assignedEngineers,
     relationshipDataAvailable,
+    engineerDetailsAvailable = false,
     directoryUrl,
     lguPermissions,
     lguReviewNotice,
@@ -189,9 +190,16 @@ export default function Show({
                                         }
                                     >
                                         <div>
-                                            <strong>
-                                                {assignment.full_name}
-                                            </strong>
+                                            {engineerDetailsAvailable ? (
+                                                <Link
+                                                    className="jr-project-title underline underline-offset-2"
+                                                    href={`/dd-phase3/users?engineer_id=${assignment.engineer_id}`}
+                                                >
+                                                    {assignment.full_name}
+                                                </Link>
+                                            ) : (
+                                                <strong>{assignment.full_name}</strong>
+                                            )}
                                             <p className="jr-project-id">
                                                 Rank:{' '}
                                                 {assignment.rank ||

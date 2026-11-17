@@ -159,6 +159,7 @@ final class LguPageController extends OperationsFrontendController
                 'assignment_is_active' => (bool) $e->is_active,
             ])->all(),
             'relationshipDataAvailable' => ['roadCoverages' => true, 'engineerAssignments' => true],
+            'engineerDetailsAvailable' => RoleAccess::canManageAccounts($actor['role']),
             'directoryUrl' => self::BASE.'/lgus',
             'lguPermissions' => [
                 'can_edit' => $canEdit,
