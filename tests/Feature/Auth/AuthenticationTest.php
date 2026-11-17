@@ -1,13 +1,15 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
+use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Fortify\Features;
 
 test('login screen can be rendered', function () {
     $response = $this->get(route('login'));
 
-    $response->assertOk();
+    $response->assertOk()->assertInertia(fn (Assert $page) => $page->component('auth/login')->has('passkeyReady'));
 });
 
 test('users can authenticate using the login screen', function () {
@@ -75,3 +77,20 @@ test('users are rate limited', function () {
 
     $response->assertTooManyRequests();
 });
+
+
+test('remember checkbox issues a persistent cookie only when selected', function (string $remember) {
+    $user = $this->canonicalUser(User::factory()->create());
+    $cookie = Auth::guard('web')->getRecallerName();
+    $response = $this->post(route('login.store'), [
+        'email' => $user->email,
+        'password' => 'password',
+        'remember' => $remember,
+    ]);
+    $this->assertAuthenticatedAs($user);
+    if ($remember === '1') {
+        $response->assertCookie($cookie);
+    } else {
+        $response->assertCookieMissing($cookie);
+    }
+})->with(['0', '1']);

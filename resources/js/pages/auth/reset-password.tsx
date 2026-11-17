@@ -13,7 +13,7 @@ import { request, update } from '@/routes/password';
 type Props = { token: string; email: string; passwordRules: string };
 export default function ResetPassword({ token, email, passwordRules }: Props) {
     return <>
-        <Head title="Reset password · JaiROADS" />
+        <Head title="Reset password · JaiROADS"><meta name="referrer" content="no-referrer" /></Head>
         <AuthShell eyebrow="Account recovery" title="Create a new password" description="Choose a strong new password for your JaiROADS account. Your existing sign-in sessions will be revoked when you reset it.">
             <Form {...update.form()} transform={(data) => ({ ...data, token, email })} resetOnSuccess={['password', 'password_confirmation']} className="space-y-4">
                 {({ processing, errors }) => <>

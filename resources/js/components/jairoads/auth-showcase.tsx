@@ -58,7 +58,7 @@ export default function AuthShowcase() {
                         {slides.map((item, index) => (
                             <div key={item.image} className={`absolute inset-0 transition-opacity duration-1000 motion-reduce:transition-none ${index === activeSlide ? 'opacity-100' : 'opacity-0'}`}>
                                 {'fallback' in item && <img src={item.fallback} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover object-center" />}
-                                <img src={item.image} alt="" aria-hidden="true" loading="eager" decoding="async"
+                                <img src={item.image} alt="" aria-hidden="true" loading="eager" decoding="async" referrerPolicy="no-referrer"
                                     onLoad={() => setLoadedImages((previous) => previous.includes(index) ? previous : [...previous, index])}
                                     onError={() => setLoadedImages((previous) => previous.filter((value) => value !== index))}
                                     className={`absolute inset-0 h-full w-full object-cover object-center ${'fallback' in item && !loadedImages.includes(index) ? 'opacity-0' : 'opacity-100'}`} />

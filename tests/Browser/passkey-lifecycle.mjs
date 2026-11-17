@@ -96,6 +96,28 @@ async function guest(page) {
 try {
     const sessions = [];
 
+    // Verify the real shared auth shell, including failed remote images.
+    const showcaseContext = await browser.newContext({ reducedMotion: 'no-preference' });
+    const showcasePage = await showcaseContext.newPage();
+    await showcasePage.route('https://images.unsplash.com/**', route => route.abort());
+    await showcasePage.goto(base + '/login');
+    const showcase = showcasePage.locator('.jr-login-showcase');
+    assert.equal(await showcase.getAttribute('data-active-slide'), '0');
+    await showcase.hover();
+    await showcasePage.waitForFunction(() => document.querySelector('.jr-login-showcase')?.getAttribute('data-active-slide') === '1', null, { timeout: 15000 });
+    assert.equal(await showcase.locator('img[src="/images/jairoads/road-mapping-fallback.svg"]').evaluate(image => image.complete && image.naturalWidth > 0), true);
+    await showcasePage.waitForFunction(() => document.querySelector('.jr-login-showcase')?.getAttribute('data-active-slide') === '2', null, { timeout: 15000 });
+    await showcasePage.getByRole('button', { name: 'Pause slideshow' }).click();
+    await showcasePage.getByRole('button', { name: 'Previous slide' }).click();
+    assert.equal(await showcase.getAttribute('data-active-slide'), '1');
+    await showcasePage.getByRole('button', { name: 'Resume slideshow' }).click();
+    await showcasePage.getByRole('link', { name: 'Forgot password?' }).click();
+    await showcasePage.getByRole('heading', { name: 'Forgot your password?' }).waitFor();
+    assert.equal(await showcasePage.locator('.jr-login-frame').count(), 1);
+    await showcasePage.getByRole('link', { name: 'Back to sign in' }).click();
+    await showcasePage.getByRole('heading', { name: 'Welcome back' }).waitFor();
+    await showcaseContext.close();
+
     for (const user of fixture.users) {
         const context = await browser.newContext();
         const page = await context.newPage();
@@ -158,6 +180,15 @@ try {
 
         if (user.role === 'Legacy') {
             state(user, 'legacy');
+        } else {
+            // Exercise the rendered login button, not only raw WebAuthn HTTP calls.
+            const signedIn = page.waitForResponse(response => new URL(response.url()).pathname === '/passkeys/login' && response.request().method() === 'POST');
+            await page.getByRole('button', { name: 'Sign in with a passkey', exact: true }).click();
+            assert.equal((await signedIn).status(), 200);
+            await page.waitForURL(url => url.pathname !== '/login');
+            assert.equal((await page.request.get(base + '/dashboard')).status(), 200);
+            await request(page, '/logout', {});
+            await page.goto(base + '/login');
         }
 
         const credential = await assertion(page);
@@ -384,16 +415,11 @@ try {
     // Exercise the real remember-me cookie, with the session cookie removed.
     const adminSession = sessions.find((s) => s.user.role === 'Admin');
     await adminSession.page.goto(base + '/login');
-    assert.equal(
-        (
-            await request(adminSession.page, '/login', {
-                email: adminSession.user.email,
-                password: 'Disposable-Test!123',
-                remember: true,
-            })
-        ).status,
-        200,
-    );
+    await adminSession.page.getByLabel('Email address', { exact: true }).fill(adminSession.user.email);
+    await adminSession.page.getByLabel('Password', { exact: true }).fill('Disposable-Test!123');
+    await adminSession.page.getByRole('checkbox', { name: 'Keep me signed in' }).check();
+    await adminSession.page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    await adminSession.page.waitForURL(url => url.pathname !== '/login');
     const rememberCookies = (await adminSession.context.cookies()).filter(
         (cookie) => cookie.name.startsWith('remember_'),
     );
@@ -451,10 +477,8 @@ try {
         200,
     );
     await root.page.goto(base + '/dd-phase3/users');
-    const form = root.page
-        .getByRole('heading', { name: 'Create account', exact: true })
-        .locator('xpath=ancestor::section[1]')
-        .locator('form');
+    await root.page.getByRole('button', { name: 'Add Account', exact: true }).click();
+    const form = root.page.getByRole('dialog', { name: 'Add Account', exact: true }).locator('form');
     await form
         .getByLabel('Username', { exact: false })
         .fill('browser-provisioned-viewer');
