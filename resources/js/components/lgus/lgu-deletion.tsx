@@ -87,11 +87,13 @@ export function LguDeletionDialog({
             error={deletion.error}
             confirmLabel="Delete LGU"
             confirmDisabled={deletion.blocked}
+            blocked={deletion.blocked}
+            selectionLabel="Selected LGU and dependencies"
             onClose={deletion.close}
             onConfirm={deletion.confirm}
             returnFocus={deletion.returnFocus}
         >
-            <p className="my-4 font-medium">
+            <p className="jr-delete-target-title">
                 {deletion.selected?.municipality_name}
             </p>
             {check?.available ? (

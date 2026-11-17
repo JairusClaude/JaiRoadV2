@@ -65,14 +65,15 @@ export function DocumentDeletionDialog({
             description="The selected documents and their private Storage files will be permanently deleted. Their Maintenance Records and Projects will be retained."
             processing={deletion.processing}
             error={deletion.error}
-            confirmLabel="Delete Document"
+            selectionLabel={deletion.selected.length === 1 ? 'Selected document' : `${deletion.selected.length} selected documents`}
+            confirmLabel={deletion.selected.length === 1 ? 'Delete Document' : `Delete ${deletion.selected.length} Documents`}
             onClose={deletion.close}
             onConfirm={deletion.confirm}
             returnFocus={deletion.returnFocus}
         >
-            <ul className="my-4">
+            <ul className="jr-delete-list">
                 {deletion.selected.map((d) => (
-                    <li key={d.id}>{d.document_title}</li>
+                    <li key={d.id}><strong>{d.document_title}</strong></li>
                 ))}
             </ul>
         </DeletionDialog>

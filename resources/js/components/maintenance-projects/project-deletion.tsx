@@ -118,13 +118,15 @@ export function ProjectDeletionDialog({ deletion }: { deletion: ReturnType<typeo
             title={count === 1 ? 'Delete project?' : `Delete ${count} projects?`}
             description="Permanently delete the selected projects, their maintenance records, monthly updates, documents and private media. This cannot be undone. Road coverages, LGUs, engineers, user accounts and audit history remain."
             confirmDisabled={!preview && (reviewing || impacts.length !== count || impacts.some((item) => !item.can_delete))}
+            selectionLabel={count === 1 ? 'Selected project and affected data' : `${count} selected projects and affected data`}
+            reviewing={reviewing}
+            blocked={!preview && impacts.some(item => !item.can_delete)}
             processing={processing}
             error={error}
             onClose={close}
             onConfirm={confirm}
             confirmLabel={count === 1 ? 'Delete Project' : `Delete ${count} Projects`}
         >
-            {reviewing && <p role="status">Reviewing affected records and files…</p>}
             <ul className="jr-delete-list">
                 {(projects ?? []).map((project) => {
                     const impact = impacts.find((item) => item.project.id === project.id);

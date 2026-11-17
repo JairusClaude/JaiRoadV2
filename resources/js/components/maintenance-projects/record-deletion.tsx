@@ -97,6 +97,7 @@ export function RecordDeletionDialog({
             confirmLabel={
                 count === 1 ? 'Delete Record' : `Delete ${count} Records`
             }
+            selectionLabel={count === 1 ? 'Selected maintenance record' : `${count} selected maintenance records`}
             processing={processing}
             error={error}
             onClose={close}

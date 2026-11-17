@@ -1,8 +1,10 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { usePage } from '@inertiajs/react';
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { ReactNode, RefObject } from 'react';
-import { TriangleAlert } from 'lucide-react';
+import { CircleAlert, LockKeyhole, ShieldCheck, Trash2, TriangleAlert } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
+import '../../../css/jairoads-deletion-dialog.css';
 import { Button } from '@/components/ui/button';
 import { DeletionCamera } from './deletion-camera';
 import type { DependentCounts } from '@/types/maintenance-projects';
@@ -70,6 +72,11 @@ export function DeletionDialog({
     error,
     confirmLabel,
     confirmDisabled = false,
+    blocked = false,
+    reviewing = false,
+    selectionLabel = 'Selected items',
+    busyLabel = 'Deleting…',
+    irreversible = true,
     requireYes = false,
     challengeScope,
     onClose,
@@ -84,12 +91,19 @@ export function DeletionDialog({
     error: string;
     confirmLabel: string;
     confirmDisabled?: boolean;
+    blocked?: boolean;
+    reviewing?: boolean;
+    selectionLabel?: string;
+    busyLabel?: string;
+    irreversible?: boolean;
     requireYes?: boolean;
     challengeScope?: 'project' | 'record';
     onClose: () => void;
     onConfirm: (confirmation?: DeleteConfirmation) => void;
     returnFocus?: RefObject<HTMLElement | null>;
 }) {
+    const cancelRef = useRef<HTMLButtonElement>(null);
+    const opener = useRef<HTMLElement | null>(null);
     const [confirmation, setConfirmation] = useState('');
     const confirmationId = useId();
     const preview = usePage().props.previewOnly === true;
@@ -107,7 +121,7 @@ export function DeletionDialog({
         setAnswer('');
         setCameraReceipt('');
         setChallengeError('');
-        if (!open || !needsChallenge) return;
+        if (!open || !needsChallenge || blocked) return;
         const controller = new AbortController();
         fetch(`/dd-phase3/ui/deletion-challenge?scope=${challengeScope}`, {
             headers: { Accept: 'application/json' }, cache: 'no-store', signal: controller.signal,
@@ -119,14 +133,14 @@ export function DeletionDialog({
             if (!controller.signal.aborted) setChallengeError('Verification unavailable. Request a new challenge.');
         });
         return () => controller.abort();
-    }, [open, title, needsChallenge, challengeScope, revision]);
+    }, [open, title, needsChallenge, challengeScope, revision, blocked]);
     const confirmed = (!requireYes || confirmation === 'YES') && (!needsChallenge || (!!challenge && /^\d{1,3}$/.test(answer) && !!cameraReceipt));
 
     return (
         <Dialog.Root
             open={open}
             onOpenChange={(value) => {
-                if (!value) {
+                if (!value && !processing) {
                     onClose();
                 }
             }}
@@ -134,11 +148,23 @@ export function DeletionDialog({
             <Dialog.Portal>
                 <Dialog.Overlay className="jr-delete-overlay" />
                 <Dialog.Content
-                    className="jr-app jr-theme jr-delete-dialog"
+                    className="jr-app jr-theme jr-delete-dialog jr-delete-premium"
+                    data-blocked={blocked}
+                    aria-busy={processing}
+                    onOpenAutoFocus={(event) => {
+                        opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+                        event.preventDefault();
+                        cancelRef.current?.focus();
+                    }}
                     onCloseAutoFocus={(event) => {
-                        if (returnFocus?.current?.isConnected) {
-                            event.preventDefault();
-                            returnFocus.current.focus();
+                        event.preventDefault();
+                        const target = returnFocus?.current?.isConnected ? returnFocus.current : opener.current;
+                        if (target?.isConnected && target !== document.body) {
+                            target.focus();
+                        } else {
+                            const heading = document.querySelector<HTMLElement>('main h1, h1');
+                            heading?.setAttribute('tabindex', '-1');
+                            heading?.focus();
                         }
                     }}
                     onEscapeKeyDown={(event) => {
@@ -153,42 +179,53 @@ export function DeletionDialog({
                     }}
                 >
                     <div className="jr-delete-heading">
-                        <span className="jr-delete-warning-icon" aria-hidden="true"><TriangleAlert size={22} /></span>
-                        <div>
+                        <span className="jr-delete-warning-icon" aria-hidden="true">{blocked ? <LockKeyhole size={24} /> : <TriangleAlert size={24} />}</span>
+                        <div className="jr-delete-heading-copy">
+                            <span className="jr-delete-eyebrow">{blocked ? 'Deletion blocked' : irreversible ? 'Permanent action' : 'Confirm action'}</span>
                             <Dialog.Title>{title}</Dialog.Title>
                             <Dialog.Description>{description}</Dialog.Description>
                         </div>
                     </div>
                     <div className="jr-delete-body">
-                    {children}
-                    {requireYes && (
-                        <div className="mt-4 grid gap-2 rounded-xl border border-red-200 bg-red-50 p-3">
-                            <label htmlFor={confirmationId} className="text-sm font-semibold text-red-800">Type YES to confirm permanent deletion <span className="jr-required">* Required</span></label>
-                            <input id={confirmationId} type="text" autoComplete="off" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Type YES" disabled={processing} required aria-required="true" className="w-full min-h-11 rounded-lg border-2 border-red-300 bg-white px-4 py-3 text-base text-slate-900 focus:border-red-600 focus:outline-none focus:ring-2 focus:ring-red-200" />
+                        <section className="jr-delete-selection" aria-label={selectionLabel}>
+                            <div className="jr-delete-section-label">{selectionLabel}</div>
+                            {children}
+                        </section>
+                        {blocked ? (
+                            <div className="jr-delete-notice" role="status"><LockKeyhole size={17} aria-hidden="true" /><span>Deletion is unavailable until the blocking conditions are resolved.</span></div>
+                        ) : irreversible && (
+                            <div className="jr-delete-notice"><CircleAlert size={17} aria-hidden="true" /><span>This action cannot be undone.</span></div>
+                        )}
+                        {reviewing && <p className="jr-delete-progress" role="status"><Spinner /> Reviewing deletion eligibility…</p>}
+                    {requireYes && !blocked && (
+                        <div className="jr-delete-verification">
+                            <label htmlFor={confirmationId} className="jr-delete-verification-label"><span className="jr-delete-step">1</span> Type YES to confirm permanent deletion <span className="jr-required">* Required</span></label>
+                            <input id={confirmationId} type="text" autoComplete="off" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Type YES" disabled={processing} required aria-required="true" className="jr-delete-input" />
                         </div>
                     )}
-                    {needsChallenge && (
-                        <div className="mt-3 grid gap-2 rounded-xl border border-slate-300 p-3">
-                            <label htmlFor={confirmationId + '-captcha'} className="text-sm font-semibold">Verification: solve the equation <span className="jr-required">*</span></label>
-                            <div className="rounded-md bg-slate-100 p-3 text-lg font-semibold" aria-live="polite">{challenge ? challenge.question + ' = ?' : 'Loading verification…'}</div>
-                            <input id={confirmationId + '-captcha'} inputMode="numeric" autoComplete="off" value={answer} onChange={(event) => setAnswer(event.target.value)} placeholder="Enter answer" disabled={processing || !challenge} className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
+                    {needsChallenge && !blocked && (
+                        <div className="jr-delete-verification">
+                            <label htmlFor={confirmationId + '-captcha'} className="jr-delete-verification-label"><span className="jr-delete-step">2</span> Verification: solve the equation <span className="jr-required">*</span></label>
+                            <div className="jr-delete-equation" aria-live="polite">{challenge ? challenge.question + ' = ?' : 'Loading verification…'}</div>
+                            <input id={confirmationId + '-captcha'} inputMode="numeric" autoComplete="off" value={answer} onChange={(event) => setAnswer(event.target.value)} placeholder="Enter answer" disabled={processing || !challenge} className="jr-delete-input" />
                             <Button type="button" variant="outline" disabled={processing} onClick={() => setRevision((value) => value + 1)}>New challenge</Button>
                             {challengeError && <p role="alert" className="jr-field-error">{challengeError}</p>}
                         </div>
                     )}
-                    {open && needsChallenge && challenge && challengeScope && (
+                    {open && needsChallenge && !blocked && challenge && challengeScope && (
                         <DeletionCamera key={challenge.token} token={challenge.token} scope={challengeScope} disabled={processing} onReceipt={setCameraReceipt} />
                     )}
                     {error && (
-                        <p className="jr-field-error" role="alert">
-                            {error}
-                        </p>
+                        <div className="jr-delete-error" role="alert"><CircleAlert size={18} aria-hidden="true" /><span>{error}</span></div>
                     )}
                     </div>
                     <div className="jr-dialog-actions">
+                        <span className="jr-delete-footer-hint">{blocked ? <LockKeyhole size={15} /> : <ShieldCheck size={15} />} {processing ? 'Please keep this window open.' : blocked ? 'Protected records' : 'Review before confirming'}</span>
                         <Button
+                            ref={cancelRef}
                             type="button"
                             variant="outline"
+                            className="jr-delete-cancel"
                             disabled={processing}
                             onClick={onClose}
                         >
@@ -196,17 +233,17 @@ export function DeletionDialog({
                         </Button>
                         <Button
                             type="button"
-                            className="jr-danger"
+                            className="jr-danger jr-delete-confirm"
                             variant="destructive"
-                            disabled={processing || confirmDisabled || !confirmed}
+                            disabled={processing || blocked || reviewing || confirmDisabled || !confirmed}
                             onClick={() => {
-                                if (confirmed && !confirmDisabled && !processing) {
+                                if (confirmed && !blocked && !reviewing && !confirmDisabled && !processing) {
                                     onConfirm(needsChallenge && challenge ? { confirmation, captcha_token: challenge.token, captcha_answer: answer, camera_receipt: cameraReceipt } : undefined);
                                     if (needsChallenge) setRevision((value) => value + 1);
                                 }
                             }}
                         >
-                            {processing ? 'Deleting…' : confirmLabel}
+                            {processing ? <><Spinner /> {busyLabel}</> : <><Trash2 size={16} aria-hidden="true" /> {confirmLabel}</>}
                         </Button>
                     </div>
                 </Dialog.Content>

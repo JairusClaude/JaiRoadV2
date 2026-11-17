@@ -1,15 +1,7 @@
 import { router } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
+import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialog';
 
 export type FileDeletionTarget = {
     id: number;
@@ -35,6 +27,7 @@ export function usePermanentFileDeletion(
 ) {
     const [selected, setSelected] = useState<FileDeletionTarget | null>(null);
     const [ready, setReady] = useState(false);
+    const [reviewing, setReviewing] = useState(false);
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState('');
     const locked = useRef(false);
@@ -50,6 +43,7 @@ export function usePermanentFileDeletion(
     return {
         selected,
         ready,
+        reviewing,
         processing,
         error,
         opener,
@@ -65,6 +59,7 @@ export function usePermanentFileDeletion(
             opener.current = document.activeElement as HTMLElement;
             setSelected(target);
             setReady(false);
+            setReviewing(true);
             setError('');
 
             try {
@@ -109,6 +104,8 @@ export function usePermanentFileDeletion(
                         'Unable to review this file. Refresh the page or contact an administrator.',
                     );
                 }
+            } finally {
+                if (!controller.signal.aborted) setReviewing(false);
             }
         },
         confirm: async () => {
@@ -168,87 +165,28 @@ export function PermanentFileDeletionDialog({
 }: {
     deletion: ReturnType<typeof usePermanentFileDeletion>;
 }) {
-    const cancel = useRef<HTMLButtonElement>(null);
-
     return (
-        <Dialog
+        <DeletionDialog
             open={deletion.selected !== null}
-            onOpenChange={(open) => !open && deletion.close()}
+            title="Delete File Permanently?"
+            description="Only the selected file and its private Storage object will be deleted. Other files and related maintenance records will remain unchanged."
+            selectionLabel="Selected file"
+            processing={deletion.processing}
+            reviewing={deletion.reviewing}
+            confirmDisabled={!deletion.ready}
+            error={deletion.error}
+            confirmLabel="Delete"
+            onClose={deletion.close}
+            onConfirm={deletion.confirm}
+            returnFocus={deletion.opener}
         >
-            <DialogContent
-                className="jr-theme"
-                onOpenAutoFocus={(event) => {
-                    event.preventDefault();
-                    cancel.current?.focus();
-                }}
-                onCloseAutoFocus={(event) => {
-                    event.preventDefault();
-
-                    if (deletion.opener.current?.isConnected) {
-                        deletion.opener.current.focus();
-                    } else {
-                        const heading = document.querySelector('h1');
-                        heading?.setAttribute('tabindex', '-1');
-                        heading?.focus();
-                    }
-                }}
-            >
-                <DialogHeader>
-                    <DialogTitle>Delete File Permanently?</DialogTitle>
-                    <DialogDescription>
-                        Are you sure you want to permanently delete this file?
-                        This action cannot be undone. Only the selected file
-                        will be deleted. Other files and related maintenance
-                        records will remain unchanged.
-                    </DialogDescription>
-                </DialogHeader>
-                {deletion.selected && (
-                    <dl className="grid gap-2 text-sm">
-                        <div>
-                            <dt>Filename</dt>
-                            <dd className="font-semibold break-words">
-                                {deletion.selected.file_name}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt>File type</dt>
-                            <dd>
-                                {deletion.selected.kind === 'document'
-                                    ? 'MaintenanceDocument'
-                                    : 'Media'}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt>Associated record</dt>
-                            <dd>{deletion.selected.parent_label}</dd>
-                        </div>
-                    </dl>
-                )}
-                <p>This file will also be removed from private Storage.</p>
-                {deletion.error && (
-                    <p role="alert" className="jr-field-error">
-                        {deletion.error}
-                    </p>
-                )}
-                <DialogFooter>
-                    <Button
-                        ref={cancel}
-                        variant="outline"
-                        onClick={deletion.close}
-                        disabled={deletion.processing}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="destructive"
-                        className="jr-danger"
-                        onClick={deletion.confirm}
-                        disabled={!deletion.ready || deletion.processing}
-                    >
-                        {deletion.processing ? 'Deleting…' : 'Delete'}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+            {deletion.selected && (
+                <dl className="jr-delete-file-details">
+                    <div><dt>Filename</dt><dd>{deletion.selected.file_name}</dd></div>
+                    <div><dt>File type</dt><dd>{deletion.selected.kind === 'document' ? 'MaintenanceDocument' : 'Media'}</dd></div>
+                    <div><dt>Associated record</dt><dd>{deletion.selected.parent_label}</dd></div>
+                </dl>
+            )}
+        </DeletionDialog>
     );
 }

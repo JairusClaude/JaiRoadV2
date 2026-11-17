@@ -218,6 +218,8 @@ export default function Show({
                     error={deleteError}
                     confirmLabel="Delete Road Coverage"
                     confirmDisabled={hasProject}
+                    blocked={hasProject}
+                    selectionLabel="Selected road coverage"
                     onClose={() => {
                         if (!deleting) {
                             setConfirmDeleteOpen(false);
@@ -226,7 +228,7 @@ export default function Show({
                     }}
                     onConfirm={handleDelete}
                 >
-                    <div className="my-4 text-sm text-[#405572]">
+                    <div className="jr-delete-target-details">
                         <p>
                             Road Coverage: <strong>{coverage.road_name}</strong>
                             {coverage.lgu?.municipality_name ? ` (${coverage.lgu.municipality_name})` : ''}

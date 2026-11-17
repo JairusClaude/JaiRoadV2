@@ -1,15 +1,7 @@
 import { KeyRound, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogClose,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
+import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialog';
 import type { Passkey } from '@/types/auth';
 
 type Props = {
@@ -19,10 +11,15 @@ type Props = {
 
 export default function PasskeyItem({ passkey, onDelete }: Props) {
     const [isDeleting, setIsDeleting] = useState(false);
+    const [open, setOpen] = useState(false);
+    const [error, setError] = useState('');
+    const opener = useRef<HTMLButtonElement>(null);
 
     const handleDelete = () => {
+        if (isDeleting) return;
         setIsDeleting(true);
-        onDelete(passkey.id, () => setIsDeleting(false));
+        setError('');
+        onDelete(passkey.id, () => { setIsDeleting(false); setError('Unable to remove this passkey. Please try again.'); });
     };
 
     return (
@@ -56,38 +53,33 @@ export default function PasskeyItem({ passkey, onDelete }: Props) {
                 </div>
             </div>
 
-            <Dialog>
-                <DialogTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Remove</span>
-                    </Button>
-                </DialogTrigger>
-                <DialogContent>
-                    <DialogTitle>Remove passkey</DialogTitle>
-                    <DialogDescription>
-                        Are you sure you want to remove the "{passkey.name}"
-                        passkey? You will no longer be able to use it to sign
-                        in.
-                    </DialogDescription>
-                    <DialogFooter className="gap-2">
-                        <DialogClose asChild>
-                            <Button variant="secondary">Cancel</Button>
-                        </DialogClose>
-                        <Button
-                            variant="destructive"
-                            onClick={handleDelete}
-                            disabled={isDeleting}
-                        >
-                            {isDeleting ? 'Removing...' : 'Remove passkey'}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <Button
+                ref={opener}
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => { setError(''); setOpen(true); }}
+            >
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">Remove</span>
+            </Button>
+            <DeletionDialog
+                open={open}
+                title="Remove passkey"
+                description="You will no longer be able to use this passkey to sign in. Your other sign-in methods are not removed."
+                selectionLabel="Selected passkey"
+                irreversible={false}
+                processing={isDeleting}
+                busyLabel="Removing…"
+                error={error}
+                confirmLabel="Remove passkey"
+                onClose={() => { if (!isDeleting) setOpen(false); }}
+                onConfirm={handleDelete}
+                returnFocus={opener}
+            >
+                <p className="jr-delete-target-title">{passkey.name}</p>
+            </DeletionDialog>
         </div>
     );
 }

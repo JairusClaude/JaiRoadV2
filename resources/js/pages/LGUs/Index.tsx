@@ -567,6 +567,8 @@ export default function Index({
                     processing={bulkDeleting}
                     error={bulkError}
                     confirmLabel={`Delete ${bulkTargets.length} LGUs`}
+                    selectionLabel={`${bulkTargets.length} selected LGUs`}
+                    blocked={bulkTargets.some(l => !l.deletion_check?.available || l.deletion_check.road_coverages > 0 || l.deletion_check.engineer_assignments > 0)}
                     confirmDisabled={bulkTargets.some(
                         (l) =>
                             (l.deletion_check?.road_coverages ?? 0) > 0 ||
@@ -579,7 +581,7 @@ export default function Index({
                     }}
                     onConfirm={confirmBulkDelete}
                 >
-                    <div className="my-4 text-sm text-[#405572]">
+                    <div className="jr-delete-target-details">
                         <ul className="max-h-40 list-disc overflow-y-auto pl-5 space-y-1">
                             {bulkTargets.map((l) => {
                                 const blocked =

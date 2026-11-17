@@ -1216,6 +1216,7 @@ export default function DdLguDirectory({
                             ? 'Are you sure you want to permanently delete this municipality? This action cannot be undone.'
                             : `Are you sure you want to permanently delete these ${deleteTargets.length} municipalities? This action cannot be undone.`
                     }
+                    selectionLabel={deleteTargets.length === 1 ? 'Selected LGU' : `${deleteTargets.length} selected LGUs`}
                     processing={deleting}
                     error={deleteError}
                     confirmLabel={
@@ -1230,7 +1231,7 @@ export default function DdLguDirectory({
                     }}
                     onConfirm={confirmDelete}
                 >
-                    <div className="my-4 text-sm text-[#405572]">
+                    <div className="jr-delete-target-details">
                         {deleteTargets.length === 1 ? (
                             <p>
                                 Municipality:{' '}

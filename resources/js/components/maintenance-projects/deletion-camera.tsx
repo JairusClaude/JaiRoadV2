@@ -122,7 +122,7 @@ export function DeletionCamera({ token, scope, disabled, onReceipt }: {
 
     return (
         <section className="jr-deletion-camera" aria-label="Camera verification">
-            <h3 className="text-sm font-semibold">Camera verification <span className="jr-required">*</span></h3>
+            <h3 className="jr-delete-verification-label"><span className="jr-delete-step">3</span> Camera verification <span className="jr-required">*</span></h3>
             <p className="jr-field-hint">Please turn on your webcam and take a picture to confirm this deletion. Your browser will request permission. The photo is sent for a one-time image check and is not stored. This does not verify your identity.</p>
             <video ref={video} autoPlay muted playsInline onLoadedData={() => setReady(true)} className={photo ? 'hidden' : 'jr-deletion-camera-preview'} aria-label="Live camera preview" />
             {photo && <img src={photo} alt="Captured verification photo" className="jr-deletion-camera-preview" />}

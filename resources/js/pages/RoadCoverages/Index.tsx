@@ -665,6 +665,8 @@ export default function Index({
                         confirmDisabled={deleteTargets.some(
                             (c) => c.has_projects,
                         )}
+                        blocked={deleteTargets.some(c => c.has_projects)}
+                        selectionLabel={deleteTargets.length === 1 ? 'Selected road coverage' : `${deleteTargets.length} selected road coverages`}
                         onClose={() => {
                             if (!deleting) {
                                 setDeleteTargets(null);
@@ -672,7 +674,7 @@ export default function Index({
                         }}
                         onConfirm={confirmDelete}
                     >
-                        <div className="my-4 text-sm text-[#405572]">
+                        <div className="jr-delete-target-details">
                             {deleteTargets.length === 1 ? (
                                 <div>
                                     <p>

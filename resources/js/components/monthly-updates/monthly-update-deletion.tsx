@@ -82,6 +82,7 @@ export function MonthlyDeletionDialog({
                     : `Delete ${count} monthly updates?`
             }
             description="The selected monthly updates and their associated private media will be permanently deleted. This cannot be undone. Parent maintenance records and projects are preserved."
+            selectionLabel={count === 1 ? 'Selected monthly update' : `${count} selected monthly updates`}
             processing={processing}
             error={error}
             confirmLabel={
