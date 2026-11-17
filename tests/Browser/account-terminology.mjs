@@ -60,6 +60,30 @@ try {
         assert.ok(typeCells.some((value) => value.trim() === type));
     }
 
+    // Account colors follow the listed role, independent of the signed-in Admin theme.
+    const palette = {
+        SuperAdmin: ['rgb(237, 229, 255)', 'rgb(81, 38, 155)', 'rgb(67, 40, 104)', 'rgb(233, 223, 255)'],
+        Admin: ['rgb(254, 228, 231)', 'rgb(168, 20, 36)', 'rgb(98, 49, 59)', 'rgb(255, 197, 204)'],
+        Engineer: ['rgb(255, 237, 213)', 'rgb(135, 58, 13)', 'rgb(87, 53, 29)', 'rgb(253, 186, 116)'],
+        Viewer: ['rgb(230, 239, 255)', 'rgb(18, 74, 156)', 'rgb(32, 60, 104)', 'rgb(191, 219, 254)'],
+    };
+    const originallyDark = await page.locator('html').evaluate(el => el.classList.contains('dark'));
+    try {
+        for (const dark of [false, true]) {
+            await page.locator('html').evaluate((el, enabled) => el.classList.toggle('dark', enabled), dark);
+            for (const [role, colors] of Object.entries(palette)) {
+                const badge = page.locator(`tbody .um-role[data-role="${role}"]`).first();
+                const actual = await badge.evaluate(el => {
+                    const style = getComputedStyle(el);
+                    return [style.backgroundColor, style.color];
+                });
+                assert.deepEqual(actual, colors.slice(dark ? 2 : 0, dark ? 4 : 2), `${role} badge: ${dark ? 'dark' : 'light'} mode`);
+            }
+        }
+    } finally {
+        await page.locator('html').evaluate((el, enabled) => el.classList.toggle('dark', enabled), originallyDark);
+    }
+
     await page.getByRole('button', { name: 'Add Engineer', exact: true }).click();
     const rank = page.getByLabel('Rank', { exact: true });
     const engineerForm = page.locator('form').filter({ has: rank });

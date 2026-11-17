@@ -42,9 +42,7 @@
 .um-person { display:flex; align-items:center; gap:10px; }
 .um-avatar { flex:none; width:35px; height:35px; display:grid; place-items:center; background:#f7ebe0; color:#90451f; border-radius:10px; font-size:12px; font-weight:700; }
 .um-you { font-size:10px; color:#64758c; font-weight:500; margin-left:3px; }
-.um-role,.um-status { display:inline-flex; gap:5px; align-items:center; font-size:11px; font-weight:650; padding:4px 9px; border-radius:999px; background:#eef1f5; color:#56657a; white-space:nowrap; }
-.um-role[data-role=SuperAdmin],.um-role[data-role=Admin] { background:#fff0e3; color:#995321; }
-.um-role[data-role=Engineer] { background:#eaf2fd; color:#295e98; }
+.um-status { display:inline-flex; gap:5px; align-items:center; font-size:11px; font-weight:650; padding:4px 9px; border-radius:999px; background:#eef1f5; color:#56657a; white-space:nowrap; }
 .um-status-active { background:#e9f7ee; color:#23774a; }
 .um-status i { width:6px; height:6px; border-radius:50%; background:currentColor; }
 .um-row-action { padding:6px 11px; font-size:12px; }

@@ -1,6 +1,7 @@
 import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { KeyRound } from 'lucide-react';
+import AccountTypeBadge from '@/components/user-management/account-type-badge';
 
 type Account = {
     id: number;
@@ -151,7 +152,7 @@ export default function DdAccountLifecycle({
                         </div>
                         <div>
                             <dt>Account Type</dt>
-                            <dd>{detail.account.account_type}</dd>
+                            <dd><AccountTypeBadge role={detail.account.account_type} /></dd>
                         </div>
                         <div>
                             <dt>Access</dt>

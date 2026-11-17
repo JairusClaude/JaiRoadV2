@@ -3,6 +3,7 @@ import { router } from '@inertiajs/react';
 import { CheckCircle2, ChevronLeft, ChevronRight, HardHat, Plus, Search, ShieldCheck, UserRound, Users, X } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import AccountTypeBadge from '@/components/user-management/account-type-badge';
 import DdAccountLifecycle from '@/pages/dd-phase3/DdAccountLifecycle';
 import DdEngineerLifecycle from '@/pages/dd-phase3/DdEngineerLifecycle';
 import '../../../css/canonical-user-management.css';
@@ -180,7 +181,7 @@ export default function CanonicalUserManagement({ accounts, engineers, initialEn
                         const e = a.engineer_id === null ? undefined : byEngineer.get(a.engineer_id);
                         return <tr key={a.id} data-account-id={a.id}>
                             <td><div className="um-person"><span className="um-avatar">{a.username.slice(0,2).toUpperCase()}</span><div><strong>{a.username}{a.id === actorId && <span className="um-you"> You</span>}</strong><small>{a.email}</small></div></div></td>
-                            <td><span className="um-role" data-role={a.account_type}>{a.account_type}</span></td>
+                            <td><AccountTypeBadge role={a.account_type}/></td>
                             <td>{e ? <><strong>{nameOf(e)}</strong><small>{e.rank}</small></> : a.engineer_id ? 'Engineer #' + a.engineer_id : <span className="um-muted">Not linked</span>}</td>
                             <td><Status active={a.is_active}/></td>
                             <td><button className="um-secondary um-row-action" type="button" aria-label={'Manage account ' + a.username} onClick={() => open({kind:'account',id:a.id})}>Manage</button></td>
@@ -192,7 +193,7 @@ export default function CanonicalUserManagement({ accounts, engineers, initialEn
                         const account = linkedAccounts.get(e.id);
                         return <tr key={e.id} data-engineer-id={e.id}>
                             <td><div className="um-person"><span className="um-avatar">{(e.first_name.slice(0,1)+e.last_name.slice(0,1)).toUpperCase()}</span><div><strong>{nameOf(e)}</strong><small>{e.contact_no || 'No contact number'}</small></div></div></td>
-                            <td>{e.rank}</td><td>{account ? <><strong>{account.username}</strong><small>{account.account_type}</small></> : eligibleEngineers.some(x => x.id === e.id) ? <span className="um-muted">Available to link</span> : <span className="um-muted">Not in loaded account list</span>}</td>
+                            <td>{e.rank}</td><td>{account ? <><strong>{account.username}</strong><div className="mt-1"><AccountTypeBadge role={account.account_type}/></div></> : eligibleEngineers.some(x => x.id === e.id) ? <span className="um-muted">Available to link</span> : <span className="um-muted">Not in loaded account list</span>}</td>
                             <td><Status active={e.engineer_status === 'Active'} label={e.engineer_status}/></td>
                             <td><button className="um-secondary um-row-action" type="button" aria-label={'Manage engineer ' + nameOf(e)} onClick={() => open({kind:'engineer',id:e.id})}>Manage</button></td>
                         </tr>;

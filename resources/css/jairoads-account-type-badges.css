@@ -1,0 +1,23 @@
+/* Account type identifies the listed account, not the signed-in workspace.
+   Keep these role colors consistent across both management views and dialogs. */
+.um-role {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 650;
+    line-height: 1.4;
+    white-space: nowrap;
+    background: #eef1f5;
+    color: #56657a;
+}
+.um-role[data-role='SuperAdmin'] { background: #ede5ff; color: #51269b; }
+.um-role[data-role='Admin'] { background: #fee4e7; color: #a81424; }
+.um-role[data-role='Engineer'] { background: #ffedd5; color: #873a0d; }
+.um-role[data-role='Viewer'] { background: #e6efff; color: #124a9c; }
+html.dark .um-role { background: #334155; color: #e2e8f0; }
+html.dark .um-role[data-role='SuperAdmin'] { background: #432868; color: #e9dfff; }
+html.dark .um-role[data-role='Admin'] { background: #62313b; color: #ffc5cc; }
+html.dark .um-role[data-role='Engineer'] { background: #57351d; color: #fdba74; }
+html.dark .um-role[data-role='Viewer'] { background: #203c68; color: #bfdbfe; }

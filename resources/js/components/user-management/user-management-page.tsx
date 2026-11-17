@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
+import AccountTypeBadge from '@/components/user-management/account-type-badge';
 import { DirectoryFilter } from '@/components/directory-controls';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { MetricCard } from '@/components/metric-card';
@@ -99,16 +100,6 @@ function Status({ active }: { active: boolean }) {
                 className={`h-1.5 w-1.5 rounded-full ${active ? 'bg-[#35A66B]' : 'bg-[#9AA5B5]'}`}
             />
             {active ? 'Active' : 'Inactive'}
-        </span>
-    );
-}
-
-function RoleBadge({ role }: { role: Role }) {
-    return (
-        <span className="inline-flex rounded-full bg-[#FFF0E2] px-2.5 py-1 text-xs font-semibold text-[#995321]">
-            {role === 'superadmin'
-                ? 'SuperAdmin'
-                : role.charAt(0).toUpperCase() + role.slice(1)}
         </span>
     );
 }
@@ -491,7 +482,7 @@ export default function UserManagementPage({
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <RoleBadge role={a.accountType} />
+                                                    <AccountTypeBadge role={a.accountType} />
                                                 </td>
                                                 <td className="text-[#334155]">
                                                     {engineerName(a.engineers_id)}
