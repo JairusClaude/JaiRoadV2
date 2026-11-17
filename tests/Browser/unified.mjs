@@ -151,6 +151,15 @@ try {
     const superadmin = await signIn(f.superadmin_email);
     lastPage = engineer;
 
+    // Viewer palette is selected from the signed-in canonical role, not URL or preference.
+    await viewer.locator('.jr-viewer-workspace').waitFor();
+    await viewer.getByRole('heading', { name: 'Road Maintenance Overview' }).waitFor();
+    await viewer.getByText('Read-Only Access', { exact: true }).waitFor();
+    await viewer.getByRole('button', { name: 'Refresh dashboard' }).waitFor();
+    assert.equal(await viewer.locator('.jr-viewer-sidebar .jr-nav-link.jr-active').first().evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(29, 93, 181)');
+    for (const other of [engineer, admin, superadmin]) {
+        assert.equal(await other.locator('.jr-viewer-workspace').count(), 0);
+    }
     const dashboardMap = engineer.getByRole('region', { name: 'My projects road map' });
     await dashboardMap.waitFor();
     const myProjects = dashboardMap.getByRole('switch', { name: 'My projects only' });
@@ -182,6 +191,8 @@ try {
 
     for (const page of [engineer, admin, viewer, superadmin]) {
         await page.goto(`${ui}/road-coverages`);
+        if (page === viewer) await page.locator('.jr-viewer-workspace').waitFor();
+        else assert.equal(await page.locator('.jr-viewer-workspace').count(), 0);
         await page
             .getByRole('heading', { name: 'Road Coverages', exact: true })
             .waitFor();

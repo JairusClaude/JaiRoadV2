@@ -49,9 +49,13 @@ const prettyDate = (value: string) => {
 export function DdDashboardAnalytics({
     data,
     compact = false,
+    omitInventoryMetrics = false,
+    showActivity = true,
 }: {
     data: DdDashboardSummary;
     compact?: boolean;
+    omitInventoryMetrics?: boolean;
+    showActivity?: boolean;
 }) {
     const max = Math.max(1, ...data.trend.map((item) => item.count));
     const cards = [
@@ -82,6 +86,7 @@ export function DdDashboardAnalytics({
         },
         { label: 'Road coverages', value: data.metrics.roads, icon: MapPinned },
     ];
+    const visibleCards = omitInventoryMetrics ? cards.filter(({ label }) => label !== 'Maintenance projects' && label !== 'Road coverages') : cards;
     const items = data.activity;
 
     return (
@@ -102,9 +107,9 @@ export function DdDashboardAnalytics({
                 </span>
             </div>
             <div
-                className={`grid gap-3 sm:grid-cols-2 ${compact ? 'xl:grid-cols-3' : 'xl:grid-cols-6'}`}
+                className={`grid gap-3 sm:grid-cols-2 ${omitInventoryMetrics ? 'xl:grid-cols-4' : compact ? 'xl:grid-cols-3' : 'xl:grid-cols-6'}`}
             >
-                {cards.map(({ label, value, icon: Icon }) => (
+                {visibleCards.map(({ label, value, icon: Icon }) => (
                     <div
                         key={label}
                         className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
@@ -126,7 +131,7 @@ export function DdDashboardAnalytics({
                     ? 'Not applicable (no ongoing records)'
                     : `${data.metrics.reportingCoverage}% of ongoing maintenance records have an update`}
             </div>
-            <div className="grid gap-5 xl:grid-cols-[1.15fr_.85fr]">
+            <div className={`grid gap-5${showActivity ? ' xl:grid-cols-[1.15fr_.85fr]' : ''}`}>
                 <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                     <h3 className="text-base font-bold text-slate-900">
                         Monthly progress reports
@@ -175,7 +180,7 @@ export function DdDashboardAnalytics({
                         description)
                     </p>
                 </div>
-                <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                {showActivity && <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                         <h3 className="text-base font-bold text-slate-900">
                             Account activity
@@ -229,7 +234,7 @@ export function DdDashboardAnalytics({
                         <Clock3 className="mr-1 inline h-3.5 w-3.5" />{' '}
                         {data.trackingNote}
                     </p>
-                </div>
+                </div>}
             </div>
         </section>
     );

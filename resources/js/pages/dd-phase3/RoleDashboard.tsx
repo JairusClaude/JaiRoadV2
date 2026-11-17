@@ -1,6 +1,8 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import {
     Bell,
+    Eye,
+    RefreshCw,
     CircleAlert,
     FileText,
     FolderKanban,
@@ -9,6 +11,7 @@ import {
     Route,
     Users,
 } from 'lucide-react';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { DdDashboardAnalytics } from '@/components/dd-dashboard-analytics';
 import type { DdDashboardSummary } from '@/components/dd-dashboard-analytics';
@@ -85,27 +88,34 @@ export default function RoleDashboard({
     mapCoverages = [],
 }: Props) {
     const isEngineer = role === 'engineer';
+    const [refreshing, setRefreshing] = useState(false);
 
     return (
-        <div className="jr-directory-exploration">
+        <div className={`jr-directory-exploration${isEngineer ? '' : ' jr-viewer-dashboard'}`}>
             <Head
                 title={`${isEngineer ? 'Engineer' : 'Viewer'} Dashboard · JaiROADS`}
             />
             <ProjectWorkspace>
                 <div className="jr-page-head">
                     <div>
-                        <h1>Dashboard</h1>
+                        {!isEngineer && <span className="jr-viewer-access"><Eye className="size-4" aria-hidden="true" /> Read-Only Access</span>}
+                        <h1>{isEngineer ? 'Dashboard' : 'Road Maintenance Overview'}</h1>
                         <p>
                             {isEngineer
                                 ? 'Your managed maintenance activities and road coverage across municipalities.'
-                                : 'A read-only view of road coverage, projects, and maintenance progress.'}
+                                : `Welcome, ${username || name}. Explore road coverage, maintenance projects and progress across JaiROADS.`}
                         </p>
                     </div>
+                    {!isEngineer && <button type="button" className="jr-viewer-refresh" disabled={refreshing}
+                        onClick={() => router.reload({ onStart: () => setRefreshing(true), onFinish: () => setRefreshing(false) })}>
+                        <RefreshCw className={`size-4${refreshing ? ' animate-spin' : ''}`} aria-hidden="true"/>
+                        {refreshing ? 'Refreshing…' : 'Refresh dashboard'}
+                    </button>}
                 </div>
 
                 <main className="relative -mt-3.5 -mx-7 rounded-t-[20px] bg-white px-7 pt-7 pb-10 shadow-sm min-w-0 space-y-6">
-                <section className="rounded-[26px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
+                <section className={isEngineer ? 'rounded-[26px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8' : 'jr-viewer-overview'} aria-label={isEngineer ? undefined : 'Road maintenance summary'}>
+                    {isEngineer && <div className="flex flex-wrap items-start justify-between gap-4">
                         <div>
                             <p className="text-xs font-bold tracking-[.16em] text-amber-800 uppercase">
                                 JaiROADS ·{' '}
@@ -127,7 +137,7 @@ export default function RoleDashboard({
                             {isEngineer ? 'Engineer' : 'Read-only Viewer'}{' '}
                             account
                         </span>
-                    </div>
+                    </div>}
 
                     {isEngineer && (
                         <div
@@ -153,7 +163,7 @@ export default function RoleDashboard({
                         </div>
                     )}
 
-                    <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className={`grid gap-3 sm:grid-cols-2 xl:grid-cols-4${isEngineer ? ' mt-6' : ' jr-viewer-metrics'}`}>
                         {isEngineer ? (
                             <>
                                 <Metric
@@ -210,7 +220,7 @@ export default function RoleDashboard({
                     </section>
                 )}
 
-                <DdDashboardAnalytics data={analytics} compact />
+                <DdDashboardAnalytics data={analytics} compact={isEngineer} omitInventoryMetrics={!isEngineer} showActivity={isEngineer} />
 
                 <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -317,7 +327,7 @@ export default function RoleDashboard({
                                         )}
                                     </div>
                                     <Link
-                                        href="/dd-phase3/projects"
+                                        href={!isEngineer && record.projectId ? `/dd-phase3/ui/maintenance-projects/${record.projectId}` : '/dd-phase3/projects'}
                                         className={cardLink}
                                     >
                                         View
