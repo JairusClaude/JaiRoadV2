@@ -81,7 +81,7 @@ export function LguDeletionDialog({
             description={
                 deletion.blocked
                     ? 'This LGU cannot be deleted until its dependencies have been checked and handled.'
-                    : 'This will permanently delete the selected LGU from the local preview. This action cannot be undone.'
+                    : 'This will permanently delete the selected LGU. Associated records will not be deleted. This action cannot be undone.'
             }
             processing={deletion.processing}
             error={deletion.error}
