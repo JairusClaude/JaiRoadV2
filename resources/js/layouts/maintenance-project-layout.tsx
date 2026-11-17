@@ -14,7 +14,8 @@ import {
     Settings,
     Users,
 } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
+import { toast } from 'sonner';
 import { DdNotificationBell } from '@/components/dd-notification-bell';
 import {
     AlternativeNavigation,
@@ -83,6 +84,12 @@ export function MaintenanceProjectShell({
     const page = usePage();
     const preview = page.props.previewOnly === true;
     const canonical = page.props.canonicalFrontend === true;
+    const operationPage = canonical && /^(MaintenanceProjects|MaintenanceRecords|MonthlyUpdates|MaintenanceDocuments|RoadCoverages|LGUs)\//.test(page.component);
+    useEffect(() => {
+        if (operationPage && typeof page.props.status === 'string' && page.props.status) {
+            toast.success(page.props.status, { id: 'jr-operation-status', duration: 4500 });
+        }
+    }, [page, operationPage]);
     const role = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role;
     const viewerTheme = canonical && role === 'viewer';
     const engineerTheme = canonical && role === 'engineer';
@@ -396,7 +403,7 @@ export function MaintenanceProjectShell({
                             process · PostgreSQL is not connected.
                         </p>
                     )}
-                    {typeof page.props.status === 'string' &&
+                    {!operationPage && typeof page.props.status === 'string' &&
                         page.props.status && (
                             <p
                                 role="status"
