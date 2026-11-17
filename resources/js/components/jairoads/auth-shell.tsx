@@ -9,11 +9,11 @@ export default function AuthShell({ eyebrow, title, description, children }: { e
     return <div className="jr-login"><div className="jr-login-frame">
         <AuthShowcase />
         <main className="jr-login-panel">
-            <div className="flex items-center justify-between text-[11px] font-semibold tracking-[.16em] text-[#8090a3] uppercase">
-                <span className="inline-flex items-center gap-2"><ShieldCheck aria-hidden="true" className="size-4 text-[#a65b2a]"/> Secure workspace</span><span>JaiROADS</span>
+            <div className="jr-login-secure-label flex flex-wrap items-center justify-between gap-2 text-[11px] font-semibold tracking-[.16em] text-[#586d83] uppercase">
+                <span className="inline-flex items-center gap-2"><ShieldCheck aria-hidden="true" className="size-4 text-[#a65b2a]"/> Secure workspace</span><span>PEO-DDO</span>
             </div>
             <div className="jr-login-form">
-                <div className="mb-6 space-y-2">
+                <div className="jr-login-form-intro mb-6 space-y-2">
                     <p className="text-xs font-bold tracking-[.22em] text-[#a35a2d] uppercase">{eyebrow}</p>
                     <h2 className="text-[30px] font-bold tracking-[-.04em] text-[#16263a] sm:text-[34px]">{title}</h2>
                     <p className="text-sm leading-6 text-[#697b90]">{description}</p>
