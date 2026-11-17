@@ -83,11 +83,12 @@ final class MaintenanceProjectPageController extends OperationsFrontendControlle
         $p = $this->projects($actor)->where('p.id', $id)->first();
         abort_unless($p !== null, 404);
 
+        $records = $this->records($actor)->where('m.project_id', $id)->orderByDesc('m.maintenance_year')->orderByDesc('m.quarter')
+            ->get(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter', 'm.status', 'm.managing_engineer_id', 'm.start_date', 'e.first_name', 'e.last_name']);
+        $latestYear = $records->first()?->maintenance_year;
         return $this->render('MaintenanceProjects/Show', $request, ['project' => $this->projectData($p, $actor),
-            'records' => $this->records($actor)->where('m.project_id', $id)->orderByDesc('m.maintenance_year')->orderByDesc('m.quarter')
-                ->get(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter', 'm.status', 'm.managing_engineer_id', 'm.start_date', 'e.first_name', 'e.last_name'])
-                ->map(fn (\stdClass $r): array => $this->historyData($r, $actor)),
+            'records' => $records->map(fn (\stdClass $r): array => $this->historyData($r, $actor)),
             'recordCreateUrl' => $this->writable($actor) ? self::BASE.'/maintenance-projects/'.$id.'/records/create' : null,
-            'expandedYear' => $request->integer('record_year', (int) date('Y'))]);
+            'expandedYear' => $request->integer('record_year', (int) ($latestYear ?? date('Y')))]);
     }
 }
