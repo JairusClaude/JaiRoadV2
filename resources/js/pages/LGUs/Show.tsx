@@ -18,7 +18,6 @@ export default function Show({
     assignedEngineers,
     relationshipDataAvailable,
     directoryUrl,
-    message,
     lguPermissions,
     lguReviewNotice,
 }: LguDetailProps) {
@@ -82,11 +81,6 @@ export default function Show({
                 {lguReviewNotice && (
                     <p role="note" className="jr-field-hint mb-4">
                         {lguReviewNotice}
-                    </p>
-                )}
-                {message && (
-                    <p role="status" className="jr-field-hint mb-4">
-                        {message}
                     </p>
                 )}
                 <section

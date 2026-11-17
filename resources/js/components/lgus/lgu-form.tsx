@@ -16,7 +16,7 @@ export function LguForm({ lgu }: { lgu?: Lgu }) {
     const directory = workspaceHref('/lgus');
     const detail = lgu ? workspaceHref(`/lgus/${lgu.id}`) : directory;
     const back = formReturn(page.url, lgu ? detail : directory, [directory, detail]);
-    const fixedLocation = canonical && !lgu;
+    const fixedLocation = !lgu;
     const form = useForm<LguValues>(
         Object.fromEntries(
             lguFields.map(({ key }) => [key, lgu?.[key] ?? (fixedLocation && key === 'province' ? 'Davao De Oro' : fixedLocation && key === 'region' ? 'XI' : '')]),

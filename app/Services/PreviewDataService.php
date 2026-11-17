@@ -72,7 +72,7 @@ final class PreviewDataService
                 'username' => 'UserTest',
                 'name' => 'UserTest',
             ],
-            'status' => $request->session()->get('dd_operations_status'),
+            'status' => $request->session()->pull('dd_operations_status'),
         ]);
     }
 
@@ -575,8 +575,7 @@ final class PreviewDataService
     public static function deleteLgu(Request $request, int $id): RedirectResponse
     {
         $store = self::getStore();
-        $lgus = $store['lgus'] ?? [];
-        $store['lgus'] = array_values(array_filter($lgus, fn ($l) => (int) $l['id'] !== $id));
+        self::deletePreviewLgus($store, [$id]);
         self::saveStore($store);
 
         return redirect('/dd-phase3/ui/lgus')->with('dd_operations_status', 'LGU deleted successfully (Preview Mode).');
@@ -587,11 +586,46 @@ final class PreviewDataService
         $ids = (array) $request->input('ids', []);
         $intIds = array_map('intval', $ids);
         $store = self::getStore();
-        $lgus = $store['lgus'] ?? [];
-        $store['lgus'] = array_values(array_filter($lgus, fn ($l) => ! in_array((int) $l['id'], $intIds, true)));
+        self::deletePreviewLgus($store, array_values(array_unique($intIds)));
         self::saveStore($store);
 
         return redirect('/dd-phase3/ui/lgus')->with('dd_operations_status', 'Selected LGUs deleted successfully (Preview Mode).');
+    }
+
+    /** Isolated preview data only: validate every dependency before removing any row. */
+    private static function deletePreviewLgus(array &$store, array $ids): void
+    {
+        $lgus = collect($store['lgus'] ?? []);
+        $rows = $lgus->filter(fn ($l) => in_array((int) $l['id'], $ids, true));
+        abort_unless($ids !== [] && $rows->count() === count($ids), 404);
+        foreach ($rows as $row) {
+            $id = (int) $row['id'];
+            if (collect($store['road_coverages'] ?? [])->contains('lgu_id', $id)
+                || collect($store['engineers'] ?? [])->contains('lgu_id', $id)) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['delete' => 'This LGU still has associated road coverages or engineer assignments. Nothing was deleted.']);
+            }
+        }
+        foreach ($rows as $row) {
+            $events = $store['preview_audit_events'] ?? [];
+            $eventId = max(107, (int) collect($events)->max('id')) + 1;
+            $events[] = [
+                'id' => $eventId,
+                'user_id' => 1,
+                'actor_identifier' => 'Local preview · UserTest',
+                'current_account_type' => 'superadmin',
+                'action' => 'DELETE',
+                'entity_type' => 'LGU',
+                'entity_id' => (int) $row['id'],
+                'description' => 'LGU deleted from the isolated preview store after dependency checks.',
+                'old_value' => array_intersect_key($row, array_flip(['id', 'municipality_name', 'province', 'region'])),
+                'new_value' => null,
+                'recipient_user_id' => null,
+                'notification_message' => null,
+                'created_at' => now()->toIso8601String(),
+            ];
+            $store['preview_audit_events'] = $events;
+        }
+        $store['lgus'] = $lgus->reject(fn ($l) => in_array((int) $l['id'], $ids, true))->values()->all();
     }
 
     // ==========================================
@@ -960,6 +994,16 @@ final class PreviewDataService
         $records = $store['maintenance_records'] ?? [];
         $projects = collect($store['maintenance_projects'] ?? []);
         $p = $projects->firstWhere('id', $project);
+        abort_unless($p !== null, 404);
+        $existing = $id === null ? null : collect($records)->firstWhere('id', $id);
+        abort_if($id !== null && ($existing === null || (int) $existing['project_id'] !== $project), 404);
+        $year = (int) $request->input('maintenance_year', $existing['maintenance_year'] ?? 2026);
+        $quarter = $request->input('quarter', $existing['quarter'] ?? 'Q2');
+        if (collect($records)->contains(fn ($record) => (int) $record['project_id'] === $project
+            && (int) $record['id'] !== $id && (int) $record['maintenance_year'] === $year
+            && $record['quarter'] === $quarter)) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['quarter' => 'This project already has a maintenance record for the selected year and quarter.']);
+        }
 
         if ($id !== null) {
             foreach ($records as &$item) {
@@ -1491,7 +1535,7 @@ final class PreviewDataService
 
         $page = (int) $request->input('page', 1);
         $perPage = 25;
-        $collection = collect($allEvents);
+        $collection = collect(array_merge(self::getStore()['preview_audit_events'] ?? [], $allEvents))->sortByDesc('id')->values();
         $paginatedItems = $collection->slice(($page - 1) * $perPage, $perPage)->values();
 
         $paginator = new \Illuminate\Pagination\LengthAwarePaginator(

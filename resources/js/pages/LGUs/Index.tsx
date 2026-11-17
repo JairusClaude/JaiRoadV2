@@ -43,7 +43,6 @@ export default function Index({
     filters = { search: '', province: '', region: '', sort: 'asc' },
     provinces = [],
     regions = [],
-    message,
     lguPermissions = { can_edit: true, can_delete: true },
     lguReviewNotice,
 }: {
@@ -213,11 +212,6 @@ export default function Index({
                 {lguReviewNotice && (
                     <p role="note" className="jr-field-hint mb-4">
                         {lguReviewNotice}
-                    </p>
-                )}
-                {message && (
-                    <p className="jr-field-hint mb-4" role="status">
-                        {message}
                     </p>
                 )}
                 <form

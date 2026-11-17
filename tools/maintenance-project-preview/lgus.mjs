@@ -198,7 +198,7 @@ return null;
  return;
 }
 
-        values[key] = (data[key] || '').trim();
+        values[key] = !current && key === 'province' ? 'Davao de Oro' : !current && key === 'region' ? 'XI' : (data[key] || '').trim();
 
         if (key !== 'mayor_middle_name' && !values[key]) {
 errors[key] = `${labels[i]} is required.`;
@@ -217,9 +217,13 @@ Object.assign(current, values);
 lgus.push({ id: nextId++, ...values });
 }
 
-    return current
-        ? { location: `/lgus/${current.id}?${new URLSearchParams({ return_to: directoryReturn(url, current.id), saved: 'updated' })}` }
-        : { location: `/lgus?${new URLSearchParams({ search: values.municipality_name, sort: 'asc', saved: 'created' })}` };
+    if (current) {
+        const target = new URL(deletionReturn(url, current.id), 'http://jairoads.local');
+        target.searchParams.delete('deleted');
+        target.searchParams.set('saved', 'updated');
+        return { location: target.pathname + target.search };
+    }
+    return { location: `/lgus?${new URLSearchParams({ search: values.municipality_name, sort: 'asc', saved: 'created' })}` };
 }
 
 // Read-only reference data for related preview directories. Never expose mutable LGU storage.

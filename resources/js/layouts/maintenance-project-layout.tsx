@@ -86,10 +86,12 @@ export function MaintenanceProjectShell({
     const canonical = page.props.canonicalFrontend === true;
     const operationPage = /^(MaintenanceProjects|MaintenanceRecords|MonthlyUpdates|MaintenanceDocuments|RoadCoverages|LGUs)\//.test(page.component);
     useEffect(() => {
-        if (operationPage && typeof page.props.status === 'string' && page.props.status) {
-            toast.success(page.props.status, { id: 'jr-operation-status', duration: 4500 });
+        // The Node-only preview historically supplies LGU success text as message.
+        const status = page.props.status ?? (preview && page.component.startsWith('LGUs/') ? page.props.message : undefined);
+        if (operationPage && typeof status === 'string' && status) {
+            toast.success(status, { id: 'jr-operation-status', duration: 4500 });
         }
-    }, [page, operationPage]);
+    }, [page, operationPage, preview]);
     const role = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role;
     const viewerTheme = canonical && role === 'viewer';
     const engineerTheme = canonical && role === 'engineer';
