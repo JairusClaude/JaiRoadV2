@@ -99,10 +99,13 @@ test('production recovery refuses log-only delivery rather than exposing reset t
     $user = $this->canonicalUser(User::factory()->create());
     config(['mail.default' => 'log', 'app.url' => 'https://jairoads.example.test']);
     $this->app->detectEnvironment(fn () => 'production');
+    // The real HTTPS browser sends an HTTPS referrer, even though this
+    // disposable PHPUnit client talks directly to PHP over HTTP.
+    $canonicalRecoveryUrl = 'https://jairoads.example.test/forgot-password';
     $this->withSession(['_token' => 'valid-recovery-test-token'])
-        ->from(route('password.request'))
+        ->from($canonicalRecoveryUrl)
         ->post(route('password.email'), ['email' => $user->email, '_token' => 'valid-recovery-test-token'])
-        ->assertRedirect(route('password.request'))
+        ->assertRedirect($canonicalRecoveryUrl)
         ->assertSessionHasErrors('email');
     Notification::assertNothingSent();
 });
