@@ -36,7 +36,7 @@ it('pages dashboard maps without dropping older assigned roads', function (): vo
     $page = $response->viewData('page');
     $cursor = $page['props']['mapNextCursor'];
     $result = $this->getJson('/dd-phase3/dashboard/map-roads?before='.$cursor)
-        ->assertOk()->assertHeader('Cache-Control', 'private, no-store')
+        ->assertOk()->assertHeader('Cache-Control', 'no-store, private')
         ->assertJsonCount(5, 'data')->assertJsonPath('next_cursor', null);
     $older = collect($result->json('data'))->firstWhere('id', $f['road']);
     expect($older)->not->toBeNull();

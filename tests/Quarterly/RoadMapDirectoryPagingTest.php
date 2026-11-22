@@ -35,7 +35,7 @@ it('bounds the initial road directory map and pages older road geometry for View
     $this->assertIsInt($cursor);
 
     $response = $this->getJson('/dd-phase3/ui/map/road-index?before='.$cursor)
-        ->assertOk()->assertHeader('Cache-Control', 'private, no-store')
+        ->assertOk()->assertHeader('Cache-Control', 'no-store, private')
         ->assertJsonCount(5, 'data')->assertJsonPath('next_cursor', null);
     $this->assertContains($fixture['road'], array_column($response->json('data'), 'id'));
     $this->getJson('/dd-phase3/ui/map/road-index?before=invalid')->assertUnprocessable();
