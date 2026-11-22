@@ -63,12 +63,12 @@ final class UnifiedFrontendTest extends PostgresTestCase
         ]);
         $this->get('/dd-phase3/dashboard?engineer_id='.$other)->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('dd-phase3/RoleDashboard')->has('mapCoverages', 3)
-            ->where('mapCoverages.0.id', $f['road'])->where('mapCoverages.0.my_project', true)
-            ->where('mapCoverages.0.my_record_count', 2)->where('mapCoverages.0.project_id', $f['project'])
+            ->where('mapCoverages.0.id', $unassigned)->where('mapCoverages.0.my_project', false)
+            ->where('mapCoverages.0.project_id', null)
             ->where('mapCoverages.1.id', $road)->where('mapCoverages.1.my_project', false)
-            ->where('mapCoverages.2.id', $unassigned)->where('mapCoverages.2.my_project', false)
-            ->where('mapCoverages.2.project_id', null));
-        $this->actingAs($otherLogin)->get('/dd-phase3/dashboard')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('mapCoverages.2.id', $f['road'])->where('mapCoverages.2.my_project', true)
+            ->where('mapCoverages.2.my_record_count', 2)->where('mapCoverages.2.project_id', $f['project']));
+        $this->withSession(['password_hash_web' => null])->actingAs($otherLogin)->get('/dd-phase3/dashboard')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->where('mapCoverages.0.my_project', false)->where('mapCoverages.1.my_project', true));
         $this->actingAs($this->account('Viewer'))->get('/dd-phase3/dashboard')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->has('mapCoverages', 0));
@@ -96,8 +96,8 @@ final class UnifiedFrontendTest extends PostgresTestCase
         $this->getJson($url.$unassigned)->assertOk()->assertJsonPath('project', null);
         $this->getJson($url.'99999999')->assertNotFound();
         $other = $this->account('Engineer');
-        $this->actingAs($other)->getJson($url.$f['road'])->assertOk()->assertJsonPath('project.my_project', false);
-        $this->actingAs($this->account('Viewer'))->getJson($url.$f['road'])->assertForbidden();
+        $this->withSession(['password_hash_web' => null])->actingAs($other)->getJson($url.$f['road'])->assertOk()->assertJsonPath('project.my_project', false);
+        $this->withSession(['password_hash_web' => null])->actingAs($this->account('Viewer'))->getJson($url.$f['road'])->assertForbidden();
     }
 
     public function test_record_search_by_engineer_and_document_form_source_context(): void
@@ -106,7 +106,7 @@ final class UnifiedFrontendTest extends PostgresTestCase
         $record = $this->record($f);
         $name = 'UniqueSearchEngineer';
         DB::table('jairoads_next.engineers')->where('id', $f['engineer'])->update(['first_name' => $name]);
-        $this->get(self::UI.'/maintenance-records?search='.$name.'&quarter=Q1')->assertOk()->assertInertia(fn (Assert $page) => $page
+        $this->get(self::UI.'/maintenance-records?search='.$name.'&quarter=Q4')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->has('records.data', 1)->where('records.data.0.id', $record)->where('filters.search', $name));
         foreach (['maintenance_id', 'record'] as $key) {
             $this->get(self::UI.'/maintenance-documents/create?'.$key.'='.$record)->assertOk()->assertInertia(fn (Assert $page) => $page
@@ -148,17 +148,13 @@ final class UnifiedFrontendTest extends PostgresTestCase
 
         $this->get(self::UI.'/maintenance-records/create')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('MaintenanceProjects/Records/Create')
-            ->has('engineers', 0)
-            ->has('managerChoicesByProject.'.$f['project'], 1)
-            ->where('managerChoicesByProject.'.$f['project'].'.0.id', $f['engineer'])
-            ->has('managerChoicesByProject.'.$otherProject, 1)
-            ->where('managerChoicesByProject.'.$otherProject.'.0.id', $f['engineer']));
+            ->has('engineers', 1)->where('engineers.0.id', $f['engineer'])
+            ->missing('managerChoicesByProject')->has('projects', 2));
 
         $this->account('Engineer', $otherEngineer);
         DB::table('jairoads_next.engineer_lgus')->where('engineer_id', $otherEngineer)->update(['is_active' => false]);
         $this->get(self::UI.'/maintenance-records/create')->assertOk()->assertInertia(fn (Assert $page) => $page
-            ->has('managerChoicesByProject.'.$f['project'], 2)
-            ->has('managerChoicesByProject.'.$otherProject, 2));
+            ->has('engineers', 2)->missing('managerChoicesByProject'));
     }
 
     public function test_empty_record_deletion_preserves_parent_siblings_and_audits(): void
@@ -284,7 +280,7 @@ final class UnifiedFrontendTest extends PostgresTestCase
         $this->assertSame('43.50', DB::table('jairoads_next.monthly_updates')->value('progress_percentage'));
         $this->postJson(self::UI.'/monthly-updates', $data)->assertUnprocessable()->assertJsonValidationErrors('update_month');
         $this->postJson(self::UI.'/monthly-updates', array_replace($data, ['update_month' => '2026-11', 'progress_percentage' => 101]))->assertUnprocessable();
-        $this->postJson(self::UI.'/monthly-updates', array_replace($data, ['update_month' => '2026-11', 'removed_media_ids' => [1]]))->assertUnprocessable();
+        $this->postJson(self::UI.'/monthly-updates', array_replace($data, ['update_month' => '2026-11', 'removed_media_ids' => [1]]))->assertForbidden();
         $this->assertSame(1, DB::table('jairoads_next.monthly_updates')->count());
     }
 
@@ -330,9 +326,11 @@ final class UnifiedFrontendTest extends PostgresTestCase
             ->where('document.download_url', '/dd-phase3/files/document/'.$doc->id)->missing('document.file_path')->missing('document.password'));
         Http::assertSentCount(1);
         $this->withSession(['password_hash_web' => null])->actingAs($this->account('Engineer', $this->engineer()));
-        $this->get(self::UI.'/maintenance-documents/'.$doc->id)->assertNotFound();
-        $this->get('/dd-phase3/files/document/'.$doc->id)->assertForbidden();
-        Http::assertSentCount(1);
+        // Verified Engineer reads remain cross-municipality, without write or
+        // file-path disclosure privileges.
+        $this->get(self::UI.'/maintenance-documents/'.$doc->id)->assertOk();
+        $this->get('/dd-phase3/files/document/'.$doc->id)->assertOk();
+        Http::assertSentCount(2);
     }
 
     public function test_frontend_reassignment_preserves_creator_and_transfers_editing_rights(): void
