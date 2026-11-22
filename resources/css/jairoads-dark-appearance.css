@@ -1,0 +1,161 @@
+/* Dark appearance for the canonical JaiROADS workspace and its real Settings UI.
+   Scope DD Settings and the modern Settings preview so role accent palettes,
+   read-only permissions, and semantic status colors remain unchanged. */
+
+html.dark .jr-app:has(.jr-dd-settings) {
+    --background: #0b1220;
+    --foreground: #e2e8f0;
+    --card: #172238;
+    --card-foreground: #e2e8f0;
+    --popover: #172238;
+    --popover-foreground: #e2e8f0;
+    --muted: #223149;
+    --muted-foreground: #b0c0d6;
+    --border: #36475d;
+    --input: #40516a;
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    color-scheme: dark;
+    color: #e2e8f0;
+    background-color: #0b1220 !important;
+}
+html.dark .jr-app:has(.jr-dd-settings) :is(.jr-stage, .jr-content, .jr-workspace) {
+    background-color: #0b1220 !important;
+    color: #e2e8f0;
+}
+html.dark .jr-app:has(.jr-dd-settings) .jr-global-header {
+    background-color: #172238 !important;
+    border-color: #36475d !important;
+    color: #cbd5e1;
+}
+html.dark .jr-app:has(.jr-dd-settings) .jr-global-header strong {
+    color: #f1f5f9;
+}
+html.dark .jr-dd-settings .jr-page-head {
+    background-color: #131f31 !important;
+}
+html.dark .jr-dd-settings .jr-page-head::before {
+    opacity: .16;
+}
+html.dark .jr-dd-settings .jr-page-head h1 {
+    color: #f1f5f9 !important;
+}
+html.dark .jr-dd-settings .jr-page-head p {
+    color: #aabbd0 !important;
+}
+html.dark .jr-dd-settings main {
+    background-color: #0f172a !important;
+    color: #e2e8f0;
+}
+html.dark .jr-dd-settings main > section,
+html.dark .jr-dd-settings main > div.grid > section {
+    border-color: #36475d !important;
+    background-color: #172238 !important;
+}
+html.dark .jr-dd-settings main section .rounded-xl.bg-white,
+html.dark .jr-dd-settings main section .rounded-xl.bg-slate-50 {
+    background-color: #223149 !important;
+    border-color: #40516a !important;
+}
+html.dark .jr-dd-settings :is(
+    .text-slate-900, .text-slate-800, .text-slate-700
+) {
+    color: #e2e8f0 !important;
+}
+html.dark .jr-dd-settings :is(.text-slate-600, .text-slate-500) {
+    color: #b0c0d6 !important;
+}
+html.dark .jr-dd-settings input {
+    color-scheme: dark;
+    color: #f1f5f9 !important;
+    background-color: #223149 !important;
+    border-color: #52637a !important;
+}
+html.dark .jr-dd-settings input:focus {
+    border-color: var(--jr-role-accent, #a78bfa) !important;
+}
+html.dark .jr-dd-settings button[aria-pressed="false"] {
+    color: #e2e8f0 !important;
+    background-color: #223149 !important;
+    border-color: #40516a !important;
+}
+html.dark .jr-dd-settings button[aria-pressed="false"]:hover {
+    background-color: #2d405b !important;
+}
+html.dark .jr-dd-settings button[aria-pressed="true"] {
+    color: var(--jr-dark-selection-text, #c4b5fd) !important;
+    background-color: #29374d !important;
+    border-color: var(--jr-role-accent, #51269b) !important;
+}
+html.dark body:has(.jr-superadmin-workspace) .jr-dd-settings {
+    --jr-dark-selection-text: #c4b5fd;
+}
+html.dark body:has(.jr-admin-workspace) .jr-dd-settings {
+    --jr-dark-selection-text: #fda4af;
+}
+html.dark body:has(.jr-engineer-workspace) .jr-dd-settings {
+    --jr-dark-selection-text: #fdba74;
+}
+html.dark body:has(.jr-viewer-workspace) .jr-dd-settings {
+    --jr-dark-selection-text: #93c5fd;
+}
+html.dark .jr-dd-settings main > :is([role="status"], [role="alert"]) {
+    border-color: #52637a;
+    background-color: #223149;
+}
+
+/* The modern /settings-preview and /settings/* routes already use Tailwind
+   dark utilities. Their polished content canvas was still hardcoded white. */
+html.dark .jr-responsive-shell:has(.jr-settings) {
+    color-scheme: dark;
+}
+html.dark .jr-responsive-shell:has(.jr-settings) .jr-normal-workspace.jr-content-view,
+html.dark .jr-responsive-shell:has(.jr-settings) .jr-workspace {
+    background-color: #0f172a !important;
+    border-color: #36475d !important;
+    color: #e2e8f0;
+}
+html.dark .jr-responsive-shell:has(.jr-settings) .jr-normal-workspace {
+    --jr-surface: #0f172a;
+    --jr-surface-soft: #172238;
+    --jr-divider: #36475d;
+    --jr-ink: #e2e8f0;
+    --jr-muted: #aabbd0;
+}
+html.dark .jr-responsive-shell:has(.jr-settings) .jr-page-head h1 {
+    color: #f1f5f9 !important;
+}
+html.dark .jr-responsive-shell:has(.jr-settings) .jr-page-head p {
+    color: #aabbd0 !important;
+}
+
+/* Settings pages in the canonical module shell also need dark tokens.
+   Keep role-specific --primary, --ring and sidebar palette definitions. */
+html.dark .jr-app:has(.jr-settings) .jr-theme,
+html.dark .jr-app.jr-theme:has(.jr-settings) {
+    --background: #0b1220;
+    --foreground: #e2e8f0;
+    --card: #172238;
+    --card-foreground: #e2e8f0;
+    --popover: #172238;
+    --popover-foreground: #e2e8f0;
+    --border: #36475d;
+    --input: #40516a;
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    color-scheme: dark;
+}

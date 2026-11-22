@@ -377,7 +377,7 @@ export default function Operations({
     }
 
     return (
-        <div className="jr-directory-exploration">
+        <div className="jr-directory-exploration jr-dd-settings">
             <Head title={`JaiROADS — ${names[section]}`} />
             <ProjectWorkspace>
                 <div className="jr-page-head">
