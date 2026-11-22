@@ -300,6 +300,7 @@ body:has(.jr-superadmin-workspace)
 .jr-superadmin-workspace .jr-superadmin-dashboard .jr-page-head {
     min-height: 184px;
     align-items: center;
+    flex-wrap: wrap;
     padding-bottom: 42px;
 }
 .jr-superadmin-workspace .jr-superadmin-dashboard .jr-page-head h1 {
