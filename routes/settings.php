@@ -7,7 +7,9 @@ use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])->group(function () {
-    Route::redirect('settings', '/settings/profile');
+    // A navigation-only redirect must not register Laravel's catch-all HTTP
+    // method set (including QUERY), which Wayfinder cannot type safely.
+    Route::get('settings', static fn () => redirect('/settings/profile'));
 
     Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('settings/profile', [ProfileController::class, 'update'])->name('profile.update');
