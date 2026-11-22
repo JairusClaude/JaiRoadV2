@@ -7,7 +7,9 @@ import { defineConfig } from 'vite';
 
 export default defineConfig(({ mode }) => ({
     build: {
-        emptyOutDir: false,
+        // A new container release must not retain hashed assets from an older build.
+        // A stale manifest or reused build directory can break the Inertia login bootstrap.
+        emptyOutDir: true,
     },
     plugins: [
         laravel({
