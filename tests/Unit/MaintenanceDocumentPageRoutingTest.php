@@ -17,8 +17,8 @@ final class MaintenanceDocumentPageRoutingTest extends TestCase
             'jairoads.ui.documents.create' => ['GET', 'dd-phase3/ui/maintenance-documents/create', 'documentForm', null],
             'jairoads.ui.documents.show' => ['GET', 'dd-phase3/ui/maintenance-documents/{id}', 'documentShow', null],
             'jairoads.ui.documents.edit' => ['GET', 'dd-phase3/ui/maintenance-documents/{id}/edit', 'documentForm', null],
-            'jairoads.ui.documents.store' => ['POST', 'dd-phase3/ui/maintenance-documents', 'saveDocument', 'throttle:8,1'],
-            'jairoads.ui.documents.update' => ['PUT', 'dd-phase3/ui/maintenance-documents/{id}', 'saveDocument', 'throttle:10,1'],
+            'jairoads.ui.documents.store' => ['POST', 'dd-phase3/ui/maintenance-documents', 'saveDocument', 'throttle:8,1,jr-documents-store-'],
+            'jairoads.ui.documents.update' => ['PUT', 'dd-phase3/ui/maintenance-documents/{id}', 'saveDocument', 'throttle:10,1,jr-documents-update-'],
         ];
 
         foreach ($expected as $name => [$verb, $uri, $method, $throttle]) {

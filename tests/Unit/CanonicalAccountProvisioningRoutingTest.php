@@ -16,7 +16,7 @@ it('preserves the canonical account provisioning route after extraction', functi
     expect($route->uri())->toBe('dd-phase3/accounts');
     expect($route->methods())->toContain('POST');
     expect($route->getActionName())->toBe(CanonicalAccountProvisioningController::class.'@createAccount');
-    expect($route->gatherMiddleware())->toContain('throttle:5,1');
+    expect($route->gatherMiddleware())->toContain('throttle:5,1,jr-accounts-store-');
 
     expect(method_exists(DirectoryController::class, 'createAccount'))->toBeFalse();
     expect(method_exists(CanonicalAccountProvisioningController::class, 'createAccount'))->toBeTrue();

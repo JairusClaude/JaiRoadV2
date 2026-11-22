@@ -30,7 +30,7 @@ final class MonthlyUpdatePageRoutingTest extends TestCase
             $this->assertSame(MonthlyUpdatePageController::class.'@'.$method, $route->getActionName(), $name);
             $this->assertContains('auth', $route->gatherMiddleware(), $name);
             if ($name === 'jairoads.ui.updates.media') {
-                $this->assertContains('throttle:8,1', $route->gatherMiddleware(), $name);
+                $this->assertContains('throttle:8,1,jr-updates-media-', $route->gatherMiddleware(), $name);
             }
         }
     }

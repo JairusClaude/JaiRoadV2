@@ -8,9 +8,9 @@ use Illuminate\Support\Facades\Route;
 
 it('preserves the LGU create update and delete route contracts after extraction', function (): void {
     $cases = [
-        ['lgus.store', 'POST', 'lgus', 'createLgu', 'throttle:10,1', false],
-        ['lgus.update', 'PUT', 'lgus/{id}', 'updateLgu', 'throttle:10,1', true],
-        ['lgus.destroy', 'DELETE', 'lgus/{id}', 'deleteLgu', 'throttle:6,1', true],
+        ['lgus.store', 'POST', 'lgus', 'createLgu', 'throttle:10,1,jr-lgus-store-', false],
+        ['lgus.update', 'PUT', 'lgus/{id}', 'updateLgu', 'throttle:10,1,jr-lgus-update-', true],
+        ['lgus.destroy', 'DELETE', 'lgus/{id}', 'deleteLgu', 'throttle:6,1,jr-lgus-destroy-', true],
     ];
 
     foreach ($cases as [$nameSuffix, $verb, $pathSuffix, $handler, $throttle, $numericId]) {
