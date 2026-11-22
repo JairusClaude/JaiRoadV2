@@ -156,7 +156,11 @@ export default function DdPhase3Workspace({
 
     return (
         <div
-            className={`jr-directory-exploration${adminDashboard ? ' jr-admin-dashboard' : ''}`}
+            className={
+                adminDashboard
+                    ? 'jr-directory-exploration jr-admin-dashboard'
+                    : 'jr-directory-exploration'
+            }
         >
             <ProjectWorkspace>
                 <Head
