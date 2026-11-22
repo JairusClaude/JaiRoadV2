@@ -135,7 +135,7 @@ export default function SuperAdminCommandLayout({
             });
 
     return (
-        <div className="jr-responsive-shell min-h-screen bg-[#f4f5f8] text-slate-900 lg:flex">
+        <div className="jr-responsive-shell jr-superadmin-workspace min-h-screen bg-[#f4f5f8] text-slate-900 lg:flex">
             {menuOpen && (
                 <button
                     aria-label="Close SuperAdmin navigation"
