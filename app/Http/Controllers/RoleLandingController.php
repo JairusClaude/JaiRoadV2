@@ -124,7 +124,12 @@ final class RoleLandingController extends Controller
             $assigned = DB::table('jairoads_next.lgus as l')
                 ->orderBy('l.municipality_name')->get(['l.id', 'l.municipality_name'])
                 ->map(static fn ($l): array => ['id' => (int) $l->id, 'name' => (string) $l->municipality_name])->all();
-            $stats['assignedLgus'] = count($assigned);
+            // Available municipalities and active profile assignments are
+            // distinct. Engineers may browse all municipalities, but the
+            // assignment metric must count only their actual active links.
+            $stats['assignedLgus'] = (int) DB::table('jairoads_next.engineer_lgus')
+                ->where('engineer_id', $id)->where('is_active', true)
+                ->distinct()->count('lgu_id');
             $stats['lgus'] = count($assigned);
             $stats['roadCoverages'] = (int) DB::table('jairoads_next.road_coverages')->count();
             $stats['projects'] = (int) DB::table('jairoads_next.maintenance_projects')->count();

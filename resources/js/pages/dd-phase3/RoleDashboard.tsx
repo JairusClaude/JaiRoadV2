@@ -152,7 +152,7 @@ export default function RoleDashboard({
                         {isEngineer ? (
                             <>
                                 <Metric
-                                    label="Available municipalities"
+                                    label="Active LGU assignments"
                                     value={stats.assignedLgus}
                                     icon={<MapPinned className="h-5 w-5" />}
                                 />

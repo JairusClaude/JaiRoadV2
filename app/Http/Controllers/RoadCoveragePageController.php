@@ -109,7 +109,7 @@ final class RoadCoveragePageController extends OperationsFrontendController
         return $this->render('RoadCoverages/'.($id === null ? 'Create' : 'Edit'), $request, [
             'coverage' => $road === null ? null : $this->roadData($road),
             'municipalities' => $this->municipalities($actor), 'roadCreatorChoices' => $creators,
-            'requiresCreator' => false,
+            'requiresCreator' => $id === null && RoleAccess::managesBusinessData($actor['role']),
             'referenceCoverages' => [], 'referenceUrl' => self::BASE.'/map/roads',
             'mapServices' => ['routing' => config('jairoads_maps.routing'), 'geocoding' => config('jairoads_maps.geocoding')],
             'canEdit' => true, 'cancelUrl' => self::BASE.'/road-coverages'.($id === null ? '' : '/'.$id),

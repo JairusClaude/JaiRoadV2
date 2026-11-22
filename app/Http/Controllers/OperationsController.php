@@ -320,14 +320,14 @@ class OperationsController extends Controller
                 // entries require a named, active mapping Engineer.
                 // The AuditLog records the real Admin/SuperAdmin actor separately.
                 if ($this->managers($actor)) {
-                    $engineerId = !empty($v['created_by_engineer_id']) ? (int) $v['created_by_engineer_id'] : null;
-                    if ($engineerId === null) {
-                        $engineerId = $actor['engineer_id']
-                            ?? $this->t('engineers')->where('engineer_status', 'Active')->value('id');
-                    }
-                    if (empty($engineerId) || $this->t('engineers')->where('id', $engineerId)->where('engineer_status', 'Active')->sharedLock()->first(['id']) === null) {
+                    // RoadCoverage.created_by points to an Engineer profile, not
+                    // the acting administrator. Never attribute work to the first
+                    // active Engineer by default; require an explicit selection.
+                    $engineerId = ! empty($v['created_by_engineer_id']) ? (int) $v['created_by_engineer_id'] : null;
+                    if ($engineerId === null || $this->t('engineers')->where('id', $engineerId)
+                        ->where('engineer_status', 'Active')->sharedLock()->first(['id']) === null) {
                         throw ValidationException::withMessages([
-                            'lgu_id' => 'No active engineer is available in the system for road attribution.',
+                            'created_by_engineer_id' => 'Select the active Engineer responsible for mapping this road.',
                         ]);
                     }
                 } else {
