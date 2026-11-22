@@ -157,7 +157,9 @@ export async function verifyDuplicatePeriod({
     await engineer
         .getByRole('button', { name: 'Save Record', exact: true })
         .click();
-    await engineer.waitForURL(`${ui}/maintenance-projects/${project.id}`);
+    // This second creation starts from the global Maintenance Records form,
+    // which intentionally redirects back to the records directory.
+    await engineer.waitForURL(`${ui}/maintenance-records`);
     const history = await props(
         engineer,
         `/maintenance-projects/${project.id}`,
