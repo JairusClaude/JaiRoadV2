@@ -25,11 +25,12 @@ jobs:
           composer require 'laravel/framework:^13.40' --with-all-dependencies --no-interaction --no-scripts
           composer validate --no-check-publish
           composer audit --locked --no-interaction
-      - name: Emit resolved manifests for source-controlled review
-        run: |
-          printf '\nJAIROADS_COMPOSER_JSON_BEGIN\n'
-          base64 -w0 composer.json
-          printf '\nJAIROADS_COMPOSER_JSON_END\n'
-          printf 'JAIROADS_COMPOSER_LOCK_BEGIN\n'
-          base64 -w0 composer.lock
-          printf '\nJAIROADS_COMPOSER_LOCK_END\n'
+      - name: Archive resolved Composer manifests for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: patched-laravel-dependencies
+          path: |
+            composer.json
+            composer.lock
+          if-no-files-found: error
+          retention-days: 1
