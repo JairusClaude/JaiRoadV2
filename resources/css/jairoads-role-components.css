@@ -225,3 +225,71 @@ body:has(.jr-superadmin-workspace) .jr-responsive-shell [aria-current="page"] {
   color:#e9dfff!important;
   --tw-ring-color:#a78bfa!important;
 }
+
+
+/* Admin workspace color consistency: Audit Log, Settings and Monthly Updates. */
+body:has(.jr-admin-workspace) {
+  --jr-role-accent:#C8293D;
+  --jr-role-accent-hover:#A81424;
+  --jr-role-accent-soft:#FDE7EA;
+  --jr-role-accent-ink:#800D18;
+}
+body:has(.jr-admin-workspace) .jr-settings {
+  --jr-role-accent:#C8293D;
+  --jr-role-accent-hover:#A81424;
+  --jr-role-accent-soft:#FDE7EA;
+  --jr-role-accent-ink:#800D18;
+}
+/* Replace legacy amber/orange Settings controls, labels and selected states. */
+body:has(.jr-admin-workspace) .jr-settings :is(button,a)[class*="bg-[#90451F]"],
+body:has(.jr-admin-workspace) .jr-settings :is(button,a)[class*="bg-amber-700"],
+body:has(.jr-admin-workspace) .jr-settings :is(button,a)[class*="bg-orange-50"],
+body:has(.jr-admin-workspace) .jr-settings :is(button,a)[class*="bg-amber-50"] {
+  background-color:#C8293D!important;
+  border-color:#C8293D!important;
+  color:#fff!important;
+}
+body:has(.jr-admin-workspace) .jr-settings :is(button,a)[class*="bg-[#90451F]"]:hover,
+body:has(.jr-admin-workspace) .jr-settings :is(button,a)[class*="bg-amber-700"]:hover {
+  background-color:#A81424!important;
+  border-color:#A81424!important;
+}
+body:has(.jr-admin-workspace) .jr-settings [class*="text-amber-800"],
+body:has(.jr-admin-workspace) .jr-settings [class*="text-amber-900"],
+body:has(.jr-admin-workspace) .jr-settings [class*="text-amber-700"],
+body:has(.jr-admin-workspace) .jr-settings [class*="text-orange-800"] {
+  color:#C8293D!important;
+}
+body:has(.jr-admin-workspace) .jr-settings [class*="border-amber-600"],
+body:has(.jr-admin-workspace) .jr-settings [class*="ring-amber-600"],
+body:has(.jr-admin-workspace) .jr-settings [class*="focus-visible:outline-amber"] {
+  border-color:#C8293D!important;
+  --tw-ring-color:#C8293D!important;
+  outline-color:#C8293D!important;
+}
+body:has(.jr-admin-workspace) .jr-settings input[type="checkbox"] {
+  accent-color:#C8293D!important;
+}
+/* Audit Log controls and detail modal, including portalled dialog content. */
+body:has(.jr-admin-workspace) .jr-workspace :is(button,a)[class*="text-[#843b12]"],
+body:has(.jr-admin-workspace) .jr-workspace [class*="text-[#843b12]"] {
+  color:#C8293D!important;
+}
+body:has(.jr-admin-workspace) .jr-workspace :is(button,a)[class*="text-[#843b12]"]:hover {
+  background-color:#FDE7EA!important;
+  color:#A81424!important;
+}
+body:has(.jr-admin-workspace) [role="dialog"] [class*="text-[#843b12]"] {
+  color:#C8293D!important;
+}
+body:has(.jr-admin-workspace) .jr-workspace :is(button[type="submit"],button[data-variant="default"]) {
+  --tw-ring-color:#C8293D;
+}
+/* Monthly Updates progress fill follows the Admin workspace accent. */
+body:has(.jr-admin-workspace) .jr-monthly-progress-track > span,
+body:has(.jr-admin-workspace) .jr-monthly-report .jr-monthly-progress-track > span {
+  background:#C8293D!important;
+}
+body:has(.jr-admin-workspace) .jr-monthly-progress > span {
+  color:#C8293D;
+}

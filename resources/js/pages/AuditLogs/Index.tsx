@@ -252,7 +252,7 @@ export default function Index({ events, filters }: AuditLogsProps) {
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="h-8 px-2.5 text-xs text-[#843b12] hover:bg-[#843b12]/10 hover:text-[#843b12]"
+                                                    className="h-8 px-2.5 text-xs text-[#C8293D] hover:bg-[#FDE7EA] hover:text-[#A81424]"
                                                     onClick={() => setSelectedEvent(event)}
                                                 >
                                                     <Eye className="size-3.5 mr-1" />
@@ -289,7 +289,7 @@ export default function Index({ events, filters }: AuditLogsProps) {
                 <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-lg">
-                            <Shield className="size-5 text-[#843b12]" />
+                            <Shield className="size-5 text-[#C8293D]" />
                             Audit Event #{selectedEvent?.id}
                         </DialogTitle>
                         <DialogDescription>
