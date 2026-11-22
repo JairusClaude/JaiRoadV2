@@ -95,9 +95,9 @@ final class AccountTypeRankTest extends PostgresTestCase
         $engineer = $this->engineer();
         $this->account('Engineer', $engineer);
         $this->actingAs($admin)->get('/dd-phase3/users')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
-            ->component('dd-phase3/Workspace')->where('accounts.0.account_type', 'SuperAdmin')
-            ->where('accounts.1.account_type', 'Admin')->where('accounts.2.account_type', 'SuperAdmin')->where('accounts.3.account_type', 'Viewer')
-            ->where('accounts.4.account_type', 'Engineer')->where('accounts.4.engineer_id', $engineer)
+            ->component('dd-phase3/Workspace')->where('accounts.0.account_type', 'Engineer')
+            ->where('accounts.1.account_type', 'Viewer')->where('accounts.2.account_type', 'SuperAdmin')->where('accounts.3.account_type', 'Admin')
+            ->where('accounts.4.account_type', 'SuperAdmin')->where('accounts.0.engineer_id', $engineer)
             ->where('engineers.0.rank', 'Engineer II')->missing('engineers.0.position')
             ->missing('accounts.0.password')->missing('accounts.0.position'));
     }

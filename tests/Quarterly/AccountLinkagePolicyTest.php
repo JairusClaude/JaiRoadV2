@@ -90,7 +90,13 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
         $this->engineer('Retired');
         $available = $this->engineer();
         $this->actingAs($admin)->get('/dd-phase3/users')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
-            ->has('accounts', 200)->has('eligibleEngineers', 1)->where('eligibleEngineers.0.id', $available));
+            ->has('accounts', 15)->where('directory.total', 203)
+            ->has('eligibleEngineers', 1)->where('eligibleEngineers.0.id', $available));
+        // Search an early account that is outside the newest 15 displayed rows.
+        $this->get('/dd-phase3/users?directory_search=filler-0')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->has('accounts', 1)->where('accounts.0.username', 'filler-0')->where('directory.total', 1));
+        $this->get('/dd-phase3/users?directory_page=2')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->has('accounts', 15)->where('directory.page', 2));
     }
 
     public function test_existing_unlinked_admin_is_denied_without_mutating_or_grandfathering_it(): void

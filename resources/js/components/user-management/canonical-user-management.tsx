@@ -455,8 +455,10 @@ export default function CanonicalUserManagement({
             .filter((a) => a.engineer_id !== null)
             .map((a) => [a.engineer_id, a]),
     );
-    const q = search.trim().toLowerCase();
-    const filteredAccounts = directory ? accounts : accounts.filter((a) => {
+    const q = directory ? '' : search.trim().toLowerCase();
+    const appliedRole = directory ? 'all' : role;
+    const appliedState = directory ? 'all' : state;
+    const filteredAccounts = accounts.filter((a) => {
         const e =
             a.engineer_id === null ? undefined : byEngineer.get(a.engineer_id);
 
@@ -465,11 +467,11 @@ export default function CanonicalUserManagement({
                 .join(' ')
                 .toLowerCase()
                 .includes(q) &&
-            (role === 'all' || a.account_type === role) &&
-            (state === 'all' || (state === 'active') === a.is_active)
+            (appliedRole === 'all' || a.account_type === appliedRole) &&
+            (appliedState === 'all' || (appliedState === 'active') === a.is_active)
         );
     });
-    const filteredEngineers = directory ? engineers : engineers.filter(
+    const filteredEngineers = engineers.filter(
         (e) =>
             [
                 nameOf(e),
@@ -481,8 +483,8 @@ export default function CanonicalUserManagement({
                 .join(' ')
                 .toLowerCase()
                 .includes(q) &&
-            (state === 'all' ||
-                (state === 'active') === (e.engineer_status === 'Active')),
+            (appliedState === 'all' ||
+                (appliedState === 'active') === (e.engineer_status === 'Active')),
     );
     const count =
         directory?.total ??
@@ -490,6 +492,8 @@ export default function CanonicalUserManagement({
     const last = directory?.pages ?? Math.max(1, Math.ceil(count / pageSize));
     const current = directory?.page ?? Math.min(page, last);
     const start = (current - 1) * pageSize;
+    const sliceStart = directory ? 0 : start;
+    const sliceEnd = directory ? pageSize : start + pageSize;
     function visitPage(next: number) {
         if (!directory) {
             setPage(next);
@@ -544,10 +548,7 @@ export default function CanonicalUserManagement({
         {
             label: 'Active accounts',
             value: activeAccounts,
-            detail:
-                directory ? 'Enabled for sign-in' : accountTotal !== null && accountTotal > accounts.length
-                    ? 'In loaded directory'
-                    : 'Enabled for sign-in',
+            detail: 'Enabled for sign-in',
             Icon: ShieldCheck,
         },
         {
@@ -726,10 +727,9 @@ export default function CanonicalUserManagement({
                                 </tr>
                             </thead>
                             <tbody>
-                                {(directory
-                                    ? filteredAccounts
-                                    : filteredAccounts.slice(start, start + pageSize)
-                                ).map((a) => {
+                                {filteredAccounts
+                                    .slice(sliceStart, sliceEnd)
+                                    .map((a) => {
                                         const e =
                                             a.engineer_id === null
                                                 ? undefined
@@ -828,10 +828,9 @@ export default function CanonicalUserManagement({
                                 </tr>
                             </thead>
                             <tbody>
-                                {(directory
-                                    ? filteredEngineers
-                                    : filteredEngineers.slice(start, start + pageSize)
-                                ).map((e) => {
+                                {filteredEngineers
+                                    .slice(sliceStart, sliceEnd)
+                                    .map((e) => {
                                         const account = linkedAccounts.get(
                                             e.id,
                                         );
@@ -978,15 +977,7 @@ export default function CanonicalUserManagement({
                         </button>
                     </div>
                 </div>
-                {!directory &&
-                    ((accountTotal !== null && accountTotal > accounts.length) ||
-                        engineers.length === 200) && (
-                    <p className="um-limit">
-                        Search and filters apply to the loaded directory. The
-                        server currently returns up to 200 accounts and 200
-                        profiles.
-                    </p>
-                )}
+
             </section>
             <aside className="um-policy">
                 <ShieldCheck size={20} />
