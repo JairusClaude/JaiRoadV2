@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Services\OperationAudit;
 use App\Services\RoadReferenceBounds;
 use App\Services\RoleAccess;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Response;
 
 /**
@@ -211,18 +214,7 @@ final class RoadCoveragePageController extends OperationsFrontendController
 
         $actor = $this->actor($request);
         abort_unless(RoleAccess::canDeleteOperations($actor['role']), 403, 'Only administrators may delete road coverages.');
-
-        $road = $this->roads($actor)->where('rc.id', $id)->first();
-        abort_unless($road !== null, 404);
-
-        if (!empty($road->project_id)) {
-            return back()->withErrors(['delete' => "Cannot delete road coverage {$road->road_name} because Maintenance Project {$road->project_title} references it."]);
-        }
-
-        DB::transaction(function () use ($id): void {
-            $deleted = DB::table('jairoads_next.road_coverages')->where('id', $id)->delete();
-            abort_unless($deleted > 0, 404);
-        });
+        $this->deleteCheckedRoads($request, $actor, [$id]);
 
         return redirect(self::BASE.'/road-coverages')->with('dd_operations_status', 'Road coverage deleted successfully.');
     }
@@ -235,26 +227,57 @@ final class RoadCoveragePageController extends OperationsFrontendController
 
         $actor = $this->actor($request);
         abort_unless(RoleAccess::canDeleteOperations($actor['role']), 403, 'Only administrators may delete road coverages.');
-
-        $ids = $request->input('ids', []);
-        if (is_array($ids) && count($ids) > 0) {
-            $blocked = [];
-            foreach ($ids as $id) {
-                $road = $this->roads($actor)->where('rc.id', $id)->first();
-                if ($road && !empty($road->project_id)) {
-                    $blocked[] = $road->road_name;
-                }
-            }
-
-            if (!empty($blocked)) {
-                return back()->withErrors(['ids' => 'Cannot delete the following roads because they are referenced by maintenance projects: ' . implode(', ', $blocked)]);
-            }
-
-            DB::transaction(function () use ($ids): void {
-                DB::table('jairoads_next.road_coverages')->whereIn('id', $ids)->delete();
-            });
-        }
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:100'],
+            'ids.*' => ['required', 'integer', 'min:1', 'distinct'],
+        ]);
+        $this->deleteCheckedRoads($request, $actor, array_map('intval', $validated['ids']));
 
         return redirect(self::BASE.'/road-coverages')->with('dd_operations_status', 'Selected road coverages deleted successfully.');
+    }
+
+    /**
+     * Lock target roads first, then check children, delete, and record canonical
+     * audit/notification events in the same transaction. A project insert must
+     * acquire a key-share lock on its road parent, so it cannot race this delete.
+     *
+     * @param array{account_id:int,role:string,engineer_id:?int} $actor
+     * @param list<int> $ids
+     */
+    private function deleteCheckedRoads(Request $request, array $actor, array $ids): void
+    {
+        sort($ids);
+        try {
+            DB::transaction(function () use ($request, $actor, $ids): void {
+                $rows = DB::table('jairoads_next.road_coverages')
+                    ->whereIn('id', $ids)->orderBy('id')->lockForUpdate()->get();
+                abort_unless($rows->count() === count($ids), 404);
+                abort_unless($this->actor($request) === $actor && RoleAccess::canDeleteOperations($actor['role']), 403);
+
+                $attached = DB::table('jairoads_next.maintenance_projects')
+                    ->whereIn('road_coverage_id', $ids)->pluck('road_coverage_id')->all();
+                if ($attached !== []) {
+                    throw ValidationException::withMessages([
+                        'delete' => 'One or more selected roads are referenced by maintenance projects. Remove those dependencies before deleting roads.',
+                    ]);
+                }
+
+                foreach ($rows as $row) {
+                    DB::table('jairoads_next.road_coverages')->where('id', $row->id)->delete();
+                    app(OperationAudit::class)->record(
+                        $actor, 'DELETE', 'RoadCoverage', (int) $row->id,
+                        'Authorized RoadCoverage deleted after dependency checks.', [], (array) $row,
+                    );
+                }
+            });
+        } catch (QueryException $error) {
+            if (($error->errorInfo[0] ?? null) === '23503') {
+                throw ValidationException::withMessages([
+                    'delete' => 'A maintenance project now references a selected road. Refresh and try again.',
+                ]);
+            }
+
+            throw $error;
+        }
     }
 }

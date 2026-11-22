@@ -41,6 +41,7 @@ final class PreviewSecurityTest extends TestCase
         $this->assertStringNotContainsString("validateCsrfTokens(except:", $bootstrap);
         $this->assertStringNotContainsString("trustProxies(at: '*')", $bootstrap);
         $this->assertStringNotContainsString("trustProxies(at: config(", $bootstrap);
-        $this->assertStringContainsString("env('TRUSTED_PROXIES'", $bootstrap);
+        $this->assertStringContainsString("['trusted_proxies']", $bootstrap);
+        $this->assertStringContainsString("bootstrap/cache/config.php", $bootstrap);
     }
 }

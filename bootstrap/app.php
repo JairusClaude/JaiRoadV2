@@ -26,11 +26,15 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // All canonical UI mutations remain protected by Laravel's default CSRF checks.
-        // Bootstrap callbacks run before the config service is bound. Read
-        // deployer-provided proxy addresses directly from the environment,
-        // never from a request header. Wildcards are not accepted.
+        // Middleware is configured before the container's config repository is
+        // bound. Read the application's *cached* configuration when present;
+        // otherwise read the same config source as config:cache, not a request.
+        $configCache = dirname(__DIR__).'/bootstrap/cache/config.php';
+        $appConfig = is_file($configCache)
+            ? (require $configCache)['app']
+            : require dirname(__DIR__).'/config/app.php';
         $trustedProxies = array_values(array_filter(
-            array_map('trim', explode(',', (string) env('TRUSTED_PROXIES', ''))),
+            array_map('trim', explode(',', (string) ($appConfig['trusted_proxies'] ?? ''))),
             static fn (string $proxy): bool => $proxy !== '' && $proxy !== '*',
         ));
         $middleware->trustProxies(at: $trustedProxies);
