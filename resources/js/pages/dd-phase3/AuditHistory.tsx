@@ -400,7 +400,7 @@ export default function AuditHistory({
                         {refreshing ? 'Refreshing…' : 'Refresh monitoring'}
                     </Button>
                 </div>
-                <main className="relative -mx-7 -mt-3.5 min-w-0 rounded-t-[20px] bg-white px-7 pt-7 pb-10 shadow-sm">
+                <main className="relative mx-0 -mt-3.5 min-w-0 rounded-t-[20px] bg-white px-4 pt-7 pb-10 shadow-sm sm:-mx-6 sm:px-6 lg:-mx-7 lg:px-7">
                     <section
                         aria-label="Audit log statistics"
                         className="jr-metrics-grid mb-6 grid w-full gap-4 sm:grid-cols-3"
