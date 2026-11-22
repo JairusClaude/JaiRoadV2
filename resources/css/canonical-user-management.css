@@ -129,3 +129,65 @@ body:has(.jr-superadmin-workspace) .um-workspace :is(.um-dialog button:focus-vis
   outline:2px solid #a78bfa;
   outline-offset:2px;
 }
+
+
+/* Admin workspace: same canonical User Management controls, using Admin red.
+   Account-type badges remain role-coded and are intentionally not overridden. */
+body:has(.jr-admin-workspace) .um-workspace {
+  --um-role-accent:#c8293d;
+  --um-role-accent-hover:#a81424;
+  --um-role-accent-soft:#fde7ea;
+  --um-role-accent-ink:#800d18;
+}
+body:has(.jr-admin-workspace) .um-workspace .um-stat-icon {
+  color:#c8293d;
+  background:#fde7ea;
+}
+body:has(.jr-admin-workspace) .um-workspace .um-primary {
+  background:#c8293d;
+  color:#fff;
+  border-color:#c8293d;
+  box-shadow:0 2px 6px #c8293d2e;
+}
+body:has(.jr-admin-workspace) .um-workspace .um-primary:hover:not(:disabled) {
+  background:#a81424;
+  border-color:#a81424;
+}
+body:has(.jr-admin-workspace) .um-workspace .um-secondary {
+  color:#800d18;
+  border-color:#e9aab2;
+}
+body:has(.jr-admin-workspace) .um-workspace .um-secondary:hover:not(:disabled) {
+  color:#800d18;
+  background:#fde7ea;
+  border-color:#c8293d;
+}
+body:has(.jr-admin-workspace) .um-workspace .um-tabs button[aria-pressed=true] {
+  color:#c8293d;
+  border-color:#c8293d;
+}
+body:has(.jr-admin-workspace) .um-workspace .um-tabs button[aria-pressed=true] span {
+  color:#800d18;
+  background:#fde7ea;
+}
+body:has(.jr-admin-workspace) .um-workspace .um-avatar {
+  color:#800d18;
+  background:#fde7ea;
+}
+body:has(.jr-admin-workspace) .um-workspace :is(.um-search:focus-within,.um-input:focus,.um-filter:focus) {
+  outline:2px solid #f16b76;
+  outline-offset:1px;
+  border-color:#c8293d;
+}
+body:has(.jr-admin-workspace) .um-workspace :is(.um-dialog button:focus-visible,.um-password-toggle:focus-visible) {
+  outline:2px solid #f16b76;
+  outline-offset:2px;
+}
+body:has(.jr-admin-workspace) .um-workspace .um-row-action {
+  border-color:#e9aab2;
+  color:#800d18;
+}
+body:has(.jr-admin-workspace) .um-workspace .um-row-action:hover {
+  background:#fde7ea;
+  border-color:#c8293d;
+}
