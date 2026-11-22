@@ -14,6 +14,7 @@ test('login screen can be rendered', function () {
 });
 
 test('HTTPS public origin preserves client-side login and canonical workspace redirects', function () {
+    $originalUrl = config('app.url');
     config(['app.url' => 'https://jairoads.example.test']);
     $this->withServerVariables(['HTTP_HOST' => 'jairoads.example.test', 'HTTPS' => 'off']);
 
@@ -33,8 +34,9 @@ test('HTTPS public origin preserves client-side login and canonical workspace re
         $this->get('/maintenance-projects')->assertRedirect('https://jairoads.example.test/dd-phase3/ui/maintenance-projects');
         $this->get('/user-management')->assertRedirect('https://jairoads.example.test/dd-phase3/users');
     } finally {
-        // In-process test requests share the URL generator. Do not leak the
-        // synthetic HTTPS host into unrelated tests or password-recovery flows.
+        // In-process test requests share configuration and the URL generator.
+        // Restore both before unrelated tests and password-recovery flows.
+        config(['app.url' => $originalUrl]);
         URL::forceRootUrl(null);
         URL::forceScheme(null);
     }
