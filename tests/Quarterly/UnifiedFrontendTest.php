@@ -68,8 +68,12 @@ final class UnifiedFrontendTest extends PostgresTestCase
             ->where('mapCoverages.1.id', $road)->where('mapCoverages.1.my_project', false)
             ->where('mapCoverages.2.id', $f['road'])->where('mapCoverages.2.my_project', true)
             ->where('mapCoverages.2.my_record_count', 2)->where('mapCoverages.2.project_id', $f['project']));
-        $this->withSession(['password_hash_web' => null])->actingAs($otherLogin)->get('/dd-phase3/dashboard')->assertOk()->assertInertia(fn (Assert $page) => $page
+        // Switching test identities must also clear the previous Laravel
+        // authentication-session password hash.
+        $this->flushSession();
+        $this->actingAs($otherLogin)->get('/dd-phase3/dashboard')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->where('mapCoverages.0.my_project', false)->where('mapCoverages.1.my_project', true));
+        $this->flushSession();
         $this->actingAs($this->account('Viewer'))->get('/dd-phase3/dashboard')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->has('mapCoverages', 0));
     }
