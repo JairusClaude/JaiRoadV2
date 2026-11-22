@@ -30,9 +30,9 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
 
         $actor = $this->actor($request);
         $sort = $request->query('sort');
-        $year = $request->string('year', 'all')->toString();
+        $year = LiteralDirectorySearch::option($request->query('year'));
         $year = ctype_digit($year) && strlen($year) <= 4 ? (string) (int) $year : 'all';
-        $filters = ['search' => LiteralDirectorySearch::normalize($request->query('search')), 'project' => $request->string('project', 'all')->toString(),
+        $filters = ['search' => LiteralDirectorySearch::normalize($request->query('search')), 'project' => LiteralDirectorySearch::option($request->query('project')),
             'year' => $year,
             'sort' => is_string($sort) && in_array($sort, ['newest', 'oldest', 'modified'], true) ? $sort : 'newest'];
         $authorized = $this->updateQuery($actor);

@@ -12,6 +12,12 @@ final class LiteralDirectorySearch
         return is_string($value) ? mb_substr(trim($value), 0, 150) : '';
     }
 
+    /** Select/filter values must remain scalar strings in Inertia page props. */
+    public static function option(mixed $value, string $fallback = 'all'): string
+    {
+        return is_string($value) ? mb_substr(trim($value), 0, 150) : $fallback;
+    }
+
     public static function pattern(string $value): string
     {
         return '%'.addcslashes($value, '%_\\').'%';

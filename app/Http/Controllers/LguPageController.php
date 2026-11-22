@@ -30,7 +30,8 @@ final class LguPageController extends OperationsFrontendController
         $province = is_string($provinceInput) ? mb_substr(trim($provinceInput), 0, 150) : '';
         $regionInput = $request->query('region');
         $region = is_string($regionInput) ? mb_substr(trim($regionInput), 0, 150) : '';
-        $sort = $request->query('sort') === 'desc' ? 'desc' : 'asc';
+        $sortInput = $request->query('sort');
+        $sort = is_string($sortInput) && strtolower($sortInput) === 'desc' ? 'desc' : 'asc';
 
         // Dependency counts are correlated subqueries, never 2N page queries.
         $query = DB::table('jairoads_next.lgus as l')

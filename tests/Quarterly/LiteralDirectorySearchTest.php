@@ -77,6 +77,27 @@ it('normalizes malformed and unicode search inputs instead of interpolating patt
     ]))->assertOk()->assertInertia(fn (Assert $page) => $page->where('filters.search', str_repeat('é', 150))->where('filters.province', '')->where('filters.region', '')->where('filters.sort', 'asc'));
 });
 
+
+it('normalizes structured directory filters to safe scalar options and preserves descending LGU sorting', function (): void {
+    $this->fixture('Admin');
+
+    $this->get('/dd-phase3/ui/road-coverages?'.http_build_query([
+        'municipality' => ['invalid'], 'condition' => ['invalid'], 'pavement' => ['invalid'], 'sort' => ['name-asc'],
+    ]))->assertOk()->assertInertia(fn (Assert $page) => $page->where('filters.municipality', 'all')->where('filters.condition', 'all')->where('filters.pavement', 'all')->where('filters.sort', 'newest'));
+    $this->get('/dd-phase3/ui/maintenance-records?'.http_build_query([
+        'municipality' => ['invalid'], 'year' => ['invalid'], 'quarter' => ['Q4'], 'status' => ['Completed'], 'sort' => ['oldest'],
+    ]))->assertOk()->assertInertia(fn (Assert $page) => $page->where('filters.municipality', 'all')->where('filters.year', 'all')->where('filters.quarter', 'all')->where('filters.status', 'all')->where('filters.sort', 'newest'));
+
+    foreach (['maintenance-projects', 'maintenance-documents', 'monthly-updates'] as $module) {
+        $this->get('/dd-phase3/ui/'.$module.'?'.http_build_query(['project' => ['invalid'], 'municipality' => ['invalid']]))->assertOk();
+    }
+    $this->get('/dd-phase3/ui/maintenance-projects?'.http_build_query(['municipality' => ['invalid']]))->assertInertia(fn (Assert $page) => $page->where('filters.municipality', 'all'));
+    $this->get('/dd-phase3/ui/maintenance-documents?'.http_build_query(['project' => ['invalid']]))->assertInertia(fn (Assert $page) => $page->where('filters.project', 'all'));
+    $this->get('/dd-phase3/ui/monthly-updates?'.http_build_query(['project' => ['invalid'], 'year' => ['invalid']]))->assertInertia(fn (Assert $page) => $page->where('filters.project', 'all')->where('filters.year', 'all'));
+    $this->get('/dd-phase3/ui/audit-logs?'.http_build_query(['action' => ['invalid']]))->assertInertia(fn (Assert $page) => $page->where('filters.action', 'all'));
+    $this->get('/dd-phase3/ui/lgus?sort=DESC')->assertInertia(fn (Assert $page) => $page->where('filters.sort', 'desc'));
+});
+
 it('keeps LGU dependency counts correct without a per-row SQL query and paginates ties stably', function (): void {
     $f = $this->fixture('Admin');
     $lgu = (int) DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->value('lgu_id');

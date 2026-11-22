@@ -36,6 +36,11 @@ final class RoadCoveragePageController extends OperationsFrontendController
         $filters = $request->only(['search', 'municipality', 'condition', 'pavement', 'sort'])
             + ['search' => '', 'municipality' => 'all', 'condition' => 'all', 'pavement' => 'all', 'sort' => 'newest'];
         $filters['search'] = LiteralDirectorySearch::normalize($filters['search']);
+        foreach (['municipality', 'condition', 'pavement'] as $key) {
+            $filters[$key] = LiteralDirectorySearch::option($filters[$key]);
+        }
+        $sort = LiteralDirectorySearch::option($filters['sort'], 'newest');
+        $filters['sort'] = in_array($sort, ['newest', 'oldest', 'name-asc', 'name-desc'], true) ? $sort : 'newest';
         $query = $this->roads($actor);
         if ($filters['search'] !== '') {
             $query->where('rc.road_name', 'ilike', LiteralDirectorySearch::pattern($filters['search']));

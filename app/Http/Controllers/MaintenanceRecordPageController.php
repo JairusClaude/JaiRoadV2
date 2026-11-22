@@ -120,6 +120,10 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
         $filters = $request->only(['search', 'municipality', 'year', 'quarter', 'status', 'sort'])
             + ['search' => '', 'municipality' => 'all', 'year' => 'all', 'quarter' => 'all', 'status' => 'all', 'sort' => 'newest'];
         $filters['search'] = LiteralDirectorySearch::normalize($filters['search']);
+        foreach (['municipality', 'year', 'quarter', 'status'] as $key) {
+            $filters[$key] = LiteralDirectorySearch::option($filters[$key]);
+        }
+        $filters['sort'] = $filters['sort'] === 'oldest' ? 'oldest' : 'newest';
         $q = $this->records($actor);
         if ($filters['search'] !== '') {
             $like = LiteralDirectorySearch::pattern($filters['search']);

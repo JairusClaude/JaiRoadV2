@@ -27,7 +27,7 @@ final class MaintenanceProjectPageController extends OperationsFrontendControlle
         }
 
         $actor = $this->actor($request);
-        $filters = ['search' => LiteralDirectorySearch::normalize($request->query('search')), 'municipality' => $request->string('municipality', 'all')->toString(), 'sort' => $request->query('sort') === 'oldest' ? 'oldest' : 'newest'];
+        $filters = ['search' => LiteralDirectorySearch::normalize($request->query('search')), 'municipality' => LiteralDirectorySearch::option($request->query('municipality')), 'sort' => $request->query('sort') === 'oldest' ? 'oldest' : 'newest'];
         $q = $this->projects($actor, false)->when($filters['search'] !== '', fn (Builder $q) => $q->where('p.project_title', 'ilike', LiteralDirectorySearch::pattern($filters['search'])));
         if (ctype_digit($filters['municipality'])) {
             $q->where('rc.lgu_id', $filters['municipality']);

@@ -25,7 +25,7 @@ final class AuditLogPageController extends OperationsFrontendController
         abort_unless(RoleAccess::managesBusinessData($actor['role']), 403);
 
         $search = LiteralDirectorySearch::normalize($request->query('search'));
-        $action = $request->string('action', 'all')->toString();
+        $action = LiteralDirectorySearch::option($request->query('action'));
         $sort = $request->query('sort') === 'oldest' ? 'oldest' : 'newest';
 
         $q = DB::table('jairoads_next.audit_logs as a')
