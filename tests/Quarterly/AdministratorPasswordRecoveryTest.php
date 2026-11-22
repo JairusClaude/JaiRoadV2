@@ -92,7 +92,8 @@ final class AdministratorPasswordRecoveryTest extends PostgresTestCase
         $data = ['current_password' => 'Disposable-Test!123', 'password' => 'Replacement-Disposable!456', 'password_confirmation' => 'Replacement-Disposable!456'];
         $this->actingAs($admin)->getJson('/dd-phase3/accounts/'.$id)->assertOk()->assertJsonPath('can_reset_password', false);
         $this->postJson($url($target), $data)->assertForbidden();
-        $this->actingAs($root)->postJson($url($target), array_replace($data, ['current_password' => 'wrong']))->assertUnprocessable()->assertJsonValidationErrors('current_password');
+        $this->withSession(['password_hash_web' => null])->actingAs($root)
+            ->postJson($url($target), array_replace($data, ['current_password' => 'wrong']))->assertUnprocessable()->assertJsonValidationErrors('current_password');
         $this->postJson($url($otherRoot), $data)->assertForbidden();
         $this->postJson($url($root), $data)->assertForbidden();
         $this->postJson($url($inactive), $data)->assertUnprocessable();

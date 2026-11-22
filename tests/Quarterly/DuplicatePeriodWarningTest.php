@@ -51,7 +51,7 @@ final class DuplicatePeriodWarningTest extends PostgresTestCase
         $this->postJson($url, $this->formData($f['project'], $other, 'Q1', 2027))->assertRedirect();
     }
 
-    public function test_warning_and_links_do_not_survive_loss_of_authorized_lgu_scope(): void
+    public function test_duplicate_period_warning_survives_historical_lgu_unassignment_without_leaking_to_viewers(): void
     {
         $f = $this->fixture('Engineer');
         $url = '/dd-phase3/ui/maintenance-projects/'.$f['project'].'/records';
@@ -62,10 +62,13 @@ final class DuplicatePeriodWarningTest extends PostgresTestCase
         DB::table('jairoads_next.engineer_lgus')->where('engineer_id', $f['engineer'])->where('lgu_id', $oldLgu)->update(['is_active' => false]);
         $road = $this->road($f['engineer']);
         $otherProject = (int) DB::table('jairoads_next.maintenance_projects')->insertGetId(['project_title' => 'Other authorized project', 'road_coverage_id' => $road, 'created_by' => $f['user']->dd_user_account_id]);
+        // Historical LGU membership no longer revokes an active Engineer's
+        // cross-municipality read or ownership. The duplicate remains visible.
         $this->get('/dd-phase3/ui/maintenance-records/create')->assertInertia(fn (Assert $page) => $page
-            ->where('duplicatePeriod', null)->has('records', 0)->has('projects', 1)
-            ->where('projects.0.id', $otherProject));
-        $this->get($url.'/1')->assertNotFound();
+            ->where('duplicatePeriod.project_id', $f['project'])
+            ->has('records', 1)->has('projects', 2));
+        $existing = (int) DB::table('jairoads_next.maintenance_records')->value('id');
+        $this->get($url.'/'.$existing)->assertOk();
         $this->flushSession();
         $this->actingAs($this->account('Viewer'))->postJson($url, $data)->assertForbidden();
     }

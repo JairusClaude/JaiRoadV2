@@ -44,7 +44,7 @@ final class FileRemovalPreparationTest extends PostgresTestCase
         }
     }
 
-    public function test_invalid_file_access_checks_parent_scope_before_private_storage(): void
+    public function test_invalid_file_ids_are_rejected_before_private_storage(): void
     {
         [$f,$document,$media] = $this->files();
         $this->getJson('/dd-phase3/files/document/999999/deletion-review')->assertNotFound();
@@ -57,8 +57,11 @@ final class FileRemovalPreparationTest extends PostgresTestCase
         $engineer = $this->engineer();
         $login = $this->account('Viewer', $engineer);
         $this->road($engineer);
-        $this->withSession(['password_hash_web' => null])->actingAs($login)->getJson('/dd-phase3/files/document/'.$document)->assertForbidden();
-        $this->getJson('/dd-phase3/files/media/'.$media)->assertForbidden();
+        // Valid linked roles can read across municipalities. Nonexistent file
+        // IDs must still return 404 without touching private Storage.
+        $this->withSession(['password_hash_web' => null])->actingAs($login)
+            ->getJson('/dd-phase3/files/document/999999')->assertNotFound();
+        $this->getJson('/dd-phase3/files/media/999999')->assertNotFound();
         $this->assertSame(1, DB::table('jairoads_next.maintenance_documents')->count());
     }
 

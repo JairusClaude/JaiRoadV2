@@ -448,6 +448,9 @@ final class PermanentFileDeletionTest extends PostgresTestCase
             DB::table('jairoads_next.maintenance_documents')->where('id', $f['documents'][0])->lockForUpdate()->first();
             $worker = new Process([PHP_BINARY, __DIR__.'/file-deletion-worker.php', (string) $f['user']->id, (string) $f['documents'][0], 'unused', $marker]);
             $worker->setTimeout(20);
+            // The independent PHP process must inherit the disposable-only
+            // deletion approval; the parent test's config() is process-local.
+            $worker->setEnv(['JAIROADS_PERMANENT_FILE_DELETION_ENABLED' => 'true']);
             $worker->start();
             $deadline = microtime(true) + 8;
             do {
@@ -503,6 +506,7 @@ final class PermanentFileDeletionTest extends PostgresTestCase
                 $worker = new Process([PHP_BINARY, __DIR__.'/file-deletion-worker.php', (string) $f['user']->id,
                     (string) $f['documents'][0], 'unused', $marker]);
                 $worker->setTimeout(20);
+                $worker->setEnv(['JAIROADS_PERMANENT_FILE_DELETION_ENABLED' => 'true']);
                 $worker->start();
                 $workers[] = $worker;
             }
