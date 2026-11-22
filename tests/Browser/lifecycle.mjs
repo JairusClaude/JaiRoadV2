@@ -37,7 +37,10 @@ try {
     const admin = await signIn(f.admin_email);
     await admin.goto(`${base}/dd-phase3/users`);
     await admin.getByRole('button', { name: /^Engineers/ }).click();
-    await admin.locator(`[data-engineer-id="${f.former_id}"]`).getByRole('button', { name: /^Manage engineer/ }).click();
+    await admin
+        .locator(`[data-engineer-id="${f.former_id}"]`)
+        .getByRole('button', { name: /^Manage engineer/ })
+        .click();
     const engineer = admin.getByRole('region', {
         name: 'Engineer profile lifecycle',
     });
@@ -51,7 +54,10 @@ try {
         .waitFor();
     await admin.getByRole('button', { name: 'Close dialog' }).click();
     await admin.getByRole('button', { name: /^User Accounts/ }).click();
-    await admin.locator(`[data-account-id="${f.viewer_id}"]`).getByRole('button', { name: /^Manage account/ }).click();
+    await admin
+        .locator(`[data-account-id="${f.viewer_id}"]`)
+        .getByRole('button', { name: /^Manage account/ })
+        .click();
     const accounts = admin.getByRole('region', {
         name: 'UserAccount lifecycle',
     });
@@ -129,7 +135,10 @@ try {
 
     await admin.goto(`${base}/dd-phase3/users`);
     await admin.getByRole('button', { name: /^Engineers/ }).click();
-    await admin.locator(`[data-engineer-id="${f.former_id}"]`).getByRole('button', { name: /^Manage engineer/ }).click();
+    await admin
+        .locator(`[data-engineer-id="${f.former_id}"]`)
+        .getByRole('button', { name: /^Manage engineer/ })
+        .click();
     await engineer
         .getByRole('button', { name: 'Retire Engineer', exact: true })
         .click();

@@ -99,17 +99,22 @@ async function session() {
     }
 
     async function submitCamera(token, jpeg) {
-        return request('/dd-phase3/ui/deletion-challenge/camera?scope=project', {
-            method: 'POST',
-            body: jpeg,
-            headers: {
-                'Content-Type': 'image/jpeg',
-                'X-Deletion-Challenge': token,
-                'X-XSRF-TOKEN': decodeURIComponent(cookies.get('XSRF-TOKEN') || ''),
-                Accept: 'application/json',
-                Origin: base,
+        return request(
+            '/dd-phase3/ui/deletion-challenge/camera?scope=project',
+            {
+                method: 'POST',
+                body: jpeg,
+                headers: {
+                    'Content-Type': 'image/jpeg',
+                    'X-Deletion-Challenge': token,
+                    'X-XSRF-TOKEN': decodeURIComponent(
+                        cookies.get('XSRF-TOKEN') || '',
+                    ),
+                    Accept: 'application/json',
+                    Origin: base,
+                },
             },
-        });
+        );
     }
 
     return { request, post, remove, submitCamera };
@@ -123,9 +128,19 @@ async function verifiedProjectDeletion(client) {
     assert.equal(challengeResponse.status, 200);
     const challenge = await challengeResponse.json();
     const numbers = /^(\d+) \+ (\d+)$/.exec(challenge.question);
-    assert.ok(numbers, 'Deletion challenge must be a solvable arithmetic question');
-    const receiptResponse = await client.submitCamera(challenge.token, verificationPhoto);
-    assert.equal(receiptResponse.status, 200, 'Camera receipt must be verified');
+    assert.ok(
+        numbers,
+        'Deletion challenge must be a solvable arithmetic question',
+    );
+    const receiptResponse = await client.submitCamera(
+        challenge.token,
+        verificationPhoto,
+    );
+    assert.equal(
+        receiptResponse.status,
+        200,
+        'Camera receipt must be verified',
+    );
     const { receipt } = await receiptResponse.json();
 
     return {
@@ -303,11 +318,18 @@ try {
             `/dd-phase3/files/document/${fixture.document_id}`,
         );
         assert.equal(otherEngineerDownload.status, 200);
-        assert.deepEqual(Buffer.from(await otherEngineerDownload.arrayBuffer()), pdf);
+        assert.deepEqual(
+            Buffer.from(await otherEngineerDownload.arrayBuffer()),
+            pdf,
+        );
         assert.equal(mock.counts.downloads, before + 1);
         const guest = await session();
         assert.equal(
-            (await guest.request(`/dd-phase3/files/document/${fixture.document_id}`)).status,
+            (
+                await guest.request(
+                    `/dd-phase3/files/document/${fixture.document_id}`,
+                )
+            ).status,
             302,
         );
 
@@ -387,13 +409,19 @@ try {
             ).status,
             422,
         );
-        assert.equal((await historicalAdmin.request(blockedProject)).status, 200);
+        assert.equal(
+            (await historicalAdmin.request(blockedProject)).status,
+            200,
+        );
         const storageBeforeProject = mock.counts.compensations;
 
         for (const [i, path] of retainedFiles.entries()) {
             const response = await historicalAdmin.request(path);
             assert.equal(response.status, 200);
-            assert.deepEqual(Buffer.from(await response.arrayBuffer()), retainedBytes[i]);
+            assert.deepEqual(
+                Buffer.from(await response.arrayBuffer()),
+                retainedBytes[i],
+            );
         }
 
         const emptyProject = `/dd-phase3/ui/maintenance-projects/${fixture.empty_project}`;
@@ -412,7 +440,10 @@ try {
         assert.equal(deletion.status, 200);
         assert.equal((await deletion.json()).state, 'completed');
         assert.equal((await historicalAdmin.request(emptyProject)).status, 404);
-        assert.equal((await historicalAdmin.request(blockedProject)).status, 200);
+        assert.equal(
+            (await historicalAdmin.request(blockedProject)).status,
+            200,
+        );
         assert.equal(mock.counts.compensations, storageBeforeProject);
 
         for (const path of retainedFiles) {
