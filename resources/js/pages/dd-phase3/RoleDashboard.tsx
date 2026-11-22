@@ -273,7 +273,7 @@ export default function RoleDashboard({
                     </button>
                 </div>
 
-                <main className="relative -mx-7 -mt-3.5 min-w-0 space-y-6 rounded-t-[20px] bg-white px-7 pt-7 pb-10 shadow-sm">
+                <main className="relative -mx-4 -mt-3.5 min-w-0 space-y-6 rounded-t-[20px] bg-white px-4 pt-7 pb-10 shadow-sm sm:-mx-6 sm:px-6 lg:-mx-7 lg:px-7">
                     <section
                         className={
                             isEngineer
