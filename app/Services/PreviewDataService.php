@@ -674,7 +674,7 @@ final class PreviewDataService
             ];
             $store['preview_audit_events'] = $events;
         }
-        $store['lgus'] = $lgus->reject(fn ($l) => in_array((int) $l['id'], $ids, true))->values()->all();
+        $store['lgus'] = array_values($lgus->reject(fn ($l) => in_array((int) $l['id'], $ids, true))->values()->all());
 
         return $store;
     }
