@@ -59,8 +59,7 @@ it('matches percent signs literally in every canonical operational directory', f
         ['maintenance-documents', 'Document%Alpha', 'documents.data', $documentA],
         ['audit-logs', 'Audit%Alpha', 'events.data', $auditA],
     ] as [$path, $search, $dataKey, $expectedId]) {
-        $this->get('/dd-phase3/ui/'.$path.'?'.http_build_query(['search' => $search]))->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->has($dataKey, 1)->where($dataKey.'.0.id', $expectedId));
+        $this->get('/dd-phase3/ui/'.$path.'?'.http_build_query(['search' => $search]))->assertOk()->assertInertia(fn (Assert $page) => $page->has($dataKey, 1)->where($dataKey.'.0.id', $expectedId));
     }
 });
 
@@ -69,25 +68,19 @@ it('normalizes malformed and unicode search inputs instead of interpolating patt
 
     foreach (['lgus', 'road-coverages', 'maintenance-projects', 'maintenance-records',
         'monthly-updates', 'maintenance-documents', 'audit-logs'] as $path) {
-        $this->get('/dd-phase3/ui/'.$path.'?'.http_build_query(['search' => ['unexpected']]))->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->where('filters.search', ''));
+        $this->get('/dd-phase3/ui/'.$path.'?'.http_build_query(['search' => ['unexpected']]))->assertOk()->assertInertia(fn (Assert $page) => $page->where('filters.search', ''));
     }
 
     $this->get('/dd-phase3/ui/lgus?'.http_build_query([
         'province' => ['untrusted'], 'region' => ['untrusted'], 'sort' => ['desc'],
         'search' => '  '.str_repeat('é', 151).'  ',
-    ]))->assertOk()->assertInertia(fn (Assert $page) => $page
-        ->where('filters.search', str_repeat('é', 150))
-        ->where('filters.province', '')->where('filters.region', '')->where('filters.sort', 'asc'));
+    ]))->assertOk()->assertInertia(fn (Assert $page) => $page->where('filters.search', str_repeat('é', 150))->where('filters.province', '')->where('filters.region', '')->where('filters.sort', 'asc'));
 });
 
 it('keeps LGU dependency counts correct without a per-row SQL query and paginates ties stably', function (): void {
     $f = $this->fixture('Admin');
     $lgu = (int) DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->value('lgu_id');
-    $this->get('/dd-phase3/ui/lgus')->assertOk()->assertInertia(fn (Assert $page) => $page
-        ->where('lgus.data.0.id', $lgu)
-        ->where('lgus.data.0.deletion_check.road_coverages', 1)
-        ->where('lgus.data.0.deletion_check.engineer_assignments', 1));
+    $this->get('/dd-phase3/ui/lgus')->assertOk()->assertInertia(fn (Assert $page) => $page->where('lgus.data.0.id', $lgu)->where('lgus.data.0.deletion_check.road_coverages', 1)->where('lgus.data.0.deletion_check.engineer_assignments', 1));
 
     $ids = [];
     for ($i = 0; $i < 12; $i++) {
@@ -99,9 +92,7 @@ it('keeps LGU dependency counts correct without a per-row SQL query and paginate
     DB::enableQueryLog();
     DB::flushQueryLog();
     try {
-        $this->get('/dd-phase3/ui/lgus?'.http_build_query(['search' => 'Repeated LGU']))
-            ->assertOk()->assertInertia(fn (Assert $page) => $page
-                ->where('lgus.data', fn ($rows): bool => collect($rows)->pluck('id')->all() === array_slice($ids, 0, 10)));
+        $this->get('/dd-phase3/ui/lgus?'.http_build_query(['search' => 'Repeated LGU']))->assertOk()->assertInertia(fn (Assert $page) => $page->where('lgus.data', fn ($rows): bool => collect($rows)->pluck('id')->all() === array_slice($ids, 0, 10)));
         $queries = DB::getQueryLog();
     } finally {
         DB::disableQueryLog();
@@ -113,7 +104,5 @@ it('keeps LGU dependency counts correct without a per-row SQL query and paginate
     });
     expect($singleRowCounts)->toHaveCount(0);
 
-    $this->get('/dd-phase3/ui/lgus?'.http_build_query(['search' => 'Repeated LGU', 'page' => 2]))
-        ->assertOk()->assertInertia(fn (Assert $page) => $page
-            ->where('lgus.data', fn ($rows): bool => collect($rows)->pluck('id')->all() === array_slice($ids, 10)));
+    $this->get('/dd-phase3/ui/lgus?'.http_build_query(['search' => 'Repeated LGU', 'page' => 2]))->assertOk()->assertInertia(fn (Assert $page) => $page->where('lgus.data', fn ($rows): bool => collect($rows)->pluck('id')->all() === array_slice($ids, 10)));
 });
