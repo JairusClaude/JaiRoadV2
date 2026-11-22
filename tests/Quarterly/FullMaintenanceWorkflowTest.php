@@ -71,6 +71,37 @@ final class FullMaintenanceWorkflowTest extends PostgresTestCase
     }
 
     #[DataProvider('kinds')]
+    public function test_private_upload_rejects_database_oversized_filename_before_remote_storage(string $kind, string $class): void
+    {
+        $f = $this->fixture('Engineer');
+        $record = (int) DB::table('jairoads_next.maintenance_records')->insertGetId(
+            $this->recordData($f['project'], $f['engineer'], 'Q4') + ['created_by' => $f['user']->dd_user_account_id]
+        );
+        $update = (int) DB::table('jairoads_next.monthly_updates')->insertGetId([
+            'maintenance_id' => $record, 'update_month' => '2026-10',
+            'progress_percentage' => 10, 'created_by' => $f['user']->dd_user_account_id,
+        ]);
+        $file = $this->file($kind);
+        $extension = $kind === 'document' ? 'pdf' : 'png';
+        $overlongName = str_repeat('a', 252).'.'.$extension;
+        $payload = $kind === 'document'
+            ? ['maintenance_id' => $record, 'document_title' => 'Rejected filename']
+            : ['monthly_update_id' => $update];
+        $mock = Mockery::mock($class);
+        $mock->shouldReceive('configured')->once()->andReturnTrue();
+        $mock->shouldNotReceive('upload');
+        $mock->shouldNotReceive('removeAfterFailure');
+        $this->app->instance($class, $mock);
+        $file = UploadedFile::fake()->createWithContent($overlongName, file_get_contents($file->getRealPath()));
+
+        $this->post('/dd-phase3/ops/'.($kind === 'document' ? 'documents' : 'media'), $payload + ['file' => $file])
+            ->assertSessionHasErrors(['file']);
+        $this->assertSame(0, DB::table('jairoads_next.maintenance_documents')->count());
+        $this->assertSame(0, DB::table('jairoads_next.media')->count());
+        $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
+    }
+
+    #[DataProvider('kinds')]
     public function test_audit_failure_after_private_upload_rolls_back_metadata_and_compensates_storage(string $kind, string $class): void
     {
         $f = $this->fixture('Engineer');

@@ -708,6 +708,10 @@ class OperationsController extends Controller
             throw ValidationException::withMessages(['file' => 'Document uploads are temporarily unavailable. Contact your administrator.']);
         }
         $file = $request->file('file');
+        $filename = basename(str_replace('\\', '/', $file->getClientOriginalName()));
+        if ($filename === '' || mb_strlen($filename) > 255) {
+            throw ValidationException::withMessages(['file' => 'Document filenames must be between 1 and 255 characters.']);
+        }
         // The MIME-based "mimes" rule checks file content, not the caller's
         // filename. Refuse a mismatched filename rather than constructing a
         // private object path that the storage allowlist rejects with HTTP 500.
@@ -721,11 +725,11 @@ class OperationsController extends Controller
         $path = 'maintenance-records/'.(int) $v['maintenance_id'].'/'.(string) Str::uuid().'.'.$ext;
         $storage->upload($file, $path);
         try {
-            DB::transaction(function () use ($request, $resolver, $actor, $v, $file, $path): void {
+            DB::transaction(function () use ($request, $resolver, $actor, $v, $filename, $path): void {
                 $this->lockUploadAuthorization($request, $resolver, $actor, (int) $v['maintenance_id']);
                 $id = (int) $this->t('maintenance_documents')->insertGetId([
                     'maintenance_id' => (int) $v['maintenance_id'], 'document_title' => $v['document_title'],
-                    'description' => $v['description'] ?? null, 'file_name' => basename($file->getClientOriginalName()),
+                    'description' => $v['description'] ?? null, 'file_name' => $filename,
                     'file_path' => $path, 'uploaded_by' => $actor['account_id'], 'uploaded_at' => now(), 'updated_at' => now(),
                 ]);
                 $this->audit($actor, 'CREATE', 'MaintenanceDocument', $id, 'Formal maintenance document uploaded.');
@@ -755,6 +759,10 @@ class OperationsController extends Controller
             throw ValidationException::withMessages(['file' => 'Evidence uploads are temporarily unavailable. Contact your administrator.']);
         }
         $file = $request->file('file');
+        $filename = basename(str_replace('\\', '/', $file->getClientOriginalName()));
+        if ($filename === '' || mb_strlen($filename) > 255) {
+            throw ValidationException::withMessages(['file' => 'Media filenames must be between 1 and 255 characters.']);
+        }
         $mime = (string) $file->getMimeType();
         $ext = match ($mime) {
             'image/jpeg' => 'jpg','image/png' => 'png','image/webp' => 'webp','video/mp4' => 'mp4','video/webm' => 'webm',
@@ -763,12 +771,12 @@ class OperationsController extends Controller
         $path = 'monthly-updates/'.(int) $v['monthly_update_id'].'/'.(string) Str::uuid().'.'.$ext;
         $storage->upload($file, $path);
         try {
-            DB::transaction(function () use ($request, $resolver, $actor, $v, $file, $path, $mime, $update): void {
+            DB::transaction(function () use ($request, $resolver, $actor, $v, $filename, $path, $mime, $update): void {
                 $this->lockUploadAuthorization($request, $resolver, $actor, (int) $update->maintenance_id);
                 $currentUpdate = $this->t('monthly_updates')->where('id', $v['monthly_update_id'])->sharedLock()->first(['maintenance_id']);
                 abort_unless($currentUpdate !== null && (int) $currentUpdate->maintenance_id === (int) $update->maintenance_id, 409);
                 $id = (int) $this->t('media')->insertGetId([
-                    'monthly_update_id' => (int) $v['monthly_update_id'], 'file_name' => basename($file->getClientOriginalName()),
+                    'monthly_update_id' => (int) $v['monthly_update_id'], 'file_name' => $filename,
                     'file_path' => $path, 'file_type' => $mime, 'uploaded_by' => $actor['account_id'], 'created_at' => now(),
                 ]);
                 $this->audit($actor, 'CREATE', 'Media', $id, 'MonthlyUpdate media evidence uploaded.');
