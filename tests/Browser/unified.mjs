@@ -633,13 +633,16 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         )
     ).update;
     assert.equal(Number(report.progress_percentage), 43.5);
+    // File upload is part of the editable Monthly Update form, not its
+    // read-only report page. Saving the form uploads the selected media.
+    await engineer.goto(`${ui}/monthly-updates/${report.id}/edit`);
     await engineer.locator('input[type=file]').setInputFiles({
         name: 'unified.png',
         mimeType: 'image/png',
         buffer: png,
     });
     await engineer
-        .getByRole('button', { name: 'Upload Media', exact: true })
+        .getByRole('button', { name: 'Save Changes', exact: true })
         .click();
     await engineer.getByText('unified.png', { exact: false }).first().waitFor();
     await engineer.goto(

@@ -42,6 +42,9 @@ final class PermanentFileDeletionTest extends PostgresTestCase
     {
         parent::setUp();
         (require base_path('database/proposals/create_file_deletions.php'))->up();
+        // Disposable scratch-database tests explicitly approve simulated exact-object
+        // deletion; the application's production kill switch remains disabled.
+        config(['jairoads_file_deletion.operationally_enabled' => true]);
         config(['jairoads_documents.supabase_url' => 'https://disposable-storage.test', 'jairoads_documents.service_role_key' => 'sb_secret_disposable',
             'jairoads_documents.bucket' => 'private-documents', 'jairoads_monthly_updates.supabase_url' => 'https://disposable-storage.test',
             'jairoads_monthly_updates.service_role_key' => 'sb_secret_disposable', 'jairoads_monthly_updates.bucket' => 'private-media']);

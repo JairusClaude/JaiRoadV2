@@ -256,16 +256,20 @@ try {
             email: fixture.rogue_email,
             password: 'Disposable-Test!123',
         });
+        // Read access is cross-municipality for active, verified Engineers.
+        // Permission to write or delete remains separately restricted.
         const before = mock.counts.downloads;
-        assert.equal(
-            (
-                await rogue.request(
-                    `/dd-phase3/files/document/${fixture.document_id}`,
-                )
-            ).status,
-            403,
+        const otherEngineerDownload = await rogue.request(
+            `/dd-phase3/files/document/${fixture.document_id}`,
         );
-        assert.equal(mock.counts.downloads, before);
+        assert.equal(otherEngineerDownload.status, 200);
+        assert.deepEqual(Buffer.from(await otherEngineerDownload.arrayBuffer()), pdf);
+        assert.equal(mock.counts.downloads, before + 1);
+        const guest = await session();
+        assert.equal(
+            (await guest.request(`/dd-phase3/files/document/${fixture.document_id}`)).status,
+            302,
+        );
 
         for (const [email, kind, id] of [
             [fixture.admin_email, 'document', fixture.document_id],
@@ -376,7 +380,7 @@ try {
             'PASS: production Docker Admin document and SuperAdmin media permanent deletion through exact-object Storage mocks, idempotent retry and retained parent project.',
         );
         console.log(
-            'PASS: Docker Laravel health/startup, built assets, PostgreSQL-backed four-role authentication/routing, Viewer direct-HTTP denial, private Storage mock download and cross-LGU denial.',
+            'PASS: Docker Laravel health/startup, built assets, PostgreSQL-backed four-role authentication/routing, Viewer direct-HTTP denial, private Storage mock download, authorized cross-LGU read and guest denial.',
         );
     }
 } finally {
