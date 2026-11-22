@@ -56,7 +56,9 @@ it('keeps every authorized match reachable by cursor and preserves search munici
         $pages++;
     } while ($cursor !== null);
     expect(count($ids))->toBe(105)->and(count(array_unique($ids)))->toBe(105)->and($pages)->toBe(2)->and(in_array($other, $ids, true))->toBeFalse();
-    $this->getJson(($this->referenceUrl)(['q' => 'Find hidden']))->assertOk()->assertJsonCount(0, 'data');
+    // All verified Engineers may read road references across municipalities.
+    $this->getJson(($this->referenceUrl)(['q' => 'Find hidden']))->assertOk()
+        ->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $other);
     $this->getJson(($this->referenceUrl)(['q' => 'Find 104']))->assertOk()->assertJsonCount(1, 'data');
     $this->getJson(($this->referenceUrl)(['q' => 'Find', 'west' => 130, 'east' => 131]))->assertOk()->assertJsonCount(0, 'data');
 });

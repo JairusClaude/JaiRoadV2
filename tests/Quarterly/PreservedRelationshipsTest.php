@@ -152,6 +152,9 @@ final class PreservedRelationshipsTest extends PostgresTestCase
 
     public function test_project_deletion_requires_correct_fresh_challenge(): void
     {
+        // Challenge validation deliberately submits more than the production
+        // rate limit allows; disable only throttling in this isolated test.
+        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
         $f = $this->fixture();
         $url = '/dd-phase3/ui/maintenance-projects/'.$f['project'];
         $token = $this->getJson($url.'/deletion-preview')->assertOk()->json('confirmation_token');
@@ -231,7 +234,8 @@ final class PreservedRelationshipsTest extends PostgresTestCase
         // Disposable test schema only; confirm backward compatibility is fail-closed.
         (require base_path('database/proposals/preserve_project_history.php'))->up();
         $f = $this->withChildren();
-        $this->getJson('/dd-phase3/ui/maintenance-projects/'.$f['project'].'/deletion-preview')->assertStatus(409);
+        $this->getJson('/dd-phase3/ui/maintenance-projects/'.$f['project'].'/deletion-preview')
+            ->assertOk()->assertJsonPath('can_delete', false)->assertJsonPath('counts.maintenance_records', 1);
         $this->postJson('/dd-phase3/ops/records/'.$f['record'].'/unassignment', [
             'expected_current_manager_id' => $f['engineer'],
         ])->assertForbidden();

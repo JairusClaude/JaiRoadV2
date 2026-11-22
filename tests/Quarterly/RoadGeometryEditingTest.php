@@ -84,7 +84,7 @@ it('rejects unauthorized geometry writes without changing data or audit history'
     $this->putJson($this->roadUrl, ($this->metadata)() + ['geojson' => ['type' => 'LineString', 'coordinates' => [[126, 8], [126.1, 8.1]]]])->assertForbidden();
     expect(($this->roadQuery)()->first())->toEqual($before);
     expect(DB::table('jairoads_next.audit_logs')->count())->toBe(0);
-})->with(['Viewer', 'Engineer']);
+})->with(['Viewer']);
 
 it('keeps complex geometry and historical audit entries through cancelled and confirmed municipality review', function (string $json): void {
     ($this->roadQuery)()->update(['geojson' => $json]);

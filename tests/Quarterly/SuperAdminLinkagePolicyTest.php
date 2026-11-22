@@ -16,7 +16,9 @@ final class SuperAdminLinkagePolicyTest extends PostgresTestCase
         $this->assertFalse(AccountIdentityResolver::roleLinkValid('SuperAdmin', 1));
         $this->assertFalse(AccountIdentityResolver::roleLinkValid('SuperAdmin', 999));
         foreach (['Admin', 'Engineer', 'Viewer'] as $role) {
-            $this->assertFalse(AccountIdentityResolver::roleLinkValid($role, null));
+            // Existing unlinked Admin/Viewer accounts require separately verified
+            // transition evidence; only Engineers always require a linked profile.
+            $this->assertSame($role !== 'Engineer', AccountIdentityResolver::roleLinkValid($role, null));
             $this->assertFalse(AccountIdentityResolver::roleLinkValid($role, 0));
             $this->assertTrue(AccountIdentityResolver::roleLinkValid($role, 1));
         }

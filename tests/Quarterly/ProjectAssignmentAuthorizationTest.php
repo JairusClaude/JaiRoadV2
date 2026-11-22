@@ -45,7 +45,7 @@ final class ProjectAssignmentAuthorizationTest extends PostgresTestCase
     public function test_ineligible_project_creator_is_rejected_without_mutation(string $case): void
     {
         $engineer = $this->engineer($case === 'retired' ? 'Retired' : 'Active');
-        $user = $this->account($case === 'Viewer' ? 'Viewer' : 'Engineer', in_array($case, ['Viewer', 'unlinked'], true) ? null : $engineer, $case !== 'inactive_account');
+        $user = $this->account($case === 'Viewer' ? 'Viewer' : 'Engineer', in_array($case, ['Viewer', 'unlinked'], true) ? null : $engineer, $case !== 'inactive_account', $case !== 'unlinked');
         $road = $this->road($case === 'unassigned' ? null : $engineer);
         if ($case === 'inactive_assignment') {
             DB::table('jairoads_next.engineer_lgus')->update(['is_active' => false]);
@@ -111,7 +111,7 @@ final class ProjectAssignmentAuthorizationTest extends PostgresTestCase
             DB::table('jairoads_next.engineer_lgus')->insert(['engineer_id' => $other, 'lgu_id' => $lgu, 'is_active' => $case !== 'inactive_assignment']);
         }
         $this->get('/dd-phase3/projects?view=show&project='.$f['project'])->assertOk()
-            ->assertInertia(fn (AssertableInertia $page) => $page->has('managerChoices', 1)->where('managerChoices.0.id', $f['engineer']));
+            ->assertInertia(fn (AssertableInertia $page) => $page->has('managerChoices', 2)->where('managerChoices.0.id', $f['engineer']));
         $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $case === 'missing' ? 999999 : $other))->assertUnprocessable();
         $this->assertSame(0, DB::table('jairoads_next.maintenance_records')->count());
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());

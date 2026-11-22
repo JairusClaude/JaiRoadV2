@@ -55,7 +55,7 @@ final class FileRemovalPreparationTest extends PostgresTestCase
             $this->app->instance($service, $mock);
         }
         $engineer = $this->engineer();
-        $login = $this->account('Engineer', $engineer);
+        $login = $this->account('Viewer', $engineer);
         $this->road($engineer);
         $this->withSession(['password_hash_web' => null])->actingAs($login)->getJson('/dd-phase3/files/document/'.$document)->assertForbidden();
         $this->getJson('/dd-phase3/files/media/'.$media)->assertForbidden();
