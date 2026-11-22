@@ -29,6 +29,7 @@ final class PreviewDataService
         return self::$storagePath;
     }
 
+    /** @return array<string,list<array<string,mixed>>> */
     public static function getStore(): array
     {
         $path = self::getStoragePath();
@@ -36,7 +37,8 @@ final class PreviewDataService
             $json = @file_get_contents($path);
             if ($json) {
                 $data = json_decode($json, true);
-                if (is_array($data) && ! empty($data['road_coverages']) && ! empty($data['maintenance_projects'])) {
+                if (self::validStore($data) && $data['road_coverages'] !== [] && $data['maintenance_projects'] !== []) {
+                    /** @var array<string,list<array<string,mixed>>> $data */
                     return $data;
                 }
             }
@@ -48,12 +50,14 @@ final class PreviewDataService
         return $initial;
     }
 
+    /** @param array<string,list<array<string,mixed>>> $data */
     public static function saveStore(array $data): void
     {
         $path = self::getStoragePath();
         file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
     }
 
+    /** @return array<string,list<array<string,mixed>>> */
     public static function resetStore(): array
     {
         $initial = self::initialData();
@@ -65,6 +69,7 @@ final class PreviewDataService
     /**
      * Common preview render wrapper.
      */
+    /** @param array<string,mixed> $props */
     public static function render(string $component, Request $request, array $props): Response
     {
         return Inertia::render($component, $props + [
@@ -77,6 +82,31 @@ final class PreviewDataService
             ],
             'status' => $request->session()->pull('dd_operations_status'),
         ]);
+    }
+
+    /**
+     * Reject malformed or partially persisted preview data rather than
+     * claiming that arbitrary decoded JSON is a typed collection of rows.
+     */
+    private static function validStore(mixed $value): bool
+    {
+        if (! is_array($value)) {
+            return false;
+        }
+
+        foreach (['lgus', 'engineers', 'road_coverages', 'maintenance_projects',
+            'maintenance_records', 'monthly_updates', 'maintenance_documents'] as $key) {
+            if (! isset($value[$key]) || ! is_array($value[$key]) || ! array_is_list($value[$key])) {
+                return false;
+            }
+            foreach ($value[$key] as $row) {
+                if (! is_array($row)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     // ==========================================
@@ -262,7 +292,7 @@ final class PreviewDataService
             unset($item);
             $targetId = $id;
         } else {
-            $maxId = empty($coverages) ? 0 : max(array_column($coverages, 'id'));
+            $maxId = max([0, ...array_column($coverages, 'id')]);
             $newId = $maxId + 1;
             $newRecord = [
                 'id' => $newId,
@@ -345,6 +375,10 @@ final class PreviewDataService
         ]);
     }
 
+    /**
+     * @param array<string,mixed> $row
+     * @return array<string,mixed>
+     */
     private static function formatRoadData(array $row): array
     {
         return [
@@ -526,6 +560,7 @@ final class PreviewDataService
     }
 
     /** Accept only explicit local destinations for preview form navigation. */
+    /** @param list<string> $allowed */
     private static function previewReturn(Request $request, string $fallback, array $allowed): string
     {
         $return = $request->input('return_to');
@@ -557,7 +592,7 @@ final class PreviewDataService
             }
             unset($item);
         } else {
-            $maxId = empty($lgus) ? 0 : max(array_column($lgus, 'id'));
+            $maxId = max([0, ...array_column($lgus, 'id')]);
             $newId = $maxId + 1;
             $lgus[] = [
                 'id' => $newId,
@@ -601,6 +636,10 @@ final class PreviewDataService
     }
 
     /** Isolated preview data only: validate every dependency before removing any row. */
+    /**
+     * @param array<string,list<array<string,mixed>>> $store
+     * @param list<int> $ids
+     */
     private static function deletePreviewLgus(array &$store, array $ids): void
     {
         $lgus = collect($store['lgus'] ?? []);
@@ -756,7 +795,7 @@ final class PreviewDataService
             unset($item);
             $targetId = $id;
         } else {
-            $maxId = empty($projects) ? 0 : max(array_column($projects, 'id'));
+            $maxId = max([0, ...array_column($projects, 'id')]);
             $newId = $maxId + 1;
             $projects[] = [
                 'id' => $newId,
@@ -785,6 +824,10 @@ final class PreviewDataService
         return redirect($id === null ? $detail : self::previewReturn($request, $detail, [$directory, $detail]))->with('dd_operations_status', 'Maintenance Project saved successfully (Preview Mode).');
     }
 
+    /**
+     * @param array<string,mixed> $row
+     * @return array<string,mixed>
+     */
     private static function formatProjectData(array $row): array
     {
         $store = self::getStore();
@@ -1029,7 +1072,7 @@ final class PreviewDataService
             unset($item);
             $targetId = $id;
         } else {
-            $maxId = empty($records) ? 0 : max(array_column($records, 'id'));
+            $maxId = max([0, ...array_column($records, 'id')]);
             $newId = $maxId + 1;
             $newRecord = [
                 'id' => $newId,
@@ -1091,6 +1134,10 @@ final class PreviewDataService
             ->with('dd_operations_status', 'Selected maintenance records deleted successfully (Preview Mode).');
     }
 
+    /**
+     * @param array<string,mixed> $row
+     * @return array<string,mixed>
+     */
     private static function formatRecordData(array $row): array
     {
         $id = (int) $row['id'];
@@ -1194,6 +1241,10 @@ final class PreviewDataService
         ]);
     }
 
+    /**
+     * @param array<string,mixed> $row
+     * @return array<string,mixed>
+     */
     private static function formatUpdateData(array $row): array
     {
         $id = (int) $row['id'];
@@ -1326,6 +1377,10 @@ final class PreviewDataService
         ]);
     }
 
+    /**
+     * @param array<string,mixed> $row
+     * @return array<string,mixed>
+     */
     private static function formatDocumentData(array $row): array
     {
         $id = (int) $row['id'];
@@ -1610,6 +1665,7 @@ final class PreviewDataService
     // SEED DATA GENERATOR
     // ==========================================
 
+    /** @return array<string,list<array<string,mixed>>> */
     private static function initialData(): array
     {
         $lgus = [
