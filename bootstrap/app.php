@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnforceCanonicalPublicOrigin;
 use App\Http\Middleware\EnforceCanonicalSession;
 use App\Http\Middleware\EnsurePasswordRecoveryDelivery;
 use App\Http\Middleware\GuardLegacyRoutesForCanonicalAccounts;
@@ -41,7 +42,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prependToPriorityList(AuthenticatesRequests::class, EnforceCanonicalSession::class);
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
-        $middleware->web(prepend: [RecordSecurityMonitoring::class], append: [
+        $middleware->web(prepend: [EnforceCanonicalPublicOrigin::class, RecordSecurityMonitoring::class], append: [
             HandleAppearance::class,
             EnforceCanonicalSession::class,
             AuthenticateSession::class,

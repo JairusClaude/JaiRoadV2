@@ -12,6 +12,27 @@ test('login screen can be rendered', function () {
     $response->assertOk()->assertInertia(fn (Assert $page) => $page->component('auth/login')->has('passkeyReady'));
 });
 
+
+test('HTTPS public origin preserves client-side login and canonical workspace redirects', function () {
+    config(['app.url' => 'https://jairoads.example.test']);
+    $this->withServerVariables(['HTTP_HOST' => 'jairoads.example.test', 'HTTPS' => 'off']);
+
+    // The TLS proxy talks HTTP to PHP-FPM. Redirects still have to remain
+    // same-origin HTTPS for browser fetch/Inertia to follow them.
+    $this->get('/')->assertRedirect('https://jairoads.example.test/login');
+
+    $user = $this->canonicalUser(User::factory()->create());
+    $this->post('/login', [
+        'email' => $user->email,
+        'password' => 'password',
+    ])->assertRedirect('https://jairoads.example.test/dashboard');
+    $this->assertAuthenticatedAs($user);
+
+    $this->get('/dashboard')->assertRedirect('https://jairoads.example.test/dd-superadmin-landing');
+    $this->get('/maintenance-projects')->assertRedirect('https://jairoads.example.test/dd-phase3/ui/maintenance-projects');
+    $this->get('/user-management')->assertRedirect('https://jairoads.example.test/dd-phase3/users');
+});
+
 test('users can authenticate using the login screen', function () {
     $user = $this->canonicalUser(User::factory()->create());
 
