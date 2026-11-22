@@ -88,10 +88,10 @@ html.jr-reduce-motion .jr-app *::after {
     --jr-role-accent-ink: #4b2386;
 }
 :where(body:has(.jr-admin-workspace), body:has(.jr-admin-sidebar)) .jr-settings {
-    --jr-role-accent: #b42336;
-    --jr-role-accent-hover: #941b2b;
-    --jr-role-accent-soft: #fdecef;
-    --jr-role-accent-ink: #941b2b;
+    --jr-role-accent: #C8293D;
+    --jr-role-accent-hover: #A81424;
+    --jr-role-accent-soft: #FDE7EA;
+    --jr-role-accent-ink: #800D18;
 }
 :where(body:has(.jr-viewer-workspace), body:has(.jr-viewer-sidebar)) .jr-settings {
     --jr-role-accent: #2463b5;
@@ -143,4 +143,39 @@ html.jr-reduce-motion .jr-app *::after {
 :where(body:has(.jr-viewer-workspace), body:has(.jr-viewer-sidebar))
     .jr-metric-card:first-child > p:first-child {
     color: #2463b5 !important;
+}
+
+/* Polished Admin Settings: selected controls use the red role accent, not
+   the old amber/orange Tailwind values. Keep warning/error status colors. */
+body:has(.jr-admin-workspace) .jr-settings nav button[aria-current="page"] {
+    background-color: #FDE7EA !important;
+    color: #C8293D !important;
+}
+body:has(.jr-admin-workspace) .jr-settings button[aria-pressed="true"] {
+    background-color: #FDE7EA !important;
+    border-color: #C8293D !important;
+    --tw-ring-color: #C8293D !important;
+}
+body:has(.jr-admin-workspace) .jr-settings :is(button, a)[class*="bg-[#90451F]"] {
+    background-color: #C8293D !important;
+    border-color: #C8293D !important;
+    color: white !important;
+}
+body:has(.jr-admin-workspace) .jr-settings :is(button, a)[class*="bg-[#90451F]"]:hover:not(:disabled) {
+    background-color: #A81424 !important;
+    border-color: #A81424 !important;
+}
+body:has(.jr-admin-workspace) .jr-settings span[class*="bg-amber-100"] {
+    background-color: #FDE7EA !important;
+    color: #C8293D !important;
+}
+body:has(.jr-admin-workspace) .jr-settings p[class*="text-amber-800"] {
+    color: #C8293D !important;
+}
+body:has(.jr-admin-workspace) .jr-settings :is(input, textarea, select):focus {
+    border-color: #C8293D !important;
+    --tw-ring-color: #F16B76 !important;
+}
+body:has(.jr-admin-workspace) .jr-settings :is(button, a, input, textarea, select):focus-visible {
+    outline-color: #C8293D !important;
 }
