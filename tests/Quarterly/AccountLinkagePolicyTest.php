@@ -175,7 +175,8 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
             ->assertOk()->assertJsonMissing(['id' => $linked]);
 
         $engineerLogin = $this->account('Engineer');
-        $this->actingAs($engineerLogin)->getJson('/dd-phase3/eligible-engineers')->assertForbidden();
+        // The canonical eligibility middleware rejects this JSON request before the administrator guard.
+        $this->actingAs($engineerLogin)->getJson('/dd-phase3/eligible-engineers')->assertUnauthorized();
         $this->actingAs($admin)->getJson('/dd-phase3/eligible-engineers')->assertOk();
     }
 
