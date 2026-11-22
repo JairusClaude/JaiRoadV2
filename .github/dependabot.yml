@@ -10,3 +10,13 @@ updates:
       github-actions:
         patterns:
           - "*"
+
+  # Track Laravel security and compatible Composer dependency updates on
+  # the integration branch, so the lockfile is regenerated and CI exercises
+  # the complete resolved dependency set before a reviewer merges it.
+  - package-ecosystem: "composer"
+    directory: "/"
+    target-branch: "merged-system"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 5
