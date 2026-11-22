@@ -32,6 +32,7 @@ type Props = {
     role: Role;
     analytics: DdDashboardSummary;
     mapCoverages: SimplifiedCoverageItem[];
+    mapNextCursor?: number | null;
     name: string;
     username: string;
     engineer: { id: number; name: string; rank: string; status: string } | null;
@@ -48,6 +49,73 @@ type Props = {
     }[];
     notifications: { id: number; message: string; createdAt: string }[];
 };
+
+
+function EngineerRoadMap({
+    initialCoverages,
+    initialCursor,
+    total,
+}: {
+    initialCoverages: SimplifiedCoverageItem[];
+    initialCursor: number | null;
+    total: number | null;
+}) {
+    const [additional, setAdditional] = useState<SimplifiedCoverageItem[]>([]);
+    const [cursor, setCursor] = useState(initialCursor);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const coverages = [...initialCoverages, ...additional];
+
+    const loadMore = async () => {
+        if (cursor === null || loading) {
+            return;
+        }
+
+        setLoading(true);
+        setError('');
+        try {
+            const response = await fetch(
+                '/dd-phase3/dashboard/map-roads?before=' + encodeURIComponent(cursor),
+                { credentials: 'same-origin', headers: { Accept: 'application/json' } },
+            );
+            if (!response.ok) {
+                throw new Error('Road map page unavailable.');
+            }
+            const result = (await response.json()) as {
+                data: SimplifiedCoverageItem[];
+                next_cursor: number | null;
+            };
+            if (!Array.isArray(result.data)) {
+                throw new Error('Invalid road map response.');
+            }
+            setAdditional((prior) => {
+                const seen = new Set([...initialCoverages, ...prior].map((road) => road.id));
+                return [...prior, ...result.data.filter((road) => !seen.has(road.id))];
+            });
+            setCursor(result.next_cursor);
+        } catch {
+            setError('Unable to load additional road coverages. Please retry.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <section aria-label="My projects road map">
+            <SimplifiedCoverageMap coverages={coverages} engineerView height={450} />
+            {cursor !== null && (
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
+                    <span>Showing {coverages.length} of {total ?? 'available'} road coverages on the map.</span>
+                    <button type="button" disabled={loading} onClick={() => void loadMore()}
+                        className="rounded-lg border border-slate-300 px-4 py-2 font-semibold text-[#A94B0C] hover:bg-orange-50 disabled:opacity-50">
+                        {loading ? 'Loading roads…' : 'Load more map roads'}
+                    </button>
+                </div>
+            )}
+            {error && <p role="alert" className="mt-2 text-sm text-red-700">{error}</p>}
+        </section>
+    );
+}
 
 function Metric({
     label,
@@ -86,6 +154,7 @@ export default function RoleDashboard({
     notifications,
     analytics,
     mapCoverages = [],
+    mapNextCursor = null,
 }: Props) {
     const isEngineer = role === 'engineer';
     const [refreshing, setRefreshing] = useState(false);
@@ -224,9 +293,12 @@ export default function RoleDashboard({
                 </section>
 
                 {isEngineer && (
-                    <section aria-label="My projects road map">
-                        <SimplifiedCoverageMap coverages={mapCoverages} engineerView height={450} />
-                    </section>
+                    <EngineerRoadMap
+                        key={String(mapCoverages[0]?.id ?? 0) + ':' + String(mapNextCursor ?? 'all')}
+                        initialCoverages={mapCoverages}
+                        initialCursor={mapNextCursor}
+                        total={stats.roadCoverages}
+                    />
                 )}
 
                 <DdDashboardAnalytics data={analytics} compact={isEngineer} omitInventoryMetrics omitOngoingMetric={isEngineer} showActivity={false} activityReplacement={notificationPanel} />
