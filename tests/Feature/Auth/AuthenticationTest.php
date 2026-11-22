@@ -12,7 +12,6 @@ test('login screen can be rendered', function () {
     $response->assertOk()->assertInertia(fn (Assert $page) => $page->component('auth/login')->has('passkeyReady'));
 });
 
-
 test('HTTPS public origin preserves client-side login and canonical workspace redirects', function () {
     config(['app.url' => 'https://jairoads.example.test']);
     $this->withServerVariables(['HTTP_HOST' => 'jairoads.example.test', 'HTTPS' => 'off']);
