@@ -405,6 +405,7 @@ export default function CanonicalUserManagement({
         directory?.tab ?? (initialEngineerId ? 'engineers' : 'accounts'),
     );
     const [search, setSearch] = useState(directory?.search ?? '');
+    const normalizedSearch = Array.from(search.trim()).slice(0, 150).join('');
     const [role, setRole] = useState(directory?.role ?? 'all');
     const [state, setState] = useState(directory?.state ?? 'all');
     const [page, setPage] = useState(1);
@@ -421,7 +422,7 @@ export default function CanonicalUserManagement({
         if (
             !directory ||
             (directory.tab === tab &&
-                directory.search === search &&
+                directory.search === normalizedSearch &&
                 directory.role === role &&
                 directory.state === state)
         ) {
@@ -433,7 +434,7 @@ export default function CanonicalUserManagement({
                 '/dd-phase3/users',
                 {
                     directory_tab: tab,
-                    directory_search: search,
+                    directory_search: normalizedSearch,
                     directory_role: role,
                     directory_state: state,
                     directory_page: 1,
@@ -443,7 +444,7 @@ export default function CanonicalUserManagement({
         }, 250);
 
         return () => clearTimeout(timer);
-    }, [directory, tab, search, role, state]);
+    }, [directory, tab, normalizedSearch, role, state]);
     const activeAccounts =
         directory?.activeAccounts ?? accounts.filter((a) => a.is_active).length;
     const activeEngineers =
@@ -509,7 +510,7 @@ export default function CanonicalUserManagement({
             '/dd-phase3/users',
             {
                 directory_tab: tab,
-                directory_search: search,
+                directory_search: normalizedSearch,
                 directory_role: role,
                 directory_state: state,
                 directory_page: next,
@@ -665,7 +666,7 @@ export default function CanonicalUserManagement({
                                     : 'Search Engineer name, rank or contact…'
                             }
                             value={search}
-                            maxLength={255}
+                            maxLength={150}
                             onChange={(e) => {
                                 setSearch(e.target.value);
                                 setPage(1);

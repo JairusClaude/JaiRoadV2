@@ -60,11 +60,14 @@ class DirectoryController extends Controller
             // first 200 records. Related names are loaded for the visible rows.
             $tab = $requestedEngineerId > 0 || $request->query('directory_tab') === 'engineers' ? 'engineers' : 'accounts';
             $inputSearch = $request->query('directory_search');
-            $search = is_string($inputSearch) ? trim(substr($inputSearch, 0, 150)) : '';
+            $search = is_string($inputSearch) ? mb_substr(trim($inputSearch), 0, 150) : '';
             $roleInput = $request->query('directory_role');
             $role = is_string($roleInput) && in_array($roleInput, ['SuperAdmin', 'Admin', 'Engineer', 'Viewer'], true) ? $roleInput : 'all';
             $state = in_array($request->query('directory_state'), ['active', 'inactive'], true) ? $request->query('directory_state') : 'all';
-            $needle = '%'.$search.'%';
+            // Escape PostgreSQL LIKE wildcards and the escape character. A search is
+            // literal text, never a caller-controlled pattern.
+            $needle = '%'.addcslashes($search, '%_\\').'%';
+            $requestedPage = filter_var($request->query('directory_page'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
             if ($tab === 'accounts') {
                 $query = $t('user_accounts as ua')->leftJoin('jairoads_next.engineers as e', 'e.id', '=', 'ua.engineer_id');
                 if ($search !== '') {
@@ -79,7 +82,11 @@ class DirectoryController extends Controller
                 if ($state !== 'all') {
                     $query->where('ua.is_active', $state === 'active');
                 }
-                $page = $query->orderByDesc('ua.id')->paginate(15, ['ua.id', 'ua.username', 'ua.email', 'ua.account_type', 'ua.engineer_id', 'ua.is_active'], 'directory_page');
+                // Clamp out-of-range pages before querying, including after
+                // a search or filter reduces the number of matches.
+                $lastPage = max(1, (int) ceil((clone $query)->count() / 15));
+                $pageNumber = min($requestedPage === false ? 1 : $requestedPage, $lastPage);
+                $page = $query->orderByDesc('ua.id')->paginate(15, ['ua.id', 'ua.username', 'ua.email', 'ua.account_type', 'ua.engineer_id', 'ua.is_active'], 'directory_page', $pageNumber);
                 $accounts = collect($page->items());
                 $engineers = $t('engineers')->whereIn('id', $accounts->pluck('engineer_id')->filter()->all())
                     ->get(['id', 'first_name', 'middle_name', 'last_name', 'contact_no', 'rank', 'engineer_status']);
@@ -98,7 +105,9 @@ class DirectoryController extends Controller
                 if ($requestedEngineerId > 0) {
                     $query->orderByRaw('CASE WHEN e.id = ? THEN 0 ELSE 1 END', [$requestedEngineerId]);
                 }
-                $page = $query->orderByDesc('e.id')->paginate(15, ['e.id', 'e.first_name', 'e.middle_name', 'e.last_name', 'e.contact_no', 'e.rank', 'e.engineer_status'], 'directory_page');
+                $lastPage = max(1, (int) ceil((clone $query)->count() / 15));
+                $pageNumber = min($requestedPage === false ? 1 : $requestedPage, $lastPage);
+                $page = $query->orderByDesc('e.id')->paginate(15, ['e.id', 'e.first_name', 'e.middle_name', 'e.last_name', 'e.contact_no', 'e.rank', 'e.engineer_status'], 'directory_page', $pageNumber);
                 $engineers = collect($page->items());
                 $accounts = $t('user_accounts')->whereIn('engineer_id', $engineers->pluck('id')->all())
                     ->get(['id', 'username', 'email', 'account_type', 'engineer_id', 'is_active']);
