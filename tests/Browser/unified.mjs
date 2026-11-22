@@ -649,6 +649,7 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     // Do not navigate away until the private media row actually exists.
 
     let originalMediaStored = false;
+
     for (let attempt = 0; attempt < 30; attempt++) {
         const savedMedia = (await props(engineer, `/monthly-updates/${report.id}`)).media;
 

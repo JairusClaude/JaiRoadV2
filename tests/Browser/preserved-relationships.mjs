@@ -105,7 +105,9 @@ export async function verifyPreservedRelationships({
     assert.deepEqual(await (await admin.request.get(documentUrl)).body(), documentBytes);
     assert.deepEqual(await (await admin.request.get(mediaUrl)).body(), mediaBytes);
     assert.equal(storage.counts.compensations, storageBefore);
-    assert.equal((await rogue.request.get(documentUrl)).status(), 403);
+    // All active linked canonical roles may read attached operational files;
+    // only managers may perform destructive project actions.
+    assert.deepEqual(await (await rogue.request.get(documentUrl)).body(), documentBytes);
 
     // The separate fixture project has no MaintenanceRecords: UI confirmation
     // may delete it without affecting the referenced project or Storage.

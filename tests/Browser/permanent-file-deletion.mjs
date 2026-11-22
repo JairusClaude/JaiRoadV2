@@ -146,6 +146,7 @@ await admin.setViewportSize(viewport);
         .waitFor();
 
     let before;
+
     for (let attempt = 0; attempt < 30; attempt++) {
         before = await props(superadmin, `/monthly-updates/${report.id}`);
 
