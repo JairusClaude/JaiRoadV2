@@ -49,7 +49,30 @@ await mkdir(evidence, { recursive:true });
                         const content = document.querySelector('.jr-content').getBoundingClientRect();
                         const sidebar = document.querySelector('.jr-sidebar-container')?.getBoundingClientRect();
 
-                        return { viewport:innerWidth, document:document.documentElement.scrollWidth, stageLeft:stage.left, stageRight:stage.right, contentRight:content.right, sidebarRight:sidebar?.right ?? 0 };
+                        const overflowing = document.documentElement.scrollWidth > innerWidth + 1
+                            ? [...document.querySelectorAll('body *')]
+                                .filter((element) => {
+                                    const rectangle = element.getBoundingClientRect();
+                                    const style = getComputedStyle(element);
+
+                                    return rectangle.right > innerWidth + 1
+                                        && rectangle.left < innerWidth + 2
+                                        && rectangle.width > 0
+                                        && style.visibility !== 'hidden'
+                                        && style.position !== 'fixed';
+                                })
+                                .slice(0, 15)
+                                .map((element) => ({
+                                    tag: element.tagName.toLowerCase(),
+                                    className: typeof element.className === 'string'
+                                        ? element.className.slice(0, 130)
+                                        : '',
+                                    right: Math.round(element.getBoundingClientRect().right),
+                                    width: Math.round(element.getBoundingClientRect().width),
+                                }))
+                            : [];
+
+                        return { viewport: innerWidth, document: document.documentElement.scrollWidth, stageLeft: stage.left, stageRight: stage.right, contentRight: content.right, sidebarRight: sidebar?.right ?? 0, overflowing };
                     });
                     assert.ok(sizes.document <= width+1 && sizes.stageRight <= width+1 && sizes.contentRight <= width+1, role + ' ' + width + ' ' + path + ': ' + JSON.stringify(sizes));
 
