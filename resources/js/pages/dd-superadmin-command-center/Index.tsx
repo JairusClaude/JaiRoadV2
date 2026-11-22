@@ -108,7 +108,7 @@ export default function DdSuperAdminCommandCenter({
                     </div>
                 </div>
 
-                <main className="relative -mx-7 -mt-3.5 min-w-0 space-y-6 rounded-t-[20px] bg-white px-7 pt-7 pb-10 shadow-sm">
+                <main className="relative mx-0 -mt-3.5 min-w-0 space-y-6 rounded-t-[20px] bg-white px-4 pt-7 pb-10 shadow-sm sm:px-6 lg:-mx-7 lg:px-7">
                     {/* Top System Metrics */}
                     <section
                         aria-label="System metrics"
@@ -141,7 +141,7 @@ export default function DdSuperAdminCommandCenter({
                     <DdDashboardAnalytics data={analytics} />
 
                     {/* Operational Access & Privileged Governance */}
-                    <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+                    <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
                         <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
                             <div className="flex items-center justify-between">
                                 <div>
@@ -211,7 +211,7 @@ export default function DdSuperAdminCommandCenter({
                                 {recentEvents.map((e) => (
                                     <div
                                         key={e.id}
-                                        className="flex items-center justify-between gap-3 py-3"
+                                        className="flex min-w-0 flex-wrap items-start justify-between gap-3 py-3 sm:flex-nowrap sm:items-center"
                                     >
                                         <div>
                                             <div className="text-sm font-semibold text-slate-800">
@@ -220,11 +220,11 @@ export default function DdSuperAdminCommandCenter({
                                                 </span>
                                                 {e.entity}
                                             </div>
-                                            <div className="mt-1 text-xs text-slate-500">
+                                            <div className="mt-1 min-w-0 break-words text-xs text-slate-500">
                                                 By {e.actor}
                                             </div>
                                         </div>
-                                        <time className="shrink-0 text-right text-xs text-slate-400">
+                                        <time className="min-w-0 break-words text-right text-xs text-slate-400 sm:shrink-0">
                                             {e.createdAt}
                                         </time>
                                     </div>
@@ -239,7 +239,7 @@ export default function DdSuperAdminCommandCenter({
                     </div>
 
                     {/* Privileged Accounts Table */}
-                    <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
+                    <section className="min-w-0 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
                         <div className="flex items-center justify-between">
                             <div>
                                 <h2 className="text-lg font-bold text-slate-900">
@@ -257,7 +257,7 @@ export default function DdSuperAdminCommandCenter({
                                 Manage accounts
                             </Link>
                         </div>
-                        <div className="mt-4 overflow-x-auto">
+                        <div className="mt-4 w-full max-w-full min-w-0 overflow-x-auto">
                             <table className="w-full text-left text-sm">
                                 <thead className="border-b border-slate-200 bg-[#F5F0FC] text-xs font-semibold tracking-wider text-slate-600 uppercase">
                                     <tr>
