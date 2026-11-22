@@ -144,7 +144,17 @@ await admin.setViewportSize(viewport);
         .getByText('retained.png', { exact: true })
         .first()
         .waitFor();
-    const before = await props(superadmin, `/monthly-updates/${report.id}`);
+    let before;
+    for (let attempt = 0; attempt < 30; attempt++) {
+        before = await props(superadmin, `/monthly-updates/${report.id}`);
+
+        if (before.media.some((file) => file.file_name === 'retained.png')) {
+            break;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+    assert.ok(before?.media.some((file) => file.file_name === 'retained.png'), 'Second private media upload must be persisted before deletion');
     const retained = before.media.find(
         (file) => file.file_name === 'retained.png',
     );
