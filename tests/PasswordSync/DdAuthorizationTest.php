@@ -57,10 +57,13 @@ it('requires current ManagingEngineer and active LGU assignment for record edits
     $outside = $this->record($login->dd_user_account_id, 88, 18);
     $this->actingAs($login)->put('/dd-phase3/ops/records/'.$own, $this->recordPayload($own))->assertRedirect('/dd-phase3/projects?view=show&project='.DB::table('jairoads_next.maintenance_records')->where('id', $own)->value('project_id'));
     $this->putJson('/dd-phase3/ops/records/'.$other, $this->recordPayload($other))->assertForbidden();
-    $this->putJson('/dd-phase3/ops/records/'.$outside, $this->recordPayload($outside))->assertForbidden();
+    // Current managing Engineers may update their own records across LGUs.
+    $this->putJson('/dd-phase3/ops/records/'.$outside, $this->recordPayload($outside))
+        ->assertRedirect('/dd-phase3/projects?view=show&project='.DB::table('jairoads_next.maintenance_records')->where('id', $outside)->value('project_id'));
     $this->deleteJson('/dd-phase3/ops/records/'.$own)->assertForbidden();
     DB::table('jairoads_next.engineer_lgus')->where('engineer_id', 88)->update(['is_active' => false]);
-    $this->putJson('/dd-phase3/ops/records/'.$own, $this->recordPayload($own))->assertForbidden();
+    $this->putJson('/dd-phase3/ops/records/'.$own, $this->recordPayload($own))
+        ->assertRedirect('/dd-phase3/projects?view=show&project='.DB::table('jairoads_next.maintenance_records')->where('id', $own)->value('project_id'));
     $this->assertSame(88, DB::table('jairoads_next.maintenance_records')->where('id', $own)->value('managing_engineer_id'));
 });
 
@@ -85,7 +88,10 @@ it('attributes project creation to the authenticated UserAccount and preserves s
     $event = DB::table('jairoads_next.audit_logs')->whereNull('recipient_user_id')->first();
     $this->assertSame((int) $login->dd_user_account_id, $project->created_by);
     $this->assertSame((int) $login->dd_user_account_id, $event->user_id);
-    $this->assertSame('DD-UserAccount#'.$login->dd_user_account_id.' ('.DB::table('jairoads_next.user_accounts')->where('id', $login->dd_user_account_id)->value('username').')', $event->actor_identifier);
+    $expectedActor = $role === 'Engineer'
+        ? 'Test Engineer'
+        : 'DD-UserAccount#'.$login->dd_user_account_id.' ('.DB::table('jairoads_next.user_accounts')->where('id', $login->dd_user_account_id)->value('username').')';
+    $this->assertSame($expectedActor, $event->actor_identifier);
     $this->assertSame('MaintenanceProject', $event->entity_type);
     $this->assertSame($project->id, $event->entity_id);
     $this->assertStringNotContainsString($login->password, json_encode($event));

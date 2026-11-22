@@ -73,8 +73,11 @@ final class MonthlyUpdateRevocationRaceTest extends PostgresTestCase
             $changed = $before !== DB::table('jairoads_next.monthly_updates')->orderBy('id')->get()->toJson();
             $auditChanged = $audit !== DB::table('jairoads_next.audit_logs')->orderBy('id')->get()->toJson();
             $message = $method.' '.$change.'; report_changed='.($changed ? 'yes' : 'no').'; audit_changed='.($auditChanged ? 'yes' : 'no').'; blocked SQL: '.$waiting->query;
-            $this->assertSame($change === 'unchanged' ? 302 : 403, $result['status'], $message);
-            if ($change === 'unchanged') {
+            // Active LGU assignments no longer gate work across municipalities;
+            // only deactivation and loss of record ownership revoke authority.
+            $stillAuthorized = in_array($change, ['unchanged', 'unassigned'], true);
+            $this->assertSame($stillAuthorized ? 302 : 403, $result['status'], $message);
+            if ($stillAuthorized) {
                 $this->assertDatabaseHas('jairoads_next.monthly_updates', ['maintenance_id' => $record, 'progress_percentage' => 40]);
                 $this->assertSame(1, DB::table('jairoads_next.audit_logs')->where('entity_type', 'MonthlyUpdate')->whereNull('recipient_user_id')->count());
             } else {

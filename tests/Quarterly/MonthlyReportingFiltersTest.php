@@ -77,13 +77,13 @@ it('uses a deterministic ID tie break across pagination', function (string $sort
     }
 })->with(['newest', 'oldest', 'modified']);
 
-it('excludes unauthorized LGU reports from both years and rows', function (): void {
+it('includes cross-LGU reports in Engineer read filters while preserving explicit project filtering', function (): void {
     $otherRoad = $this->road();
     $otherProject = DB::table('jairoads_next.maintenance_projects')->insertGetId(['road_coverage_id' => $otherRoad, 'project_title' => 'Hidden project', 'created_by' => $this->f['user']->dd_user_account_id]);
     $otherRecord = DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData((int) $otherProject, $this->f['engineer']) + ['created_by' => $this->f['user']->dd_user_account_id]);
     ($this->report)('2099-01', '2099-01-01 00:00:00', (int) $otherRecord);
-    $this->get('/dd-phase3/ui/monthly-updates?sort=modified')->assertInertia(fn (Assert $page) => $page->where('years', [2027, 2026])->has('updates.data', 2));
-    $this->get('/dd-phase3/ui/monthly-updates?year=2099&project='.$otherProject)->assertInertia(fn (Assert $page) => $page->where('years', [2027, 2026])->has('updates.data', 0));
+    $this->get('/dd-phase3/ui/monthly-updates?sort=modified')->assertInertia(fn (Assert $page) => $page->where('years', [2099, 2027, 2026])->has('updates.data', 3));
+    $this->get('/dd-phase3/ui/monthly-updates?year=2099&project='.$otherProject)->assertInertia(fn (Assert $page) => $page->where('years', [2099, 2027, 2026])->has('updates.data', 1));
 });
 
 it('lets Viewers read permitted reports but never mutate them', function (): void {

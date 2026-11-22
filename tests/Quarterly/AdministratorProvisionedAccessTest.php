@@ -66,7 +66,9 @@ final class AdministratorProvisionedAccessTest extends PostgresTestCase
             $this->putJson('/dd-phase3/ops/projects/'.$project->id, $projectData + ['description' => 'Authorized edit'])->assertRedirect();
             if ($role === 'Engineer') {
                 $otherRoad = $this->road();
-                $this->putJson('/dd-phase3/ops/projects/'.$project->id, array_replace($projectData, ['road_coverage_id' => $otherRoad]))->assertForbidden();
+                // An active provisioned Engineer can work across municipalities.
+                $this->putJson('/dd-phase3/ops/projects/'.$project->id, array_replace($projectData, ['road_coverage_id' => $otherRoad]))->assertRedirect();
+                $this->assertDatabaseHas('jairoads_next.maintenance_projects', ['id' => $project->id, 'road_coverage_id' => $otherRoad]);
                 $this->postJson('/dd-phase3/ops/records', $this->recordData((int) $project->id, $engineer))->assertRedirect();
                 $record = DB::table('jairoads_next.maintenance_records')->first();
                 $this->postJson('/dd-phase3/ops/updates', ['maintenance_id' => $record->id, 'update_month' => '2027-12', 'progress_percentage' => 25])->assertRedirect();
