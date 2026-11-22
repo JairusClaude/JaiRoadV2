@@ -83,6 +83,7 @@ export async function verifyMobileWorkspaces({
                         role + ': ' + path,
                     );
                     await page.locator('.jr-stage').waitFor();
+
                     if (role === 'admin' && path === '/dd-phase3/dashboard') {
                         assert.equal(
                             await page
@@ -94,6 +95,7 @@ export async function verifyMobileWorkspaces({
                             'Admin dashboard must retain both styling classes',
                         );
                     }
+
                     const sizes = await page.evaluate(() => {
                         const stage = document
                             .querySelector('.jr-stage')
