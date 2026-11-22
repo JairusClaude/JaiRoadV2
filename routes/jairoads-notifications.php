@@ -9,5 +9,5 @@ use Illuminate\Support\Facades\Route;
 // eligible recipient notifications. Email verification is not an extra role rule.
 // The controller requires an active linked account and scopes by recipient_user_id.
 Route::get('jairoads/notifications', JaiRoadsNotificationsController::class)
-    ->middleware(['auth', 'throttle:30,1'])
+    ->middleware(['auth', 'throttle:30,1,jr-jairoads-notifications-'])
     ->name('jairoads.notifications');

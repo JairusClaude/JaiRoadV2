@@ -16,6 +16,8 @@ use App\Http\Controllers\SectionController;
 use Illuminate\Support\Facades\Route;
 
 // Explicit Data Dictionary-only routes. Never share legacy controller/permission paths.
+// Laravel numeric throttles otherwise share one per-user counter across routes;
+// distinct third-argument prefixes keep each operation's existing limit independent.
 Route::middleware(['auth'])->prefix('dd-phase3')->name('jairoads.dd-phase3.')->group(function (): void {
     Route::get('/dashboard/roads/{road}', [RoleLandingController::class, 'roadDetails'])->whereNumber('road')->name('dashboard.road-details');
     Route::get('/dashboard/map-roads', [RoleLandingController::class, 'roadMapPage'])->name('dashboard.map-roads');
@@ -28,25 +30,25 @@ Route::middleware(['auth'])->prefix('dd-phase3')->name('jairoads.dd-phase3.')->g
     Route::get('/{section}', SectionController::class)
         ->whereIn('section', ['dashboard', 'users', 'lgus', 'settings', 'roads', 'projects', 'updates', 'documents'])
         ->name('show');
-    Route::post('/lgus', [LguDirectoryController::class, 'createLgu'])->middleware('throttle:10,1')->name('lgus.store');
-    Route::put('/lgus/{id}', [LguDirectoryController::class, 'updateLgu'])->whereNumber('id')->middleware('throttle:10,1')->name('lgus.update');
-    Route::delete('/lgus/{id}', [LguDirectoryController::class, 'deleteLgu'])->whereNumber('id')->middleware('throttle:6,1')->name('lgus.destroy');
-    Route::post('/engineers', [EngineerDirectoryController::class, 'createEngineer'])->middleware('throttle:10,1')->name('engineers.store');
+    Route::post('/lgus', [LguDirectoryController::class, 'createLgu'])->middleware('throttle:10,1,jr-lgus-store-')->name('lgus.store');
+    Route::put('/lgus/{id}', [LguDirectoryController::class, 'updateLgu'])->whereNumber('id')->middleware('throttle:10,1,jr-lgus-update-')->name('lgus.update');
+    Route::delete('/lgus/{id}', [LguDirectoryController::class, 'deleteLgu'])->whereNumber('id')->middleware('throttle:6,1,jr-lgus-destroy-')->name('lgus.destroy');
+    Route::post('/engineers', [EngineerDirectoryController::class, 'createEngineer'])->middleware('throttle:10,1,jr-engineers-store-')->name('engineers.store');
     // Historical assignment maintenance only; these links no longer authorize operational access.
-    Route::post('/assignments', [EngineerAssignmentController::class, 'setAssignment'])->middleware('throttle:10,1')->name('assignments.store');
-    Route::post('/accounts', [CanonicalAccountProvisioningController::class, 'createAccount'])->middleware('throttle:5,1')->name('accounts.store');
+    Route::post('/assignments', [EngineerAssignmentController::class, 'setAssignment'])->middleware('throttle:10,1,jr-assignments-store-')->name('assignments.store');
+    Route::post('/accounts', [CanonicalAccountProvisioningController::class, 'createAccount'])->middleware('throttle:5,1,jr-accounts-store-')->name('accounts.store');
 
     Route::put('/engineers/{id}', [PeopleLifecycleController::class, 'updateEngineer'])->whereNumber('id');
     Route::post('/engineers/{id}/retirement', [PeopleLifecycleController::class, 'retireEngineer'])->whereNumber('id');
 
     Route::get('/accounts/{id}', [PeopleLifecycleController::class, 'accountDetails'])->whereNumber('id');
     Route::patch('/accounts/{id}/status', [PeopleLifecycleController::class, 'accountStatus'])->whereNumber('id');
-    Route::post('/accounts/{id}/password-reset', [PeopleLifecycleController::class, 'resetAccountPassword'])->whereNumber('id')->middleware('throttle:5,1')->name('accounts.password-reset');
+    Route::post('/accounts/{id}/password-reset', [PeopleLifecycleController::class, 'resetAccountPassword'])->whereNumber('id')->middleware('throttle:5,1,jr-accounts-password-reset-')->name('accounts.password-reset');
 
     Route::get('/history/records', [PreservedHistoryController::class, 'index'])->name('history.index');
     Route::get('/history/records/{id}', [PreservedHistoryController::class, 'show'])->whereNumber('id')->name('history.show');
     Route::get('/ops/projects/{id}/deletion-preview', [PreservedHistoryController::class, 'preview'])->whereNumber('id');
-    Route::post('/ops/records/{id}/unassignment', [OperationsController::class, 'unassignRecord'])->whereNumber('id')->middleware('throttle:10,1')->name('operations.records.unassign');
+    Route::post('/ops/records/{id}/unassignment', [OperationsController::class, 'unassignRecord'])->whereNumber('id')->middleware('throttle:10,1,jr-operations-records-unassign-')->name('operations.records.unassign');
 
     // Explicitly qualified DD module endpoints; never use legacy CRUD routes.
     Route::post('/ops/roads', [OperationsController::class, 'saveRoad'])->name('operations.roads.store');
@@ -57,19 +59,19 @@ Route::middleware(['auth'])->prefix('dd-phase3')->name('jairoads.dd-phase3.')->g
     Route::put('/ops/projects/{id}', [OperationsController::class, 'saveProject'])->whereNumber('id');
     Route::post('/ops/records', [OperationsController::class, 'saveRecord'])->name('operations.records.store');
     Route::put('/ops/records/{id}', [OperationsController::class, 'saveRecord'])->whereNumber('id');
-    Route::post('/ops/records/{id}/reassignment', [OperationsController::class, 'reassignRecord'])->whereNumber('id')->middleware('throttle:10,1')->name('operations.records.reassign');
+    Route::post('/ops/records/{id}/reassignment', [OperationsController::class, 'reassignRecord'])->whereNumber('id')->middleware('throttle:10,1,jr-operations-records-reassign-')->name('operations.records.reassign');
     Route::post('/ops/updates', [OperationsController::class, 'saveUpdate'])->name('operations.updates.store');
     Route::put('/ops/updates/{id}', [OperationsController::class, 'saveUpdate'])->whereNumber('id');
     Route::delete('/ops/{entity}/{id}', [OperationsController::class, 'deleteEntity'])
         ->whereIn('entity', ['roads', 'projects', 'records', 'updates'])->whereNumber('id');
-    Route::put('/ops/settings', [OperationsController::class, 'saveSettings'])->middleware('throttle:6,1')->name('operations.settings.update');
-    Route::post('/ops/documents', [OperationsController::class, 'uploadDocument'])->middleware('throttle:8,1')->name('operations.documents.store');
-    Route::put('/ops/documents/{id}', [OperationsController::class, 'updateDocument'])->whereNumber('id')->middleware('throttle:10,1')->name('operations.documents.update');
-    Route::post('/ops/media', [OperationsController::class, 'uploadMedia'])->middleware('throttle:8,1')->name('operations.media.store');
+    Route::put('/ops/settings', [OperationsController::class, 'saveSettings'])->middleware('throttle:6,1,jr-operations-settings-update-')->name('operations.settings.update');
+    Route::post('/ops/documents', [OperationsController::class, 'uploadDocument'])->middleware('throttle:8,1,jr-operations-documents-store-')->name('operations.documents.store');
+    Route::put('/ops/documents/{id}', [OperationsController::class, 'updateDocument'])->whereNumber('id')->middleware('throttle:10,1,jr-operations-documents-update-')->name('operations.documents.update');
+    Route::post('/ops/media', [OperationsController::class, 'uploadMedia'])->middleware('throttle:8,1,jr-operations-media-store-')->name('operations.media.store');
     Route::get('/files/{kind}/{id}/deletion-review', [OperationsController::class, 'fileRemovalReview'])
         ->whereIn('kind', ['document', 'media'])->whereNumber('id');
     Route::delete('/files/{kind}/{id}', [OperationsController::class, 'deleteFile'])
-        ->whereIn('kind', ['document', 'media'])->whereNumber('id')->middleware('throttle:10,1')->name('operations.files.destroy');
+        ->whereIn('kind', ['document', 'media'])->whereNumber('id')->middleware('throttle:10,1,jr-operations-files-destroy-')->name('operations.files.destroy');
     Route::get('/files/{kind}/{id}', [OperationsController::class, 'download'])
         ->whereIn('kind', ['document', 'media'])->whereNumber('id')->name('operations.files.download');
 });

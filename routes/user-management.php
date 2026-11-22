@@ -115,18 +115,18 @@ Route::middleware(['web'])->group(function (): void {
     });
 
     Route::post('/user-management/accounts', [AccountProvisioningController::class, 'store'])
-        ->middleware('throttle:5,1')
+        ->middleware('throttle:5,1,jr-user-management-accounts-store-')
         ->name('user-management.accounts.store');
 
     // Admin and SuperAdmin only, independently checked inside every controller
     // action. Keep all workflows within the EXISTING User Management sidebar.
     Route::post('/user-management/engineers', [EngineerAdministrationController::class, 'storeEngineer'])
-        ->middleware('throttle:10,1')->name('user-management.engineers.store');
+        ->middleware('throttle:10,1,jr-user-management-engineers-store-')->name('user-management.engineers.store');
     Route::patch('/user-management/engineers/{engineer}', [EngineerAdministrationController::class, 'updateEngineer'])
-        ->whereNumber('engineer')->middleware('throttle:20,1')->name('user-management.engineers.update');
+        ->whereNumber('engineer')->middleware('throttle:20,1,jr-user-management-engineers-update-')->name('user-management.engineers.update');
     Route::post('/user-management/assignments', [EngineerAdministrationController::class, 'storeAssignment'])
-        ->middleware('throttle:10,1')->name('user-management.assignments.store');
+        ->middleware('throttle:10,1,jr-user-management-assignments-store-')->name('user-management.assignments.store');
     Route::patch('/user-management/assignments/{engineer}/{lgu}', [EngineerAdministrationController::class, 'setAssignmentStatus'])
-        ->whereNumber('engineer')->whereNumber('lgu')->middleware('throttle:20,1')
+        ->whereNumber('engineer')->whereNumber('lgu')->middleware('throttle:20,1,jr-user-management-assignments-status-')
         ->name('user-management.assignments.status');
 });
