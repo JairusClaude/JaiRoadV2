@@ -783,10 +783,20 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         'PASS: all three visible monthly sort modes, reporting-year selection, accurate URLs, and filter/order persistence after reload.',
     );
     // Both confirmations use the unchanged server-side impact service and its signed snapshot.
-    await engineer.goto(`${ui}/road-coverages/${road.id}`);
-    await engineer
-        .getByRole('button', { name: /Change municipality/i })
-        .click();
+    const openRoadMunicipalityChange = async () => {
+        // The reviewed municipality change flow lives in the canonical DD
+        // road directory, not the legacy road detail view.
+        await engineer.goto(`${base}/dd-phase3/roads`);
+        await engineer
+            .getByRole('button', {
+                name: new RegExp(`Unified browser road.*Coverage ID: ${road.id}`, 's'),
+            })
+            .click();
+        await engineer
+            .getByRole('button', { name: 'Change municipality', exact: true })
+            .click();
+    };
+    await openRoadMunicipalityChange();
     await engineer
         .getByLabel('New municipality', { exact: true })
         .selectOption(String(f.destination_id));
@@ -804,9 +814,7 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         (await props(engineer, `/road-coverages/${road.id}`)).coverage.lgus_id,
         f.lgu_id,
     );
-    await engineer
-        .getByRole('button', { name: /Change municipality/i })
-        .click();
+    await openRoadMunicipalityChange();
     await engineer
         .getByLabel('New municipality', { exact: true })
         .selectOption(String(f.destination_id));

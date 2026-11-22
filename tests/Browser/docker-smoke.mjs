@@ -325,10 +325,11 @@ try {
             `${blockedProject}/deletion-preview`,
             { headers: { Accept: 'application/json' } },
         );
-        // Dependency review returns a structured, non-destructive preview;
-        // the subsequent confirmed deletion must still refuse referenced data.
+        // In disposable CI, permanent file deletion is explicitly enabled.
+        // Review may allow a separately verified cascade; it never deletes
+        // records or files by itself.
         assert.equal(blockedPreview.status, 200);
-        assert.equal((await blockedPreview.json()).can_delete, false);
+        assert.equal((await blockedPreview.json()).can_delete, true);
         assert.equal(
             (
                 await historicalAdmin.post(
