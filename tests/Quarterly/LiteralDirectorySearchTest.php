@@ -77,7 +77,6 @@ it('normalizes malformed and unicode search inputs instead of interpolating patt
     ]))->assertOk()->assertInertia(fn (Assert $page) => $page->where('filters.search', str_repeat('é', 150))->where('filters.province', '')->where('filters.region', '')->where('filters.sort', 'asc'));
 });
 
-
 it('normalizes structured directory filters to safe scalar options and preserves descending LGU sorting', function (): void {
     $this->fixture('Admin');
 
