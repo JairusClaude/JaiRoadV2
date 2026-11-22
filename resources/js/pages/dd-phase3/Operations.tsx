@@ -69,7 +69,6 @@ type Props = {
     mediaReady: boolean;
     status: string | null;
 };
-const box = 'rounded-2xl border border-[#e2e8f1] bg-white p-5 sm:p-6';
 const tiny =
     'rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs hover:bg-slate-50';
 const input =
@@ -122,17 +121,6 @@ export default function Operations({
     const isViewer = role === 'Viewer';
     // The DD Settings screen is rendered here, not in settings-preview.
     // Apply the Admin palette to its locally hard-coded accent controls.
-    const settingsHeroTheme = isSuperAdmin
-        ? 'border border-[#111c33] bg-[#111c33] text-white'
-        : role === 'Admin'
-          ? 'border border-amber-200 bg-gradient-to-br from-[#fff6e8] to-white text-[#1c2b40]'
-          : role === 'Engineer'
-            ? 'border border-sky-200 bg-gradient-to-br from-[#eef7ff] to-white text-[#1c344e]'
-            : 'border border-slate-200 bg-gradient-to-br from-slate-50 to-white text-slate-800';
-    const settingsPanelClass = isSuperAdmin
-        ? 'border-white/10 bg-white/5'
-        : 'border-slate-200 bg-white/80';
-    const settingsMuted = isSuperAdmin ? 'text-slate-300' : 'text-slate-600';
     const { appearance, updateAppearance } = useAppearance();
     const submit = (
         url: string,

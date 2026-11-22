@@ -1,13 +1,9 @@
 import { Head, Link, router } from '@inertiajs/react';
 import {
-    Activity,
     ArrowRight,
-    Building2,
     Crown,
-    FileText,
     RefreshCw,
     ShieldCheck,
-    Users,
 } from 'lucide-react';
 import { useState } from 'react';
 import { DdDashboardAnalytics } from '@/components/dd-dashboard-analytics';

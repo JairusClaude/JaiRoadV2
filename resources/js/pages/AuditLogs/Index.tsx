@@ -1,15 +1,12 @@
 import { Head, router } from '@inertiajs/react';
 import {
-    Activity,
-    Calendar,
     Eye,
-    FileText,
     History,
     Search,
     Shield,
     User,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import {
     DirectoryFilter,
     DirectoryPagination,
@@ -107,13 +104,13 @@ function formatDate(iso: string): string {
 }
 
 export default function Index({ events, filters }: AuditLogsProps) {
-    const [search, setSearch] = useState(filters.search || '');
+    const [draft, setDraft] = useState({
+        filter: filters.search || '',
+        value: filters.search || '',
+    });
+    const search = draft.filter === (filters.search || '') ? draft.value : (filters.search || '');
     const [selectedEvent, setSelectedEvent] = useState<AuditEvent | null>(null);
     const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-    useEffect(() => {
-        setSearch(filters.search || '');
-    }, [filters.search]);
 
     const navigate = (nextFilters: Partial<typeof filters>, page = 1) => {
         clearTimeout(timer.current);
@@ -133,7 +130,7 @@ export default function Index({ events, filters }: AuditLogsProps) {
     };
 
     const handleSearchChange = (value: string) => {
-        setSearch(value);
+        setDraft({ filter: filters.search || '', value });
         clearTimeout(timer.current);
         timer.current = setTimeout(() => {
             navigate({ search: value }, 1);

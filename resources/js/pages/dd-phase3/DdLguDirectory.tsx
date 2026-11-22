@@ -25,8 +25,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { requestOperation } from '@/pages/dd-phase3/requests';
 
-// DELETE /dd-phase3/lgus/{id} is throttled to 6 requests per minute.
-const maxDeletesPerBatch = 6;
 // Linked road coverages or engineer assignments are protected by restrictive
 // foreign keys; the server rejects those deletions, so the UI blocks them early.
 const deletionBlocked = (item: {

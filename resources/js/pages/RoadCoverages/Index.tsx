@@ -77,11 +77,15 @@ export default function Index({
     const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     const request = useRef<{ cancel: () => void } | null>(null);
 
-    useEffect(() => {
+    // Reset pagination immediately when Inertia delivers a different map page.
+    // React permits guarded prop-derived updates during rendering.
+    const [mapSource, setMapSource] = useState({ mapCoverages, mapNextCursor });
+    if (mapSource.mapCoverages !== mapCoverages || mapSource.mapNextCursor !== mapNextCursor) {
+        setMapSource({ mapCoverages, mapNextCursor });
         setLoadedMap(mapCoverages ?? []);
         setMapCursor(mapNextCursor ?? null);
         setMapError('');
-    }, [mapCoverages, mapNextCursor]);
+    }
 
     const loadMoreMap = async () => {
         if (mapCursor === null || mapLoading) {

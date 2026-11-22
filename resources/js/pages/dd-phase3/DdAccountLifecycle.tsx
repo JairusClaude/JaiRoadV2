@@ -170,12 +170,18 @@ export default function DdAccountLifecycle({
         }
     }, []);
     useEffect(() => {
-        if (initialAccountId !== undefined) {
-            void load(String(initialAccountId));
-        }
+        const generation = sequence.current;
+        // Account detail loading is asynchronous. Avoid synchronously calling
+        // setState during the React effect setup phase.
+        void Promise.resolve().then(() => {
+            if (initialAccountId !== undefined && sequence.current === generation) {
+                void load(String(initialAccountId));
+            }
+        });
 
+        const sequenceRef = sequence;
         return () => {
-            sequence.current++;
+            sequenceRef.current++;
         };
     }, [initialAccountId, load]);
 

@@ -36,9 +36,6 @@ export default function ShowRecord({
     monthlyUpdateCreateUrl,
     documents = [],
     updates = [],
-    canReassign = false,
-    canUnassign = false,
-    managerChoices = [],
 }: {
     project: ProjectSummary;
     record: MaintenanceRecordDetail;

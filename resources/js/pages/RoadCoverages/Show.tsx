@@ -30,7 +30,6 @@ export default function Show({
     canEdit,
     canDelete: canDeleteAllowed,
     backUrl,
-    municipalities = [],
 }: RoadCoverageDetailsProps) {
     const page = usePage();
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
