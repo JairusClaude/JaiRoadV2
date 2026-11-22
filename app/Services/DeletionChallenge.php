@@ -62,11 +62,20 @@ final class DeletionChallenge
         }
         if (! is_array($claim) || ($claim['account'] ?? null) !== $account || ($claim['scope'] ?? null) !== $scope
             || ! is_int($claim['expires'] ?? null) || $claim['expires'] < time()
+            || ! is_int($claim['answer'] ?? null)
             || ! is_string($claim['nonce'] ?? null)) {
             $this->invalid();
         }
 
-        return $claim;
+        // Return only the validated fields: a decrypted JSON array is not
+        // automatically a typed deletion challenge.
+        return [
+            'account' => $account,
+            'scope' => $scope,
+            'answer' => $claim['answer'],
+            'nonce' => $claim['nonce'],
+            'expires' => $claim['expires'],
+        ];
     }
 
     public function verify(Request $request, int $account, string $scope): void
@@ -92,7 +101,7 @@ final class DeletionChallenge
         }
         // Consume even on an incorrect answer. A retry requires a fresh challenge.
         if (! Cache::add('jairoads:deletion-challenge:'.$claim['nonce'], true, now()->addMinutes(6))
-            || ($claim['answer'] ?? null) !== (int) $v['captcha_answer']) {
+            || $claim['answer'] !== (int) $v['captcha_answer']) {
             $this->invalid();
         }
     }

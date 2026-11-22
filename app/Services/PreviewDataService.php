@@ -618,7 +618,7 @@ final class PreviewDataService
     public static function deleteLgu(Request $request, int $id): RedirectResponse
     {
         $store = self::getStore();
-        self::deletePreviewLgus($store, [$id]);
+        $store = self::deletePreviewLgus($store, [$id]);
         self::saveStore($store);
 
         return redirect('/dd-phase3/ui/lgus')->with('dd_operations_status', 'LGU deleted successfully (Preview Mode).');
@@ -629,18 +629,20 @@ final class PreviewDataService
         $ids = (array) $request->input('ids', []);
         $intIds = array_map('intval', $ids);
         $store = self::getStore();
-        self::deletePreviewLgus($store, array_values(array_unique($intIds)));
+        $store = self::deletePreviewLgus($store, array_values(array_unique($intIds)));
         self::saveStore($store);
 
         return redirect('/dd-phase3/ui/lgus')->with('dd_operations_status', 'Selected LGUs deleted successfully (Preview Mode).');
     }
 
-    /** Isolated preview data only: validate every dependency before removing any row. */
     /**
+     * Isolated preview data only: validate every dependency before removing any row.
+     *
      * @param array<string,list<array<string,mixed>>> $store
      * @param list<int> $ids
+     * @return array<string,list<array<string,mixed>>>
      */
-    private static function deletePreviewLgus(array &$store, array $ids): void
+    private static function deletePreviewLgus(array $store, array $ids): array
     {
         $lgus = collect($store['lgus'] ?? []);
         $rows = $lgus->filter(fn ($l) => in_array((int) $l['id'], $ids, true));
@@ -673,6 +675,8 @@ final class PreviewDataService
             $store['preview_audit_events'] = $events;
         }
         $store['lgus'] = $lgus->reject(fn ($l) => in_array((int) $l['id'], $ids, true))->values()->all();
+
+        return $store;
     }
 
     // ==========================================
