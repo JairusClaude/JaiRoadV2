@@ -9,9 +9,8 @@ import {
 } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { ReactNode, RefObject } from 'react';
-import { Spinner } from '@/components/ui/spinner';
-import '../../../css/jairoads-deletion-dialog.css';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import type { DependentCounts } from '@/types/maintenance-projects';
 import { DeletionCamera } from './deletion-camera';
 
@@ -127,15 +126,18 @@ export function DeletionDialog({
     const [cameraReceipt, setCameraReceipt] = useState('');
     const [challengeError, setChallengeError] = useState('');
     const [revision, setRevision] = useState(0);
-    useEffect(() => {
+    const resetVerification = () => {
         setConfirmation('');
-    }, [open, title]);
-    useEffect(() => {
         setChallenge(null);
         setAnswer('');
         setCameraReceipt('');
         setChallengeError('');
-
+    };
+    const closeDialog = () => {
+        resetVerification();
+        onClose();
+    };
+    useEffect(() => {
         if (!open || !needsChallenge || blocked) {
             return;
         }
@@ -177,7 +179,7 @@ export function DeletionDialog({
             open={open}
             onOpenChange={(value) => {
                 if (!value && !processing) {
-                    onClose();
+                    closeDialog();
                 }
             }}
         >
@@ -341,9 +343,13 @@ export function DeletionDialog({
                                     type="button"
                                     variant="outline"
                                     disabled={processing}
-                                    onClick={() =>
-                                        setRevision((value) => value + 1)
-                                    }
+                                    onClick={() => {
+                                        setChallenge(null);
+                                        setAnswer('');
+                                        setCameraReceipt('');
+                                        setChallengeError('');
+                                        setRevision((value) => value + 1);
+                                    }}
                                 >
                                     New challenge
                                 </Button>
@@ -393,7 +399,7 @@ export function DeletionDialog({
                             variant="outline"
                             className="jr-delete-cancel"
                             disabled={processing}
-                            onClick={onClose}
+                            onClick={closeDialog}
                         >
                             Cancel
                         </Button>

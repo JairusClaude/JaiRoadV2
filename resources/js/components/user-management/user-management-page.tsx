@@ -178,8 +178,10 @@ export default function UserManagementPage({
         [engineerById],
     );
 
-    const lguName = (id: number) =>
-        lguById.get(id)?.municipality_name ?? `LGU #${id}`;
+    const lguName = useCallback(
+        (id: number) => lguById.get(id)?.municipality_name ?? `LGU #${id}`,
+        [lguById],
+    );
 
     const filteredAccounts = useMemo(() => {
         const query = search.toLowerCase();
@@ -206,7 +208,7 @@ export default function UserManagementPage({
                 .toLowerCase()
                 .includes(query),
         );
-    }, [engineers, search, lguById]);
+    }, [engineers, search, lguName]);
 
     const filteredAssignments = useMemo(() => {
         const query = search.toLowerCase();
@@ -216,7 +218,7 @@ export default function UserManagementPage({
                 .toLowerCase()
                 .includes(query),
         );
-    }, [assignments, search, engineerName, lguById]);
+    }, [assignments, search, engineerName, lguName]);
 
     const active = accounts.filter((a) => a.is_active).length;
     const activeAssignments = assignments.filter(

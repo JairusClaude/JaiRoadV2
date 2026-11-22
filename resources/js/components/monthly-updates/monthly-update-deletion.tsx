@@ -1,4 +1,4 @@
-import { router, usePage } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialog';
 import { updateMonth } from '@/lib/monthly-updates';

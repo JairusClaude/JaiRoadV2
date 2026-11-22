@@ -34,10 +34,11 @@ export function DeletionCamera({
 
     useEffect(() => {
         active.current = true;
+        const generationRef = generation;
 
         return () => {
             active.current = false;
-            generation.current++;
+            generationRef.current++;
             request.current?.abort();
             stop();
         };

@@ -63,8 +63,6 @@ export function RoadDetailsPanel({
 
     useEffect(() => {
         const controller = new AbortController();
-        setDetails(null);
-        setError('');
         fetch('/dd-phase3/dashboard/roads/' + roadId, {
             headers: { Accept: 'application/json' },
             credentials: 'same-origin',
@@ -135,7 +133,11 @@ export function RoadDetailsPanel({
                         <button
                             type="button"
                             className="jr-road-details-retry"
-                            onClick={() => setAttempt((n) => n + 1)}
+                            onClick={() => {
+                                setDetails(null);
+                                setError('');
+                                setAttempt((n) => n + 1);
+                            }}
                         >
                             Try again
                         </button>

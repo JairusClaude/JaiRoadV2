@@ -18,9 +18,9 @@ import {
     X,
 } from 'lucide-react';
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import '../../css/jairoads-responsive-workspace.css';
-import type { ReactNode } from 'react';
 
 type Identity = { role: string; username: string; name: string } | null;
 const nav = [

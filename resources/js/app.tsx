@@ -7,8 +7,6 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
-import DdPhase3RoleLayout from '@/layouts/dd-phase3-role-layout';
-import DdSuperAdminCommandLayout from '@/layouts/dd-superadmin-command-layout';
 import MaintenanceProjectLayout from '@/layouts/maintenance-project-layout';
 import RoleAwareWorkspaceLayout from '@/layouts/role-aware-workspace-layout';
 import RoleWorkspaceLayout from '@/layouts/role-workspace-layout';

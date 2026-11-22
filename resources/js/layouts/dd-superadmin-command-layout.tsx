@@ -18,10 +18,10 @@ import {
     X,
 } from 'lucide-react';
 import { useState } from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
-import '../../css/jairoads-responsive-workspace.css';
 import type { ReactNode } from 'react';
 import { DdNotificationBell } from '@/components/dd-notification-bell';
+import { useIsMobile } from '@/hooks/use-mobile';
+import '../../css/jairoads-responsive-workspace.css';
 
 type Identity = { role: string; username: string; name: string } | null;
 
