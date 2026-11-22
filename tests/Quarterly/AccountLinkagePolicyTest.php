@@ -103,7 +103,7 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
         $this->get('/dd-phase3/users?directory_page=9999')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
             ->has('accounts', $lastCount)->where('directory.page', $lastPage)->where('directory.pages', $lastPage));
         $this->get('/dd-phase3/users?directory_search=no-such-account&directory_page=9999')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('accounts', 0)->where('directory.page', 1)->where('directory.pages', 1));
+            ->has('accounts', 0)->where('directory.page', 1)->where('directory.pages', 1));
     }
 
     public function test_directory_search_treats_wildcards_literally_and_normalizes_input(): void
@@ -116,20 +116,20 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
         ]);
         $this->actingAs($admin);
         $this->get('/dd-phase3/users?'.http_build_query(['directory_search' => '  specific_needle  ']))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('accounts', 1)->where('accounts.0.username', 'specific_needle')
-                ->where('directory.search', 'specific_needle'));
+            ->has('accounts', 1)->where('accounts.0.username', 'specific_needle')
+            ->where('directory.search', 'specific_needle'));
         $this->get('/dd-phase3/users?'.http_build_query(['directory_search' => 'specific%needle']))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('accounts', 0)->where('directory.total', 0));
+            ->has('accounts', 0)->where('directory.total', 0));
         $this->get('/dd-phase3/users?'.http_build_query(['directory_search' => str_repeat('é', 151)]))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
-                ->where('directory.search', str_repeat('é', 150)));
+            ->where('directory.search', str_repeat('é', 150)));
         $matchingEngineer = $this->engineer();
         $otherEngineer = $this->engineer();
         DB::table('jairoads_next.engineers')->where('id', $matchingEngineer)->update(['rank' => 'Grade_Alpha']);
         DB::table('jairoads_next.engineers')->where('id', $otherEngineer)->update(['rank' => 'GradeXAlpha']);
         $this->get('/dd-phase3/users?'.http_build_query(['directory_tab' => 'engineers', 'directory_search' => 'Grade_Alpha']))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
-                ->has('engineers', 1)->where('engineers.0.id', $matchingEngineer)->where('directory.total', 1));
+            ->has('engineers', 1)->where('engineers.0.id', $matchingEngineer)->where('directory.total', 1));
         $this->get('/dd-phase3/users?'.http_build_query(['directory_tab' => 'engineers', 'directory_page' => 9999]))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
-                ->where('directory.page', 1)->where('directory.pages', 1));
+            ->where('directory.page', 1)->where('directory.pages', 1));
     }
 
     public function test_existing_unlinked_admin_is_denied_without_mutating_or_grandfathering_it(): void

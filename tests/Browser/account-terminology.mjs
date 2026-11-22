@@ -211,6 +211,27 @@ try {
     await page.getByText('No accounts found', { exact: true }).waitFor();
     await page.getByLabel('Filter status').selectOption('active');
     await row.waitFor();
+    // Equivalent whitespace must not trigger a loop of directory GET requests.
+    const redundantSearches = [];
+    const recordSearch = (request) => {
+        const url = new URL(request.url());
+
+        if (
+            request.method() === 'GET' &&
+            url.pathname === '/dd-phase3/users' &&
+            url.searchParams.has('directory_search')
+        ) {
+            redundantSearches.push(url.searchParams.get('directory_search'));
+        }
+    };
+    page.on('request', recordSearch);
+    await page
+        .getByRole('textbox', { name: 'Search accounts' })
+        .fill('  ui-type-engineer@example.test  ');
+    await page.waitForTimeout(750);
+    page.off('request', recordSearch);
+    assert.deepEqual(redundantSearches, []);
+    await row.waitFor();
     await page.goto(`${base}/dd-phase3/settings`);
     await page.getByText('Account Type', { exact: true }).waitFor();
     assert.equal(await page.getByText('Role', { exact: true }).count(), 0);
