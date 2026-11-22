@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Services\OperationAudit;
 use App\Services\PreviewDataService;
 use App\Services\RoleAccess;
+use App\Support\LiteralDirectorySearch;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -31,11 +32,11 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
         $sort = $request->query('sort');
         $year = $request->string('year', 'all')->toString();
         $year = ctype_digit($year) && strlen($year) <= 4 ? (string) (int) $year : 'all';
-        $filters = ['search' => $request->string('search')->toString(), 'project' => $request->string('project', 'all')->toString(),
+        $filters = ['search' => LiteralDirectorySearch::normalize($request->query('search')), 'project' => $request->string('project', 'all')->toString(),
             'year' => $year,
             'sort' => is_string($sort) && in_array($sort, ['newest', 'oldest', 'modified'], true) ? $sort : 'newest'];
         $authorized = $this->updateQuery($actor);
-        $q = (clone $authorized)->when($filters['search'] !== '', fn (Builder $q) => $q->where('p.project_title', 'ilike', '%'.substr($filters['search'], 0, 255).'%'));
+        $q = (clone $authorized)->when($filters['search'] !== '', fn (Builder $q) => $q->where('p.project_title', 'ilike', LiteralDirectorySearch::pattern($filters['search'])));
         if (ctype_digit($filters['project'])) {
             $q->where('p.id', $filters['project']);
         }

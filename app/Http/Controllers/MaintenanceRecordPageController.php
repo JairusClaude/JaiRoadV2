@@ -10,6 +10,7 @@ use App\Services\OperationAudit;
 use App\Services\PreservedProjectDeletion;
 use App\Services\PreviewDataService;
 use App\Services\RoleAccess;
+use App\Support\LiteralDirectorySearch;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -118,9 +119,10 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
         $actor = $this->actor($request);
         $filters = $request->only(['search', 'municipality', 'year', 'quarter', 'status', 'sort'])
             + ['search' => '', 'municipality' => 'all', 'year' => 'all', 'quarter' => 'all', 'status' => 'all', 'sort' => 'newest'];
+        $filters['search'] = LiteralDirectorySearch::normalize($filters['search']);
         $q = $this->records($actor);
-        if (is_string($filters['search']) && trim($filters['search']) !== '') {
-            $like = '%'.substr(trim($filters['search']), 0, 255).'%';
+        if ($filters['search'] !== '') {
+            $like = LiteralDirectorySearch::pattern($filters['search']);
             $q->where(fn ($query) => $query->where('p.project_title', 'ilike', $like)
                 ->orWhereRaw("concat_ws(' ', e.first_name, e.last_name) ilike ?", [$like])
                 ->orWhere('l.municipality_name', 'ilike', $like)

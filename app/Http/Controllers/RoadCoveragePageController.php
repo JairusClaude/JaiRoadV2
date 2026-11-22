@@ -8,6 +8,7 @@ use App\Services\OperationAudit;
 use App\Services\PreviewDataService;
 use App\Services\RoadReferenceBounds;
 use App\Services\RoleAccess;
+use App\Support\LiteralDirectorySearch;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -34,9 +35,10 @@ final class RoadCoveragePageController extends OperationsFrontendController
         $actor = $this->actor($request);
         $filters = $request->only(['search', 'municipality', 'condition', 'pavement', 'sort'])
             + ['search' => '', 'municipality' => 'all', 'condition' => 'all', 'pavement' => 'all', 'sort' => 'newest'];
+        $filters['search'] = LiteralDirectorySearch::normalize($filters['search']);
         $query = $this->roads($actor);
-        if (is_string($filters['search']) && $filters['search'] !== '') {
-            $query->where('rc.road_name', 'ilike', '%'.substr($filters['search'], 0, 255).'%');
+        if ($filters['search'] !== '') {
+            $query->where('rc.road_name', 'ilike', LiteralDirectorySearch::pattern($filters['search']));
         }
         foreach (['municipality' => 'rc.lgu_id', 'condition' => 'rc.state_category', 'pavement' => 'rc.pavement_type'] as $key => $column) {
             if (is_string($filters[$key]) && $filters[$key] !== '' && $filters[$key] !== 'all') {
@@ -46,7 +48,8 @@ final class RoadCoveragePageController extends OperationsFrontendController
             }
         }
         $query->orderBy(in_array($filters['sort'], ['name-asc', 'name-desc'], true) ? 'rc.road_name' : 'rc.id',
-            in_array($filters['sort'], ['oldest', 'name-asc'], true) ? 'asc' : 'desc');
+            in_array($filters['sort'], ['oldest', 'name-asc'], true) ? 'asc' : 'desc')
+            ->orderBy('rc.id', in_array($filters['sort'], ['oldest', 'name-asc'], true) ? 'asc' : 'desc');
 
         $totalCoverages = (int) DB::table('jairoads_next.road_coverages')->count();
         $linkedProjects = (int) DB::table('jairoads_next.maintenance_projects')->whereNotNull('road_coverage_id')->distinct()->count('id');

@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Services\PreviewDataService;
 use App\Services\RoleAccess;
+use App\Support\LiteralDirectorySearch;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,8 +27,8 @@ final class MaintenanceProjectPageController extends OperationsFrontendControlle
         }
 
         $actor = $this->actor($request);
-        $filters = ['search' => $request->string('search')->toString(), 'municipality' => $request->string('municipality', 'all')->toString(), 'sort' => $request->query('sort') === 'oldest' ? 'oldest' : 'newest'];
-        $q = $this->projects($actor, false)->when($filters['search'] !== '', fn (Builder $q) => $q->where('p.project_title', 'ilike', '%'.substr($filters['search'], 0, 255).'%'));
+        $filters = ['search' => LiteralDirectorySearch::normalize($request->query('search')), 'municipality' => $request->string('municipality', 'all')->toString(), 'sort' => $request->query('sort') === 'oldest' ? 'oldest' : 'newest'];
+        $q = $this->projects($actor, false)->when($filters['search'] !== '', fn (Builder $q) => $q->where('p.project_title', 'ilike', LiteralDirectorySearch::pattern($filters['search'])));
         if (ctype_digit($filters['municipality'])) {
             $q->where('rc.lgu_id', $filters['municipality']);
         }

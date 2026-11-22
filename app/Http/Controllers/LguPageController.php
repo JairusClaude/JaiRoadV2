@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Services\OperationAudit;
 use App\Services\PreviewDataService;
 use App\Services\RoleAccess;
+use App\Support\LiteralDirectorySearch;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -24,43 +25,48 @@ final class LguPageController extends OperationsFrontendController
         }
 
         $actor = $this->actor($request);
-        $search = trim((string) $request->query('search', ''));
-        $province = trim((string) $request->query('province', ''));
-        $region = trim((string) $request->query('region', ''));
-        $sort = strtolower((string) $request->query('sort', 'asc')) === 'desc' ? 'desc' : 'asc';
+        $search = LiteralDirectorySearch::normalize($request->query('search'));
+        $provinceInput = $request->query('province');
+        $province = is_string($provinceInput) ? mb_substr(trim($provinceInput), 0, 150) : '';
+        $regionInput = $request->query('region');
+        $region = is_string($regionInput) ? mb_substr(trim($regionInput), 0, 150) : '';
+        $sort = $request->query('sort') === 'desc' ? 'desc' : 'asc';
 
-        $query = DB::table('jairoads_next.lgus');
+        // Dependency counts are correlated subqueries, never 2N page queries.
+        $query = DB::table('jairoads_next.lgus as l')
+            ->select('l.*')
+            ->selectSub(DB::table('jairoads_next.road_coverages as rc')->selectRaw('COUNT(*)')
+                ->whereColumn('rc.lgu_id', 'l.id'), 'road_count')
+            ->selectSub(DB::table('jairoads_next.engineer_lgus as el')->selectRaw('COUNT(*)')
+                ->whereColumn('el.lgu_id', 'l.id'), 'assignment_count');
 
         if ($search !== '') {
             $query->where(function (Builder $query) use ($search): void {
-                $like = '%'.$search.'%';
-                $query->where('municipality_name', 'ilike', $like)
-                    ->orWhere('province', 'ilike', $like)
-                    ->orWhere('region', 'ilike', $like)
-                    ->orWhere('mayor_first_name', 'ilike', $like)
-                    ->orWhere('mayor_middle_name', 'ilike', $like)
-                    ->orWhere('mayor_last_name', 'ilike', $like);
+                $like = LiteralDirectorySearch::pattern($search);
+                $query->where('l.municipality_name', 'ilike', $like)
+                    ->orWhere('l.province', 'ilike', $like)
+                    ->orWhere('l.region', 'ilike', $like)
+                    ->orWhere('l.mayor_first_name', 'ilike', $like)
+                    ->orWhere('l.mayor_middle_name', 'ilike', $like)
+                    ->orWhere('l.mayor_last_name', 'ilike', $like);
             });
         }
 
         if ($province !== '' && $province !== 'all') {
-            $query->where('province', $province);
+            $query->where('l.province', $province);
         }
 
         if ($region !== '' && $region !== 'all') {
-            $query->where('region', $region);
+            $query->where('l.region', $region);
         }
 
         $paginated = $query
-            ->orderBy('municipality_name', $sort)
+            ->orderBy('l.municipality_name', $sort)->orderBy('l.id', $sort)
             ->paginate(10)
             ->withQueryString();
 
         $lgus = [
             'data' => collect($paginated->items())->map(function (\stdClass $lgu): array {
-                $roadCount = DB::table('jairoads_next.road_coverages')->where('lgu_id', $lgu->id)->count();
-                $assignmentCount = DB::table('jairoads_next.engineer_lgus')->where('lgu_id', $lgu->id)->count();
-
                 return [
                     'id' => (int) $lgu->id,
                     'municipality_name' => $lgu->municipality_name,
@@ -71,8 +77,8 @@ final class LguPageController extends OperationsFrontendController
                     'mayor_last_name' => $lgu->mayor_last_name,
                     'deletion_check' => [
                         'available' => true,
-                        'road_coverages' => $roadCount,
-                        'engineer_assignments' => $assignmentCount,
+                        'road_coverages' => (int) $lgu->road_count,
+                        'engineer_assignments' => (int) $lgu->assignment_count,
                     ],
                 ];
             })->all(),

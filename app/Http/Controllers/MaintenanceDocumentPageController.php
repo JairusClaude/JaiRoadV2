@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Services\PreviewDataService;
 use App\Services\RoleAccess;
+use App\Support\LiteralDirectorySearch;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,9 +28,9 @@ final class MaintenanceDocumentPageController extends OperationsFrontendControll
         }
 
         $actor = $this->actor($request);
-        $filters = ['search' => $request->string('search')->toString(), 'project' => $request->string('project', 'all')->toString(),
+        $filters = ['search' => LiteralDirectorySearch::normalize($request->query('search')), 'project' => $request->string('project', 'all')->toString(),
             'sort' => $request->query('sort') === 'oldest' ? 'oldest' : 'newest'];
-        $q = $this->documentQuery($actor)->when($filters['search'] !== '', fn (Builder $q) => $q->where('d.document_title', 'ilike', '%'.substr($filters['search'], 0, 255).'%'));
+        $q = $this->documentQuery($actor)->when($filters['search'] !== '', fn (Builder $q) => $q->where('d.document_title', 'ilike', LiteralDirectorySearch::pattern($filters['search'])));
         if (ctype_digit($filters['project'])) {
             $q->where('p.id', $filters['project']);
         }

@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Services\AuditValues;
 use App\Services\PreviewDataService;
 use App\Services\RoleAccess;
+use App\Support\LiteralDirectorySearch;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,14 +24,14 @@ final class AuditLogPageController extends OperationsFrontendController
         $actor = $this->actor($request);
         abort_unless(RoleAccess::managesBusinessData($actor['role']), 403);
 
-        $search = $request->string('search')->toString();
+        $search = LiteralDirectorySearch::normalize($request->query('search'));
         $action = $request->string('action', 'all')->toString();
         $sort = $request->query('sort') === 'oldest' ? 'oldest' : 'newest';
 
         $q = DB::table('jairoads_next.audit_logs as a')
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $sub) use ($search) {
-                    $term = '%'.substr($search, 0, 255).'%';
+                    $term = LiteralDirectorySearch::pattern($search);
                     $sub->where('a.description', 'ilike', $term)
                         ->orWhere('a.actor_identifier', 'ilike', $term)
                         ->orWhere('a.entity_type', 'ilike', $term);
