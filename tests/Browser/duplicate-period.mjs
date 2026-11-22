@@ -85,11 +85,11 @@ export async function verifyDuplicatePeriod({
         .last()
         .click();
     await preserved();
-    assert.match(await engineer.getByLabel(/^Quarter/).innerText(), /Q2/);
+    assert.match(await engineer.getByRole('combobox', { name: /^Quarter/ }).innerText(), /Q2/);
 
     // Every unoccupied quarter stays selectable; no paired-quarter restriction.
     await engineer.getByLabel(/^Maintenance Year/).fill('2027');
-    await engineer.getByLabel(/^Quarter/).click();
+    await engineer.getByRole('combobox', { name: /^Quarter/ }).click();
     assert.deepEqual(await engineer.getByRole('option').allTextContents(), [
         'Q1',
         'Q2',
@@ -143,7 +143,7 @@ export async function verifyDuplicatePeriod({
         '2026-01-01',
     );
     assert.match(
-        await engineer.getByLabel(/^Quarter/).innerText(),
+        await engineer.getByRole('combobox', { name: /^Quarter/ }).innerText(),
         /Select quarter/,
     );
     assert.equal(
