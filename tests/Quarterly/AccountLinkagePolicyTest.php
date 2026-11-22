@@ -89,8 +89,9 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
         $this->account('Engineer', $linked, false);
         $this->engineer('Retired');
         $available = $this->engineer();
+        $totalAccounts = (int) DB::table('jairoads_next.user_accounts')->count();
         $this->actingAs($admin)->get('/dd-phase3/users')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
-            ->has('accounts', 15)->where('directory.total', 203)
+            ->has('accounts', 15)->where('directory.total', $totalAccounts)
             ->has('eligibleEngineers', 1)->where('eligibleEngineers.0.id', $available));
         // Search an early account that is outside the newest 15 displayed rows.
         $this->get('/dd-phase3/users?directory_search=filler-0')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
