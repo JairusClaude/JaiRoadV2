@@ -3,6 +3,7 @@
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Fortify\Features;
 
@@ -16,20 +17,27 @@ test('HTTPS public origin preserves client-side login and canonical workspace re
     config(['app.url' => 'https://jairoads.example.test']);
     $this->withServerVariables(['HTTP_HOST' => 'jairoads.example.test', 'HTTPS' => 'off']);
 
-    // The TLS proxy talks HTTP to PHP-FPM. Redirects still have to remain
-    // same-origin HTTPS for browser fetch/Inertia to follow them.
-    $this->get('/')->assertRedirect('https://jairoads.example.test/login');
+    try {
+        // The TLS proxy talks HTTP to PHP-FPM. Redirects still have to remain
+        // same-origin HTTPS for browser fetch/Inertia to follow them.
+        $this->get('/')->assertRedirect('https://jairoads.example.test/login');
 
-    $user = $this->canonicalUser(User::factory()->create());
-    $this->post('/login', [
-        'email' => $user->email,
-        'password' => 'password',
-    ])->assertRedirect('https://jairoads.example.test/dashboard');
-    $this->assertAuthenticatedAs($user);
+        $user = $this->canonicalUser(User::factory()->create());
+        $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ])->assertRedirect('https://jairoads.example.test/dashboard');
+        $this->assertAuthenticatedAs($user);
 
-    $this->get('/dashboard')->assertRedirect('https://jairoads.example.test/dd-superadmin-landing');
-    $this->get('/maintenance-projects')->assertRedirect('https://jairoads.example.test/dd-phase3/ui/maintenance-projects');
-    $this->get('/user-management')->assertRedirect('https://jairoads.example.test/dd-phase3/users');
+        $this->get('/dashboard')->assertRedirect('https://jairoads.example.test/dd-superadmin-landing');
+        $this->get('/maintenance-projects')->assertRedirect('https://jairoads.example.test/dd-phase3/ui/maintenance-projects');
+        $this->get('/user-management')->assertRedirect('https://jairoads.example.test/dd-phase3/users');
+    } finally {
+        // In-process test requests share the URL generator. Do not leak the
+        // synthetic HTTPS host into unrelated tests or password-recovery flows.
+        URL::forceRootUrl(null);
+        URL::forceScheme(null);
+    }
 });
 
 test('users can authenticate using the login screen', function () {
