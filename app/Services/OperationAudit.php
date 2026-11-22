@@ -10,7 +10,11 @@ use Illuminate\Support\Facades\DB;
 /** One canonical event plus deduplicated deliveries in the mutation transaction. */
 final class OperationAudit
 {
-    /** Store the verified actor's name at the time of the event, never the target's name. */
+    /**
+     * Store the verified actor's name at the time of the event, never the target's name.
+     *
+     * @param array{account_id:int,role:string,engineer_id:?int} $actor
+     */
     private function actorIdentifier(array $actor): string
     {
         if ($actor['role'] === 'Engineer' && $actor['engineer_id'] !== null) {
@@ -35,7 +39,11 @@ final class OperationAudit
         return 'DD-UserAccount#'.$actor['account_id'].' ('.$username.')';
     }
 
-    /** Credential reset audit: record the event, never a credential or hash. */
+    /**
+     * Credential reset audit: record the event, never a credential or hash.
+     *
+     * @param array{account_id:int,role:string,engineer_id:?int} $actor
+     */
     public function recordAdministratorPasswordReset(array $actor, int $id, bool $operatorRoot = false): void
     {
         $login = User::where('dd_user_account_id', $actor['account_id'])->first();

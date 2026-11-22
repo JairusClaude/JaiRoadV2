@@ -44,6 +44,7 @@ final class EnsurePasswordRecoveryDelivery
         }
     }
 
+    /** @param list<string> $seen */
     private function delivers(string $mailer, array $seen = []): bool
     {
         if (in_array($mailer, $seen, true)) {

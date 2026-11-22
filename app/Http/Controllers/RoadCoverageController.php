@@ -110,11 +110,11 @@ class RoadCoverageController extends Controller
         try {
             $totalCoverages = (int) DB::table('jairoads_next.road_coverages')->count();
             $linkedProjects = (int) DB::table('jairoads_next.maintenance_projects')->whereNotNull('road_coverage_id')->distinct()->count('id');
-            $totalLengthKm = (float) (DB::table('jairoads_next.road_coverages')->sum('kilometers') ?? 0);
+            $totalLengthKm = (float) DB::table('jairoads_next.road_coverages')->sum('kilometers');
         } catch (\Throwable) {
             $totalCoverages = (int) RoadCoverage::count();
             $linkedProjects = (int) MaintenanceProject::whereNotNull('road_coverage_id')->distinct('id')->count('id');
-            $totalLengthKm = (float) (RoadCoverage::sum('kilometers') ?? 0);
+            $totalLengthKm = (float) RoadCoverage::sum('kilometers');
         }
 
         return Inertia::render('RoadCoverages/Index', [
@@ -128,7 +128,7 @@ class RoadCoverageController extends Controller
                 'municipality' => (string) request()->query('municipality', 'all'),
                 'condition' => (string) request()->query('condition', 'all'),
                 'pavement' => (string) request()->query('pavement', 'all'),
-                'sort' => $sortField === 'road_name' && $sortDirection === 'asc' ? 'name-asc' : ($sortField === 'road_name' && $sortDirection === 'desc' ? 'name-desc' : 'newest'),
+                'sort' => $sortField !== 'road_name' ? 'newest' : ($sortDirection === 'asc' ? 'name-asc' : 'name-desc'),
             ],
             'model' => $model,
             'lgus' => $availableLgus,

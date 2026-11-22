@@ -118,7 +118,7 @@ final class RoleLandingController extends Controller
         $page = $rows->take(100);
 
         return [
-            'data' => $page->map(static fn (\stdClass $road): array => [
+            'data' => array_values($page->map(static fn (\stdClass $road): array => [
                 'id' => (int) $road->id,
                 'road_name' => (string) $road->road_name,
                 'municipality' => (string) $road->municipality_name,
@@ -128,7 +128,7 @@ final class RoleLandingController extends Controller
                 'project_title' => $road->project_title,
                 'my_project' => (int) $road->my_record_count > 0,
                 'my_record_count' => (int) $road->my_record_count,
-            ])->values()->all(),
+            ])->values()->all()),
             'next_cursor' => $rows->count() > 100 ? (int) $page->last()->id : null,
         ];
     }

@@ -12,6 +12,7 @@ use Illuminate\Validation\ValidationException;
 /** Additional human confirmation, not a replacement for authentication or CSRF. */
 final class DeletionChallenge
 {
+    /** @return array{question:string,token:string} */
     public function issue(int $account, string $scope): array
     {
         $left = random_int(10, 49);
@@ -51,6 +52,7 @@ final class DeletionChallenge
         ], JSON_THROW_ON_ERROR));
     }
 
+    /** @return array{account:int,scope:string,answer:int,nonce:string,expires:int} */
     private function claim(string $token, int $account, string $scope): array
     {
         try {
