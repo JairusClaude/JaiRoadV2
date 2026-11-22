@@ -302,6 +302,8 @@ jobs:
       SUPABASE_URL: http://127.0.0.1:5799
       SUPABASE_SECRET_KEY: disposable-storage-only
       SUPABASE_SERVICE_ROLE_KEY: disposable-storage-only
+      # Disposable PostgreSQL + local Storage mock only; production remains fail-closed.
+      JAIROADS_PERMANENT_FILE_DELETION_ENABLED: 'true'
       QUARTERLY_BROWSER_URL: http://127.0.0.1:8011
       QUARTERLY_BROWSER_FIXTURE: /tmp/jairoads-unified-fixture.json
     steps:

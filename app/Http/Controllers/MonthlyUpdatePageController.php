@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Services\OperationAudit;
 use App\Services\PreviewDataService;
 use App\Services\RoleAccess;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -49,7 +50,7 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
         $q->orderBy($filters['sort'] === 'modified' ? 'u.updated_at' : 'u.update_month', $direction)
             ->orderBy('u.id', $direction);
 
-        $currentMonth = date('Y-m');
+        $currentMonth = CarbonImmutable::now('Asia/Manila')->format('Y-m');
         $thisMonthCount = (clone $authorized)->where('u.update_month', $currentMonth)->count();
 
         return $this->render('MonthlyUpdates/Index', $request, [

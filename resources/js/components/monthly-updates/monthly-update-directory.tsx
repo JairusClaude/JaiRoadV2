@@ -111,18 +111,16 @@ export function MonthlyUpdateDirectory({
 
     const displayedTotalReports =
         totalReports ?? updates?.total ?? updates?.data?.length ?? 0;
-    const currentMonthPrefix = new Date().toISOString().slice(0, 7);
+    const currentMonthPrefix = new Intl.DateTimeFormat('sv-SE', {
+        timeZone: 'Asia/Manila',
+        year: 'numeric',
+        month: '2-digit',
+    }).format(new Date());
     const thisMonthMatches =
         updates?.data?.filter((u) =>
             u.update_month?.startsWith(currentMonthPrefix),
         ).length ?? 0;
-    const displayedReportsThisMonth =
-        reportsThisMonth ??
-        (thisMonthMatches > 0
-            ? thisMonthMatches
-            : (updates?.data?.filter(
-                  (u) => u.update_month === updates.data[0]?.update_month,
-              ).length ?? 0));
+    const displayedReportsThisMonth = reportsThisMonth ?? thisMonthMatches;
 
     return (
         <ProjectWorkspace>
