@@ -1,154 +1,661 @@
 /* SuperAdmin identity only; server role chooses the shell marker. No access rules here. */
-.jr-superadmin-workspace, body:has(.jr-superadmin-workspace) .jr-theme {
-    --primary:#51269b; --primary-foreground:#faf5ff; --secondary:#eee5ff;
-    --secondary-foreground:#26104d; --ring:#a78bfa; --sidebar:#26104d;
-    --color-primary:var(--primary); --color-secondary:var(--secondary);
-    --color-ring:var(--ring); --color-sidebar:var(--sidebar);
-    --superadmin-navy:#26104d; --superadmin-blue:#38166b; --superadmin-active:#51269b;
-    --superadmin-accent:#a78bfa; --superadmin-ink:#26163e;
+.jr-superadmin-workspace,
+body:has(.jr-superadmin-workspace) .jr-theme {
+    --primary: #51269b;
+    --primary-foreground: #faf5ff;
+    --secondary: #eee5ff;
+    --secondary-foreground: #26104d;
+    --ring: #a78bfa;
+    --sidebar: #26104d;
+    --color-primary: var(--primary);
+    --color-secondary: var(--secondary);
+    --color-ring: var(--ring);
+    --color-sidebar: var(--sidebar);
+    --superadmin-navy: #26104d;
+    --superadmin-blue: #38166b;
+    --superadmin-active: #51269b;
+    --superadmin-accent: #a78bfa;
+    --superadmin-ink: #26163e;
 }
-.jr-app.jr-superadmin-workspace { background:#f5f0ff; }
-.jr-superadmin-workspace .jr-stage { background:linear-gradient(150deg,#fcf9ff 0%,#f4eeff 70%,#ece3fb 100%); }
-body:has(.jr-superadmin-workspace) :is(.jr-superadmin-sidebar,.jr-superadmin-sidebar [data-sidebar='sidebar']) {
-    --sidebar:#26104d; --color-sidebar:#26104d;
-    background-color:#26104d;
-    background-image:radial-gradient(ellipse at 90% 20%,#38166b88,transparent 60%),linear-gradient(160deg,#1c0a3b,#26104d 53%,#38166b);
-    color:#faf5ff;
+.jr-app.jr-superadmin-workspace {
+    background: #f5f0ff;
 }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar [data-sidebar='sidebar'] { background:transparent; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar :is(.jr-brand-copy strong,.jr-identity-copy strong) { color:#faf5ff; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar :is(.jr-brand-copy small,.jr-identity-copy small,.jr-nav-caption) { color:#e9dfff; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar :is(.jr-brand-icon,.jr-brand-toggle) { background:#38166b; color:#fff; border-color:#ffffff26; box-shadow:none; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar :is(.jr-sidebar-collapse,.jr-alternative-chevron) { color:#e9dfff; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar :is(.jr-sidebar-collapse,.jr-alternative-chevron):hover { background:#ffffff16; color:#fff; border-color:transparent; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-nav-link { color:#faf5ff; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-nav-link svg { color:#ede9fe; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-nav-link:hover { background:#ffffff14; color:#fff; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-nav-link.jr-active { background:#51269b; color:#fff; border-color:#a78bfa40; box-shadow:0 4px 12px #1b093733; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-nav-link.jr-active svg { color:#fff; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-nav-link.jr-active::before { content:none; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-alternative-submenu::before { border-color:#c4b5fd75; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-alternative-parent .jr-nav-link>span { left:39px; letter-spacing:-.2px; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-alternative-chevron { right:11px; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-alternative-submenu .jr-alternative-record-label { left:0; right:0; text-align:center; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-identity { background:#210e45bd; border-color:#ffffff20; box-shadow:none; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-initial { background:#51269b; color:white; border-radius:50%; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-header { height:180px; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand { top:18px; left:0; width:100%; height:148px; flex-direction:column; align-items:center; justify-content:flex-start; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-control { width:90px; height:90px; flex:0 0 90px; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-icon { width:90px; height:90px; background:transparent; border:0; border-radius:0; overflow:visible; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-superadmin-brand-logo { display:block; width:100%; height:100%; object-fit:contain; border-radius:0; background:transparent; border:0; box-shadow:none; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-copy { position:static; text-align:center; margin-top:5px; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-copy strong { font-size:22px; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-copy small { font-size:12px; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-sidebar-collapse { top:15px; right:10px; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-nav-content { position:relative; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-sidebar-footer { position:relative; }
-body:has(.jr-superadmin-workspace) [data-state='collapsed'] .jr-superadmin-sidebar .jr-brand-header { height:96px; }
-body:has(.jr-superadmin-workspace) [data-state='collapsed'] .jr-superadmin-sidebar .jr-brand { top:19px; left:22px; width:40px; height:40px; }
-body:has(.jr-superadmin-workspace) [data-state='collapsed'] .jr-superadmin-sidebar .jr-brand-control { width:40px; height:40px; flex-basis:40px; }
-body:has(.jr-superadmin-workspace) [data-state='collapsed'] .jr-superadmin-sidebar .jr-brand-icon { width:40px; height:40px; }
-body:has(.jr-superadmin-workspace) [data-state='collapsed'] .jr-superadmin-sidebar .jr-brand-copy { display:none; }
-body:has(.jr-superadmin-workspace) [data-state='collapsed'] .jr-superadmin-sidebar .jr-alternative-parent .jr-nav-link>span { left:45px; }
-.jr-superadmin-workspace .jr-global-header { background:#fcf9ff; border-color:#e6dcf4; color:#38166b; }
-.jr-superadmin-workspace .jr-global-header strong { color:#26163e; }
-.jr-superadmin-workspace .jr-global-header :is(.jr-icon-button,.jr-account-trigger) { color:#38166b; }
-.jr-superadmin-workspace .jr-account-trigger .jr-initial { background:#51269b; color:#fff; border-color:#a78bfa; }
-.jr-superadmin-workspace .jr-content { border-color:#e7dff4; }
-.jr-superadmin-workspace .jr-workspace { border-color:#e6dcf4; }
-.jr-superadmin-workspace .jr-workspace .jr-page-head h1 { color:#26163e; }
-.jr-superadmin-workspace .jr-workspace .jr-page-head p { color:#605273; }
-.jr-superadmin-workspace .jr-primary, .jr-superadmin-refresh { background:#51269b; color:#fff; border:1px solid #51269b; box-shadow:0 3px 10px #51269b25; }
-.jr-superadmin-workspace .jr-primary:hover,.jr-superadmin-refresh:hover:not(:disabled) { background:#38166b; border-color:#38166b; }
-.jr-superadmin-workspace :is(button,a,input,textarea,select):focus-visible { outline-color:#a78bfa; }
-.jr-superadmin-workspace .jr-search input:focus { border-color:#51269b; box-shadow:0 0 0 3px #a78bfa30; }
-.jr-superadmin-workspace .jr-directory-exploration .jr-page-head { background:#f4edff; }
-.jr-superadmin-workspace .jr-directory-exploration .jr-page-head::before { background-image:url('../images/superadmin-road-landscape.svg'); opacity:1; }
-.jr-superadmin-workspace .jr-superadmin-dashboard .jr-page-head { min-height:184px; align-items:center; padding-bottom:42px; }
-.jr-superadmin-workspace .jr-superadmin-dashboard .jr-page-head h1 { font-size:clamp(25px,2.7vw,36px); letter-spacing:-.035em; font-weight:750; }
-.jr-superadmin-access { display:inline-flex; align-items:center; gap:7px; background:#ede5ff; color:#38166b; padding:7px 12px; border-radius:11px; font-size:12px; font-weight:700; margin-bottom:12px; }
-.jr-superadmin-refresh { display:inline-flex; align-items:center; justify-content:center; gap:9px; min-height:42px; padding:9px 18px; border-radius:999px; font-size:13px; font-weight:650; white-space:nowrap; }
-.jr-superadmin-refresh:disabled { opacity:.65; cursor:wait; }
-.jr-superadmin-workspace .jr-superadmin-dashboard main { margin-top:-22px; border:1px solid #e6dcf4; background:#fcf9ff; border-radius:22px; padding-top:22px; }
-.jr-superadmin-workspace .jr-superadmin-dashboard :is(.text-amber-700,.text-amber-800,.text-amber-900) { color:#38166b; }
-.jr-superadmin-workspace .jr-superadmin-dashboard .bg-amber-50 { background:#eee6ff; }
-.jr-superadmin-workspace .jr-superadmin-dashboard .border-amber-200 { border-color:#ded0fb; }
-.jr-superadmin-workspace .jr-superadmin-dashboard [class~="from-amber-700"][class~="to-amber-400"] { background:linear-gradient(to top,#38166b,#a78bfa); }
-.jr-superadmin-workspace .jr-superadmin-dashboard a:hover { border-color:#c8b1f2; background:#f5efff; }
-.jr-superadmin-workspace .jr-superadmin-dashboard :is(h2,h3) { color:#26163e; }
-.jr-superadmin-workspace .jr-superadmin-dashboard .border-slate-200 { border-color:#e6dcf4; }
-.jr-superadmin-workspace .jr-superadmin-dashboard .text-slate-500 { color:#645573; }
-.jr-superadmin-workspace .jr-superadmin-dashboard .text-slate-950 { color:#26163e; }
-.jr-superadmin-workspace .jr-superadmin-dashboard .text-slate-900 { color:#26163e; }
-.jr-superadmin-workspace .jr-superadmin-dashboard .text-slate-700 { color:#544567; }
-body:has(.jr-superadmin-workspace) .jr-menu [data-highlighted] { background:#eee6ff; color:#26104d; }
+.jr-superadmin-workspace .jr-stage {
+    background: linear-gradient(150deg, #fcf9ff 0%, #f4eeff 70%, #ece3fb 100%);
+}
+body:has(.jr-superadmin-workspace)
+    :is(
+        .jr-superadmin-sidebar,
+        .jr-superadmin-sidebar [data-sidebar='sidebar']
+    ) {
+    --sidebar: #26104d;
+    --color-sidebar: #26104d;
+    background-color: #26104d;
+    background-image:
+        radial-gradient(ellipse at 90% 20%, #38166b88, transparent 60%),
+        linear-gradient(160deg, #1c0a3b, #26104d 53%, #38166b);
+    color: #faf5ff;
+}
+body:has(.jr-superadmin-workspace)
+    .jr-superadmin-sidebar
+    [data-sidebar='sidebar'] {
+    background: transparent;
+}
+body:has(.jr-superadmin-workspace)
+    .jr-superadmin-sidebar
+    :is(.jr-brand-copy strong, .jr-identity-copy strong) {
+    color: #faf5ff;
+}
+body:has(.jr-superadmin-workspace)
+    .jr-superadmin-sidebar
+    :is(.jr-brand-copy small, .jr-identity-copy small, .jr-nav-caption) {
+    color: #e9dfff;
+}
+body:has(.jr-superadmin-workspace)
+    .jr-superadmin-sidebar
+    :is(.jr-brand-icon, .jr-brand-toggle) {
+    background: #38166b;
+    color: #fff;
+    border-color: #ffffff26;
+    box-shadow: none;
+}
+body:has(.jr-superadmin-workspace)
+    .jr-superadmin-sidebar
+    :is(.jr-sidebar-collapse, .jr-alternative-chevron) {
+    color: #e9dfff;
+}
+body:has(.jr-superadmin-workspace)
+    .jr-superadmin-sidebar
+    :is(.jr-sidebar-collapse, .jr-alternative-chevron):hover {
+    background: #ffffff16;
+    color: #fff;
+    border-color: transparent;
+}
+body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-nav-link {
+    color: #faf5ff;
+}
+body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-nav-link svg {
+    color: #ede9fe;
+}
+body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-nav-link:hover {
+    background: #ffffff14;
+    color: #fff;
+}
+body:has(.jr-superadmin-workspace)
+    .jr-superadmin-sidebar
+    .jr-nav-link.jr-active {
+    background: #51269b;
+    color: #fff;
+    border-color: #a78bfa40;
+    box-shadow: 0 4px 12px #1b093733;
+}
+body:has(.jr-superadmin-workspace)
+    .jr-superadmin-sidebar
+    .jr-nav-link.jr-active
+    svg {
+    color: #fff;
+}
+body:has(.jr-superadmin-workspace)
+    .jr-superadmin-sidebar
+    .jr-nav-link.jr-active::before {
+    content: none;
+}
+body:has(.jr-superadmin-workspace)
+    .jr-superadmin-sidebar
+    .jr-alternative-submenu::before {
+    border-color: #c4b5fd75;
+}
+body:has(.jr-superadmin-workspace)
+    .jr-superadmin-sidebar
+    .jr-alternative-parent
+    .jr-nav-link
+    > span {
+    left: 39px;
+    letter-spacing: -0.2px;
+}
+body:has(.jr-superadmin-workspace)
+    .jr-superadmin-sidebar
+    .jr-alternative-chevron {
+    right: 11px;
+}
+body:has(.jr-superadmin-workspace)
+    .jr-superadmin-sidebar
+    .jr-alternative-submenu
+    .jr-alternative-record-label {
+    left: 0;
+    right: 0;
+    text-align: center;
+}
+body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-identity {
+    background: #210e45bd;
+    border-color: #ffffff20;
+    box-shadow: none;
+}
+body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-initial {
+    background: #51269b;
+    color: white;
+    border-radius: 50%;
+}
+body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-header {
+    height: 180px;
+}
+body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand {
+    top: 18px;
+    left: 0;
+    width: 100%;
+    height: 148px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+}
+body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-control {
+    width: 90px;
+    height: 90px;
+    flex: 0 0 90px;
+}
+body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-icon {
+    width: 90px;
+    height: 90px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    overflow: visible;
+}
+body:has(.jr-superadmin-workspace)
+    .jr-superadmin-sidebar
+    .jr-superadmin-brand-logo {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+}
+body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-copy {
+    position: static;
+    text-align: center;
+    margin-top: 5px;
+}
+body:has(.jr-superadmin-workspace)
+    .jr-superadmin-sidebar
+    .jr-brand-copy
+    strong {
+    font-size: 22px;
+}
+body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-copy small {
+    font-size: 12px;
+}
+body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-sidebar-collapse {
+    top: 15px;
+    right: 10px;
+}
+body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-nav-content {
+    position: relative;
+}
+body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-sidebar-footer {
+    position: relative;
+}
+body:has(.jr-superadmin-workspace)
+    [data-state='collapsed']
+    .jr-superadmin-sidebar
+    .jr-brand-header {
+    height: 96px;
+}
+body:has(.jr-superadmin-workspace)
+    [data-state='collapsed']
+    .jr-superadmin-sidebar
+    .jr-brand {
+    top: 19px;
+    left: 22px;
+    width: 40px;
+    height: 40px;
+}
+body:has(.jr-superadmin-workspace)
+    [data-state='collapsed']
+    .jr-superadmin-sidebar
+    .jr-brand-control {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+}
+body:has(.jr-superadmin-workspace)
+    [data-state='collapsed']
+    .jr-superadmin-sidebar
+    .jr-brand-icon {
+    width: 40px;
+    height: 40px;
+}
+body:has(.jr-superadmin-workspace)
+    [data-state='collapsed']
+    .jr-superadmin-sidebar
+    .jr-brand-copy {
+    display: none;
+}
+body:has(.jr-superadmin-workspace)
+    [data-state='collapsed']
+    .jr-superadmin-sidebar
+    .jr-alternative-parent
+    .jr-nav-link
+    > span {
+    left: 45px;
+}
+.jr-superadmin-workspace .jr-global-header {
+    background: #fcf9ff;
+    border-color: #e6dcf4;
+    color: #38166b;
+}
+.jr-superadmin-workspace .jr-global-header strong {
+    color: #26163e;
+}
+.jr-superadmin-workspace
+    .jr-global-header
+    :is(.jr-icon-button, .jr-account-trigger) {
+    color: #38166b;
+}
+.jr-superadmin-workspace .jr-account-trigger .jr-initial {
+    background: #51269b;
+    color: #fff;
+    border-color: #a78bfa;
+}
+.jr-superadmin-workspace .jr-content {
+    border-color: #e7dff4;
+}
+.jr-superadmin-workspace .jr-workspace {
+    border-color: #e6dcf4;
+}
+.jr-superadmin-workspace .jr-workspace .jr-page-head h1 {
+    color: #26163e;
+}
+.jr-superadmin-workspace .jr-workspace .jr-page-head p {
+    color: #605273;
+}
+.jr-superadmin-workspace .jr-primary,
+.jr-superadmin-refresh {
+    background: #51269b;
+    color: #fff;
+    border: 1px solid #51269b;
+    box-shadow: 0 3px 10px #51269b25;
+}
+.jr-superadmin-workspace .jr-primary:hover,
+.jr-superadmin-refresh:hover:not(:disabled) {
+    background: #38166b;
+    border-color: #38166b;
+}
+.jr-superadmin-workspace :is(button, a, input, textarea, select):focus-visible {
+    outline-color: #a78bfa;
+}
+.jr-superadmin-workspace .jr-search input:focus {
+    border-color: #51269b;
+    box-shadow: 0 0 0 3px #a78bfa30;
+}
+.jr-superadmin-workspace .jr-directory-exploration .jr-page-head {
+    background: #f4edff;
+}
+.jr-superadmin-workspace .jr-directory-exploration .jr-page-head::before {
+    background-image: url('../images/superadmin-road-landscape.svg');
+    opacity: 1;
+}
+.jr-superadmin-workspace .jr-superadmin-dashboard .jr-page-head {
+    min-height: 184px;
+    align-items: center;
+    padding-bottom: 42px;
+}
+.jr-superadmin-workspace .jr-superadmin-dashboard .jr-page-head h1 {
+    font-size: clamp(25px, 2.7vw, 36px);
+    letter-spacing: -0.035em;
+    font-weight: 750;
+}
+.jr-superadmin-access {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #ede5ff;
+    color: #38166b;
+    padding: 7px 12px;
+    border-radius: 11px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+.jr-superadmin-refresh {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-height: 42px;
+    padding: 9px 18px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 650;
+    white-space: nowrap;
+}
+.jr-superadmin-refresh:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+.jr-superadmin-workspace .jr-superadmin-dashboard main {
+    margin-top: -22px;
+    border: 1px solid #e6dcf4;
+    background: #fcf9ff;
+    border-radius: 22px;
+    padding-top: 22px;
+}
+.jr-superadmin-workspace
+    .jr-superadmin-dashboard
+    :is(.text-amber-700, .text-amber-800, .text-amber-900) {
+    color: #38166b;
+}
+.jr-superadmin-workspace .jr-superadmin-dashboard .bg-amber-50 {
+    background: #eee6ff;
+}
+.jr-superadmin-workspace .jr-superadmin-dashboard .border-amber-200 {
+    border-color: #ded0fb;
+}
+.jr-superadmin-workspace
+    .jr-superadmin-dashboard
+    [class~='from-amber-700'][class~='to-amber-400'] {
+    background: linear-gradient(to top, #38166b, #a78bfa);
+}
+.jr-superadmin-workspace .jr-superadmin-dashboard a:hover {
+    border-color: #c8b1f2;
+    background: #f5efff;
+}
+.jr-superadmin-workspace .jr-superadmin-dashboard :is(h2, h3) {
+    color: #26163e;
+}
+.jr-superadmin-workspace .jr-superadmin-dashboard .border-slate-200 {
+    border-color: #e6dcf4;
+}
+.jr-superadmin-workspace .jr-superadmin-dashboard .text-slate-500 {
+    color: #645573;
+}
+.jr-superadmin-workspace .jr-superadmin-dashboard .text-slate-950 {
+    color: #26163e;
+}
+.jr-superadmin-workspace .jr-superadmin-dashboard .text-slate-900 {
+    color: #26163e;
+}
+.jr-superadmin-workspace .jr-superadmin-dashboard .text-slate-700 {
+    color: #544567;
+}
+body:has(.jr-superadmin-workspace) .jr-menu [data-highlighted] {
+    background: #eee6ff;
+    color: #26104d;
+}
 /* Respect dark preference without reverting the SuperAdmin sidebar to brown. */
-html.dark body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar { background-color:#1c0a3b!important; }
-html.dark body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar [data-sidebar='sidebar'] { background-color:transparent!important; }
-html.dark body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-nav-link.jr-active { background-color:#51269b!important; color:#fff!important; }
-html.dark body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-identity { background-color:#210e45!important; border-color:#ffffff20!important; }
-html.dark .jr-superadmin-workspace :is(.jr-stage,.jr-content) { background:#190f2a!important; }
-html.dark .jr-superadmin-workspace .jr-global-header { background:#27173e!important; border-color:#594278!important; }
-html.dark .jr-superadmin-workspace .jr-superadmin-dashboard .jr-page-head { background:#382255; }
-html.dark .jr-superadmin-workspace .jr-superadmin-dashboard .jr-page-head::before { opacity:.26; }
-html.dark .jr-superadmin-workspace .jr-superadmin-dashboard main { background:#241833; border-color:#503963; }
-html.dark .jr-superadmin-workspace .jr-superadmin-dashboard .bg-white { background:#30213e; border-color:#644c7d; }
-html.dark .jr-superadmin-workspace .jr-superadmin-dashboard .bg-slate-50 { background:#422d59; }
-html.dark .jr-superadmin-workspace .jr-superadmin-dashboard :is(.text-amber-700,.text-amber-800,.text-amber-900) { color:#c4b5fd; }
-html.dark .jr-superadmin-workspace .jr-superadmin-dashboard .bg-amber-50 { background:#432868; }
-html.dark .jr-superadmin-workspace .jr-superadmin-dashboard a:hover { background:#422d59; }
-@media(max-width:767px) {
-    .jr-superadmin-workspace .jr-superadmin-dashboard .jr-page-head { min-height:unset; padding-bottom:42px; }
-    .jr-superadmin-workspace .jr-superadmin-dashboard .jr-page-head::before { opacity:.48; }
-    .jr-superadmin-workspace .jr-superadmin-dashboard main { margin-inline:calc(-1 * var(--jr-exploration-gutter)); padding-inline:var(--jr-exploration-gutter); }
+html.dark body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar {
+    background-color: #1c0a3b !important;
+}
+html.dark
+    body:has(.jr-superadmin-workspace)
+    .jr-superadmin-sidebar
+    [data-sidebar='sidebar'] {
+    background-color: transparent !important;
+}
+html.dark
+    body:has(.jr-superadmin-workspace)
+    .jr-superadmin-sidebar
+    .jr-nav-link.jr-active {
+    background-color: #51269b !important;
+    color: #fff !important;
+}
+html.dark
+    body:has(.jr-superadmin-workspace)
+    .jr-superadmin-sidebar
+    .jr-identity {
+    background-color: #210e45 !important;
+    border-color: #ffffff20 !important;
+}
+html.dark .jr-superadmin-workspace :is(.jr-stage, .jr-content) {
+    background: #190f2a !important;
+}
+html.dark .jr-superadmin-workspace .jr-global-header {
+    background: #27173e !important;
+    border-color: #594278 !important;
+}
+html.dark .jr-superadmin-workspace .jr-superadmin-dashboard .jr-page-head {
+    background: #382255;
+}
+html.dark
+    .jr-superadmin-workspace
+    .jr-superadmin-dashboard
+    .jr-page-head::before {
+    opacity: 0.26;
+}
+html.dark .jr-superadmin-workspace .jr-superadmin-dashboard main {
+    background: #241833;
+    border-color: #503963;
+}
+html.dark .jr-superadmin-workspace .jr-superadmin-dashboard .bg-white {
+    background: #30213e;
+    border-color: #644c7d;
+}
+html.dark .jr-superadmin-workspace .jr-superadmin-dashboard .bg-slate-50 {
+    background: #422d59;
+}
+html.dark
+    .jr-superadmin-workspace
+    .jr-superadmin-dashboard
+    :is(.text-amber-700, .text-amber-800, .text-amber-900) {
+    color: #c4b5fd;
+}
+html.dark .jr-superadmin-workspace .jr-superadmin-dashboard .bg-amber-50 {
+    background: #432868;
+}
+html.dark .jr-superadmin-workspace .jr-superadmin-dashboard a:hover {
+    background: #422d59;
+}
+@media (max-width: 767px) {
+    .jr-superadmin-workspace .jr-superadmin-dashboard .jr-page-head {
+        min-height: unset;
+        padding-bottom: 42px;
+    }
+    .jr-superadmin-workspace .jr-superadmin-dashboard .jr-page-head::before {
+        opacity: 0.48;
+    }
+    .jr-superadmin-workspace .jr-superadmin-dashboard main {
+        margin-inline: calc(-1 * var(--jr-exploration-gutter));
+        padding-inline: var(--jr-exploration-gutter);
+    }
 }
 
 /* Explicit SuperAdmin accents also survive module-specific style import order. */
-.jr-app.jr-superadmin-workspace:has(.jr-directory-exploration) { background:#f5f0ff; }
-.jr-app.jr-superadmin-workspace .jr-primary { background:#51269b; border-color:#51269b; box-shadow:0 3px 10px #51269b25; }
-.jr-app.jr-superadmin-workspace .jr-primary:hover { background:#38166b; border-color:#38166b; }
-.jr-app.jr-superadmin-workspace :is(.jr-project-title:hover,.jr-availability,.jr-directory-exploration .jr-exploration-version a) { color:#38166b; }
-.jr-app.jr-superadmin-workspace .jr-table-footer [data-slot='button'][aria-current='page'] { background:#eee5ff; border-color:#dac9f8; color:#38166b; }
-.jr-app.jr-superadmin-workspace :is(.jr-filter-row [data-slot='select-trigger'],.jr-monthly-context-links a):focus-visible { outline-color:#a78bfa; }
-.jr-superadmin-workspace .jr-superadmin-dashboard .jr-page-head > div { min-width:0; }
+.jr-app.jr-superadmin-workspace:has(.jr-directory-exploration) {
+    background: #f5f0ff;
+}
+.jr-app.jr-superadmin-workspace .jr-primary {
+    background: #51269b;
+    border-color: #51269b;
+    box-shadow: 0 3px 10px #51269b25;
+}
+.jr-app.jr-superadmin-workspace .jr-primary:hover {
+    background: #38166b;
+    border-color: #38166b;
+}
+.jr-app.jr-superadmin-workspace
+    :is(
+        .jr-project-title:hover,
+        .jr-availability,
+        .jr-directory-exploration .jr-exploration-version a
+    ) {
+    color: #38166b;
+}
+.jr-app.jr-superadmin-workspace
+    .jr-table-footer
+    [data-slot='button'][aria-current='page'] {
+    background: #eee5ff;
+    border-color: #dac9f8;
+    color: #38166b;
+}
+.jr-app.jr-superadmin-workspace
+    :is(
+        .jr-filter-row [data-slot='select-trigger'],
+        .jr-monthly-context-links a
+    ):focus-visible {
+    outline-color: #a78bfa;
+}
+.jr-superadmin-workspace .jr-superadmin-dashboard .jr-page-head > div {
+    min-width: 0;
+}
 body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar.jr-mobile-shell,
 body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar.jr-sidebar-container {
-    background-image:radial-gradient(ellipse at 90% 20%,#38166b88,transparent 60%),linear-gradient(160deg,#1c0a3b,#26104d 53%,#38166b);
+    background-image:
+        radial-gradient(ellipse at 90% 20%, #38166b88, transparent 60%),
+        linear-gradient(160deg, #1c0a3b, #26104d 53%, #38166b);
 }
-html.dark .jr-app.jr-superadmin-workspace:has(.jr-directory-exploration) { background:#190f2a!important; }
-html.dark .jr-superadmin-workspace .jr-superadmin-dashboard .border-slate-200 { border-color:#644c7d; }
-html.dark .jr-superadmin-workspace .jr-superadmin-dashboard .bg-slate-100 { background:#422d59; color:#ede9fe; }
-html.dark .jr-superadmin-workspace .jr-superadmin-dashboard .bg-amber-50 { border-color:#8568ae; }
+html.dark .jr-app.jr-superadmin-workspace:has(.jr-directory-exploration) {
+    background: #190f2a !important;
+}
+html.dark .jr-superadmin-workspace .jr-superadmin-dashboard .border-slate-200 {
+    border-color: #644c7d;
+}
+html.dark .jr-superadmin-workspace .jr-superadmin-dashboard .bg-slate-100 {
+    background: #422d59;
+    color: #ede9fe;
+}
+html.dark .jr-superadmin-workspace .jr-superadmin-dashboard .bg-amber-50 {
+    border-color: #8568ae;
+}
 
 /* The supplied PEO-DDO logo keeps its original color and proportions. */
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-control { isolation:isolate; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-icon { box-shadow:none; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-toggle { width:100%; height:100%; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-copy small { letter-spacing:.02em; }
+body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-control {
+    isolation: isolate;
+}
+body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-icon {
+    box-shadow: none;
+}
+body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-toggle {
+    width: 100%;
+    height: 100%;
+}
+body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-copy small {
+    letter-spacing: 0.02em;
+}
 
 /* Preserve alpha transparency: no rectangular logo tile on the SuperAdmin sidebar. */
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-control { background:transparent; border:0; box-shadow:none; }
-body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-toggle { background:transparent; border:0; box-shadow:none; }
+body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-control {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+}
+body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-toggle {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+}
 
 /* Real system metrics and role-specific dashboard surfaces. */
-.jr-superadmin-workspace .jr-superadmin-dashboard .jr-metric-card { border-color:#e3d7f3; box-shadow:0 3px 12px #38166b08; }
-.jr-superadmin-workspace .jr-superadmin-dashboard .jr-metric-card p:first-child { color:#605273; }
-.jr-superadmin-workspace .jr-superadmin-dashboard .jr-metric-card:first-child p:first-child { color:#51269b; }
-.jr-superadmin-workspace .jr-superadmin-dashboard .jr-metric-card p:nth-child(2) { color:#26104d; font-weight:750; font-size:34px; }
-.jr-superadmin-workspace .jr-superadmin-dashboard .jr-metric-card p:nth-child(3) { color:#645573; }
-.jr-superadmin-workspace .jr-superadmin-dashboard .bg-amber-100 { background:#ede5ff; }
-.jr-superadmin-workspace .jr-superadmin-dashboard [class~="border-slate-200/80"] { border-color:#e6dcf4; }
-.jr-superadmin-workspace .jr-superadmin-dashboard .jr-page-actions { align-self:center; }
-.jr-superadmin-workspace .jr-superadmin-dashboard .jr-superadmin-refresh { background:#51269b; border-color:#51269b; color:#fff; }
-.jr-superadmin-workspace .jr-superadmin-dashboard .jr-superadmin-refresh:hover:not(:disabled) { background:#38166b; }
-.jr-superadmin-workspace .jr-superadmin-dashboard .jr-superadmin-refresh svg { margin-right:0; }
-.jr-superadmin-workspace .jr-superadmin-dashboard a:focus-visible { outline:2px solid #a78bfa; }
-html.dark .jr-superadmin-workspace .jr-superadmin-dashboard .jr-metric-card { background:#30213e; border-color:#644c7d; }
-html.dark .jr-superadmin-workspace .jr-superadmin-dashboard .jr-metric-card p { color:#d9c9ee; }
-html.dark .jr-superadmin-workspace .jr-superadmin-dashboard .jr-metric-card p:nth-child(2) { color:#faf5ff; }
-html.dark .jr-superadmin-workspace .jr-superadmin-dashboard :is(.text-slate-800,.text-slate-700,.text-slate-900,.text-slate-950,h2,h3) { color:#faf5ff; }
-html.dark .jr-superadmin-workspace .jr-superadmin-dashboard :is(.text-slate-400,.text-slate-500,.text-slate-600) { color:#d9c9ee; }
-html.dark .jr-superadmin-workspace .jr-superadmin-dashboard :is([class~="bg-[#FCFAFF]"],[class~="bg-[#F5F0FC]"]) { background:#382255; }
-html.dark .jr-superadmin-workspace .jr-superadmin-dashboard [class~="bg-[#EDE5FF]"] { background:#432868; }
-html.dark .jr-superadmin-workspace .jr-superadmin-dashboard [class~="text-[#51269B]"] { color:#e9dfff; }
-html.dark .jr-superadmin-workspace .jr-superadmin-dashboard .bg-amber-100 { background:#432868; color:#e9dfff; }
+.jr-superadmin-workspace .jr-superadmin-dashboard .jr-metric-card {
+    border-color: #e3d7f3;
+    box-shadow: 0 3px 12px #38166b08;
+}
+.jr-superadmin-workspace
+    .jr-superadmin-dashboard
+    .jr-metric-card
+    p:first-child {
+    color: #605273;
+}
+.jr-superadmin-workspace
+    .jr-superadmin-dashboard
+    .jr-metric-card:first-child
+    p:first-child {
+    color: #51269b;
+}
+.jr-superadmin-workspace
+    .jr-superadmin-dashboard
+    .jr-metric-card
+    p:nth-child(2) {
+    color: #26104d;
+    font-weight: 750;
+    font-size: 34px;
+}
+.jr-superadmin-workspace
+    .jr-superadmin-dashboard
+    .jr-metric-card
+    p:nth-child(3) {
+    color: #645573;
+}
+.jr-superadmin-workspace .jr-superadmin-dashboard .bg-amber-100 {
+    background: #ede5ff;
+}
+.jr-superadmin-workspace
+    .jr-superadmin-dashboard
+    [class~='border-slate-200/80'] {
+    border-color: #e6dcf4;
+}
+.jr-superadmin-workspace .jr-superadmin-dashboard .jr-page-actions {
+    align-self: center;
+}
+.jr-superadmin-workspace .jr-superadmin-dashboard .jr-superadmin-refresh {
+    background: #51269b;
+    border-color: #51269b;
+    color: #fff;
+}
+.jr-superadmin-workspace
+    .jr-superadmin-dashboard
+    .jr-superadmin-refresh:hover:not(:disabled) {
+    background: #38166b;
+}
+.jr-superadmin-workspace .jr-superadmin-dashboard .jr-superadmin-refresh svg {
+    margin-right: 0;
+}
+.jr-superadmin-workspace .jr-superadmin-dashboard a:focus-visible {
+    outline: 2px solid #a78bfa;
+}
+html.dark .jr-superadmin-workspace .jr-superadmin-dashboard .jr-metric-card {
+    background: #30213e;
+    border-color: #644c7d;
+}
+html.dark .jr-superadmin-workspace .jr-superadmin-dashboard .jr-metric-card p {
+    color: #d9c9ee;
+}
+html.dark
+    .jr-superadmin-workspace
+    .jr-superadmin-dashboard
+    .jr-metric-card
+    p:nth-child(2) {
+    color: #faf5ff;
+}
+html.dark
+    .jr-superadmin-workspace
+    .jr-superadmin-dashboard
+    :is(
+        .text-slate-800,
+        .text-slate-700,
+        .text-slate-900,
+        .text-slate-950,
+        h2,
+        h3
+    ) {
+    color: #faf5ff;
+}
+html.dark
+    .jr-superadmin-workspace
+    .jr-superadmin-dashboard
+    :is(.text-slate-400, .text-slate-500, .text-slate-600) {
+    color: #d9c9ee;
+}
+html.dark
+    .jr-superadmin-workspace
+    .jr-superadmin-dashboard
+    :is([class~='bg-[#FCFAFF]'], [class~='bg-[#F5F0FC]']) {
+    background: #382255;
+}
+html.dark
+    .jr-superadmin-workspace
+    .jr-superadmin-dashboard
+    [class~='bg-[#EDE5FF]'] {
+    background: #432868;
+}
+html.dark
+    .jr-superadmin-workspace
+    .jr-superadmin-dashboard
+    [class~='text-[#51269B]'] {
+    color: #e9dfff;
+}
+html.dark .jr-superadmin-workspace .jr-superadmin-dashboard .bg-amber-100 {
+    background: #432868;
+    color: #e9dfff;
+}

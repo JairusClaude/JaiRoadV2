@@ -37,7 +37,7 @@ final class EnsurePasswordRecoveryDelivery
 
         try {
             return $next($request);
-        } catch (TransportExceptionInterface | \InvalidArgumentException $error) {
+        } catch (TransportExceptionInterface|\InvalidArgumentException $error) {
             // Transport exceptions can include provider credentials or message
             // content. Do not expose them or report raw exceptions.
             $this->unavailable();

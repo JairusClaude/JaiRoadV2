@@ -222,6 +222,7 @@ export function RecordEditor({
                                         form.setData('engineers_id', '');
                                         form.clearErrors('engineers_id');
                                     }
+
                                     setProjectId(value);
                                     setProjectError('');
                                     form.clearErrors('quarter');

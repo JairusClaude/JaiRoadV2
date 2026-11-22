@@ -455,7 +455,9 @@ export function MaintenanceRecordForm({
                             <Button
                                 type="submit"
                                 className="jr-primary"
-                                disabled={!enabled || processing || managerUnavailable}
+                                disabled={
+                                    !enabled || processing || managerUnavailable
+                                }
                             >
                                 {processing
                                     ? 'Saving…'

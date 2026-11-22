@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuditLogPageController;
 use App\Http\Controllers\Dashboard\SuperAdminLandingController;
 use App\Http\Controllers\EngineerController;
 use App\Http\Controllers\LguController;
@@ -8,6 +9,7 @@ use App\Http\Controllers\MaintenanceProjectController;
 use App\Http\Controllers\MaintenanceRecordReadOnlyController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\MonthlyUpdateController;
+use App\Http\Controllers\OperationsFrontendController;
 use App\Http\Controllers\RoadCoverageController;
 use App\Http\Controllers\UserAccountController;
 use App\Models\StagingUserAccount;
@@ -19,9 +21,10 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function (): RedirectResponse {
-    if (\App\Http\Controllers\OperationsFrontendController::isPreview()) {
+    if (OperationsFrontendController::isPreview()) {
         return redirect()->route('jairoads.ui.roads.index');
     }
+
     return redirect('/login');
 })->name('home');
 
@@ -29,7 +32,7 @@ Route::middleware(['auth'])->group(function () {
     // Fortify's /dashboard entry now resolves role-specific JaiROADS dashboards.
     // Never use Laravel's default starter dashboard for authorized Engineer/Viewer roles.
     Route::get('dashboard', function (): RedirectResponse {
-        if (\App\Http\Controllers\OperationsFrontendController::isPreview()) {
+        if (OperationsFrontendController::isPreview()) {
             return redirect()->route('jairoads.ui.roads.index');
         }
         $user = request()->user();
@@ -103,7 +106,7 @@ Route::middleware(['auth'])->group(function () {
         ->parameters(['media' => 'media']);
 
     Route::resource('user-accounts', UserAccountController::class);
-    Route::get('/audit-logs', [\App\Http\Controllers\AuditLogPageController::class, 'index'])->name('audit-logs.index');
+    Route::get('/audit-logs', [AuditLogPageController::class, 'index'])->name('audit-logs.index');
 });
 
 require __DIR__.'/settings.php';
@@ -127,7 +130,7 @@ require __DIR__.'/jairoads-notifications.php';
 // Role identity is shared with Inertia views, including existing JaiROADS modules.
 // Do not infer operational roles from Laravel users.id, name, or email.
 Inertia::share('jairoadsIdentity', static function (): ?array {
-    if (\App\Http\Controllers\OperationsFrontendController::isPreview()) {
+    if (OperationsFrontendController::isPreview()) {
         return [
             'role' => 'superadmin',
             'username' => 'UserTest',

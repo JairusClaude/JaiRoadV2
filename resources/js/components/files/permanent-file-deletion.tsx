@@ -105,7 +105,9 @@ export function usePermanentFileDeletion(
                     );
                 }
             } finally {
-                if (!controller.signal.aborted) setReviewing(false);
+                if (!controller.signal.aborted) {
+                    setReviewing(false);
+                }
             }
         },
         confirm: async () => {
@@ -118,6 +120,7 @@ export function usePermanentFileDeletion(
             setError('');
 
             let completed = false;
+
             try {
                 const response = await fetch(selected.delete_url, {
                     method: 'DELETE',
@@ -154,7 +157,10 @@ export function usePermanentFileDeletion(
             } finally {
                 locked.current = false;
                 setProcessing(false);
-                if (completed) onCompleted();
+
+                if (completed) {
+                    onCompleted();
+                }
             }
         },
     };
@@ -182,9 +188,22 @@ export function PermanentFileDeletionDialog({
         >
             {deletion.selected && (
                 <dl className="jr-delete-file-details">
-                    <div><dt>Filename</dt><dd>{deletion.selected.file_name}</dd></div>
-                    <div><dt>File type</dt><dd>{deletion.selected.kind === 'document' ? 'MaintenanceDocument' : 'Media'}</dd></div>
-                    <div><dt>Associated record</dt><dd>{deletion.selected.parent_label}</dd></div>
+                    <div>
+                        <dt>Filename</dt>
+                        <dd>{deletion.selected.file_name}</dd>
+                    </div>
+                    <div>
+                        <dt>File type</dt>
+                        <dd>
+                            {deletion.selected.kind === 'document'
+                                ? 'MaintenanceDocument'
+                                : 'Media'}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt>Associated record</dt>
+                        <dd>{deletion.selected.parent_label}</dd>
+                    </div>
                 </dl>
             )}
         </DeletionDialog>

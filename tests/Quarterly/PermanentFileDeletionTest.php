@@ -125,7 +125,9 @@ final class PermanentFileDeletionTest extends PostgresTestCase
         }
         foreach ($snapshots as $name => $snapshot) {
             $q = DB::table('jairoads_next.'.$name)->orderBy('id');
-            if ('jairoads_next.'.$name === $table) $q->where('id', '!=', $id);
+            if ('jairoads_next.'.$name === $table) {
+                $q->where('id', '!=', $id);
+            }
             $this->assertSame($snapshot, $q->get()->toJson());
         }
         $this->assertSame($history, $this->history());

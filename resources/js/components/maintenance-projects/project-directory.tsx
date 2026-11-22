@@ -229,7 +229,13 @@ export function ProjectDirectory({
                     )
                 }
             />
-            <div className="jr-table-wrap" aria-busy={busy} role="region" aria-label="Maintenance Projects table" tabIndex={0}>
+            <div
+                className="jr-table-wrap"
+                aria-busy={busy}
+                role="region"
+                aria-label="Maintenance Projects table"
+                tabIndex={0}
+            >
                 <table className="jr-table">
                     <colgroup>
                         <col style={{ width: '60%' }} />

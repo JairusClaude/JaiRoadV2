@@ -384,12 +384,13 @@ export default function Operations({
                     <div>
                         <h1>Settings</h1>
                         <p>
-                            Manage your account, password, and display preferences.
+                            Manage your account, password, and display
+                            preferences.
                         </p>
                     </div>
                 </div>
 
-                <main className="relative -mt-3.5 -mx-7 rounded-t-[20px] bg-white px-7 pt-7 pb-10 shadow-sm min-w-0 space-y-6">
+                <main className="relative -mx-7 -mt-3.5 min-w-0 space-y-6 rounded-t-[20px] bg-white px-7 pt-7 pb-10 shadow-sm">
                     {status && (
                         <div
                             role="status"
@@ -412,8 +413,11 @@ export default function Operations({
                             {/* Account and Security Overview Banner */}
                             <section className="rounded-2xl border border-slate-200/80 bg-[#fdfcfb] p-6 shadow-sm">
                                 <div className="space-y-3">
-                                    <div className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${isAdmin ? 'bg-[#FDE7EA] text-[#C8293D]' : isEngineer ? 'bg-[#FFF0E3] text-[#A94B0C]' : isViewer ? 'bg-[#E6EFFF] text-[#1D5DB5]' : 'bg-[#FFF0E2] text-[#995321]'}`}>
-                                        <ShieldCheck className="h-3.5 w-3.5" /> Verified {identity.role}
+                                    <div
+                                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${isAdmin ? 'bg-[#FDE7EA] text-[#C8293D]' : isEngineer ? 'bg-[#FFF0E3] text-[#A94B0C]' : isViewer ? 'bg-[#E6EFFF] text-[#1D5DB5]' : 'bg-[#FFF0E2] text-[#995321]'}`}
+                                    >
+                                        <ShieldCheck className="h-3.5 w-3.5" />{' '}
+                                        Verified {identity.role}
                                     </div>
                                     <h2 className="text-2xl font-bold tracking-tight text-slate-900">
                                         Account and Security
@@ -428,10 +432,18 @@ export default function Operations({
                                                 : 'Your read-only identity and personal display preferences.'}
                                     </p>
                                     <div className="flex flex-wrap items-center gap-3 pt-2">
-                                        <Link href="/settings/security?tab=passkeys" className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition focus-visible:outline-2 focus-visible:outline-offset-2 ${isAdmin ? 'bg-[#C8293D] hover:bg-[#A81424] focus-visible:outline-[#C8293D]' : isEngineer ? 'bg-[#A94B0C] hover:bg-[#873A0D] focus-visible:outline-[#A94B0C]' : isViewer ? 'bg-[#1D5DB5] hover:bg-[#124A9C] focus-visible:outline-[#1D5DB5]' : 'bg-[#90451f] hover:bg-[#773917] focus-visible:outline-amber-600'}`}>
-                                            <KeyRound className="size-4" /> Manage passkeys
+                                        <Link
+                                            href="/settings/security?tab=passkeys"
+                                            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition focus-visible:outline-2 focus-visible:outline-offset-2 ${isAdmin ? 'bg-[#C8293D] hover:bg-[#A81424] focus-visible:outline-[#C8293D]' : isEngineer ? 'bg-[#A94B0C] hover:bg-[#873A0D] focus-visible:outline-[#A94B0C]' : isViewer ? 'bg-[#1D5DB5] hover:bg-[#124A9C] focus-visible:outline-[#1D5DB5]' : 'bg-[#90451f] hover:bg-[#773917] focus-visible:outline-amber-600'}`}
+                                        >
+                                            <KeyRound className="size-4" />{' '}
+                                            Manage passkeys
                                         </Link>
-                                        <span className="text-xs text-slate-500">Register a device for passwordless sign-in. Recent password confirmation is required.</span>
+                                        <span className="text-xs text-slate-500">
+                                            Register a device for passwordless
+                                            sign-in. Recent password
+                                            confirmation is required.
+                                        </span>
                                     </div>
                                     <div className="grid gap-3 pt-2 sm:grid-cols-3">
                                         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
@@ -466,7 +478,8 @@ export default function Operations({
                                                 Password rotation
                                             </div>
                                             <div className="mt-1 text-xs text-slate-500">
-                                                Requires current password verification
+                                                Requires current password
+                                                verification
                                             </div>
                                         </div>
                                     </div>
@@ -477,21 +490,28 @@ export default function Operations({
                             <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
                                 <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
                                     <div className="flex items-center gap-2">
-                                        <Settings2 className={`h-5 w-5 ${isAdmin ? 'text-[#C8293D]' : isEngineer ? 'text-[#A94B0C]' : isViewer ? 'text-[#1D5DB5]' : 'text-amber-700'}`} />
+                                        <Settings2
+                                            className={`h-5 w-5 ${isAdmin ? 'text-[#C8293D]' : isEngineer ? 'text-[#A94B0C]' : isViewer ? 'text-[#1D5DB5]' : 'text-amber-700'}`}
+                                        />
                                         <h2 className="text-lg font-bold text-slate-900">
                                             Update credentials
                                         </h2>
                                     </div>
                                     <p className="mt-1 text-sm text-slate-500">
-                                        Confirm your current password before saving account changes.
+                                        Confirm your current password before
+                                        saving account changes.
                                     </p>
                                     {!canManage && (
                                         <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
                                             <p>
-                                                <strong>Username:</strong> {identity.username}
+                                                <strong>Username:</strong>{' '}
+                                                {identity.username}
                                             </p>
                                             <p className="mt-2 text-slate-500">
-                                                Your account details are read-only. Contact an administrator for account changes.
+                                                Your account details are
+                                                read-only. Contact an
+                                                administrator for account
+                                                changes.
                                             </p>
                                         </div>
                                     )}
@@ -507,9 +527,11 @@ export default function Operations({
                                                     () =>
                                                         setSettings((old) => ({
                                                             ...old,
-                                                            current_password: '',
+                                                            current_password:
+                                                                '',
                                                             password: '',
-                                                            password_confirmation: '',
+                                                            password_confirmation:
+                                                                '',
                                                         })),
                                                 );
                                             }}
@@ -528,37 +550,52 @@ export default function Operations({
                                                 >
                                                     {
                                                         {
-                                                            username: 'Username',
-                                                            current_password: 'Current password',
-                                                            password: 'New password (optional)',
-                                                            password_confirmation: 'Confirm new password',
+                                                            username:
+                                                                'Username',
+                                                            current_password:
+                                                                'Current password',
+                                                            password:
+                                                                'New password (optional)',
+                                                            password_confirmation:
+                                                                'Confirm new password',
                                                         }[k]
                                                     }
                                                     <input
                                                         className={
-                                                             isAdmin
-                                                                 ? 'mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-[#C8293D] focus:outline-none focus:ring-2 focus:ring-[#C8293D]/20'
-                                                                 : input
-                                                         }
-                                                        type={k === 'username' ? 'text' : 'password'}
+                                                            isAdmin
+                                                                ? 'mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-[#C8293D] focus:ring-2 focus:ring-[#C8293D]/20 focus:outline-none'
+                                                                : input
+                                                        }
+                                                        type={
+                                                            k === 'username'
+                                                                ? 'text'
+                                                                : 'password'
+                                                        }
                                                         autoComplete={
                                                             k === 'username'
                                                                 ? 'username'
-                                                                : k === 'current_password'
+                                                                : k ===
+                                                                    'current_password'
                                                                   ? 'current-password'
                                                                   : 'new-password'
                                                         }
                                                         value={settings[k]}
                                                         onChange={(e) =>
-                                                            setSettings((old) => ({
-                                                                ...old,
-                                                                [k]: e.target.value,
-                                                            }))
+                                                            setSettings(
+                                                                (old) => ({
+                                                                    ...old,
+                                                                    [k]: e
+                                                                        .target
+                                                                        .value,
+                                                                }),
+                                                            )
                                                         }
                                                     />
                                                     {k === 'password' && (
                                                         <span className="mt-1 block text-[11px] font-normal text-slate-500">
-                                                            Leave blank if you only want to rename the username.
+                                                            Leave blank if you
+                                                            only want to rename
+                                                            the username.
                                                         </span>
                                                     )}
                                                     {issues[k] && (
@@ -568,15 +605,15 @@ export default function Operations({
                                                     )}
                                                 </label>
                                             ))}
-                                            <div className="flex flex-wrap gap-3 sm:col-span-2 pt-2">
+                                            <div className="flex flex-wrap gap-3 pt-2 sm:col-span-2">
                                                 <button
-                                                     className={
-                                                         isAdmin
-                                                             ? 'rounded-lg bg-[#C8293D] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#A81424] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8293D] disabled:opacity-60'
-                                                             : action
-                                                     }
-                                                     disabled={busy}
-                                                 >
+                                                    className={
+                                                        isAdmin
+                                                            ? 'rounded-lg bg-[#C8293D] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#A81424] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8293D] disabled:opacity-60'
+                                                            : action
+                                                    }
+                                                    disabled={busy}
+                                                >
                                                     Save changes
                                                 </button>
                                                 <button
@@ -584,10 +621,13 @@ export default function Operations({
                                                     className={tiny}
                                                     onClick={() =>
                                                         setSettings({
-                                                            username: identity.username,
-                                                            current_password: '',
+                                                            username:
+                                                                identity.username,
+                                                            current_password:
+                                                                '',
                                                             password: '',
-                                                            password_confirmation: '',
+                                                            password_confirmation:
+                                                                '',
                                                         })
                                                     }
                                                 >
@@ -607,7 +647,8 @@ export default function Operations({
                                               : 'Account Protection Details'}
                                     </h3>
                                     <p className="mt-1 text-sm text-slate-500">
-                                        Your verified Account Type and applicable governance protections.
+                                        Your verified Account Type and
+                                        applicable governance protections.
                                     </p>
                                     <div className="mt-5 grid gap-3">
                                         <div className="rounded-xl border border-slate-200 bg-white p-4">
@@ -615,7 +656,8 @@ export default function Operations({
                                                 Verified Account
                                             </div>
                                             <div className="mt-2 flex items-center gap-2 text-sm font-bold text-slate-900">
-                                                <ShieldCheck className="h-4 w-4 text-emerald-600" /> {identity.username}
+                                                <ShieldCheck className="h-4 w-4 text-emerald-600" />{' '}
+                                                {identity.username}
                                             </div>
                                             <p className="mt-1 text-xs text-slate-500">
                                                 Role: {identity.role}
@@ -636,9 +678,21 @@ export default function Operations({
                                                 System Guidelines
                                             </div>
                                             <ul className="mt-2 space-y-1.5 text-xs text-slate-600">
-                                                <li>• Account type is verified by the application on each request.</li>
-                                                <li>• Administrative updates are securely written to the audit history.</li>
-                                                <li>• Device appearance is stored locally and does not affect other users.</li>
+                                                <li>
+                                                    • Account type is verified
+                                                    by the application on each
+                                                    request.
+                                                </li>
+                                                <li>
+                                                    • Administrative updates are
+                                                    securely written to the
+                                                    audit history.
+                                                </li>
+                                                <li>
+                                                    • Device appearance is
+                                                    stored locally and does not
+                                                    affect other users.
+                                                </li>
                                             </ul>
                                         </div>
                                     </div>
@@ -651,7 +705,9 @@ export default function Operations({
                     <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
                         <div className="flex items-center justify-between gap-3">
                             <div>
-                                <h2 className="text-lg font-bold text-slate-900">Appearance</h2>
+                                <h2 className="text-lg font-bold text-slate-900">
+                                    Appearance
+                                </h2>
                                 <p className="mt-1 text-sm text-slate-500">
                                     Choose how JaiROADS looks on this device.
                                 </p>
@@ -661,34 +717,36 @@ export default function Operations({
                             </div>
                         </div>
                         <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                            {(['light', 'dark', 'system'] as const).map((mode) => (
-                                <button
-                                    key={mode}
-                                    type="button"
-                                    aria-pressed={appearance === mode}
-                                    onClick={() => updateAppearance(mode)}
-                                    className={`rounded-xl border px-5 py-4 text-left text-sm font-semibold capitalize transition focus-visible:outline-2 focus-visible:outline-offset-2 ${isAdmin ? 'focus-visible:outline-[#C8293D]' : isEngineer ? 'focus-visible:outline-[#A94B0C]' : isViewer ? 'focus-visible:outline-[#1D5DB5]' : 'focus-visible:outline-amber-600'} ${
-                                        appearance === mode
-                                            ? (isAdmin
-                                                 ? 'border-[#C8293D] bg-[#FDE7EA] text-[#C8293D] shadow-xs'
-                                                 : isEngineer
-                                                    ? 'border-[#A94B0C] bg-[#FFF0E3] text-[#A94B0C] shadow-xs'
-                                                    : isViewer
-                                                      ? 'border-[#1D5DB5] bg-[#E6EFFF] text-[#1D5DB5] shadow-xs'
-                                                      : 'border-[#a15b34] bg-[#fff1e3] text-[#90451f] shadow-xs')
-                                            : 'border-slate-200 bg-[#fdfcfb] text-slate-700 hover:bg-slate-50'
-                                    }`}
-                                >
-                                    <div className="font-bold">{mode}</div>
-                                    <div className="mt-1 text-xs font-normal text-slate-500 normal-case">
-                                        {mode === 'light'
-                                            ? 'Bright workspace with warm contrast cards.'
-                                            : mode === 'dark'
-                                              ? 'Darker panels for low-light use.'
-                                              : 'Follow the device or browser preference.'}
-                                    </div>
-                                </button>
-                            ))}
+                            {(['light', 'dark', 'system'] as const).map(
+                                (mode) => (
+                                    <button
+                                        key={mode}
+                                        type="button"
+                                        aria-pressed={appearance === mode}
+                                        onClick={() => updateAppearance(mode)}
+                                        className={`rounded-xl border px-5 py-4 text-left text-sm font-semibold capitalize transition focus-visible:outline-2 focus-visible:outline-offset-2 ${isAdmin ? 'focus-visible:outline-[#C8293D]' : isEngineer ? 'focus-visible:outline-[#A94B0C]' : isViewer ? 'focus-visible:outline-[#1D5DB5]' : 'focus-visible:outline-amber-600'} ${
+                                            appearance === mode
+                                                ? isAdmin
+                                                    ? 'border-[#C8293D] bg-[#FDE7EA] text-[#C8293D] shadow-xs'
+                                                    : isEngineer
+                                                      ? 'border-[#A94B0C] bg-[#FFF0E3] text-[#A94B0C] shadow-xs'
+                                                      : isViewer
+                                                        ? 'border-[#1D5DB5] bg-[#E6EFFF] text-[#1D5DB5] shadow-xs'
+                                                        : 'border-[#a15b34] bg-[#fff1e3] text-[#90451f] shadow-xs'
+                                                : 'border-slate-200 bg-[#fdfcfb] text-slate-700 hover:bg-slate-50'
+                                        }`}
+                                    >
+                                        <div className="font-bold">{mode}</div>
+                                        <div className="mt-1 text-xs font-normal text-slate-500 normal-case">
+                                            {mode === 'light'
+                                                ? 'Bright workspace with warm contrast cards.'
+                                                : mode === 'dark'
+                                                  ? 'Darker panels for low-light use.'
+                                                  : 'Follow the device or browser preference.'}
+                                        </div>
+                                    </button>
+                                ),
+                            )}
                         </div>
                     </section>
                 </main>

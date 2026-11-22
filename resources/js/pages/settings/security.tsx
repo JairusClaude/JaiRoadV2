@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import InputError from '@/components/input-error';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import ManagePasskeys from '@/components/manage-passkeys';
@@ -16,6 +15,7 @@ import type { Props as ManagePasskeysProps } from '@/components/manage-passkeys'
 import ManageTwoFactor from '@/components/manage-two-factor';
 import type { Props as ManageTwoFactorProps } from '@/components/manage-two-factor';
 import PasswordInput from '@/components/password-input';
+import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 
 type Props = { passwordRules: string } & ManagePasskeysProps &
     ManageTwoFactorProps;
@@ -92,7 +92,8 @@ export default function Security(props: Props) {
                             Account & Security
                         </h1>
                         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                            Protect your JaiROADS sign-in account with passkeys and two-factor authentication.
+                            Protect your JaiROADS sign-in account with passkeys
+                            and two-factor authentication.
                         </p>
                     </div>
                     <Link

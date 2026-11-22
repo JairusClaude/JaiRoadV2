@@ -8,7 +8,7 @@ import '../../../css/jairoads-road-map.css';
 
 // Default province overview bounds (Davao de Oro)
 const PROVINCE_BOUNDS: L.LatLngBoundsExpression = [
-    [7.10, 125.65],
+    [7.1, 125.65],
     [7.95, 126.35],
 ];
 
@@ -73,8 +73,12 @@ export function SimplifiedCoverageMap({
         });
     }, [coverages]);
 
-    const mappedCount = mappedCoverages.filter((c) => c.lines.length > 0).length;
-    const myMappedCount = mappedCoverages.filter((c) => c.mine && c.lines.length > 0).length;
+    const mappedCount = mappedCoverages.filter(
+        (c) => c.lines.length > 0,
+    ).length;
+    const myMappedCount = mappedCoverages.filter(
+        (c) => c.mine && c.lines.length > 0,
+    ).length;
     const myProjectCount = mappedCoverages.filter((c) => c.mine).length;
     const myOnly = engineerView && mineOnly;
     const visibleCoverages = useMemo(
@@ -82,10 +86,14 @@ export function SimplifiedCoverageMap({
         [mappedCoverages, myOnly],
     );
 
-    const selected = engineerView ? visibleCoverages.find((item) => item.id === selectedId) : undefined;
+    const selected = engineerView
+        ? visibleCoverages.find((item) => item.id === selectedId)
+        : undefined;
 
     useEffect(() => {
-        if (!containerRef.current) return;
+        if (!containerRef.current) {
+            return;
+        }
 
         // Create Leaflet map instance (scrollWheelZoom enabled, clean read-only display)
         const map = L.map(containerRef.current, {
@@ -107,6 +115,7 @@ export function SimplifiedCoverageMap({
         map.fitBounds(PROVINCE_BOUNDS);
         const observer = new ResizeObserver(() => map.invalidateSize());
         observer.observe(containerRef.current);
+
         return () => {
             observer.disconnect();
             map.remove();
@@ -116,16 +125,25 @@ export function SimplifiedCoverageMap({
 
     useEffect(() => {
         const map = mapRef.current;
-        if (!map) return;
+
+        if (!map) {
+            return;
+        }
+
         const roadGroup = L.featureGroup();
         roadLayers.current = [];
 
         // Draw background roads first so the engineer's highlighted roads stay on top.
         const ordered = engineerView
-            ? [...visibleCoverages].sort((a, b) => Number(a.mine) - Number(b.mine))
+            ? [...visibleCoverages].sort(
+                  (a, b) => Number(a.mine) - Number(b.mine),
+              )
             : visibleCoverages;
+
         for (const item of ordered) {
-            if (!item.lines.length) continue;
+            if (!item.lines.length) {
+                continue;
+            }
 
             // Use the canonical road brown (#843b12) from the Add Road Coverage editor and Details view
             const highlighted = engineerView && item.mine;
@@ -147,7 +165,11 @@ export function SimplifiedCoverageMap({
                     color: lineColor,
                     weight: highlighted ? 7 : muted ? 3 : 5,
                     opacity: muted ? 0.75 : 0.95,
-                    className: engineerView ? (item.mine ? 'jr-dashboard-road-mine' : 'jr-dashboard-road-other') : undefined,
+                    className: engineerView
+                        ? item.mine
+                            ? 'jr-dashboard-road-mine'
+                            : 'jr-dashboard-road-other'
+                        : undefined,
                     smoothFactor: 0,
                     interactive: true,
                 });
@@ -165,11 +187,13 @@ export function SimplifiedCoverageMap({
                     const detail = document.createElement('p');
                     detail.textContent = item.municipality;
                     popup.append(detail);
+
                     if (item.assigned) {
                         const status = document.createElement('p');
                         status.textContent = 'Linked to maintenance project';
                         popup.append(status);
                     }
+
                     line.bindPopup(popup, { closeButton: true });
                 }
 
@@ -182,6 +206,7 @@ export function SimplifiedCoverageMap({
         // Auto-fit bounds to the road network or fall back to Davao de Oro province bounds
         if (roadGroup.getLayers().length > 0) {
             const bounds = roadGroup.getBounds();
+
             if (bounds.isValid()) {
                 map.fitBounds(bounds.pad(0.08), { maxZoom: 15 });
             } else {
@@ -199,8 +224,14 @@ export function SimplifiedCoverageMap({
 
     useEffect(() => {
         for (const { id, line } of roadLayers.current) {
-            line.getElement()?.classList.toggle('jr-dashboard-road-selected', id === selected?.id);
-            if (id === selected?.id) line.bringToFront();
+            line.getElement()?.classList.toggle(
+                'jr-dashboard-road-selected',
+                id === selected?.id,
+            );
+
+            if (id === selected?.id) {
+                line.bringToFront();
+            }
         }
     }, [selected?.id, visibleCoverages]);
 
@@ -211,35 +242,83 @@ export function SimplifiedCoverageMap({
                     <MapPin size={17} />
                     <strong>Davao de Oro · Road Coverage Map</strong>
                     <span className="jr-road-map-count">
-                        {myOnly ? myMappedCount : mappedCount} mapped road line{(myOnly ? myMappedCount : mappedCount) === 1 ? '' : 's'}
+                        {myOnly ? myMappedCount : mappedCount} mapped road line
+                        {(myOnly ? myMappedCount : mappedCount) === 1
+                            ? ''
+                            : 's'}
                     </span>
                 </div>
                 {engineerView && (
                     <label className="jr-engineer-map-toggle">
-                        <input type="checkbox" role="switch" checked={mineOnly} onChange={(event) => {
-                            setMineOnly(event.target.checked);
-                            if (event.target.checked && selected && !selected.mine) setSelectedId(null);
-                        }} />
+                        <input
+                            type="checkbox"
+                            role="switch"
+                            checked={mineOnly}
+                            onChange={(event) => {
+                                setMineOnly(event.target.checked);
+
+                                if (
+                                    event.target.checked &&
+                                    selected &&
+                                    !selected.mine
+                                ) {
+                                    setSelectedId(null);
+                                }
+                            }}
+                        />
                         My projects only
                     </label>
                 )}
             </div>
             {engineerView && (
                 <div className="jr-road-map-toolbar" role="status">
-                    <span>{myProjectCount} assigned project{myProjectCount === 1 ? '' : 's'} · {myMappedCount} mapped · {mappedCount - myMappedCount} other mapped roads</span>
-                    <select className="jr-road-inspect-select" aria-label="Inspect a road" value={selected?.id ?? ''} onChange={(event) => setSelectedId(event.target.value ? Number(event.target.value) : null)}>
+                    <span>
+                        {myProjectCount} assigned project
+                        {myProjectCount === 1 ? '' : 's'} · {myMappedCount}{' '}
+                        mapped · {mappedCount - myMappedCount} other mapped
+                        roads
+                    </span>
+                    <select
+                        className="jr-road-inspect-select"
+                        aria-label="Inspect a road"
+                        value={selected?.id ?? ''}
+                        onChange={(event) =>
+                            setSelectedId(
+                                event.target.value
+                                    ? Number(event.target.value)
+                                    : null,
+                            )
+                        }
+                    >
                         <option value="">Inspect a road…</option>
-                        {visibleCoverages.filter(item => item.lines.length > 0).map(item => <option key={item.id} value={item.id}>{item.name} · {item.municipality}</option>)}
+                        {visibleCoverages
+                            .filter((item) => item.lines.length > 0)
+                            .map((item) => (
+                                <option key={item.id} value={item.id}>
+                                    {item.name} · {item.municipality}
+                                </option>
+                            ))}
                     </select>
                 </div>
             )}
             {engineerView && myMappedCount === 0 && (
                 <p className="jr-engineer-map-empty" role="status">
-                    {myProjectCount ? 'Your assigned projects do not have valid mapped road lines yet.' : 'No projects are assigned to you yet.'} {myOnly ? 'Turn off My projects only to see all mapped roads.' : ''}
+                    {myProjectCount
+                        ? 'Your assigned projects do not have valid mapped road lines yet.'
+                        : 'No projects are assigned to you yet.'}{' '}
+                    {myOnly
+                        ? 'Turn off My projects only to see all mapped roads.'
+                        : ''}
                 </p>
             )}
 
-            <div className={selected ? 'jr-road-map-content jr-road-map-content--selected' : 'jr-road-map-content'}>
+            <div
+                className={
+                    selected
+                        ? 'jr-road-map-content jr-road-map-content--selected'
+                        : 'jr-road-map-content'
+                }
+            >
                 <div
                     ref={containerRef}
                     className="jr-road-map-canvas"
@@ -247,18 +326,34 @@ export function SimplifiedCoverageMap({
                     role="application"
                     aria-label="Read-only Leaflet road coverage map"
                 />
-                {selected && <RoadDetailsPanel key={selected.id} roadId={selected.id} name={selected.name} municipality={selected.municipality} height={height} onClose={() => setSelectedId(null)} />}
+                {selected && (
+                    <RoadDetailsPanel
+                        key={selected.id}
+                        roadId={selected.id}
+                        name={selected.name}
+                        municipality={selected.municipality}
+                        height={height}
+                        onClose={() => setSelectedId(null)}
+                    />
+                )}
             </div>
 
             <div className="jr-road-map-footer">
                 <div className="jr-road-map-legend">
                     <span>
-                        <i style={{ background: '#843b12' }} /> {engineerView ? 'My projects' : 'Road Coverage'}
+                        <i style={{ background: '#843b12' }} />{' '}
+                        {engineerView ? 'My projects' : 'Road Coverage'}
                     </span>
-                    {engineerView && !myOnly && <span><i style={{ background: '#64748b' }} /> Other roads</span>}
+                    {engineerView && !myOnly && (
+                        <span>
+                            <i style={{ background: '#64748b' }} /> Other roads
+                        </span>
+                    )}
                 </div>
                 <small>
-                    {engineerView ? 'Select a road to inspect its connected maintenance data.' : 'Clean, read-only Leaflet display map consistent with Add & Details pages.'}
+                    {engineerView
+                        ? 'Select a road to inspect its connected maintenance data.'
+                        : 'Clean, read-only Leaflet display map consistent with Add & Details pages.'}
                 </small>
             </div>
         </div>

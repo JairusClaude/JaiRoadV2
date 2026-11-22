@@ -197,7 +197,7 @@ class LguController extends Controller
                 foreach ($ids as $id) {
                     $hasRoads = DB::table('jairoads_next.road_coverages')->where('lgu_id', $id)->exists();
                     $hasAssignments = DB::table('jairoads_next.engineer_lgus')->where('lgu_id', $id)->exists();
-                    if (!$hasRoads && !$hasAssignments) {
+                    if (! $hasRoads && ! $hasAssignments) {
                         Lgu::destroy($id);
                     }
                 }

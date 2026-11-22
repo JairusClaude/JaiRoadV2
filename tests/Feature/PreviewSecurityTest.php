@@ -38,10 +38,10 @@ final class PreviewSecurityTest extends TestCase
         // deployment middleware does not exempt the canonical mutation URLs.
         $bootstrap = file_get_contents(base_path('bootstrap/app.php'));
         $this->assertIsString($bootstrap);
-        $this->assertStringNotContainsString("validateCsrfTokens(except:", $bootstrap);
+        $this->assertStringNotContainsString('validateCsrfTokens(except:', $bootstrap);
         $this->assertStringNotContainsString("trustProxies(at: '*')", $bootstrap);
-        $this->assertStringNotContainsString("trustProxies(at: config(", $bootstrap);
+        $this->assertStringNotContainsString('trustProxies(at: config(', $bootstrap);
         $this->assertStringContainsString("['trusted_proxies']", $bootstrap);
-        $this->assertStringContainsString("bootstrap/cache/config.php", $bootstrap);
+        $this->assertStringContainsString('bootstrap/cache/config.php', $bootstrap);
     }
 }

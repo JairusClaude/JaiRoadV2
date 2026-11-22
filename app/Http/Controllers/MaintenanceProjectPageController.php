@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Services\PreviewDataService;
 use App\Services\RoleAccess;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -21,7 +22,7 @@ final class MaintenanceProjectPageController extends OperationsFrontendControlle
     public function projectIndex(Request $request): Response
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::projectIndex($request);
+            return PreviewDataService::projectIndex($request);
         }
 
         $actor = $this->actor($request);
@@ -41,7 +42,7 @@ final class MaintenanceProjectPageController extends OperationsFrontendControlle
     public function projectForm(Request $request, ?int $id = null): Response
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::projectForm($request, $id);
+            return PreviewDataService::projectForm($request, $id);
         }
 
         $actor = $this->actor($request);
@@ -73,13 +74,14 @@ final class MaintenanceProjectPageController extends OperationsFrontendControlle
         $directory = self::BASE.'/maintenance-projects';
         $fallback = $id === null ? $directory : $directory.'/'.$id;
         $return = $this->editReturn($request, $fallback, [$directory, $fallback]);
+
         return redirect($return)->with('dd_operations_status', 'Maintenance Project saved to the database.');
     }
 
     public function projectShow(Request $request, int $id): Response
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::projectShow($request, $id);
+            return PreviewDataService::projectShow($request, $id);
         }
 
         $actor = $this->actor($request);
@@ -89,6 +91,7 @@ final class MaintenanceProjectPageController extends OperationsFrontendControlle
         $records = $this->records($actor)->where('m.project_id', $id)->orderByDesc('m.maintenance_year')->orderByDesc('m.quarter')
             ->get(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter', 'm.status', 'm.managing_engineer_id', 'm.start_date', 'e.first_name', 'e.last_name']);
         $latestYear = $records->first()?->maintenance_year;
+
         return $this->render('MaintenanceProjects/Show', $request, ['project' => $this->projectData($p, $actor),
             'records' => $records->map(fn (\stdClass $r): array => $this->historyData($r, $actor)),
             'recordCreateUrl' => $this->writable($actor) ? self::BASE.'/maintenance-projects/'.$id.'/records/create' : null,

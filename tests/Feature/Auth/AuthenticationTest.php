@@ -78,7 +78,6 @@ test('users are rate limited', function () {
     $response->assertTooManyRequests();
 });
 
-
 test('remember checkbox issues a persistent cookie only when selected', function (string $remember) {
     $user = $this->canonicalUser(User::factory()->create());
     $cookie = Auth::guard('web')->getRecallerName();

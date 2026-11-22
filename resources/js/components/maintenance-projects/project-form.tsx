@@ -69,7 +69,9 @@ export function ProjectForm({
               .filter((coverage) => showAssigned || !coverage.assigned)
               .sort((a, b) => Number(a.assigned) - Number(b.assigned))
         : matches;
-    const assignedCount = matches.filter((coverage) => coverage.assigned).length;
+    const assignedCount = matches.filter(
+        (coverage) => coverage.assigned,
+    ).length;
     const availableCount = matches.length - assignedCount;
     const error = (field: keyof ProjectFormValues) =>
         localErrors[field] ??
@@ -182,7 +184,8 @@ export function ProjectForm({
                         {create ? (
                             <div className="jr-coverage-info">
                                 <p className="jr-field-hint" role="status">
-                                    {availableCount} available · {assignedCount} assigned · {matches.length} total coverages
+                                    {availableCount} available · {assignedCount}{' '}
+                                    assigned · {matches.length} total coverages
                                 </p>
                                 <label className="jr-show-assigned">
                                     <input
@@ -253,9 +256,15 @@ export function ProjectForm({
                                                 'Municipality unavailable'}{' '}
                                             · {coverage.kilometers} km
                                         </small>
-                                        {coverage.assigned && coverage.assigned_project_title && (
-                                            <small>Linked project: {coverage.assigned_project_title}</small>
-                                        )}
+                                        {coverage.assigned &&
+                                            coverage.assigned_project_title && (
+                                                <small>
+                                                    Linked project:{' '}
+                                                    {
+                                                        coverage.assigned_project_title
+                                                    }
+                                                </small>
+                                            )}
                                     </span>
                                     {(!create || coverage.assigned) && (
                                         <span className="jr-availability">
@@ -275,7 +284,9 @@ export function ProjectForm({
                                               ? create && !showAssigned
                                                   ? 'No available coverages match your search. Turn on Show assigned to include unavailable entries.'
                                                   : 'No coverages match your search.'
-                                              : create && !showAssigned && assignedCount > 0
+                                              : create &&
+                                                  !showAssigned &&
+                                                  assignedCount > 0
                                                 ? 'All road coverages are already assigned. Turn on Show assigned to view them.'
                                                 : 'No road coverages are available to this account.'}
                                     </p>
@@ -322,10 +333,14 @@ export function ProjectForm({
                                     className="jr-map-placeholder"
                                     aria-live="polite"
                                 >
-                                    <Map className="size-12" aria-hidden="true" />
+                                    <Map
+                                        className="size-12"
+                                        aria-hidden="true"
+                                    />
                                     <strong>Select a road coverage</strong>
                                     <span>
-                                        Choose an available coverage from the list to preview its location.
+                                        Choose an available coverage from the
+                                        list to preview its location.
                                     </span>
                                 </div>
                             )}
@@ -362,10 +377,14 @@ export function ProjectForm({
                                     className="jr-map-placeholder"
                                     aria-live="polite"
                                 >
-                                    <Map className="size-12" aria-hidden="true" />
+                                    <Map
+                                        className="size-12"
+                                        aria-hidden="true"
+                                    />
                                     <strong>RoadCoverage map preview</strong>
                                     <span>
-                                        Select a road coverage from the list to preview its location.
+                                        Select a road coverage from the list to
+                                        preview its location.
                                     </span>
                                 </div>
                             )}
@@ -452,7 +471,7 @@ export function ProjectForm({
                             </Label>
                             <Input
                                 id="project-municipality"
-                                className="mt-2 !bg-slate-100 !text-slate-600 dark:!bg-slate-800 dark:!text-slate-300 cursor-not-allowed"
+                                className="mt-2 cursor-not-allowed !bg-slate-100 !text-slate-600 dark:!bg-slate-800 dark:!text-slate-300"
                                 value={selected?.municipality ?? ''}
                                 readOnly
                                 tabIndex={-1}

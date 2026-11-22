@@ -7,12 +7,9 @@ import 'leaflet/dist/leaflet.css';
 import '../../../css/road-coverage-details.css';
 
 // A display-only map: never initialize the editor, call routing, or change data.
-export function CoverageMapPreview({
-    geojson,
-}: {
-    geojson: unknown | null;
-}) {
+export function CoverageMapPreview({ geojson }: { geojson: unknown | null }) {
     let parsed: object | null = null;
+
     if (typeof geojson === 'string') {
         try {
             parsed = JSON.parse(geojson);

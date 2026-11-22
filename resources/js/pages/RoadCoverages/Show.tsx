@@ -46,6 +46,7 @@ export default function Show({
             setDeleteError(
                 `Cannot delete "${coverage.road_name}" because Maintenance Project "${associatedProject?.project_title || 'a maintenance project'}" references it.`,
             );
+
             return;
         }
 
@@ -233,11 +234,16 @@ export default function Show({
                     <div className="jr-delete-target-details">
                         <p>
                             Road Coverage: <strong>{coverage.road_name}</strong>
-                            {coverage.lgu?.municipality_name ? ` (${coverage.lgu.municipality_name})` : ''}
+                            {coverage.lgu?.municipality_name
+                                ? ` (${coverage.lgu.municipality_name})`
+                                : ''}
                         </p>
                         {hasProject && (
                             <p className="mt-2 text-xs text-red-600">
-                                This road coverage is referenced by {associatedProject?.project_title || 'a maintenance project'} and cannot be deleted.
+                                This road coverage is referenced by{' '}
+                                {associatedProject?.project_title ||
+                                    'a maintenance project'}{' '}
+                                and cannot be deleted.
                             </p>
                         )}
                     </div>

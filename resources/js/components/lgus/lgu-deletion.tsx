@@ -56,14 +56,16 @@ export function useLguDeletion(records: LguSummary[], canDelete: boolean) {
             router.delete(
                 workspaceHref(editUrl(`/lgus/${current.id}`, page.url)),
                 {
-                preserveScroll: true,
-                onSuccess: () => setSelected(null),
-                onError: (errors) => setError(Object.values(errors).join(' ')),
-                onFinish: () => {
-                    lock.current = false;
-                    setProcessing(false);
+                    preserveScroll: true,
+                    onSuccess: () => setSelected(null),
+                    onError: (errors) =>
+                        setError(Object.values(errors).join(' ')),
+                    onFinish: () => {
+                        lock.current = false;
+                        setProcessing(false);
+                    },
                 },
-            });
+            );
         },
     };
 }

@@ -1,11 +1,11 @@
 import { Bell, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
-import { useJaiRoadsNotificationFeed } from '@/components/use-jairoads-notification-feed';
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
+import { useJaiRoadsNotificationFeed } from '@/components/use-jairoads-notification-feed';
 
 /** Header feed: the API enforces recipient_user_id against the authenticated DD identity. */
 export function DdNotificationBell({
@@ -22,6 +22,7 @@ export function DdNotificationBell({
             open={open}
             onOpenChange={(next) => {
                 setOpen(next);
+
                 if (next) {
                     void refresh();
                 }
@@ -53,7 +54,9 @@ export function DdNotificationBell({
                 className="jr-notification-popover z-50 w-[min(90vw,370px)] rounded-2xl border border-slate-200 bg-white p-4 text-slate-900 shadow-2xl dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             >
                 <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3 dark:border-slate-700">
-                    <strong className="text-sm font-semibold">My notifications</strong>
+                    <strong className="text-sm font-semibold">
+                        My notifications
+                    </strong>
                     <button
                         type="button"
                         onClick={() => void refresh()}
@@ -68,7 +71,10 @@ export function DdNotificationBell({
                             Loading account notifications…
                         </p>
                     ) : status === 'error' ? (
-                        <p role="alert" className="py-5 text-center text-sm text-red-700">
+                        <p
+                            role="alert"
+                            className="py-5 text-center text-sm text-red-700"
+                        >
                             {message || 'Notifications unavailable.'}
                         </p>
                     ) : items.length === 0 ? (
@@ -79,7 +85,7 @@ export function DdNotificationBell({
                         <ul className="max-h-80 divide-y divide-slate-100 overflow-y-auto dark:divide-slate-700">
                             {items.map((item) => (
                                 <li key={item.id} className="py-3 text-sm">
-                                    <p className="font-medium text-slate-800 dark:text-slate-100 break-words">
+                                    <p className="font-medium break-words text-slate-800 dark:text-slate-100">
                                         {item.notification_message}
                                     </p>
                                     <time className="mt-1 block text-xs text-slate-400">
@@ -91,7 +97,8 @@ export function DdNotificationBell({
                     )}
                 </div>
                 <p className="mt-3 border-t border-slate-100 pt-2 text-[11px] leading-5 text-slate-500 dark:border-slate-700">
-                    Only activity addressed to this signed-in account. The dot means recent items exist, not unread status.
+                    Only activity addressed to this signed-in account. The dot
+                    means recent items exist, not unread status.
                 </p>
             </PopoverContent>
         </Popover>

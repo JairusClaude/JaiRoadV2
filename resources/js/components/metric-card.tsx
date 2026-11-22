@@ -20,7 +20,7 @@ export function MetricCard({
             className={`jr-metric-card rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm ${className}`}
         >
             <p
-                className={`text-xs font-semibold uppercase tracking-wider ${
+                className={`text-xs font-semibold tracking-wider uppercase ${
                     highlight ? 'text-[#98502D]' : 'text-[#64748B]'
                 }`}
             >

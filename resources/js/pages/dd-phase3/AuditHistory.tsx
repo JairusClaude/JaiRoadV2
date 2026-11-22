@@ -380,7 +380,8 @@ export default function AuditHistory({
                     <div>
                         <h1>Audit Log</h1>
                         <p>
-                            Security and activity monitoring across system operations. Times shown in Asia/Manila.
+                            Security and activity monitoring across system
+                            operations. Times shown in Asia/Manila.
                         </p>
                     </div>
                     <Button
@@ -399,370 +400,379 @@ export default function AuditHistory({
                         {refreshing ? 'Refreshing…' : 'Refresh monitoring'}
                     </Button>
                 </div>
-                <main className="relative -mt-3.5 -mx-7 rounded-t-[20px] bg-white px-7 pt-7 pb-10 shadow-sm min-w-0">
+                <main className="relative -mx-7 -mt-3.5 min-w-0 rounded-t-[20px] bg-white px-7 pt-7 pb-10 shadow-sm">
                     <section
                         aria-label="Audit log statistics"
                         className="jr-metrics-grid mb-6 grid w-full gap-4 sm:grid-cols-3"
                     >
-                    <MetricCard
-                        title="System Activities"
-                        value={summary.system_activities}
-                        subtitle="Permanent business entries; historical copies remain preserved."
-                        highlight={true}
-                    />
-                    <MetricCard
-                        title="Authentication in Period"
-                        value={
-                            monitoring.available
-                                ? `${summary.logins ?? 0} logins`
-                                : 'Unavailable'
-                        }
-                        subtitle={
-                            monitoring.available
-                                ? `${summary.logins ?? 0} successful · ${summary.failed_logins ?? 0} rejected`
-                                : 'Recorded events in the authentication date range; failed attempts are rate-bounded.'
-                        }
-                    />
-                    <MetricCard
-                        title="Unique Online Accounts"
-                        value={
-                            summary.online_accounts === null
-                                ? 'Unavailable'
-                                : summary.online_accounts
-                        }
-                        subtitle={`${Math.round(presence.window_seconds / 60)}-minute activity window; multiple sessions count once.`}
-                    />
-                </section>
-                <section className="mb-6 min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-                    <h2 className="text-lg font-bold text-slate-900">
-                        System Activity History
-                    </h2>
-                    <p className="mt-1 mb-4 text-sm text-slate-500">
-                        {events.total} matching entries. Existing historical
-                        authentication and notification copies are preserved and
-                        labeled. Account Type shows the current stored role; the
-                        original audit schema did not snapshot the actor role.
-                    </p>
-                    <Filters
-                        key={`activity-${JSON.stringify(filters)}`}
-                        prefix="activity"
-                        filters={filters}
-                        actions={actions}
-                        entities={entities}
-                    />
-                    <Table
-                        title="System Activity History"
-                        headers={[
-                            'Date and Time',
-                            'Performed By',
-                            'Account Type',
-                            'Action',
-                            'Module',
-                            'Affected Record',
-                            'Description',
-                            'Details',
-                        ]}
-                    >
-                        {events.data.map((e) => (
-                            <tr key={e.id}>
-                                <td className="whitespace-nowrap">
-                                    <time dateTime={e.created_at}>
-                                        {time(e.created_at)}
-                                    </time>
-                                </td>
-                                <td className="max-w-64 min-w-40 break-words">
-                                    {e.actor_identifier}
-                                    <span className="mt-1 block text-xs text-slate-500">
-                                        UserAccount{' '}
-                                        {e.user_id === null
-                                            ? 'not recorded'
-                                            : `#${e.user_id}`}
-                                    </span>
-                                </td>
-                                <td>
-                                    {e.current_account_type ?? 'Not recorded'}
-                                    <span className="block text-xs text-slate-400">
-                                        Current role
-                                    </span>
-                                </td>
-                                <td>
-                                    <Badge action={e.action} />
-                                    {['LOGIN', 'LOGOUT'].includes(e.action) && (
+                        <MetricCard
+                            title="System Activities"
+                            value={summary.system_activities}
+                            subtitle="Permanent business entries; historical copies remain preserved."
+                            highlight={true}
+                        />
+                        <MetricCard
+                            title="Authentication in Period"
+                            value={
+                                monitoring.available
+                                    ? `${summary.logins ?? 0} logins`
+                                    : 'Unavailable'
+                            }
+                            subtitle={
+                                monitoring.available
+                                    ? `${summary.logins ?? 0} successful · ${summary.failed_logins ?? 0} rejected`
+                                    : 'Recorded events in the authentication date range; failed attempts are rate-bounded.'
+                            }
+                        />
+                        <MetricCard
+                            title="Unique Online Accounts"
+                            value={
+                                summary.online_accounts === null
+                                    ? 'Unavailable'
+                                    : summary.online_accounts
+                            }
+                            subtitle={`${Math.round(presence.window_seconds / 60)}-minute activity window; multiple sessions count once.`}
+                        />
+                    </section>
+                    <section className="mb-6 min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+                        <h2 className="text-lg font-bold text-slate-900">
+                            System Activity History
+                        </h2>
+                        <p className="mt-1 mb-4 text-sm text-slate-500">
+                            {events.total} matching entries. Existing historical
+                            authentication and notification copies are preserved
+                            and labeled. Account Type shows the current stored
+                            role; the original audit schema did not snapshot the
+                            actor role.
+                        </p>
+                        <Filters
+                            key={`activity-${JSON.stringify(filters)}`}
+                            prefix="activity"
+                            filters={filters}
+                            actions={actions}
+                            entities={entities}
+                        />
+                        <Table
+                            title="System Activity History"
+                            headers={[
+                                'Date and Time',
+                                'Performed By',
+                                'Account Type',
+                                'Action',
+                                'Module',
+                                'Affected Record',
+                                'Description',
+                                'Details',
+                            ]}
+                        >
+                            {events.data.map((e) => (
+                                <tr key={e.id}>
+                                    <td className="whitespace-nowrap">
+                                        <time dateTime={e.created_at}>
+                                            {time(e.created_at)}
+                                        </time>
+                                    </td>
+                                    <td className="max-w-64 min-w-40 break-words">
+                                        {e.actor_identifier}
                                         <span className="mt-1 block text-xs text-slate-500">
-                                            Historical authentication entry
+                                            UserAccount{' '}
+                                            {e.user_id === null
+                                                ? 'not recorded'
+                                                : `#${e.user_id}`}
                                         </span>
-                                    )}
-                                    {e.recipient_user_id !== null && (
-                                        <span className="mt-1 block text-xs text-slate-500">
-                                            Historical notification copy
+                                    </td>
+                                    <td>
+                                        {e.current_account_type ??
+                                            'Not recorded'}
+                                        <span className="block text-xs text-slate-400">
+                                            Current role
                                         </span>
-                                    )}
-                                </td>
-                                <td>{e.entity_type}</td>
-                                <td>
-                                    {e.entity_type}{' '}
-                                    {e.entity_id === null
-                                        ? '—'
-                                        : `#${e.entity_id}`}
-                                </td>
-                                <td className="max-w-80 min-w-48 break-words">
-                                    {e.description}
-                                </td>
-                                <td>
-                                    <details className="min-w-52">
-                                        <summary className="cursor-pointer font-semibold text-[#90451f]">
-                                            Safe before / after values
-                                        </summary>
-                                        <div className="mt-3 max-w-md space-y-2 text-xs">
-                                            <p>
-                                                AuditLog #{e.id} ·{' '}
-                                                {e.actor_identifier}
-                                            </p>
-                                            <p>
-                                                {e.action} · {e.entity_type} #
-                                                {e.entity_id ?? '—'}
-                                            </p>
-                                            <p>{e.created_at}</p>
-                                            <p className="break-words">
-                                                {e.description}
-                                            </p>
-                                            {e.notification_message && (
+                                    </td>
+                                    <td>
+                                        <Badge action={e.action} />
+                                        {['LOGIN', 'LOGOUT'].includes(
+                                            e.action,
+                                        ) && (
+                                            <span className="mt-1 block text-xs text-slate-500">
+                                                Historical authentication entry
+                                            </span>
+                                        )}
+                                        {e.recipient_user_id !== null && (
+                                            <span className="mt-1 block text-xs text-slate-500">
+                                                Historical notification copy
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td>{e.entity_type}</td>
+                                    <td>
+                                        {e.entity_type}{' '}
+                                        {e.entity_id === null
+                                            ? '—'
+                                            : `#${e.entity_id}`}
+                                    </td>
+                                    <td className="max-w-80 min-w-48 break-words">
+                                        {e.description}
+                                    </td>
+                                    <td>
+                                        <details className="min-w-52">
+                                            <summary className="cursor-pointer font-semibold text-[#90451f]">
+                                                Safe before / after values
+                                            </summary>
+                                            <div className="mt-3 max-w-md space-y-2 text-xs">
                                                 <p>
-                                                    Historical notification:{' '}
-                                                    {e.notification_message}
+                                                    AuditLog #{e.id} ·{' '}
+                                                    {e.actor_identifier}
                                                 </p>
-                                            )}
-                                            {Object.keys({
-                                                ...e.old_value,
-                                                ...e.new_value,
-                                            }).length === 0 ? (
                                                 <p>
-                                                    No safe change details were
-                                                    recorded for this event.
+                                                    {e.action} · {e.entity_type}{' '}
+                                                    #{e.entity_id ?? '—'}
                                                 </p>
-                                            ) : (
-                                                <table className="w-full table-fixed text-left">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Field</th>
-                                                            <th>
-                                                                Previous value
-                                                            </th>
-                                                            <th>New value</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {[
-                                                            ...new Set([
-                                                                ...Object.keys(
-                                                                    e.old_value ??
-                                                                        {},
-                                                                ),
-                                                                ...Object.keys(
-                                                                    e.new_value ??
-                                                                        {},
-                                                                ),
-                                                            ]),
-                                                        ].map((k) => (
-                                                            <tr key={k}>
-                                                                <th className="p-1 break-words">
-                                                                    {k.replaceAll(
-                                                                        '_',
-                                                                        ' ',
-                                                                    )}
+                                                <p>{e.created_at}</p>
+                                                <p className="break-words">
+                                                    {e.description}
+                                                </p>
+                                                {e.notification_message && (
+                                                    <p>
+                                                        Historical notification:{' '}
+                                                        {e.notification_message}
+                                                    </p>
+                                                )}
+                                                {Object.keys({
+                                                    ...e.old_value,
+                                                    ...e.new_value,
+                                                }).length === 0 ? (
+                                                    <p>
+                                                        No safe change details
+                                                        were recorded for this
+                                                        event.
+                                                    </p>
+                                                ) : (
+                                                    <table className="w-full table-fixed text-left">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Field</th>
+                                                                <th>
+                                                                    Previous
+                                                                    value
                                                                 </th>
-                                                                <td className="p-1 break-all whitespace-pre-wrap">
-                                                                    {value(
-                                                                        e
-                                                                            .old_value?.[
-                                                                            k
-                                                                        ],
-                                                                    )}
-                                                                </td>
-                                                                <td className="p-1 break-all whitespace-pre-wrap">
-                                                                    {value(
-                                                                        e
-                                                                            .new_value?.[
-                                                                            k
-                                                                        ],
-                                                                    )}
-                                                                </td>
+                                                                <th>
+                                                                    New value
+                                                                </th>
                                                             </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            )}
-                                        </div>
-                                    </details>
-                                </td>
-                            </tr>
-                        ))}
-                        {events.data.length === 0 && (
-                            <tr>
-                                <td colSpan={8}>
-                                    No system activity matches these filters.
-                                </td>
-                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {[
+                                                                ...new Set([
+                                                                    ...Object.keys(
+                                                                        e.old_value ??
+                                                                            {},
+                                                                    ),
+                                                                    ...Object.keys(
+                                                                        e.new_value ??
+                                                                            {},
+                                                                    ),
+                                                                ]),
+                                                            ].map((k) => (
+                                                                <tr key={k}>
+                                                                    <th className="p-1 break-words">
+                                                                        {k.replaceAll(
+                                                                            '_',
+                                                                            ' ',
+                                                                        )}
+                                                                    </th>
+                                                                    <td className="p-1 break-all whitespace-pre-wrap">
+                                                                        {value(
+                                                                            e
+                                                                                .old_value?.[
+                                                                                k
+                                                                            ],
+                                                                        )}
+                                                                    </td>
+                                                                    <td className="p-1 break-all whitespace-pre-wrap">
+                                                                        {value(
+                                                                            e
+                                                                                .new_value?.[
+                                                                                k
+                                                                            ],
+                                                                        )}
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                )}
+                                            </div>
+                                        </details>
+                                    </td>
+                                </tr>
+                            ))}
+                            {events.data.length === 0 && (
+                                <tr>
+                                    <td colSpan={8}>
+                                        No system activity matches these
+                                        filters.
+                                    </td>
+                                </tr>
+                            )}
+                        </Table>
+                        <PaginationLinks
+                            page={events}
+                            label="Audit history pagination"
+                        />
+                    </section>
+                    <section className="mb-6 min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+                        <h2 className="text-lg font-bold text-slate-900">
+                            Authentication History
+                        </h2>
+                        <p className="mt-1 mb-4 text-sm text-slate-500">
+                            {monitoring.message}
+                        </p>
+                        {monitoring.recent_failure_at && (
+                            <p
+                                role="status"
+                                className="mb-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900"
+                            >
+                                Collection encountered a recent outage at{' '}
+                                {time(monitoring.recent_failure_at)}. Some
+                                events may be missing; authentication remains
+                                governed by existing security controls.
+                            </p>
                         )}
-                    </Table>
-                    <PaginationLinks
-                        page={events}
-                        label="Audit history pagination"
-                    />
-                </section>
-                <section className="mb-6 min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-                    <h2 className="text-lg font-bold text-slate-900">
-                        Authentication History
-                    </h2>
-                    <p className="mt-1 mb-4 text-sm text-slate-500">
-                        {monitoring.message}
-                    </p>
-                    {monitoring.recent_failure_at && (
-                        <p
-                            role="status"
-                            className="mb-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900"
+                        {!monitoring.available && (
+                            <p
+                                role="status"
+                                className="mb-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900"
+                            >
+                                Schema-owner activation is required. No
+                                synthetic or historical backfill is performed.
+                            </p>
+                        )}
+                        <Filters
+                            key={`auth-${JSON.stringify(filters)}`}
+                            prefix="auth"
+                            filters={filters}
+                            actions={['LOGIN', 'LOGOUT', 'FAILED_LOGIN']}
+                        />
+                        <Table
+                            title="Authentication History"
+                            headers={[
+                                'Date and Time',
+                                'Account / Attempted Identifier',
+                                'Account Type',
+                                'Event',
+                                'Outcome',
+                                'Client Information',
+                                'Details',
+                            ]}
                         >
-                            Collection encountered a recent outage at{' '}
-                            {time(monitoring.recent_failure_at)}. Some events
-                            may be missing; authentication remains governed by
-                            existing security controls.
+                            {authentication.data.map((e) => (
+                                <tr key={e.id}>
+                                    <td className="whitespace-nowrap">
+                                        {time(e.created_at)}
+                                    </td>
+                                    <td className="min-w-48 break-words">
+                                        {e.actor_identifier ??
+                                            e.attempted_identifier ??
+                                            'Unavailable account'}
+                                        {e.user_account_id === null && (
+                                            <span className="block text-xs text-slate-500">
+                                                Unverified identifier
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td>{e.account_type ?? 'Not verified'}</td>
+                                    <td>
+                                        <Badge action={e.event} />
+                                    </td>
+                                    <td>{e.outcome}</td>
+                                    <td>{e.client_description}</td>
+                                    <td>
+                                        <details>
+                                            <summary className="cursor-pointer font-semibold text-[#90451f]">
+                                                Authentication details
+                                            </summary>
+                                            <p className="mt-2 text-xs">
+                                                Event #{e.id} · {e.method} ·{' '}
+                                                {e.created_at}
+                                            </p>
+                                            <p className="text-xs">
+                                                {e.user_account_id === null
+                                                    ? 'No canonical identity attributed.'
+                                                    : `Verified UserAccount #${e.user_account_id}`}
+                                            </p>
+                                        </details>
+                                    </td>
+                                </tr>
+                            ))}
+                            {authentication.data.length === 0 && (
+                                <tr>
+                                    <td colSpan={7}>
+                                        No recorded authentication events match
+                                        these filters.
+                                    </td>
+                                </tr>
+                            )}
+                        </Table>
+                        <PaginationLinks
+                            page={authentication}
+                            label="Authentication history pagination"
+                        />
+                    </section>
+                    <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+                        <h2 className="text-lg font-bold text-slate-900">
+                            Currently Online Users
+                        </h2>
+                        <p className="mt-1 mb-4 text-sm text-slate-500">
+                            {presence.message} Closing a tab may leave a valid
+                            session recently active until this window elapses.
                         </p>
-                    )}
-                    {!monitoring.available && (
-                        <p
-                            role="status"
-                            className="mb-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900"
+                        <Table
+                            title="Currently Online Users"
+                            headers={[
+                                'Username',
+                                'Account Type',
+                                'Session Status',
+                                'Login Time',
+                                'Last Activity',
+                                'Device / Browser',
+                            ]}
                         >
-                            Schema-owner activation is required. No synthetic or
-                            historical backfill is performed.
-                        </p>
-                    )}
-                    <Filters
-                        key={`auth-${JSON.stringify(filters)}`}
-                        prefix="auth"
-                        filters={filters}
-                        actions={['LOGIN', 'LOGOUT', 'FAILED_LOGIN']}
-                    />
-                    <Table
-                        title="Authentication History"
-                        headers={[
-                            'Date and Time',
-                            'Account / Attempted Identifier',
-                            'Account Type',
-                            'Event',
-                            'Outcome',
-                            'Client Information',
-                            'Details',
-                        ]}
-                    >
-                        {authentication.data.map((e) => (
-                            <tr key={e.id}>
-                                <td className="whitespace-nowrap">
-                                    {time(e.created_at)}
-                                </td>
-                                <td className="min-w-48 break-words">
-                                    {e.actor_identifier ??
-                                        e.attempted_identifier ??
-                                        'Unavailable account'}
-                                    {e.user_account_id === null && (
+                            {presence.accounts.map((a) => (
+                                <tr key={a.account_id}>
+                                    <td>
+                                        {a.username}
                                         <span className="block text-xs text-slate-500">
-                                            Unverified identifier
+                                            UserAccount #{a.account_id}
                                         </span>
-                                    )}
-                                </td>
-                                <td>{e.account_type ?? 'Not verified'}</td>
-                                <td>
-                                    <Badge action={e.event} />
-                                </td>
-                                <td>{e.outcome}</td>
-                                <td>{e.client_description}</td>
-                                <td>
-                                    <details>
-                                        <summary className="cursor-pointer font-semibold text-[#90451f]">
-                                            Authentication details
-                                        </summary>
-                                        <p className="mt-2 text-xs">
-                                            Event #{e.id} · {e.method} ·{' '}
-                                            {e.created_at}
-                                        </p>
-                                        <p className="text-xs">
-                                            {e.user_account_id === null
-                                                ? 'No canonical identity attributed.'
-                                                : `Verified UserAccount #${e.user_account_id}`}
-                                        </p>
-                                    </details>
-                                </td>
-                            </tr>
-                        ))}
-                        {authentication.data.length === 0 && (
-                            <tr>
-                                <td colSpan={7}>
-                                    No recorded authentication events match
-                                    these filters.
-                                </td>
-                            </tr>
-                        )}
-                    </Table>
-                    <PaginationLinks
-                        page={authentication}
-                        label="Authentication history pagination"
-                    />
-                </section>
-                <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-                    <h2 className="text-lg font-bold text-slate-900">
-                        Currently Online Users
-                    </h2>
-                    <p className="mt-1 mb-4 text-sm text-slate-500">
-                        {presence.message} Closing a tab may leave a valid
-                        session recently active until this window elapses.
-                    </p>
-                    <Table
-                        title="Currently Online Users"
-                        headers={[
-                            'Username',
-                            'Account Type',
-                            'Session Status',
-                            'Login Time',
-                            'Last Activity',
-                            'Device / Browser',
-                        ]}
-                    >
-                        {presence.accounts.map((a) => (
-                            <tr key={a.account_id}>
-                                <td>
-                                    {a.username}
-                                    <span className="block text-xs text-slate-500">
-                                        UserAccount #{a.account_id}
-                                    </span>
-                                </td>
-                                <td>{a.account_type}</td>
-                                <td>
-                                    {a.status}
-                                    <span className="block text-xs text-slate-500">
-                                        {a.session_count} valid session
-                                        {a.session_count === 1 ? '' : 's'}
-                                    </span>
-                                </td>
-                                <td className="whitespace-nowrap">
-                                    {time(a.login_at)}
-                                </td>
-                                <td className="whitespace-nowrap">
-                                    {time(a.last_activity)}
-                                </td>
-                                <td>{a.client_description}</td>
-                            </tr>
-                        ))}
-                        {presence.accounts.length === 0 && (
-                            <tr>
-                                <td colSpan={6}>
-                                    {presence.available
-                                        ? 'No eligible accounts are recently active.'
-                                        : 'Online presence is unavailable; no unverified sessions are shown.'}
-                                </td>
-                            </tr>
-                        )}
-                    </Table>
-                </section>
+                                    </td>
+                                    <td>{a.account_type}</td>
+                                    <td>
+                                        {a.status}
+                                        <span className="block text-xs text-slate-500">
+                                            {a.session_count} valid session
+                                            {a.session_count === 1 ? '' : 's'}
+                                        </span>
+                                    </td>
+                                    <td className="whitespace-nowrap">
+                                        {time(a.login_at)}
+                                    </td>
+                                    <td className="whitespace-nowrap">
+                                        {time(a.last_activity)}
+                                    </td>
+                                    <td>{a.client_description}</td>
+                                </tr>
+                            ))}
+                            {presence.accounts.length === 0 && (
+                                <tr>
+                                    <td colSpan={6}>
+                                        {presence.available
+                                            ? 'No eligible accounts are recently active.'
+                                            : 'Online presence is unavailable; no unverified sessions are shown.'}
+                                    </td>
+                                </tr>
+                            )}
+                        </Table>
+                    </section>
                 </main>
             </ProjectWorkspace>
         </div>

@@ -1,5 +1,4 @@
 import { Buffer } from 'node:buffer';
-import { relatedEditReturn } from './related-edit-return.mjs';
 import { randomUUID } from 'node:crypto';
 import { readFile, stat } from 'node:fs/promises';
 import { createServer } from 'node:http';
@@ -49,6 +48,7 @@ import {
     deletePreviewRecords,
     dependentCounts,
 } from './records.mjs';
+import { relatedEditReturn } from './related-edit-return.mjs';
 import { roadCoverageDetailsPage } from './road-coverage-details.mjs';
 import {
     initializeRoadCoveragePreview,
@@ -613,8 +613,10 @@ async function mutate(method, url, data, files = []) {
         if (result?.errors) {
             return { ...result, location: `/monthly-updates/${monthlyEdit[1]}/edit${url.search}` };
         }
+
         const update = monthlyUpdates.find(item => Number(item.id) === Number(monthlyEdit[1]));
         const record = records.find(item => Number(item.id) === Number(update?.maintenance_id));
+
         return result && record
             ? { ...result, location: relatedEditReturn(url, '/monthly-updates', update.id, record) }
             : result;

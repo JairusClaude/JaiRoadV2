@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Services\OperationAudit;
+use App\Services\PreviewDataService;
 use App\Services\RoadReferenceBounds;
 use App\Services\RoleAccess;
 use Illuminate\Database\Query\Builder;
@@ -27,7 +28,7 @@ final class RoadCoveragePageController extends OperationsFrontendController
     public function roadIndex(Request $request): Response
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::roadIndex($request);
+            return PreviewDataService::roadIndex($request);
         }
 
         $actor = $this->actor($request);
@@ -87,7 +88,7 @@ final class RoadCoveragePageController extends OperationsFrontendController
      * value on a road-index visit. Never skip existing roads; all are reachable
      * through the next cursor without reloading already-seen records.
      *
-     * @param array{account_id:int,role:string,engineer_id:?int} $actor
+     * @param  array{account_id:int,role:string,engineer_id:?int}  $actor
      * @return array{data:array<int,array<string,mixed>>,next_cursor:?int}
      */
     private function roadMapData(array $actor, ?int $before = null): array
@@ -117,7 +118,7 @@ final class RoadCoveragePageController extends OperationsFrontendController
     public function roadShow(Request $request, int $id): Response
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::roadShow($request, $id);
+            return PreviewDataService::roadShow($request, $id);
         }
 
         $actor = $this->actor($request);
@@ -137,7 +138,7 @@ final class RoadCoveragePageController extends OperationsFrontendController
     public function roadForm(Request $request, ?int $id = null): Response
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::roadForm($request, $id);
+            return PreviewDataService::roadForm($request, $id);
         }
 
         $actor = $this->actor($request);
@@ -161,7 +162,7 @@ final class RoadCoveragePageController extends OperationsFrontendController
     public function roadReferences(Request $request): JsonResponse
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::roadReferences($request);
+            return PreviewDataService::roadReferences($request);
         }
 
         $actor = $this->actor($request);
@@ -190,7 +191,7 @@ final class RoadCoveragePageController extends OperationsFrontendController
     public function saveRoad(Request $request, ?int $id = null): RedirectResponse
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::saveRoad($request, $id);
+            return PreviewDataService::saveRoad($request, $id);
         }
 
         $this->writer($this->actor($request));
@@ -203,13 +204,14 @@ final class RoadCoveragePageController extends OperationsFrontendController
 
         $directory = self::BASE.'/road-coverages';
         $fallback = $id === null ? $directory : $directory.'/'.$id;
+
         return redirect($this->editReturn($request, $fallback, [$directory, $fallback]))->with('dd_operations_status', 'Road coverage saved to the database.');
     }
 
     public function deleteRoad(Request $request, int $id): RedirectResponse
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::deleteRoad($request, $id);
+            return PreviewDataService::deleteRoad($request, $id);
         }
 
         $actor = $this->actor($request);
@@ -222,7 +224,7 @@ final class RoadCoveragePageController extends OperationsFrontendController
     public function bulkDeleteRoad(Request $request): RedirectResponse
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::bulkDeleteRoad($request);
+            return PreviewDataService::bulkDeleteRoad($request);
         }
 
         $actor = $this->actor($request);
@@ -241,8 +243,8 @@ final class RoadCoveragePageController extends OperationsFrontendController
      * audit/notification events in the same transaction. A project insert must
      * acquire a key-share lock on its road parent, so it cannot race this delete.
      *
-     * @param array{account_id:int,role:string,engineer_id:?int} $actor
-     * @param list<int> $ids
+     * @param  array{account_id:int,role:string,engineer_id:?int}  $actor
+     * @param  list<int>  $ids
      */
     private function deleteCheckedRoads(Request $request, array $actor, array $ids): void
     {

@@ -15,11 +15,22 @@ export function LguForm({ lgu }: { lgu?: Lgu }) {
     const canonical = page.props.canonicalFrontend === true;
     const directory = workspaceHref('/lgus');
     const detail = lgu ? workspaceHref(`/lgus/${lgu.id}`) : directory;
-    const back = formReturn(page.url, lgu ? detail : directory, [directory, detail]);
+    const back = formReturn(page.url, lgu ? detail : directory, [
+        directory,
+        detail,
+    ]);
     const fixedLocation = !lgu;
     const form = useForm<LguValues>(
         Object.fromEntries(
-            lguFields.map(({ key }) => [key, lgu?.[key] ?? (fixedLocation && key === 'province' ? 'Davao De Oro' : fixedLocation && key === 'region' ? 'XI' : '')]),
+            lguFields.map(({ key }) => [
+                key,
+                lgu?.[key] ??
+                    (fixedLocation && key === 'province'
+                        ? 'Davao De Oro'
+                        : fixedLocation && key === 'region'
+                          ? 'XI'
+                          : ''),
+            ]),
         ) as LguValues,
     );
     const saving = useRef(false);
@@ -43,7 +54,9 @@ export function LguForm({ lgu }: { lgu?: Lgu }) {
                         onClick={cancel}
                     >
                         <ArrowLeft className="size-4" />
-                        {back.split('?')[0] === directory ? 'LGU' : 'LGU Details'}
+                        {back.split('?')[0] === directory
+                            ? 'LGU'
+                            : 'LGU Details'}
                     </button>
                     <div className="jr-page-head">
                         <div>
@@ -136,8 +149,18 @@ export function LguForm({ lgu }: { lgu?: Lgu }) {
                                                 required={field.required}
                                                 maxLength={255}
                                                 value={form.data[field.key]}
-                                                readOnly={fixedLocation && (field.key === 'province' || field.key === 'region')}
-                                                className={fixedLocation && (field.key === 'province' || field.key === 'region') ? '!bg-slate-100 !text-slate-600 dark:!bg-slate-800 dark:!text-slate-300 cursor-not-allowed' : undefined}
+                                                readOnly={
+                                                    fixedLocation &&
+                                                    (field.key === 'province' ||
+                                                        field.key === 'region')
+                                                }
+                                                className={
+                                                    fixedLocation &&
+                                                    (field.key === 'province' ||
+                                                        field.key === 'region')
+                                                        ? 'cursor-not-allowed !bg-slate-100 !text-slate-600 dark:!bg-slate-800 dark:!text-slate-300'
+                                                        : undefined
+                                                }
                                                 disabled={
                                                     !enabled || form.processing
                                                 }
@@ -150,7 +173,16 @@ export function LguForm({ lgu }: { lgu?: Lgu }) {
                                                         : undefined
                                                 }
                                                 onChange={(e) => {
-                                                    if (fixedLocation && (field.key === 'province' || field.key === 'region')) return;
+                                                    if (
+                                                        fixedLocation &&
+                                                        (field.key ===
+                                                            'province' ||
+                                                            field.key ===
+                                                                'region')
+                                                    ) {
+                                                        return;
+                                                    }
+
                                                     form.clearErrors(field.key);
                                                     form.setData(
                                                         field.key,
@@ -173,7 +205,11 @@ export function LguForm({ lgu }: { lgu?: Lgu }) {
                             </section>
                         ))}
                         <footer className="jr-form-footer">
-                            <p>{canonical ? 'Saved to the LGU directory.' : 'Local preview · changes reset on restart.'}</p>
+                            <p>
+                                {canonical
+                                    ? 'Saved to the LGU directory.'
+                                    : 'Local preview · changes reset on restart.'}
+                            </p>
                             <div className="flex gap-2">
                                 <Button
                                     variant="outline"

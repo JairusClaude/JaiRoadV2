@@ -14,7 +14,8 @@ export default function RoleAwareWorkspaceLayout({
     const page = usePage<{ jairoadsIdentity?: Identity }>();
     const { jairoadsIdentity } = page.props;
     const path = page.url.split('?')[0].split('#')[0];
-    const isSettings = path === '/settings-preview' || path.startsWith('/settings/');
+    const isSettings =
+        path === '/settings-preview' || path.startsWith('/settings/');
     // Settings lives in the polished layout, which has no role marker by default.
     // Add one only on Settings pages so existing role-specific controls and tokens apply.
     const settingsRole =

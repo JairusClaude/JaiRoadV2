@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Services\RoleAccess;
 use App\Services\OperationAudit;
-use Illuminate\Database\QueryException;
-use Illuminate\Validation\ValidationException;
+use App\Services\PreviewDataService;
+use App\Services\RoleAccess;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Response;
 
 final class LguPageController extends OperationsFrontendController
@@ -19,7 +20,7 @@ final class LguPageController extends OperationsFrontendController
     public function lguIndex(Request $request): Response
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::lguIndex($request);
+            return PreviewDataService::lguIndex($request);
         }
 
         $actor = $this->actor($request);
@@ -113,7 +114,7 @@ final class LguPageController extends OperationsFrontendController
     public function lguShow(Request $request, int $id): Response
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::lguShow($request, $id);
+            return PreviewDataService::lguShow($request, $id);
         }
 
         $actor = $this->actor($request);
@@ -171,7 +172,7 @@ final class LguPageController extends OperationsFrontendController
     public function lguForm(Request $request, ?int $id = null): Response
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::lguForm($request, $id);
+            return PreviewDataService::lguForm($request, $id);
         }
 
         $actor = $this->actor($request);
@@ -193,7 +194,7 @@ final class LguPageController extends OperationsFrontendController
     public function saveLgu(Request $request, ?int $id = null): RedirectResponse
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::saveLgu($request, $id);
+            return PreviewDataService::saveLgu($request, $id);
         }
 
         $actor = $this->actor($request);
@@ -214,19 +215,21 @@ final class LguPageController extends OperationsFrontendController
 
         if ($id === null) {
             DB::table('jairoads_next.lgus')->insert($v);
+
             return redirect(self::BASE.'/lgus')->with('dd_operations_status', 'LGU created successfully.');
         }
 
         DB::table('jairoads_next.lgus')->where('id', $id)->update($v);
         $directory = self::BASE.'/lgus';
         $detail = $directory.'/'.$id;
+
         return redirect($this->editReturn($request, $detail, [$directory, $detail]))->with('dd_operations_status', 'LGU updated successfully.');
     }
 
     public function deleteLgu(Request $request, int $id): RedirectResponse
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::deleteLgu($request, $id);
+            return PreviewDataService::deleteLgu($request, $id);
         }
 
         $actor = $this->actor($request);
@@ -240,7 +243,7 @@ final class LguPageController extends OperationsFrontendController
     public function bulkDestroy(Request $request): RedirectResponse
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::bulkDestroyLgu($request);
+            return PreviewDataService::bulkDestroyLgu($request);
         }
 
         $actor = $this->actor($request);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Http\Controllers\OperationsFrontendController;
 use App\Models\User;
 use App\Services\AccountIdentityResolver;
 use Closure;
@@ -20,7 +21,7 @@ final class GuardLegacyRoutesForCanonicalAccounts
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (\App\Http\Controllers\OperationsFrontendController::isPreview($request)) {
+        if (OperationsFrontendController::isPreview($request)) {
             return $next($request);
         }
 

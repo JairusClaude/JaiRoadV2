@@ -115,6 +115,7 @@ export default function DdPhase3Workspace({
 }: Props) {
     const [refreshing, setRefreshing] = useState(false);
     const adminDashboard = section === 'dashboard' && identity.role === 'Admin';
+
     if (section === 'lgus') {
         return (
             <>
@@ -154,16 +155,30 @@ export default function DdPhase3Workspace({
     }
 
     return (
-        <div className={`jr-directory-exploration${adminDashboard ? " jr-admin-dashboard" : ""}`}>
+        <div
+            className={`jr-directory-exploration${adminDashboard ? 'jr-admin-dashboard' : ''}`}
+        >
             <ProjectWorkspace>
                 <Head
                     title={`JaiROADS — ${section === 'users' ? 'User Management' : 'Dashboard'}`}
                 />
                 <div className="jr-page-head">
                     <div>
-                        {adminDashboard && <span className="jr-admin-access"><ShieldCheck className="size-4" aria-hidden="true" /> Administration Panel</span>}
+                        {adminDashboard && (
+                            <span className="jr-admin-access">
+                                <ShieldCheck
+                                    className="size-4"
+                                    aria-hidden="true"
+                                />{' '}
+                                Administration Panel
+                            </span>
+                        )}
                         <h1>
-                            {section === 'users' ? 'User Management' : adminDashboard ? 'Administration Dashboard' : 'Dashboard'}
+                            {section === 'users'
+                                ? 'User Management'
+                                : adminDashboard
+                                  ? 'Administration Dashboard'
+                                  : 'Dashboard'}
                         </h1>
                         <p>
                             {section === 'users'
@@ -176,219 +191,249 @@ export default function DdPhase3Workspace({
                     {section === 'dashboard' && (
                         <button
                             type="button"
-                            className={adminDashboard ? "jr-admin-refresh" : "jr-primary rounded-xl px-4 py-2.5 text-sm font-semibold text-white"}
+                            className={
+                                adminDashboard
+                                    ? 'jr-admin-refresh'
+                                    : 'jr-primary rounded-xl px-4 py-2.5 text-sm font-semibold text-white'
+                            }
                             disabled={refreshing}
-                            onClick={() => router.reload({ onStart: () => setRefreshing(true), onFinish: () => setRefreshing(false) })}
+                            onClick={() =>
+                                router.reload({
+                                    onStart: () => setRefreshing(true),
+                                    onFinish: () => setRefreshing(false),
+                                })
+                            }
                         >
-                            <RefreshCw className={`size-4 ${refreshing ? "animate-spin" : ""}`} aria-hidden="true" />
-                            {refreshing ? "Refreshing…" : "Refresh dashboard"}
+                            <RefreshCw
+                                className={`size-4 ${refreshing ? 'animate-spin' : ''}`}
+                                aria-hidden="true"
+                            />
+                            {refreshing ? 'Refreshing…' : 'Refresh dashboard'}
                         </button>
                     )}
                 </div>
 
-                <main className="relative -mt-3.5 -mx-7 rounded-t-[20px] bg-white px-7 pt-7 pb-10 shadow-sm min-w-0 space-y-6">
-
-            {section === 'users' && canManage && (
-                <CanonicalUserManagement key={initialEngineerId ?? 'directory'} initialEngineerId={initialEngineerId} accounts={accounts} engineers={engineers}
-                    eligibleEngineers={eligibleEngineers} actorId={identity.accountId}
-                    canCreateRoles={canCreateRoles} accountTotal={counts.userAccounts}
-                    status={status} />
-            )}
-
-            {section === 'dashboard' && status && (
-                <div
-                    role="status"
-                    className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"
-                >
-                    {status}
-                </div>
-            )}
-            {section === 'dashboard' && historyUrl && (
-                <p className="my-4">
-                    <a className="underline" href={historyUrl}>
-                        Preserved project history
-                    </a>{' '}
-                    · Administrative totals include retained records. Detached
-                    history remains restricted to Admin/SuperAdmin.
-                </p>
-            )}
-            {section === 'dashboard' && identity.role === 'Admin' && (
-                <div className="space-y-6">
-                    <section aria-label="Administration metrics" className="jr-admin-metrics grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                        <StatCard
-                            label="Maintenance projects"
-                            value={counts.maintenanceProjects ?? 0}
-                            detail="Linked road maintenance projects"
-                            icon={FolderKanban}
+                <main className="relative -mx-7 -mt-3.5 min-w-0 space-y-6 rounded-t-[20px] bg-white px-7 pt-7 pb-10 shadow-sm">
+                    {section === 'users' && canManage && (
+                        <CanonicalUserManagement
+                            key={initialEngineerId ?? 'directory'}
+                            initialEngineerId={initialEngineerId}
+                            accounts={accounts}
+                            engineers={engineers}
+                            eligibleEngineers={eligibleEngineers}
+                            actorId={identity.accountId}
+                            canCreateRoles={canCreateRoles}
+                            accountTotal={counts.userAccounts}
+                            status={status}
                         />
-                        <StatCard
-                            label="Maintenance records"
-                            value={counts.maintenanceRecords ?? 0}
-                            detail="Quarterly maintenance history"
-                            icon={Activity}
-                        />
-                        <StatCard
-                            label="Monthly updates"
-                            value={counts.monthlyUpdates ?? 0}
-                            detail="Progress reports"
-                            icon={FileText}
-                        />
-                        <StatCard
-                            label="LGUs"
-                            value={counts.lgus}
-                            detail="Municipalities in inventory"
-                            icon={Building2}
-                        />
-                    </section>
-                    {analytics && (
-                        <DdDashboardAnalytics data={analytics} compact />
                     )}
-                    <section className="grid gap-5 xl:grid-cols-[1.2fr_.8fr]">
-                        <div className={panel}>
-                            <h2 className="text-lg font-bold text-slate-900">
-                                Daily operations
+
+                    {section === 'dashboard' && status && (
+                        <div
+                            role="status"
+                            className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"
+                        >
+                            {status}
+                        </div>
+                    )}
+                    {section === 'dashboard' && historyUrl && (
+                        <p className="my-4">
+                            <a className="underline" href={historyUrl}>
+                                Preserved project history
+                            </a>{' '}
+                            · Administrative totals include retained records.
+                            Detached history remains restricted to
+                            Admin/SuperAdmin.
+                        </p>
+                    )}
+                    {section === 'dashboard' && identity.role === 'Admin' && (
+                        <div className="space-y-6">
+                            <section
+                                aria-label="Administration metrics"
+                                className="jr-admin-metrics grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+                            >
+                                <StatCard
+                                    label="Maintenance projects"
+                                    value={counts.maintenanceProjects ?? 0}
+                                    detail="Linked road maintenance projects"
+                                    icon={FolderKanban}
+                                />
+                                <StatCard
+                                    label="Maintenance records"
+                                    value={counts.maintenanceRecords ?? 0}
+                                    detail="Quarterly maintenance history"
+                                    icon={Activity}
+                                />
+                                <StatCard
+                                    label="Monthly updates"
+                                    value={counts.monthlyUpdates ?? 0}
+                                    detail="Progress reports"
+                                    icon={FileText}
+                                />
+                                <StatCard
+                                    label="LGUs"
+                                    value={counts.lgus}
+                                    detail="Municipalities in inventory"
+                                    icon={Building2}
+                                />
+                            </section>
+                            {analytics && (
+                                <DdDashboardAnalytics
+                                    data={analytics}
+                                    compact
+                                />
+                            )}
+                            <section className="grid gap-5 xl:grid-cols-[1.2fr_.8fr]">
+                                <div className={panel}>
+                                    <h2 className="text-lg font-bold text-slate-900">
+                                        Daily operations
+                                    </h2>
+                                    <p className="mt-1 text-sm text-slate-500">
+                                        Access the workflows that Admin is
+                                        permitted to manage.
+                                    </p>
+                                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                                        {[
+                                            [
+                                                'Maintenance Projects',
+                                                '/dd-phase3/projects',
+                                                'Create and maintain projects and records',
+                                            ],
+                                            [
+                                                'Monthly Updates',
+                                                '/dd-phase3/updates',
+                                                'Review monthly progress and evidence',
+                                            ],
+                                            [
+                                                'Project Documents',
+                                                '/dd-phase3/documents',
+                                                'Manage formal project documentation',
+                                            ],
+                                            [
+                                                'Road Sections',
+                                                '/dd-phase3/roads',
+                                                'Manage mapped road coverages',
+                                            ],
+                                            [
+                                                'LGU',
+                                                '/dd-phase3/lgus',
+                                                'Manage municipality details',
+                                            ],
+                                            [
+                                                'User Management',
+                                                '/dd-phase3/users',
+                                                'Provision accounts and manage Engineer profiles',
+                                            ],
+                                        ].map(([label, href, summary]) => (
+                                            <Link
+                                                key={label}
+                                                href={href}
+                                                className="group flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-amber-300 hover:bg-amber-50"
+                                            >
+                                                <div>
+                                                    <div className="text-sm font-semibold text-slate-900">
+                                                        {label}
+                                                    </div>
+                                                    <p className="mt-1 text-xs text-slate-500">
+                                                        {summary}
+                                                    </p>
+                                                </div>
+                                                <ArrowRight className="h-4 w-4 shrink-0 text-amber-700 transition group-hover:translate-x-1" />
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="space-y-5">
+                                    <div className={panel}>
+                                        <h2 className="text-lg font-bold text-slate-900">
+                                            Operations inventory
+                                        </h2>
+                                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                            <StatCard
+                                                label="Road coverages"
+                                                value={counts.roadCoverages}
+                                                detail="Physical mapped road inventory"
+                                                icon={Wrench}
+                                            />
+                                            <StatCard
+                                                label="Documents"
+                                                value={counts.documents ?? 0}
+                                                detail="Linked formal documents"
+                                                icon={FileText}
+                                            />
+                                            <StatCard
+                                                label="User accounts"
+                                                value={counts.userAccounts ?? 0}
+                                                detail="Authorized business users"
+                                                icon={Users}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="rounded-2xl border border-[#e9d5bb] bg-[#fff9ef] p-5 text-sm text-slate-700">
+                                        <div className="font-bold text-slate-900">
+                                            Admin versus SuperAdmin
+                                        </div>
+                                        <p className="mt-2 leading-6">
+                                            Admin and SuperAdmin share ordinary
+                                            CRUD where authorized by the Data
+                                            Dictionary. This dashboard is
+                                            designed for daily work; the
+                                            SuperAdmin has a separate Command
+                                            Center with system-wide activity and
+                                            governance visibility.
+                                        </p>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                    )}
+                    {section === 'dashboard' && identity.role !== 'Admin' && (
+                        <section className={`${panel} mt-6`}>
+                            <h2 className="text-xl font-bold">
+                                Workspace overview
                             </h2>
-                            <p className="mt-1 text-sm text-slate-500">
-                                Access the workflows that Admin is permitted to
-                                manage.
-                            </p>
-                            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                                 {[
                                     [
-                                        'Maintenance Projects',
-                                        '/dd-phase3/projects',
-                                        'Create and maintain projects and records',
+                                        'LGUs',
+                                        counts.lgus,
+                                        'Municipality directory',
+                                        Building2,
                                     ],
                                     [
-                                        'Monthly Updates',
-                                        '/dd-phase3/updates',
-                                        'Review monthly progress and evidence',
+                                        'Road coverages',
+                                        counts.roadCoverages,
+                                        'Mapped inventory',
+                                        Wrench,
                                     ],
                                     [
-                                        'Project Documents',
-                                        '/dd-phase3/documents',
-                                        'Manage formal project documentation',
+                                        'Maintenance projects',
+                                        counts.maintenanceProjects,
+                                        'Tracked road maintenance work',
+                                        ShieldCheck,
                                     ],
                                     [
-                                        'Road Sections',
-                                        '/dd-phase3/roads',
-                                        'Manage mapped road coverages',
+                                        'User accounts',
+                                        counts.userAccounts,
+                                        'Provisioned user identities',
+                                        Users,
                                     ],
-                                    [
-                                        'LGU',
-                                        '/dd-phase3/lgus',
-                                        'Manage municipality details',
-                                    ],
-                                    [
-                                        'User Management',
-                                        '/dd-phase3/users',
-                                        'Provision accounts and manage Engineer profiles',
-                                    ],
-                                ].map(([label, href, summary]) => (
-                                    <Link
-                                        key={label}
-                                        href={href}
-                                        className="group flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-amber-300 hover:bg-amber-50"
-                                    >
-                                        <div>
-                                            <div className="text-sm font-semibold text-slate-900">
-                                                {label}
-                                            </div>
-                                            <p className="mt-1 text-xs text-slate-500">
-                                                {summary}
-                                            </p>
-                                        </div>
-                                        <ArrowRight className="h-4 w-4 shrink-0 text-amber-700 transition group-hover:translate-x-1" />
-                                    </Link>
+                                ].map(([label, value, detail, icon]) => (
+                                    <StatCard
+                                        key={String(label)}
+                                        label={String(label)}
+                                        value={
+                                            value === null
+                                                ? 'Scoped'
+                                                : Number(value)
+                                        }
+                                        detail={String(detail)}
+                                        icon={icon as typeof Users}
+                                    />
                                 ))}
                             </div>
-                        </div>
-                        <div className="space-y-5">
-                            <div className={panel}>
-                                <h2 className="text-lg font-bold text-slate-900">
-                                    Operations inventory
-                                </h2>
-                                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                                    <StatCard
-                                        label="Road coverages"
-                                        value={counts.roadCoverages}
-                                        detail="Physical mapped road inventory"
-                                        icon={Wrench}
-                                    />
-                                    <StatCard
-                                        label="Documents"
-                                        value={counts.documents ?? 0}
-                                        detail="Linked formal documents"
-                                        icon={FileText}
-                                    />
-                                    <StatCard
-                                        label="User accounts"
-                                        value={counts.userAccounts ?? 0}
-                                        detail="Authorized business users"
-                                        icon={Users}
-                                    />
-                                </div>
-                            </div>
-                            <div className="rounded-2xl border border-[#e9d5bb] bg-[#fff9ef] p-5 text-sm text-slate-700">
-                                <div className="font-bold text-slate-900">
-                                    Admin versus SuperAdmin
-                                </div>
-                                <p className="mt-2 leading-6">
-                                    Admin and SuperAdmin share ordinary CRUD
-                                    where authorized by the Data Dictionary.
-                                    This dashboard is designed for daily work;
-                                    the SuperAdmin has a separate Command Center
-                                    with system-wide activity and governance
-                                    visibility.
-                                </p>
-                            </div>
-                        </div>
-                    </section>
-                </div>
-            )}
-            {section === 'dashboard' && identity.role !== 'Admin' && (
-                <section className={`${panel} mt-6`}>
-                    <h2 className="text-xl font-bold">Workspace overview</h2>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                        {[
-                            [
-                                'LGUs',
-                                counts.lgus,
-                                'Municipality directory',
-                                Building2,
-                            ],
-                            [
-                                'Road coverages',
-                                counts.roadCoverages,
-                                'Mapped inventory',
-                                Wrench,
-                            ],
-                            [
-                                'Maintenance projects',
-                                counts.maintenanceProjects,
-                                'Tracked road maintenance work',
-                                ShieldCheck,
-                            ],
-                            [
-                                'User accounts',
-                                counts.userAccounts,
-                                'Provisioned user identities',
-                                Users,
-                            ],
-                        ].map(([label, value, detail, icon]) => (
-                            <StatCard
-                                key={String(label)}
-                                label={String(label)}
-                                value={
-                                    value === null ? 'Scoped' : Number(value)
-                                }
-                                detail={String(detail)}
-                                icon={icon as typeof Users}
-                            />
-                        ))}
-                    </div>
-                </section>
-            )}
+                        </section>
+                    )}
                 </main>
             </ProjectWorkspace>
         </div>

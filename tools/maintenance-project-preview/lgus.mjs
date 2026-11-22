@@ -221,8 +221,10 @@ lgus.push({ id: nextId++, ...values });
         const target = new URL(deletionReturn(url, current.id), 'http://jairoads.local');
         target.searchParams.delete('deleted');
         target.searchParams.set('saved', 'updated');
+
         return { location: target.pathname + target.search };
     }
+
     return { location: `/lgus?${new URLSearchParams({ search: values.municipality_name, sort: 'asc', saved: 'created' })}` };
 }
 

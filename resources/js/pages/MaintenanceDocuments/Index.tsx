@@ -299,7 +299,9 @@ export default function Index({
                                                 >
                                                     {doc.document_title}
                                                 </Link>
-                                                {Boolean(doc.file_name?.trim()) && (
+                                                {Boolean(
+                                                    doc.file_name?.trim(),
+                                                ) && (
                                                     <div
                                                         className="jr-project-id truncate"
                                                         title={doc.file_name}
@@ -357,7 +359,8 @@ export default function Index({
                                                         Edit Maintenance
                                                         Document
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem variant="destructive"
+                                                    <DropdownMenuItem
+                                                        variant="destructive"
                                                         disabled={
                                                             page.props
                                                                 .canonicalFrontend ===
@@ -365,7 +368,9 @@ export default function Index({
                                                                 ? !doc.delete_url
                                                                 : !enabled
                                                         }
-                                                        onSelect={() => deletion.open([doc])}
+                                                        onSelect={() =>
+                                                            deletion.open([doc])
+                                                        }
                                                     >
                                                         <Trash2 />
                                                         Delete Maintenance

@@ -1,15 +1,20 @@
 // Read-only login UX smoke test against a running JaiROADS application.
 import assert from 'node:assert/strict';
-import process from 'node:process';
 import { mkdir } from 'node:fs/promises';
+import process from 'node:process';
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const base = (process.env.JAIROADS_LOGIN_TEST_URL || 'http://127.0.0.1:8000').replace(/\/$/, '');
 const evidence = process.env.LOGIN_BROWSER_EVIDENCE_DIR;
-if (evidence) await mkdir(evidence, { recursive: true });
+
+if (evidence) {
+await mkdir(evidence, { recursive: true });
+}
+
 const browser = await chromium.launch({
     executablePath: process.env.CHROME_EXECUTABLE || undefined,
     headless: true,
 });
+
 try {
     for (const [width, height] of [[320, 568], [360, 800], [390, 844], [412, 915], [768, 1024], [1024, 768], [1440, 900]]) {
         const context = await browser.newContext({
@@ -27,6 +32,7 @@ try {
         await page.getByLabel('Email address').waitFor();
         const layout = await page.evaluate(() => {
             const rect = selector => document.querySelector(selector).getBoundingClientRect();
+
             return {
                 width: innerWidth,
                 scrollWidth: document.documentElement.scrollWidth,
@@ -38,6 +44,7 @@ try {
         });
         assert.ok(layout.scrollWidth <= layout.width + 1, 'Horizontal overflow at ' + width);
         assert.notEqual(layout.focused, 'email', 'No unsolicited focus at ' + width);
+
         if (width <= 1023) {
             assert.ok(layout.banner <= 110, 'Mobile brand is too tall at ' + width);
             assert.equal(layout.caption, 'none');
@@ -52,6 +59,7 @@ try {
             await page.getByRole('button', { name: 'Previous slide' }).click();
             await page.getByRole('button', { name: 'Resume slideshow' }).click();
         }
+
         const password = page.getByLabel('Password', { exact: true });
         await password.fill('Disposable-visual-test');
         await page.getByRole('button', { name: 'Show password' }).click();
@@ -65,16 +73,23 @@ try {
         assert.equal(await remember.isChecked(), true);
         await remember.uncheck();
         const help = page.locator('.jr-login-passkey-help');
+
         if (await help.count()) {
             await help.locator('summary').click();
             assert.equal(await help.evaluate(element => element.open), true);
             await help.locator('summary').click();
         }
+
         assert.deepEqual(errors, [], 'Browser exceptions at ' + width);
-        if (evidence) await page.screenshot({ path: evidence + '/login-' + width + '.png', fullPage: true });
+
+        if (evidence) {
+await page.screenshot({ path: evidence + '/login-' + width + '.png', fullPage: true });
+}
+
         console.log('PASS', width, height, JSON.stringify(layout));
         await context.close();
     }
+
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
     const page = await context.newPage();
     await page.goto(base + '/login');

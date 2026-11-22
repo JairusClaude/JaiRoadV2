@@ -1,8 +1,8 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialog';
 import { DocumentAttachment } from '@/components/maintenance-documents/document-file';
+import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialog';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { ProjectSelector } from '@/components/monthly-updates/project-selector';
 import { Button } from '@/components/ui/button';
@@ -87,19 +87,15 @@ export default function Form(parents: DocumentParents) {
     });
     const cancel = () => router.visit(back);
     const save = (confirmed = false) => {
-
         if (disabled || lock.current) {
             return;
         }
 
         form.clearErrors();
-        const errors: Partial<
-            Record<keyof Values, string>
-        > = {};
+        const errors: Partial<Record<keyof Values, string>> = {};
 
         if (!project) {
-            errors.project_id =
-                'Select a Maintenance Project.';
+            errors.project_id = 'Select a Maintenance Project.';
         }
 
         if (!record || record.project_id !== project?.id) {
@@ -120,9 +116,7 @@ export default function Form(parents: DocumentParents) {
         }
 
         if (form.data.attachment) {
-            const problem = documentFileError(
-                form.data.attachment,
-            );
+            const problem = documentFileError(form.data.attachment);
 
             if (problem) {
                 errors.attachment = problem;
@@ -131,15 +125,21 @@ export default function Form(parents: DocumentParents) {
 
         if (Object.keys(errors).length) {
             form.setError(errors);
-            document
-                .getElementById(Object.keys(errors)[0])
-                ?.focus();
+            document.getElementById(Object.keys(errors)[0])?.focus();
 
             return;
         }
 
-        if (savedRemovalPending && !confirmed) { setConfirmRemoval(true); return; }
-        form.transform((data) => ({ ...data, remove_attachment: savedRemovalPending }));
+        if (savedRemovalPending && !confirmed) {
+            setConfirmRemoval(true);
+
+            return;
+        }
+
+        form.transform((data) => ({
+            ...data,
+            remove_attachment: savedRemovalPending,
+        }));
         lock.current = true;
         form.submit(
             doc ? 'put' : 'post',
@@ -153,7 +153,6 @@ export default function Form(parents: DocumentParents) {
                 },
             },
         );
-
     };
 
     return (
@@ -189,7 +188,10 @@ export default function Form(parents: DocumentParents) {
                     </div>
                     <form
                         noValidate
-                        onSubmit={(e) => { e.preventDefault(); save(); }}
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            save();
+                        }}
                     >
                         <section>
                             <h2>Maintenance Information</h2>
@@ -364,13 +366,20 @@ export default function Form(parents: DocumentParents) {
                                     (page.props.canonicalFrontend === true &&
                                         !!doc)
                                 }
-                                error={form.errors.attachment || (form.errors as Record<string, string>).file}
+                                error={
+                                    form.errors.attachment ||
+                                    (form.errors as Record<string, string>).file
+                                }
                                 onChange={(file) => {
                                     form.clearErrors('attachment');
                                     form.setData('attachment', file);
                                 }}
                                 savedRemovalPending={savedRemovalPending}
-                                onRemoveSaved={doc?.file_name && doc.delete_url ? () => setSavedRemovalPending(true) : undefined}
+                                onRemoveSaved={
+                                    doc?.file_name && doc.delete_url
+                                        ? () => setSavedRemovalPending(true)
+                                        : undefined
+                                }
                             />
                         </section>
                         <footer className="jr-form-footer">
@@ -403,7 +412,22 @@ export default function Form(parents: DocumentParents) {
                         </footer>
                     </form>
                 </div>
-                <DeletionDialog open={confirmRemoval} title="Remove attachment permanently?" description="Save the changes and permanently remove the selected private Storage file. The document title and information will be retained." selectionLabel="Selected attachment" processing={form.processing} error={Object.values(form.errors).join(' ')} confirmLabel="Save and Remove" busyLabel="Saving…" onClose={() => { if (!form.processing) setConfirmRemoval(false); }} onConfirm={() => save(true)}>
+                <DeletionDialog
+                    open={confirmRemoval}
+                    title="Remove attachment permanently?"
+                    description="Save the changes and permanently remove the selected private Storage file. The document title and information will be retained."
+                    selectionLabel="Selected attachment"
+                    processing={form.processing}
+                    error={Object.values(form.errors).join(' ')}
+                    confirmLabel="Save and Remove"
+                    busyLabel="Saving…"
+                    onClose={() => {
+                        if (!form.processing) {
+                            setConfirmRemoval(false);
+                        }
+                    }}
+                    onConfirm={() => save(true)}
+                >
                     <p className="jr-delete-target-title">{doc?.file_name}</p>
                 </DeletionDialog>
             </ProjectWorkspace>

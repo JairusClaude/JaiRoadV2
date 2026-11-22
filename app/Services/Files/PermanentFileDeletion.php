@@ -6,6 +6,7 @@ namespace App\Services\Files;
 
 use App\Models\User;
 use App\Services\AccountIdentityResolver;
+use App\Services\AuditValues;
 use App\Services\Documents\PrivateSupabaseStorage;
 use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
 use App\Services\OperationAudit;
@@ -237,14 +238,14 @@ final class PermanentFileDeletion
                 if ($intent->kind === 'document' && $row !== null) {
                     // Canonical file columns are NOT NULL. Empty strings explicitly
                     // represent no attachment; never manufacture a Storage path.
-                    $before = app(\App\Services\AuditValues::class)->persisted('MaintenanceDocument', (int) $intent->entity_id);
+                    $before = app(AuditValues::class)->persisted('MaintenanceDocument', (int) $intent->entity_id);
                     $target->update(['file_name' => '', 'file_path' => '', 'updated_at' => now()]);
                     if (! (clone $target)->where('file_name', '')->where('file_path', '')->exists()) {
                         throw new \RuntimeException('Attachment removal was not confirmed.');
                     }
                     $this->audit->record($actor, 'UPDATE', 'MaintenanceDocument', (int) $intent->entity_id,
                         'Attachment permanently removed; document information retained.',
-                        app(\App\Services\AuditValues::class)->persisted('MaintenanceDocument', (int) $intent->entity_id), $before + ['initiated_by' => (int) $intent->initiated_by]);
+                        app(AuditValues::class)->persisted('MaintenanceDocument', (int) $intent->entity_id), $before + ['initiated_by' => (int) $intent->initiated_by]);
                 } elseif ($intent->kind === 'media') {
                     $target->delete();
                     if ($target->exists()) {

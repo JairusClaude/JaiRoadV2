@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Services\PreviewDataService;
 use App\Services\RoleAccess;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Response;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 /**
  * Maintenance Document frontend pages. Shared identity, scoping, document
@@ -21,7 +23,7 @@ final class MaintenanceDocumentPageController extends OperationsFrontendControll
     public function documentIndex(Request $request): Response
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::documentIndex($request);
+            return PreviewDataService::documentIndex($request);
         }
 
         $actor = $this->actor($request);
@@ -42,7 +44,7 @@ final class MaintenanceDocumentPageController extends OperationsFrontendControll
     public function documentShow(Request $request, int $id): Response
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::documentShow($request, $id);
+            return PreviewDataService::documentShow($request, $id);
         }
 
         $actor = $this->actor($request);
@@ -55,7 +57,7 @@ final class MaintenanceDocumentPageController extends OperationsFrontendControll
     public function documentForm(Request $request, ?int $id = null): Response
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::documentForm($request, $id);
+            return PreviewDataService::documentForm($request, $id);
         }
 
         $actor = $this->actor($request);
@@ -118,10 +120,11 @@ final class MaintenanceDocumentPageController extends OperationsFrontendControll
         foreach ($ids as $id) {
             try {
                 $this->fileDeletions->deleteDocumentRecord($request->user(), $id);
-            } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $error) {
-                throw \Illuminate\Validation\ValidationException::withMessages(['file' => 'Document deletion unavailable or not confirmed. Refresh and review remaining records.']);
+            } catch (HttpExceptionInterface $error) {
+                throw ValidationException::withMessages(['file' => 'Document deletion unavailable or not confirmed. Refresh and review remaining records.']);
             }
         }
+
         return redirect($this->relatedReturn($request, $actor, self::BASE.'/maintenance-documents'))->with('dd_operations_status', 'Selected documents permanently deleted.');
     }
 }

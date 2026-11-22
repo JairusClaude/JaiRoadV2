@@ -2,8 +2,8 @@
 
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Fortify\Features;
 
@@ -28,6 +28,7 @@ test('reset password link can be requested', function () {
         $mail = $notification->toMail($user);
         expect($mail->subject)->toBe('Reset your JaiROADS password')
             ->and($mail->actionUrl)->toStartWith(rtrim((string) config('app.url'), '/').'/reset-password/');
+
         return true;
     });
 });
@@ -92,7 +93,6 @@ test('password cannot be reset with invalid token', function () {
 
     $response->assertSessionHasErrors('email');
 });
-
 
 test('production recovery refuses log-only delivery rather than exposing reset tokens', function () {
     Notification::fake();

@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -36,6 +37,7 @@ final class PreservedHistoryController extends Controller
         $login = $this->login($request);
         $v = $request->validate(['scope' => ['required', 'in:project,record']]);
         $actor = $this->identities->resolve($login);
+
         return response()->json(app(DeletionChallenge::class)->issue($actor['account_id'], $v['scope']))
             ->header('Cache-Control', 'private, no-store');
     }
@@ -53,10 +55,11 @@ final class PreservedHistoryController extends Controller
         abort_if((int) $request->header('Content-Length', 0) > 524288, 413);
         try {
             $receipt = app(DeletionChallenge::class)->cameraReceipt($actor['account_id'], $scope, $token, $request->getContent());
-        } catch (\Illuminate\Validation\ValidationException $error) {
+        } catch (ValidationException $error) {
             return response()->json(['message' => $error->getMessage(), 'errors' => $error->errors()], 422)
                 ->header('Cache-Control', 'private, no-store');
         }
+
         return response()->json(['receipt' => $receipt])->header('Cache-Control', 'private, no-store');
     }
 
@@ -93,7 +96,7 @@ final class PreservedHistoryController extends Controller
         app(DeletionChallenge::class)->verify($request, $this->identities->resolve($login)['account_id'], 'project');
         foreach ($v['project_ids'] as $id) {
             if (! isset($v['confirmation_tokens'][(string) $id])) {
-                throw \Illuminate\Validation\ValidationException::withMessages(['confirmation_tokens' => 'Review all selected projects first.']);
+                throw ValidationException::withMessages(['confirmation_tokens' => 'Review all selected projects first.']);
             }
         }
         $deletedCount = 0;
@@ -108,7 +111,7 @@ final class PreservedHistoryController extends Controller
             }
         }
 
-        $message = "Deleted {$deletedCount} project(s)." . (!empty($failedProjects) ? ' Some projects could not be fully deleted. Refresh to review remaining data.' : '');
+        $message = "Deleted {$deletedCount} project(s).".(! empty($failedProjects) ? ' Some projects could not be fully deleted. Refresh to review remaining data.' : '');
 
         if ($request->expectsJson()) {
             return response()->json(['state' => $failedProjects === [] ? 'completed' : 'partial', 'message' => $message]);

@@ -3,8 +3,12 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\AccountProvisioningController;
+use App\Http\Controllers\OperationsFrontendController;
 use App\Http\Controllers\UserManagement\EngineerAdministrationController;
+use App\Services\AccountIdentityResolver;
 use App\Services\MaintenanceProjects\VerifiedProjectAccount;
+use App\Services\PreviewDataService;
+use App\Services\RoleAccess;
 use App\Services\UserManagement\AccountProvisioningRoles;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -14,8 +18,8 @@ use Inertia\Inertia;
 // Explicitly linked Admin / SuperAdmin only. Read operations remain unchanged.
 Route::middleware(['web'])->group(function (): void {
     Route::get('/user-management', function () {
-        if (\App\Http\Controllers\OperationsFrontendController::isPreview(request())) {
-            $store = \App\Services\PreviewDataService::getStore();
+        if (OperationsFrontendController::isPreview(request())) {
+            $store = PreviewDataService::getStore();
             $accounts = [
                 ['id' => 1, 'username' => 'User1', 'accountType' => 'admin', 'is_active' => true, 'engineers_id' => 1, 'created_by' => null],
                 ['id' => 2, 'username' => 'User2', 'accountType' => 'user', 'is_active' => true, 'engineers_id' => 2, 'created_by' => null],
@@ -40,7 +44,7 @@ Route::middleware(['web'])->group(function (): void {
                 'municipality_name' => $l['municipality_name'],
             ])->all();
 
-            return \App\Services\PreviewDataService::render('user-management/Index', request(), [
+            return PreviewDataService::render('user-management/Index', request(), [
                 'initialAccounts' => $accounts,
                 'initialEngineers' => $engineers,
                 'initialLgus' => $lgus,
@@ -56,14 +60,14 @@ Route::middleware(['web'])->group(function (): void {
 
         abort_unless(request()->user() !== null, 401);
         if (request()->user()->getAttribute('dd_user_account_id') !== null) {
-            $identity = app(\App\Services\AccountIdentityResolver::class)->resolve(request()->user());
-            abort_unless($identity !== null && \App\Services\RoleAccess::canManageAccounts($identity['role']), 403);
+            $identity = app(AccountIdentityResolver::class)->resolve(request()->user());
+            abort_unless($identity !== null && RoleAccess::canManageAccounts($identity['role']), 403);
 
             return redirect()->route('jairoads.dd-phase3.show', ['section' => 'users']);
         }
         $role = app(VerifiedProjectAccount::class)->role(request()->user());
         if ($role === null) {
-            $identity = app(\App\Services\AccountIdentityResolver::class)->resolve(request()->user());
+            $identity = app(AccountIdentityResolver::class)->resolve(request()->user());
             $role = $identity ? strtolower((string) $identity['role']) : null;
         }
         abort_unless(in_array($role, ['admin', 'superadmin'], true), 403);

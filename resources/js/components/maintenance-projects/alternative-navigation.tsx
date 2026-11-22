@@ -42,37 +42,37 @@ export function AlternativeNavigation({
           path.startsWith(workspaceHref('/maintenance-records'))
             ? 'maintenance-records'
             : normalized.startsWith('/road-coverages') ||
-              path.startsWith(workspaceHref('/road-coverages'))
+                path.startsWith(workspaceHref('/road-coverages'))
               ? 'road-coverages'
               : normalized.startsWith('/lgus') ||
-                path.startsWith(workspaceHref('/lgus')) ||
-                path.startsWith('/dd-phase3/lgus')
+                  path.startsWith(workspaceHref('/lgus')) ||
+                  path.startsWith('/dd-phase3/lgus')
                 ? 'lgus'
                 : normalized.startsWith('/maintenance-documents') ||
-                  path.startsWith(workspaceHref('/maintenance-documents'))
+                    path.startsWith(workspaceHref('/maintenance-documents'))
                   ? 'maintenance-documents'
                   : normalized.startsWith('/monthly-updates') ||
-                    path.startsWith(workspaceHref('/monthly-updates'))
+                      path.startsWith(workspaceHref('/monthly-updates'))
                     ? 'monthly-updates'
                     : normalized.startsWith('/dashboard') ||
-                      path.startsWith('/dd-phase3/dashboard') ||
-                      path.startsWith('/dd-superadmin-landing')
+                        path.startsWith('/dd-phase3/dashboard') ||
+                        path.startsWith('/dd-superadmin-landing')
                       ? 'dashboard'
                       : normalized.startsWith('/user-accounts') ||
-                        normalized.startsWith('/user-management') ||
-                        path.startsWith('/dd-phase3/users') ||
-                        path.startsWith('/user-management')
+                          normalized.startsWith('/user-management') ||
+                          path.startsWith('/dd-phase3/users') ||
+                          path.startsWith('/user-management')
                         ? 'user-management'
                         : normalized.startsWith('/audit-logs') ||
-                          path.startsWith('/dd-phase3/audit-logs') ||
-                          path.startsWith(workspaceHref('/audit-logs'))
+                            path.startsWith('/dd-phase3/audit-logs') ||
+                            path.startsWith(workspaceHref('/audit-logs'))
                           ? 'audit-logs'
-                        : normalized.startsWith('/settings') ||
-                          path.startsWith('/dd-phase3/settings') ||
-                          path.startsWith('/dd-phase3/ops/settings') ||
-                          path.startsWith('/settings/profile')
-                          ? 'settings'
-                          : 'maintenance-projects'
+                          : normalized.startsWith('/settings') ||
+                              path.startsWith('/dd-phase3/settings') ||
+                              path.startsWith('/dd-phase3/ops/settings') ||
+                              path.startsWith('/settings/profile')
+                            ? 'settings'
+                            : 'maintenance-projects'
         : typeof page.props.navigationSection === 'string'
           ? page.props.navigationSection
           : 'maintenance-projects';
@@ -83,6 +83,7 @@ export function AlternativeNavigation({
 
     if (lastSection !== section) {
         setLastSection(section);
+
         if (
             section !== 'maintenance-projects' &&
             section !== 'maintenance-records'
@@ -176,7 +177,17 @@ export function AlternativeNavigation({
                             if (parent) {
                                 setSubmenu(true);
                             }
-                            if (!event.defaultPrevented && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) onNavigate?.();
+
+                            if (
+                                !event.defaultPrevented &&
+                                event.button === 0 &&
+                                !event.ctrlKey &&
+                                !event.metaKey &&
+                                !event.shiftKey &&
+                                !event.altKey
+                            ) {
+                                onNavigate?.();
+                            }
                         }}
                         className={`jr-nav-link ${active ? 'jr-active' : ''}`}
                         aria-current={active ? 'page' : undefined}
@@ -268,7 +279,16 @@ export function AlternativeNavigation({
                                                     : `${directoryUrl}/navigation/maintenance-records`
                                             }
                                             onClick={(event) => {
-                                                if (!event.defaultPrevented && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) onNavigate?.();
+                                                if (
+                                                    !event.defaultPrevented &&
+                                                    event.button === 0 &&
+                                                    !event.ctrlKey &&
+                                                    !event.metaKey &&
+                                                    !event.shiftKey &&
+                                                    !event.altKey
+                                                ) {
+                                                    onNavigate?.();
+                                                }
                                             }}
                                             className={`jr-nav-link ${recordsActive ? 'jr-active' : ''}`}
                                             aria-current={

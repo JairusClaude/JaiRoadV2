@@ -8,6 +8,7 @@ import {
 } from '@/components/directory-controls';
 import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialog';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
+import { SimplifiedCoverageMap } from '@/components/road-coverages/simplified-coverage-map';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -19,7 +20,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { editUrl } from '@/lib/form-navigation';
 import { workspaceHref } from '@/lib/workspace-navigation';
-import { SimplifiedCoverageMap } from '@/components/road-coverages/simplified-coverage-map';
 import type {
     RoadCoverageDirectoryProps,
     RoadCoverageFilters,
@@ -63,13 +63,15 @@ export default function Index({
     const [busy, setBusy] = useState(false);
     const [selecting, setSelecting] = useState(false);
     const [selected, setSelected] = useState<Set<number>>(new Set());
-    const [deleteTargets, setDeleteTargets] = useState<RoadCoverageRow[] | null>(
-        null,
-    );
+    const [deleteTargets, setDeleteTargets] = useState<
+        RoadCoverageRow[] | null
+    >(null);
     const [deleting, setDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState('');
     const [loadedMap, setLoadedMap] = useState(mapCoverages ?? []);
-    const [mapCursor, setMapCursor] = useState<number | null>(mapNextCursor ?? null);
+    const [mapCursor, setMapCursor] = useState<number | null>(
+        mapNextCursor ?? null,
+    );
     const [mapLoading, setMapLoading] = useState(false);
     const [mapError, setMapError] = useState('');
     const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -82,22 +84,38 @@ export default function Index({
     }, [mapCoverages, mapNextCursor]);
 
     const loadMoreMap = async () => {
-        if (mapCursor === null || mapLoading) return;
+        if (mapCursor === null || mapLoading) {
+            return;
+        }
+
         setMapLoading(true);
         setMapError('');
+
         try {
             const response = await fetch(
                 `/dd-phase3/ui/map/road-index?before=${encodeURIComponent(mapCursor)}`,
-                { credentials: 'same-origin', headers: { Accept: 'application/json' } },
+                {
+                    credentials: 'same-origin',
+                    headers: { Accept: 'application/json' },
+                },
             );
-            if (!response.ok) throw new Error('The next road map page is unavailable.');
+
+            if (!response.ok) {
+                throw new Error('The next road map page is unavailable.');
+            }
+
             const result = (await response.json()) as {
                 data: NonNullable<RoadCoverageDirectoryProps['mapCoverages']>;
                 next_cursor: number | null;
             };
-            if (!Array.isArray(result.data)) throw new Error('Unexpected map response.');
+
+            if (!Array.isArray(result.data)) {
+                throw new Error('Unexpected map response.');
+            }
+
             setLoadedMap((previous) => {
                 const seen = new Set(previous.map((road) => road.id));
+
                 return [
                     ...previous,
                     ...result.data.filter((road) => !seen.has(road.id)),
@@ -135,7 +153,9 @@ export default function Index({
         coverages.data.every((c) => selected.has(c.id));
 
     const confirmDelete = async () => {
-        if (!deleteTargets || deleting) return;
+        if (!deleteTargets || deleting) {
+            return;
+        }
 
         const blocked = deleteTargets.filter((c) => c.has_projects);
 
@@ -259,442 +279,506 @@ export default function Index({
                 </div>
 
                 {/* Main White Content Container matching Maintenance Documents smooth fully-rounded top corners */}
-                <main className="jr-road-coverage-main-container relative -mt-3.5 -mx-7 rounded-t-[20px] bg-white px-7 pt-6 pb-8 shadow-sm">
+                <main className="jr-road-coverage-main-container relative -mx-7 -mt-3.5 rounded-t-[20px] bg-white px-7 pt-6 pb-8 shadow-sm">
                     {/* 1. Metric Cards */}
                     <section
                         aria-label="Road coverage statistics"
                         className="jr-metrics-grid mb-6 grid gap-4 sm:grid-cols-3"
                     >
-                    <div className="jr-metric-card rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
-                        <p className="text-xs font-semibold uppercase tracking-wider text-[#98502D]">
-                            Total Road Coverages
-                        </p>
-                        <p className="mt-2 text-3xl font-bold text-[#1E293B]">
-                            {displayedTotalCoverages}
-                        </p>
-                        <p className="mt-1 text-xs text-[#64748B]">
-                            Registered road coverages
-                        </p>
-                    </div>
-                    <div className="jr-metric-card rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
-                        <p className="text-xs font-semibold uppercase tracking-wider text-[#64748B]">
-                            Linked Projects
-                        </p>
-                        <p className="mt-2 text-3xl font-bold text-[#1E293B]">
-                            {displayedLinkedProjects}
-                        </p>
-                        <p className="mt-1 text-xs text-[#64748B]">
-                            Maintenance projects linked to coverages
-                        </p>
-                    </div>
-                    <div className="jr-metric-card rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
-                        <p className="text-xs font-semibold uppercase tracking-wider text-[#64748B]">
-                            Total Network Length
-                        </p>
-                        <p className="mt-2 text-3xl font-bold text-[#1E293B]">
-                            {Number(displayedTotalLengthKm).toFixed(2)}{' '}
-                            <span className="text-sm font-medium text-[#64748B]">
-                                km
-                            </span>
-                        </p>
-                        <p className="mt-1 text-xs text-[#64748B]">
-                            Across all road coverages
-                        </p>
-                    </div>
-                </section>
-
-                {/* 2. Simplified Coverage Map (Separated Cards Layout) */}
-                <section
-                    aria-label="Road coverage map"
-                    className="jr-map-card-container mb-6 rounded-2xl border border-[#E2E8F0] bg-white p-4 sm:p-5 shadow-sm overflow-hidden"
-                >
-                    <SimplifiedCoverageMap coverages={loadedMap} />
-                    {mapCursor !== null && (
-                        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
-                            <p>
-                                Showing {loadedMap.length} of {displayedTotalCoverages} road coverages on the map.
+                        <div className="jr-metric-card rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+                            <p className="text-xs font-semibold tracking-wider text-[#98502D] uppercase">
+                                Total Road Coverages
                             </p>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                disabled={mapLoading}
-                                onClick={() => void loadMoreMap()}
-                            >
-                                {mapLoading ? 'Loading roads…' : 'Load more map roads'}
-                            </Button>
+                            <p className="mt-2 text-3xl font-bold text-[#1E293B]">
+                                {displayedTotalCoverages}
+                            </p>
+                            <p className="mt-1 text-xs text-[#64748B]">
+                                Registered road coverages
+                            </p>
                         </div>
-                    )}
-                    {mapError && <p role="alert" className="mt-2 text-sm text-red-700">{mapError}</p>}
-                </section>
+                        <div className="jr-metric-card rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+                            <p className="text-xs font-semibold tracking-wider text-[#64748B] uppercase">
+                                Linked Projects
+                            </p>
+                            <p className="mt-2 text-3xl font-bold text-[#1E293B]">
+                                {displayedLinkedProjects}
+                            </p>
+                            <p className="mt-1 text-xs text-[#64748B]">
+                                Maintenance projects linked to coverages
+                            </p>
+                        </div>
+                        <div className="jr-metric-card rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+                            <p className="text-xs font-semibold tracking-wider text-[#64748B] uppercase">
+                                Total Network Length
+                            </p>
+                            <p className="mt-2 text-3xl font-bold text-[#1E293B]">
+                                {Number(displayedTotalLengthKm).toFixed(2)}{' '}
+                                <span className="text-sm font-medium text-[#64748B]">
+                                    km
+                                </span>
+                            </p>
+                            <p className="mt-1 text-xs text-[#64748B]">
+                                Across all road coverages
+                            </p>
+                        </div>
+                    </section>
 
-                {/* 3. Road Coverages Directory Table (Separated Cards Layout) */}
-                <section
-                    aria-label="Road coverages directory"
-                    className="jr-table-card-container rounded-t-[20px] rounded-b-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm"
-                >
-                    <form
-                        className="jr-filters"
-                        onSubmit={(event) => {
-                            event.preventDefault();
-                            visit({ ...filters, search });
-                        }}
+                    {/* 2. Simplified Coverage Map (Separated Cards Layout) */}
+                    <section
+                        aria-label="Road coverage map"
+                        className="jr-map-card-container mb-6 overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white p-4 shadow-sm sm:p-5"
                     >
-                    <div className="jr-search">
-                        <Search className="size-[18px]" />
-                        <Input
-                            type="search"
-                            maxLength={255}
-                            aria-label="Search road coverages"
-                            placeholder="Search road coverage names..."
-                            value={search}
-                            onChange={(event) => {
-                                const value = event.target.value;
-                                setSearch(value);
-                                clearTimeout(timer.current);
-                                request.current?.cancel();
-                                timer.current = setTimeout(
-                                    () => visit({ ...filters, search: value }),
-                                    250,
+                        <SimplifiedCoverageMap coverages={loadedMap} />
+                        {mapCursor !== null && (
+                            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
+                                <p>
+                                    Showing {loadedMap.length} of{' '}
+                                    {displayedTotalCoverages} road coverages on
+                                    the map.
+                                </p>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled={mapLoading}
+                                    onClick={() => void loadMoreMap()}
+                                >
+                                    {mapLoading
+                                        ? 'Loading roads…'
+                                        : 'Load more map roads'}
+                                </Button>
+                            </div>
+                        )}
+                        {mapError && (
+                            <p
+                                role="alert"
+                                className="mt-2 text-sm text-red-700"
+                            >
+                                {mapError}
+                            </p>
+                        )}
+                    </section>
+
+                    {/* 3. Road Coverages Directory Table (Separated Cards Layout) */}
+                    <section
+                        aria-label="Road coverages directory"
+                        className="jr-table-card-container rounded-t-[20px] rounded-b-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm"
+                    >
+                        <form
+                            className="jr-filters"
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                visit({ ...filters, search });
+                            }}
+                        >
+                            <div className="jr-search">
+                                <Search className="size-[18px]" />
+                                <Input
+                                    type="search"
+                                    maxLength={255}
+                                    aria-label="Search road coverages"
+                                    placeholder="Search road coverage names..."
+                                    value={search}
+                                    onChange={(event) => {
+                                        const value = event.target.value;
+                                        setSearch(value);
+                                        clearTimeout(timer.current);
+                                        request.current?.cancel();
+                                        timer.current = setTimeout(
+                                            () =>
+                                                visit({
+                                                    ...filters,
+                                                    search: value,
+                                                }),
+                                            250,
+                                        );
+                                    }}
+                                />
+                            </div>
+                            <div className="jr-filter-row">
+                                <DirectoryFilter
+                                    label="Municipality filter"
+                                    className="jr-road-municipality-filter"
+                                    value={filters.municipality || 'all'}
+                                    options={[
+                                        {
+                                            value: 'all',
+                                            label: 'All Municipalities',
+                                        },
+                                        ...municipalities.map((lgu) => ({
+                                            value: String(lgu.id),
+                                            label: lgu.municipality_name,
+                                        })),
+                                    ]}
+                                    onChange={(value) =>
+                                        visit({
+                                            ...filters,
+                                            search,
+                                            municipality:
+                                                value === 'all' ? '' : value,
+                                        })
+                                    }
+                                />
+                                <DirectoryFilter
+                                    label="Road Condition filter"
+                                    value={filters.condition || 'all'}
+                                    options={[
+                                        {
+                                            value: 'all',
+                                            label: 'All Conditions',
+                                        },
+                                        ...['Good', 'Fair', 'Bad'].map(
+                                            (value) => ({
+                                                value,
+                                                label: value,
+                                            }),
+                                        ),
+                                    ]}
+                                    onChange={(value) =>
+                                        visit({
+                                            ...filters,
+                                            search,
+                                            condition:
+                                                value === 'all' ? '' : value,
+                                        })
+                                    }
+                                />
+                                <DirectoryFilter
+                                    label="Pavement Type filter"
+                                    value={filters.pavement || 'all'}
+                                    options={[
+                                        {
+                                            value: 'all',
+                                            label: 'All Pavements',
+                                        },
+                                        ...[
+                                            'Concrete',
+                                            'Asphalt',
+                                            'Gravel',
+                                            'Earth',
+                                        ].map((value) => ({
+                                            value,
+                                            label: value,
+                                        })),
+                                    ]}
+                                    onChange={(value) =>
+                                        visit({
+                                            ...filters,
+                                            search,
+                                            pavement:
+                                                value === 'all' ? '' : value,
+                                        })
+                                    }
+                                />
+                                <DirectoryFilter
+                                    label="Sort road coverages"
+                                    value={filters.sort}
+                                    options={[
+                                        {
+                                            value: 'newest',
+                                            label: 'Newest first',
+                                        },
+                                        {
+                                            value: 'oldest',
+                                            label: 'Oldest first',
+                                        },
+                                        {
+                                            value: 'name-asc',
+                                            label: 'Road name A–Z',
+                                        },
+                                        {
+                                            value: 'name-desc',
+                                            label: 'Road name Z–A',
+                                        },
+                                    ]}
+                                    onChange={(sort) =>
+                                        visit({
+                                            ...filters,
+                                            search,
+                                            sort: sort as RoadCoverageFilters['sort'],
+                                        })
+                                    }
+                                />
+                            </div>
+                        </form>
+                        <DirectorySelectionToolbar
+                            selecting={selecting}
+                            selectedCount={selected.size}
+                            total={coverages.total}
+                            singular="road coverage"
+                            plural="road coverages"
+                            canDelete={effectiveCanDelete}
+                            disabled={busy}
+                            onSelect={() => setSelecting(true)}
+                            onCancel={clearSelection}
+                            onDelete={() => {
+                                const targets = coverages.data.filter((c) =>
+                                    selected.has(c.id),
                                 );
+
+                                if (targets.length > 0) {
+                                    setDeleteError('');
+                                    setDeleteTargets(targets);
+                                }
                             }}
                         />
-                    </div>
-                    <div className="jr-filter-row">
-                        <DirectoryFilter
-                            label="Municipality filter"
-                            className="jr-road-municipality-filter"
-                            value={filters.municipality || 'all'}
-                            options={[
-                                { value: 'all', label: 'All Municipalities' },
-                                ...municipalities.map((lgu) => ({
-                                    value: String(lgu.id),
-                                    label: lgu.municipality_name,
-                                })),
-                            ]}
-                            onChange={(value) =>
-                                visit({
-                                    ...filters,
-                                    search,
-                                    municipality: value === 'all' ? '' : value,
-                                })
-                            }
-                        />
-                        <DirectoryFilter
-                            label="Road Condition filter"
-                            value={filters.condition || 'all'}
-                            options={[
-                                { value: 'all', label: 'All Conditions' },
-                                ...['Good', 'Fair', 'Bad'].map((value) => ({
-                                    value,
-                                    label: value,
-                                })),
-                            ]}
-                            onChange={(value) =>
-                                visit({
-                                    ...filters,
-                                    search,
-                                    condition: value === 'all' ? '' : value,
-                                })
-                            }
-                        />
-                        <DirectoryFilter
-                            label="Pavement Type filter"
-                            value={filters.pavement || 'all'}
-                            options={[
-                                { value: 'all', label: 'All Pavements' },
-                                ...[
-                                    'Concrete',
-                                    'Asphalt',
-                                    'Gravel',
-                                    'Earth',
-                                ].map((value) => ({ value, label: value })),
-                            ]}
-                            onChange={(value) =>
-                                visit({
-                                    ...filters,
-                                    search,
-                                    pavement: value === 'all' ? '' : value,
-                                })
-                            }
-                        />
-                        <DirectoryFilter
-                            label="Sort road coverages"
-                            value={filters.sort}
-                            options={[
-                                { value: 'newest', label: 'Newest first' },
-                                { value: 'oldest', label: 'Oldest first' },
-                                { value: 'name-asc', label: 'Road name A–Z' },
-                                { value: 'name-desc', label: 'Road name Z–A' },
-                            ]}
-                            onChange={(sort) =>
-                                visit({
-                                    ...filters,
-                                    search,
-                                    sort: sort as RoadCoverageFilters['sort'],
-                                })
-                            }
-                        />
-                    </div>
-                </form>
-                <DirectorySelectionToolbar
-                    selecting={selecting}
-                    selectedCount={selected.size}
-                    total={coverages.total}
-                    singular="road coverage"
-                    plural="road coverages"
-                    canDelete={effectiveCanDelete}
-                    disabled={busy}
-                    onSelect={() => setSelecting(true)}
-                    onCancel={clearSelection}
-                    onDelete={() => {
-                        const targets = coverages.data.filter((c) =>
-                            selected.has(c.id),
-                        );
-                        if (targets.length > 0) {
-                            setDeleteError('');
-                            setDeleteTargets(targets);
-                        }
-                    }}
-                />
-                <div
-                    className="jr-table-wrap"
-                    role="region"
-                    aria-label="Road coverages table"
-                    aria-busy={busy}
-                    tabIndex={0}
-                >
-                    <table className="jr-table jr-road-coverage-table">
-                        <colgroup>
-                            {selecting && <col style={{ width: '48px' }} />}
-                            <col style={{ width: selecting ? '27%' : '30%' }} />
-                            <col style={{ width: '19%' }} />
-                            <col style={{ width: '12%' }} />
-                            <col style={{ width: '16%' }} />
-                            <col style={{ width: '16%' }} />
-                            <col style={{ width: '7%' }} />
-                        </colgroup>
-                        <thead>
-                            <tr>
-                                {selecting && (
-                                    <th className="w-12 px-3 text-center">
-                                        <Checkbox
-                                            aria-label="Select all road coverages on this page"
-                                            checked={
-                                                allSelected
-                                                    ? true
-                                                    : selected.size > 0
-                                                      ? 'indeterminate'
-                                                      : false
-                                            }
-                                            onCheckedChange={(checked) =>
-                                                setSelected(
-                                                    checked
-                                                        ? new Set(
-                                                              coverages.data.map(
-                                                                  (c) => c.id,
-                                                              ),
-                                                          )
-                                                        : new Set(),
-                                                )
-                                            }
-                                        />
-                                    </th>
-                                )}
-                                <th>Road Coverage</th>
-                                <th>Municipality</th>
-                                <th>Length</th>
-                                <th>Pavement Type</th>
-                                <th>Road Condition</th>
-                                <th className="text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {coverages.data.map((coverage) => (
-                                <tr
-                                    key={coverage.id}
-                                    data-road-coverage-id={coverage.id}
-                                    data-selected={selected.has(coverage.id)}
-                                    onClick={() => {
-                                        if (selecting) {
-                                            toggle(coverage.id);
-                                        } else {
-                                            router.visit(
-                                                editUrl(
-                                                    workspaceHref(
-                                                        `/road-coverages/${coverage.id}`,
-                                                    ),
-                                                    page.url,
-                                                ),
-                                            );
-                                        }
-                                    }}
-                                >
+                        <div
+                            className="jr-table-wrap"
+                            role="region"
+                            aria-label="Road coverages table"
+                            aria-busy={busy}
+                            tabIndex={0}
+                        >
+                            <table className="jr-table jr-road-coverage-table">
+                                <colgroup>
                                     {selecting && (
-                                        <td
-                                            className="w-12 px-3 text-center"
-                                            onClick={(event) =>
-                                                event.stopPropagation()
-                                            }
-                                        >
-                                            <Checkbox
-                                                aria-label={`Select ${coverage.road_name}`}
-                                                checked={selected.has(
-                                                    coverage.id,
-                                                )}
-                                                onCheckedChange={() =>
-                                                    toggle(coverage.id)
-                                                }
-                                            />
-                                        </td>
+                                        <col style={{ width: '48px' }} />
                                     )}
-                                    <td>
-                                        <Link
-                                            className="jr-project-title"
-                                            href={editUrl(
-                                                workspaceHref(
-                                                    `/road-coverages/${coverage.id}`,
-                                                ),
-                                                page.url,
+                                    <col
+                                        style={{
+                                            width: selecting ? '27%' : '30%',
+                                        }}
+                                    />
+                                    <col style={{ width: '19%' }} />
+                                    <col style={{ width: '12%' }} />
+                                    <col style={{ width: '16%' }} />
+                                    <col style={{ width: '16%' }} />
+                                    <col style={{ width: '7%' }} />
+                                </colgroup>
+                                <thead>
+                                    <tr>
+                                        {selecting && (
+                                            <th className="w-12 px-3 text-center">
+                                                <Checkbox
+                                                    aria-label="Select all road coverages on this page"
+                                                    checked={
+                                                        allSelected
+                                                            ? true
+                                                            : selected.size > 0
+                                                              ? 'indeterminate'
+                                                              : false
+                                                    }
+                                                    onCheckedChange={(
+                                                        checked,
+                                                    ) =>
+                                                        setSelected(
+                                                            checked
+                                                                ? new Set(
+                                                                      coverages.data.map(
+                                                                          (c) =>
+                                                                              c.id,
+                                                                      ),
+                                                                  )
+                                                                : new Set(),
+                                                        )
+                                                    }
+                                                />
+                                            </th>
+                                        )}
+                                        <th>Road Coverage</th>
+                                        <th>Municipality</th>
+                                        <th>Length</th>
+                                        <th>Pavement Type</th>
+                                        <th>Road Condition</th>
+                                        <th className="text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {coverages.data.map((coverage) => (
+                                        <tr
+                                            key={coverage.id}
+                                            data-road-coverage-id={coverage.id}
+                                            data-selected={selected.has(
+                                                coverage.id,
                                             )}
-                                            onClick={(event) => {
+                                            onClick={() => {
                                                 if (selecting) {
-                                                    event.preventDefault();
                                                     toggle(coverage.id);
                                                 } else {
-                                                    event.stopPropagation();
+                                                    router.visit(
+                                                        editUrl(
+                                                            workspaceHref(
+                                                                `/road-coverages/${coverage.id}`,
+                                                            ),
+                                                            page.url,
+                                                        ),
+                                                    );
                                                 }
                                             }}
                                         >
-                                            {coverage.road_name}
-                                        </Link>
-                                    </td>
-                                    <td>{coverage.lgu.municipality_name}</td>
-                                    <td className="whitespace-nowrap">
-                                        {length(coverage.kilometers)}
-                                    </td>
-                                    <td>{coverage.pavement_type}</td>
-                                    <td>
-                                        <span
-                                            className="jr-coverage-condition"
-                                            data-condition={
-                                                coverage.state_category
-                                            }
-                                        >
-                                            {coverage.state_category}
-                                        </span>
-                                    </td>
-                                    <td
-                                        className="text-right"
-                                        onClick={(event) =>
-                                            event.stopPropagation()
-                                        }
-                                    >
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="jr-action-trigger"
-                                                    aria-label={`Actions for ${coverage.road_name}`}
-                                                >
-                                                    <MoreHorizontal />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent
-                                                className="jr-theme jr-menu"
-                                                align="end"
-                                            >
-                                                <DropdownMenuItem
-                                                    disabled={!canEdit}
-                                                    onSelect={() =>
-                                                        router.visit(
-                                                            editUrl(
-                                                                workspaceHref(
-                                                                    `/road-coverages/${coverage.id}/edit`,
-                                                                ),
-                                                                page.url,
-                                                             ),
-                                                        )
+                                            {selecting && (
+                                                <td
+                                                    className="w-12 px-3 text-center"
+                                                    onClick={(event) =>
+                                                        event.stopPropagation()
                                                     }
                                                 >
-                                                    <Pencil />
-                                                    Edit Road Coverage
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem
-                                                    disabled={
-                                                        !effectiveCanDelete ||
-                                                        Boolean(
-                                                            coverage.has_projects,
-                                                        )
-                                                    }
-                                                    title={
-                                                        coverage.has_projects
-                                                            ? `Referenced by ${coverage.project_title || 'a maintenance project'}`
-                                                            : undefined
-                                                    }
-                                                    className="text-red-600 focus:bg-red-50 focus:text-red-700"
-                                                    onSelect={() => {
-                                                        setDeleteError('');
-                                                        setDeleteTargets([
-                                                            coverage,
-                                                        ]);
+                                                    <Checkbox
+                                                        aria-label={`Select ${coverage.road_name}`}
+                                                        checked={selected.has(
+                                                            coverage.id,
+                                                        )}
+                                                        onCheckedChange={() =>
+                                                            toggle(coverage.id)
+                                                        }
+                                                    />
+                                                </td>
+                                            )}
+                                            <td>
+                                                <Link
+                                                    className="jr-project-title"
+                                                    href={editUrl(
+                                                        workspaceHref(
+                                                            `/road-coverages/${coverage.id}`,
+                                                        ),
+                                                        page.url,
+                                                    )}
+                                                    onClick={(event) => {
+                                                        if (selecting) {
+                                                            event.preventDefault();
+                                                            toggle(coverage.id);
+                                                        } else {
+                                                            event.stopPropagation();
+                                                        }
                                                     }}
                                                 >
-                                                    <Trash2 className="size-4" />
-                                                    Delete Road Coverage
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    {!coverages.data.length && (
-                        <div className="jr-empty">
-                            <strong>
-                                {filtered
-                                    ? 'No matching road coverages.'
-                                    : 'No road coverages yet.'}
-                            </strong>
-                            <p>
-                                {filtered
-                                    ? 'Try another search or clear the filters.'
-                                    : 'Road coverages will appear here when available.'}
-                            </p>
-                            {filtered && (
-                                <Button
-                                    variant="outline"
-                                    onClick={() => {
-                                        setSearch('');
-                                        visit({
-                                            search: '',
-                                            municipality: '',
-                                            condition: '',
-                                            pavement: '',
-                                            sort: filters.sort,
-                                        });
-                                    }}
-                                >
-                                    Clear filters
-                                </Button>
+                                                    {coverage.road_name}
+                                                </Link>
+                                            </td>
+                                            <td>
+                                                {coverage.lgu.municipality_name}
+                                            </td>
+                                            <td className="whitespace-nowrap">
+                                                {length(coverage.kilometers)}
+                                            </td>
+                                            <td>{coverage.pavement_type}</td>
+                                            <td>
+                                                <span
+                                                    className="jr-coverage-condition"
+                                                    data-condition={
+                                                        coverage.state_category
+                                                    }
+                                                >
+                                                    {coverage.state_category}
+                                                </span>
+                                            </td>
+                                            <td
+                                                className="text-right"
+                                                onClick={(event) =>
+                                                    event.stopPropagation()
+                                                }
+                                            >
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger
+                                                        asChild
+                                                    >
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="jr-action-trigger"
+                                                            aria-label={`Actions for ${coverage.road_name}`}
+                                                        >
+                                                            <MoreHorizontal />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent
+                                                        className="jr-theme jr-menu"
+                                                        align="end"
+                                                    >
+                                                        <DropdownMenuItem
+                                                            disabled={!canEdit}
+                                                            onSelect={() =>
+                                                                router.visit(
+                                                                    editUrl(
+                                                                        workspaceHref(
+                                                                            `/road-coverages/${coverage.id}/edit`,
+                                                                        ),
+                                                                        page.url,
+                                                                    ),
+                                                                )
+                                                            }
+                                                        >
+                                                            <Pencil />
+                                                            Edit Road Coverage
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            disabled={
+                                                                !effectiveCanDelete ||
+                                                                Boolean(
+                                                                    coverage.has_projects,
+                                                                )
+                                                            }
+                                                            title={
+                                                                coverage.has_projects
+                                                                    ? `Referenced by ${coverage.project_title || 'a maintenance project'}`
+                                                                    : undefined
+                                                            }
+                                                            className="text-red-600 focus:bg-red-50 focus:text-red-700"
+                                                            onSelect={() => {
+                                                                setDeleteError(
+                                                                    '',
+                                                                );
+                                                                setDeleteTargets(
+                                                                    [coverage],
+                                                                );
+                                                            }}
+                                                        >
+                                                            <Trash2 className="size-4" />
+                                                            Delete Road Coverage
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            {!coverages.data.length && (
+                                <div className="jr-empty">
+                                    <strong>
+                                        {filtered
+                                            ? 'No matching road coverages.'
+                                            : 'No road coverages yet.'}
+                                    </strong>
+                                    <p>
+                                        {filtered
+                                            ? 'Try another search or clear the filters.'
+                                            : 'Road coverages will appear here when available.'}
+                                    </p>
+                                    {filtered && (
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => {
+                                                setSearch('');
+                                                visit({
+                                                    search: '',
+                                                    municipality: '',
+                                                    condition: '',
+                                                    pavement: '',
+                                                    sort: filters.sort,
+                                                });
+                                            }}
+                                        >
+                                            Clear filters
+                                        </Button>
+                                    )}
+                                </div>
                             )}
                         </div>
-                    )}
-                </div>
-                <DirectoryPagination
-                    total={coverages.total}
-                    from={coverages.from}
-                    to={coverages.to}
-                    currentPage={coverages.current_page}
-                    lastPage={coverages.last_page}
-                    plural="road coverages"
-                    label="Road coverage pagination"
-                    busy={busy}
-                    ready={true}
-                    onPage={(value) => visit({ ...filters, search }, value)}
-                />
-                </section>
+                        <DirectoryPagination
+                            total={coverages.total}
+                            from={coverages.from}
+                            to={coverages.to}
+                            currentPage={coverages.current_page}
+                            lastPage={coverages.last_page}
+                            plural="road coverages"
+                            label="Road coverage pagination"
+                            busy={busy}
+                            ready={true}
+                            onPage={(value) =>
+                                visit({ ...filters, search }, value)
+                            }
+                        />
+                    </section>
                 </main>
 
                 {deleteTargets && (
@@ -720,8 +804,12 @@ export default function Index({
                         confirmDisabled={deleteTargets.some(
                             (c) => c.has_projects,
                         )}
-                        blocked={deleteTargets.some(c => c.has_projects)}
-                        selectionLabel={deleteTargets.length === 1 ? 'Selected road coverage' : `${deleteTargets.length} selected road coverages`}
+                        blocked={deleteTargets.some((c) => c.has_projects)}
+                        selectionLabel={
+                            deleteTargets.length === 1
+                                ? 'Selected road coverage'
+                                : `${deleteTargets.length} selected road coverages`
+                        }
                         onClose={() => {
                             if (!deleting) {
                                 setDeleteTargets(null);
@@ -737,8 +825,7 @@ export default function Index({
                                         <strong>
                                             {deleteTargets[0].road_name}
                                         </strong>
-                                        {deleteTargets[0].lgu
-                                            ?.municipality_name
+                                        {deleteTargets[0].lgu?.municipality_name
                                             ? ` (${deleteTargets[0].lgu.municipality_name})`
                                             : ''}
                                     </p>
@@ -753,7 +840,7 @@ export default function Index({
                                 </div>
                             ) : (
                                 <div>
-                                    <ul className="max-h-40 list-disc overflow-y-auto pl-5 space-y-1">
+                                    <ul className="max-h-40 list-disc space-y-1 overflow-y-auto pl-5">
                                         {deleteTargets.map((c) => (
                                             <li key={c.id}>
                                                 {c.road_name}{' '}
@@ -773,8 +860,8 @@ export default function Index({
                                     ) && (
                                         <p className="mt-2 text-xs text-red-600">
                                             Records referenced by maintenance
-                                            projects cannot be deleted.
-                                            Deselect them to proceed.
+                                            projects cannot be deleted. Deselect
+                                            them to proceed.
                                         </p>
                                     )}
                                 </div>

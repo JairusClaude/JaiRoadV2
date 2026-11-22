@@ -45,7 +45,12 @@ export default function PasskeyVerify({
     });
 
     if (!isSupported) {
-        return loginMode ? <p role="status" className="text-sm text-[#697b90]">Passkeys require a supported browser and secure connection. You can still sign in with your password.</p> : null;
+        return loginMode ? (
+            <p role="status" className="text-sm text-[#697b90]">
+                Passkeys require a supported browser and secure connection. You
+                can still sign in with your password.
+            </p>
+        ) : null;
     }
 
     return (
@@ -68,16 +73,18 @@ export default function PasskeyVerify({
                 )}
             </div>
 
-            {!hideSeparator && <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                    <Separator className="w-full" />
+            {!hideSeparator && (
+                <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                        <Separator className="w-full" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">
+                            {separator ?? 'Or continue with email'}
+                        </span>
+                    </div>
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
-                        {separator ?? 'Or continue with email'}
-                    </span>
-                </div>
-            </div>}
+            )}
         </>
     );
 }

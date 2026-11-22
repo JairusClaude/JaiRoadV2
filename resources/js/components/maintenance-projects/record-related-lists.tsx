@@ -50,8 +50,11 @@ function RelatedActions({
     onDelete: () => void;
 }) {
     const page = usePage();
-    const identity = page.props.jairoadsIdentity as { role?: string } | undefined;
-    const canDelete = page.props.previewOnly === true || ['admin', 'superadmin'].includes(identity?.role ?? '');
+    const identity = page.props.jairoadsIdentity as
+        { role?: string } | undefined;
+    const canDelete =
+        page.props.previewOnly === true ||
+        ['admin', 'superadmin'].includes(identity?.role ?? '');
 
     return (
         <div onClick={(e) => e.stopPropagation()}>
@@ -277,7 +280,9 @@ export function RecordRelatedLists({
                                         )
                                     }
                                 >
-                                    <DocumentIcon name={doc.file_name || 'No attachment'} />
+                                    <DocumentIcon
+                                        name={doc.file_name || 'No attachment'}
+                                    />
                                     <div className="jr-related-row-copy">
                                         <Link
                                             className="jr-related-row-title"

@@ -180,20 +180,34 @@ export default function DdMonthlyUpdates({
         null,
     );
     const [toast, setToast] = useState('');
-    const [deleteTarget, setDeleteTarget] = useState<MonthlyUpdate | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<MonthlyUpdate | null>(
+        null,
+    );
     const [deleting, setDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState('');
     const confirmRemoval = async () => {
-        if (!canManage || !deleteTarget || deleting) return;
+        if (!canManage || !deleteTarget || deleting) {
+            return;
+        }
+
         setDeleting(true);
         setDeleteError('');
+
         try {
-            await requestOperation(`/dd-phase3/ops/updates/${deleteTarget.id}`, {}, 'delete');
+            await requestOperation(
+                `/dd-phase3/ops/updates/${deleteTarget.id}`,
+                {},
+                'delete',
+            );
             setDeleteTarget(null);
             setSelectedUpdate(null);
             setToast('Monthly update deleted.');
         } catch (failure) {
-            setDeleteError(failure instanceof Error ? failure.message : 'Unable to delete update.');
+            setDeleteError(
+                failure instanceof Error
+                    ? failure.message
+                    : 'Unable to delete update.',
+            );
         } finally {
             setDeleting(false);
         }
@@ -1100,7 +1114,10 @@ export default function DdMonthlyUpdates({
                                 <button
                                     type="button"
                                     className={`${neutral} text-red-700`}
-                                    onClick={() => { setDeleteError(''); setDeleteTarget(selectedUpdate); }}
+                                    onClick={() => {
+                                        setDeleteError('');
+                                        setDeleteTarget(selectedUpdate);
+                                    }}
                                 >
                                     Delete update
                                 </button>
@@ -1126,10 +1143,27 @@ export default function DdMonthlyUpdates({
                 error={deleteError}
                 confirmLabel="Delete Monthly Update"
                 blocked={(deleteTarget?.mediaCount ?? 0) > 0}
-                onClose={() => { if (!deleting) setDeleteTarget(null); }}
+                onClose={() => {
+                    if (!deleting) {
+                        setDeleteTarget(null);
+                    }
+                }}
                 onConfirm={confirmRemoval}
             >
-                {deleteTarget && <><p className="jr-delete-target-title">{niceMonth(deleteTarget.month)} · {recordName(deleteTarget.maintenanceRecordId)}</p><dl className="jr-delete-counts"><div><dt>Attached files</dt><dd>{deleteTarget.mediaCount}</dd></div></dl></>}
+                {deleteTarget && (
+                    <>
+                        <p className="jr-delete-target-title">
+                            {niceMonth(deleteTarget.month)} ·{' '}
+                            {recordName(deleteTarget.maintenanceRecordId)}
+                        </p>
+                        <dl className="jr-delete-counts">
+                            <div>
+                                <dt>Attached files</dt>
+                                <dd>{deleteTarget.mediaCount}</dd>
+                            </div>
+                        </dl>
+                    </>
+                )}
             </DeletionDialog>
         </ProjectWorkspace>
     );

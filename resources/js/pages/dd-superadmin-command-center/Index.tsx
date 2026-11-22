@@ -89,11 +89,13 @@ export default function DdSuperAdminCommandCenter({
                 <div className="jr-page-head">
                     <div>
                         <div className="jr-superadmin-access">
-                            <Crown className="h-3.5 w-3.5" /> Highest Authority · SuperAdmin
+                            <Crown className="h-3.5 w-3.5" /> Highest Authority
+                            · SuperAdmin
                         </div>
                         <h1>System Command Center</h1>
                         <p>
-                            Welcome, {username}. Manage accounts, assignments, and road maintenance across JaiROADS.
+                            Welcome, {username}. Manage accounts, assignments,
+                            and road maintenance across JaiROADS.
                         </p>
                     </div>
                     <div className="jr-page-actions">
@@ -115,7 +117,7 @@ export default function DdSuperAdminCommandCenter({
                     </div>
                 </div>
 
-                <main className="relative -mt-3.5 -mx-7 rounded-t-[20px] bg-white px-7 pt-7 pb-10 shadow-sm min-w-0 space-y-6">
+                <main className="relative -mx-7 -mt-3.5 min-w-0 space-y-6 rounded-t-[20px] bg-white px-7 pt-7 pb-10 shadow-sm">
                     {/* Top System Metrics */}
                     <section
                         aria-label="System metrics"
@@ -149,24 +151,37 @@ export default function DdSuperAdminCommandCenter({
 
                     {/* Operational Access & Privileged Governance */}
                     <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-                        <section className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-sm">
+                        <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <h2 className="text-lg font-bold text-slate-900">
                                         Administrative Operations
                                     </h2>
                                     <p className="mt-1 text-sm text-slate-500">
-                                        Quick access to authorized system modules
+                                        Quick access to authorized system
+                                        modules
                                     </p>
                                 </div>
                                 <ShieldCheck className="h-6 w-6 text-amber-700" />
                             </div>
                             <div className="mt-5 grid gap-3 sm:grid-cols-2">
                                 {[
-                                    ['Maintenance Projects', '/dd-phase3/ui/maintenance-projects'],
-                                    ['Road Coverages', '/dd-phase3/ui/road-coverages'],
-                                    ['Monthly Updates', '/dd-phase3/ui/monthly-updates'],
-                                    ['Maintenance Documents', '/dd-phase3/ui/maintenance-documents'],
+                                    [
+                                        'Maintenance Projects',
+                                        '/dd-phase3/ui/maintenance-projects',
+                                    ],
+                                    [
+                                        'Road Coverages',
+                                        '/dd-phase3/ui/road-coverages',
+                                    ],
+                                    [
+                                        'Monthly Updates',
+                                        '/dd-phase3/ui/monthly-updates',
+                                    ],
+                                    [
+                                        'Maintenance Documents',
+                                        '/dd-phase3/ui/maintenance-documents',
+                                    ],
                                     ['LGU Directory', '/dd-phase3/ui/lgus'],
                                     ['User Management', '/user-management'],
                                     ['Audit Log', '/dd-phase3/audit-logs'],
@@ -184,7 +199,7 @@ export default function DdSuperAdminCommandCenter({
                             </div>
                         </section>
 
-                        <section className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-sm">
+                        <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <h2 className="text-lg font-bold text-slate-900">
@@ -209,7 +224,7 @@ export default function DdSuperAdminCommandCenter({
                                     >
                                         <div>
                                             <div className="text-sm font-semibold text-slate-800">
-                                                <span className="inline-block rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 mr-1.5">
+                                                <span className="mr-1.5 inline-block rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">
                                                     {e.action}
                                                 </span>
                                                 {e.entity}
@@ -233,14 +248,15 @@ export default function DdSuperAdminCommandCenter({
                     </div>
 
                     {/* Privileged Accounts Table */}
-                    <section className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-sm">
+                    <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
                         <div className="flex items-center justify-between">
                             <div>
                                 <h2 className="text-lg font-bold text-slate-900">
                                     Privileged Accounts Directory
                                 </h2>
                                 <p className="mt-1 text-sm text-slate-500">
-                                    Active and retained SuperAdmin / Admin accounts
+                                    Active and retained SuperAdmin / Admin
+                                    accounts
                                 </p>
                             </div>
                             <Link
@@ -252,17 +268,24 @@ export default function DdSuperAdminCommandCenter({
                         </div>
                         <div className="mt-4 overflow-x-auto">
                             <table className="w-full text-left text-sm">
-                                <thead className="border-b border-slate-200 bg-[#F5F0FC] text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                                <thead className="border-b border-slate-200 bg-[#F5F0FC] text-xs font-semibold tracking-wider text-slate-600 uppercase">
                                     <tr>
-                                        <th className="px-5 py-3.5">Username</th>
+                                        <th className="px-5 py-3.5">
+                                            Username
+                                        </th>
                                         <th className="px-4 py-3.5">Role</th>
-                                        <th className="px-4 py-3.5">Linked Engineer</th>
+                                        <th className="px-4 py-3.5">
+                                            Linked Engineer
+                                        </th>
                                         <th className="px-5 py-3.5">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {privilegedAccounts.map((a) => (
-                                        <tr key={a.id} className="hover:bg-slate-50/50">
+                                        <tr
+                                            key={a.id}
+                                            className="hover:bg-slate-50/50"
+                                        >
                                             <td className="px-5 py-3 font-semibold text-slate-900">
                                                 {a.username}
                                             </td>
@@ -286,10 +309,14 @@ export default function DdSuperAdminCommandCenter({
                                                 >
                                                     <span
                                                         className={`h-1.5 w-1.5 rounded-full ${
-                                                            a.active ? 'bg-[#35A66B]' : 'bg-[#9AA5B5]'
+                                                            a.active
+                                                                ? 'bg-[#35A66B]'
+                                                                : 'bg-[#9AA5B5]'
                                                         }`}
                                                     />
-                                                    {a.active ? 'Active' : 'Inactive'}
+                                                    {a.active
+                                                        ? 'Active'
+                                                        : 'Inactive'}
                                                 </span>
                                             </td>
                                         </tr>

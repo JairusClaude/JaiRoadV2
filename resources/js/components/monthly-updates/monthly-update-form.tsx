@@ -331,7 +331,10 @@ export function MonthlyUpdateForm({
                             existing={savedMedia}
                             onRemoveExisting={onRemoveSaved}
                             disabled={disabled}
-                            error={errors.attachments || (errors as Record<string, string>).file}
+                            error={
+                                errors.attachments ||
+                                (errors as Record<string, string>).file
+                            }
                             onChange={onFiles}
                         />
                     </section>

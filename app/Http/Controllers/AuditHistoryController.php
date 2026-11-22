@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Services\AccountIdentityResolver;
 use App\Services\AuditValues;
+use App\Services\PreviewDataService;
 use App\Services\RoleAccess;
 use App\Services\SecurityMonitoring\AuthenticationTelemetry;
 use App\Services\SecurityMonitoring\OnlinePresence;
@@ -26,7 +27,7 @@ final class AuditHistoryController extends Controller
     public function __invoke(Request $request, AccountIdentityResolver $resolver): Response
     {
         if (OperationsFrontendController::isPreview($request)) {
-            return \App\Services\PreviewDataService::auditIndex($request);
+            return PreviewDataService::auditIndex($request);
         }
 
         $user = $request->user();

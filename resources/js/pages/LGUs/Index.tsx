@@ -25,7 +25,12 @@ import { Input } from '@/components/ui/input';
 import { editUrl } from '@/lib/form-navigation';
 import { mayorName } from '@/lib/lgus';
 import { workspaceHref } from '@/lib/workspace-navigation';
-import type { LguFilters, LguPage, LguPermissions, LguSummary } from '@/types/lgus';
+import type {
+    LguFilters,
+    LguPage,
+    LguPermissions,
+    LguSummary,
+} from '@/types/lgus';
 import '../../../css/lgus.css';
 
 export default function Index({
@@ -59,10 +64,7 @@ export default function Index({
 }) {
     const page = usePage();
     const enabled = true;
-    const deletion = useLguDeletion(
-        lgus.data,
-        lguPermissions.can_delete,
-    );
+    const deletion = useLguDeletion(lgus.data, lguPermissions.can_delete);
     const [search, setSearch] = useState(filters.search);
     const [busy, setBusy] = useState(false);
     const [selecting, setSelecting] = useState(false);
@@ -96,7 +98,9 @@ export default function Index({
         lgus.data.length > 0 && lgus.data.every((l) => selected.has(l.id));
 
     const confirmBulkDelete = () => {
-        if (!bulkTargets || bulkDeleting) return;
+        if (!bulkTargets || bulkDeleting) {
+            return;
+        }
 
         const blocked = bulkTargets.filter(
             (l) =>
@@ -201,7 +205,9 @@ export default function Index({
                         disabled={!enabled || !lguPermissions.can_edit}
                         onClick={() =>
                             router.visit(
-                                workspaceHref(editUrl('/lgus/create', page.url)),
+                                workspaceHref(
+                                    editUrl('/lgus/create', page.url),
+                                ),
                             )
                         }
                     >
@@ -331,6 +337,7 @@ export default function Index({
                         const targets = lgus.data.filter((l) =>
                             selected.has(l.id),
                         );
+
                         if (targets.length > 0) {
                             setBulkError('');
                             setBulkTargets(targets);
@@ -491,9 +498,7 @@ export default function Index({
                                                     <DropdownMenuItem
                                                         className="text-red-600 focus:bg-red-50 focus:text-red-700"
                                                         onSelect={() =>
-                                                            deletion.open(
-                                                                lgu,
-                                                            )
+                                                            deletion.open(lgu)
                                                         }
                                                     >
                                                         <Trash2 className="size-4" />
@@ -568,7 +573,12 @@ export default function Index({
                     error={bulkError}
                     confirmLabel={`Delete ${bulkTargets.length} LGUs`}
                     selectionLabel={`${bulkTargets.length} selected LGUs`}
-                    blocked={bulkTargets.some(l => !l.deletion_check?.available || l.deletion_check.road_coverages > 0 || l.deletion_check.engineer_assignments > 0)}
+                    blocked={bulkTargets.some(
+                        (l) =>
+                            !l.deletion_check?.available ||
+                            l.deletion_check.road_coverages > 0 ||
+                            l.deletion_check.engineer_assignments > 0,
+                    )}
                     confirmDisabled={bulkTargets.some(
                         (l) =>
                             (l.deletion_check?.road_coverages ?? 0) > 0 ||
@@ -582,20 +592,22 @@ export default function Index({
                     onConfirm={confirmBulkDelete}
                 >
                     <div className="jr-delete-target-details">
-                        <ul className="max-h-40 list-disc overflow-y-auto pl-5 space-y-1">
+                        <ul className="max-h-40 list-disc space-y-1 overflow-y-auto pl-5">
                             {bulkTargets.map((l) => {
                                 const blocked =
                                     (l.deletion_check?.road_coverages ?? 0) >
                                         0 ||
                                     (l.deletion_check?.engineer_assignments ??
                                         0) > 0;
+
                                 return (
                                     <li key={l.id}>
                                         {l.municipality_name}
                                         {l.province ? ` (${l.province})` : ''}
                                         {blocked && (
                                             <span className="ml-1 text-xs text-red-600">
-                                                (has linked roads or assignments)
+                                                (has linked roads or
+                                                assignments)
                                             </span>
                                         )}
                                     </li>

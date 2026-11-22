@@ -1,6 +1,5 @@
 import '../../css/jairoads-workspace-surfaces.css';
 import '../../css/jairoads-responsive-workspace.css';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { Link, usePage } from '@inertiajs/react';
 import {
     Building2,
@@ -22,6 +21,7 @@ import {
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { DdNotificationBell } from '@/components/dd-notification-bell';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 type Identity = { role: string; username: string; name: string } | null;
 type WorkspaceRole = 'admin' | 'engineer' | 'viewer';
@@ -203,7 +203,9 @@ export default function PolishedWorkspaceLayout({
         .toUpperCase();
 
     return (
-        <div className={`jr-responsive-shell min-h-screen bg-[#f4f5f8] font-sans text-[#15253b] lg:flex dark:bg-slate-950 dark:text-slate-100 ${activeRole === 'engineer' ? 'jr-engineer-workspace' : activeRole === 'viewer' ? 'jr-viewer-workspace' : ''}`}>
+        <div
+            className={`jr-responsive-shell min-h-screen bg-[#f4f5f8] font-sans text-[#15253b] lg:flex dark:bg-slate-950 dark:text-slate-100 ${activeRole === 'engineer' ? 'jr-engineer-workspace' : activeRole === 'viewer' ? 'jr-viewer-workspace' : ''}`}
+        >
             {mobileNavOpen && (
                 <button
                     type="button"

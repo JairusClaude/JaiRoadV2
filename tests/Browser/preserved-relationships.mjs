@@ -121,6 +121,7 @@ export async function verifyPreservedRelationships({
                 ctx.fillStyle = '#5680a3'; ctx.fillRect(0, 0, 640, 480);
                 const stream = canvas.captureStream(10);
                 setTimeout(() => ctx.fillRect(0, 0, 640, 480), 100);
+
                 return stream;
             },
         });

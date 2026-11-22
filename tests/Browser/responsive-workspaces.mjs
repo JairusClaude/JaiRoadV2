@@ -24,15 +24,22 @@ export async function verifyMobileWorkspaces({ browser, base, admin, superadmin,
         ui + '/maintenance-documents/create?maintenance_id=' + recordId,
     ];
     const evidence = process.env.UNIFIED_BROWSER_EVIDENCE_DIR;
-    if (evidence) await mkdir(evidence, { recursive:true });
+
+    if (evidence) {
+await mkdir(evidence, { recursive:true });
+}
+
     let count = 0;
+
     for (const [role, page] of Object.entries({ admin, superadmin, engineer, viewer })) {
         const previous = page.viewportSize();
+
         try {
             for (const width of [320,390,768,1024]) {
                 await page.setViewportSize({ width, height: 844 });
                 const privileged = role === 'admin' || role === 'superadmin';
                 const paths = [...common, ...(privileged ? ['/dd-phase3/users','/dd-phase3/audit-logs',ui+'/lgus/create'] : []), ...(role === 'viewer' ? [] : forms)];
+
                 for (const path of paths) {
                     const response = await page.goto(base + path);
                     assert.ok(response && response.status() < 400, role + ': ' + path);
@@ -41,22 +48,34 @@ export async function verifyMobileWorkspaces({ browser, base, admin, superadmin,
                         const stage = document.querySelector('.jr-stage').getBoundingClientRect();
                         const content = document.querySelector('.jr-content').getBoundingClientRect();
                         const sidebar = document.querySelector('.jr-sidebar-container')?.getBoundingClientRect();
+
                         return { viewport:innerWidth, document:document.documentElement.scrollWidth, stageLeft:stage.left, stageRight:stage.right, contentRight:content.right, sidebarRight:sidebar?.right ?? 0 };
                     });
                     assert.ok(sizes.document <= width+1 && sizes.stageRight <= width+1 && sizes.contentRight <= width+1, role + ' ' + width + ' ' + path + ': ' + JSON.stringify(sizes));
-                    if (width < 1024) assert.ok(sizes.stageLeft < 2, 'Mobile drawer must not reserve desktop space');
-                    else assert.ok(sizes.stageLeft >= sizes.sidebarRight - 1, 'Desktop sidebar overlaps content');
+
+                    if (width < 1024) {
+assert.ok(sizes.stageLeft < 2, 'Mobile drawer must not reserve desktop space');
+} else {
+assert.ok(sizes.stageLeft >= sizes.sidebarRight - 1, 'Desktop sidebar overlaps content');
+}
+
                     for (const table of await page.locator('.jr-table-wrap, .um-table-scroll, [role="region"]:has(>table)').all()) {
-                        if (!(await table.isVisible())) continue;
+                        if (!(await table.isVisible())) {
+continue;
+}
+
                         const result = await table.evaluate(el => {
                             el.scrollLeft = el.scrollWidth;
+
                             return { visible:el.clientWidth, width:el.scrollWidth, scroll:el.scrollLeft };
                         });
                         assert.ok(result.width <= result.visible + 1 || result.scroll > 0, 'Table must scroll: ' + role + ' ' + path);
                     }
+
                     if (evidence && width === 390 && [ui+'/maintenance-projects',ui+'/maintenance-documents','/dd-phase3/users','/dd-phase3/dashboard'].includes(path)) {
                         await page.screenshot({path:evidence+'/mobile-'+role+'-'+path.split('/').at(-1)+'.png',fullPage:true});
                     }
+
                     if (width < 1024 && path === '/dd-phase3/dashboard') {
                         const trigger = page.getByRole('button',{ name:'Open navigation', exact:true });
                         await trigger.click();
@@ -73,13 +92,17 @@ export async function verifyMobileWorkspaces({ browser, base, admin, superadmin,
                         await page.keyboard.press('Escape');
                         await drawer.waitFor({state:'hidden'});
                     }
+
                     count++;
                 }
             }
         } finally {
-            if(previous) await page.setViewportSize(previous);
+            if(previous) {
+await page.setViewportSize(previous);
+}
         }
     }
+
     // Real Chromium mobile emulation, with touch and the same authenticated
     // disposable sessions. Read-only; the original role contexts stay intact.
     for (const [role, page] of Object.entries({ admin, superadmin, engineer, viewer })) {
@@ -87,6 +110,7 @@ export async function verifyMobileWorkspaces({ browser, base, admin, superadmin,
             viewport:{width:390,height:844}, deviceScaleFactor:2, isMobile:true,
             hasTouch:true, reducedMotion:'reduce', storageState:await page.context().storageState(),
         });
+
         try {
             const phone = await context.newPage();
             await phone.goto(base + ui + '/maintenance-projects');
@@ -104,10 +128,14 @@ export async function verifyMobileWorkspaces({ browser, base, admin, superadmin,
             await drawer.waitFor({state:'hidden'});
             await phone.locator('html').evaluate(el=>el.classList.add('dark'));
             assert.ok(await phone.evaluate(()=>document.documentElement.scrollWidth<=391),role+' mobile dark mode');
-            if(evidence) await phone.screenshot({path:evidence+'/touch-dark-'+role+'.png',fullPage:true});
+
+            if(evidence) {
+await phone.screenshot({path:evidence+'/touch-dark-'+role+'.png',fullPage:true});
+}
         } finally {
             await context.close();
         }
     }
+
     console.log('PASS: '+count+' all-role workspace viewport checks, mobile menu navigation, local table scrolling, desktop separation and four touch/dark-mode checks.');
 }

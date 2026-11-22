@@ -1708,7 +1708,10 @@ function EditableCoverageMapEditor({
                     </button>
                 </div>
                 {layers && (
-                    <div className="jr-map-layers" id="jr-reference-road-layers">
+                    <div
+                        className="jr-map-layers"
+                        id="jr-reference-road-layers"
+                    >
                         <strong>Reference road layers</strong>
                         <label>
                             <input
@@ -1718,7 +1721,10 @@ function EditableCoverageMapEditor({
                             />{' '}
                             Show mapped roads
                         </label>
-                        <small>Overlay existing saved road lines for reference while editing your coverage.</small>
+                        <small>
+                            Overlay existing saved road lines for reference
+                            while editing your coverage.
+                        </small>
                         <label>
                             <input
                                 type="checkbox"
@@ -1727,7 +1733,10 @@ function EditableCoverageMapEditor({
                             />{' '}
                             All municipalities
                         </label>
-                        <small>Show roads across municipalities; uncheck to limit the overlay to the selected municipality.</small>
+                        <small>
+                            Show roads across municipalities; uncheck to limit
+                            the overlay to the selected municipality.
+                        </small>
                         <small>Only saved, valid geometry is shown.</small>
                     </div>
                 )}
@@ -1925,10 +1934,19 @@ function EditableCoverageMapEditor({
                 <section>
                     <h2>Road Mapping</h2>
                     {referenceUrl && referenceNotice && (
-                        <div className="jr-map-reference-notice" role="status" aria-live="polite" data-reference-state={referenceState}>
+                        <div
+                            className="jr-map-reference-notice"
+                            role="status"
+                            aria-live="polite"
+                            data-reference-state={referenceState}
+                        >
                             <strong>Saved road references</strong>
                             <p>{referenceNotice}</p>
-                            <small>These are existing road coverages returned by the server for the current map area. They are reference guides, not changes to this road.</small>
+                            <small>
+                                These are existing road coverages returned by
+                                the server for the current map area. They are
+                                reference guides, not changes to this road.
+                            </small>
                         </div>
                     )}
                     <p className="jr-field-hint">

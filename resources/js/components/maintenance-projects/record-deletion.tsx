@@ -3,8 +3,8 @@ import { useState } from 'react';
 import {
     DeletionCounts,
     DeletionDialog,
-    type DeleteConfirmation,
 } from '@/components/maintenance-projects/deletion-dialog';
+import type { DeleteConfirmation } from '@/components/maintenance-projects/deletion-dialog';
 import type { MaintenanceRecordSummary } from '@/types/maintenance-records';
 
 export function useRecordDeletion(returnUrl?: string) {
@@ -22,6 +22,7 @@ export function useRecordDeletion(returnUrl?: string) {
         selected: MaintenanceRecordSummary | MaintenanceRecordSummary[],
     ) => {
         const list = Array.isArray(selected) ? selected : [selected];
+
         if (!list.length) {
             return;
         }
@@ -97,7 +98,11 @@ export function RecordDeletionDialog({
             confirmLabel={
                 count === 1 ? 'Delete Record' : `Delete ${count} Records`
             }
-            selectionLabel={count === 1 ? 'Selected maintenance record' : `${count} selected maintenance records`}
+            selectionLabel={
+                count === 1
+                    ? 'Selected maintenance record'
+                    : `${count} selected maintenance records`
+            }
             processing={processing}
             error={error}
             onClose={close}

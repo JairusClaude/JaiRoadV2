@@ -1049,8 +1049,8 @@ export default function DdRoadSections({
                                     <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
                                         Admins can create RoadCoverages without
                                         a personal Engineer link, but must
-                                        select an active mapping Engineer. Create an
-                                        active Engineer profile first.
+                                        select an active mapping Engineer.
+                                        Create an active Engineer profile first.
                                     </p>
                                 )}
                             <div className="grid gap-4 sm:grid-cols-2">

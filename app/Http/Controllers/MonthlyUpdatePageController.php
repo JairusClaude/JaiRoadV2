@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Services\OperationAudit;
+use App\Services\PreviewDataService;
 use App\Services\RoleAccess;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Response;
 
 /**
@@ -20,7 +23,7 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
     public function updateIndex(Request $request): Response
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::updateIndex($request);
+            return PreviewDataService::updateIndex($request);
         }
 
         $actor = $this->actor($request);
@@ -66,7 +69,7 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
     public function updateForm(Request $request, ?int $id = null): Response
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::updateForm($request, $id);
+            return PreviewDataService::updateForm($request, $id);
         }
 
         $actor = $this->actor($request);
@@ -95,14 +98,14 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
         if ($removals !== []) {
             $this->requirePrivateDeletion($request, $actor);
             if ($id === null) {
-                throw \Illuminate\Validation\ValidationException::withMessages(['attachments' => 'Save the monthly update before removing existing media.']);
+                throw ValidationException::withMessages(['attachments' => 'Save the monthly update before removing existing media.']);
             }
             foreach ($removals as $mediaId) {
                 $row = DB::table('jairoads_next.media')->where('id', $mediaId)->first(['monthly_update_id']);
                 $alreadyCompleted = $row === null && DB::table('jairoads_next.file_deletions')->where('kind', 'media')
                     ->where('entity_id', $mediaId)->where('monthly_update_id', $id)->where('state', 'completed')->exists();
                 if (! $alreadyCompleted && ($row === null || (int) $row->monthly_update_id !== $id)) {
-                    throw \Illuminate\Validation\ValidationException::withMessages(['attachments' => 'Selected media does not belong to this update. Refresh and retry.']);
+                    throw ValidationException::withMessages(['attachments' => 'Selected media does not belong to this update. Refresh and retry.']);
                 }
             }
         }
@@ -126,7 +129,7 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
     public function updateShow(Request $request, int $id): Response
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::updateShow($request, $id);
+            return PreviewDataService::updateShow($request, $id);
         }
 
         $actor = $this->actor($request);
@@ -189,14 +192,14 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
             abort_unless($this->actor($request) === $actor && RoleAccess::canDeleteOperations($actor['role']), 403);
             $records = DB::table('jairoads_next.monthly_updates')->whereIn('id', $ids)->orderBy('id')->lockForUpdate()->get();
             if ($records->count() !== count($ids) || DB::table('jairoads_next.media')->whereIn('monthly_update_id', $ids)->exists()) {
-                throw \Illuminate\Validation\ValidationException::withMessages(['delete' => 'Updates changed during deletion. Refresh and retry.']);
+                throw ValidationException::withMessages(['delete' => 'Updates changed during deletion. Refresh and retry.']);
             }
             foreach ($records as $row) {
                 $deleted = DB::table('jairoads_next.monthly_updates')->where('id', $row->id)->delete();
                 if ($deleted !== 1 || DB::table('jairoads_next.monthly_updates')->where('id', $row->id)->exists()) {
-                    throw \Illuminate\Validation\ValidationException::withMessages(['delete' => 'Monthly update deletion was not confirmed.']);
+                    throw ValidationException::withMessages(['delete' => 'Monthly update deletion was not confirmed.']);
                 }
-                app(\App\Services\OperationAudit::class)->record($actor, 'DELETE', 'MonthlyUpdate', (int) $row->id, 'Monthly update deleted after private media removal.', [], (array) $row);
+                app(OperationAudit::class)->record($actor, 'DELETE', 'MonthlyUpdate', (int) $row->id, 'Monthly update deleted after private media removal.', [], (array) $row);
             }
         });
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Services\AuditValues;
+use App\Services\PreviewDataService;
 use App\Services\RoleAccess;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ final class AuditLogPageController extends OperationsFrontendController
     public function index(Request $request): Response
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::auditIndex($request);
+            return PreviewDataService::auditIndex($request);
         }
 
         $actor = $this->actor($request);
@@ -29,7 +30,7 @@ final class AuditLogPageController extends OperationsFrontendController
         $q = DB::table('jairoads_next.audit_logs as a')
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $sub) use ($search) {
-                    $term = '%' . substr($search, 0, 255) . '%';
+                    $term = '%'.substr($search, 0, 255).'%';
                     $sub->where('a.description', 'ilike', $term)
                         ->orWhere('a.actor_identifier', 'ilike', $term)
                         ->orWhere('a.entity_type', 'ilike', $term);

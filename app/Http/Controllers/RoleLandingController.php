@@ -88,7 +88,6 @@ final class RoleLandingController extends Controller
         ])->header('Cache-Control', 'private, no-store');
     }
 
-
     /** Engineer-only continuation endpoint for dashboard road geometries. */
     public function roadMapPage(Request $request, AccountIdentityResolver $resolver): JsonResponse
     {

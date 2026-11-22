@@ -29,7 +29,10 @@ import { requestOperation } from '@/pages/dd-phase3/requests';
 const maxDeletesPerBatch = 6;
 // Linked road coverages or engineer assignments are protected by restrictive
 // foreign keys; the server rejects those deletions, so the UI blocks them early.
-const deletionBlocked = (item: { roadCoverageCount: number | null; activeAssignmentCount: number | null }) =>
+const deletionBlocked = (item: {
+    roadCoverageCount: number | null;
+    activeAssignmentCount: number | null;
+}) =>
     (item.roadCoverageCount ?? 0) > 0 || (item.activeAssignmentCount ?? 0) > 0;
 /** UI label: LGU; data entity: LGU master data. */
 export type LguRecord = {
@@ -252,7 +255,10 @@ export default function DdLguDirectory({
             setDeleteTargets(failed.map(({ item }) => item));
             setDeleteError(
                 failed
-                    .map(({ item, message }) => `${item.municipalityName}: ${message}`)
+                    .map(
+                        ({ item, message }) =>
+                            `${item.municipalityName}: ${message}`,
+                    )
                     .join(' '),
             );
 
@@ -588,7 +594,9 @@ export default function DdLguDirectory({
                     onSelect={() => setSelecting(true)}
                     onCancel={resetSelection}
                     onDelete={() =>
-                        openDelete(items.filter((item) => selected.has(item.id)))
+                        openDelete(
+                            items.filter((item) => selected.has(item.id)),
+                        )
                     }
                 />
             </div>
@@ -602,9 +610,13 @@ export default function DdLguDirectory({
                                         <Checkbox
                                             aria-label="Select all deletable LGUs on this page"
                                             checked={(() => {
-                                                const selectable = visible.filter(
-                                                    (item) => !deletionBlocked(item),
-                                                );
+                                                const selectable =
+                                                    visible.filter(
+                                                        (item) =>
+                                                            !deletionBlocked(
+                                                                item,
+                                                            ),
+                                                    );
 
                                                 if (
                                                     selectable.length > 0 &&
@@ -767,7 +779,9 @@ export default function DdLguDirectory({
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem
                                                     disabled={!canCreate}
-                                                    onSelect={() => openEdit(item)}
+                                                    onSelect={() =>
+                                                        openEdit(item)
+                                                    }
                                                 >
                                                     <FilePenLine /> Edit LGU
                                                 </DropdownMenuItem>
@@ -978,7 +992,9 @@ export default function DdLguDirectory({
                                 </button>
                                 <button
                                     type="button"
-                                    disabled={saving || deletionBlocked(details)}
+                                    disabled={
+                                        saving || deletionBlocked(details)
+                                    }
                                     title={
                                         deletionBlocked(details)
                                             ? 'Linked road coverages or engineer assignments block deletion.'
@@ -1216,7 +1232,11 @@ export default function DdLguDirectory({
                             ? 'Are you sure you want to permanently delete this municipality? This action cannot be undone.'
                             : `Are you sure you want to permanently delete these ${deleteTargets.length} municipalities? This action cannot be undone.`
                     }
-                    selectionLabel={deleteTargets.length === 1 ? 'Selected LGU' : `${deleteTargets.length} selected LGUs`}
+                    selectionLabel={
+                        deleteTargets.length === 1
+                            ? 'Selected LGU'
+                            : `${deleteTargets.length} selected LGUs`
+                    }
                     processing={deleting}
                     error={deleteError}
                     confirmLabel={
@@ -1235,13 +1255,15 @@ export default function DdLguDirectory({
                         {deleteTargets.length === 1 ? (
                             <p>
                                 Municipality:{' '}
-                                <strong>{deleteTargets[0].municipalityName}</strong>
+                                <strong>
+                                    {deleteTargets[0].municipalityName}
+                                </strong>
                                 {deleteTargets[0].province
                                     ? ` (${deleteTargets[0].province})`
                                     : ''}
                             </p>
                         ) : (
-                            <ul className="max-h-40 list-disc overflow-y-auto pl-5 space-y-1">
+                            <ul className="max-h-40 list-disc space-y-1 overflow-y-auto pl-5">
                                 {deleteTargets.map((t) => (
                                     <li key={t.id}>
                                         {t.municipalityName}

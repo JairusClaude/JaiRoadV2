@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Http\Controllers\OperationsFrontendController;
 use App\Models\User;
 use App\Services\AccountIdentityResolver;
 use Closure;
@@ -17,9 +18,9 @@ final class EnforceCanonicalSession
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (\App\Http\Controllers\OperationsFrontendController::isPreview($request)) {
+        if (OperationsFrontendController::isPreview($request)) {
             if (! Auth::check()) {
-                $user = new User();
+                $user = new User;
                 $user->id = 1;
                 $user->name = 'UserTest';
                 $user->email = 'usertest@jairoads.ph';
@@ -27,6 +28,7 @@ final class EnforceCanonicalSession
                 $user->exists = true;
                 Auth::setUser($user);
             }
+
             return $next($request);
         }
 

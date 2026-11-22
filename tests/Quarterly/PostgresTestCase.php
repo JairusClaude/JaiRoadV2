@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Quarterly;
 
 use App\Models\User;
+use App\Services\DeletionChallenge;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -30,10 +31,11 @@ abstract class PostgresTestCase extends TestCase
     protected function deletionVerification(string $scope): array
     {
         $account = (int) auth()->user()->dd_user_account_id;
-        $challenge = app(\App\Services\DeletionChallenge::class)->issue($account, $scope);
+        $challenge = app(DeletionChallenge::class)->issue($account, $scope);
         preg_match('/^(\d+) \+ (\d+)$/', $challenge['question'], $parts);
         $jpeg = base64_decode('/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABIMDRANCxIQDhAUExIVGywdGxgYGzYnKSAsQDlEQz85Pj1HUGZXR0thTT0+WXlaYWltcnNyRVV9hnxvhWZwcm7/2wBDARMUFBsXGzQdHTRuST5Jbm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm7/wAARCAB4AKADASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAP/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAT/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCoCpOAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//Z', true);
-        $receipt = app(\App\Services\DeletionChallenge::class)->cameraReceipt($account, $scope, $challenge['token'], $jpeg);
+        $receipt = app(DeletionChallenge::class)->cameraReceipt($account, $scope, $challenge['token'], $jpeg);
+
         return ['confirmation' => 'YES', 'captcha_token' => $challenge['token'], 'captcha_answer' => (int) $parts[1] + (int) $parts[2], 'camera_receipt' => $receipt];
     }
 

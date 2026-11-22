@@ -27,10 +27,7 @@ export default function Show({
     const enabled = page.props.previewOnly === true || canonical;
     const canDelete = lguPermissions?.can_delete ?? true;
     const canEdit = lguPermissions?.can_edit ?? true;
-    const deletion = useLguDeletion(
-        [lgu],
-        enabled && canDelete,
-    );
+    const deletion = useLguDeletion([lgu], enabled && canDelete);
 
     return (
         <div className="jr-lgu-details">
@@ -130,7 +127,12 @@ export default function Show({
                                         data-lgu-coverage-id={coverage.id}
                                     >
                                         <div>
-                                            <Link className="jr-project-title" href={workspaceHref(`/road-coverages/${coverage.id}`)}>
+                                            <Link
+                                                className="jr-project-title"
+                                                href={workspaceHref(
+                                                    `/road-coverages/${coverage.id}`,
+                                                )}
+                                            >
                                                 {coverage.road_name}
                                             </Link>
                                             <p className="jr-project-id">
@@ -198,7 +200,9 @@ export default function Show({
                                                     {assignment.full_name}
                                                 </Link>
                                             ) : (
-                                                <strong>{assignment.full_name}</strong>
+                                                <strong>
+                                                    {assignment.full_name}
+                                                </strong>
                                             )}
                                             <p className="jr-project-id">
                                                 Rank:{' '}

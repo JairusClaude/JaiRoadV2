@@ -10,5 +10,9 @@ const labels: Record<string, string> = {
 export default function AccountTypeBadge({ role }: { role: string }) {
     const label = labels[role.toLowerCase()] ?? role;
 
-    return <span className="um-role" data-role={label}>{label}</span>;
+    return (
+        <span className="um-role" data-role={label}>
+            {label}
+        </span>
+    );
 }

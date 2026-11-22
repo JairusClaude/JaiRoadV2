@@ -1,20 +1,13 @@
 import { router } from '@inertiajs/react';
-import {
-    Check,
-    HardHat,
-    Plus,
-    Search,
-    Users,
-    X,
-} from 'lucide-react';
+import { Check, HardHat, Plus, Search, Users, X } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
-import AccountTypeBadge from '@/components/user-management/account-type-badge';
 import { DirectoryFilter } from '@/components/directory-controls';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { MetricCard } from '@/components/metric-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import AccountTypeBadge from '@/components/user-management/account-type-badge';
 import {
     EngineerDialog,
     AssignmentDialog,
@@ -289,9 +282,7 @@ export default function UserManagementPage({
                 <div className="jr-page-head">
                     <div>
                         <h1>User Management</h1>
-                        <p>
-                            Manage system accounts and Engineer information.
-                        </p>
+                        <p>Manage system accounts and Engineer information.</p>
                     </div>
                     {canManage &&
                         creatableRoles.length > 0 &&
@@ -317,18 +308,20 @@ export default function UserManagementPage({
                             <Plus size={16} /> Add Engineer
                         </Button>
                     )}
-                    {canManage && assignmentsAvailable && tab === 'assignments' && (
-                        <Button
-                            type="button"
-                            className="jr-primary"
-                            onClick={() => setAssignmentEditor(true)}
-                        >
-                            <Plus size={16} /> Assign LGU
-                        </Button>
-                    )}
+                    {canManage &&
+                        assignmentsAvailable &&
+                        tab === 'assignments' && (
+                            <Button
+                                type="button"
+                                className="jr-primary"
+                                onClick={() => setAssignmentEditor(true)}
+                            >
+                                <Plus size={16} /> Assign LGU
+                            </Button>
+                        )}
                 </div>
 
-                <main className="relative -mt-3.5 -mx-7 rounded-t-[20px] bg-white px-7 pt-7 pb-10 shadow-sm min-w-0">
+                <main className="relative -mx-7 -mt-3.5 min-w-0 rounded-t-[20px] bg-white px-7 pt-7 pb-10 shadow-sm">
                     <section
                         aria-label="User management statistics"
                         className="jr-metrics-grid mb-6 grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-3"
@@ -404,9 +397,18 @@ export default function UserManagementPage({
                                     options={[
                                         { value: 'all', label: 'All Roles' },
                                         { value: 'admin', label: 'Admin' },
-                                        { value: 'engineer', label: 'Engineer' },
-                                        { value: 'superadmin', label: 'SuperAdmin' },
-                                        { value: 'user', label: 'User (legacy)' },
+                                        {
+                                            value: 'engineer',
+                                            label: 'Engineer',
+                                        },
+                                        {
+                                            value: 'superadmin',
+                                            label: 'SuperAdmin',
+                                        },
+                                        {
+                                            value: 'user',
+                                            label: 'User (legacy)',
+                                        },
                                         { value: 'viewer', label: 'Viewer' },
                                     ]}
                                 />
@@ -417,7 +419,10 @@ export default function UserManagementPage({
                                     options={[
                                         { value: 'all', label: 'All Statuses' },
                                         { value: 'active', label: 'Active' },
-                                        { value: 'inactive', label: 'Inactive' },
+                                        {
+                                            value: 'inactive',
+                                            label: 'Inactive',
+                                        },
                                     ]}
                                 />
                             </div>
@@ -430,7 +435,10 @@ export default function UserManagementPage({
                             className="mb-5 flex items-start justify-between rounded-xl border border-[#DDE9F5] bg-[#F5FAFF] p-3 text-sm text-[#4B698B]"
                         >
                             <span className="flex items-start gap-2">
-                                <Check size={16} className="mt-0.5 shrink-0 text-[#238554]" />
+                                <Check
+                                    size={16}
+                                    className="mt-0.5 shrink-0 text-[#238554]"
+                                />
                                 {visibleNotice}
                             </span>
                             <button
@@ -482,19 +490,28 @@ export default function UserManagementPage({
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <AccountTypeBadge role={a.accountType} />
+                                                    <AccountTypeBadge
+                                                        role={a.accountType}
+                                                    />
                                                 </td>
                                                 <td className="text-[#334155]">
-                                                    {engineerName(a.engineers_id)}
+                                                    {engineerName(
+                                                        a.engineers_id,
+                                                    )}
                                                 </td>
                                                 <td>
-                                                    <Status active={a.is_active} />
+                                                    <Status
+                                                        active={a.is_active}
+                                                    />
                                                 </td>
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={4} className="py-8 text-center text-sm text-[#64748B]">
+                                            <td
+                                                colSpan={4}
+                                                className="py-8 text-center text-sm text-[#64748B]"
+                                            >
                                                 No matching accounts found.
                                             </td>
                                         </tr>
@@ -536,32 +553,46 @@ export default function UserManagementPage({
                                             <tr key={e.id}>
                                                 <td>
                                                     <span className="font-semibold text-[#1E293B]">
-                                                        {e.first_name} {e.middle_name ? `${e.middle_name} ` : ''}{e.last_name}
+                                                        {e.first_name}{' '}
+                                                        {e.middle_name
+                                                            ? `${e.middle_name} `
+                                                            : ''}
+                                                        {e.last_name}
                                                     </span>
-                                                    <div className="text-xs text-[#64748B]">{e.email}</div>
+                                                    <div className="text-xs text-[#64748B]">
+                                                        {e.email}
+                                                    </div>
                                                 </td>
                                                 <td className="text-[#334155]">
-                                                    {e.position || e.rank || '—'}
+                                                    {e.position ||
+                                                        e.rank ||
+                                                        '—'}
                                                 </td>
                                                 <td className="text-[#334155]">
                                                     {lguName(e.lgus_id)}
                                                 </td>
                                                 <td className="text-[#334155]">
-                                                    {accountByEngineerId.get(e.id)?.username ?? (
-                                                        <span className="text-[#94A3B8]">No account</span>
+                                                    {accountByEngineerId.get(
+                                                        e.id,
+                                                    )?.username ?? (
+                                                        <span className="text-[#94A3B8]">
+                                                            No account
+                                                        </span>
                                                     )}
                                                 </td>
                                                 <td>
                                                     <span
                                                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                                                            e.engineer_status === 'Active'
+                                                            e.engineer_status ===
+                                                            'Active'
                                                                 ? 'bg-[#E9F7EE] text-[#238554]'
                                                                 : 'bg-[#F1F2F5] text-[#79869A]'
                                                         }`}
                                                     >
                                                         <span
                                                             className={`h-1.5 w-1.5 rounded-full ${
-                                                                e.engineer_status === 'Active'
+                                                                e.engineer_status ===
+                                                                'Active'
                                                                     ? 'bg-[#35A66B]'
                                                                     : 'bg-[#9AA5B5]'
                                                             }`}
@@ -575,7 +606,11 @@ export default function UserManagementPage({
                                                             variant="outline"
                                                             size="sm"
                                                             className="h-8 rounded-lg border-[#E2E8F0] px-3 text-xs font-medium text-[#334155] hover:bg-[#F8FAFC]"
-                                                            onClick={() => setEngineerEditor(e)}
+                                                            onClick={() =>
+                                                                setEngineerEditor(
+                                                                    e,
+                                                                )
+                                                            }
                                                         >
                                                             Edit
                                                         </Button>
@@ -585,7 +620,10 @@ export default function UserManagementPage({
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={6} className="py-8 text-center text-sm text-[#64748B]">
+                                            <td
+                                                colSpan={6}
+                                                className="py-8 text-center text-sm text-[#64748B]"
+                                            >
                                                 No matching engineers found.
                                             </td>
                                         </tr>
@@ -595,14 +633,16 @@ export default function UserManagementPage({
                         </div>
                     )}
 
-                    {tab === 'assignments' && (
-                        !assignmentsAvailable ? (
+                    {tab === 'assignments' &&
+                        (!assignmentsAvailable ? (
                             <div
                                 role="status"
                                 className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-6 text-sm text-[#64748B]"
                             >
-                                The EngineerLGU table could not be found. Assignment management remains unavailable;
-                                verify the existing database connection before making changes.
+                                The EngineerLGU table could not be found.
+                                Assignment management remains unavailable;
+                                verify the existing database connection before
+                                making changes.
                             </div>
                         ) : (
                             <div>
@@ -612,8 +652,12 @@ export default function UserManagementPage({
                                             Engineer–LGU assignments
                                         </p>
                                         <p className="mt-0.5 text-xs text-[#64748B]">
-                                            {activeAssignments} active of {assignments.length} assignment
-                                            {assignments.length === 1 ? '' : 's'} · Existing database records
+                                            {activeAssignments} active of{' '}
+                                            {assignments.length} assignment
+                                            {assignments.length === 1
+                                                ? ''
+                                                : 's'}{' '}
+                                            · Existing database records
                                         </p>
                                     </div>
                                     <span className="rounded-full bg-[#F1F5F9] px-3 py-1 text-xs font-medium text-[#475569]">
@@ -643,42 +687,67 @@ export default function UserManagementPage({
                                         </thead>
                                         <tbody>
                                             {filteredAssignments.length > 0 ? (
-                                                filteredAssignments.map((assignment) => (
-                                                    <tr key={assignment.id}>
-                                                        <td>
-                                                            <span className="font-semibold text-[#1E293B]">
-                                                                {engineerName(assignment.engineers_id)}
-                                                            </span>
-                                                            <div className="text-xs text-[#64748B]">
-                                                                Engineer #{assignment.engineers_id}
-                                                            </div>
-                                                        </td>
-                                                        <td className="text-[#334155]">
-                                                            {lguName(assignment.lgus_id)}{' '}
-                                                            <span className="text-xs text-[#64748B]">
-                                                                · LGU #{assignment.lgus_id}
-                                                            </span>
-                                                        </td>
-                                                        <td>
-                                                            <Status active={assignment.is_active} />
-                                                        </td>
-                                                        <td>
-                                                            {canManage && (
-                                                                <Button
-                                                                    variant="outline"
-                                                                    size="sm"
-                                                                    className="h-8 rounded-lg border-[#E2E8F0] px-3 text-xs font-medium text-[#334155] hover:bg-[#F8FAFC]"
-                                                                    onClick={() => setAssignmentChanging(assignment)}
-                                                                >
-                                                                    {assignment.is_active ? 'Deactivate' : 'Activate'}
-                                                                </Button>
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                ))
+                                                filteredAssignments.map(
+                                                    (assignment) => (
+                                                        <tr key={assignment.id}>
+                                                            <td>
+                                                                <span className="font-semibold text-[#1E293B]">
+                                                                    {engineerName(
+                                                                        assignment.engineers_id,
+                                                                    )}
+                                                                </span>
+                                                                <div className="text-xs text-[#64748B]">
+                                                                    Engineer #
+                                                                    {
+                                                                        assignment.engineers_id
+                                                                    }
+                                                                </div>
+                                                            </td>
+                                                            <td className="text-[#334155]">
+                                                                {lguName(
+                                                                    assignment.lgus_id,
+                                                                )}{' '}
+                                                                <span className="text-xs text-[#64748B]">
+                                                                    · LGU #
+                                                                    {
+                                                                        assignment.lgus_id
+                                                                    }
+                                                                </span>
+                                                            </td>
+                                                            <td>
+                                                                <Status
+                                                                    active={
+                                                                        assignment.is_active
+                                                                    }
+                                                                />
+                                                            </td>
+                                                            <td>
+                                                                {canManage && (
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        className="h-8 rounded-lg border-[#E2E8F0] px-3 text-xs font-medium text-[#334155] hover:bg-[#F8FAFC]"
+                                                                        onClick={() =>
+                                                                            setAssignmentChanging(
+                                                                                assignment,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        {assignment.is_active
+                                                                            ? 'Deactivate'
+                                                                            : 'Activate'}
+                                                                    </Button>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    ),
+                                                )
                                             ) : (
                                                 <tr>
-                                                    <td colSpan={4} className="py-8 text-center text-sm text-[#64748B]">
+                                                    <td
+                                                        colSpan={4}
+                                                        className="py-8 text-center text-sm text-[#64748B]"
+                                                    >
                                                         {assignments.length
                                                             ? 'No assignments match your search.'
                                                             : 'No EngineerLGU assignments have been recorded.'}
@@ -689,8 +758,7 @@ export default function UserManagementPage({
                                     </table>
                                 </div>
                             </div>
-                        )
-                    )}
+                        ))}
 
                     <div className="mt-4 flex items-center justify-between text-xs text-[#64748B]">
                         <p>
@@ -713,8 +781,12 @@ export default function UserManagementPage({
 
                 {engineerEditor !== null && (
                     <EngineerDialog
-                        key={engineerEditor === 'new' ? 'new' : engineerEditor.id}
-                        engineer={engineerEditor === 'new' ? null : engineerEditor}
+                        key={
+                            engineerEditor === 'new' ? 'new' : engineerEditor.id
+                        }
+                        engineer={
+                            engineerEditor === 'new' ? null : engineerEditor
+                        }
                         lgus={initialLgus}
                         onClose={() => setEngineerEditor(null)}
                     />
@@ -731,7 +803,9 @@ export default function UserManagementPage({
                 {assignmentChanging && (
                     <AssignmentStatusDialog
                         assignment={assignmentChanging}
-                        engineerName={engineerName(assignmentChanging.engineers_id)}
+                        engineerName={engineerName(
+                            assignmentChanging.engineers_id,
+                        )}
                         lguName={lguName(assignmentChanging.lgus_id)}
                         engineerIsActive={
                             engineerById.get(assignmentChanging.engineers_id)
@@ -847,7 +921,9 @@ export default function UserManagementPage({
                                                 Viewer — read only
                                             </option>
                                         )}
-                                        {creatableRoles.includes('engineer') && (
+                                        {creatableRoles.includes(
+                                            'engineer',
+                                        ) && (
                                             <option value="engineer">
                                                 Engineer — requires an unlinked
                                                 Engineer
@@ -864,9 +940,9 @@ export default function UserManagementPage({
                                 </div>
                                 {!engineerRoleReady && (
                                     <p className="text-xs text-[#94501C]">
-                                        Engineer account creation is disabled until
-                                        the shared database role constraint is
-                                        approved.
+                                        Engineer account creation is disabled
+                                        until the shared database role
+                                        constraint is approved.
                                     </p>
                                 )}
                                 {form.accountType === 'viewer' ? (
@@ -908,7 +984,8 @@ export default function UserManagementPage({
                                             onChange={(e) =>
                                                 setForm((f) => ({
                                                     ...f,
-                                                    engineers_id: e.target.value,
+                                                    engineers_id:
+                                                        e.target.value,
                                                 }))
                                             }
                                         >
@@ -925,13 +1002,18 @@ export default function UserManagementPage({
                                                         ),
                                                 )
                                                 .map((e) => (
-                                                    <option key={e.id} value={e.id}>
-                                                        {e.first_name} {e.last_name}{' '}
-                                                        (#{e.id})
+                                                    <option
+                                                        key={e.id}
+                                                        value={e.id}
+                                                    >
+                                                        {e.first_name}{' '}
+                                                        {e.last_name} (#{e.id})
                                                     </option>
                                                 ))}
                                         </select>
-                                        <FieldError text={errors.engineers_id} />
+                                        <FieldError
+                                            text={errors.engineers_id}
+                                        />
                                     </div>
                                 )}
                                 <div>

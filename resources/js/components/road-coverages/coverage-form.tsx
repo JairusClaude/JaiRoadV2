@@ -319,37 +319,69 @@ export function CoverageForm({
                                             {requiresCreator && !coverage && (
                                                 <div className="jr-record-field">
                                                     <Label htmlFor="created_by_engineer_id">
-                                                        Mapping Engineer{required}
+                                                        Mapping Engineer
+                                                        {required}
                                                     </Label>
                                                     <Select
-                                                        value={form.data.created_by_engineer_id}
-                                                        onValueChange={(value) =>
-                                                            set('created_by_engineer_id', value)
+                                                        value={
+                                                            form.data
+                                                                .created_by_engineer_id
                                                         }
-                                                        disabled={!enabled || form.processing}
+                                                        onValueChange={(
+                                                            value,
+                                                        ) =>
+                                                            set(
+                                                                'created_by_engineer_id',
+                                                                value,
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            !enabled ||
+                                                            form.processing
+                                                        }
                                                     >
                                                         <SelectTrigger
                                                             id="created_by_engineer_id"
                                                             className="jr-record-select"
                                                             aria-required="true"
-                                                            aria-invalid={!!form.errors.created_by_engineer_id}
+                                                            aria-invalid={
+                                                                !!form.errors
+                                                                    .created_by_engineer_id
+                                                            }
                                                         >
                                                             <SelectValue placeholder="Select responsible active Engineer" />
                                                         </SelectTrigger>
                                                         <SelectContent className="jr-theme jr-menu">
-                                                            {roadCreatorChoices.map((engineer) => (
-                                                                <SelectItem
-                                                                    key={engineer.id}
-                                                                    value={String(engineer.id)}
-                                                                >
-                                                                    {engineer.first_name} {engineer.last_name}
-                                                                </SelectItem>
-                                                            ))}
+                                                            {roadCreatorChoices.map(
+                                                                (engineer) => (
+                                                                    <SelectItem
+                                                                        key={
+                                                                            engineer.id
+                                                                        }
+                                                                        value={String(
+                                                                            engineer.id,
+                                                                        )}
+                                                                    >
+                                                                        {
+                                                                            engineer.first_name
+                                                                        }{' '}
+                                                                        {
+                                                                            engineer.last_name
+                                                                        }
+                                                                    </SelectItem>
+                                                                ),
+                                                            )}
                                                         </SelectContent>
                                                     </Select>
-                                                    {error('created_by_engineer_id')}
+                                                    {error(
+                                                        'created_by_engineer_id',
+                                                    )}
                                                     <p className="jr-field-hint">
-                                                        Required for accurate road attribution. Your administrator identity is recorded separately in the audit log.
+                                                        Required for accurate
+                                                        road attribution. Your
+                                                        administrator identity
+                                                        is recorded separately
+                                                        in the audit log.
                                                     </p>
                                                 </div>
                                             )}
@@ -640,14 +672,19 @@ export function CoverageForm({
                                 JSON.stringify(
                                     lineCoordinates(coverage.geojson),
                                 ) && (
-                                <div
-                                    className="jr-record-field jr-correction-reason"
-                                >
+                                <div className="jr-record-field jr-correction-reason">
                                     <Label htmlFor="correction_reason">
                                         Correction reason
-                                        <span className="jr-required"> *Required</span>
+                                        <span className="jr-required">
+                                            {' '}
+                                            *Required
+                                        </span>
                                     </Label>
-                                    <p className="jr-field-hint">Explain why the mapped road alignment is being corrected. This reason is recorded in the audit log.</p>
+                                    <p className="jr-field-hint">
+                                        Explain why the mapped road alignment is
+                                        being corrected. This reason is recorded
+                                        in the audit log.
+                                    </p>
                                     <textarea
                                         className="jr-textarea"
                                         required

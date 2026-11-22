@@ -64,7 +64,9 @@ export default function DdMaintenanceProjects({
     records,
 }: Props) {
     const page = usePage();
-    const [deleteTarget, setDeleteTarget] = useState<ProjectSummary | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<ProjectSummary | null>(
+        null,
+    );
     const [deleting, setDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState('');
     const qs = new URLSearchParams(page.url.split('?')[1] ?? '');
@@ -155,13 +157,17 @@ export default function DdMaintenanceProjects({
         setDeleteTarget(rows[0]);
     };
     const confirmRemoval = () => {
-        if (!canManage || !deleteTarget || deleting) return;
+        if (!canManage || !deleteTarget || deleting) {
+            return;
+        }
+
         setDeleting(true);
         setDeleteError('');
         router.delete(`/dd-phase3/ops/projects/${deleteTarget.id}`, {
             preserveScroll: true,
             onSuccess: () => setDeleteTarget(null),
-            onError: errors => setDeleteError(Object.values(errors).join(' ')),
+            onError: (errors) =>
+                setDeleteError(Object.values(errors).join(' ')),
             onFinish: () => setDeleting(false),
         });
     };
@@ -335,11 +341,22 @@ export default function DdMaintenanceProjects({
                 error={deleteError}
                 confirmLabel="Delete Project"
                 blocked={!!deleteTarget?.maintenance_records_count}
-                onClose={() => { if (!deleting) setDeleteTarget(null); }}
+                onClose={() => {
+                    if (!deleting) {
+                        setDeleteTarget(null);
+                    }
+                }}
                 onConfirm={confirmRemoval}
             >
-                <p className="jr-delete-target-title">{deleteTarget?.project_title}</p>
-                <dl className="jr-delete-counts"><div><dt>Maintenance records</dt><dd>{deleteTarget?.maintenance_records_count ?? 0}</dd></div></dl>
+                <p className="jr-delete-target-title">
+                    {deleteTarget?.project_title}
+                </p>
+                <dl className="jr-delete-counts">
+                    <div>
+                        <dt>Maintenance records</dt>
+                        <dd>{deleteTarget?.maintenance_records_count ?? 0}</dd>
+                    </div>
+                </dl>
             </DeletionDialog>
         </>
     );

@@ -68,13 +68,16 @@ try {
         Viewer: ['rgb(230, 239, 255)', 'rgb(18, 74, 156)', 'rgb(32, 60, 104)', 'rgb(191, 219, 254)'],
     };
     const originallyDark = await page.locator('html').evaluate(el => el.classList.contains('dark'));
+
     try {
         for (const dark of [false, true]) {
             await page.locator('html').evaluate((el, enabled) => el.classList.toggle('dark', enabled), dark);
+
             for (const [role, colors] of Object.entries(palette)) {
                 const badge = page.locator(`tbody .um-role[data-role="${role}"]`).first();
                 const actual = await badge.evaluate(el => {
                     const style = getComputedStyle(el);
+
                     return [style.backgroundColor, style.color];
                 });
                 assert.deepEqual(actual, colors.slice(dark ? 2 : 0, dark ? 4 : 2), `${role} badge: ${dark ? 'dark' : 'light'} mode`);

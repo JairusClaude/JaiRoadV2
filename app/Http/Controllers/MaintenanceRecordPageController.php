@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Services\DuplicateMaintenancePeriod;
 use App\Services\DeletionChallenge;
+use App\Services\DuplicateMaintenancePeriod;
 use App\Services\OperationAudit;
 use App\Services\PreservedProjectDeletion;
+use App\Services\PreviewDataService;
 use App\Services\RoleAccess;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -28,7 +29,7 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
     public function recordForm(Request $request, int $project, ?int $id = null): Response
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::recordForm($request, $project, $id);
+            return PreviewDataService::recordForm($request, $project, $id);
         }
 
         $actor = $this->actor($request);
@@ -56,7 +57,7 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
     public function saveRecord(Request $request, int $project, ?int $id = null): RedirectResponse
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::saveRecord($request, $project, $id);
+            return PreviewDataService::saveRecord($request, $project, $id);
         }
 
         $actor = $this->actor($request);
@@ -80,13 +81,14 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
 
         $parent = self::BASE.'/maintenance-projects/'.$project;
         $detail = $id === null ? $parent : $parent.'/records/'.$id;
+
         return redirect($this->editReturn($request, $id === null ? $parent : $detail, [$parent, $detail, self::BASE.'/maintenance-records']))->with('dd_operations_status', 'MaintenanceRecord saved to the database.');
     }
 
     public function recordShow(Request $request, int $project, int $id): Response
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::recordShow($request, $project, $id);
+            return PreviewDataService::recordShow($request, $project, $id);
         }
 
         $actor = $this->actor($request);
@@ -110,7 +112,7 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
     public function recordIndex(Request $request): Response
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::recordIndex($request);
+            return PreviewDataService::recordIndex($request);
         }
 
         $actor = $this->actor($request);
@@ -152,7 +154,7 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
     public function recordCreate(Request $request): Response
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::recordCreate($request);
+            return PreviewDataService::recordCreate($request);
         }
 
         $actor = $this->actor($request);
@@ -183,7 +185,7 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
     public function deleteRecord(Request $request, int $id): RedirectResponse
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::deleteRecord($request, $id);
+            return PreviewDataService::deleteRecord($request, $id);
         }
 
         $actor = $this->actor($request);
@@ -198,13 +200,14 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
         if ($record?->project_id !== null) {
             $allowed[] = self::BASE.'/maintenance-projects/'.$record->project_id;
         }
+
         return redirect($this->editReturn($request, $directory, $allowed))->with('dd_operations_status', 'Maintenance record deleted successfully.');
     }
 
     public function bulkDeleteRecord(Request $request): RedirectResponse
     {
         if (self::isPreview($request)) {
-            return \App\Services\PreviewDataService::bulkDeleteRecord($request);
+            return PreviewDataService::bulkDeleteRecord($request);
         }
 
         $actor = $this->actor($request);

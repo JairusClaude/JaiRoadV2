@@ -100,7 +100,7 @@ export default function Show({
                                     className="jr-report-context-link"
                                 >
                                     <strong>
-                                         {update.project.project_title}
+                                        {update.project.project_title}
                                     </strong>
                                     <span className="jr-field-hint">
                                         Project ID: {update.project.id}

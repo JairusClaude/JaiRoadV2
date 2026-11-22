@@ -85,12 +85,17 @@ export async function verifyPermanentFileDeletion({
     await admin.setViewportSize({ width: 390, height: 844 });
     const bounds = await documentModal.evaluate(el => {
         const r = el.getBoundingClientRect();
+
         return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: innerWidth, height: innerHeight };
     });
     assert.ok(bounds.left >= 0 && bounds.right <= bounds.width && bounds.top >= 0 && bounds.bottom <= bounds.height);
     await documentModal.getByRole('button', { name: 'Cancel', exact: true }).click();
     assert.equal((await admin.request.get(`${base}${doc.download_url}`)).status(), 200);
-    if (previousViewport) await admin.setViewportSize(previousViewport);
+
+    if (previousViewport) {
+await admin.setViewportSize(previousViewport);
+}
+
     await admin.getByRole('button', { name: 'Save Changes', exact: true }).click();
     await admin.getByRole('dialog', { name: 'Remove attachment permanently?' }).getByRole('button', { name: 'Save and Remove', exact: true }).click();
     await admin.waitForURL(`${ui}/maintenance-documents/${doc.id}`);
@@ -102,6 +107,7 @@ export async function verifyPermanentFileDeletion({
     assert.equal(retainedDocument.download_url, null);
     // Match the monthly-update empty state without phantom attachment or file actions.
     await admin.getByRole('heading', { name: retainedDocument.document_title, exact: true }).waitFor();
+
     for (const width of [1440, 390]) {
         const viewport = admin.viewportSize();
         await admin.setViewportSize({ width, height: 844 });
@@ -112,8 +118,12 @@ export async function verifyPermanentFileDeletion({
         assert.equal(await admin.getByRole('link', { name: 'Download', exact: true }).count(), 0);
         assert.equal(await admin.getByRole('button', { name: /^(View|Download)$/ }).count(), 0);
         assert.equal(await admin.getByRole('heading', { name: 'Document Information', exact: true }).isVisible(), true);
-        if (viewport) await admin.setViewportSize(viewport);
+
+        if (viewport) {
+await admin.setViewportSize(viewport);
+}
     }
+
     await admin.reload();
     await admin.getByRole('heading', { name: retainedDocument.document_title, exact: true }).waitFor();
     assert.equal(await admin.getByRole('heading', { name: 'Document Attachment', exact: true }).isVisible(), true);

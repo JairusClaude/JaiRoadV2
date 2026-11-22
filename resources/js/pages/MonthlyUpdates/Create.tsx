@@ -55,14 +55,20 @@ export default function Create(parents: MonthlyCreateProps) {
 
         if (Object.keys(errors).length) {
             form.setError(errors);
-            document
-                .getElementById(Object.keys(errors)[0])
-                ?.focus();
+            document.getElementById(Object.keys(errors)[0])?.focus();
 
             return;
         }
 
-        if (page.props.canonicalFrontend === true && form.data.removed_media_ids.length && !confirmed) { setConfirmRemoval(true); return; }
+        if (
+            page.props.canonicalFrontend === true &&
+            form.data.removed_media_ids.length &&
+            !confirmed
+        ) {
+            setConfirmRemoval(true);
+
+            return;
+        }
 
         submitting.current = true;
 
@@ -75,44 +81,70 @@ export default function Create(parents: MonthlyCreateProps) {
             }));
         }
 
-        form.submit(update ? 'put' : 'post', update ? editUrl(parents.submitUrl, cancel) : parents.submitUrl, {
-            forceFormData: page.props.canonicalFrontend !== true,
-            preserveScroll: true,
-            onSuccess: (responsePage) => {
-                setConfirmRemoval(false);
-                if (page.props.canonicalFrontend !== true) return;
-                const match = responsePage.url.match(new RegExp('/monthly-updates/([0-9]+)(?:[/?#]|$)'));
-                const savedId = update?.id ?? Number(match?.[1] ?? 0);
-                if (selectedAttachments.length && (!Number.isSafeInteger(savedId) || savedId < 1)) {
-                    form.setError('attachments', 'The update was saved, but its media changes could not be completed. Open the saved update and retry.');
-                    return;
-                }
+        form.submit(
+            update ? 'put' : 'post',
+            update ? editUrl(parents.submitUrl, cancel) : parents.submitUrl,
+            {
+                forceFormData: page.props.canonicalFrontend !== true,
+                preserveScroll: true,
+                onSuccess: (responsePage) => {
+                    setConfirmRemoval(false);
 
-                const uploadNext = (index: number) => {
-                    if (index >= selectedAttachments.length) {
+                    if (page.props.canonicalFrontend !== true) {
                         return;
                     }
-                    const mediaUrl = workspaceHref(`/monthly-updates/${savedId}/media`);
-                    router.post(update ? editUrl(mediaUrl, cancel) : mediaUrl, {
-                        file: selectedAttachments[index],
-                    }, {
-                        forceFormData: true,
-                        preserveScroll: true,
-                        onSuccess: () => uploadNext(index + 1),
-                        onError: (errors) => {
-                            const message = errors.file ?? 'The update was saved, but a media file could not be uploaded. Open the saved update and retry.';
-                            form.setError('attachments', message);
-                            toast.error(message);
-                        },
-                    });
-                };
-                uploadNext(0);
-            },
-            onFinish: () => {
-                submitting.current = false;
-            },
-        });
 
+                    const match = responsePage.url.match(
+                        new RegExp('/monthly-updates/([0-9]+)(?:[/?#]|$)'),
+                    );
+                    const savedId = update?.id ?? Number(match?.[1] ?? 0);
+
+                    if (
+                        selectedAttachments.length &&
+                        (!Number.isSafeInteger(savedId) || savedId < 1)
+                    ) {
+                        form.setError(
+                            'attachments',
+                            'The update was saved, but its media changes could not be completed. Open the saved update and retry.',
+                        );
+
+                        return;
+                    }
+
+                    const uploadNext = (index: number) => {
+                        if (index >= selectedAttachments.length) {
+                            return;
+                        }
+
+                        const mediaUrl = workspaceHref(
+                            `/monthly-updates/${savedId}/media`,
+                        );
+                        router.post(
+                            update ? editUrl(mediaUrl, cancel) : mediaUrl,
+                            {
+                                file: selectedAttachments[index],
+                            },
+                            {
+                                forceFormData: true,
+                                preserveScroll: true,
+                                onSuccess: () => uploadNext(index + 1),
+                                onError: (errors) => {
+                                    const message =
+                                        errors.file ??
+                                        'The update was saved, but a media file could not be uploaded. Open the saved update and retry.';
+                                    form.setError('attachments', message);
+                                    toast.error(message);
+                                },
+                            },
+                        );
+                    };
+                    uploadNext(0);
+                },
+                onFinish: () => {
+                    submitting.current = false;
+                },
+            },
+        );
     };
 
     return (
@@ -173,8 +205,33 @@ export default function Create(parents: MonthlyCreateProps) {
                 onCancel={() => router.visit(cancel)}
                 onSave={() => save()}
             />
-            <DeletionDialog open={confirmRemoval} title="Remove selected media permanently?" description="Save the changes and permanently remove the selected private media files. The monthly update and its information will be retained." selectionLabel={`${form.data.removed_media_ids.length} selected media files`} processing={form.processing} error={Object.values(form.errors).join(' ')} confirmLabel="Save and Remove" busyLabel="Saving…" onClose={() => { if (!form.processing) setConfirmRemoval(false); }} onConfirm={() => save(true)}>
-                <ul className="jr-delete-list">{(parents.media ?? []).filter(file => form.data.removed_media_ids.includes(file.id)).map(file => <li key={file.id}><strong>{file.file_name}</strong></li>)}</ul>
+            <DeletionDialog
+                open={confirmRemoval}
+                title="Remove selected media permanently?"
+                description="Save the changes and permanently remove the selected private media files. The monthly update and its information will be retained."
+                selectionLabel={`${form.data.removed_media_ids.length} selected media files`}
+                processing={form.processing}
+                error={Object.values(form.errors).join(' ')}
+                confirmLabel="Save and Remove"
+                busyLabel="Saving…"
+                onClose={() => {
+                    if (!form.processing) {
+                        setConfirmRemoval(false);
+                    }
+                }}
+                onConfirm={() => save(true)}
+            >
+                <ul className="jr-delete-list">
+                    {(parents.media ?? [])
+                        .filter((file) =>
+                            form.data.removed_media_ids.includes(file.id),
+                        )
+                        .map((file) => (
+                            <li key={file.id}>
+                                <strong>{file.file_name}</strong>
+                            </li>
+                        ))}
+                </ul>
             </DeletionDialog>
         </>
     );

@@ -128,16 +128,21 @@ export function RecordDirectory({
             ]}
         />
     );
-    const hasFilters = [filters.search, filters.municipality, filters.year, filters.quarter, filters.status].some((value) => Boolean(value && value !== 'all'));
+    const hasFilters = [
+        filters.search,
+        filters.municipality,
+        filters.year,
+        filters.quarter,
+        filters.status,
+    ].some((value) => Boolean(value && value !== 'all'));
 
     const displayedTotalProjects = totalProjects ?? projects?.length ?? 0;
     const displayedTotalRecords =
         totalRecords ?? records?.total ?? records?.data?.length ?? 0;
     const displayedCompletedRoads =
         completedRoads ??
-        records?.data?.filter(
-            (r) => r.status?.toLowerCase() === 'completed',
-        ).length ??
+        records?.data?.filter((r) => r.status?.toLowerCase() === 'completed')
+            .length ??
         0;
     const displayedOngoingRoads =
         ongoingRoads ??
@@ -204,71 +209,84 @@ export function RecordDirectory({
                     />
                 </section>
                 <div className="jr-record-filter-controls">
-                <div className="jr-search">
-                    <Search className="size-[18px]" />
-                    <Input
-                        type="search"
-                        maxLength={255}
-                        aria-label="Search maintenance projects or managing engineers"
-                        placeholder="Search maintenance projects or managing engineers..."
-                        value={search}
-                        disabled={!integration.ready || busy}
-                        onChange={(event) => {
-                            setSearch(event.target.value);
-                            clear();
-                            onSearch(event.target.value);
-                        }}
-                    />
-                </div>
-                <div className="jr-filter-row">
-                    {filter('municipality', 'Municipality', municipalities)}
-                    {filter(
-                        'year',
-                        'Reporting Year',
-                        years.map((year) => ({
-                            value: String(year),
-                            label: String(year),
-                        })),
-                    )}
-                    {filter(
-                        'quarter',
-                        'Quarter',
-                        ['Q1', 'Q2', 'Q3', 'Q4'].map((value) => ({
-                            value,
-                            label: value,
-                        })),
-                    )}
-                    {filter(
-                        'status',
-                        'Status',
-                        ['Ongoing', 'Completed'].map((value) => ({
-                            value,
-                            label: value,
-                        })),
-                    )}
-                    <DirectoryFilter
-                        label="Sort records"
-                        value={filters.sort}
-                        disabled={!integration.ready || busy}
-                        options={[
-                            { value: 'newest', label: 'Newest first' },
-                            { value: 'oldest', label: 'Oldest first' },
-                        ]}
-                        onChange={(sort) =>
-                            apply({
-                                ...filters,
-                                search,
-                                sort: sort as 'newest' | 'oldest',
-                            })
-                        }
-                    />
-                </div>
+                    <div className="jr-search">
+                        <Search className="size-[18px]" />
+                        <Input
+                            type="search"
+                            maxLength={255}
+                            aria-label="Search maintenance projects or managing engineers"
+                            placeholder="Search maintenance projects or managing engineers..."
+                            value={search}
+                            disabled={!integration.ready || busy}
+                            onChange={(event) => {
+                                setSearch(event.target.value);
+                                clear();
+                                onSearch(event.target.value);
+                            }}
+                        />
+                    </div>
+                    <div className="jr-filter-row">
+                        {filter('municipality', 'Municipality', municipalities)}
+                        {filter(
+                            'year',
+                            'Reporting Year',
+                            years.map((year) => ({
+                                value: String(year),
+                                label: String(year),
+                            })),
+                        )}
+                        {filter(
+                            'quarter',
+                            'Quarter',
+                            ['Q1', 'Q2', 'Q3', 'Q4'].map((value) => ({
+                                value,
+                                label: value,
+                            })),
+                        )}
+                        {filter(
+                            'status',
+                            'Status',
+                            ['Ongoing', 'Completed'].map((value) => ({
+                                value,
+                                label: value,
+                            })),
+                        )}
+                        <DirectoryFilter
+                            label="Sort records"
+                            value={filters.sort}
+                            disabled={!integration.ready || busy}
+                            options={[
+                                { value: 'newest', label: 'Newest first' },
+                                { value: 'oldest', label: 'Oldest first' },
+                            ]}
+                            onChange={(sort) =>
+                                apply({
+                                    ...filters,
+                                    search,
+                                    sort: sort as 'newest' | 'oldest',
+                                })
+                            }
+                        />
+                    </div>
                 </div>
                 {hasFilters && (
-                    <Button type="button" variant="outline" onClick={() => {
-                        setSearch('');
-                        apply({ search: '', municipality: 'all', year: 'all', quarter: 'all', status: 'all', sort: 'newest' });
-                    }}>Clear filters</Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                            setSearch('');
+                            apply({
+                                search: '',
+                                municipality: 'all',
+                                year: 'all',
+                                quarter: 'all',
+                                status: 'all',
+                                sort: 'newest',
+                            });
+                        }}
+                    >
+                        Clear filters
+                    </Button>
                 )}
                 <span className="sr-only">
                     Search results update automatically while typing.
@@ -501,7 +519,10 @@ export function RecordDirectory({
                                                     }
                                                     className="text-red-600 focus:bg-red-50 focus:text-red-700"
                                                     onSelect={() =>
-                                                        onDelete([record], false)
+                                                        onDelete(
+                                                            [record],
+                                                            false,
+                                                        )
                                                     }
                                                 >
                                                     <Trash2 className="size-4" />

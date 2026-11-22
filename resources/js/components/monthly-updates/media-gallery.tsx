@@ -226,7 +226,6 @@ export function MediaGallery({ media }: { media: MonthlyMedia[] }) {
                                         {contents}
                                     </div>
                                 )}
-
                             </li>
                         );
                     })}

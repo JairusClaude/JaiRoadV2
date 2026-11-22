@@ -7,16 +7,16 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Services\AccountIdentityResolver;
 use App\Services\AccountProvisioning;
-use App\Services\OperationAudit;
 use App\Services\LinkedPasswordUpdater;
-use Illuminate\Database\QueryException;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Password;
+use App\Services\OperationAudit;
 use App\Services\RoleAccess;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use stdClass;
 
@@ -195,6 +195,7 @@ final class PeopleLifecycleController extends Controller
         if (! $provisioning->verified((int) $account->id, (string) $account->account_type, $engineerId)) {
             return 'This existing account lacks matching administrator provisioning approval. A database administrator must complete the approved account review before password recovery.';
         }
+
         return 'This account did not pass the sign-in eligibility checks. A database administrator must review its authorization record.';
     }
 

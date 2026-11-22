@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 /**
  * Canonical read projections for the reviewed frontend. Writes delegate to the
@@ -130,7 +131,7 @@ class OperationsFrontendController extends Controller
             'kilometers' => $row->kilometers, 'pavement_type' => $row->pavement_type, 'state_category' => $row->state_category,
             'geojson' => json_decode($row->geojson, true, 512, JSON_THROW_ON_ERROR), 'created_by' => (int) $row->created_by,
             'created_at' => $row->created_at, 'updated_at' => $row->updated_at,
-            'has_projects' => !empty($row->project_id),
+            'has_projects' => ! empty($row->project_id),
             'project_title' => $row->project_title ?? null,
         ];
     }
@@ -373,13 +374,13 @@ class OperationsFrontendController extends Controller
     {
         try {
             $result = $this->fileDeletions->delete($request->user(), $kind, $id);
-        } catch (\Illuminate\Validation\ValidationException $error) {
+        } catch (ValidationException $error) {
             throw $error;
-        } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $error) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['file' => 'File deletion unavailable or unauthorized. No successful deletion was confirmed.']);
+        } catch (HttpExceptionInterface $error) {
+            throw ValidationException::withMessages(['file' => 'File deletion unavailable or unauthorized. No successful deletion was confirmed.']);
         }
         if ($result['state'] !== 'completed') {
-            throw \Illuminate\Validation\ValidationException::withMessages(['file' => 'File deletion is pending. Retry the deletion or contact an administrator.']);
+            throw ValidationException::withMessages(['file' => 'File deletion is pending. Retry the deletion or contact an administrator.']);
         }
     }
 
@@ -387,7 +388,7 @@ class OperationsFrontendController extends Controller
     {
         abort_unless(RoleAccess::canDeleteOperations($actor['role']), 403);
         if (! $this->fileDeletions->operationallyEnabled()) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['file' => 'Permanent file deletion is temporarily unavailable.']);
+            throw ValidationException::withMessages(['file' => 'Permanent file deletion is temporarily unavailable.']);
         }
     }
 
@@ -402,6 +403,7 @@ class OperationsFrontendController extends Controller
         if (! is_string($path) || ! in_array($path, $allowed, true)) {
             return $fallback;
         }
+
         return $path;
     }
 
@@ -426,6 +428,7 @@ class OperationsFrontendController extends Controller
 
         // The path is allowlisted and relative. Retain the original query only.
         $query = parse_url($origin, PHP_URL_QUERY);
+
         return $path.(is_string($query) && $query !== '' ? '?'.$query : '');
     }
 
@@ -433,7 +436,7 @@ class OperationsFrontendController extends Controller
     {
         $id = $request->integer('record');
         $record = $id > 0 ? $this->records($actor)->where('m.id', $id)->first() : null;
+
         return $record ? self::BASE.'/maintenance-projects/'.$record->project_id.'/records/'.$id : $fallback;
     }
-
 }

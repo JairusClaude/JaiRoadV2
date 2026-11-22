@@ -157,6 +157,7 @@ try {
     await viewer.locator('.jr-viewer-brand-logo').first().waitFor();
     await viewer.waitForFunction(() => {
         const logo = document.querySelector('.jr-viewer-brand-logo');
+
         return logo instanceof HTMLImageElement && logo.complete && logo.naturalWidth > 0;
     });
     const viewerLogo = await viewer.locator('.jr-viewer-brand-logo').first().evaluate(img => {
@@ -165,6 +166,7 @@ try {
         canvas.height = img.naturalHeight;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0);
+
         return { path: new URL(img.src).pathname, cornerAlpha: ctx.getImageData(0, 0, 1, 1).data[3], tile: getComputedStyle(img.parentElement).backgroundColor, shadow: getComputedStyle(img.parentElement).boxShadow };
     });
     assert.equal(viewerLogo.path, '/images/jairoads/peo-ddo-transparent.webp');
@@ -175,51 +177,62 @@ try {
     await viewer.getByText('Read-Only Access', { exact: true }).waitFor();
     await viewer.getByRole('button', { name: 'Refresh dashboard' }).waitFor();
     assert.equal(await viewer.locator('.jr-viewer-sidebar .jr-nav-link.jr-active').first().evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(29, 93, 181)');
+
     for (const other of [engineer, admin, superadmin]) {
         assert.equal(await other.locator('.jr-viewer-workspace').count(), 0);
     }
+
     await engineer.locator('.jr-engineer-workspace').waitFor();
     await engineer.getByRole('heading', { name: 'Engineering Dashboard', exact: true }).waitFor();
     await engineer.getByText('Technical Workspace', { exact: true }).waitFor();
     await engineer.getByRole('button', { name: 'Refresh dashboard' }).waitFor();
     await engineer.waitForFunction(() => {
         const logo = document.querySelector('.jr-engineer-brand-logo');
+
         return logo instanceof HTMLImageElement && logo.complete && logo.naturalWidth > 0;
     });
     assert.equal(await engineer.locator('.jr-engineer-sidebar .jr-nav-link.jr-active').first().evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(169, 75, 12)');
     assert.equal(await engineer.locator('.jr-engineer-brand-logo').first().evaluate(el => new URL(el.src).pathname), '/images/jairoads/peo-ddo-transparent.webp');
     assert.equal(await engineer.locator('.jr-engineer-brand-logo').first().evaluate(el => getComputedStyle(el.parentElement).backgroundColor), 'rgba(0, 0, 0, 0)');
+
     for (const other of [viewer, admin, superadmin]) {
         assert.equal(await other.locator('.jr-engineer-workspace').count(), 0);
     }
+
     await superadmin.locator('.jr-superadmin-workspace').waitFor();
     await superadmin.getByRole('heading', { name: 'System Command Center', exact: true }).waitFor();
     await superadmin.getByText('Highest Authority · SuperAdmin', { exact: true }).waitFor();
     await superadmin.getByRole('button', { name: 'Refresh dashboard' }).waitFor();
     await superadmin.waitForFunction(() => {
         const logo = document.querySelector('.jr-superadmin-brand-logo');
+
         return logo instanceof HTMLImageElement && logo.complete && logo.naturalWidth > 0;
     });
     assert.equal(await superadmin.locator('.jr-superadmin-sidebar .jr-nav-link.jr-active').first().evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(81, 38, 155)');
     assert.equal(await superadmin.locator('.jr-superadmin-brand-logo').first().evaluate(el => new URL(el.src).pathname), '/images/jairoads/peo-ddo-transparent.webp');
     assert.equal(await superadmin.locator('.jr-superadmin-brand-logo').first().evaluate(el => getComputedStyle(el.parentElement).backgroundColor), 'rgba(0, 0, 0, 0)');
+
     for (const other of [viewer, engineer, admin]) {
         assert.equal(await other.locator('.jr-superadmin-workspace').count(), 0);
     }
+
     await admin.locator('.jr-admin-workspace').waitFor();
     await admin.getByRole('heading', { name: 'Administration Dashboard', exact: true }).waitFor();
     await admin.getByText('Administration Panel', { exact: true }).waitFor();
     await admin.getByRole('button', { name: 'Refresh dashboard' }).waitFor();
     await admin.waitForFunction(() => {
         const logo = document.querySelector('.jr-admin-brand-logo');
+
         return logo instanceof HTMLImageElement && logo.complete && logo.naturalWidth > 0;
     });
     assert.equal(await admin.locator('.jr-admin-sidebar .jr-nav-link.jr-active').first().evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(200, 41, 61)');
     assert.equal(await admin.locator('.jr-admin-brand-logo').first().evaluate(el => new URL(el.src).pathname), '/images/jairoads/peo-ddo-transparent.webp');
     assert.equal(await admin.locator('.jr-admin-brand-logo').first().evaluate(el => getComputedStyle(el.parentElement).backgroundColor), 'rgba(0, 0, 0, 0)');
+
     for (const other of [viewer, engineer, superadmin]) {
         assert.equal(await other.locator('.jr-admin-workspace').count(), 0);
     }
+
     // Decorative motion uses each authenticated role's accent and obeys both preferences.
     for (const [page, rgb] of [[viewer, '96 165 250'], [engineer, '251 146 60'], [admin, '241 107 118'], [superadmin, '167 139 250']]) {
         const layer = page.locator('.jr-sidebar-waves');
@@ -232,23 +245,37 @@ try {
         assert.equal(await wave.evaluate(el => getComputedStyle(el).animationName), 'none');
         await page.emulateMedia({ reducedMotion: 'no-preference' });
         await wave.evaluate(el => {
-            if (getComputedStyle(el).animationName !== 'jr-sidebar-wave-flow') throw new Error('Wave animation missing');
-            if (getComputedStyle(el).animationIterationCount !== 'infinite') throw new Error('Wave does not loop');
+            if (getComputedStyle(el).animationName !== 'jr-sidebar-wave-flow') {
+throw new Error('Wave animation missing');
+}
+
+            if (getComputedStyle(el).animationIterationCount !== 'infinite') {
+throw new Error('Wave does not loop');
+}
+
             const animation = el.getAnimations()[0];
-            if (!animation) throw new Error('Wave has no running animation');
+
+            if (!animation) {
+throw new Error('Wave has no running animation');
+}
+
             animation.pause();
             animation.currentTime = 0;
             const start = getComputedStyle(el).transform;
             animation.currentTime = 5000;
             const middle = getComputedStyle(el).transform;
             animation.play();
-            if (start === middle) throw new Error('Wave transform is static');
+
+            if (start === middle) {
+throw new Error('Wave transform is static');
+}
         });
         await page.evaluate(() => document.documentElement.classList.add('jr-reduce-motion'));
         assert.equal(await wave.evaluate(el => getComputedStyle(el).animationName), 'none');
         await page.evaluate(() => document.documentElement.classList.remove('jr-reduce-motion'));
         await page.emulateMedia({ reducedMotion: 'reduce' });
     }
+
     const dashboardMap = engineer.getByRole('region', { name: 'My projects road map' });
     await dashboardMap.waitFor();
     const myProjects = dashboardMap.getByRole('switch', { name: 'My projects only' });
@@ -280,14 +307,31 @@ try {
 
     for (const page of [engineer, admin, viewer, superadmin]) {
         await page.goto(`${ui}/road-coverages`);
-        if (page === viewer) await page.locator('.jr-viewer-workspace').waitFor();
-        else assert.equal(await page.locator('.jr-viewer-workspace').count(), 0);
-        if (page === engineer) await page.locator('.jr-engineer-workspace').waitFor();
-        else assert.equal(await page.locator('.jr-engineer-workspace').count(), 0);
-        if (page === superadmin) await page.locator('.jr-superadmin-workspace').waitFor();
-        else assert.equal(await page.locator('.jr-superadmin-workspace').count(), 0);
-        if (page === admin) await page.locator('.jr-admin-workspace').waitFor();
-        else assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
+
+        if (page === viewer) {
+await page.locator('.jr-viewer-workspace').waitFor();
+} else {
+assert.equal(await page.locator('.jr-viewer-workspace').count(), 0);
+}
+
+        if (page === engineer) {
+await page.locator('.jr-engineer-workspace').waitFor();
+} else {
+assert.equal(await page.locator('.jr-engineer-workspace').count(), 0);
+}
+
+        if (page === superadmin) {
+await page.locator('.jr-superadmin-workspace').waitFor();
+} else {
+assert.equal(await page.locator('.jr-superadmin-workspace').count(), 0);
+}
+
+        if (page === admin) {
+await page.locator('.jr-admin-workspace').waitFor();
+} else {
+assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
+}
+
         await page
             .getByRole('heading', { name: 'Road Coverages', exact: true })
             .waitFor();
@@ -654,23 +698,28 @@ try {
     await engineer.waitForURL(`${ui}/monthly-updates/${january.id}`);
     // Both modules must return to all three explicit edit origins and keep filters.
     const parentOrigin = `/dd-phase3/ui/maintenance-projects/${project.id}/records/${record.id}`;
+
     for (const [module, entity, directoryQuery] of [
         ['monthly-updates', january, `?project=${project.id}&year=2026&sort=oldest&page=1`],
         ['maintenance-documents', doc, `?project=${project.id}&sort=oldest&page=1`],
     ]) {
         const directory = `/dd-phase3/ui/${module}`;
         const detail = `${directory}/${entity.id}`;
+
         for (const origin of [directory + directoryQuery, detail, parentOrigin]) {
             await engineer.goto(base + detail + '/edit?' + new URLSearchParams({ return_to: origin }));
+
             if (module === 'monthly-updates') {
                 await engineer.getByLabel(/^Progress Percentage/).fill('17');
             } else {
                 await engineer.getByLabel(/^Document Title/).fill(doc.document_title);
             }
+
             await engineer.getByRole('button', { name: 'Save Changes', exact: true }).click();
             await engineer.waitForURL(base + origin);
         }
     }
+
     console.log('PASS: both related modules return to directory, own details and parent record after editing.');
     await engineer.goto(`${ui}/monthly-updates?project=${project.id}`);
     const firstMonth = () =>

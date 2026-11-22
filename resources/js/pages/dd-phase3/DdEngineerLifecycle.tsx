@@ -19,57 +19,66 @@ export default function DdEngineerLifecycle({
     initialEngineerId?: number;
     onBusy?: (busy: boolean) => void;
 }) {
-    const [selected, setSelected] = useState<Engineer | null>(() => engineers.find((e) => e.id === initialEngineerId) ?? null);
+    const [selected, setSelected] = useState<Engineer | null>(
+        () => engineers.find((e) => e.id === initialEngineerId) ?? null,
+    );
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [busy, setBusy] = useState(false);
     const [notice, setNotice] = useState('');
     const options = {
         preserveScroll: true,
         onError: setErrors,
-        onFinish: () => { setBusy(false); onBusy?.(false); },
+        onFinish: () => {
+            setBusy(false);
+            onBusy?.(false);
+        },
     };
 
     return (
-        <section
-            className="space-y-4"
-            aria-label="Engineer profile lifecycle"
-        >
+        <section className="space-y-4" aria-label="Engineer profile lifecycle">
             <h2 className="text-lg font-semibold">Edit or retire Engineer</h2>
             <p className="text-sm text-slate-600">
                 Rank is professional information. Retirement retains history and
                 deactivates the linked account and active LGU assignments.
             </p>
-            {initialEngineerId === undefined && <label className="block text-sm">
-                Engineer profile
-                <select
-                    className="mt-1 block rounded border p-2"
-                    value={selected?.id ?? ''}
-                    onChange={(e) => {
-                        setSelected(
-                            engineers.find(
-                                (x) => x.id === Number(e.target.value),
-                            ) ?? null,
-                        );
-                        setErrors({});
-                        setNotice('');
-                    }}
-                >
-                    <option value="">Select Engineer</option>
-                    {engineers.map((e) => (
-                        <option key={e.id} value={e.id}>
-                            {e.first_name} {e.last_name} · {e.engineer_status}
-                        </option>
-                    ))}
-                </select>
-            </label>}
+            {initialEngineerId === undefined && (
+                <label className="block text-sm">
+                    Engineer profile
+                    <select
+                        className="mt-1 block rounded border p-2"
+                        value={selected?.id ?? ''}
+                        onChange={(e) => {
+                            setSelected(
+                                engineers.find(
+                                    (x) => x.id === Number(e.target.value),
+                                ) ?? null,
+                            );
+                            setErrors({});
+                            setNotice('');
+                        }}
+                    >
+                        <option value="">Select Engineer</option>
+                        {engineers.map((e) => (
+                            <option key={e.id} value={e.id}>
+                                {e.first_name} {e.last_name} ·{' '}
+                                {e.engineer_status}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+            )}
             {selected && (
                 <form
                     className="grid gap-3 sm:grid-cols-2"
                     onSubmit={(e) => {
                         e.preventDefault();
-                        if (busy) return;
+
+                        if (busy) {
+                            return;
+                        }
+
                         setBusy(true);
-                                onBusy?.(true);
+                        onBusy?.(true);
                         setErrors({});
                         router.put(
                             `/dd-phase3/engineers/${selected.id}`,
@@ -125,10 +134,7 @@ export default function DdEngineerLifecycle({
                         </label>
                     ))}
                     <div className="flex gap-3 sm:col-span-2">
-                        <button
-                            disabled={busy}
-                            className="um-primary"
-                        >
+                        <button disabled={busy} className="um-primary">
                             Save profile
                         </button>
                         <button
@@ -144,7 +150,7 @@ export default function DdEngineerLifecycle({
                                     )
                                 ) {
                                     setBusy(true);
-                                onBusy?.(true);
+                                    onBusy?.(true);
                                     setErrors({});
                                     router.post(
                                         `/dd-phase3/engineers/${selected.id}/retirement`,

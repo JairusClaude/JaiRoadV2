@@ -27,7 +27,9 @@ html.dark .jr-app:has(.jr-dd-settings) {
     color: #e2e8f0;
     background-color: #0b1220 !important;
 }
-html.dark .jr-app:has(.jr-dd-settings) :is(.jr-stage, .jr-content, .jr-workspace) {
+html.dark
+    .jr-app:has(.jr-dd-settings)
+    :is(.jr-stage, .jr-content, .jr-workspace) {
     background-color: #0b1220 !important;
     color: #e2e8f0;
 }
@@ -43,7 +45,7 @@ html.dark .jr-dd-settings .jr-page-head {
     background-color: #131f31 !important;
 }
 html.dark .jr-dd-settings .jr-page-head::before {
-    opacity: .16;
+    opacity: 0.16;
 }
 html.dark .jr-dd-settings .jr-page-head h1 {
     color: #f1f5f9 !important;
@@ -65,9 +67,9 @@ html.dark .jr-dd-settings main section .rounded-xl.bg-slate-50 {
     background-color: #223149 !important;
     border-color: #40516a !important;
 }
-html.dark .jr-dd-settings :is(
-    .text-slate-900, .text-slate-800, .text-slate-700
-) {
+html.dark
+    .jr-dd-settings
+    :is(.text-slate-900, .text-slate-800, .text-slate-700) {
     color: #e2e8f0 !important;
 }
 html.dark .jr-dd-settings :is(.text-slate-600, .text-slate-500) {
@@ -82,15 +84,15 @@ html.dark .jr-dd-settings input {
 html.dark .jr-dd-settings input:focus {
     border-color: var(--jr-role-accent, #a78bfa) !important;
 }
-html.dark .jr-dd-settings button[aria-pressed="false"] {
+html.dark .jr-dd-settings button[aria-pressed='false'] {
     color: #e2e8f0 !important;
     background-color: #223149 !important;
     border-color: #40516a !important;
 }
-html.dark .jr-dd-settings button[aria-pressed="false"]:hover {
+html.dark .jr-dd-settings button[aria-pressed='false']:hover {
     background-color: #2d405b !important;
 }
-html.dark .jr-dd-settings button[aria-pressed="true"] {
+html.dark .jr-dd-settings button[aria-pressed='true'] {
     color: var(--jr-dark-selection-text, #c4b5fd) !important;
     background-color: #29374d !important;
     border-color: var(--jr-role-accent, #51269b) !important;
@@ -107,12 +109,12 @@ html.dark body:has(.jr-engineer-workspace) .jr-dd-settings {
 html.dark body:has(.jr-viewer-workspace) .jr-dd-settings {
     --jr-dark-selection-text: #93c5fd;
 }
-html.dark .jr-dd-settings main > [role="status"] {
+html.dark .jr-dd-settings main > [role='status'] {
     border-color: #236c53;
     background-color: #12372d;
     color: #a7f3d0;
 }
-html.dark .jr-dd-settings main > [role="alert"] {
+html.dark .jr-dd-settings main > [role='alert'] {
     border-color: #ad3448;
     background-color: #442128;
     color: #fecdd3;
@@ -123,7 +125,9 @@ html.dark .jr-dd-settings main > [role="alert"] {
 html.dark .jr-responsive-shell:has(.jr-settings) {
     color-scheme: dark;
 }
-html.dark .jr-responsive-shell:has(.jr-settings) .jr-normal-workspace.jr-content-view,
+html.dark
+    .jr-responsive-shell:has(.jr-settings)
+    .jr-normal-workspace.jr-content-view,
 html.dark .jr-responsive-shell:has(.jr-settings) .jr-workspace {
     background-color: #0f172a !important;
     border-color: #36475d !important;

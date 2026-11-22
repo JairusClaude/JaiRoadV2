@@ -1,9 +1,7 @@
 import { Form } from '@inertiajs/react';
-import { useRef, useState } from 'react';
 import { TriangleAlert, Trash2 } from 'lucide-react';
-import { Spinner } from '@/components/ui/spinner';
+import { useRef, useState } from 'react';
 import '../../css/jairoads-deletion-dialog.css';
-import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
@@ -18,6 +16,8 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
+import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 
 export default function DeleteUser() {
     const passwordInput = useRef<HTMLInputElement>(null);
@@ -50,16 +50,41 @@ export default function DeleteUser() {
                     </DialogTrigger>
                     <DialogContent
                         className="jr-delete-dialog jr-delete-premium jr-delete-account"
-                        onOpenAutoFocus={event => { event.preventDefault(); cancelRef.current?.focus(); }}
-                        onEscapeKeyDown={event => { if (busy) event.preventDefault(); }}
-                        onPointerDownOutside={event => { if (busy) event.preventDefault(); }}
+                        onOpenAutoFocus={(event) => {
+                            event.preventDefault();
+                            cancelRef.current?.focus();
+                        }}
+                        onEscapeKeyDown={(event) => {
+                            if (busy) {
+                                event.preventDefault();
+                            }
+                        }}
+                        onPointerDownOutside={(event) => {
+                            if (busy) {
+                                event.preventDefault();
+                            }
+                        }}
                     >
                         <div className="jr-delete-heading">
-                            <span className="jr-delete-warning-icon" aria-hidden="true"><TriangleAlert size={24} /></span>
+                            <span
+                                className="jr-delete-warning-icon"
+                                aria-hidden="true"
+                            >
+                                <TriangleAlert size={24} />
+                            </span>
                             <div className="jr-delete-heading-copy">
-                                <span className="jr-delete-eyebrow">Permanent action</span>
-                                <DialogTitle>Are you sure you want to delete your account?</DialogTitle>
-                                <DialogDescription>Once your account is deleted, all of its resources and data will also be permanently deleted. Enter your password to confirm.</DialogDescription>
+                                <span className="jr-delete-eyebrow">
+                                    Permanent action
+                                </span>
+                                <DialogTitle>
+                                    Are you sure you want to delete your
+                                    account?
+                                </DialogTitle>
+                                <DialogDescription>
+                                    Once your account is deleted, all of its
+                                    resources and data will also be permanently
+                                    deleted. Enter your password to confirm.
+                                </DialogDescription>
                             </div>
                         </div>
 
@@ -76,27 +101,35 @@ export default function DeleteUser() {
                         >
                             {({ resetAndClearErrors, processing, errors }) => (
                                 <>
-                                    <div className="jr-delete-body"><div className="jr-delete-notice">This action cannot be undone.</div><div className="jr-delete-verification">
-                                        <Label
-                                            htmlFor="password"
-                                            className="jr-delete-verification-label"
-                                        >
-                                            Confirm with your password
-                                        </Label>
+                                    <div className="jr-delete-body">
+                                        <div className="jr-delete-notice">
+                                            This action cannot be undone.
+                                        </div>
+                                        <div className="jr-delete-verification">
+                                            <Label
+                                                htmlFor="password"
+                                                className="jr-delete-verification-label"
+                                            >
+                                                Confirm with your password
+                                            </Label>
 
-                                        <PasswordInput
-                                            id="password"
-                                            name="password"
-                                            ref={passwordInput}
-                                            placeholder="Password"
-                                            autoComplete="current-password"
-                                            disabled={processing}
-                                            required
-                                            className="jr-delete-input"
-                                        />
+                                            <PasswordInput
+                                                id="password"
+                                                name="password"
+                                                ref={passwordInput}
+                                                placeholder="Password"
+                                                autoComplete="current-password"
+                                                disabled={processing}
+                                                required
+                                                className="jr-delete-input"
+                                            />
 
-                                        <InputError message={errors.password} role="alert" />
-                                    </div></div>
+                                            <InputError
+                                                message={errors.password}
+                                                role="alert"
+                                            />
+                                        </div>
+                                    </div>
 
                                     <DialogFooter className="jr-dialog-actions">
                                         <DialogClose asChild>
@@ -123,7 +156,19 @@ export default function DeleteUser() {
                                                 type="submit"
                                                 data-test="confirm-delete-user-button"
                                             >
-                                                {processing ? <><Spinner /> Deleting…</> : <><Trash2 size={16} aria-hidden="true" /> Delete account</>}
+                                                {processing ? (
+                                                    <>
+                                                        <Spinner /> Deleting…
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Trash2
+                                                            size={16}
+                                                            aria-hidden="true"
+                                                        />{' '}
+                                                        Delete account
+                                                    </>
+                                                )}
                                             </button>
                                         </Button>
                                     </DialogFooter>

@@ -16,6 +16,7 @@ final class DeletionChallenge
     {
         $left = random_int(10, 49);
         $right = random_int(2, 29);
+
         return [
             'question' => "{$left} + {$right}",
             'token' => Crypt::encryptString(json_encode([
@@ -41,6 +42,7 @@ final class DeletionChallenge
             || $info[0] > 640 || $info[1] > 640 || ! str_ends_with($jpeg, "\xFF\xD9")) {
             throw ValidationException::withMessages(['camera_receipt' => 'Capture a valid camera photo and try again.']);
         }
+
         // No photo, hash of photo, face template or image URL is persisted.
         return Crypt::encryptString(json_encode([
             'purpose' => 'deletion-camera',
@@ -61,6 +63,7 @@ final class DeletionChallenge
             || ! is_string($claim['nonce'] ?? null)) {
             $this->invalid();
         }
+
         return $claim;
     }
 

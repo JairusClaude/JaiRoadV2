@@ -140,7 +140,9 @@ export default function Show({ document: doc }: { document: DocumentSummary }) {
                         aria-labelledby="document-attachment-title"
                     >
                         <div className="jr-report-media-heading">
-                            <h2 id="document-attachment-title">Document Attachment</h2>
+                            <h2 id="document-attachment-title">
+                                Document Attachment
+                            </h2>
                             <p className="jr-field-hint">
                                 {hasAttachment ? '1 file' : '0 files'}
                             </p>
@@ -165,7 +167,8 @@ export default function Show({ document: doc }: { document: DocumentSummary }) {
                                             variant="outline"
                                             disabled={!doc.available}
                                             onClick={() => {
-                                                viewerFocus.current = window.document
+                                                viewerFocus.current = window
+                                                    .document
                                                     .activeElement as HTMLElement;
                                                 setViewer(true);
                                             }}
@@ -195,14 +198,15 @@ export default function Show({ document: doc }: { document: DocumentSummary }) {
                                 </div>
                                 {!doc.available && (
                                     <p className="jr-field-error" role="status">
-                                        This private file is currently unavailable.
-                                        Contact your administrator.
+                                        This private file is currently
+                                        unavailable. Contact your administrator.
                                     </p>
                                 )}
                             </>
                         ) : (
                             <div className="jr-related-empty">
-                                No document attachment for this maintenance document.
+                                No document attachment for this maintenance
+                                document.
                             </div>
                         )}
                     </section>

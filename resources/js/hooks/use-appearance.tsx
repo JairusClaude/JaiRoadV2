@@ -36,6 +36,7 @@ const getStoredAppearance = (): Appearance => {
 
     try {
         const stored = window.localStorage.getItem('appearance');
+
         return stored === 'dark' || stored === 'system' ? stored : 'light';
     } catch {
         return 'light';
@@ -96,6 +97,7 @@ export function initializeTheme(): void {
     }
 
     currentAppearance = getStoredAppearance();
+
     try {
         if (!window.localStorage.getItem('appearance')) {
             window.localStorage.setItem('appearance', currentAppearance);
@@ -103,6 +105,7 @@ export function initializeTheme(): void {
     } catch {
         // Private browsing and storage restrictions must not break the theme.
     }
+
     setCookie('appearance', currentAppearance);
     applyTheme(currentAppearance);
 

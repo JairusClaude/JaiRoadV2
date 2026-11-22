@@ -1,9 +1,9 @@
 import { Form, Head, Link, usePage } from '@inertiajs/react';
 import { ArrowLeft, Mail, Save, UserRound } from 'lucide-react';
-import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import InputError from '@/components/input-error';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import type { Auth } from '@/types';
+import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 
 type PageProps = { auth: Auth };
 const inputClass =

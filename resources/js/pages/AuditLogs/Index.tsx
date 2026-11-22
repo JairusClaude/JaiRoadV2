@@ -73,7 +73,9 @@ const SORT_OPTIONS = [
     { value: 'oldest', label: 'Oldest First' },
 ];
 
-function actionVariant(action: string): 'default' | 'secondary' | 'destructive' | 'outline' {
+function actionVariant(
+    action: string,
+): 'default' | 'secondary' | 'destructive' | 'outline' {
     switch (action.toUpperCase()) {
         case 'CREATE':
         case 'UPLOAD':
@@ -88,9 +90,13 @@ function actionVariant(action: string): 'default' | 'secondary' | 'destructive' 
 }
 
 function formatDate(iso: string): string {
-    if (!iso) return '—';
+    if (!iso) {
+        return '—';
+    }
+
     try {
         const d = new Date(iso);
+
         return new Intl.DateTimeFormat('en-PH', {
             dateStyle: 'medium',
             timeStyle: 'short',
@@ -142,7 +148,9 @@ export default function Index({ events, filters }: AuditLogsProps) {
                     <div>
                         <h1>Audit Log</h1>
                         <p>
-                            Review permanent system audit history, authentication events, and operational activity trails.
+                            Review permanent system audit history,
+                            authentication events, and operational activity
+                            trails.
                         </p>
                     </div>
                 </div>
@@ -183,14 +191,16 @@ export default function Index({ events, filters }: AuditLogsProps) {
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
                             <thead>
-                                <tr className="border-b border-[#e6e9ef] text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                <tr className="border-b border-[#e6e9ef] text-xs font-semibold tracking-wider text-slate-500 uppercase">
                                     <th className="px-4 py-3">Event ID</th>
                                     <th className="px-4 py-3">Timestamp</th>
                                     <th className="px-4 py-3">Action</th>
                                     <th className="px-4 py-3">Entity</th>
                                     <th className="px-4 py-3">Actor</th>
                                     <th className="px-4 py-3">Description</th>
-                                    <th className="px-4 py-3 text-right">Details</th>
+                                    <th className="px-4 py-3 text-right">
+                                        Details
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[#f1f3f7]">
@@ -205,7 +215,8 @@ export default function Index({ events, filters }: AuditLogsProps) {
                                                 No audit log entries found
                                             </p>
                                             <p className="text-xs text-slate-400">
-                                                {search || filters.action !== 'all'
+                                                {search ||
+                                                filters.action !== 'all'
                                                     ? 'Try clearing your search or filters to see more results.'
                                                     : 'Audit records will appear here as users perform actions in the system.'}
                                             </p>
@@ -215,37 +226,43 @@ export default function Index({ events, filters }: AuditLogsProps) {
                                     events.data.map((event) => (
                                         <tr
                                             key={event.id}
-                                            className="hover:bg-slate-50/80 transition-colors"
+                                            className="transition-colors hover:bg-slate-50/80"
                                         >
                                             <td className="px-4 py-3 font-mono text-xs font-semibold text-slate-600">
                                                 #{event.id}
                                             </td>
-                                            <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-600">
+                                            <td className="px-4 py-3 text-xs whitespace-nowrap text-slate-600">
                                                 {formatDate(event.created_at)}
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap">
                                                 <Badge
-                                                    variant={actionVariant(event.action)}
+                                                    variant={actionVariant(
+                                                        event.action,
+                                                    )}
                                                     className="text-[11px] font-semibold"
                                                 >
                                                     {event.action}
                                                 </Badge>
                                             </td>
-                                            <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-slate-700">
+                                            <td className="px-4 py-3 text-xs font-medium whitespace-nowrap text-slate-700">
                                                 {event.entity_type}
                                                 {event.entity_id !== null && (
-                                                    <span className="text-slate-400 ml-1">
+                                                    <span className="ml-1 text-slate-400">
                                                         #{event.entity_id}
                                                     </span>
                                                 )}
                                             </td>
-                                            <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-700">
+                                            <td className="px-4 py-3 text-xs whitespace-nowrap text-slate-700">
                                                 <span className="inline-flex items-center gap-1.5 font-medium">
                                                     <User className="size-3.5 text-slate-400" />
-                                                    {event.actor_identifier || 'System'}
+                                                    {event.actor_identifier ||
+                                                        'System'}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-3 text-xs text-slate-600 max-w-xs truncate" title={event.description}>
+                                            <td
+                                                className="max-w-xs truncate px-4 py-3 text-xs text-slate-600"
+                                                title={event.description}
+                                            >
                                                 {event.description}
                                             </td>
                                             <td className="px-4 py-3 text-right whitespace-nowrap">
@@ -253,9 +270,11 @@ export default function Index({ events, filters }: AuditLogsProps) {
                                                     variant="ghost"
                                                     size="sm"
                                                     className="h-8 px-2.5 text-xs text-[#C8293D] hover:bg-[#FDE7EA] hover:text-[#A81424]"
-                                                    onClick={() => setSelectedEvent(event)}
+                                                    onClick={() =>
+                                                        setSelectedEvent(event)
+                                                    }
                                                 >
-                                                    <Eye className="size-3.5 mr-1" />
+                                                    <Eye className="mr-1 size-3.5" />
                                                     View
                                                 </Button>
                                             </td>
@@ -283,10 +302,12 @@ export default function Index({ events, filters }: AuditLogsProps) {
             <Dialog
                 open={selectedEvent !== null}
                 onOpenChange={(open) => {
-                    if (!open) setSelectedEvent(null);
+                    if (!open) {
+                        setSelectedEvent(null);
+                    }
                 }}
             >
-                <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+                <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-lg">
                             <Shield className="size-5 text-[#C8293D]" />
@@ -299,51 +320,85 @@ export default function Index({ events, filters }: AuditLogsProps) {
 
                     {selectedEvent && (
                         <div className="space-y-4 text-sm">
-                            <div className="grid grid-cols-2 gap-3 rounded-lg bg-slate-50 p-3 border border-slate-200">
+                            <div className="grid grid-cols-2 gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
                                 <div>
-                                    <span className="text-xs text-slate-500 block">Action</span>
-                                    <Badge variant={actionVariant(selectedEvent.action)}>
+                                    <span className="block text-xs text-slate-500">
+                                        Action
+                                    </span>
+                                    <Badge
+                                        variant={actionVariant(
+                                            selectedEvent.action,
+                                        )}
+                                    >
                                         {selectedEvent.action}
                                     </Badge>
                                 </div>
                                 <div>
-                                    <span className="text-xs text-slate-500 block">Timestamp</span>
-                                    <span className="font-medium">{formatDate(selectedEvent.created_at)}</span>
-                                </div>
-                                <div>
-                                    <span className="text-xs text-slate-500 block">Entity</span>
+                                    <span className="block text-xs text-slate-500">
+                                        Timestamp
+                                    </span>
                                     <span className="font-medium">
-                                        {selectedEvent.entity_type} {selectedEvent.entity_id ? `#${selectedEvent.entity_id}` : ''}
+                                        {formatDate(selectedEvent.created_at)}
                                     </span>
                                 </div>
                                 <div>
-                                    <span className="text-xs text-slate-500 block">Actor</span>
-                                    <span className="font-medium">{selectedEvent.actor_identifier}</span>
+                                    <span className="block text-xs text-slate-500">
+                                        Entity
+                                    </span>
+                                    <span className="font-medium">
+                                        {selectedEvent.entity_type}{' '}
+                                        {selectedEvent.entity_id
+                                            ? `#${selectedEvent.entity_id}`
+                                            : ''}
+                                    </span>
+                                </div>
+                                <div>
+                                    <span className="block text-xs text-slate-500">
+                                        Actor
+                                    </span>
+                                    <span className="font-medium">
+                                        {selectedEvent.actor_identifier}
+                                    </span>
                                 </div>
                             </div>
 
                             <div>
-                                <h4 className="text-xs font-semibold text-slate-700 uppercase mb-1">Description</h4>
-                                <p className="text-slate-700 bg-slate-50 rounded p-2.5 border border-slate-200 text-xs">
+                                <h4 className="mb-1 text-xs font-semibold text-slate-700 uppercase">
+                                    Description
+                                </h4>
+                                <p className="rounded border border-slate-200 bg-slate-50 p-2.5 text-xs text-slate-700">
                                     {selectedEvent.description}
                                 </p>
                             </div>
 
-                            {(selectedEvent.old_value || selectedEvent.new_value) && (
-                                <div className="grid md:grid-cols-2 gap-3">
+                            {(selectedEvent.old_value ||
+                                selectedEvent.new_value) && (
+                                <div className="grid gap-3 md:grid-cols-2">
                                     <div>
-                                        <h4 className="text-xs font-semibold text-slate-600 mb-1">Previous State (Before)</h4>
-                                        <pre className="text-xs bg-slate-900 text-slate-100 p-3 rounded-lg overflow-x-auto max-h-48 font-mono">
+                                        <h4 className="mb-1 text-xs font-semibold text-slate-600">
+                                            Previous State (Before)
+                                        </h4>
+                                        <pre className="max-h-48 overflow-x-auto rounded-lg bg-slate-900 p-3 font-mono text-xs text-slate-100">
                                             {selectedEvent.old_value
-                                                ? JSON.stringify(selectedEvent.old_value, null, 2)
+                                                ? JSON.stringify(
+                                                      selectedEvent.old_value,
+                                                      null,
+                                                      2,
+                                                  )
                                                 : 'null (None / Created)'}
                                         </pre>
                                     </div>
                                     <div>
-                                        <h4 className="text-xs font-semibold text-slate-600 mb-1">New State (After)</h4>
-                                        <pre className="text-xs bg-slate-900 text-slate-100 p-3 rounded-lg overflow-x-auto max-h-48 font-mono">
+                                        <h4 className="mb-1 text-xs font-semibold text-slate-600">
+                                            New State (After)
+                                        </h4>
+                                        <pre className="max-h-48 overflow-x-auto rounded-lg bg-slate-900 p-3 font-mono text-xs text-slate-100">
                                             {selectedEvent.new_value
-                                                ? JSON.stringify(selectedEvent.new_value, null, 2)
+                                                ? JSON.stringify(
+                                                      selectedEvent.new_value,
+                                                      null,
+                                                      2,
+                                                  )
                                                 : 'null (Deleted)'}
                                         </pre>
                                     </div>

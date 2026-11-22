@@ -28,7 +28,8 @@ export function ProjectWorkspace({
     className?: string;
 }) {
     const page = usePage();
-    const canonical = page.props.canonicalFrontend === true || !page.props.previewOnly;
+    const canonical =
+        page.props.canonicalFrontend === true || !page.props.previewOnly;
 
     if (canonical) {
         return <div className={`jr-workspace ${className}`}>{children}</div>;

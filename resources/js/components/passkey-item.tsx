@@ -1,7 +1,7 @@
 import { KeyRound, Trash2 } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialog';
+import { Button } from '@/components/ui/button';
 import type { Passkey } from '@/types/auth';
 
 type Props = {
@@ -16,10 +16,16 @@ export default function PasskeyItem({ passkey, onDelete }: Props) {
     const opener = useRef<HTMLButtonElement>(null);
 
     const handleDelete = () => {
-        if (isDeleting) return;
+        if (isDeleting) {
+            return;
+        }
+
         setIsDeleting(true);
         setError('');
-        onDelete(passkey.id, () => { setIsDeleting(false); setError('Unable to remove this passkey. Please try again.'); });
+        onDelete(passkey.id, () => {
+            setIsDeleting(false);
+            setError('Unable to remove this passkey. Please try again.');
+        });
     };
 
     return (
@@ -59,7 +65,10 @@ export default function PasskeyItem({ passkey, onDelete }: Props) {
                 variant="ghost"
                 size="sm"
                 className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                onClick={() => { setError(''); setOpen(true); }}
+                onClick={() => {
+                    setError('');
+                    setOpen(true);
+                }}
             >
                 <Trash2 className="h-4 w-4" />
                 <span className="sr-only">Remove</span>
@@ -74,7 +83,11 @@ export default function PasskeyItem({ passkey, onDelete }: Props) {
                 busyLabel="Removing…"
                 error={error}
                 confirmLabel="Remove passkey"
-                onClose={() => { if (!isDeleting) setOpen(false); }}
+                onClose={() => {
+                    if (!isDeleting) {
+                        setOpen(false);
+                    }
+                }}
                 onConfirm={handleDelete}
                 returnFocus={opener}
             >

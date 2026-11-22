@@ -245,7 +245,11 @@ export function MediaAttachments({
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    disabled={disabled || (!(file instanceof File) && !file.delete_url)}
+                                    disabled={
+                                        disabled ||
+                                        (!(file instanceof File) &&
+                                            !file.delete_url)
+                                    }
                                     aria-label={`Remove ${fileName(file)}`}
                                     onClick={() =>
                                         file instanceof File
@@ -268,7 +272,9 @@ export function MediaAttachments({
                 </section>
             )}
             <p className="jr-field-hint mt-3">
-                New files are uploaded when the update is saved. Removing a saved file requires administrator confirmation and permanently removes that file from private storage.
+                New files are uploaded when the update is saved. Removing a
+                saved file requires administrator confirmation and permanently
+                removes that file from private storage.
             </p>
             <Dialog.Root
                 open={preview !== null}

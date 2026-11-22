@@ -14,7 +14,8 @@ import {
     Settings,
     Users,
 } from 'lucide-react';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { toast } from 'sonner';
 import { DdNotificationBell } from '@/components/dd-notification-bell';
 import {
@@ -79,27 +80,49 @@ export function MaintenanceProjectShell({
     children: ReactNode;
     user: User;
 }) {
-    const { state, toggleSidebar, isMobile, openMobile, setOpenMobile } = useSidebar();
+    const { state, toggleSidebar, isMobile, openMobile, setOpenMobile } =
+        useSidebar();
     const expanded = isMobile ? openMobile : state === 'expanded';
     const initials = useInitials()(user.name);
     const page = usePage();
     const preview = page.props.previewOnly === true;
     const canonical = page.props.canonicalFrontend === true;
-    const operationPage = /^(MaintenanceProjects|MaintenanceRecords|MonthlyUpdates|MaintenanceDocuments|RoadCoverages|LGUs)\//.test(page.component);
+    const operationPage =
+        /^(MaintenanceProjects|MaintenanceRecords|MonthlyUpdates|MaintenanceDocuments|RoadCoverages|LGUs)\//.test(
+            page.component,
+        );
     useEffect(() => {
         // The Node-only preview historically supplies LGU success text as message.
-        const status = page.props.status ?? (preview && page.component.startsWith('LGUs/') ? page.props.message : undefined);
+        const status =
+            page.props.status ??
+            (preview && page.component.startsWith('LGUs/')
+                ? page.props.message
+                : undefined);
+
         if (operationPage && typeof status === 'string' && status) {
-            toast.success(status, { id: 'jr-operation-status', duration: 4500 });
+            toast.success(status, {
+                id: 'jr-operation-status',
+                duration: 4500,
+            });
         }
     }, [page, operationPage, preview]);
-    const role = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role;
+    const role = (page.props.jairoadsIdentity as { role?: string } | undefined)
+        ?.role;
     const viewerTheme = canonical && role === 'viewer';
     const engineerTheme = canonical && role === 'engineer';
     const superadminTheme = canonical && role === 'superadmin';
     const adminTheme = canonical && role === 'admin';
-    const brandedTheme = viewerTheme || engineerTheme || superadminTheme || adminTheme;
-    const sidebarTheme = viewerTheme ? ' jr-viewer-sidebar' : engineerTheme ? ' jr-engineer-sidebar' : superadminTheme ? ' jr-superadmin-sidebar' : adminTheme ? ' jr-admin-sidebar' : '';
+    const brandedTheme =
+        viewerTheme || engineerTheme || superadminTheme || adminTheme;
+    const sidebarTheme = viewerTheme
+        ? ' jr-viewer-sidebar'
+        : engineerTheme
+          ? ' jr-engineer-sidebar'
+          : superadminTheme
+            ? ' jr-superadmin-sidebar'
+            : adminTheme
+              ? ' jr-admin-sidebar'
+              : '';
     const path = page.url.split('?')[0].replace(/^\/dd-phase3\/ui/, '');
     const alternativeNavigation = isAlternativeNavigation(page.component);
     const documentPageName = path.startsWith('/maintenance-documents')
@@ -122,10 +145,14 @@ export function MaintenanceProjectShell({
                   ? 'LGU Details'
                   : undefined;
     const pageName =
-        (path === '/dashboard' || path.startsWith('/dd-phase3/dashboard') || path.startsWith('/dd-superadmin-landing')
+        (path === '/dashboard' ||
+        path.startsWith('/dd-phase3/dashboard') ||
+        path.startsWith('/dd-superadmin-landing')
             ? 'Dashboard'
             : undefined) ??
-        (path.startsWith('/settings') || path.startsWith('/dd-phase3/settings') || path.startsWith('/dd-phase3/ops/settings')
+        (path.startsWith('/settings') ||
+        path.startsWith('/dd-phase3/settings') ||
+        path.startsWith('/dd-phase3/ops/settings')
             ? 'Settings'
             : undefined) ??
         (path.startsWith('/road-coverages')
@@ -139,10 +166,12 @@ export function MaintenanceProjectShell({
             : undefined) ??
         lguPageName ??
         documentPageName ??
-        (path.startsWith('/audit-logs') || path.startsWith('/dd-phase3/audit-logs')
+        (path.startsWith('/audit-logs') ||
+        path.startsWith('/dd-phase3/audit-logs')
             ? 'Audit Log'
             : undefined) ??
-        (path.startsWith('/user-management') || path.startsWith('/user-accounts')
+        (path.startsWith('/user-management') ||
+        path.startsWith('/user-accounts')
             ? 'User Management'
             : undefined) ??
         (typeof page.props.navigationTitle === 'string' && alternativeNavigation
@@ -175,7 +204,10 @@ export function MaintenanceProjectShell({
 
     return (
         <>
-            <Sidebar collapsible="icon" className={`jr-sidebar-container${sidebarTheme}`}>
+            <Sidebar
+                collapsible="icon"
+                className={`jr-sidebar-container${sidebarTheme}`}
+            >
                 <div
                     className={
                         isMobile
@@ -210,7 +242,21 @@ export function MaintenanceProjectShell({
                                     aria-hidden="true"
                                 >
                                     {brandedTheme ? (
-                                        <img src="/images/jairoads/peo-ddo-transparent.webp" alt="" className={viewerTheme ? "jr-viewer-brand-logo" : engineerTheme ? "jr-engineer-brand-logo" : superadminTheme ? "jr-superadmin-brand-logo" : "jr-admin-brand-logo"} width={144} height={144} />
+                                        <img
+                                            src="/images/jairoads/peo-ddo-transparent.webp"
+                                            alt=""
+                                            className={
+                                                viewerTheme
+                                                    ? 'jr-viewer-brand-logo'
+                                                    : engineerTheme
+                                                      ? 'jr-engineer-brand-logo'
+                                                      : superadminTheme
+                                                        ? 'jr-superadmin-brand-logo'
+                                                        : 'jr-admin-brand-logo'
+                                            }
+                                            width={144}
+                                            height={144}
+                                        />
                                     ) : (
                                         <svg viewBox="0 0 24 24">
                                             <path d="M7 3c-1 4 2 5 2 8s-3 4-2 10M17 3c1 4-2 5-2 8s3 4 2 10M12 4v2m0 4v2m0 4v2" />
@@ -235,11 +281,20 @@ export function MaintenanceProjectShell({
                             </button>
                             <span className="jr-brand-copy">
                                 <strong className="jr-brand-wordmark">
-                                    <span>Jai</span><span>ROADS</span>
+                                    <span>Jai</span>
+                                    <span>ROADS</span>
                                 </strong>
                                 <small>
                                     {canonical
-                                        ? viewerTheme ? 'Viewer Workspace' : engineerTheme ? 'Engineer Workspace' : superadminTheme ? 'SuperAdmin Workspace' : adminTheme ? 'Admin Workspace' : `${String((page.props.jairoadsIdentity as { role?: string } | undefined)?.role ?? 'User')} Workspace`
+                                        ? viewerTheme
+                                            ? 'Viewer Workspace'
+                                            : engineerTheme
+                                              ? 'Engineer Workspace'
+                                              : superadminTheme
+                                                ? 'SuperAdmin Workspace'
+                                                : adminTheme
+                                                  ? 'Admin Workspace'
+                                                  : `${String((page.props.jairoadsIdentity as { role?: string } | undefined)?.role ?? 'User')} Workspace`
                                         : 'Admin Console'}
                                 </small>
                             </span>
@@ -247,7 +302,11 @@ export function MaintenanceProjectShell({
                         <button
                             type="button"
                             className="jr-sidebar-collapse"
-                            aria-label={isMobile ? "Close navigation" : "Collapse sidebar"}
+                            aria-label={
+                                isMobile
+                                    ? 'Close navigation'
+                                    : 'Collapse sidebar'
+                            }
                             aria-expanded={expanded}
                             aria-controls="jr-sidebar-nav"
                             aria-hidden={!expanded}
@@ -310,7 +369,11 @@ export function MaintenanceProjectShell({
                                 }))}
                             expanded={expanded}
                             mainNavigation={!alternativeNavigation}
-                            onNavigate={isMobile ? () => setOpenMobile(false) : undefined}
+                            onNavigate={
+                                isMobile
+                                    ? () => setOpenMobile(false)
+                                    : undefined
+                            }
                         />
                     </SidebarContent>
                     <SidebarFooter className="jr-sidebar-footer">
@@ -343,8 +406,13 @@ export function MaintenanceProjectShell({
                             </Button>
                         )}
                         <span className="jr-header-brand">JaiROADS</span>
-                        <ChevronRight className="jr-header-chevron size-3" aria-hidden="true" />
-                        <strong className="jr-header-page-title truncate">{pageName}</strong>
+                        <ChevronRight
+                            className="jr-header-chevron size-3"
+                            aria-hidden="true"
+                        />
+                        <strong className="jr-header-page-title truncate">
+                            {pageName}
+                        </strong>
                     </div>
                     <div className="jr-top-actions">
                         {canonical ? (
@@ -411,7 +479,8 @@ export function MaintenanceProjectShell({
                             process · PostgreSQL is not connected.
                         </p>
                     )}
-                    {!operationPage && typeof page.props.status === 'string' &&
+                    {!operationPage &&
+                        typeof page.props.status === 'string' &&
                         page.props.status && (
                             <p
                                 role="status"
@@ -435,11 +504,16 @@ export default function MaintenanceProjectLayout({
     const page = usePage();
     const { auth, sidebarOpen } = page.props;
     const mainDesign = !isAlternativeNavigation(page.component);
-    const role = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role;
-    const viewerTheme = page.props.canonicalFrontend === true && role === 'viewer';
-    const engineerTheme = page.props.canonicalFrontend === true && role === 'engineer';
-    const superadminTheme = page.props.canonicalFrontend === true && role === 'superadmin';
-    const adminTheme = page.props.canonicalFrontend === true && role === 'admin';
+    const role = (page.props.jairoadsIdentity as { role?: string } | undefined)
+        ?.role;
+    const viewerTheme =
+        page.props.canonicalFrontend === true && role === 'viewer';
+    const engineerTheme =
+        page.props.canonicalFrontend === true && role === 'engineer';
+    const superadminTheme =
+        page.props.canonicalFrontend === true && role === 'superadmin';
+    const adminTheme =
+        page.props.canonicalFrontend === true && role === 'admin';
 
     return (
         <SidebarProvider

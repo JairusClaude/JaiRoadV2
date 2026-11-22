@@ -8,7 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -23,8 +23,9 @@ final class PreviewDataService
             if (! is_dir($dir)) {
                 @mkdir($dir, 0755, true);
             }
-            self::$storagePath = $dir . DIRECTORY_SEPARATOR . 'preview_store.json';
+            self::$storagePath = $dir.DIRECTORY_SEPARATOR.'preview_store.json';
         }
+
         return self::$storagePath;
     }
 
@@ -43,6 +44,7 @@ final class PreviewDataService
 
         $initial = self::initialData();
         self::saveStore($initial);
+
         return $initial;
     }
 
@@ -56,6 +58,7 @@ final class PreviewDataService
     {
         $initial = self::initialData();
         self::saveStore($initial);
+
         return $initial;
     }
 
@@ -106,6 +109,7 @@ final class PreviewDataService
             if ($filters['pavement'] !== 'all' && strtolower($r['pavement_type']) !== strtolower($filters['pavement'])) {
                 return false;
             }
+
             return true;
         });
 
@@ -168,7 +172,7 @@ final class PreviewDataService
             'createdByName' => $road['created_by_name'] ?? 'Engineer Assigned',
             'associatedProject' => empty($road['project_id']) ? null : [
                 'id' => (int) $road['project_id'],
-                'project_title' => $road['project_title'] ?? 'Maintenance Project #' . $road['project_id'],
+                'project_title' => $road['project_title'] ?? 'Maintenance Project #'.$road['project_id'],
             ],
             'canEdit' => true,
             'canDelete' => true,
@@ -195,7 +199,7 @@ final class PreviewDataService
             'last_name' => $e['last_name'],
         ])->values();
 
-        return self::render('RoadCoverages/' . ($id === null ? 'Create' : 'Edit'), $request, [
+        return self::render('RoadCoverages/'.($id === null ? 'Create' : 'Edit'), $request, [
             'coverage' => $road === null ? null : self::formatRoadData($road),
             'municipalities' => $lgus,
             'roadCreatorChoices' => $engineers,
@@ -207,7 +211,7 @@ final class PreviewDataService
                 'geocoding' => config('jairoads_maps.geocoding') ?: 'https://photon.komoot.io/api',
             ],
             'canEdit' => true,
-            'cancelUrl' => '/dd-phase3/ui/road-coverages' . ($id === null ? '' : '/' . $id),
+            'cancelUrl' => '/dd-phase3/ui/road-coverages'.($id === null ? '' : '/'.$id),
         ]);
     }
 
@@ -262,7 +266,7 @@ final class PreviewDataService
             $newId = $maxId + 1;
             $newRecord = [
                 'id' => $newId,
-                'road_name' => $request->input('road_name', 'New Road Coverage #' . $newId),
+                'road_name' => $request->input('road_name', 'New Road Coverage #'.$newId),
                 'lgu_id' => $lguId,
                 'municipality_name' => $municipalityName,
                 'pavement_type' => $request->input('pavement_type', 'Concrete'),
@@ -291,6 +295,7 @@ final class PreviewDataService
 
         $directory = '/dd-phase3/ui/road-coverages';
         $detail = $directory.'/'.$targetId;
+
         return redirect($id === null ? $directory : self::previewReturn($request, $detail, [$directory, $detail]))
             ->with('dd_operations_status', 'Road coverage saved successfully (Preview Mode).');
     }
@@ -398,6 +403,7 @@ final class PreviewDataService
             if ($region !== '' && $region !== 'all' && ($l['region'] ?? '') !== $region) {
                 return false;
             }
+
             return true;
         });
 
@@ -512,7 +518,7 @@ final class PreviewDataService
         $lgu = $id === null ? null : collect($store['lgus'])->firstWhere('id', $id);
         abort_if($id !== null && $lgu === null, 404);
 
-        return self::render('LGUs/' . ($id === null ? 'Create' : 'Edit'), $request, [
+        return self::render('LGUs/'.($id === null ? 'Create' : 'Edit'), $request, [
             'lgu' => $lgu,
             'canEdit' => true,
             'backUrl' => '/dd-phase3/ui/lgus',
@@ -527,6 +533,7 @@ final class PreviewDataService
             return $fallback;
         }
         $path = parse_url($return, PHP_URL_PATH);
+
         return in_array($path, $allowed, true) ? $return : $fallback;
     }
 
@@ -554,7 +561,7 @@ final class PreviewDataService
             $newId = $maxId + 1;
             $lgus[] = [
                 'id' => $newId,
-                'municipality_name' => $request->input('municipality_name', 'New LGU #' . $newId),
+                'municipality_name' => $request->input('municipality_name', 'New LGU #'.$newId),
                 'province' => 'Davao de Oro',
                 'region' => 'XI',
                 'mayor_first_name' => $request->input('mayor_first_name', ''),
@@ -569,6 +576,7 @@ final class PreviewDataService
 
         $directory = '/dd-phase3/ui/lgus';
         $detail = $directory.'/'.$id;
+
         return redirect($id === null ? $directory : self::previewReturn($request, $detail, [$directory, $detail]))->with('dd_operations_status', 'LGU saved successfully (Preview Mode).');
     }
 
@@ -602,7 +610,7 @@ final class PreviewDataService
             $id = (int) $row['id'];
             if (collect($store['road_coverages'] ?? [])->contains('lgu_id', $id)
                 || collect($store['engineers'] ?? [])->contains('lgu_id', $id)) {
-                throw \Illuminate\Validation\ValidationException::withMessages(['delete' => 'This LGU still has associated road coverages or engineer assignments. Nothing was deleted.']);
+                throw ValidationException::withMessages(['delete' => 'This LGU still has associated road coverages or engineer assignments. Nothing was deleted.']);
             }
         }
         foreach ($rows as $row) {
@@ -655,6 +663,7 @@ final class PreviewDataService
             if ($filters['municipality'] !== 'all' && (string) ($p['lgu_id'] ?? '') !== (string) $filters['municipality']) {
                 return false;
             }
+
             return true;
         });
 
@@ -693,7 +702,7 @@ final class PreviewDataService
         return self::render('MaintenanceProjects/Show', $request, [
             'project' => self::formatProjectData($p),
             'records' => $records,
-            'recordCreateUrl' => '/dd-phase3/ui/maintenance-projects/' . $id . '/records/create',
+            'recordCreateUrl' => '/dd-phase3/ui/maintenance-projects/'.$id.'/records/create',
             'expandedYear' => $request->integer('record_year', (int) ($records->max('year') ?? date('Y'))),
         ]);
     }
@@ -711,7 +720,7 @@ final class PreviewDataService
             'geojson' => is_string($r['geojson']) ? json_decode($r['geojson'], true) : $r['geojson'],
         ])->values();
 
-        return self::render('MaintenanceProjects/' . ($id === null ? 'Create' : 'Edit'), $request, [
+        return self::render('MaintenanceProjects/'.($id === null ? 'Create' : 'Edit'), $request, [
             'project' => $p === null ? null : self::formatProjectData($p),
             'coverages' => $coverages,
             'integration' => ['ready' => true, 'message' => null],
@@ -751,7 +760,7 @@ final class PreviewDataService
             $newId = $maxId + 1;
             $projects[] = [
                 'id' => $newId,
-                'project_title' => $request->input('project_title', 'Maintenance Project #' . $newId),
+                'project_title' => $request->input('project_title', 'Maintenance Project #'.$newId),
                 'description' => $request->input('description', 'Standard road maintenance project.'),
                 'road_coverage_id' => $coverageId,
                 'road_name' => $coverage ? $coverage['road_name'] : 'Road Coverage',
@@ -772,6 +781,7 @@ final class PreviewDataService
 
         $directory = '/dd-phase3/ui/maintenance-projects';
         $detail = $directory.'/'.$targetId;
+
         return redirect($id === null ? $detail : self::previewReturn($request, $detail, [$directory, $detail]))->with('dd_operations_status', 'Maintenance Project saved successfully (Preview Mode).');
     }
 
@@ -843,6 +853,7 @@ final class PreviewDataService
             if ($filters['status'] !== 'all' && strtolower($r['status'] ?? '') !== strtolower($filters['status'])) {
                 return false;
             }
+
             return true;
         });
 
@@ -932,7 +943,7 @@ final class PreviewDataService
         $store = self::getStore();
         $p = collect($store['maintenance_projects'])->firstWhere('id', $project) ?? [
             'id' => $project,
-            'project_title' => 'Project Maintenance #' . $project,
+            'project_title' => 'Project Maintenance #'.$project,
             'municipality_name' => 'Nabunturan',
         ];
         $r = collect($store['maintenance_records'])->firstWhere('id', $id);
@@ -948,7 +959,7 @@ final class PreviewDataService
                 'municipality_name' => $p['municipality_name'] ?? 'Nabunturan',
             ],
             'record' => self::formatRecordData($r),
-            'monthlyUpdateCreateUrl' => '/dd-phase3/ui/monthly-updates/create?maintenance_id=' . $id,
+            'monthlyUpdateCreateUrl' => '/dd-phase3/ui/monthly-updates/create?maintenance_id='.$id,
             'documents' => $documents,
             'updates' => $updates,
             'canWrite' => true,
@@ -971,7 +982,7 @@ final class PreviewDataService
             'last_name' => $e['last_name'],
         ])->values();
 
-        return self::render('MaintenanceProjects/Records/' . ($id === null ? 'Create' : 'Edit'), $request, [
+        return self::render('MaintenanceProjects/Records/'.($id === null ? 'Create' : 'Edit'), $request, [
             'duplicatePeriod' => false,
             'project' => [
                 'id' => (int) $p['id'],
@@ -983,8 +994,8 @@ final class PreviewDataService
             'records' => collect($store['maintenance_records'])->where('project_id', $project)->values(),
             'record' => $r === null ? null : self::formatRecordData($r),
             'canWrite' => true,
-            'submitUrl' => '/dd-phase3/ui/maintenance-projects/' . $project . '/records' . ($id === null ? '' : '/' . $id),
-            'cancelUrl' => '/dd-phase3/ui/maintenance-projects/' . $project . ($id === null ? '' : '/records/' . $id),
+            'submitUrl' => '/dd-phase3/ui/maintenance-projects/'.$project.'/records'.($id === null ? '' : '/'.$id),
+            'cancelUrl' => '/dd-phase3/ui/maintenance-projects/'.$project.($id === null ? '' : '/records/'.$id),
         ]);
     }
 
@@ -1002,7 +1013,7 @@ final class PreviewDataService
         if (collect($records)->contains(fn ($record) => (int) $record['project_id'] === $project
             && (int) $record['id'] !== $id && (int) $record['maintenance_year'] === $year
             && $record['quarter'] === $quarter)) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['quarter' => 'This project already has a maintenance record for the selected year and quarter.']);
+            throw ValidationException::withMessages(['quarter' => 'This project already has a maintenance record for the selected year and quarter.']);
         }
 
         if ($id !== null) {
@@ -1023,7 +1034,7 @@ final class PreviewDataService
             $newRecord = [
                 'id' => $newId,
                 'project_id' => $project,
-                'project_title' => $p ? $p['project_title'] : 'Project Maintenance #' . $project,
+                'project_title' => $p ? $p['project_title'] : 'Project Maintenance #'.$project,
                 'municipality_name' => $p ? ($p['municipality_name'] ?? 'Nabunturan') : 'Nabunturan',
                 'maintenance_year' => (int) $request->input('maintenance_year', 2026),
                 'quarter' => $request->input('quarter', 'Q2'),
@@ -1046,6 +1057,7 @@ final class PreviewDataService
 
         $parent = '/dd-phase3/ui/maintenance-projects/'.$project;
         $detail = $parent.'/records/'.$targetId;
+
         return redirect(self::previewReturn($request, $id === null ? $parent : $detail, [$parent, $detail, '/dd-phase3/ui/maintenance-records']))
             ->with('dd_operations_status', 'Maintenance record saved successfully (Preview Mode).');
     }
@@ -1061,6 +1073,7 @@ final class PreviewDataService
 
         $directory = '/dd-phase3/ui/maintenance-records';
         $parent = '/dd-phase3/ui/maintenance-projects/'.$record['project_id'];
+
         return redirect(self::previewReturn($request, $directory, [$directory, $parent]))
             ->with('dd_operations_status', 'Maintenance record deleted successfully (Preview Mode).');
     }
@@ -1082,7 +1095,7 @@ final class PreviewDataService
     {
         $id = (int) $row['id'];
         $projectId = (int) ($row['project_id'] ?? 1);
-        $url = '/dd-phase3/ui/maintenance-projects/' . $projectId . '/records/' . $id;
+        $url = '/dd-phase3/ui/maintenance-projects/'.$projectId.'/records/'.$id;
 
         return [
             'id' => $id,
@@ -1104,8 +1117,8 @@ final class PreviewDataService
             'created_at' => $row['created_at'] ?? '2026-11-09T14:58:00Z',
             'updated_at' => $row['updated_at'] ?? '2026-11-09T14:58:00Z',
             'details_url' => $url,
-            'edit_url' => $url . '/edit',
-            'delete_url' => '/dd-phase3/ui/maintenance-records/' . $id,
+            'edit_url' => $url.'/edit',
+            'delete_url' => '/dd-phase3/ui/maintenance-records/'.$id,
             'can_delete' => true,
             'project' => [
                 'id' => $projectId,
@@ -1143,6 +1156,7 @@ final class PreviewDataService
             if ($filters['project'] !== 'all' && (string) ($u['project_id'] ?? '') !== (string) $filters['project']) {
                 return false;
             }
+
             return true;
         });
 
@@ -1250,8 +1264,8 @@ final class PreviewDataService
             'contextRecordId' => null,
             'project' => null,
             'record' => null,
-            'submitUrl' => '/dd-phase3/ui/monthly-updates' . ($id === null ? '' : '/' . $id),
-            'cancelUrl' => '/dd-phase3/ui/monthly-updates' . ($id === null ? '' : '/' . $id),
+            'submitUrl' => '/dd-phase3/ui/monthly-updates'.($id === null ? '' : '/'.$id),
+            'cancelUrl' => '/dd-phase3/ui/monthly-updates'.($id === null ? '' : '/'.$id),
         ]);
     }
 
@@ -1282,6 +1296,7 @@ final class PreviewDataService
             if ($filters['project'] !== 'all' && (string) ($d['project_id'] ?? '') !== (string) $filters['project']) {
                 return false;
             }
+
             return true;
         });
 
@@ -1327,7 +1342,7 @@ final class PreviewDataService
             'uploaded_at' => $row['uploaded_at'] ?? '2026-07-15T09:00:00Z',
             'updated_at' => $row['updated_at'] ?? '2026-07-15T09:00:00Z',
             'available' => true,
-            'delete_url' => '/dd-phase3/files/document/' . $id,
+            'delete_url' => '/dd-phase3/files/document/'.$id,
             'download_url' => '#',
             'can_edit' => true,
             'project' => [
@@ -1384,8 +1399,8 @@ final class PreviewDataService
             'contextRecordId' => null,
             'project' => null,
             'record' => null,
-            'submitUrl' => '/dd-phase3/ui/maintenance-documents' . ($id === null ? '' : '/' . $id),
-            'cancelUrl' => '/dd-phase3/ui/maintenance-documents' . ($id === null ? '' : '/' . $id),
+            'submitUrl' => '/dd-phase3/ui/maintenance-documents'.($id === null ? '' : '/'.$id),
+            'cancelUrl' => '/dd-phase3/ui/maintenance-documents'.($id === null ? '' : '/'.$id),
         ]);
     }
 
@@ -1538,7 +1553,7 @@ final class PreviewDataService
         $collection = collect(array_merge(self::getStore()['preview_audit_events'] ?? [], $allEvents))->sortByDesc('id')->values();
         $paginatedItems = $collection->slice(($page - 1) * $perPage, $perPage)->values();
 
-        $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+        $paginator = new LengthAwarePaginator(
             $paginatedItems,
             $collection->count(),
             $perPage,
@@ -1549,7 +1564,7 @@ final class PreviewDataService
         $actions = ['CREATE', 'UPDATE', 'DELETE', 'ACTIVATE', 'DEACTIVATE', 'REASSIGN', 'RETIRE', 'LOGIN', 'LOGOUT'];
         $entities = ['MaintenanceProject', 'MaintenanceRecord', 'MonthlyUpdate', 'RoadCoverage', 'UserAccount', 'LGU', 'MaintenanceDocument'];
 
-        $authPaginator = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 25, 1, ['path' => $request->url(), 'pageName' => 'auth_page']);
+        $authPaginator = new LengthAwarePaginator([], 0, 25, 1, ['path' => $request->url(), 'pageName' => 'auth_page']);
 
         return self::render('dd-phase3/AuditHistory', $request, [
             'events' => $paginator,
@@ -1883,6 +1898,7 @@ final class PreviewDataService
             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
             sin($dLon / 2) * sin($dLon / 2);
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
         return $earthRadiusKm * $c;
     }
 }
