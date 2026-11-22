@@ -357,3 +357,81 @@ body:has(.jr-engineer-workspace) .jr-loading-track {
 body:has(.jr-engineer-workspace) .jr-loading-track-stripe {
   background: linear-gradient(90deg, #873A0D, #A94B0C, #873A0D);
 }
+
+/* Viewer-only interactive accents across DD and polished workspaces.
+   Blue is used for non-destructive actions and informational feedback.
+   Keep success, warning, error and disabled-action semantics unchanged. */
+body:has(.jr-viewer-workspace) {
+  --jr-toast-bg: #E6EFFF;
+  --jr-toast-ink: #0B2E66;
+}
+html.dark body:has(.jr-viewer-workspace) {
+  --jr-toast-bg: #102744;
+  --jr-toast-ink: #DBEAFE;
+}
+body:has(.jr-viewer-workspace) :is(.jr-workspace, .jr-normal-workspace)
+  :is(button, a)[class*="bg-[#90451"]:not([data-variant="destructive"]) {
+  background-color: #1D5DB5 !important;
+  border-color: #1D5DB5 !important;
+  color: #fff !important;
+}
+body:has(.jr-viewer-workspace) :is(.jr-workspace, .jr-normal-workspace)
+  :is(button, a)[class*="bg-[#90451"]:not([data-variant="destructive"]):hover:not(:disabled) {
+  background-color: #124A9C !important;
+  border-color: #124A9C !important;
+}
+body:has(.jr-viewer-workspace) .jr-notification-trigger {
+  color: #1D5DB5 !important;
+}
+body:has(.jr-viewer-workspace) .jr-notification-trigger:is(:hover, :focus-visible) {
+  background-color: #E6EFFF !important;
+  border-color: #BCD4FB !important;
+  outline-color: #1D5DB5 !important;
+}
+body:has(.jr-viewer-workspace) .jr-notification-dot {
+  background-color: #1D5DB5 !important;
+}
+body:has(.jr-viewer-workspace) .jr-notification-popover {
+  border-top: 3px solid #1D5DB5 !important;
+}
+body:has(.jr-viewer-workspace) .jr-notification-refresh {
+  color: #1D5DB5 !important;
+  outline-color: #1D5DB5 !important;
+}
+body:has(.jr-viewer-workspace) .jr-notification-refresh:hover {
+  background-color: #E6EFFF !important;
+}
+html.dark body:has(.jr-viewer-workspace) .jr-notification-trigger:is(:hover, :focus-visible),
+html.dark body:has(.jr-viewer-workspace) .jr-notification-refresh:hover {
+  background-color: #243D5F !important;
+}
+body:has(.jr-viewer-workspace) #notifications h2 svg {
+  color: #1D5DB5 !important;
+}
+body:has(.jr-viewer-workspace) .toaster [data-sonner-toast]:not([data-type="success"]):not([data-type="error"]):not([data-type="warning"]) {
+  border-color: #1D5DB5 !important;
+}
+body:has(.jr-viewer-workspace) .toaster {
+  --info-bg: var(--jr-toast-bg);
+  --info-text: var(--jr-toast-ink);
+  --info-border: #1D5DB5;
+}
+body:has(.jr-viewer-workspace) .jr-loading-track {
+  background-color: #E6EFFF;
+}
+body:has(.jr-viewer-workspace) .jr-loading-track-stripe {
+  background: #1D5DB5 !important;
+  box-shadow: 0 0 12px #1D5DB540;
+}
+body:has(.jr-viewer-workspace) .jr-monthly-progress-track > span,
+body:has(.jr-viewer-workspace) .jr-monthly-report .jr-monthly-progress-track > span {
+  background: #1D5DB5 !important;
+}
+body:has(.jr-viewer-workspace) .jr-monthly-progress > span {
+  color: #1D5DB5 !important;
+}
+body:has(.jr-viewer-workspace) .jr-responsive-shell aside [aria-current="page"],
+.jr-viewer-workspace aside [aria-current="page"] {
+  color: #1D5DB5 !important;
+  background-color: #E6EFFF !important;
+}
