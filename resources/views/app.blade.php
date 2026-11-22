@@ -7,7 +7,7 @@
         {{-- Inline script to detect appearance preference --}}
         <script>
             (function() {
-                const appearance = @json(in_array($appearance ?? 'light', ['light', 'dark', 'system'], true) ? $appearance : 'light');
+                const appearance = @json($appearance ?? 'light');
                 const isDark = appearance === 'dark' ||
                     (appearance === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
                 document.documentElement.classList.toggle('dark', isDark);
