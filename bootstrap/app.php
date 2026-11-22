@@ -26,8 +26,14 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // All canonical UI mutations remain protected by Laravel's default CSRF checks.
-        // Proxy headers are trusted only from explicitly configured upstreams.
-        $middleware->trustProxies(at: config('app.trusted_proxies') ?: null);
+        // Bootstrap callbacks run before the config service is bound. Read
+        // deployer-provided proxy addresses directly from the environment,
+        // never from a request header. Wildcards are not accepted.
+        $trustedProxies = array_values(array_filter(
+            array_map('trim', explode(',', (string) env('TRUSTED_PROXIES', ''))),
+            static fn (string $proxy): bool => $proxy !== '' && $proxy !== '*',
+        ));
+        $middleware->trustProxies(at: $trustedProxies);
         $middleware->prependToPriorityList(AuthenticatesRequests::class, EnforceCanonicalSession::class);
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 

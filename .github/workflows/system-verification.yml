@@ -7,6 +7,9 @@ permissions:
   contents: read
 jobs:
   reviewed-lineage:
+    # This immutable lineage gate is for the stacked combined-review candidate.
+    # merged-system is a separate delivery branch with a different Git ancestry.
+    if: ${{ github.ref_name != 'merged-system' }}
     name: integration / canonical and teammate ancestry
     runs-on: ubuntu-latest
     permissions:
@@ -18,6 +21,18 @@ jobs:
           persist-credentials: false
       - name: Verify all stacked PRs and teammate integration remain in this candidate
         run: bash tests/Integration/assert-reviewed-history.sh
+
+  merged-contracts:
+    if: ${{ github.ref_name == 'merged-system' }}
+    name: integration / merged-system canonical contracts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with: { persist-credentials: false }
+      - name: Verify current canonical identity, audit and file contracts
+        run: bash tests/Integration/assert-merged-system-contracts.sh
 
   release-no-go-gate:
     name: release / unapproved deployment must remain blocked
