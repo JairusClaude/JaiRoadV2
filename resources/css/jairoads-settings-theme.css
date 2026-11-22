@@ -75,3 +75,72 @@ html.jr-reduce-motion .jr-app *::after {
         scroll-behavior: auto !important;
     }
 }
+
+
+/* Role-aware accents for Settings and User Management.
+   Keep the established role palettes consistent across shared workspace modules. */
+:where(body:has(.jr-superadmin-workspace), body:has(.jr-superadmin-sidebar)) .jr-settings,
+:where(body:has(.jr-admin-workspace), body:has(.jr-admin-sidebar)) .jr-settings,
+:where(body:has(.jr-viewer-workspace), body:has(.jr-viewer-sidebar)) .jr-settings {
+    --jr-role-accent: #5b2ca0;
+    --jr-role-accent-hover: #4b2386;
+    --jr-role-accent-soft: #f1eaff;
+    --jr-role-accent-ink: #4b2386;
+}
+:where(body:has(.jr-admin-workspace), body:has(.jr-admin-sidebar)) .jr-settings {
+    --jr-role-accent: #b42336;
+    --jr-role-accent-hover: #941b2b;
+    --jr-role-accent-soft: #fdecef;
+    --jr-role-accent-ink: #941b2b;
+}
+:where(body:has(.jr-viewer-workspace), body:has(.jr-viewer-sidebar)) .jr-settings {
+    --jr-role-accent: #2463b5;
+    --jr-role-accent-hover: #1d4f91;
+    --jr-role-accent-soft: #eaf2ff;
+    --jr-role-accent-ink: #1d4f91;
+}
+:where(body:has(.jr-superadmin-workspace), body:has(.jr-superadmin-sidebar))
+    :is(.jr-settings, .jr-workspace) [class*="bg-[#90451F]"],
+:where(body:has(.jr-admin-workspace), body:has(.jr-admin-sidebar))
+    :is(.jr-settings, .jr-workspace) [class*="bg-[#90451F]"],
+:where(body:has(.jr-viewer-workspace), body:has(.jr-viewer-sidebar))
+    :is(.jr-settings, .jr-workspace) [class*="bg-[#90451F]"] {
+    background-color: var(--jr-role-accent) !important;
+}
+:where(body:has(.jr-superadmin-workspace), body:has(.jr-superadmin-sidebar))
+    :is(.jr-settings, .jr-workspace) [class*="bg-[#90451F]"]:hover,
+:where(body:has(.jr-admin-workspace), body:has(.jr-admin-sidebar))
+    :is(.jr-settings, .jr-workspace) [class*="bg-[#90451F]"]:hover,
+:where(body:has(.jr-viewer-workspace), body:has(.jr-viewer-sidebar))
+    :is(.jr-settings, .jr-workspace) [class*="bg-[#90451F]"]:hover {
+    background-color: var(--jr-role-accent-hover) !important;
+}
+:where(body:has(.jr-superadmin-workspace), body:has(.jr-superadmin-sidebar))
+    .jr-settings nav button[aria-current="page"],
+:where(body:has(.jr-admin-workspace), body:has(.jr-admin-sidebar))
+    .jr-settings nav button[aria-current="page"],
+:where(body:has(.jr-viewer-workspace), body:has(.jr-viewer-sidebar))
+    .jr-settings nav button[aria-current="page"] {
+    background-color: var(--jr-role-accent-soft) !important;
+    color: var(--jr-role-accent-ink) !important;
+}
+:where(body:has(.jr-superadmin-workspace), body:has(.jr-superadmin-sidebar))
+    .jr-settings nav button:focus-visible,
+:where(body:has(.jr-admin-workspace), body:has(.jr-admin-sidebar))
+    .jr-settings nav button:focus-visible,
+:where(body:has(.jr-viewer-workspace), body:has(.jr-viewer-sidebar))
+    .jr-settings nav button:focus-visible {
+    outline-color: var(--jr-role-accent) !important;
+}
+:where(body:has(.jr-superadmin-workspace), body:has(.jr-superadmin-sidebar))
+    .jr-metric-card:first-child > p:first-child {
+    color: #6b35b4 !important;
+}
+:where(body:has(.jr-admin-workspace), body:has(.jr-admin-sidebar))
+    .jr-metric-card:first-child > p:first-child {
+    color: #b42336 !important;
+}
+:where(body:has(.jr-viewer-workspace), body:has(.jr-viewer-sidebar))
+    .jr-metric-card:first-child > p:first-child {
+    color: #2463b5 !important;
+}
