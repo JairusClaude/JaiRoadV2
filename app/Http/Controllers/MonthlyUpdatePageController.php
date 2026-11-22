@@ -177,8 +177,8 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
     }
 
     /**
-     * @param array{account_id:int,role:string,engineer_id:?int} $actor
-     * @param list<int> $ids
+     * @param  array{account_id:int,role:string,engineer_id:?int}  $actor
+     * @param  list<int>  $ids
      */
     private function deleteUpdates(Request $request, array $actor, array $ids): void
     {

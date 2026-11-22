@@ -396,7 +396,7 @@ class OperationsFrontendController extends Controller
     /**
      * Return to a known source page after a successful mutation; never redirect to arbitrary URLs.
      *
-     * @param list<string> $allowed
+     * @param  list<string>  $allowed
      */
     protected function editReturn(Request $request, string $fallback, array $allowed): string
     {

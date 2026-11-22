@@ -1,10 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import {
-    ArrowRight,
-    Crown,
-    RefreshCw,
-    ShieldCheck,
-} from 'lucide-react';
+import { ArrowRight, Crown, RefreshCw, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import { DdDashboardAnalytics } from '@/components/dd-dashboard-analytics';
 import type { DdDashboardSummary } from '@/components/dd-dashboard-analytics';

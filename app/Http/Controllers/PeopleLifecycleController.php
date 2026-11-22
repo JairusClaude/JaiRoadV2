@@ -163,7 +163,7 @@ final class PeopleLifecycleController extends Controller
     /**
      * Explain an unavailable reset without exposing credentials or weakening identity checks.
      *
-     * @param array{account_id:int,role:string,engineer_id:?int} $actor
+     * @param  array{account_id:int,role:string,engineer_id:?int}  $actor
      */
     private function passwordRecoveryBlocker(array $actor, stdClass $account, ?stdClass $engineer, AccountIdentityResolver $resolver): ?string
     {

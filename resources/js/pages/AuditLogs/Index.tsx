@@ -1,11 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import {
-    Eye,
-    History,
-    Search,
-    Shield,
-    User,
-} from 'lucide-react';
+import { Eye, History, Search, Shield, User } from 'lucide-react';
 import { useRef, useState } from 'react';
 import {
     DirectoryFilter,
@@ -108,7 +102,10 @@ export default function Index({ events, filters }: AuditLogsProps) {
         filter: filters.search || '',
         value: filters.search || '',
     });
-    const search = draft.filter === (filters.search || '') ? draft.value : (filters.search || '');
+    const search =
+        draft.filter === (filters.search || '')
+            ? draft.value
+            : filters.search || '';
     const [selectedEvent, setSelectedEvent] = useState<AuditEvent | null>(null);
     const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 

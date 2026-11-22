@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Quarterly;
 
 use Illuminate\Database\QueryException;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -154,7 +155,7 @@ final class PreservedRelationshipsTest extends PostgresTestCase
     {
         // Challenge validation deliberately submits more than the production
         // rate limit allows; disable only throttling in this isolated test.
-        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
+        $this->withoutMiddleware(ThrottleRequests::class);
         $f = $this->fixture();
         $url = '/dd-phase3/ui/maintenance-projects/'.$f['project'];
         $token = $this->getJson($url.'/deletion-preview')->assertOk()->json('confirmation_token');

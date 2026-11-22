@@ -376,7 +376,7 @@ final class PreviewDataService
     }
 
     /**
-     * @param array<string,mixed> $row
+     * @param  array<string,mixed>  $row
      * @return array<string,mixed>
      */
     private static function formatRoadData(array $row): array
@@ -638,8 +638,8 @@ final class PreviewDataService
     /**
      * Isolated preview data only: validate every dependency before removing any row.
      *
-     * @param array<string,list<array<string,mixed>>> $store
-     * @param list<int> $ids
+     * @param  array<string,list<array<string,mixed>>>  $store
+     * @param  list<int>  $ids
      * @return array<string,list<array<string,mixed>>>
      */
     private static function deletePreviewLgus(array $store, array $ids): array
@@ -829,7 +829,7 @@ final class PreviewDataService
     }
 
     /**
-     * @param array<string,mixed> $row
+     * @param  array<string,mixed>  $row
      * @return array<string,mixed>
      */
     private static function formatProjectData(array $row): array
@@ -1139,7 +1139,7 @@ final class PreviewDataService
     }
 
     /**
-     * @param array<string,mixed> $row
+     * @param  array<string,mixed>  $row
      * @return array<string,mixed>
      */
     private static function formatRecordData(array $row): array
@@ -1246,7 +1246,7 @@ final class PreviewDataService
     }
 
     /**
-     * @param array<string,mixed> $row
+     * @param  array<string,mixed>  $row
      * @return array<string,mixed>
      */
     private static function formatUpdateData(array $row): array
@@ -1382,7 +1382,7 @@ final class PreviewDataService
     }
 
     /**
-     * @param array<string,mixed> $row
+     * @param  array<string,mixed>  $row
      * @return array<string,mixed>
      */
     private static function formatDocumentData(array $row): array

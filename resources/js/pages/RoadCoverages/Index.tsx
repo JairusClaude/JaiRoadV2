@@ -80,7 +80,11 @@ export default function Index({
     // Reset pagination immediately when Inertia delivers a different map page.
     // React permits guarded prop-derived updates during rendering.
     const [mapSource, setMapSource] = useState({ mapCoverages, mapNextCursor });
-    if (mapSource.mapCoverages !== mapCoverages || mapSource.mapNextCursor !== mapNextCursor) {
+
+    if (
+        mapSource.mapCoverages !== mapCoverages ||
+        mapSource.mapNextCursor !== mapNextCursor
+    ) {
         setMapSource({ mapCoverages, mapNextCursor });
         setLoadedMap(mapCoverages ?? []);
         setMapCursor(mapNextCursor ?? null);

@@ -13,7 +13,7 @@ final class OperationAudit
     /**
      * Store the verified actor's name at the time of the event, never the target's name.
      *
-     * @param array{account_id:int,role:string,engineer_id:?int} $actor
+     * @param  array{account_id:int,role:string,engineer_id:?int}  $actor
      */
     private function actorIdentifier(array $actor): string
     {
@@ -42,7 +42,7 @@ final class OperationAudit
     /**
      * Credential reset audit: record the event, never a credential or hash.
      *
-     * @param array{account_id:int,role:string,engineer_id:?int} $actor
+     * @param  array{account_id:int,role:string,engineer_id:?int}  $actor
      */
     public function recordAdministratorPasswordReset(array $actor, int $id, bool $operatorRoot = false): void
     {

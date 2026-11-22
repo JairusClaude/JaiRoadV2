@@ -261,8 +261,8 @@ final class LguPageController extends OperationsFrontendController
     /**
      * Dependency checks, removal and canonical audit/notification delivery are atomic.
      *
-     * @param array{account_id:int,role:string,engineer_id:?int} $actor
-     * @param list<int> $ids
+     * @param  array{account_id:int,role:string,engineer_id:?int}  $actor
+     * @param  list<int>  $ids
      */
     private function deleteCheckedLgus(array $actor, array $ids): void
     {
