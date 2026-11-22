@@ -167,6 +167,10 @@ try {
     assert.equal(await engineerSelect.isDisabled(), false);
     assert.equal(await engineerSelect.getAttribute('required'), '');
     await accountType.selectOption('Engineer');
+    // Search must find profiles using the bounded, authorized endpoint.
+    await accountForm
+        .getByRole('searchbox', { name: 'Search eligible Engineers' })
+        .fill('UI Rank Fixture');
     const option = engineerSelect
         .locator('option')
         .filter({ hasText: 'UI Rank Fixture · Engineer III' });

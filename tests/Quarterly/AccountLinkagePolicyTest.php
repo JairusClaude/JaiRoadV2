@@ -92,7 +92,8 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
         $totalAccounts = (int) DB::table('jairoads_next.user_accounts')->count();
         $this->actingAs($admin)->get('/dd-phase3/users')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
             ->has('accounts', 15)->where('directory.total', $totalAccounts)
-            ->has('eligibleEngineers', 1)->where('eligibleEngineers.0.id', $available));
+            ->has('eligibleEngineers', 1)->where('eligibleEngineerTotal', 1)
+            ->where('eligibleEngineers.0.id', $available));
         // Search an early account that is outside the newest 15 displayed rows.
         $this->get('/dd-phase3/users?directory_search=filler-0')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
             ->has('accounts', 1)->where('accounts.0.username', 'filler-0')->where('directory.total', 1));
@@ -130,6 +131,68 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
             ->has('engineers', 1)->where('engineers.0.id', $matchingEngineer)->where('directory.total', 1));
         $this->get('/dd-phase3/users?'.http_build_query(['directory_tab' => 'engineers', 'directory_page' => 9999]))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
             ->where('directory.page', 1)->where('directory.pages', 1));
+    }
+
+    public function test_eligible_engineer_selector_is_bounded_searchable_and_manager_only(): void
+    {
+        $admin = $this->account();
+        $bulk = [];
+        for ($i = 0; $i < 62; $i++) {
+            $bulk[] = [
+                'first_name' => 'Bulk'.str_pad((string) $i, 3, '0', STR_PAD_LEFT),
+                'last_name' => 'Engineer',
+                'rank' => 'Engineer II',
+                'engineer_status' => 'Active',
+            ];
+        }
+        DB::table('jairoads_next.engineers')->insert($bulk);
+        $target = (int) DB::table('jairoads_next.engineers')->insertGetId([
+            'first_name' => 'Hidden_Unique', 'last_name' => 'Profile',
+            'rank' => 'Engineer III', 'engineer_status' => 'Active',
+        ]);
+        DB::table('jairoads_next.engineers')->insert([
+            'first_name' => 'HiddenXUnique', 'last_name' => 'Profile',
+            'rank' => 'Engineer III', 'engineer_status' => 'Active',
+        ]);
+        $retired = $this->engineer('Retired');
+        $linked = $this->engineer();
+        $this->account('Engineer', $linked);
+        $expected = 64;
+
+        $this->actingAs($admin)->get('/dd-phase3/users')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->has('eligibleEngineers', 50)->where('eligibleEngineerTotal', $expected)
+            ->missing('eligibleEngineers.50.id'));
+        $this->getJson('/dd-phase3/eligible-engineers')->assertOk()
+            ->assertJsonCount(50, 'engineers')->assertJsonPath('total', $expected);
+        $this->getJson('/dd-phase3/eligible-engineers?'.http_build_query(['search' => ' Hidden_Unique ']))
+            ->assertOk()->assertJsonCount(1, 'engineers')->assertJsonPath('total', 1)
+            ->assertJsonPath('engineers.0.id', $target);
+        $this->getJson('/dd-phase3/eligible-engineers?'.http_build_query(['search' => 'Hidden%Unique']))
+            ->assertOk()->assertJsonCount(0, 'engineers')->assertJsonPath('total', 0);
+        $this->getJson('/dd-phase3/eligible-engineers?'.http_build_query(['search' => (string) $retired]))
+            ->assertOk()->assertJsonMissing(['id' => $retired]);
+        $this->getJson('/dd-phase3/eligible-engineers?'.http_build_query(['search' => (string) $linked]))
+            ->assertOk()->assertJsonMissing(['id' => $linked]);
+
+        $engineerLogin = $this->account('Engineer');
+        $this->actingAs($engineerLogin)->getJson('/dd-phase3/eligible-engineers')->assertForbidden();
+        $this->actingAs($admin)->getJson('/dd-phase3/eligible-engineers')->assertOk();
+    }
+
+    public function test_dashboard_and_users_do_not_load_unneeded_lgu_rows(): void
+    {
+        $admin = $this->account();
+        DB::table('jairoads_next.lgus')->insert([
+            'municipality_name' => 'Directory only municipality',
+            'province' => 'Example Province', 'region' => 'Example Region',
+            'mayor_first_name' => 'Example', 'mayor_last_name' => 'Mayor',
+        ]);
+        $expected = (int) DB::table('jairoads_next.lgus')->count();
+
+        $this->actingAs($admin)->get('/dd-phase3/dashboard')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->has('lgus', 0)->where('counts.lgus', $expected));
+        $this->get('/dd-phase3/users')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+            ->has('lgus', 0)->where('counts.lgus', $expected));
     }
 
     public function test_existing_unlinked_admin_is_denied_without_mutating_or_grandfathering_it(): void
