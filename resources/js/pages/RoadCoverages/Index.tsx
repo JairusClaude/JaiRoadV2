@@ -42,6 +42,7 @@ export default function Index({
     linkedProjects,
     totalLengthKm,
     mapCoverages,
+    mapNextCursor,
 }: RoadCoverageDirectoryProps) {
     const page = usePage();
     const effectiveCanDelete = canDelete ?? canEdit;
@@ -67,8 +68,48 @@ export default function Index({
     );
     const [deleting, setDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState('');
+    const [loadedMap, setLoadedMap] = useState(mapCoverages ?? []);
+    const [mapCursor, setMapCursor] = useState<number | null>(mapNextCursor ?? null);
+    const [mapLoading, setMapLoading] = useState(false);
+    const [mapError, setMapError] = useState('');
     const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     const request = useRef<{ cancel: () => void } | null>(null);
+
+    useEffect(() => {
+        setLoadedMap(mapCoverages ?? []);
+        setMapCursor(mapNextCursor ?? null);
+        setMapError('');
+    }, [mapCoverages, mapNextCursor]);
+
+    const loadMoreMap = async () => {
+        if (mapCursor === null || mapLoading) return;
+        setMapLoading(true);
+        setMapError('');
+        try {
+            const response = await fetch(
+                `/dd-phase3/ui/map/road-index?before=${encodeURIComponent(mapCursor)}`,
+                { credentials: 'same-origin', headers: { Accept: 'application/json' } },
+            );
+            if (!response.ok) throw new Error('The next road map page is unavailable.');
+            const result = (await response.json()) as {
+                data: NonNullable<RoadCoverageDirectoryProps['mapCoverages']>;
+                next_cursor: number | null;
+            };
+            if (!Array.isArray(result.data)) throw new Error('Unexpected map response.');
+            setLoadedMap((previous) => {
+                const seen = new Set(previous.map((road) => road.id));
+                return [
+                    ...previous,
+                    ...result.data.filter((road) => !seen.has(road.id)),
+                ];
+            });
+            setMapCursor(result.next_cursor);
+        } catch {
+            setMapError('Could not load more map roads. Try again.');
+        } finally {
+            setMapLoading(false);
+        }
+    };
 
     const toggle = (id: number) => {
         setSelected((previous) => {
@@ -267,9 +308,23 @@ export default function Index({
                     aria-label="Road coverage map"
                     className="jr-map-card-container mb-6 rounded-2xl border border-[#E2E8F0] bg-white p-4 sm:p-5 shadow-sm overflow-hidden"
                 >
-                    <SimplifiedCoverageMap
-                        coverages={mapCoverages || coverages?.data || []}
-                    />
+                    <SimplifiedCoverageMap coverages={loadedMap} />
+                    {mapCursor !== null && (
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
+                            <p>
+                                Showing {loadedMap.length} of {displayedTotalCoverages} road coverages on the map.
+                            </p>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                disabled={mapLoading}
+                                onClick={() => void loadMoreMap()}
+                            >
+                                {mapLoading ? 'Loading roads…' : 'Load more map roads'}
+                            </Button>
+                        </div>
+                    )}
+                    {mapError && <p role="alert" className="mt-2 text-sm text-red-700">{mapError}</p>}
                 </section>
 
                 {/* 3. Road Coverages Directory Table (Separated Cards Layout) */}

@@ -39,6 +39,7 @@ export type RoadCoverageDirectoryProps = {
         assigned?: boolean;
         geojson: unknown;
     }>;
+    mapNextCursor?: number | null;
     coverages: {
         data: RoadCoverageRow[];
         total: number;

@@ -9,6 +9,7 @@ it('preserves canonical road coverage URLs names and action routing', function (
     foreach ([
         'roads.references' => ['dd-phase3/ui/map/roads', 'roadReferences'],
         'roads.index' => ['dd-phase3/ui/road-coverages', 'roadIndex'],
+        'roads.map-page' => ['dd-phase3/ui/map/road-index', 'roadMapPage'],
         'roads.create' => ['dd-phase3/ui/road-coverages/create', 'roadForm'],
         'roads.show' => ['dd-phase3/ui/road-coverages/{id}', 'roadShow'],
         'roads.edit' => ['dd-phase3/ui/road-coverages/{id}/edit', 'roadForm'],

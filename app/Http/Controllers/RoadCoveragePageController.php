@@ -48,28 +48,67 @@ final class RoadCoveragePageController extends OperationsFrontendController
         $linkedProjects = (int) DB::table('jairoads_next.maintenance_projects')->whereNotNull('road_coverage_id')->distinct()->count('id');
         $totalLengthKm = (float) (DB::table('jairoads_next.road_coverages')->sum('kilometers') ?? 0);
 
-        $mapCoverages = DB::table('jairoads_next.road_coverages as rc')
-            ->join('jairoads_next.lgus as l', 'l.id', '=', 'rc.lgu_id')
-            ->leftJoin('jairoads_next.maintenance_projects as p', 'p.road_coverage_id', '=', 'rc.id')
-            ->select(['rc.id', 'rc.road_name', 'rc.geojson', 'l.municipality_name', 'p.id as project_id'])
-            ->get()
-            ->map(fn (\stdClass $r): array => [
-                'id' => (int) $r->id,
-                'road_name' => $r->road_name,
-                'municipality' => $r->municipality_name,
-                'assigned' => !empty($r->project_id),
-                'geojson' => json_decode($r->geojson, true, 512, JSON_THROW_ON_ERROR),
-            ])->all();
+        // Keep initial Inertia payload bounded. The user can progressively load
+        // further map geometries through the read-only, cursor-based endpoint.
+        $mapPage = $this->roadMapData($actor);
 
         return $this->render('RoadCoverages/Index', $request, [
             'totalCoverages' => $totalCoverages,
             'linkedProjects' => $linkedProjects,
             'totalLengthKm' => $totalLengthKm,
-            'mapCoverages' => $mapCoverages,
+            'mapCoverages' => $mapPage['data'],
+            'mapNextCursor' => $mapPage['next_cursor'],
             'coverages' => $query->paginate(12)->withQueryString()->through(fn (\stdClass $r): array => $this->roadData($r)),
             'municipalities' => $this->municipalities($actor), 'filters' => $filters, 'canEdit' => $this->writable($actor),
             'canDelete' => RoleAccess::canDeleteOperations($actor['role']),
         ]);
+    }
+
+    /** Read-only map geometry batches for all eligible canonical roles. */
+    public function roadMapPage(Request $request): JsonResponse
+    {
+        if (self::isPreview($request)) {
+            return response()->json(['data' => [], 'next_cursor' => null])
+                ->header('Cache-Control', 'private, no-store');
+        }
+
+        $actor = $this->actor($request);
+        $v = $request->validate(['before' => ['required', 'integer', 'min:1']]);
+
+        return response()->json($this->roadMapData($actor, (int) $v['before']))
+            ->header('Cache-Control', 'private, no-store');
+    }
+
+    /**
+     * Newest-first keyset pagination avoids materializing every stored GeoJSON
+     * value on a road-index visit. Never skip existing roads; all are reachable
+     * through the next cursor without reloading already-seen records.
+     *
+     * @param array{account_id:int,role:string,engineer_id:?int} $actor
+     * @return array{data:array<int,array<string,mixed>>,next_cursor:?int}
+     */
+    private function roadMapData(array $actor, ?int $before = null): array
+    {
+        $query = $this->scope(DB::table('jairoads_next.road_coverages as rc')
+            ->join('jairoads_next.lgus as l', 'l.id', '=', 'rc.lgu_id')
+            ->leftJoin('jairoads_next.maintenance_projects as p', 'p.road_coverage_id', '=', 'rc.id'), $actor);
+        if ($before !== null) {
+            $query->where('rc.id', '<', $before);
+        }
+        $rows = $query->orderByDesc('rc.id')->limit(101)
+            ->get(['rc.id', 'rc.road_name', 'rc.geojson', 'l.municipality_name', 'p.id as project_id']);
+        $page = $rows->take(100);
+
+        return [
+            'data' => $page->map(static fn (\stdClass $road): array => [
+                'id' => (int) $road->id,
+                'road_name' => (string) $road->road_name,
+                'municipality' => (string) $road->municipality_name,
+                'assigned' => $road->project_id !== null,
+                'geojson' => json_decode((string) $road->geojson, true, 512, JSON_THROW_ON_ERROR),
+            ])->values()->all(),
+            'next_cursor' => $rows->count() > 100 ? (int) $page->last()->id : null,
+        ];
     }
 
     public function roadShow(Request $request, int $id): Response
