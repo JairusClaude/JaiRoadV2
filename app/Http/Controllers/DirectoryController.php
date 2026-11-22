@@ -10,6 +10,7 @@ use App\Services\DashboardAnalytics;
 use App\Services\PreservedProjectDeletion;
 use App\Services\RoleAccess;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +25,38 @@ use Inertia\Response;
 class DirectoryController extends Controller
 {
     use AuthorizesAndAuditsDirectory;
+
+    private function eligibleEngineerQuery(): Builder
+    {
+        return DB::table('jairoads_next.engineers as e')
+            ->where('e.engineer_status', 'Active')
+            ->whereNotExists(static fn (Builder $query) => $query->selectRaw('1')
+                ->from('jairoads_next.user_accounts as ua')->whereColumn('ua.engineer_id', 'e.id'));
+    }
+
+    public function eligibleEngineers(Request $request, AccountIdentityResolver $resolver): JsonResponse
+    {
+        $this->admin($request, $resolver);
+        $input = $request->query('search');
+        $search = is_string($input) ? mb_substr(trim($input), 0, 100) : '';
+        $query = $this->eligibleEngineerQuery();
+        if ($search !== '') {
+            $needle = '%'.addcslashes($search, '%_\\').'%';
+            $query->where(static fn (Builder $q) => $q
+                ->whereRaw("CONCAT_WS(' ', e.first_name, e.middle_name, e.last_name) ILIKE ?", [$needle])
+                ->orWhere('e.first_name', 'ilike', $needle)
+                ->orWhere('e.last_name', 'ilike', $needle)
+                ->orWhere('e.rank', 'ilike', $needle)
+                ->orWhereRaw('CAST(e.id AS text) ILIKE ?', [$needle]));
+        }
+        $total = (clone $query)->count();
+
+        return response()->json([
+            'engineers' => $query->orderBy('e.last_name')->orderBy('e.first_name')->orderBy('e.id')
+                ->limit(50)->get(['e.id', 'e.first_name', 'e.last_name', 'e.rank', 'e.engineer_status']),
+            'total' => $total,
+        ])->header('Cache-Control', 'private, no-store');
+    }
 
     public function show(string $section, Request $request, AccountIdentityResolver $resolver): Response|RedirectResponse
     {
@@ -45,11 +78,9 @@ class DirectoryController extends Controller
             abort_unless(RoleAccess::canManageAccounts($actor['role']), 403);
         }
         $t = static fn (string $name) => DB::table('jairoads_next.'.$name);
-        $lguQuery = $t('lgus')->orderBy('id');
-        $lgus = $lguQuery->limit(200)->get([
-            'id', 'municipality_name', 'province', 'region',
-            'mayor_first_name', 'mayor_middle_name', 'mayor_last_name',
-        ]);
+        // Dashboard and User Management only need the LGU count.
+        // The actual LGU directory is served by a separate controller.
+        $lgus = collect();
         $allowedManager = RoleAccess::canManageAccounts($actor['role']);
         $accounts = collect();
         $engineers = collect();
@@ -124,15 +155,15 @@ class DirectoryController extends Controller
         // A direct profile link is still honored, even if there are many engineers.
         $initialEngineerId = $requestedEngineerId > 0 && $engineers->contains('id', $requestedEngineerId)
             ? $requestedEngineerId : null;
-        // Do not infer availability from the paginated account directory.
-        $eligibleEngineers = $allowedManager ? $t('engineers as e')
-            ->where('e.engineer_status', 'Active')
-            ->whereNotExists(static fn (Builder $query) => $query->selectRaw('1')
-                ->from('jairoads_next.user_accounts as ua')->whereColumn('ua.engineer_id', 'e.id'))
-            ->orderBy('e.last_name')->orderBy('e.first_name')->orderBy('e.id')
-            ->get(['e.id', 'e.first_name', 'e.last_name', 'e.rank', 'e.engineer_status']) : collect();
+        // Retain an exact total, but never serialize every unused Engineer.
+        // The Add Account dialog can search beyond the first 50 matches.
+        $eligibleQuery = $section === 'users' && $allowedManager ? $this->eligibleEngineerQuery() : null;
+        $eligibleEngineerTotal = $eligibleQuery === null ? 0 : (clone $eligibleQuery)->count();
+        $eligibleEngineers = $eligibleQuery === null ? collect() : $eligibleQuery
+            ->orderBy('e.last_name')->orderBy('e.first_name')->orderBy('e.id')->limit(50)
+            ->get(['e.id', 'e.first_name', 'e.last_name', 'e.rank', 'e.engineer_status']);
         $counts = [
-            'lgus' => $lguQuery->count(),
+            'lgus' => (int) $t('lgus')->count(),
             'roadCoverages' => (int) $t('road_coverages')->count(),
             'maintenanceProjects' => $allowedManager || $actor['role'] === 'Viewer'
                 ? (int) $t('maintenance_projects')->count() : null,
@@ -152,7 +183,7 @@ class DirectoryController extends Controller
             'lgus' => $lgus, 'accounts' => $accounts,
             'engineers' => $engineers,
             'initialEngineerId' => $initialEngineerId, 'directory' => $directory,
-            'eligibleEngineers' => $eligibleEngineers, 'assignments' => [],
+            'eligibleEngineers' => $eligibleEngineers, 'eligibleEngineerTotal' => $eligibleEngineerTotal, 'assignments' => [],
             'canManage' => $allowedManager,
             // Both authorized administrative roles can create standard DD accounts.
             // Initial SuperAdmin creation is a separate owner-verified bootstrap.

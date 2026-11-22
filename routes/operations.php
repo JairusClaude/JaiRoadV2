@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\AuditHistoryController;
 use App\Http\Controllers\CanonicalAccountProvisioningController;
+use App\Http\Controllers\DirectoryController;
 use App\Http\Controllers\EngineerAssignmentController;
 use App\Http\Controllers\EngineerDirectoryController;
 use App\Http\Controllers\LguDirectoryController;
@@ -33,6 +34,7 @@ Route::middleware(['auth'])->prefix('dd-phase3')->name('jairoads.dd-phase3.')->g
     Route::post('/lgus', [LguDirectoryController::class, 'createLgu'])->middleware('throttle:10,1,jr-lgus-store-')->name('lgus.store');
     Route::put('/lgus/{id}', [LguDirectoryController::class, 'updateLgu'])->whereNumber('id')->middleware('throttle:10,1,jr-lgus-update-')->name('lgus.update');
     Route::delete('/lgus/{id}', [LguDirectoryController::class, 'deleteLgu'])->whereNumber('id')->middleware('throttle:6,1,jr-lgus-destroy-')->name('lgus.destroy');
+    Route::get('/eligible-engineers', [DirectoryController::class, 'eligibleEngineers'])->middleware('throttle:60,1,jr-engineers-eligible-')->name('engineers.eligible');
     Route::post('/engineers', [EngineerDirectoryController::class, 'createEngineer'])->middleware('throttle:10,1,jr-engineers-store-')->name('engineers.store');
     // Historical assignment maintenance only; these links no longer authorize operational access.
     Route::post('/assignments', [EngineerAssignmentController::class, 'setAssignment'])->middleware('throttle:10,1,jr-assignments-store-')->name('assignments.store');
