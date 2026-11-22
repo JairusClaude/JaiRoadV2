@@ -220,11 +220,11 @@ export default function DdSuperAdminCommandCenter({
                                                 </span>
                                                 {e.entity}
                                             </div>
-                                            <div className="mt-1 min-w-0 break-words text-xs text-slate-500">
+                                            <div className="mt-1 min-w-0 text-xs break-words text-slate-500">
                                                 By {e.actor}
                                             </div>
                                         </div>
-                                        <time className="min-w-0 break-words text-right text-xs text-slate-400 sm:shrink-0">
+                                        <time className="min-w-0 text-right text-xs break-words text-slate-400 sm:shrink-0">
                                             {e.createdAt}
                                         </time>
                                     </div>
