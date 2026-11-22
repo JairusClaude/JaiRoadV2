@@ -17,9 +17,9 @@ function Toaster({ ...props }: ToasterProps) {
             richColors
             style={
                 {
-                    '--normal-bg': 'var(--popover)',
-                    '--normal-text': 'var(--popover-foreground)',
-                    '--normal-border': 'var(--border)',
+                    '--normal-bg': 'var(--jr-toast-bg, var(--jr-role-accent-soft, var(--popover)))',
+                    '--normal-text': 'var(--jr-toast-ink, var(--jr-role-accent-ink, var(--popover-foreground)))',
+                    '--normal-border': 'var(--jr-role-accent, var(--border))',
                 } as React.CSSProperties
             }
             {...props}

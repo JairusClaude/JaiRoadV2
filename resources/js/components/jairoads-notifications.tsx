@@ -29,7 +29,7 @@ export function JaiRoadsNotifications() {
             <DropdownMenuTrigger asChild>
                 <button
                     type="button"
-                    className="jr-icon-button"
+                    className="jr-notification-trigger jr-icon-button"
                     aria-label="Open notifications"
                     title="Notifications"
                 >
@@ -39,7 +39,7 @@ export function JaiRoadsNotifications() {
             <DropdownMenuContent
                 align="end"
                 sideOffset={10}
-                className="jr-theme jr-menu max-h-[70vh] w-[min(23rem,calc(100vw-2rem))] overflow-y-auto p-0"
+                className="jr-notification-popover jr-theme jr-menu max-h-[70vh] w-[min(23rem,calc(100vw-2rem))] overflow-y-auto p-0"
             >
                 <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-700">
                     <div>
@@ -56,7 +56,7 @@ export function JaiRoadsNotifications() {
                             event.preventDefault();
                             void refresh();
                         }}
-                        className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-amber-700 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+                        className="jr-notification-refresh rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-amber-700 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
                         title="Refresh notifications"
                         aria-label="Refresh notifications"
                         disabled={status === 'loading'}
@@ -79,7 +79,7 @@ export function JaiRoadsNotifications() {
                             </p>
                             <button
                                 type="button"
-                                className="text-sm font-semibold underline"
+                                className="jr-notification-refresh text-sm font-semibold underline"
                                 onClick={() => void refresh()}
                             >
                                 Try again

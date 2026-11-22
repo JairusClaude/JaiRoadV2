@@ -203,7 +203,7 @@ export default function PolishedWorkspaceLayout({
         .toUpperCase();
 
     return (
-        <div className="jr-responsive-shell min-h-screen bg-[#f4f5f8] font-sans text-[#15253b] lg:flex dark:bg-slate-950 dark:text-slate-100">
+        <div className={`jr-responsive-shell min-h-screen bg-[#f4f5f8] font-sans text-[#15253b] lg:flex dark:bg-slate-950 dark:text-slate-100 ${activeRole === 'engineer' ? 'jr-engineer-workspace' : ''}`}>
             {mobileNavOpen && (
                 <button
                     type="button"

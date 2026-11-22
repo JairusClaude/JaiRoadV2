@@ -293,3 +293,67 @@ body:has(.jr-admin-workspace) .jr-monthly-report .jr-monthly-progress-track > sp
 body:has(.jr-admin-workspace) .jr-monthly-progress > span {
   color:#C8293D;
 }
+
+/* Engineer-only buttons and notifications, across DD and polished shells.
+   Keep destructive controls and semantic success/error/warning colors intact. */
+body:has(.jr-engineer-workspace) {
+  --jr-toast-bg: #FFF0E3;
+  --jr-toast-ink: #692B0B;
+}
+html.dark body:has(.jr-engineer-workspace) {
+  --jr-toast-bg: #352218;
+  --jr-toast-ink: #FFEDD5;
+}
+body:has(.jr-engineer-workspace) :is(.jr-workspace, .jr-normal-workspace)
+  :is(button, a)[class*="bg-[#90451"]:not([data-variant="destructive"]) {
+  background-color: #A94B0C !important;
+  border-color: #A94B0C !important;
+  color: #fff !important;
+}
+body:has(.jr-engineer-workspace) :is(.jr-workspace, .jr-normal-workspace)
+  :is(button, a)[class*="bg-[#90451"]:not([data-variant="destructive"]):hover:not(:disabled) {
+  background-color: #873A0D !important;
+  border-color: #873A0D !important;
+}
+body:has(.jr-engineer-workspace) .jr-notification-trigger {
+  color: #A94B0C !important;
+}
+body:has(.jr-engineer-workspace) .jr-notification-trigger:is(:hover, :focus-visible) {
+  background-color: #FFF0E3 !important;
+  border-color: #EBC7AB !important;
+  outline-color: #A94B0C !important;
+}
+body:has(.jr-engineer-workspace) .jr-notification-dot {
+  background-color: #A94B0C !important;
+}
+body:has(.jr-engineer-workspace) .jr-notification-popover {
+  border-top: 3px solid #A94B0C !important;
+}
+body:has(.jr-engineer-workspace) .jr-notification-refresh {
+  color: #A94B0C !important;
+  outline-color: #A94B0C !important;
+}
+body:has(.jr-engineer-workspace) .jr-notification-refresh:hover {
+  background-color: #FFF0E3 !important;
+}
+html.dark body:has(.jr-engineer-workspace) .jr-notification-trigger:is(:hover, :focus-visible),
+html.dark body:has(.jr-engineer-workspace) .jr-notification-refresh:hover {
+  background-color: #503725 !important;
+}
+body:has(.jr-engineer-workspace) #notifications h2 svg {
+  color: #A94B0C !important;
+}
+body:has(.jr-engineer-workspace) .toaster [data-sonner-toast]:not([data-type="success"]):not([data-type="error"]):not([data-type="warning"]) {
+  border-color: #A94B0C !important;
+}
+body:has(.jr-engineer-workspace) .toaster {
+  --info-bg: var(--jr-toast-bg);
+  --info-text: var(--jr-toast-ink);
+  --info-border: #A94B0C;
+}
+body:has(.jr-engineer-workspace) .jr-loading-track {
+  background-color: #FFF0E3;
+}
+body:has(.jr-engineer-workspace) .jr-loading-track-stripe {
+  background: linear-gradient(90deg, #873A0D, #A94B0C, #873A0D);
+}
