@@ -70,9 +70,3 @@ jobs:
 
       - name: Run CI Checks against disposable PostgreSQL 17
         run: composer ci:check
-
-      - name: Show exact formatting patch for eligible Engineer search
-        if: failure()
-        run: |
-          npx prettier --write resources/js/components/user-management/canonical-user-management.tsx
-          git --no-pager diff -- resources/js/components/user-management/canonical-user-management.tsx

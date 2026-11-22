@@ -193,9 +193,8 @@ function CreateForm({
         total: number;
         error: string;
     }>({ query: '', engineers: [], total: 0, error: '' });
-    const [chosenEngineer, setChosenEngineer] = useState<EligibleEngineer | null>(
-        null,
-    );
+    const [chosenEngineer, setChosenEngineer] =
+        useState<EligibleEngineer | null>(null);
     const searchTerm = Array.from(eligibleSearch.trim()).slice(0, 100).join('');
     useEffect(() => {
         if (!isAccount || searchTerm === '') {
@@ -215,7 +214,9 @@ function CreateForm({
             )
                 .then(async (response) => {
                     if (!response.ok) {
-                        throw new Error('Eligible Engineer search is unavailable.');
+                        throw new Error(
+                            'Eligible Engineer search is unavailable.',
+                        );
                     }
 
                     return (await response.json()) as {
@@ -252,11 +253,7 @@ function CreateForm({
     }, [isAccount, searchTerm]);
     const searchResolved = searchTerm === lookup.query;
     const visibleEligible =
-        searchTerm === ''
-            ? eligible
-            : searchResolved
-              ? lookup.engineers
-              : [];
+        searchTerm === '' ? eligible : searchResolved ? lookup.engineers : [];
     // A chosen profile must stay selectable even when the search is changed.
     const eligibleChoices =
         chosenEngineer &&
@@ -422,7 +419,8 @@ function CreateForm({
                                       ? 'Searching eligible profiles…'
                                       : lookup.error ||
                                         `Showing ${visibleEligible.length} of ${lookup.total} matching profile(s).`}
-                                {eligibleTotal === 0 && searchTerm === '' &&
+                                {eligibleTotal === 0 &&
+                                    searchTerm === '' &&
                                     ' Add an Engineer profile first.'}
                             </small>
                             {errors.engineer_id && (
@@ -995,7 +993,8 @@ export default function CanonicalUserManagement({
                                                                 />
                                                             </div>
                                                         </>
-                                                    ) : e.engineer_status === 'Active' ? (
+                                                    ) : e.engineer_status ===
+                                                      'Active' ? (
                                                         <span className="um-muted">
                                                             Available to link
                                                         </span>
