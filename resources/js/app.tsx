@@ -1,4 +1,5 @@
 import { createInertiaApp } from '@inertiajs/react';
+import '../css/jairoads-role-components.css';
 import { JaiRoadsNavigationFeedback } from '@/components/jairoads/navigation-feedback';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';

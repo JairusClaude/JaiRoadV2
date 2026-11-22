@@ -1,0 +1,156 @@
+/*
+ * JaiROADS role-aware component tokens.
+ * Applied at body level so Radix dialogs and Sonner toasts (portalled to body)
+ * inherit the active workspace role even when rendered outside the app shell.
+ */
+body:has(.jr-superadmin-workspace) {
+  --jr-role-accent:#51269b;
+  --jr-role-accent-hover:#38166b;
+  --jr-role-accent-soft:#eee5ff;
+  --jr-role-accent-ink:#26104d;
+  --primary:#51269b;
+  --primary-foreground:#faf5ff;
+  --secondary:#eee5ff;
+  --secondary-foreground:#26104d;
+  --accent:#eee5ff;
+  --accent-foreground:#26104d;
+  --ring:#a78bfa;
+  --color-primary:var(--primary);
+  --color-primary-foreground:var(--primary-foreground);
+  --color-secondary:var(--secondary);
+  --color-secondary-foreground:var(--secondary-foreground);
+  --color-accent:var(--accent);
+  --color-accent-foreground:var(--accent-foreground);
+  --color-ring:var(--ring);
+}
+body:has(.jr-admin-workspace) {
+  --jr-role-accent:#c8293d;
+  --jr-role-accent-hover:#a81424;
+  --jr-role-accent-soft:#fde7ea;
+  --jr-role-accent-ink:#800d18;
+  --primary:#c8293d;
+  --primary-foreground:#fff5f5;
+  --secondary:#fde7ea;
+  --secondary-foreground:#800d18;
+  --accent:#fde7ea;
+  --accent-foreground:#800d18;
+  --ring:#f16b76;
+  --color-primary:var(--primary);
+  --color-primary-foreground:var(--primary-foreground);
+  --color-secondary:var(--secondary);
+  --color-secondary-foreground:var(--secondary-foreground);
+  --color-accent:var(--accent);
+  --color-accent-foreground:var(--accent-foreground);
+  --color-ring:var(--ring);
+}
+body:has(.jr-engineer-workspace) {
+  --jr-role-accent:#a94b0c;
+  --jr-role-accent-hover:#873a0d;
+  --jr-role-accent-soft:#fff0e3;
+  --jr-role-accent-ink:#692b0b;
+  --primary:#a94b0c;
+  --primary-foreground:#fff7ed;
+  --secondary:#fff0e3;
+  --secondary-foreground:#692b0b;
+  --accent:#fff0e3;
+  --accent-foreground:#692b0b;
+  --ring:#fb923c;
+  --color-primary:var(--primary);
+  --color-primary-foreground:var(--primary-foreground);
+  --color-secondary:var(--secondary);
+  --color-secondary-foreground:var(--secondary-foreground);
+  --color-accent:var(--accent);
+  --color-accent-foreground:var(--accent-foreground);
+  --color-ring:var(--ring);
+}
+body:has(.jr-viewer-workspace) {
+  --jr-role-accent:#1d5db5;
+  --jr-role-accent-hover:#124a9c;
+  --jr-role-accent-soft:#e6efff;
+  --jr-role-accent-ink:#0b2e66;
+  --primary:#1d5db5;
+  --primary-foreground:#f7fbff;
+  --secondary:#e6efff;
+  --secondary-foreground:#0b2e66;
+  --accent:#e6efff;
+  --accent-foreground:#0b2e66;
+  --ring:#60a5fa;
+  --color-primary:var(--primary);
+  --color-primary-foreground:var(--primary-foreground);
+  --color-secondary:var(--secondary);
+  --color-secondary-foreground:var(--secondary-foreground);
+  --color-accent:var(--accent);
+  --color-accent-foreground:var(--accent-foreground);
+  --color-ring:var(--ring);
+}
+
+/* Shared Button component: default, secondary, outline and ghost variants. */
+body:has(.jr-superadmin-workspace) [data-slot="button"]:not([data-variant="destructive"]),
+body:has(.jr-admin-workspace) [data-slot="button"]:not([data-variant="destructive"]),
+body:has(.jr-engineer-workspace) [data-slot="button"]:not([data-variant="destructive"]),
+body:has(.jr-viewer-workspace) [data-slot="button"]:not([data-variant="destructive"]) {
+  --tw-ring-color:var(--jr-role-accent);
+}
+body:has(.jr-superadmin-workspace) .jr-settings :is(button,a)[class*="bg-[#90451F]"],
+body:has(.jr-admin-workspace) .jr-settings :is(button,a)[class*="bg-[#90451F]"],
+body:has(.jr-engineer-workspace) .jr-settings :is(button,a)[class*="bg-[#90451F]"],
+body:has(.jr-viewer-workspace) .jr-settings :is(button,a)[class*="bg-[#90451F]"] {
+  background-color:var(--jr-role-accent)!important;
+  border-color:var(--jr-role-accent)!important;
+  color:#fff!important;
+}
+body:has(.jr-superadmin-workspace) .jr-settings :is(button,a)[class*="bg-[#90451F]"]:hover,
+body:has(.jr-admin-workspace) .jr-settings :is(button,a)[class*="bg-[#90451F]"]:hover,
+body:has(.jr-engineer-workspace) .jr-settings :is(button,a)[class*="bg-[#90451F]"]:hover,
+body:has(.jr-viewer-workspace) .jr-settings :is(button,a)[class*="bg-[#90451F]"]:hover {
+  background-color:var(--jr-role-accent-hover)!important;
+  border-color:var(--jr-role-accent-hover)!important;
+}
+
+/* Dialogs and custom role-page modals. Keep destructive actions semantic red. */
+body:has(.jr-superadmin-workspace) :is([data-slot="dialog-content"],[role="dialog"]),
+body:has(.jr-admin-workspace) :is([data-slot="dialog-content"],[role="dialog"]),
+body:has(.jr-engineer-workspace) :is([data-slot="dialog-content"],[role="dialog"]),
+body:has(.jr-viewer-workspace) :is([data-slot="dialog-content"],[role="dialog"]) {
+  --ring:var(--jr-role-accent);
+  --color-ring:var(--jr-role-accent);
+  border-top:3px solid var(--jr-role-accent);
+}
+body:has(.jr-superadmin-workspace) :is([data-slot="dialog-content"],[role="dialog"]) [data-slot="button"]:not([data-variant="destructive"]),
+body:has(.jr-admin-workspace) :is([data-slot="dialog-content"],[role="dialog"]) [data-slot="button"]:not([data-variant="destructive"]),
+body:has(.jr-engineer-workspace) :is([data-slot="dialog-content"],[role="dialog"]) [data-slot="button"]:not([data-variant="destructive"]),
+body:has(.jr-viewer-workspace) :is([data-slot="dialog-content"],[role="dialog"]) [data-slot="button"]:not([data-variant="destructive"]) {
+  --tw-ring-color:var(--jr-role-accent);
+}
+body:has(.jr-superadmin-workspace) [role="dialog"] button[type="submit"],
+body:has(.jr-admin-workspace) [role="dialog"] button[type="submit"],
+body:has(.jr-engineer-workspace) [role="dialog"] button[type="submit"],
+body:has(.jr-viewer-workspace) [role="dialog"] button[type="submit"] {
+  background:var(--jr-role-accent)!important;
+  border-color:var(--jr-role-accent)!important;
+  color:#fff!important;
+}
+body:has(.jr-superadmin-workspace) [role="dialog"] button[type="submit"]:hover:not(:disabled),
+body:has(.jr-admin-workspace) [role="dialog"] button[type="submit"]:hover:not(:disabled),
+body:has(.jr-engineer-workspace) [role="dialog"] button[type="submit"]:hover:not(:disabled),
+body:has(.jr-viewer-workspace) [role="dialog"] button[type="submit"]:hover:not(:disabled) {
+  background:var(--jr-role-accent-hover)!important;
+  border-color:var(--jr-role-accent-hover)!important;
+}
+
+/* Sonner normal/informational toasts inherit the active role accent.
+   Success, warning and error keep their standard semantic status colors. */
+body:has(.jr-superadmin-workspace) .toaster,
+body:has(.jr-admin-workspace) .toaster,
+body:has(.jr-engineer-workspace) .toaster,
+body:has(.jr-viewer-workspace) .toaster {
+  --normal-bg:var(--popover);
+  --normal-text:var(--popover-foreground);
+  --normal-border:var(--jr-role-accent);
+}
+body:has(.jr-superadmin-workspace) .toaster [data-sonner-toast]:not([data-type="success"]):not([data-type="error"]):not([data-type="warning"]),
+body:has(.jr-admin-workspace) .toaster [data-sonner-toast]:not([data-type="success"]):not([data-type="error"]):not([data-type="warning"]),
+body:has(.jr-engineer-workspace) .toaster [data-sonner-toast]:not([data-type="success"]):not([data-type="error"]):not([data-type="warning"]),
+body:has(.jr-viewer-workspace) .toaster [data-sonner-toast]:not([data-type="success"]):not([data-type="error"]):not([data-type="warning"]) {
+  border-color:var(--jr-role-accent)!important;
+}
