@@ -78,6 +78,7 @@ type Props = {
     initialEngineerId?: number | null;
     directory?: DirectoryPaging | null;
     eligibleEngineers: Engineer[];
+    eligibleEngineerTotal: number;
     assignments: Assignment[];
     canManage: boolean;
     canCreateRoles: Role[];
@@ -122,6 +123,7 @@ export default function DdPhase3Workspace({
     initialEngineerId,
     directory,
     eligibleEngineers,
+    eligibleEngineerTotal,
     canManage,
     canCreateRoles,
     status,
@@ -241,6 +243,7 @@ export default function DdPhase3Workspace({
                             accounts={accounts}
                             engineers={engineers}
                             eligibleEngineers={eligibleEngineers}
+                            eligibleEngineerTotal={eligibleEngineerTotal}
                             actorId={identity.accountId}
                             canCreateRoles={canCreateRoles}
                             accountTotal={counts.userAccounts}

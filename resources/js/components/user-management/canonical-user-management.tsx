@@ -63,6 +63,7 @@ type Props = {
     directory?: DirectoryPaging | null;
     initialEngineerId?: number | null;
     eligibleEngineers: EligibleEngineer[];
+    eligibleEngineerTotal: number;
     actorId: number;
     canCreateRoles: Role[];
     accountTotal: number | null;
@@ -154,12 +155,14 @@ function Field({
 function CreateForm({
     kind,
     eligible,
+    eligibleTotal,
     roles: allowed,
     onClose,
     onBusy,
 }: {
     kind: 'add-account' | 'add-engineer';
     eligible: EligibleEngineer[];
+    eligibleTotal: number;
     roles: Role[];
     onClose: () => void;
     onBusy: (busy: boolean) => void;
@@ -183,6 +186,83 @@ function CreateForm({
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [busy, setBusy] = useState(false);
+    const [eligibleSearch, setEligibleSearch] = useState('');
+    const [lookup, setLookup] = useState<{
+        query: string;
+        engineers: EligibleEngineer[];
+        total: number;
+        error: string;
+    }>({ query: '', engineers: [], total: 0, error: '' });
+    const [chosenEngineer, setChosenEngineer] = useState<EligibleEngineer | null>(
+        null,
+    );
+    const searchTerm = Array.from(eligibleSearch.trim()).slice(0, 100).join('');
+    useEffect(() => {
+        if (!isAccount || searchTerm === '') {
+            return;
+        }
+
+        const controller = new AbortController();
+        const timer = setTimeout(() => {
+            void fetch(
+                `/dd-phase3/eligible-engineers?search=${encodeURIComponent(searchTerm)}`,
+                {
+                    credentials: 'same-origin',
+                    headers: { Accept: 'application/json' },
+                    cache: 'no-store',
+                    signal: controller.signal,
+                },
+            )
+                .then(async (response) => {
+                    if (!response.ok) {
+                        throw new Error('Eligible Engineer search is unavailable.');
+                    }
+
+                    return (await response.json()) as {
+                        engineers: EligibleEngineer[];
+                        total: number;
+                    };
+                })
+                .then((result) => {
+                    if (!controller.signal.aborted) {
+                        setLookup({
+                            query: searchTerm,
+                            engineers: result.engineers,
+                            total: result.total,
+                            error: '',
+                        });
+                    }
+                })
+                .catch(() => {
+                    if (!controller.signal.aborted) {
+                        setLookup({
+                            query: searchTerm,
+                            engineers: [],
+                            total: 0,
+                            error: 'Search unavailable. Please try again.',
+                        });
+                    }
+                });
+        }, 300);
+
+        return () => {
+            clearTimeout(timer);
+            controller.abort();
+        };
+    }, [isAccount, searchTerm]);
+    const searchResolved = searchTerm === lookup.query;
+    const visibleEligible =
+        searchTerm === ''
+            ? eligible
+            : searchResolved
+              ? lookup.engineers
+              : [];
+    // A chosen profile must stay selectable even when the search is changed.
+    const eligibleChoices =
+        chosenEngineer &&
+        !visibleEligible.some((e) => e.id === chosenEngineer.id)
+            ? [chosenEngineer, ...visibleEligible]
+            : visibleEligible;
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
@@ -190,9 +270,8 @@ function CreateForm({
             busy ||
             (isAccount &&
                 (!allowed.includes(account.account_type) ||
-                    !eligible.some(
-                        (e) => String(e.id) === account.engineer_id,
-                    )))
+                    !chosenEngineer ||
+                    String(chosenEngineer.id) !== account.engineer_id))
         ) {
             return;
         }
@@ -294,6 +373,20 @@ function CreateForm({
                             )}
                         </label>
                         <label className="um-field um-span">
+                            Search eligible Engineers
+                            <input
+                                aria-label="Search eligible Engineers"
+                                className="um-input"
+                                type="search"
+                                maxLength={100}
+                                placeholder="Find by name, rank or profile ID"
+                                value={eligibleSearch}
+                                onChange={(e) =>
+                                    setEligibleSearch(e.target.value)
+                                }
+                            />
+                        </label>
+                        <label className="um-field um-span">
                             Linked Engineer{' '}
                             <span className="um-required">*</span>
                             <select
@@ -301,26 +394,36 @@ function CreateForm({
                                 className="um-input"
                                 required
                                 value={account.engineer_id}
-                                onChange={(e) =>
+                                onChange={(e) => {
+                                    const engineer = eligibleChoices.find(
+                                        (item) =>
+                                            String(item.id) === e.target.value,
+                                    );
+                                    setChosenEngineer(engineer ?? null);
                                     setAccount((old) => ({
                                         ...old,
                                         engineer_id: e.target.value,
-                                    }))
-                                }
+                                    }));
+                                }}
                             >
                                 <option value="">
                                     Select an active Engineer
                                 </option>
-                                {eligible.map((e) => (
+                                {eligibleChoices.map((e) => (
                                     <option key={e.id} value={e.id}>
                                         {e.first_name} {e.last_name} · {e.rank}
                                     </option>
                                 ))}
                             </select>
-                            <small>
-                                {eligible.length} available profile(s).{' '}
-                                {eligible.length === 0 &&
-                                    'Add an Engineer profile first.'}
+                            <small role="status">
+                                {searchTerm === ''
+                                    ? `Showing ${eligible.length} of ${eligibleTotal} available profile(s). Search to find more.`
+                                    : !searchResolved
+                                      ? 'Searching eligible profiles…'
+                                      : lookup.error ||
+                                        `Showing ${visibleEligible.length} of ${lookup.total} matching profile(s).`}
+                                {eligibleTotal === 0 && searchTerm === '' &&
+                                    ' Add an Engineer profile first.'}
                             </small>
                             {errors.engineer_id && (
                                 <small role="alert" className="um-required">
@@ -376,7 +479,7 @@ function CreateForm({
                     className="um-primary"
                     disabled={
                         busy ||
-                        (isAccount && (!eligible.length || !allowed.length))
+                        (isAccount && (!chosenEngineer || !allowed.length))
                     }
                 >
                     {busy
@@ -396,6 +499,7 @@ export default function CanonicalUserManagement({
     initialEngineerId,
     directory,
     eligibleEngineers,
+    eligibleEngineerTotal,
     actorId,
     canCreateRoles,
     accountTotal,
@@ -564,7 +668,7 @@ export default function CanonicalUserManagement({
         },
         {
             label: 'Available profiles',
-            value: eligibleEngineers.length,
+            value: eligibleEngineerTotal,
             detail: 'Ready to link to an account',
             Icon: UserRound,
         },
@@ -891,16 +995,14 @@ export default function CanonicalUserManagement({
                                                                 />
                                                             </div>
                                                         </>
-                                                    ) : eligibleEngineers.some(
-                                                          (x) => x.id === e.id,
-                                                      ) ? (
+                                                    ) : e.engineer_status === 'Active' ? (
                                                         <span className="um-muted">
                                                             Available to link
                                                         </span>
                                                     ) : (
                                                         <span className="um-muted">
-                                                            Not in loaded
-                                                            account list
+                                                            Not available to
+                                                            link
                                                         </span>
                                                     )}
                                                 </td>
@@ -1049,6 +1151,7 @@ export default function CanonicalUserManagement({
                                     key={modal.kind}
                                     kind={modal.kind}
                                     eligible={eligibleEngineers}
+                                    eligibleTotal={eligibleEngineerTotal}
                                     roles={canCreateRoles}
                                     onClose={() => {
                                         setModal(null);
