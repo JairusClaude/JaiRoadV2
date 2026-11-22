@@ -46,6 +46,19 @@ type Lgu = {
     mayor_last_name: string;
 };
 type Assignment = { engineer_id: number; lgu_id: number; is_active: boolean };
+type DirectoryPaging = {
+    tab: 'accounts' | 'engineers';
+    search: string;
+    role: string;
+    state: string;
+    page: number;
+    pages: number;
+    total: number;
+    accountTotal: number;
+    activeAccounts: number;
+    engineerTotal: number;
+    activeEngineers: number;
+};
 type Props = {
     historyUrl?: string | null;
     section: 'dashboard' | 'users' | 'lgus';
@@ -63,6 +76,7 @@ type Props = {
     accounts: Account[];
     engineers: Engineer[];
     initialEngineerId?: number | null;
+    directory?: DirectoryPaging | null;
     eligibleEngineers: Engineer[];
     assignments: Assignment[];
     canManage: boolean;
@@ -106,6 +120,7 @@ export default function DdPhase3Workspace({
     accounts,
     engineers,
     initialEngineerId,
+    directory,
     eligibleEngineers,
     canManage,
     canCreateRoles,
@@ -222,6 +237,7 @@ export default function DdPhase3Workspace({
                         <CanonicalUserManagement
                             key={initialEngineerId ?? 'directory'}
                             initialEngineerId={initialEngineerId}
+                            directory={directory}
                             accounts={accounts}
                             engineers={engineers}
                             eligibleEngineers={eligibleEngineers}

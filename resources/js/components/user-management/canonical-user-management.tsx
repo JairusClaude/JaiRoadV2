@@ -12,7 +12,7 @@ import {
     Users,
     X,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import AccountTypeBadge from '@/components/user-management/account-type-badge';
 import DdAccountLifecycle from '@/pages/dd-phase3/DdAccountLifecycle';
@@ -44,9 +44,23 @@ type EligibleEngineer = Pick<
 type Modal =
     | { kind: 'add-account' | 'add-engineer' }
     | { kind: 'account' | 'engineer'; id: number };
+type DirectoryPaging = {
+    tab: 'accounts' | 'engineers';
+    search: string;
+    role: string;
+    state: string;
+    page: number;
+    pages: number;
+    total: number;
+    accountTotal: number;
+    activeAccounts: number;
+    engineerTotal: number;
+    activeEngineers: number;
+};
 type Props = {
     accounts: Account[];
     engineers: Engineer[];
+    directory?: DirectoryPaging | null;
     initialEngineerId?: number | null;
     eligibleEngineers: EligibleEngineer[];
     actorId: number;
@@ -380,6 +394,7 @@ export default function CanonicalUserManagement({
     accounts,
     engineers,
     initialEngineerId,
+    directory,
     eligibleEngineers,
     actorId,
     canCreateRoles,
@@ -387,11 +402,11 @@ export default function CanonicalUserManagement({
     status,
 }: Props) {
     const [tab, setTab] = useState<'accounts' | 'engineers'>(
-        initialEngineerId ? 'engineers' : 'accounts',
+        directory?.tab ?? (initialEngineerId ? 'engineers' : 'accounts'),
     );
-    const [search, setSearch] = useState('');
-    const [role, setRole] = useState('all');
-    const [state, setState] = useState('all');
+    const [search, setSearch] = useState(directory?.search ?? '');
+    const [role, setRole] = useState(directory?.role ?? 'all');
+    const [state, setState] = useState(directory?.state ?? 'all');
     const [page, setPage] = useState(1);
     const [modal, setModal] = useState<Modal | null>(() =>
         initialEngineerId && engineers.some((e) => e.id === initialEngineerId)
@@ -400,10 +415,40 @@ export default function CanonicalUserManagement({
     );
     const [busy, setBusy] = useState(false);
     const [dismissed, setDismissed] = useState<string | null>(null);
-    const activeAccounts = accounts.filter((a) => a.is_active).length;
-    const activeEngineers = engineers.filter(
-        (e) => e.engineer_status === 'Active',
-    ).length;
+    // Keep the existing filter controls while searching the full authorized
+    // directory on the server. Only the visible page is sent to the browser.
+    useEffect(() => {
+        if (
+            !directory ||
+            (directory.tab === tab &&
+                directory.search === search &&
+                directory.role === role &&
+                directory.state === state)
+        ) {
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            router.get(
+                '/dd-phase3/users',
+                {
+                    directory_tab: tab,
+                    directory_search: search,
+                    directory_role: role,
+                    directory_state: state,
+                    directory_page: 1,
+                },
+                { preserveState: true, preserveScroll: true, replace: true },
+            );
+        }, 250);
+
+        return () => clearTimeout(timer);
+    }, [directory, tab, search, role, state]);
+    const activeAccounts =
+        directory?.activeAccounts ?? accounts.filter((a) => a.is_active).length;
+    const activeEngineers =
+        directory?.activeEngineers ??
+        engineers.filter((e) => e.engineer_status === 'Active').length;
     const byEngineer = new Map(engineers.map((e) => [e.id, e]));
     const linkedAccounts = new Map(
         accounts
@@ -411,7 +456,7 @@ export default function CanonicalUserManagement({
             .map((a) => [a.engineer_id, a]),
     );
     const q = search.trim().toLowerCase();
-    const filteredAccounts = accounts.filter((a) => {
+    const filteredAccounts = directory ? accounts : accounts.filter((a) => {
         const e =
             a.engineer_id === null ? undefined : byEngineer.get(a.engineer_id);
 
@@ -424,7 +469,7 @@ export default function CanonicalUserManagement({
             (state === 'all' || (state === 'active') === a.is_active)
         );
     });
-    const filteredEngineers = engineers.filter(
+    const filteredEngineers = directory ? engineers : engineers.filter(
         (e) =>
             [
                 nameOf(e),
@@ -440,10 +485,30 @@ export default function CanonicalUserManagement({
                 (state === 'active') === (e.engineer_status === 'Active')),
     );
     const count =
-        tab === 'accounts' ? filteredAccounts.length : filteredEngineers.length;
-    const last = Math.max(1, Math.ceil(count / pageSize));
-    const current = Math.min(page, last);
+        directory?.total ??
+        (tab === 'accounts' ? filteredAccounts.length : filteredEngineers.length);
+    const last = directory?.pages ?? Math.max(1, Math.ceil(count / pageSize));
+    const current = directory?.page ?? Math.min(page, last);
     const start = (current - 1) * pageSize;
+    function visitPage(next: number) {
+        if (!directory) {
+            setPage(next);
+
+            return;
+        }
+
+        router.get(
+            '/dd-phase3/users',
+            {
+                directory_tab: tab,
+                directory_search: search,
+                directory_role: role,
+                directory_state: state,
+                directory_page: next,
+            },
+            { preserveState: true, preserveScroll: true, replace: true },
+        );
+    }
     function switchTab(next: typeof tab) {
         setTab(next);
         setSearch('');
@@ -480,14 +545,14 @@ export default function CanonicalUserManagement({
             label: 'Active accounts',
             value: activeAccounts,
             detail:
-                accountTotal !== null && accountTotal > accounts.length
+                directory ? 'Enabled for sign-in' : accountTotal !== null && accountTotal > accounts.length
                     ? 'In loaded directory'
                     : 'Enabled for sign-in',
             Icon: ShieldCheck,
         },
         {
             label: 'Engineer profiles',
-            value: engineers.length,
+            value: directory?.engineerTotal ?? engineers.length,
             detail: activeEngineers + ' active in directory',
             Icon: HardHat,
         },
@@ -565,7 +630,7 @@ export default function CanonicalUserManagement({
                         onClick={() => switchTab('accounts')}
                     >
                         <Users size={17} /> User Accounts{' '}
-                        <span>{accounts.length}</span>
+                        <span>{directory?.accountTotal ?? accounts.length}</span>
                     </button>
                     <button
                         type="button"
@@ -573,7 +638,7 @@ export default function CanonicalUserManagement({
                         onClick={() => switchTab('engineers')}
                     >
                         <HardHat size={17} /> Engineers{' '}
-                        <span>{engineers.length}</span>
+                        <span>{directory?.engineerTotal ?? engineers.length}</span>
                     </button>
                 </nav>
                 <div className="um-toolbar">
@@ -661,9 +726,10 @@ export default function CanonicalUserManagement({
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredAccounts
-                                    .slice(start, start + pageSize)
-                                    .map((a) => {
+                                {(directory
+                                    ? filteredAccounts
+                                    : filteredAccounts.slice(start, start + pageSize)
+                                ).map((a) => {
                                         const e =
                                             a.engineer_id === null
                                                 ? undefined
@@ -762,9 +828,10 @@ export default function CanonicalUserManagement({
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredEngineers
-                                    .slice(start, start + pageSize)
-                                    .map((e) => {
+                                {(directory
+                                    ? filteredEngineers
+                                    : filteredEngineers.slice(start, start + pageSize)
+                                ).map((e) => {
                                         const account = linkedAccounts.get(
                                             e.id,
                                         );
@@ -894,7 +961,7 @@ export default function CanonicalUserManagement({
                             type="button"
                             aria-label="Previous page"
                             disabled={current === 1}
-                            onClick={() => setPage(current - 1)}
+                            onClick={() => visitPage(current - 1)}
                         >
                             <ChevronLeft size={18} />
                         </button>
@@ -905,14 +972,15 @@ export default function CanonicalUserManagement({
                             type="button"
                             aria-label="Next page"
                             disabled={current === last}
-                            onClick={() => setPage(current + 1)}
+                            onClick={() => visitPage(current + 1)}
                         >
                             <ChevronRight size={18} />
                         </button>
                     </div>
                 </div>
-                {((accountTotal !== null && accountTotal > accounts.length) ||
-                    engineers.length === 200) && (
+                {!directory &&
+                    ((accountTotal !== null && accountTotal > accounts.length) ||
+                        engineers.length === 200) && (
                     <p className="um-limit">
                         Search and filters apply to the loaded directory. The
                         server currently returns up to 200 accounts and 200

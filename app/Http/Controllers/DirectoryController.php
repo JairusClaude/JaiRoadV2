@@ -51,18 +51,68 @@ class DirectoryController extends Controller
             'mayor_first_name', 'mayor_middle_name', 'mayor_last_name',
         ]);
         $allowedManager = RoleAccess::canManageAccounts($actor['role']);
-        $accounts = $allowedManager ? $t('user_accounts')->orderBy('id')->limit(200)->get([
-            'id', 'username', 'email', 'account_type', 'engineer_id', 'is_active',
-        ]) : collect();
-        // An authorized LGU profile link can open a specific engineer, even outside the first 200.
+        $accounts = collect();
+        $engineers = collect();
+        $directory = null;
         $requestedEngineerId = $section === 'users' && $allowedManager ? $request->integer('engineer_id') : 0;
-        $engineerQuery = $t('engineers');
-        if ($requestedEngineerId > 0) {
-            $engineerQuery->orderByRaw('CASE WHEN id = ? THEN 0 ELSE 1 END', [$requestedEngineerId]);
+        if ($section === 'users' && $allowedManager) {
+            // Search and paginate in PostgreSQL instead of filtering only the
+            // first 200 records. Related names are loaded for the visible rows.
+            $tab = $requestedEngineerId > 0 || $request->query('directory_tab') === 'engineers' ? 'engineers' : 'accounts';
+            $inputSearch = $request->query('directory_search');
+            $search = is_string($inputSearch) ? trim(substr($inputSearch, 0, 150)) : '';
+            $roleInput = $request->query('directory_role');
+            $role = is_string($roleInput) && in_array($roleInput, ['SuperAdmin', 'Admin', 'Engineer', 'Viewer'], true) ? $roleInput : 'all';
+            $state = in_array($request->query('directory_state'), ['active', 'inactive'], true) ? $request->query('directory_state') : 'all';
+            $needle = '%'.$search.'%';
+            if ($tab === 'accounts') {
+                $query = $t('user_accounts as ua')->leftJoin('jairoads_next.engineers as e', 'e.id', '=', 'ua.engineer_id');
+                if ($search !== '') {
+                    $query->where(static fn (Builder $q) => $q->where('ua.username', 'ilike', $needle)
+                        ->orWhere('ua.email', 'ilike', $needle)->orWhere('ua.account_type', 'ilike', $needle)
+                        ->orWhereRaw('CAST(ua.id AS text) ILIKE ?', [$needle])
+                        ->orWhereRaw("CONCAT_WS(' ', e.first_name, e.middle_name, e.last_name) ILIKE ?", [$needle]));
+                }
+                if ($role !== 'all') {
+                    $query->where('ua.account_type', $role);
+                }
+                if ($state !== 'all') {
+                    $query->where('ua.is_active', $state === 'active');
+                }
+                $page = $query->orderByDesc('ua.id')->paginate(15, ['ua.id', 'ua.username', 'ua.email', 'ua.account_type', 'ua.engineer_id', 'ua.is_active'], 'directory_page');
+                $accounts = collect($page->items());
+                $engineers = $t('engineers')->whereIn('id', $accounts->pluck('engineer_id')->filter()->all())
+                    ->get(['id', 'first_name', 'middle_name', 'last_name', 'contact_no', 'rank', 'engineer_status']);
+            } else {
+                $query = $t('engineers as e');
+                if ($search !== '') {
+                    $query->where(static fn (Builder $q) => $q->whereRaw("CONCAT_WS(' ', e.first_name, e.middle_name, e.last_name) ILIKE ?", [$needle])
+                        ->orWhere('e.rank', 'ilike', $needle)->orWhere('e.contact_no', 'ilike', $needle)
+                        ->orWhereRaw('CAST(e.id AS text) ILIKE ?', [$needle])
+                        ->orWhereExists(static fn (Builder $linked) => $linked->selectRaw('1')->from('jairoads_next.user_accounts as ua')
+                            ->whereColumn('ua.engineer_id', 'e.id')->where('ua.username', 'ilike', $needle)));
+                }
+                if ($state !== 'all') {
+                    $query->where('e.engineer_status', $state === 'active' ? '=' : '!=', 'Active');
+                }
+                if ($requestedEngineerId > 0) {
+                    $query->orderByRaw('CASE WHEN e.id = ? THEN 0 ELSE 1 END', [$requestedEngineerId]);
+                }
+                $page = $query->orderByDesc('e.id')->paginate(15, ['e.id', 'e.first_name', 'e.middle_name', 'e.last_name', 'e.contact_no', 'e.rank', 'e.engineer_status'], 'directory_page');
+                $engineers = collect($page->items());
+                $accounts = $t('user_accounts')->whereIn('engineer_id', $engineers->pluck('id')->all())
+                    ->get(['id', 'username', 'email', 'account_type', 'engineer_id', 'is_active']);
+            }
+            $directory = [
+                'tab' => $tab, 'search' => $search, 'role' => $role, 'state' => $state,
+                'page' => $page->currentPage(), 'pages' => $page->lastPage(), 'total' => $page->total(),
+                'accountTotal' => (int) $t('user_accounts')->count(),
+                'activeAccounts' => (int) $t('user_accounts')->where('is_active', true)->count(),
+                'engineerTotal' => (int) $t('engineers')->count(),
+                'activeEngineers' => (int) $t('engineers')->where('engineer_status', 'Active')->count(),
+            ];
         }
-        $engineers = $allowedManager ? $engineerQuery->orderBy('id')->limit(200)->get([
-            'id', 'first_name', 'middle_name', 'last_name', 'contact_no', 'rank', 'engineer_status',
-        ]) : collect();
+        // A direct profile link is still honored, even if there are many engineers.
         $initialEngineerId = $requestedEngineerId > 0 && $engineers->contains('id', $requestedEngineerId)
             ? $requestedEngineerId : null;
         // Do not infer availability from the paginated account directory.
@@ -92,7 +142,7 @@ class DirectoryController extends Controller
             'analytics' => $section === 'dashboard' ? app(DashboardAnalytics::class)->summary($actor) : null,
             'lgus' => $lgus, 'accounts' => $accounts,
             'engineers' => $engineers,
-            'initialEngineerId' => $initialEngineerId,
+            'initialEngineerId' => $initialEngineerId, 'directory' => $directory,
             'eligibleEngineers' => $eligibleEngineers, 'assignments' => [],
             'canManage' => $allowedManager,
             // Both authorized administrative roles can create standard DD accounts.
