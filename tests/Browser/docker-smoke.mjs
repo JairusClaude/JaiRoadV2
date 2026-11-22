@@ -325,7 +325,10 @@ try {
             `${blockedProject}/deletion-preview`,
             { headers: { Accept: 'application/json' } },
         );
-        assert.equal(blockedPreview.status, 409);
+        // Dependency review returns a structured, non-destructive preview;
+        // the subsequent confirmed deletion must still refuse referenced data.
+        assert.equal(blockedPreview.status, 200);
+        assert.equal((await blockedPreview.json()).can_delete, false);
         assert.equal(
             (
                 await historicalAdmin.post(

@@ -719,7 +719,13 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
             }
 
             await engineer.getByRole('button', { name: 'Save Changes', exact: true }).click();
-            await engineer.waitForURL(base + origin);
+            await engineer.waitForURL((url) => {
+                const expected = new URL(base + origin);
+
+                return url.pathname === expected.pathname &&
+                    [...expected.searchParams].every(([key, value]) => url.searchParams.get(key) === value) &&
+                    [...url.searchParams].length === [...expected.searchParams].length;
+            });
         }
     }
 
