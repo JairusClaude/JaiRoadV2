@@ -61,6 +61,13 @@ body:has(.jr-directory-exploration) .jr-mobile-shell .jr-nav-link.jr-active {
     background: #fffdf9;
 }
 
+/* The SuperAdmin title and refresh action must fit beside the fixed sidebar
+   at tablet and small-desktop widths. Let the action wrap instead of widening
+   the document beyond the viewport. */
+.jr-superadmin-dashboard .jr-page-head {
+    flex-wrap: wrap;
+}
+
 .jr-directory-exploration .jr-page-head::before {
     content: '';
     position: absolute;
