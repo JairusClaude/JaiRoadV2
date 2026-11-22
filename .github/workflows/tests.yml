@@ -70,10 +70,3 @@ jobs:
 
       - name: Run CI Checks against disposable PostgreSQL 17
         run: composer ci:check
-
-      # Temporary diagnostics: print the exact formatter patch from the disposable runner.
-      - name: Show required frontend formatting diff
-        if: failure()
-        run: |
-          npx prettier --write resources/js/components/user-management/canonical-user-management.tsx
-          git --no-pager diff -- resources/js/components/user-management/canonical-user-management.tsx

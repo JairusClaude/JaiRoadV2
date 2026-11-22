@@ -468,7 +468,8 @@ export default function CanonicalUserManagement({
                 .toLowerCase()
                 .includes(q) &&
             (appliedRole === 'all' || a.account_type === appliedRole) &&
-            (appliedState === 'all' || (appliedState === 'active') === a.is_active)
+            (appliedState === 'all' ||
+                (appliedState === 'active') === a.is_active)
         );
     });
     const filteredEngineers = engineers.filter(
@@ -484,11 +485,14 @@ export default function CanonicalUserManagement({
                 .toLowerCase()
                 .includes(q) &&
             (appliedState === 'all' ||
-                (appliedState === 'active') === (e.engineer_status === 'Active')),
+                (appliedState === 'active') ===
+                    (e.engineer_status === 'Active')),
     );
     const count =
         directory?.total ??
-        (tab === 'accounts' ? filteredAccounts.length : filteredEngineers.length);
+        (tab === 'accounts'
+            ? filteredAccounts.length
+            : filteredEngineers.length);
     const last = directory?.pages ?? Math.max(1, Math.ceil(count / pageSize));
     const current = directory?.page ?? Math.min(page, last);
     const start = (current - 1) * pageSize;
@@ -631,7 +635,9 @@ export default function CanonicalUserManagement({
                         onClick={() => switchTab('accounts')}
                     >
                         <Users size={17} /> User Accounts{' '}
-                        <span>{directory?.accountTotal ?? accounts.length}</span>
+                        <span>
+                            {directory?.accountTotal ?? accounts.length}
+                        </span>
                     </button>
                     <button
                         type="button"
@@ -639,7 +645,9 @@ export default function CanonicalUserManagement({
                         onClick={() => switchTab('engineers')}
                     >
                         <HardHat size={17} /> Engineers{' '}
-                        <span>{directory?.engineerTotal ?? engineers.length}</span>
+                        <span>
+                            {directory?.engineerTotal ?? engineers.length}
+                        </span>
                     </button>
                 </nav>
                 <div className="um-toolbar">
@@ -977,7 +985,6 @@ export default function CanonicalUserManagement({
                         </button>
                     </div>
                 </div>
-
             </section>
             <aside className="um-policy">
                 <ShieldCheck size={20} />

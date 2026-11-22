@@ -647,6 +647,7 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     await engineer.getByText('unified.png', { exact: false }).first().waitFor();
     // The form submits media after the monthly-update metadata response.
     // Do not navigate away until the private media row actually exists.
+
     let originalMediaStored = false;
     for (let attempt = 0; attempt < 30; attempt++) {
         const savedMedia = (await props(engineer, `/monthly-updates/${report.id}`)).media;
@@ -658,6 +659,7 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
 
         await new Promise((resolve) => setTimeout(resolve, 200));
     }
+
     assert.ok(originalMediaStored, 'Original private media must be persisted before later deletion tests');
     await engineer.goto(
         `${ui}/maintenance-documents/create?maintenance_id=${record.id}`,
