@@ -320,6 +320,12 @@ final class UnifiedFrontendTest extends PostgresTestCase
         $this->post(self::UI.'/maintenance-documents', ['maintenance_id' => $record, 'document_title' => 'Private integrated document',
             'attachment' => UploadedFile::fake()->createWithContent('inspection.pdf', "%PDF-1.4\nDisposable\n%%EOF")])->assertSessionHasNoErrors()->assertRedirect();
         $doc = DB::table('jairoads_next.maintenance_documents')->first();
+        $this->assertMatchesRegularExpression('/^maintenance-records\\/'.$record.'\\/[0-9a-f-]+\\.pdf$/', (string) $doc->file_path);
+
+        // A valid PDF renamed with an unsupported extension is a validation
+        // error, never a storage exception or a second remote upload.
+        $this->post(self::UI.'/maintenance-documents', ['maintenance_id' => $record, 'document_title' => 'Mismatched extension',
+            'attachment' => UploadedFile::fake()->createWithContent('inspection.txt', "%PDF-1.4\nDisposable\n%%EOF")])->assertSessionHasErrors(['attachment']);
         $this->get(self::UI.'/maintenance-documents/'.$doc->id)->assertInertia(fn (Assert $page) => $page
             ->where('document.download_url', '/dd-phase3/files/document/'.$doc->id)->missing('document.file_path')->missing('document.password'));
         Http::assertSentCount(1);

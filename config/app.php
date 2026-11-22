@@ -54,6 +54,13 @@ return [
 
     'url' => env('APP_URL', env('RENDER_EXTERNAL_URL', 'http://localhost')),
 
+    // Preview synthetic identities are allowed only for an explicitly
+    // isolated APP_ENV=preview deployment, never via a client header or port.
+    'preview_mode' => (bool) env('JAIROADS_PREVIEW_MODE', false),
+
+    // Leave null by default; deployers must supply their real proxy IPs/CIDRs.
+    'trusted_proxies' => env('TRUSTED_PROXIES'),
+
     'asset_url' => env('ASSET_URL'),
 
     /*

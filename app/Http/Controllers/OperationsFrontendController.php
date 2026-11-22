@@ -44,19 +44,12 @@ class OperationsFrontendController extends Controller
 
     public static function isPreview(?Request $request = null): bool
     {
-        if (app()->environment('preview') || config('app.preview_mode', false)) {
-            return true;
-        }
-
-        if ($request === null && app()->bound('request')) {
-            $request = app('request');
-        }
-
-        return $request !== null && (
-            $request->getPort() === 8080
-            || (isset($_SERVER['SERVER_PORT']) && (int) $_SERVER['SERVER_PORT'] === 8080)
-            || $request->header('X-Preview-Mode') === 'true'
-        );
+        // Preview uses synthetic identities: NEVER infer it from a request,
+        // forwarded header, server port or a setting enabled in production.
+        // Dedicated, isolated preview deployments must opt in with BOTH
+        // APP_ENV=preview and JAIROADS_PREVIEW_MODE=true.
+        return app()->environment('preview')
+            && config('app.preview_mode', false) === true;
     }
 
     /** @return Actor */

@@ -25,8 +25,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->validateCsrfTokens(except: ['dd-phase3/ui/*']);
-        $middleware->trustProxies(at: '*');
+        // All canonical UI mutations remain protected by Laravel's default CSRF checks.
+        // Proxy headers are trusted only from explicitly configured upstreams.
+        $middleware->trustProxies(at: config('app.trusted_proxies') ?: null);
         $middleware->prependToPriorityList(AuthenticatesRequests::class, EnforceCanonicalSession::class);
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 

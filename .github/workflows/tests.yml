@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - merged-system
   pull_request:
 
 permissions:

@@ -705,7 +705,16 @@ class OperationsController extends Controller
             throw ValidationException::withMessages(['file' => 'Document uploads are temporarily unavailable. Contact your administrator.']);
         }
         $file = $request->file('file');
-        $ext = strtolower($file->getClientOriginalExtension());
+        // The MIME-based "mimes" rule checks file content, not the caller's
+        // filename. Refuse a mismatched filename rather than constructing a
+        // private object path that the storage allowlist rejects with HTTP 500.
+        $ext = strtolower((string) $file->guessExtension());
+        $clientExt = strtolower((string) $file->getClientOriginalExtension());
+        if (! in_array($ext, ['pdf', 'docx', 'xlsx', 'pptx'], true) || $ext !== $clientExt) {
+            throw ValidationException::withMessages([
+                'file' => 'The document filename extension must match its PDF, DOCX, XLSX or PPTX file type.',
+            ]);
+        }
         $path = 'maintenance-records/'.(int) $v['maintenance_id'].'/'.(string) Str::uuid().'.'.$ext;
         $storage->upload($file, $path);
         try {
