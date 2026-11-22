@@ -107,9 +107,15 @@ html.dark body:has(.jr-engineer-workspace) .jr-dd-settings {
 html.dark body:has(.jr-viewer-workspace) .jr-dd-settings {
     --jr-dark-selection-text: #93c5fd;
 }
-html.dark .jr-dd-settings main > :is([role="status"], [role="alert"]) {
-    border-color: #52637a;
-    background-color: #223149;
+html.dark .jr-dd-settings main > [role="status"] {
+    border-color: #236c53;
+    background-color: #12372d;
+    color: #a7f3d0;
+}
+html.dark .jr-dd-settings main > [role="alert"] {
+    border-color: #ad3448;
+    background-color: #442128;
+    color: #fecdd3;
 }
 
 /* The modern /settings-preview and /settings/* routes already use Tailwind
