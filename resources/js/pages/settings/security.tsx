@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import InputError from '@/components/input-error';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import ManagePasskeys from '@/components/manage-passkeys';
@@ -15,7 +16,6 @@ import type { Props as ManagePasskeysProps } from '@/components/manage-passkeys'
 import ManageTwoFactor from '@/components/manage-two-factor';
 import type { Props as ManageTwoFactorProps } from '@/components/manage-two-factor';
 import PasswordInput from '@/components/password-input';
-import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 
 type Props = { passwordRules: string } & ManagePasskeysProps &
     ManageTwoFactorProps;
