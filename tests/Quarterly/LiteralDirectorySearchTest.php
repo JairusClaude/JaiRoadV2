@@ -107,9 +107,10 @@ it('keeps LGU dependency counts correct without a per-row SQL query and paginate
         DB::disableQueryLog();
         DB::flushQueryLog();
     }
-    $singleRowCounts = collect($queries)->filter(static fn (array $entry): bool =>
-        str_contains($entry['query'], 'count(*)')
-        && str_contains($entry['query'], '"lgu_id" = ?'));
+    $singleRowCounts = collect($queries)->filter(static function (array $entry): bool {
+        return str_contains($entry['query'], 'count(*)')
+            && str_contains($entry['query'], '"lgu_id" = ?');
+    });
     expect($singleRowCounts)->toHaveCount(0);
 
     $this->get('/dd-phase3/ui/lgus?'.http_build_query(['search' => 'Repeated LGU', 'page' => 2]))
