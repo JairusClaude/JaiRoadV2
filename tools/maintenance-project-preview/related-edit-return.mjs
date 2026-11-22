@@ -3,7 +3,11 @@ export function relatedEditReturn(requestUrl, directory, id, record) {
     const detail = directory + '/' + id;
     const origin = requestUrl.searchParams.get('return_to');
 
-    if (!origin || !origin.startsWith('/') || origin.startsWith('//') || /[\x00-\x20\x7f\\]/.test(origin)) {
+    if (!origin || !origin.startsWith('/') || origin.startsWith('//') || [...origin].some((character) =>
+        character.charCodeAt(0) <= 32 ||
+        character.charCodeAt(0) === 127 ||
+        character === '\\',
+    )) {
 return detail;
 }
 

@@ -12,7 +12,6 @@ export async function verifyPermanentFileDeletion({
     doc,
     report,
     record,
-    storage,
     props,
 }) {
     const csrfDelete = (page, url) =>
