@@ -88,6 +88,52 @@ final class RoleLandingController extends Controller
         ])->header('Cache-Control', 'private, no-store');
     }
 
+
+    /** Engineer-only continuation endpoint for dashboard road geometries. */
+    public function roadMapPage(Request $request, AccountIdentityResolver $resolver): JsonResponse
+    {
+        $user = $request->user();
+        abort_unless($user instanceof User && $user->getAttribute('dd_user_account_id') !== null, 403);
+        $actor = $resolver->resolve($user);
+        abort_unless($actor !== null && $actor['role'] === 'Engineer' && $actor['engineer_id'] !== null, 403);
+        $validated = $request->validate(['before' => ['required', 'integer', 'min:1']]);
+
+        return response()->json($this->roadMapBatch((int) $actor['engineer_id'], (int) $validated['before']))
+            ->header('Cache-Control', 'private, no-store');
+    }
+
+    /** @return array{data:list<array<string,mixed>>,next_cursor:?int} */
+    private function roadMapBatch(int $engineerId, ?int $before = null): array
+    {
+        $query = DB::table('jairoads_next.road_coverages as rc')
+            ->join('jairoads_next.lgus as l', 'l.id', '=', 'rc.lgu_id')
+            ->leftJoin('jairoads_next.maintenance_projects as p', 'p.road_coverage_id', '=', 'rc.id')
+            ->select(['rc.id', 'rc.road_name', 'rc.geojson', 'l.municipality_name', 'p.id as project_id', 'p.project_title'])
+            ->selectSub(DB::table('jairoads_next.maintenance_records as mr')
+                ->selectRaw('count(*)')->whereColumn('mr.project_id', 'p.id')
+                ->where('mr.managing_engineer_id', $engineerId), 'my_record_count');
+        if ($before !== null) {
+            $query->where('rc.id', '<', $before);
+        }
+        $rows = $query->orderByDesc('rc.id')->limit(101)->get();
+        $page = $rows->take(100);
+
+        return [
+            'data' => $page->map(static fn (\stdClass $road): array => [
+                'id' => (int) $road->id,
+                'road_name' => (string) $road->road_name,
+                'municipality' => (string) $road->municipality_name,
+                'geojson' => json_decode((string) $road->geojson, true, 512, JSON_THROW_ON_ERROR),
+                'assigned' => $road->project_id !== null,
+                'project_id' => $road->project_id === null ? null : (int) $road->project_id,
+                'project_title' => $road->project_title,
+                'my_project' => (int) $road->my_record_count > 0,
+                'my_record_count' => (int) $road->my_record_count,
+            ])->values()->all(),
+            'next_cursor' => $rows->count() > 100 ? (int) $page->last()->id : null,
+        ];
+    }
+
     public function show(Request $request, AccountIdentityResolver $resolver): Response
     {
         $user = $request->user();
@@ -99,6 +145,7 @@ final class RoleLandingController extends Controller
         $assigned = [];
         $records = [];
         $mapCoverages = [];
+        $mapNextCursor = null;
         $stats = [
             'assignedLgus' => 0, 'managedRecords' => 0, 'ongoingRecords' => 0,
             'roadCoverages' => 0, 'projects' => 0, 'lgus' => 0,
@@ -138,24 +185,9 @@ final class RoleLandingController extends Controller
             // is "mine" only if its linked project has a record managed by this
             // authenticated Engineer. Counting via a correlated subquery avoids
             // duplicating roads with multiple quarterly records.
-            $mapCoverages = DB::table('jairoads_next.road_coverages as rc')
-                ->join('jairoads_next.lgus as l', 'l.id', '=', 'rc.lgu_id')
-                ->leftJoin('jairoads_next.maintenance_projects as p', 'p.road_coverage_id', '=', 'rc.id')
-                ->select(['rc.id', 'rc.road_name', 'rc.geojson', 'l.municipality_name', 'p.id as project_id', 'p.project_title'])
-                ->selectSub(DB::table('jairoads_next.maintenance_records as mr')
-                    ->selectRaw('count(*)')->whereColumn('mr.project_id', 'p.id')
-                    ->where('mr.managing_engineer_id', $id), 'my_record_count')
-                ->orderBy('rc.id')->get()->map(static fn ($r): array => [
-                    'id' => (int) $r->id,
-                    'road_name' => (string) $r->road_name,
-                    'municipality' => (string) $r->municipality_name,
-                    'geojson' => json_decode((string) $r->geojson, true),
-                    'assigned' => $r->project_id !== null,
-                    'project_id' => $r->project_id === null ? null : (int) $r->project_id,
-                    'project_title' => $r->project_title,
-                    'my_project' => (int) $r->my_record_count > 0,
-                    'my_record_count' => (int) $r->my_record_count,
-                ])->all();
+            $mapPage = $this->roadMapBatch($id);
+            $mapCoverages = $mapPage['data'];
+            $mapNextCursor = $mapPage['next_cursor'];
 
             // Dashboard lists own managed records across municipalities.
             $scope = DB::table('jairoads_next.maintenance_records as mr')
@@ -203,6 +235,7 @@ final class RoleLandingController extends Controller
             'analytics' => app(DashboardAnalytics::class)->summary($actor),
             'records' => $records,
             'mapCoverages' => $mapCoverages,
+            'mapNextCursor' => $mapNextCursor,
             'notifications' => $notifications,
             'canonicalFrontend' => true,
             'jairoadsIdentity' => ['role' => strtolower($actor['role'])],
