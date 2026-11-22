@@ -19,6 +19,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * may confirm email ownership optionally; MustVerifyEmail is intentionally not implemented.
  *
  * @property int $id
+ * @property int|null $dd_user_account_id
  * @property string $name
  * @property string $email
  * @property Carbon|null $email_verified_at

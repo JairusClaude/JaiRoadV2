@@ -171,11 +171,15 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
         abort_unless(RoleAccess::canDeleteOperations($actor['role']), 403, 'Only administrators may delete monthly updates.');
 
         $v = $request->validate(['update_ids' => ['required', 'array', 'min:1', 'max:100'], 'update_ids.*' => ['required', 'integer', 'min:1', 'distinct']]);
-        $this->deleteUpdates($request, $actor, array_map('intval', $v['update_ids']));
+        $this->deleteUpdates($request, $actor, array_values(array_map('intval', $v['update_ids'])));
 
         return redirect($this->relatedReturn($request, $actor, self::BASE.'/monthly-updates'))->with('dd_operations_status', 'Selected monthly updates deleted successfully.');
     }
 
+    /**
+     * @param array{account_id:int,role:string,engineer_id:?int} $actor
+     * @param list<int> $ids
+     */
     private function deleteUpdates(Request $request, array $actor, array $ids): void
     {
         abort_unless($this->updateQuery($actor)->whereIn('u.id', $ids)->count() === count($ids), 404);

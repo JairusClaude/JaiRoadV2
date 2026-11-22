@@ -48,11 +48,11 @@ final class PreservedHistoryController extends Controller
         $actor = $this->identities->resolve($login);
         $scope = $request->query('scope');
         $token = $request->header('X-Deletion-Challenge', '');
-        abort_unless(in_array($scope, ['project', 'record'], true) && is_string($token) && strlen($token) <= 4096, 422);
+        abort_unless(in_array($scope, ['project', 'record'], true) && strlen($token) <= 4096, 422);
         // Accept only a small raw JPEG, not a form field that could be flashed
         // to a session on validation failure. Never log or store the snapshot.
         abort_unless($request->header('Content-Type') === 'image/jpeg', 415);
-        abort_if((int) $request->header('Content-Length', 0) > 524288, 413);
+        abort_if((int) $request->header('Content-Length', '0') > 524288, 413);
         try {
             $receipt = app(DeletionChallenge::class)->cameraReceipt($actor['account_id'], $scope, $token, $request->getContent());
         } catch (ValidationException $error) {

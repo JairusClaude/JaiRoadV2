@@ -253,12 +253,17 @@ final class LguPageController extends OperationsFrontendController
             'ids' => ['required', 'array', 'min:1', 'max:100'],
             'ids.*' => ['required', 'integer', 'min:1', 'distinct'],
         ]);
-        $this->deleteCheckedLgus($actor, array_map('intval', $validated['ids']));
+        $this->deleteCheckedLgus($actor, array_values(array_map('intval', $validated['ids'])));
 
         return redirect(self::BASE.'/lgus')->with('dd_operations_status', 'Selected LGUs deleted successfully.');
     }
 
-    /** Dependency checks, removal and canonical audit/notification delivery are atomic. */
+    /**
+     * Dependency checks, removal and canonical audit/notification delivery are atomic.
+     *
+     * @param array{account_id:int,role:string,engineer_id:?int} $actor
+     * @param list<int> $ids
+     */
     private function deleteCheckedLgus(array $actor, array $ids): void
     {
         try {

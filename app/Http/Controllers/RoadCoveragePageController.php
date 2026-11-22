@@ -50,7 +50,7 @@ final class RoadCoveragePageController extends OperationsFrontendController
 
         $totalCoverages = (int) DB::table('jairoads_next.road_coverages')->count();
         $linkedProjects = (int) DB::table('jairoads_next.maintenance_projects')->whereNotNull('road_coverage_id')->distinct()->count('id');
-        $totalLengthKm = (float) (DB::table('jairoads_next.road_coverages')->sum('kilometers') ?? 0);
+        $totalLengthKm = (float) DB::table('jairoads_next.road_coverages')->sum('kilometers');
 
         // Keep initial Inertia payload bounded. The user can progressively load
         // further map geometries through the read-only, cursor-based endpoint.
@@ -233,7 +233,7 @@ final class RoadCoveragePageController extends OperationsFrontendController
             'ids' => ['required', 'array', 'min:1', 'max:100'],
             'ids.*' => ['required', 'integer', 'min:1', 'distinct'],
         ]);
-        $this->deleteCheckedRoads($request, $actor, array_map('intval', $validated['ids']));
+        $this->deleteCheckedRoads($request, $actor, array_values(array_map('intval', $validated['ids'])));
 
         return redirect(self::BASE.'/road-coverages')->with('dd_operations_status', 'Selected road coverages deleted successfully.');
     }

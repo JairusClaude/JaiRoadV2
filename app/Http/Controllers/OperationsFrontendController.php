@@ -384,6 +384,7 @@ class OperationsFrontendController extends Controller
         }
     }
 
+    /** @param array{account_id:int,role:string,engineer_id:?int} $actor */
     protected function requirePrivateDeletion(Request $request, array $actor): void
     {
         abort_unless(RoleAccess::canDeleteOperations($actor['role']), 403);
@@ -392,7 +393,11 @@ class OperationsFrontendController extends Controller
         }
     }
 
-    /** Return to a known source page after a successful mutation; never redirect to arbitrary URLs. */
+    /**
+     * Return to a known source page after a successful mutation; never redirect to arbitrary URLs.
+     *
+     * @param list<string> $allowed
+     */
     protected function editReturn(Request $request, string $fallback, array $allowed): string
     {
         $origin = $request->query('return_to');
@@ -432,6 +437,7 @@ class OperationsFrontendController extends Controller
         return $path.(is_string($query) && $query !== '' ? '?'.$query : '');
     }
 
+    /** @param array{account_id:int,role:string,engineer_id:?int} $actor */
     protected function relatedReturn(Request $request, array $actor, string $fallback): string
     {
         $id = $request->integer('record');

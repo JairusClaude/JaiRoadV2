@@ -160,7 +160,11 @@ final class PeopleLifecycleController extends Controller
         ])->header('Cache-Control', 'private, no-store');
     }
 
-    /** Explain an unavailable reset without exposing credentials or weakening identity checks. */
+    /**
+     * Explain an unavailable reset without exposing credentials or weakening identity checks.
+     *
+     * @param array{account_id:int,role:string,engineer_id:?int} $actor
+     */
     private function passwordRecoveryBlocker(array $actor, stdClass $account, ?stdClass $engineer, AccountIdentityResolver $resolver): ?string
     {
         if ($actor['role'] !== 'SuperAdmin') {

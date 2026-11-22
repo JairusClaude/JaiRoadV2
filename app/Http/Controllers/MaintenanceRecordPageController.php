@@ -218,7 +218,7 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
             'record_ids' => ['required', 'array', 'min:1', 'max:100'],
             'record_ids.*' => ['required', 'integer', 'min:1', 'distinct'],
         ]);
-        $ids = array_map('intval', $validated['record_ids']);
+        $ids = array_values(array_map('intval', $validated['record_ids']));
         $this->deleteEmptyRecords($actor, $ids);
 
         return redirect(self::BASE.'/maintenance-records')->with('dd_operations_status', 'Selected maintenance records deleted successfully.');
