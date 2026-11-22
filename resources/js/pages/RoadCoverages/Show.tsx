@@ -28,6 +28,7 @@ export default function Show({
     createdByName,
     associatedProject,
     canEdit,
+    canDelete: canDeleteAllowed,
     backUrl,
     municipalities = [],
 }: RoadCoverageDetailsProps) {
@@ -37,7 +38,8 @@ export default function Show({
     const [deleteError, setDeleteError] = useState('');
 
     const hasProject = Boolean(associatedProject);
-    const canDelete = coverage.can_delete ?? canEdit ?? true;
+    // Use the server-authorized permission, not an omitted field on the road.
+    const canDelete = canDeleteAllowed ?? false;
 
     const handleDelete = () => {
         if (hasProject) {

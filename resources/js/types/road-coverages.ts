@@ -78,6 +78,7 @@ export type RoadCoverageDetailsProps = {
     createdByName: string | null;
     associatedProject: { id: number; project_title: string } | null;
     canEdit: boolean;
+    canDelete?: boolean;
     backUrl: string;
 };
 
