@@ -14,7 +14,7 @@ test('rendered login assets retain legitimate request and proxy authority', func
 })->with([
     'local port' => ['http://127.0.0.1:10000/login', [], 'http://127.0.0.1:10000'],
     'TLS origin' => ['https://portal.example.test/login', [], 'https://portal.example.test'],
-    'trusted ingress' => ['http://internal.example.test/login', ['X-Forwarded-Host' => 'portal.example.test', 'X-Forwarded-Proto' => 'https', 'X-Forwarded-Port' => '443'], 'https://portal.example.test'],
+    'untrusted ingress cannot rewrite asset origin' => ['http://internal.example.test/login', ['X-Forwarded-Host' => 'portal.example.test', 'X-Forwarded-Proto' => 'https', 'X-Forwarded-Port' => '443'], 'http://internal.example.test'],
 ]);
 
 test('crafted front-controller base paths cannot supply an asset host', function (): void {

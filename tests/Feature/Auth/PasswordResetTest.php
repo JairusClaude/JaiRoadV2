@@ -99,8 +99,9 @@ test('production recovery refuses log-only delivery rather than exposing reset t
     $user = $this->canonicalUser(User::factory()->create());
     config(['mail.default' => 'log', 'app.url' => 'https://jairoads.example.test']);
     $this->app->detectEnvironment(fn () => 'production');
-    $this->from(route('password.request'))
-        ->post(route('password.email'), ['email' => $user->email])
+    $this->withSession(['_token' => 'valid-recovery-test-token'])
+        ->from(route('password.request'))
+        ->post(route('password.email'), ['email' => $user->email, '_token' => 'valid-recovery-test-token'])
         ->assertRedirect(route('password.request'))
         ->assertSessionHasErrors('email');
     Notification::assertNothingSent();
@@ -111,6 +112,8 @@ test('production recovery rejects a failover that could log private reset links'
     $user = $this->canonicalUser(User::factory()->create());
     config(['mail.default' => 'failover', 'mail.mailers.failover.mailers' => ['smtp', 'log'], 'app.url' => 'https://jairoads.example.test']);
     $this->app->detectEnvironment(fn () => 'production');
-    $this->post(route('password.email'), ['email' => $user->email])->assertSessionHasErrors('email');
+    $this->withSession(['_token' => 'valid-recovery-test-token'])
+        ->post(route('password.email'), ['email' => $user->email, '_token' => 'valid-recovery-test-token'])
+        ->assertSessionHasErrors('email');
     Notification::assertNothingSent();
 });

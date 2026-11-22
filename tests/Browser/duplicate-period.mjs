@@ -43,7 +43,7 @@ export async function verifyDuplicatePeriod({
     };
     const assertWarning = async (quarter) => {
         const panel = engineer.getByRole('dialog', {
-            name: 'Maintenance period already occupied',
+            name: 'Quarter already has a maintenance record',
         });
         await panel.waitFor();
         assert.match(
@@ -52,7 +52,7 @@ export async function verifyDuplicatePeriod({
         );
         assert.match(await panel.innerText(), /2026/);
         assert.match(await panel.innerText(), new RegExp(quarter));
-        assert.match(await panel.innerText(), /Only one MaintenanceRecord/);
+        assert.match(await panel.innerText(), /Only one record is allowed per project/);
 
         return panel;
     };

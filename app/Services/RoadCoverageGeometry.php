@@ -11,12 +11,17 @@ namespace App\Services;
  */
 final class RoadCoverageGeometry
 {
+    // Bound total positions across nested lines/collections, not only depth.
+    public const MAX_POSITIONS = 50000;
+
     public static function valid(mixed $geometry): bool
     {
-        return self::roadLines($geometry, 0);
+        $positions = 0;
+
+        return self::roadLines($geometry, 0, $positions);
     }
 
-    private static function roadLines(mixed $value, int $depth): bool
+    private static function roadLines(mixed $value, int $depth, int &$positions): bool
     {
         // Bound nested Feature/GeometryCollection depth, guarding CPU/stack use.
         if ($depth > 12 || ! is_array($value) || array_is_list($value)) {
@@ -29,16 +34,16 @@ final class RoadCoverageGeometry
         }
 
         return match ($type) {
-            'LineString' => self::line($value['coordinates'] ?? null),
-            'MultiLineString' => self::lineList($value['coordinates'] ?? null),
-            'Feature' => self::roadLines($value['geometry'] ?? null, $depth + 1),
-            'FeatureCollection' => self::children($value['features'] ?? null, $depth, 'Feature'),
-            'GeometryCollection' => self::children($value['geometries'] ?? null, $depth, null),
+            'LineString' => self::line($value['coordinates'] ?? null, $positions),
+            'MultiLineString' => self::lineList($value['coordinates'] ?? null, $positions),
+            'Feature' => self::roadLines($value['geometry'] ?? null, $depth + 1, $positions),
+            'FeatureCollection' => self::children($value['features'] ?? null, $depth, 'Feature', $positions),
+            'GeometryCollection' => self::children($value['geometries'] ?? null, $depth, null, $positions),
             default => false,
         };
     }
 
-    private static function children(mixed $items, int $depth, ?string $requiredType): bool
+    private static function children(mixed $items, int $depth, ?string $requiredType, int &$positions): bool
     {
         if (! is_array($items) || ! array_is_list($items) || $items === []) {
             return false;
@@ -47,7 +52,7 @@ final class RoadCoverageGeometry
             if ($requiredType !== null && (! is_array($item) || ($item['type'] ?? null) !== $requiredType)) {
                 return false;
             }
-            if (! self::roadLines($item, $depth + 1)) {
+            if (! self::roadLines($item, $depth + 1, $positions)) {
                 return false;
             }
         }
@@ -55,13 +60,13 @@ final class RoadCoverageGeometry
         return true;
     }
 
-    private static function lineList(mixed $lines): bool
+    private static function lineList(mixed $lines, int &$positions): bool
     {
         if (! is_array($lines) || ! array_is_list($lines) || $lines === []) {
             return false;
         }
         foreach ($lines as $line) {
-            if (! self::line($line)) {
+            if (! self::line($line, $positions)) {
                 return false;
             }
         }
@@ -69,11 +74,15 @@ final class RoadCoverageGeometry
         return true;
     }
 
-    private static function line(mixed $points): bool
+    private static function line(mixed $points, int &$positions): bool
     {
         if (! is_array($points) || ! array_is_list($points) || count($points) < 2) {
             return false;
         }
+        if (count($points) > self::MAX_POSITIONS - $positions) {
+            return false;
+        }
+        $positions += count($points);
         foreach ($points as $position) {
             if (! is_array($position) || ! array_is_list($position) || count($position) < 2) {
                 return false;

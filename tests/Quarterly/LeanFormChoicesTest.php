@@ -21,7 +21,7 @@ it('keeps all authorized choices without geometry or full record payloads', func
     DB::enableQueryLog();
     DB::flushQueryLog();
     $this->get('/dd-phase3/ui/maintenance-records/create')->assertInertia(fn (Assert $page) => $page
-        ->has('projects', 110)->has('records', 110)->missing('projects.0.geojson')->missing('projects.0.description')
+        ->has('projects', 110)->has('records', 110)->has('engineers')->missing('managerChoicesByProject')->missing('projects.0.geojson')->missing('projects.0.description')
         ->missing('records.0.description')->missing('records.0.created_by'));
     expect(count(DB::getQueryLog()))->toBeLessThanOrEqual(12); // 110 LGUs must not cause 110 eligibility queries.
     DB::disableQueryLog();

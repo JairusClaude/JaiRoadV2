@@ -42,14 +42,17 @@ final class CanonicalWorkspaceNavigationTest extends TestCase
     {
         $this->bindIdentity(['role' => 'Engineer', 'account_id' => 77]);
         foreach ([
-            '/maintenance-projects' => 'projects', '/monthly-updates-preview' => 'updates',
-            '/project-documents-preview' => 'documents', '/road-sections-preview' => 'roads',
-            '/lgus-preview' => 'lgus', '/settings-preview' => 'settings',
-            '/user-management' => 'users', '/admin-dashboard' => 'dashboard',
-        ] as $old => $section) {
+            '/maintenance-projects' => '/dd-phase3/ui/maintenance-projects',
+            '/monthly-updates-preview' => '/dd-phase3/updates',
+            '/project-documents-preview' => '/dd-phase3/documents',
+            '/road-sections-preview' => '/dd-phase3/roads',
+            '/lgus-preview' => '/dd-phase3/lgus',
+            '/settings-preview' => '/dd-phase3/settings',
+            '/admin-dashboard' => '/dd-phase3/dashboard',
+        ] as $old => $destination) {
             $response = (new GuardLegacyRoutesForCanonicalAccounts)->handle($this->requestFor($old), static fn () => new Response('unexpected'));
             $this->assertSame(302, $response->getStatusCode());
-            $this->assertSame('/dd-phase3/'.$section, parse_url($response->headers->get('Location'), PHP_URL_PATH));
+            $this->assertSame($destination, parse_url($response->headers->get('Location'), PHP_URL_PATH));
         }
     }
 
@@ -78,5 +81,7 @@ final class CanonicalWorkspaceNavigationTest extends TestCase
         $middleware = new GuardLegacyRoutesForCanonicalAccounts;
         $this->assertSame('passed', $middleware->handle($this->requestFor('/maintenance-projects', 'GET', false), $next)->getContent());
         $this->assertSame('passed', $middleware->handle($this->requestFor('/dd-phase3/ops/updates', 'POST'), $next)->getContent());
+        // User Management implements its own canonical role checks.
+        $this->assertSame('passed', $middleware->handle($this->requestFor('/user-management'), $next)->getContent());
     }
 }

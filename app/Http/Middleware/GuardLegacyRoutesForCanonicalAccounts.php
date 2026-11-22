@@ -36,6 +36,11 @@ final class GuardLegacyRoutesForCanonicalAccounts
             ];
             $cleanPath = trim($request->path(), '/');
             if (($request->isMethod('GET') || $request->isMethod('HEAD')) && isset($canonicalUiModules[$cleanPath])) {
+                // Invalid canonical links must fail closed even at a legacy
+                // entry point, rather than receiving a fallback redirect.
+                $identity = app(AccountIdentityResolver::class)->resolve($user);
+                abort_unless($identity !== null, 403, 'Your account is unavailable. Please contact your administrator.');
+
                 return redirect($canonicalUiModules[$cleanPath]);
             }
 

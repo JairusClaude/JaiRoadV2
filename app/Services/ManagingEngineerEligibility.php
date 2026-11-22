@@ -17,6 +17,23 @@ final class ManagingEngineerEligibility
         return $this->eligibleChoices($actor);
     }
 
+    /**
+     * Legacy batched-choice API: the approved Engineer eligibility is global,
+     * independent of LGU. Enumerate eligible Engineers for each requested LGU
+     * in one SQL statement without issuing one query per municipality.
+     *
+     * @param array{account_id:int,role:string,engineer_id:?int} $actor
+     * @param list<int> $lguIds
+     */
+    public function choicesForLgus(array $actor, array $lguIds): Builder
+    {
+        $ids = array_values(array_unique(array_map('intval', $lguIds)));
+
+        return $this->eligibleChoices($actor)
+            ->crossJoin('jairoads_next.lgus as l')
+            ->whereIn('l.id', $ids)->addSelect('l.id as lgu_id');
+    }
+
     /** @param array{account_id:int, role:string, engineer_id:?int} $actor
      */
     public function eligibleChoices(array $actor): Builder

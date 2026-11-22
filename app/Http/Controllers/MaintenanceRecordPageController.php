@@ -159,15 +159,12 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
         $this->writer($actor);
         $projects = $this->projectChoices($actor)->orderBy('p.project_title')->get();
         $choices = $this->eligibility->eligibleChoices($actor)->get()->map(fn (\stdClass $e): array => ['id' => (int) $e->id, 'first_name' => $e->first_name, 'last_name' => $e->last_name])->all();
-        $byProject = [];
-        foreach ($projects as $p) {
-            $byProject[(int) $p->id] = $choices;
-        }
+        // Eligibility does not vary by municipality: send the same Engineer list
+        // only once, rather than repeating it for every project.
 
         return $this->render('MaintenanceProjects/Records/Create', $request, [
             'duplicatePeriod' => $this->duplicatePeriod($request, $actor),
-            'projects' => $projects->map(fn (\stdClass $p): array => $this->projectChoiceData($p)), 'engineers' => [],
-            'managerChoicesByProject' => $byProject,
+            'projects' => $projects->map(fn (\stdClass $p): array => $this->projectChoiceData($p)), 'engineers' => $choices,
             'records' => $this->records($actor)->get(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter'])->map(fn (\stdClass $r): array => $this->periodChoiceData($r)),
             'canWrite' => true, 'cancelUrl' => self::BASE.'/maintenance-records',
         ]);

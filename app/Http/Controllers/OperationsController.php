@@ -271,12 +271,15 @@ class OperationsController extends Controller
         $v = $request->validate([
             'road_name' => ['required', 'string', 'max:255'], 'lgu_id' => ['required', 'integer', 'min:1'],
             'kilometers' => ['required', 'numeric', 'min:0'], 'pavement_type' => ['required', Rule::in(['Concrete', 'Asphalt', 'Gravel', 'Earth'])],
-            'state_category' => ['required', Rule::in(['Good', 'Fair', 'Bad'])], 'geojson' => [$id === null ? 'required' : 'sometimes', 'json'],
+            'state_category' => ['required', Rule::in(['Good', 'Fair', 'Bad'])], 'geojson' => [$id === null ? 'required' : 'sometimes', 'json', 'max:2097152'],
             'correction_reason' => ['nullable', 'string', 'max:5000'],
             // Request-only attribution choice, backed by existing RoadCoverage.CreatedBy.
             // Never changes the 11-entity schema or any business table column.
             'created_by_engineer_id' => ['nullable', 'integer', 'min:1'],
         ]);
+        if (isset($v['geojson']) && strlen($v['geojson']) > 2097152) {
+            throw ValidationException::withMessages(['geojson' => 'Road geometry exceeds the 2 MiB limit.']);
+        }
         $geometry = isset($v['geojson']) ? json_decode($v['geojson'], true) : null;
         // RoadCoverage is mapped road geometry, not a marker/polygon. Preserve
         // line-based GeoJSON wrappers supported by the existing road editor.

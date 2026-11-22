@@ -511,7 +511,7 @@ try {
         .getByRole('button', { name: 'Create account', exact: true })
         .click();
     assert.equal((await saved).status(), 302);
-    await root.page.getByText('Account created.', { exact: true }).waitFor();
+    await root.page.locator('p[role="status"]').filter({ hasText: 'Account created.' }).first().waitFor();
     await request(root.page, '/logout', {});
     await root.page.goto(base + '/login');
     assert.equal(

@@ -172,13 +172,13 @@ try {
             '/login',
             'roads.example.test',
             { 'X-Forwarded-Proto': 'https' },
-            'https://roads.example.test',
+            'http://roads.example.test',
         );
         await assertLoginAssetOrigin(
             '/login',
             'roads.example.test:8443',
             { 'X-Forwarded-Proto': 'https' },
-            'https://roads.example.test:8443',
+            'http://roads.example.test:8443',
         );
         await assertLoginAssetOrigin(
             '/login',
