@@ -837,11 +837,21 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     assert.equal(JSON.stringify(moved.geojson), geometry);
     const rogue = await signIn(f.rogue_email);
     const before = storage.counts.downloads;
+    // Verified active Engineers may read across municipalities. Private file
+    // downloads remain authenticated and cannot be edited by non-managers.
     assert.equal(
         (await rogue.request.get(`${base}${doc.download_url}`)).status(),
+        200,
+    );
+    assert.equal(storage.counts.downloads, before + 1);
+    assert.equal(
+        (
+            await rogue.request.get(
+                `${ui}/maintenance-projects/${project.id}/records/${record.id}/edit`,
+            )
+        ).status(),
         403,
     );
-    assert.equal(storage.counts.downloads, before);
     assert.equal(
         (
             await csrfPost(viewer, '/dd-phase3/ui/maintenance-projects', {
@@ -855,9 +865,11 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         (await viewer.request.get(`${ui}/road-coverages/create`)).status(),
         403,
     );
-    assert.equal(
-        (await props(rogue, '/maintenance-projects')).projects.data.length,
-        0,
+    assert.ok(
+        (await props(rogue, '/maintenance-projects')).projects.data.some(
+            (item) => item.id === project.id,
+        ),
+        'Verified Engineers retain cross-municipality project read access.',
     );
 
     lastPage = admin;
