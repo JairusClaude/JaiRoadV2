@@ -117,6 +117,9 @@ export default function Operations({
     const [issues, setIssues] = useState<Record<string, string>>({});
     const [error, setError] = useState('');
     const isSuperAdmin = role === 'SuperAdmin';
+    const isAdmin = role === 'Admin';
+    // The DD Settings screen is rendered here, not in settings-preview.
+    // Apply the Admin palette to its locally hard-coded accent controls.
     const settingsHeroTheme = isSuperAdmin
         ? 'border border-[#111c33] bg-[#111c33] text-white'
         : role === 'Admin'
@@ -407,7 +410,7 @@ export default function Operations({
                             {/* Account and Security Overview Banner */}
                             <section className="rounded-2xl border border-slate-200/80 bg-[#fdfcfb] p-6 shadow-sm">
                                 <div className="space-y-3">
-                                    <div className="inline-flex items-center gap-1.5 rounded-full bg-[#FFF0E2] px-2.5 py-0.5 text-xs font-semibold text-[#995321]">
+                                    <div className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${isAdmin ? 'bg-[#FDE7EA] text-[#C8293D]' : 'bg-[#FFF0E2] text-[#995321]'}`}>
                                         <ShieldCheck className="h-3.5 w-3.5" /> Verified {identity.role}
                                     </div>
                                     <h2 className="text-2xl font-bold tracking-tight text-slate-900">
@@ -423,7 +426,7 @@ export default function Operations({
                                                 : 'Your read-only identity and personal display preferences.'}
                                     </p>
                                     <div className="flex flex-wrap items-center gap-3 pt-2">
-                                        <Link href="/settings/security?tab=passkeys" className="inline-flex items-center gap-2 rounded-xl bg-[#90451f] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#773917]">
+                                        <Link href="/settings/security?tab=passkeys" className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition focus-visible:outline-2 focus-visible:outline-offset-2 ${isAdmin ? 'bg-[#C8293D] hover:bg-[#A81424] focus-visible:outline-[#C8293D]' : 'bg-[#90451f] hover:bg-[#773917] focus-visible:outline-amber-600'}`}>
                                             <KeyRound className="size-4" /> Manage passkeys
                                         </Link>
                                         <span className="text-xs text-slate-500">Register a device for passwordless sign-in. Recent password confirmation is required.</span>
@@ -472,7 +475,7 @@ export default function Operations({
                             <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
                                 <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
                                     <div className="flex items-center gap-2">
-                                        <Settings2 className="h-5 w-5 text-amber-700" />
+                                        <Settings2 className={`h-5 w-5 ${isAdmin ? 'text-[#C8293D]' : 'text-amber-700'}`} />
                                         <h2 className="text-lg font-bold text-slate-900">
                                             Update credentials
                                         </h2>
@@ -530,7 +533,11 @@ export default function Operations({
                                                         }[k]
                                                     }
                                                     <input
-                                                        className={input}
+                                                        className={
+                                                             isAdmin
+                                                                 ? 'mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-[#C8293D] focus:outline-none focus:ring-2 focus:ring-[#C8293D]/20'
+                                                                 : input
+                                                         }
                                                         type={k === 'username' ? 'text' : 'password'}
                                                         autoComplete={
                                                             k === 'username'
@@ -560,7 +567,14 @@ export default function Operations({
                                                 </label>
                                             ))}
                                             <div className="flex flex-wrap gap-3 sm:col-span-2 pt-2">
-                                                <button className={action} disabled={busy}>
+                                                <button
+                                                     className={
+                                                         isAdmin
+                                                             ? 'rounded-lg bg-[#C8293D] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#A81424] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8293D] disabled:opacity-60'
+                                                             : action
+                                                     }
+                                                     disabled={busy}
+                                                 >
                                                     Save changes
                                                 </button>
                                                 <button
@@ -651,9 +665,11 @@ export default function Operations({
                                     type="button"
                                     aria-pressed={appearance === mode}
                                     onClick={() => updateAppearance(mode)}
-                                    className={`rounded-xl border px-5 py-4 text-left text-sm font-semibold capitalize transition ${
+                                    className={`rounded-xl border px-5 py-4 text-left text-sm font-semibold capitalize transition focus-visible:outline-2 focus-visible:outline-offset-2 ${isAdmin ? 'focus-visible:outline-[#C8293D]' : 'focus-visible:outline-amber-600'} ${
                                         appearance === mode
-                                            ? 'border-[#a15b34] bg-[#fff1e3] text-[#90451f] shadow-xs'
+                                            ? (isAdmin
+                                                 ? 'border-[#C8293D] bg-[#FDE7EA] text-[#C8293D] shadow-xs'
+                                                 : 'border-[#a15b34] bg-[#fff1e3] text-[#90451f] shadow-xs')
                                             : 'border-slate-200 bg-[#fdfcfb] text-slate-700 hover:bg-slate-50'
                                     }`}
                                 >
