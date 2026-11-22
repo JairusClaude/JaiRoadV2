@@ -4,9 +4,9 @@ import type { FormEvent } from 'react';
 import type { Engineer, EngineerLgu, Lgu } from './user-management-page';
 
 const field =
-    'w-full rounded-xl border border-[#DFE6EF] bg-white px-3 py-2.5 text-sm text-[#18263A] outline-none focus:border-[#B56C3B] focus:ring-2 focus:ring-[#F4E5D7]';
+    'w-full rounded-xl border border-[#DFE6EF] bg-white px-3 py-2.5 text-sm text-[#18263A] outline-none focus:border-[#51269B] focus:ring-2 focus:ring-[#EDE5FA]';
 const primary =
-    'rounded-xl bg-[#90451F] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50';
+    'rounded-xl bg-[#51269B] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#38166B] disabled:opacity-50';
 const secondary =
     'rounded-xl border border-[#DFE6EF] px-4 py-2.5 text-sm font-medium text-[#435773] disabled:opacity-50';
 const error = (message?: string) =>

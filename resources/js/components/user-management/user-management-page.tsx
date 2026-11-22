@@ -85,11 +85,11 @@ const initialForm = (): AccountForm => ({
     password_confirmation: '',
 });
 const field =
-    'w-full rounded-xl border border-[#DFE6EF] bg-white px-3 py-2.5 text-sm text-[#18263A] outline-none transition placeholder:text-[#95A4BE] focus:border-[#B56C3B] focus:ring-2 focus:ring-[#F4E5D7]';
+    'w-full rounded-xl border border-[#DFE6EF] bg-white px-3 py-2.5 text-sm text-[#18263A] outline-none transition placeholder:text-[#95A4BE] focus:border-[#51269B] focus:ring-2 focus:ring-[#EDE5FA]';
 const ghost =
     'inline-flex items-center justify-center gap-2 rounded-xl border border-[#DFE6EF] bg-white px-3.5 py-2.5 text-sm font-medium text-[#435773] shadow-sm transition hover:bg-[#F5F7FA] disabled:cursor-not-allowed disabled:opacity-45';
 const primary =
-    'inline-flex items-center justify-center gap-2 rounded-xl bg-[#90451F] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_3px_9px_rgba(100,46,20,.16)] transition hover:bg-[#793713] disabled:cursor-not-allowed disabled:opacity-45';
+    'inline-flex items-center justify-center gap-2 rounded-xl bg-[#51269B] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_3px_9px_rgba(81,38,155,.18)] transition hover:bg-[#38166B] disabled:cursor-not-allowed disabled:opacity-45';
 
 function Status({ active }: { active: boolean }) {
     return (
@@ -367,7 +367,7 @@ export default function UserManagementPage({
                                 }}
                                 className={`inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
                                     tab === key
-                                        ? 'border-[#90451f] text-[#90451f]'
+                                        ? 'border-[#51269B] text-[#51269B]'
                                         : 'border-transparent text-[#64748B] hover:border-[#CBD5E1] hover:text-[#1E293B]'
                                 }`}
                             >
