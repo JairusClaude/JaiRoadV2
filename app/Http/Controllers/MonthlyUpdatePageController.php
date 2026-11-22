@@ -102,17 +102,24 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
                 throw ValidationException::withMessages(['attachments' => 'Save the monthly update before removing existing media.']);
             }
             foreach ($removals as $mediaId) {
-                $row = DB::table('jairoads_next.media')->where('id', $mediaId)->first(['monthly_update_id']);
+                $row = DB::table('jairoads_next.media')->where('id', $mediaId)->first(['monthly_update_id', 'file_path']);
                 $alreadyCompleted = $row === null && DB::table('jairoads_next.file_deletions')->where('kind', 'media')
                     ->where('entity_id', $mediaId)->where('monthly_update_id', $id)->where('state', 'completed')->exists();
                 if (! $alreadyCompleted && ($row === null || (int) $row->monthly_update_id !== $id)) {
                     throw ValidationException::withMessages(['attachments' => 'Selected media does not belong to this update. Refresh and retry.']);
                 }
+                if ($row !== null) {
+                    $this->fileDeletions->preflight($request->user(), 'media', $mediaId, (string) $row->file_path);
+                }
             }
         }
         $this->operations->saveUpdate($request, $this->identities, $id);
         foreach ($removals as $mediaId) {
-            $this->deletePrivateFile($request, 'media', $mediaId);
+            try {
+                $this->deletePrivateFile($request, 'media', $mediaId);
+            } catch (ValidationException $error) {
+                throw ValidationException::withMessages(['attachments' => 'Monthly update details were saved, but one or more media removals were not confirmed. Refresh the update and retry.']);
+            }
         }
         $id ??= (int) DB::table('jairoads_next.monthly_updates')->where('maintenance_id', $request->input('maintenance_id'))
             ->where('update_month', $request->input('update_month'))->value('id');
@@ -184,11 +191,19 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
     private function deleteUpdates(Request $request, array $actor, array $ids): void
     {
         abort_unless($this->updateQuery($actor)->whereIn('u.id', $ids)->count() === count($ids), 404);
-        $mediaIds = DB::table('jairoads_next.media')->whereIn('monthly_update_id', $ids)->orderBy('id')->pluck('id');
-        if ($mediaIds->isNotEmpty()) {
+        $mediaFiles = DB::table('jairoads_next.media')->whereIn('monthly_update_id', $ids)->orderBy('id')->get(['id', 'file_path']);
+        if ($mediaFiles->isNotEmpty()) {
             $this->requirePrivateDeletion($request, $actor);
-            foreach ($mediaIds as $mediaId) {
-                $this->deletePrivateFile($request, 'media', (int) $mediaId);
+            // Check all objects and permissions before changing any Storage bytes.
+            foreach ($mediaFiles as $file) {
+                $this->fileDeletions->preflight($request->user(), 'media', (int) $file->id, (string) $file->file_path);
+            }
+            foreach ($mediaFiles as $file) {
+                try {
+                    $this->deletePrivateFile($request, 'media', (int) $file->id);
+                } catch (ValidationException $error) {
+                    throw ValidationException::withMessages(['delete' => 'Monthly update deletion was interrupted. Some media may already be gone. Refresh and review remaining records before retrying.']);
+                }
             }
         }
         DB::transaction(function () use ($request, $ids, $actor): void {

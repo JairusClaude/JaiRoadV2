@@ -91,12 +91,17 @@ final class MaintenanceDocumentPageController extends OperationsFrontendControll
             $this->write(fn () => $this->operations->uploadDocument($upload, $this->identities, $this->documents), ['file' => 'attachment']);
         } else {
             $request->validate(['attachment' => ['prohibited']]);
-            if ($remove) {
-                // Validate metadata first. Only remove the attachment, never the parent row.
-                $request->validate(['document_title' => ['required', 'string', 'max:255'], 'description' => ['nullable', 'string', 'max:5000']]);
-                $this->deletePrivateFile($request, 'document', $id);
-            }
+            // Save and validate document metadata before any irreversible Storage I/O.
+            // If attachment removal is unavailable, the file stays intact and
+            // the user is told explicitly that this was a partial save.
             $this->operations->updateDocument($request, $this->identities, $id);
+            if ($remove) {
+                try {
+                    $this->deletePrivateFile($request, 'document', $id);
+                } catch (ValidationException $error) {
+                    throw ValidationException::withMessages(['file' => 'Document details were saved, but attachment removal was not confirmed. Refresh the document and retry removal.']);
+                }
+            }
         }
 
         $destination = self::BASE.'/maintenance-documents';
@@ -116,12 +121,20 @@ final class MaintenanceDocumentPageController extends OperationsFrontendControll
 
         $v = $request->validate(['document_ids' => ['required', 'array', 'min:1', 'max:100'], 'document_ids.*' => ['required', 'integer', 'min:1', 'distinct']]);
         $ids = array_map('intval', $v['document_ids']);
-        abort_unless($this->documentQuery($actor)->whereIn('d.id', $ids)->count() === count($ids), 404);
+        $documents = $this->documentQuery($actor)->whereIn('d.id', $ids)->get(['d.id', 'd.file_path']);
+        abort_unless($documents->count() === count($ids), 404);
+        // Preflight EVERY file before deleting the first record. This avoids
+        // predictable partial batches when a later object is not deletable.
+        foreach ($documents as $document) {
+            if ($document->file_path !== '') {
+                $this->fileDeletions->preflight($request->user(), 'document', (int) $document->id, (string) $document->file_path);
+            }
+        }
         foreach ($ids as $id) {
             try {
                 $this->fileDeletions->deleteDocumentRecord($request->user(), $id);
-            } catch (HttpExceptionInterface $error) {
-                throw ValidationException::withMessages(['file' => 'Document deletion unavailable or not confirmed. Refresh and review remaining records.']);
+            } catch (ValidationException|HttpExceptionInterface $error) {
+                throw ValidationException::withMessages(['file' => 'Document batch deletion was interrupted. Some records may already have been removed. Refresh and review what remains before retrying.']);
             }
         }
 
