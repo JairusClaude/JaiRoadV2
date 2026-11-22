@@ -84,3 +84,48 @@
 html.dark .um-dialog,html.dark .um-dialog-actions{background:var(--popover);color:var(--popover-foreground)}
 html.dark .um-dialog :is(.um-field,.um-dialog-head p,.um-field small){color:var(--popover-foreground)}
 html.dark .um-dialog .um-input{background:var(--background);color:var(--foreground);border-color:var(--border)}
+
+
+/* SuperAdmin theme override for the canonical User Management page.
+   Role badges remain role-coded; workspace controls use SuperAdmin purple. */
+body:has(.jr-superadmin-workspace) .um-workspace {
+  --um-role-accent:#51269b;
+  --um-role-accent-hover:#38166b;
+  --um-role-accent-soft:#eee5ff;
+  --um-role-accent-ink:#38166b;
+}
+body:has(.jr-superadmin-workspace) .um-workspace .um-stat-icon {
+  color:#51269b;
+  background:#eee5ff;
+}
+body:has(.jr-superadmin-workspace) .um-workspace .um-primary {
+  background:#51269b;
+  color:#fff;
+  border-color:#51269b;
+  box-shadow:0 2px 6px #51269b2e;
+}
+body:has(.jr-superadmin-workspace) .um-workspace .um-primary:hover:not(:disabled) {
+  background:#38166b;
+  border-color:#38166b;
+}
+body:has(.jr-superadmin-workspace) .um-workspace .um-tabs button[aria-pressed=true] {
+  color:#51269b;
+  border-color:#51269b;
+}
+body:has(.jr-superadmin-workspace) .um-workspace .um-tabs button[aria-pressed=true] span {
+  color:#38166b;
+  background:#eee5ff;
+}
+body:has(.jr-superadmin-workspace) .um-workspace .um-avatar {
+  color:#51269b;
+  background:#eee5ff;
+}
+body:has(.jr-superadmin-workspace) .um-workspace :is(.um-search:focus-within,.um-input:focus,.um-filter:focus) {
+  outline:2px solid #a78bfa;
+  outline-offset:1px;
+  border-color:#51269b;
+}
+body:has(.jr-superadmin-workspace) .um-workspace :is(.um-dialog button:focus-visible,.um-password-toggle:focus-visible) {
+  outline:2px solid #a78bfa;
+  outline-offset:2px;
+}
