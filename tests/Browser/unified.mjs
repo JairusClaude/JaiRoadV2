@@ -799,6 +799,30 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     console.log(
         'PASS: all three visible monthly sort modes, reporting-year selection, accurate URLs, and filter/order persistence after reload.',
     );
+
+    // SuperAdmin theme and breadcrumb regressions seen in the deployed UI.
+    await superadmin.goto(`${ui}/monthly-updates`);
+    const purpleProgress = superadmin
+        .locator('.jr-monthly-progress-track > span')
+        .first();
+    await purpleProgress.waitFor();
+    assert.match(
+        await purpleProgress.evaluate(
+            (bar) => getComputedStyle(bar).backgroundImage,
+        ),
+        /rgb\(81, 38, 155\)/,
+    );
+    await superadmin.goto(`${base}/dd-phase3/users`);
+    await superadmin.getByRole('heading', {
+        name: 'User Management',
+        exact: true,
+    }).waitFor();
+    assert.equal(
+        await superadmin.locator('.jr-header-page-title').innerText(),
+        'User Management',
+    );
+    console.log('PASS: SuperAdmin monthly progress is purple and User Management breadcrumb is correct.');
+
     // Both confirmations use the unchanged server-side impact service and its signed snapshot.
     const openRoadMunicipalityChange = async () => {
         // The reviewed municipality change flow lives in the canonical DD
