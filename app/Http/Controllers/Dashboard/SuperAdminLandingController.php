@@ -92,7 +92,6 @@ final class SuperAdminLandingController extends Controller
                 'createdAt' => (string) $row->created_at,
             ])->all();
 
-
         // Compact, genuine monthly-report preview; no stored file paths or
         // private media metadata are exposed to the dashboard.
         $recentMonthlyUpdates = DB::table('jairoads_next.monthly_updates as mu')

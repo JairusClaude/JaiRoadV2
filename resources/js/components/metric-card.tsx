@@ -33,7 +33,10 @@ export function MetricCard({
                 <p className="mt-1 text-xs text-[#64748B]">{subtitle}</p>
             )}
             {icon && (
-                <span className="jr-metric-icon absolute top-4 right-4 flex size-10 items-center justify-center rounded-xl bg-[#F0E8FF] text-[#51269B]" aria-hidden="true">
+                <span
+                    className="jr-metric-icon absolute top-4 right-4 flex size-10 items-center justify-center rounded-xl bg-[#F0E8FF] text-[#51269B]"
+                    aria-hidden="true"
+                >
                     {icon}
                 </span>
             )}

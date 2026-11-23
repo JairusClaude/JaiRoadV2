@@ -156,8 +156,8 @@ export function DdDashboardAnalytics({
                                 Monthly progress reports
                             </h3>
                             <p className="mt-1 text-xs text-slate-500">
-                                Actual monthly-update counts, last six calendar months ·{' '}
-                                {data.scope}
+                                Actual monthly-update counts, last six calendar
+                                months · {data.scope}
                             </p>
                         </div>
                         <span className="jr-trend-total rounded-xl bg-[#F2EAFF] px-3 py-2 text-xs font-semibold text-[#51269B]">
@@ -197,17 +197,21 @@ export function DdDashboardAnalytics({
                                     />
                                 </div>
                                 <span className="w-full text-center text-[10px] text-slate-500">
-                                    {new Date(`${item.month}-01T00:00:00Z`).toLocaleDateString(
-                                        undefined,
-                                        { month: 'short', year: '2-digit', timeZone: 'UTC' },
-                                    )}
+                                    {new Date(
+                                        `${item.month}-01T00:00:00Z`,
+                                    ).toLocaleDateString(undefined, {
+                                        month: 'short',
+                                        year: '2-digit',
+                                        timeZone: 'UTC',
+                                    })}
                                 </span>
                             </div>
                         ))}
                     </div>
                     {trendTotal === 0 && (
                         <p className="mt-3 rounded-xl bg-[#F8F5FE] px-4 py-3 text-center text-xs text-slate-600">
-                            No monthly progress reports were submitted during this six-month period.
+                            No monthly progress reports were submitted during
+                            this six-month period.
                         </p>
                     )}
                 </div>

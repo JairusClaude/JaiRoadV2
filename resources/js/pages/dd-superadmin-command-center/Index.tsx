@@ -1,11 +1,21 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowRight, CalendarDays, ClipboardCheck, Crown, FileText, FolderKanban, RefreshCw, ShieldCheck, UsersRound } from 'lucide-react';
+import {
+    ArrowRight,
+    CalendarDays,
+    ClipboardCheck,
+    Crown,
+    FileText,
+    FolderKanban,
+    RefreshCw,
+    ShieldCheck,
+    UsersRound,
+} from 'lucide-react';
 import { useState } from 'react';
 import { DdDashboardAnalytics } from '@/components/dd-dashboard-analytics';
 import type { DdDashboardSummary } from '@/components/dd-dashboard-analytics';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
-import { MonthlyProgress } from '@/components/monthly-updates/monthly-progress';
 import { MetricCard } from '@/components/metric-card';
+import { MonthlyProgress } from '@/components/monthly-updates/monthly-progress';
 import { Button } from '@/components/ui/button';
 import '../../../css/maintenance-projects-exploration.css';
 
@@ -183,14 +193,17 @@ export default function DdSuperAdminCommandCenter({
                                 </div>
                                 <ol className="jr-command-activity mt-4 max-h-72 space-y-0 overflow-y-auto">
                                     {recentEvents.map((event) => (
-                                        <li key={event.id} className="border-l-2 border-[#E6D9FB] py-2.5 pl-4">
+                                        <li
+                                            key={event.id}
+                                            className="border-l-2 border-[#E6D9FB] py-2.5 pl-4"
+                                        >
                                             <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-800">
                                                 <span className="rounded-md bg-[#EEE6FF] px-2 py-0.5 text-xs font-semibold text-[#51269B]">
                                                     {event.action}
                                                 </span>
                                                 <span>{event.entity}</span>
                                             </div>
-                                            <p className="mt-1 break-words text-xs text-slate-500">
+                                            <p className="mt-1 text-xs break-words text-slate-500">
                                                 By {event.actor}
                                             </p>
                                             <time className="mt-1 block text-xs text-slate-400">
@@ -200,7 +213,8 @@ export default function DdSuperAdminCommandCenter({
                                     ))}
                                     {recentEvents.length === 0 && (
                                         <li className="rounded-xl bg-slate-50 px-4 py-5 text-sm text-slate-500">
-                                            No recent system activity to display.
+                                            No recent system activity to
+                                            display.
                                         </li>
                                     )}
                                 </ol>
@@ -237,7 +251,8 @@ export default function DdSuperAdminCommandCenter({
                                                         {update.projectTitle}
                                                     </p>
                                                     <p className="mt-1 text-xs text-slate-500">
-                                                        {update.period} · {update.updateMonth}
+                                                        {update.period} ·{' '}
+                                                        {update.updateMonth}
                                                     </p>
                                                 </div>
                                             </div>
@@ -251,7 +266,8 @@ export default function DdSuperAdminCommandCenter({
                                     ))}
                                     {recentMonthlyUpdates.length === 0 && (
                                         <p className="rounded-xl bg-slate-50 px-4 py-5 text-sm text-slate-500">
-                                            No monthly progress reports submitted yet.
+                                            No monthly progress reports
+                                            submitted yet.
                                         </p>
                                     )}
                                 </div>
@@ -269,14 +285,32 @@ export default function DdSuperAdminCommandCenter({
                                     Quick access to authorized system modules
                                 </p>
                             </div>
-                            <ShieldCheck className="size-5 text-[#51269B]" aria-hidden="true" />
+                            <ShieldCheck
+                                className="size-5 text-[#51269B]"
+                                aria-hidden="true"
+                            />
                         </div>
-                        <nav className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4" aria-label="Administrative modules">
+                        <nav
+                            className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4"
+                            aria-label="Administrative modules"
+                        >
                             {[
-                                ['Maintenance Projects', '/dd-phase3/ui/maintenance-projects'],
-                                ['Road Coverages', '/dd-phase3/ui/road-coverages'],
-                                ['Monthly Updates', '/dd-phase3/ui/monthly-updates'],
-                                ['Maintenance Documents', '/dd-phase3/ui/maintenance-documents'],
+                                [
+                                    'Maintenance Projects',
+                                    '/dd-phase3/ui/maintenance-projects',
+                                ],
+                                [
+                                    'Road Coverages',
+                                    '/dd-phase3/ui/road-coverages',
+                                ],
+                                [
+                                    'Monthly Updates',
+                                    '/dd-phase3/ui/monthly-updates',
+                                ],
+                                [
+                                    'Maintenance Documents',
+                                    '/dd-phase3/ui/maintenance-documents',
+                                ],
                                 ['LGU Directory', '/dd-phase3/ui/lgus'],
                                 ['User Management', '/dd-phase3/users'],
                                 ['Audit Log', '/dd-phase3/audit-logs'],
@@ -288,7 +322,10 @@ export default function DdSuperAdminCommandCenter({
                                     className="jr-command-quick-link flex min-w-0 items-center justify-between gap-2 rounded-xl border border-[#E9E0F6] bg-[#FCFAFF] px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-[#F4EDFF]"
                                 >
                                     <span>{name}</span>
-                                    <ArrowRight className="size-4 shrink-0 text-[#6B46AF]" aria-hidden="true" />
+                                    <ArrowRight
+                                        className="size-4 shrink-0 text-[#6B46AF]"
+                                        aria-hidden="true"
+                                    />
                                 </Link>
                             ))}
                         </nav>
