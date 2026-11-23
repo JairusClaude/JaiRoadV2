@@ -1,0 +1,30 @@
+name: JaiROADS temporary design formatting review
+on:
+  push:
+    branches: ['merged-system']
+permissions:
+  contents: read
+jobs:
+  format-review:
+    if: contains(github.event.head_commit.message, '[format-review]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with: { persist-credentials: false }
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with: { php-version: '8.4', extensions: 'pdo_pgsql, pdo_sqlite, mbstring', tools: 'composer:v2', coverage: none }
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with: { node-version: '22', cache: npm }
+      - run: |
+          composer install --no-interaction --prefer-dist
+          npm ci
+      - name: Generate exact tracked-source formatting for review
+        shell: bash
+        run: |
+          npx prettier --write resources/css/jairoads-superadmin-workspace.css resources/js/components/dd-dashboard-analytics.tsx resources/js/components/metric-card.tsx resources/js/pages/dd-superadmin-command-center/Index.tsx
+          php vendor/bin/pint app/Http/Controllers/Dashboard/SuperAdminLandingController.php tests/Quarterly/SuperAdminDashboardDesignTest.php
+          for file in resources/css/jairoads-superadmin-workspace.css resources/js/components/dd-dashboard-analytics.tsx resources/js/components/metric-card.tsx resources/js/pages/dd-superadmin-command-center/Index.tsx app/Http/Controllers/Dashboard/SuperAdminLandingController.php tests/Quarterly/SuperAdminDashboardDesignTest.php; do
+            printf 'FORMATTED_SOURCE_BEGIN %s\n' "$file"
+            base64 -w 0 "$file"
+            printf '\nFORMATTED_SOURCE_END %s\n' "$file"
+          done
