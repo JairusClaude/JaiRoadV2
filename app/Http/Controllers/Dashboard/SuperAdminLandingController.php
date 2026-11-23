@@ -92,12 +92,29 @@ final class SuperAdminLandingController extends Controller
                 'createdAt' => (string) $row->created_at,
             ])->all();
 
+
+        // Compact, genuine monthly-report preview; no stored file paths or
+        // private media metadata are exposed to the dashboard.
+        $recentMonthlyUpdates = DB::table('jairoads_next.monthly_updates as mu')
+            ->leftJoin('jairoads_next.maintenance_records as mr', 'mr.id', '=', 'mu.maintenance_id')
+            ->leftJoin('jairoads_next.maintenance_projects as p', 'p.id', '=', 'mr.project_id')
+            ->orderByDesc('mu.id')->limit(3)
+            ->get(['mu.id', 'mu.update_month', 'mu.progress_percentage', 'mr.quarter', 'mr.maintenance_year', 'p.project_title'])
+            ->map(static fn ($row): array => [
+                'id' => (int) $row->id,
+                'projectTitle' => (string) ($row->project_title ?: 'Unlinked maintenance project'),
+                'updateMonth' => (string) $row->update_month,
+                'period' => $row->quarter === null ? 'Historical record' : (string) $row->quarter.' '.(string) $row->maintenance_year,
+                'progress' => max(0, min(100, (float) ($row->progress_percentage ?? 0))),
+            ])->all();
+
         return Inertia::render('dd-superadmin-command-center/Index', [
             'username' => (string) $account->username,
             'counts' => $counts,
             'analytics' => app(DashboardAnalytics::class)->summary($identity),
             'privilegedAccounts' => $privilegedAccounts,
             'recentEvents' => $recentEvents,
+            'recentMonthlyUpdates' => $recentMonthlyUpdates,
             'canonicalFrontend' => true,
             'jairoadsIdentity' => ['role' => 'superadmin'],
             'navigationSection' => 'dashboard',

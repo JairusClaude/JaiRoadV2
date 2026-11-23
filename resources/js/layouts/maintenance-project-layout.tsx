@@ -171,7 +171,9 @@ export function MaintenanceProjectShell({
             ? 'Audit Log'
             : undefined) ??
         (path.startsWith('/user-management') ||
-        path.startsWith('/user-accounts')
+        path.startsWith('/user-accounts') ||
+        path.startsWith('/dd-phase3/users') ||
+        path === '/users'
             ? 'User Management'
             : undefined) ??
         (typeof page.props.navigationTitle === 'string' && alternativeNavigation

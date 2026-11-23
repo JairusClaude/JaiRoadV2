@@ -660,3 +660,125 @@ html.dark .jr-superadmin-workspace .jr-superadmin-dashboard .bg-amber-100 {
     background: #432868;
     color: #e9dfff;
 }
+
+
+/* SuperAdmin command center: clearer hierarchy, compact glanceable analytics,
+   and consistent purple progress bars. No metrics are calculated in CSS. */
+.jr-app.jr-superadmin-workspace .jr-superadmin-dashboard .jr-metric-card {
+    padding-right: 64px;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 5px 18px #38166b10;
+    transition: transform 160ms ease, box-shadow 160ms ease;
+}
+.jr-app.jr-superadmin-workspace .jr-superadmin-dashboard .jr-metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 9px 24px #38166b18;
+}
+.jr-app.jr-superadmin-workspace .jr-superadmin-dashboard .jr-metric-icon {
+    background: #f0e8ff;
+    color: #51269b;
+}
+.jr-app.jr-superadmin-workspace .jr-superadmin-dashboard .jr-command-overview {
+    align-items: start;
+}
+.jr-app.jr-superadmin-workspace .jr-superadmin-dashboard .jr-dashboard-analytics {
+    min-width: 0;
+}
+.jr-app.jr-superadmin-workspace .jr-superadmin-dashboard .jr-dashboard-analytics > div:first-child {
+    border: 1px solid #e6dcf4;
+    border-radius: 18px;
+    background: white;
+    padding: 16px;
+}
+.jr-app.jr-superadmin-workspace .jr-superadmin-dashboard .jr-dashboard-analytics-metrics > div {
+    min-width: 0;
+    border-color: #e8ddf7;
+    border-radius: 15px;
+    padding: 15px;
+}
+.jr-app.jr-superadmin-workspace .jr-superadmin-dashboard .jr-dashboard-analytics-metrics > div p {
+    font-variant-numeric: tabular-nums;
+}
+.jr-app.jr-superadmin-workspace .jr-superadmin-dashboard .jr-dashboard-trend > div > div {
+    background: repeating-linear-gradient(to top, #f1eafa 0, #f1eafa 1px, transparent 1px, transparent 25%);
+}
+.jr-app.jr-superadmin-workspace .jr-superadmin-dashboard .jr-trend-total {
+    white-space: nowrap;
+}
+.jr-app.jr-superadmin-workspace .jr-superadmin-dashboard .jr-command-panel {
+    border-color: #e6dcf4;
+    box-shadow: 0 5px 18px #38166b0c;
+}
+.jr-app.jr-superadmin-workspace .jr-superadmin-dashboard .jr-command-activity li {
+    position: relative;
+}
+.jr-app.jr-superadmin-workspace .jr-superadmin-dashboard .jr-command-activity li::before {
+    content: '';
+    position: absolute;
+    top: 19px;
+    left: -6px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #7c3aed;
+    box-shadow: 0 0 0 3px #efe6ff;
+}
+.jr-app.jr-superadmin-workspace .jr-monthly-progress {
+    gap: 12px;
+}
+.jr-app.jr-superadmin-workspace .jr-monthly-progress > span {
+    color: #51269b;
+    font-size: 13px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.jr-app.jr-superadmin-workspace .jr-monthly-progress-track {
+    height: 8px;
+    background: #eadffc;
+}
+.jr-app.jr-superadmin-workspace .jr-monthly-progress-track > span {
+    background: linear-gradient(90deg, #51269b, #7c3aed);
+    transition: width 220ms ease;
+}
+.jr-app.jr-superadmin-workspace .jr-monthly-directory .jr-table-wrap {
+    border-color: #e6dcf4;
+    box-shadow: 0 3px 14px #38166b0a;
+}
+.jr-app.jr-superadmin-workspace .jr-monthly-directory .jr-monthly-table th {
+    background: #f4edff;
+    color: #493177;
+}
+.jr-app.jr-superadmin-workspace .jr-monthly-directory .jr-monthly-table tbody tr:hover {
+    background: #faf7ff;
+}
+.jr-app.jr-superadmin-workspace .jr-superadmin-dashboard .jr-command-quick-link:hover {
+    border-color: #bd9fe9;
+}
+@media (max-width: 1279px) {
+    .jr-app.jr-superadmin-workspace .jr-superadmin-dashboard .jr-command-rail {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+    .jr-app.jr-superadmin-workspace .jr-superadmin-dashboard .jr-command-rail > section {
+        min-width: 0;
+    }
+}
+@media (max-width: 767px) {
+    .jr-app.jr-superadmin-workspace .jr-superadmin-dashboard .jr-command-rail {
+        display: block;
+    }
+    .jr-app.jr-superadmin-workspace .jr-superadmin-dashboard .jr-command-rail > section + section {
+        margin-top: 16px;
+    }
+    .jr-app.jr-superadmin-workspace .jr-superadmin-dashboard .jr-metric-card {
+        padding-right: 58px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .jr-app.jr-superadmin-workspace .jr-superadmin-dashboard .jr-metric-card,
+    .jr-app.jr-superadmin-workspace .jr-monthly-progress-track > span {
+        transition: none;
+    }
+}

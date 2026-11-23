@@ -63,6 +63,7 @@ export function DdDashboardAnalytics({
     activityReplacement?: ReactNode;
 }) {
     const max = Math.max(1, ...data.trend.map((item) => item.count));
+    const trendTotal = data.trend.reduce((sum, item) => sum + item.count, 0);
     const cards = [
         {
             label: 'Maintenance projects',
@@ -149,13 +150,23 @@ export function DdDashboardAnalytics({
                 className={`grid gap-5${showActivity || activityReplacement ? 'xl:grid-cols-[1.15fr_.85fr]' : ''}`}
             >
                 <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                    <h3 className="text-base font-bold text-slate-900">
-                        Monthly progress reports
-                    </h3>
-                    <p className="mt-1 text-xs text-slate-500">
-                        Actual monthly-update counts, last six calendar months ·{' '}
-                        {data.scope}
-                    </p>
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <h3 className="text-base font-bold text-slate-900">
+                                Monthly progress reports
+                            </h3>
+                            <p className="mt-1 text-xs text-slate-500">
+                                Actual monthly-update counts, last six calendar months ·{' '}
+                                {data.scope}
+                            </p>
+                        </div>
+                        <span className="jr-trend-total rounded-xl bg-[#F2EAFF] px-3 py-2 text-xs font-semibold text-[#51269B]">
+                            <strong className="mr-1 text-lg tabular-nums">
+                                {trendTotal.toLocaleString()}
+                            </strong>
+                            reports in 6 months
+                        </span>
+                    </div>
                     <div
                         className="jr-dashboard-trend mt-5 grid h-44 grid-cols-6 items-end gap-2 sm:gap-4"
                         role="img"
@@ -185,16 +196,20 @@ export function DdDashboardAnalytics({
                                         }}
                                     />
                                 </div>
-                                <span className="truncate text-[10px] text-slate-500">
-                                    {item.month.slice(5)}
+                                <span className="w-full text-center text-[10px] text-slate-500">
+                                    {new Date(`${item.month}-01T00:00:00Z`).toLocaleDateString(
+                                        undefined,
+                                        { month: 'short', year: '2-digit', timeZone: 'UTC' },
+                                    )}
                                 </span>
                             </div>
                         ))}
                     </div>
-                    <p className="mt-2 text-center text-[11px] text-slate-500">
-                        Month number (year/month details in accessible chart
-                        description)
-                    </p>
+                    {trendTotal === 0 && (
+                        <p className="mt-3 rounded-xl bg-[#F8F5FE] px-4 py-3 text-center text-xs text-slate-600">
+                            No monthly progress reports were submitted during this six-month period.
+                        </p>
+                    )}
                 </div>
                 {showActivity && (
                     <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">

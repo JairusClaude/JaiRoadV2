@@ -1,9 +1,10 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowRight, Crown, RefreshCw, ShieldCheck } from 'lucide-react';
+import { ArrowRight, CalendarDays, ClipboardCheck, Crown, FileText, FolderKanban, RefreshCw, ShieldCheck, UsersRound } from 'lucide-react';
 import { useState } from 'react';
 import { DdDashboardAnalytics } from '@/components/dd-dashboard-analytics';
 import type { DdDashboardSummary } from '@/components/dd-dashboard-analytics';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
+import { MonthlyProgress } from '@/components/monthly-updates/monthly-progress';
 import { MetricCard } from '@/components/metric-card';
 import { Button } from '@/components/ui/button';
 import '../../../css/maintenance-projects-exploration.css';
@@ -47,12 +48,21 @@ type AuditEvent = {
     createdAt: string;
 };
 
+type MonthlyPreview = {
+    id: number;
+    projectTitle: string;
+    updateMonth: string;
+    period: string;
+    progress: number;
+};
+
 type Props = {
     username: string;
     analytics: DdDashboardSummary;
     counts: Counts;
     privilegedAccounts: PrivilegedAccount[];
     recentEvents: AuditEvent[];
+    recentMonthlyUpdates: MonthlyPreview[];
     supportedActions: {
         createAdmin: boolean;
         roleChange: boolean;
@@ -70,6 +80,7 @@ export default function DdSuperAdminCommandCenter({
     analytics,
     privilegedAccounts,
     recentEvents,
+    recentMonthlyUpdates,
 }: Props) {
     const [refreshing, setRefreshing] = useState(false);
 
@@ -119,124 +130,169 @@ export default function DdSuperAdminCommandCenter({
                             value={counts.activeAccounts}
                             subtitle={`${format(counts.inactiveAccounts)} inactive retained`}
                             highlight={true}
+                            icon={<UsersRound className="size-5" />}
                         />
                         <MetricCard
                             title="Privileged Accounts"
                             value={counts.superadmins + counts.admins}
                             subtitle={`${counts.superadmins} SuperAdmin · ${counts.admins} Admin`}
+                            icon={<ShieldCheck className="size-5" />}
                         />
                         <MetricCard
                             title="Active Assignments"
                             value={counts.activeAssignments}
                             subtitle={`${format(counts.lguAssignments)} total LGU links`}
+                            icon={<ClipboardCheck className="size-5" />}
                         />
                         <MetricCard
                             title="Maintenance Records"
                             value={counts.maintenanceRecords}
                             subtitle={`${format(counts.projects)} active projects`}
+                            icon={<FolderKanban className="size-5" />}
                         />
                     </section>
 
-                    {/* System Analytics */}
-                    <DdDashboardAnalytics data={analytics} />
-
-                    {/* Operational Access & Privileged Governance */}
-                    <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-                        <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h2 className="text-lg font-bold text-slate-900">
-                                        Administrative Operations
-                                    </h2>
-                                    <p className="mt-1 text-sm text-slate-500">
-                                        Quick access to authorized system
-                                        modules
-                                    </p>
-                                </div>
-                                <ShieldCheck className="h-6 w-6 text-amber-700" />
-                            </div>
-                            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                                {[
-                                    [
-                                        'Maintenance Projects',
-                                        '/dd-phase3/ui/maintenance-projects',
-                                    ],
-                                    [
-                                        'Road Coverages',
-                                        '/dd-phase3/ui/road-coverages',
-                                    ],
-                                    [
-                                        'Monthly Updates',
-                                        '/dd-phase3/ui/monthly-updates',
-                                    ],
-                                    [
-                                        'Maintenance Documents',
-                                        '/dd-phase3/ui/maintenance-documents',
-                                    ],
-                                    ['LGU Directory', '/dd-phase3/ui/lgus'],
-                                    ['User Management', '/user-management'],
-                                    ['Audit Log', '/dd-phase3/audit-logs'],
-                                    ['Settings', '/dd-phase3/settings'],
-                                ].map(([name, url]) => (
-                                    <Link
-                                        key={name}
-                                        href={url}
-                                        className="flex items-center justify-between rounded-xl border border-slate-200 bg-[#FCFAFF] px-4 py-3 text-sm font-semibold text-slate-800 transition hover:border-amber-400 hover:bg-[#F4EDFF]"
-                                    >
-                                        <span>{name}</span>
-                                        <ArrowRight className="h-4 w-4 text-slate-400" />
-                                    </Link>
-                                ))}
-                            </div>
-                        </section>
-
-                        <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h2 className="text-lg font-bold text-slate-900">
-                                        Recent Activity
-                                    </h2>
-                                    <p className="mt-1 text-sm text-slate-500">
-                                        Latest system operations
-                                    </p>
-                                </div>
-                                <Link
-                                    href="/dd-phase3/audit-logs"
-                                    className="text-xs font-semibold text-amber-800 hover:underline"
-                                >
-                                    Full audit log
-                                </Link>
-                            </div>
-                            <div className="mt-5 divide-y divide-slate-100">
-                                {recentEvents.map((e) => (
-                                    <div
-                                        key={e.id}
-                                        className="flex min-w-0 flex-wrap items-start justify-between gap-3 py-3 sm:flex-nowrap sm:items-center"
-                                    >
-                                        <div>
-                                            <div className="text-sm font-semibold text-slate-800">
-                                                <span className="mr-1.5 inline-block rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">
-                                                    {e.action}
-                                                </span>
-                                                {e.entity}
-                                            </div>
-                                            <div className="mt-1 min-w-0 text-xs break-words text-slate-500">
-                                                By {e.actor}
-                                            </div>
-                                        </div>
-                                        <time className="min-w-0 text-right text-xs break-words text-slate-400 sm:shrink-0">
-                                            {e.createdAt}
-                                        </time>
+                    {/* Real counts and reporting chart, with a concise operations rail. */}
+                    <div className="jr-command-overview grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(290px,0.9fr)]">
+                        <DdDashboardAnalytics
+                            data={analytics}
+                            compact
+                            showActivity={false}
+                        />
+                        <aside
+                            className="jr-command-rail min-w-0 space-y-5"
+                            aria-label="Recent operations and reports"
+                        >
+                            <section className="jr-command-panel rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+                                            <ShieldCheck className="size-5 text-[#51269B]" />
+                                            Recent Activity
+                                        </h2>
+                                        <p className="mt-1 text-sm text-slate-500">
+                                            Latest recorded system operations
+                                        </p>
                                     </div>
-                                ))}
-                                {recentEvents.length === 0 && (
-                                    <p className="py-6 text-center text-sm text-slate-500">
-                                        No recent audit events available.
-                                    </p>
-                                )}
-                            </div>
-                        </section>
+                                    <Link
+                                        href="/dd-phase3/audit-logs"
+                                        className="shrink-0 text-xs font-semibold text-[#51269B] hover:underline"
+                                    >
+                                        View audit log
+                                    </Link>
+                                </div>
+                                <ol className="jr-command-activity mt-4 max-h-72 space-y-0 overflow-y-auto">
+                                    {recentEvents.map((event) => (
+                                        <li key={event.id} className="border-l-2 border-[#E6D9FB] py-2.5 pl-4">
+                                            <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-800">
+                                                <span className="rounded-md bg-[#EEE6FF] px-2 py-0.5 text-xs font-semibold text-[#51269B]">
+                                                    {event.action}
+                                                </span>
+                                                <span>{event.entity}</span>
+                                            </div>
+                                            <p className="mt-1 break-words text-xs text-slate-500">
+                                                By {event.actor}
+                                            </p>
+                                            <time className="mt-1 block text-xs text-slate-400">
+                                                {event.createdAt}
+                                            </time>
+                                        </li>
+                                    ))}
+                                    {recentEvents.length === 0 && (
+                                        <li className="rounded-xl bg-slate-50 px-4 py-5 text-sm text-slate-500">
+                                            No recent system activity to display.
+                                        </li>
+                                    )}
+                                </ol>
+                            </section>
+                            <section className="jr-command-panel rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+                                            <CalendarDays className="size-5 text-[#51269B]" />
+                                            Monthly Updates
+                                        </h2>
+                                        <p className="mt-1 text-sm text-slate-500">
+                                            Latest maintenance progress reports
+                                        </p>
+                                    </div>
+                                    <Link
+                                        href="/dd-phase3/ui/monthly-updates"
+                                        className="shrink-0 text-xs font-semibold text-[#51269B] hover:underline"
+                                    >
+                                        View all
+                                    </Link>
+                                </div>
+                                <div className="mt-4 space-y-3">
+                                    {recentMonthlyUpdates.map((update) => (
+                                        <Link
+                                            key={update.id}
+                                            href={`/dd-phase3/ui/monthly-updates/${update.id}`}
+                                            className="jr-command-update block rounded-xl border border-[#F0E9FB] p-3 transition hover:bg-[#F8F3FF]"
+                                        >
+                                            <div className="flex min-w-0 items-start gap-3">
+                                                <FileText className="mt-0.5 size-4 shrink-0 text-[#51269B]" />
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="line-clamp-2 text-xs font-semibold text-slate-800">
+                                                        {update.projectTitle}
+                                                    </p>
+                                                    <p className="mt-1 text-xs text-slate-500">
+                                                        {update.period} · {update.updateMonth}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="mt-3">
+                                                <MonthlyProgress
+                                                    value={update.progress}
+                                                    label={`Progress for ${update.projectTitle}`}
+                                                />
+                                            </div>
+                                        </Link>
+                                    ))}
+                                    {recentMonthlyUpdates.length === 0 && (
+                                        <p className="rounded-xl bg-slate-50 px-4 py-5 text-sm text-slate-500">
+                                            No monthly progress reports submitted yet.
+                                        </p>
+                                    )}
+                                </div>
+                            </section>
+                        </aside>
                     </div>
+
+                    <section className="jr-command-panel rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                                <h2 className="text-lg font-bold text-slate-900">
+                                    Administrative Operations
+                                </h2>
+                                <p className="mt-1 text-sm text-slate-500">
+                                    Quick access to authorized system modules
+                                </p>
+                            </div>
+                            <ShieldCheck className="size-5 text-[#51269B]" aria-hidden="true" />
+                        </div>
+                        <nav className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4" aria-label="Administrative modules">
+                            {[
+                                ['Maintenance Projects', '/dd-phase3/ui/maintenance-projects'],
+                                ['Road Coverages', '/dd-phase3/ui/road-coverages'],
+                                ['Monthly Updates', '/dd-phase3/ui/monthly-updates'],
+                                ['Maintenance Documents', '/dd-phase3/ui/maintenance-documents'],
+                                ['LGU Directory', '/dd-phase3/ui/lgus'],
+                                ['User Management', '/dd-phase3/users'],
+                                ['Audit Log', '/dd-phase3/audit-logs'],
+                                ['Settings', '/dd-phase3/settings'],
+                            ].map(([name, url]) => (
+                                <Link
+                                    key={name}
+                                    href={url}
+                                    className="jr-command-quick-link flex min-w-0 items-center justify-between gap-2 rounded-xl border border-[#E9E0F6] bg-[#FCFAFF] px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-[#F4EDFF]"
+                                >
+                                    <span>{name}</span>
+                                    <ArrowRight className="size-4 shrink-0 text-[#6B46AF]" aria-hidden="true" />
+                                </Link>
+                            ))}
+                        </nav>
+                    </section>
 
                     {/* Privileged Accounts Table */}
                     <section className="min-w-0 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
