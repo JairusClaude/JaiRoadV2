@@ -72,6 +72,7 @@ export default function Index({
     lguReviewNotice?: string;
 }) {
     const page = usePage();
+    const isViewer = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role?.toLowerCase() === 'viewer';
     const enabled = true;
     const deletion = useLguDeletion(lgus.data, lguPermissions.can_delete);
     const [search, setSearch] = useState(filters.search);
@@ -209,7 +210,7 @@ export default function Index({
                             Browse and manage registered local government units.
                         </p>
                     </div>
-                    {lguPermissions.can_edit && (
+                    {!isViewer && lguPermissions.can_edit && (
 <Button
                         className="jr-primary"
                         disabled={!enabled || !lguPermissions.can_edit}
@@ -343,7 +344,7 @@ export default function Index({
                     total={lgus.total}
                     singular="LGU"
                     plural="LGUs"
-                    canDelete={lguPermissions.can_delete}
+                    canDelete={!isViewer && lguPermissions.can_delete}
                     disabled={busy || bulkDeleting}
                     onSelect={() => setSelecting(true)}
                     onCancel={clearSelection}
@@ -475,7 +476,7 @@ export default function Index({
                                             event.stopPropagation()
                                         }
                                     >
-                                        {lguPermissions.can_edit || lguPermissions.can_delete && (
+                                        {!isViewer && (lguPermissions.can_edit || lguPermissions.can_delete) && (
 <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button
