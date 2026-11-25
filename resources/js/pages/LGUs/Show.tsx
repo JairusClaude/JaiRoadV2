@@ -47,7 +47,8 @@ export default function Show({
                     </div>
                     <div className="jr-lgu-detail-actions">
                         <div className="jr-header-actions">
-                            <Button
+                            {enabled && canEdit && (
+<Button
                                 variant="outline"
                                 disabled={!enabled || !canEdit}
                                 onClick={() =>
@@ -64,6 +65,7 @@ export default function Show({
                                 <Pencil />
                                 Edit LGU
                             </Button>
+)}
                             {enabled && canDelete && (
                                 <Button
                                     className="jr-danger"
