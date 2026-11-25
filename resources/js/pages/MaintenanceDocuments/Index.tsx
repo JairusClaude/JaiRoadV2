@@ -35,9 +35,10 @@ export default function Index({
     filters,
 }: DocumentDirectoryProps) {
     const page = usePage();
-    const enabled =
+    const isViewer = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role?.toLowerCase() === 'viewer';
+    const enabled = !isViewer && (
         page.props.previewOnly === true ||
-        (page.props.canonicalFrontend === true && page.props.canWrite === true);
+        (page.props.canonicalFrontend === true && page.props.canWrite === true));
     const deletion = useDocumentDeletion();
     const [search, setSearch] = useState(filters.search);
     const [selecting, setSelecting] = useState(false);
