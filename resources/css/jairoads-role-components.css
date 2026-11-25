@@ -573,3 +573,35 @@ html.dark body:has(.jr-viewer-workspace) .jr-metric-card .jr-metric-icon {
     background-color: #203b65;
     color: #93c5fd;
 }
+
+/* Consistent role-owned UI accents. Semantic error/success/status colors stay distinct. */
+body:has(.jr-superadmin-workspace) { --jr-directory-header-bg: #f4edff; --jr-directory-header-fg: #56416e; --jr-display-accent: #51269b; --jr-display-soft: #eee5ff; }
+body:has(.jr-admin-workspace) { --jr-directory-header-bg: #fde7ea; --jr-directory-header-fg: #800d18; --jr-display-accent: #c8293d; --jr-display-soft: #fde7ea; }
+body:has(.jr-engineer-workspace) { --jr-directory-header-bg: #fff0e3; --jr-directory-header-fg: #692b0b; --jr-display-accent: #a94b0c; --jr-display-soft: #fff0e3; }
+body:has(.jr-viewer-workspace) { --jr-directory-header-bg: #e6efff; --jr-directory-header-fg: #0b2e66; --jr-display-accent: #1d5db5; --jr-display-soft: #e6efff; }
+html.dark body:has(.jr-superadmin-workspace) { --jr-directory-header-bg: #382255; --jr-directory-header-fg: #e9dfff; --jr-display-accent: #c4b5fd; --jr-display-soft: #432868; }
+html.dark body:has(.jr-admin-workspace) { --jr-directory-header-bg: #4b2030; --jr-directory-header-fg: #fda4af; --jr-display-accent: #fda4af; --jr-display-soft: #4b2030; }
+html.dark body:has(.jr-engineer-workspace) { --jr-directory-header-bg: #4a2c1b; --jr-directory-header-fg: #fdba74; --jr-display-accent: #fdba74; --jr-display-soft: #4a2c1b; }
+html.dark body:has(.jr-viewer-workspace) { --jr-directory-header-bg: #203b65; --jr-directory-header-fg: #93c5fd; --jr-display-accent: #93c5fd; --jr-display-soft: #203b65; }
+body:has(.jr-admin-workspace, .jr-engineer-workspace, .jr-viewer-workspace, .jr-superadmin-workspace) :is(.jr-directory-exploration, .jr-monthly-directory, .um-workspace) table thead th {
+    background-color: var(--jr-directory-header-bg) !important;
+    color: var(--jr-directory-header-fg) !important;
+}
+body:has(.jr-admin-workspace, .jr-engineer-workspace, .jr-viewer-workspace, .jr-superadmin-workspace) :is(.jr-action-trigger, .jr-metric-icon, .jr-search > svg, .jr-report-context-action, .jr-dashboard-analytics h2 > svg, .jr-viewer-metrics svg, .jr-dashboard-analytics-metrics svg) {
+    color: var(--jr-display-accent) !important;
+}
+body:has(.jr-admin-workspace, .jr-engineer-workspace, .jr-viewer-workspace, .jr-superadmin-workspace) :is(.jr-dashboard-analytics .jr-trend-total, .jr-metric-card .jr-metric-icon, .jr-dashboard-analytics [class*='bg-[var(--jr-role-accent-soft)]']) {
+    background-color: var(--jr-display-soft) !important;
+    color: var(--jr-display-accent) !important;
+}
+body:has(.jr-admin-workspace, .jr-engineer-workspace, .jr-viewer-workspace, .jr-superadmin-workspace) :is(.jr-table-footer, .jr-audit-pagination) [aria-current='page'] {
+    background: var(--jr-display-soft) !important;
+    color: var(--jr-display-accent) !important;
+    border-color: var(--jr-display-accent) !important;
+}
+html.dark .jr-dashboard-analytics [class*='text-[var(--jr-role-accent'] { color: var(--jr-display-accent) !important; }
+/* Read-only roles retain browsing, filtering, pagination and personal appearance. */
+.jr-viewer-workspace :is(.jr-action-trigger, .jr-viewer-refresh, .jr-notification-trigger, .jr-danger),
+.jr-viewer-workspace :is(.jr-directory-exploration, .jr-monthly-directory) .jr-page-head .jr-primary {
+    display: none !important;
+}
