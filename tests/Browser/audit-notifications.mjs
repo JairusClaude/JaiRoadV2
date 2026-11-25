@@ -107,10 +107,30 @@ export async function verifyAuditNotifications({
                 Number(e.entity_id) === report.id,
         ),
     );
-    await admin
-        .getByText('Safe before / after values', { exact: true })
-        .first()
-        .click();
+    // At a normal desktop viewport, the details button must fit its table cell.
+    await admin.setViewportSize({ width: 1440, height: 900 });
+    const activityTable = admin.getByRole('region', { name: 'System Activity History', exact: true });
+    const detailButton = activityTable.getByRole('button', { name: 'Safe before / after values', exact: true }).first();
+    await detailButton.waitFor();
+    const rowHeight = await detailButton.evaluate(el => el.closest('tr').getBoundingClientRect().height);
+    await detailButton.click();
+    const detailDialog = admin.getByRole('dialog');
+    await detailDialog.getByRole('heading', { name: /^Activity #/ }).waitFor();
+    await detailDialog.getByRole('region', { name: 'Recorded event details' }).waitFor();
+    assert.equal(await detailButton.evaluate(el => el.closest('tr').getBoundingClientRect().height), rowHeight);
+    assert.ok(await detailDialog.evaluate(el => {
+        const r = el.getBoundingClientRect();
+        return r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight;
+    }));
+    await detailDialog.getByRole('button', { name: 'Done', exact: true }).click();
+    await detailDialog.waitFor({ state: 'hidden' });
+    await admin.setViewportSize({ width: 390, height: 844 });
+    await detailButton.click();
+    await detailDialog.waitFor();
+    assert.ok(await detailDialog.evaluate(el => el.scrollWidth <= el.clientWidth + 1));
+    await detailDialog.getByRole('button', { name: 'Done', exact: true }).click();
+    await detailDialog.waitFor({ state: 'hidden' });
+    await admin.setViewportSize({ width: 1440, height: 900 });
     assert.ok(
         await admin
             .getByRole('navigation', { name: 'Audit history pagination' })
