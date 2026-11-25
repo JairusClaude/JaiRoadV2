@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { DirectoryPagination } from '@/components/directory-controls';
+import { DirectoryFilter, DirectoryPagination } from '@/components/directory-controls';
 import AccountTypeBadge from '@/components/user-management/account-type-badge';
 import DdAccountLifecycle from '@/pages/dd-phase3/DdAccountLifecycle';
 import DdEngineerLifecycle from '@/pages/dd-phase3/DdEngineerLifecycle';
@@ -158,6 +158,7 @@ function CreateForm({
     roles: allowed,
     onClose,
     onBusy,
+    onProfileOnly,
 }: {
     kind: 'add-account' | 'add-engineer';
     eligible: EligibleEngineer[];
@@ -165,8 +166,12 @@ function CreateForm({
     roles: Role[];
     onClose: () => void;
     onBusy: (busy: boolean) => void;
+    onProfileOnly: () => void;
 }) {
     const isAccount = kind === 'add-account';
+    const [profileMode, setProfileMode] = useState<'new' | 'existing'>(
+        eligibleTotal > 0 ? 'existing' : 'new',
+    );
     const [account, setAccount] = useState({
         username: '',
         email: '',
@@ -196,7 +201,7 @@ function CreateForm({
         useState<EligibleEngineer | null>(null);
     const searchTerm = Array.from(eligibleSearch.trim()).slice(0, 100).join('');
     useEffect(() => {
-        if (!isAccount || searchTerm === '') {
+        if (!isAccount || profileMode !== 'existing' || searchTerm === '') {
             return;
         }
 
@@ -249,7 +254,7 @@ function CreateForm({
             clearTimeout(timer);
             controller.abort();
         };
-    }, [isAccount, searchTerm]);
+    }, [isAccount, profileMode, searchTerm]);
     const searchResolved = searchTerm === lookup.query;
     const visibleEligible =
         searchTerm === '' ? eligible : searchResolved ? lookup.engineers : [];
@@ -266,8 +271,8 @@ function CreateForm({
             busy ||
             (isAccount &&
                 (!allowed.includes(account.account_type) ||
-                    !chosenEngineer ||
-                    String(chosenEngineer.id) !== account.engineer_id))
+                    (profileMode === 'existing' &&
+                        (!chosenEngineer || String(chosenEngineer.id) !== account.engineer_id))))
         ) {
             return;
         }
@@ -283,7 +288,11 @@ function CreateForm({
         setErrors({});
         router.post(
             isAccount ? '/dd-phase3/accounts' : '/dd-phase3/engineers',
-            isAccount ? account : engineer,
+            isAccount
+                ? profileMode === 'new'
+                    ? { ...account, engineer_id: null, profile: engineer }
+                    : account
+                : engineer,
             {
                 preserveScroll: true,
                 onError: setErrors,
@@ -321,7 +330,7 @@ function CreateForm({
             label={label}
             value={engineer[key]}
             onChange={(v) => setEngineer((old) => ({ ...old, [key]: v }))}
-            error={errors[key]}
+            error={errors[`profile.${key}`] ?? errors[key]}
             optional={optional}
         />
     );
@@ -331,9 +340,7 @@ function CreateForm({
             {isAccount ? (
                 <>
                     <div className="um-form-note">
-                        New accounts require an active, unused Engineer profile.
-                        Linking a profile does not change Account Type or its
-                        permissions.
+                        Create a new profile and account together, or link an active, unused Engineer profile. All account types retain the profile requirement; linking a profile does not grant Engineer permissions.
                     </div>
                     <div className="um-form-grid">
                         {af(
@@ -368,6 +375,26 @@ function CreateForm({
                                 </small>
                             )}
                         </label>
+                        <fieldset className="um-span min-w-0 space-y-3">
+                            <legend className="mb-2 text-sm font-semibold">Engineer profile</legend>
+                            <div className="flex flex-wrap gap-2">
+                                <button type="button" className={profileMode === 'new' ? 'um-primary' : 'um-secondary'} aria-pressed={profileMode === 'new'} disabled={busy} onClick={() => setProfileMode('new')}>
+                                    Create new profile
+                                </button>
+                                <button type="button" className={profileMode === 'existing' ? 'um-primary' : 'um-secondary'} aria-pressed={profileMode === 'existing'} disabled={busy} onClick={() => setProfileMode('existing')}>
+                                    Link existing profile
+                                </button>
+                            </div>
+                            {profileMode === 'new' ? (
+                                <div className="um-form-grid">
+                                    {ef('first_name', 'First name')}
+                                    {ef('middle_name', 'Middle name', true)}
+                                    {ef('last_name', 'Last name')}
+                                    {ef('contact_no', 'Contact number')}
+                                    {ef('rank', 'Rank')}
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
                         <label className="um-field um-span">
                             Search eligible Engineers
                             <input
@@ -420,7 +447,7 @@ function CreateForm({
                                         `Showing ${visibleEligible.length} of ${lookup.total} matching profile(s).`}
                                 {eligibleTotal === 0 &&
                                     searchTerm === '' &&
-                                    ' Add an Engineer profile first.'}
+                                    ' Choose Create new profile to continue.'}
                             </small>
                             {errors.engineer_id && (
                                 <small role="alert" className="um-required">
@@ -428,6 +455,9 @@ function CreateForm({
                                 </small>
                             )}
                         </label>
+                                </div>
+                            )}
+                        </fieldset>
                         {af(
                             'password',
                             'Password',
@@ -457,6 +487,11 @@ function CreateForm({
                     </div>
                 </>
             )}
+            {isAccount && (
+                <button type="button" className="um-secondary self-start" disabled={busy} onClick={onProfileOnly}>
+                    Register an Engineer profile without an account
+                </button>
+            )}
             {Object.keys(errors).length > 0 && (
                 <div role="alert" className="um-error">
                     {Object.values(errors).join(' ')}
@@ -476,7 +511,7 @@ function CreateForm({
                     className="um-primary"
                     disabled={
                         busy ||
-                        (isAccount && (!chosenEngineer || !allowed.length))
+                        (isAccount && (!allowed.length || (profileMode === 'existing' && !chosenEngineer)))
                     }
                 >
                     {busy
@@ -619,16 +654,15 @@ export default function CanonicalUserManagement({
             { preserveState: true, preserveScroll: true, replace: true },
         );
     }
-    function switchTab(next: typeof tab) {
+    function switchTab(next: typeof tab, nextRole: string = 'all') {
         setTab(next);
         setSearch('');
-        setRole('all');
+        setRole(nextRole);
         setState('all');
         setPage(1);
     }
     function clear() {
         setSearch('');
-        setRole('all');
         setState('all');
         setPage(1);
     }
@@ -715,13 +749,6 @@ export default function CanonicalUserManagement({
                     <div className="um-header-actions">
                         <button
                             type="button"
-                            className="um-secondary"
-                            onClick={() => open({ kind: 'add-engineer' })}
-                        >
-                            <Plus size={16} /> Add Engineer
-                        </button>
-                        <button
-                            type="button"
                             className="um-primary"
                             disabled={!canCreateRoles.length}
                             onClick={() => open({ kind: 'add-account' })}
@@ -733,7 +760,7 @@ export default function CanonicalUserManagement({
                 <nav className="um-tabs" aria-label="Directory views">
                     <button
                         type="button"
-                        aria-pressed={tab === 'accounts'}
+                        aria-pressed={tab === 'accounts' && role === 'all'}
                         onClick={() => switchTab('accounts')}
                     >
                         <Users size={17} /> User Accounts{' '}
@@ -741,12 +768,22 @@ export default function CanonicalUserManagement({
                             {directory?.accountTotal ?? accounts.length}
                         </span>
                     </button>
+                    {roles.map((accountRole) => (
+                        <button
+                            key={accountRole}
+                            type="button"
+                            aria-pressed={tab === 'accounts' && role === accountRole}
+                            onClick={() => switchTab('accounts', accountRole)}
+                        >
+                            {accountRole === 'Engineer' ? 'Engineer Accounts' : `${accountRole}s`}
+                        </button>
+                    ))}
                     <button
                         type="button"
                         aria-pressed={tab === 'engineers'}
                         onClick={() => switchTab('engineers')}
                     >
-                        <HardHat size={17} /> Engineers{' '}
+                        <HardHat size={17} /> Engineer Profiles{' '}
                         <span>
                             {directory?.engineerTotal ?? engineers.length}
                         </span>
@@ -774,38 +811,21 @@ export default function CanonicalUserManagement({
                             }}
                         />
                     </label>
-                    {tab === 'accounts' && (
-                        <select
-                            aria-label="Filter account type"
-                            className="um-filter"
-                            value={role}
-                            onChange={(e) => {
-                                setRole(e.target.value);
-                                setPage(1);
-                            }}
-                        >
-                            <option value="all">All Account Types</option>
-                            {roles.map((r) => (
-                                <option key={r}>{r}</option>
-                            ))}
-                        </select>
-                    )}
-                    <select
-                        aria-label="Filter status"
+                    <DirectoryFilter
+                        label="Filter status"
                         className="um-filter"
                         value={state}
-                        onChange={(e) => {
-                            setState(e.target.value);
+                        onChange={(value) => {
+                            setState(value);
                             setPage(1);
                         }}
-                    >
-                        <option value="all">All Statuses</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">
-                            {tab === 'accounts' ? 'Inactive' : 'Retired'}
-                        </option>
-                    </select>
-                    {(search || role !== 'all' || state !== 'all') && (
+                        options={[
+                            { value: 'all', label: 'All Statuses' },
+                            { value: 'active', label: 'Active' },
+                            { value: 'inactive', label: tab === 'accounts' ? 'Inactive' : 'Retired' },
+                        ]}
+                    />
+                    {(search || state !== 'all') && (
                         <button
                             className="um-secondary"
                             type="button"
@@ -1110,7 +1130,7 @@ export default function CanonicalUserManagement({
                                 <Dialog.Title>{modalTitle}</Dialog.Title>
                                 <Dialog.Description>
                                     {modal?.kind === 'add-account'
-                                        ? 'Set up sign-in details and account access.'
+                                        ? 'Set up a person profile, sign-in details and account access.'
                                         : modal?.kind === 'add-engineer'
                                           ? 'Register a professional Engineer profile.'
                                           : 'Review details and make authorized changes.'}
@@ -1144,9 +1164,11 @@ export default function CanonicalUserManagement({
                                                 ? 'accounts'
                                                 : 'engineers',
                                         );
+                                        setRole('all');
                                         clear();
                                     }}
                                     onBusy={setBusy}
+                                    onProfileOnly={() => open({ kind: 'add-engineer' })}
                                 />
                             ) : modal?.kind === 'account' ? (
                                 <DdAccountLifecycle
