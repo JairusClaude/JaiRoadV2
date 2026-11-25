@@ -1,3 +1,4 @@
+import { usePage } from '@inertiajs/react';
 import { CheckSquare, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -71,6 +72,8 @@ export function DirectorySelectionToolbar({
     onCancel: () => void;
     onDelete: () => void;
 }) {
+    const page = usePage();
+    const isViewer = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role?.toLowerCase() === 'viewer';
     return (
         <div className="jr-table-toolbar">
             <span role="status">
@@ -78,7 +81,7 @@ export function DirectorySelectionToolbar({
                     ? `${selectedCount} selected`
                     : `${total} ${total === 1 ? singular : plural} found`}
             </span>
-            {!canDelete ? null : selecting ? (
+            {isViewer || !canDelete ? null : selecting ? (
                 <div className="flex gap-2">
                     <Button variant="outline" onClick={onCancel}>
                         Cancel selection
