@@ -72,7 +72,7 @@ export default function Show({ document: doc }: { document: DocumentSummary }) {
                                 Edit Document
                             </Button>
 )}
-                            {enabled || Boolean(doc.delete_url) && (
+                            {(enabled || Boolean(doc.delete_url)) && (
 <Button
                                 className="jr-danger"
                                 disabled={
