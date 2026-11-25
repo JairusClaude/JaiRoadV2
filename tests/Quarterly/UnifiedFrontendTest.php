@@ -61,29 +61,31 @@ final class UnifiedFrontendTest extends PostgresTestCase
             $this->recordData($f['project'], $f['engineer'], 'Q2') + ['created_by' => $f['user']->dd_user_account_id],
             $this->recordData($project, $other) + ['created_by' => $f['user']->dd_user_account_id],
         ]);
-        $this->get('/dd-phase3/dashboard?engineer_id='.$other)->assertOk()->assertInertia(fn (Assert $page) => $page
-            ->component('dd-phase3/RoleDashboard')->has('mapCoverages', 3)
-            ->where('mapCoverages.0.id', $unassigned)->where('mapCoverages.0.my_project', false)
-            ->where('mapCoverages.0.project_id', null)
-            ->where('mapCoverages.1.id', $road)->where('mapCoverages.1.my_project', true)
-            ->where('mapCoverages.1.created_by_me', true)->where('mapCoverages.1.assigned_to_me', false)
-            ->where('mapCoverages.2.id', $f['road'])->where('mapCoverages.2.my_project', true)
-            ->where('mapCoverages.2.created_by_me', true)->where('mapCoverages.2.assigned_to_me', true)
-            ->where('mapCoverages.2.my_record_count', 2)->where('mapCoverages.2.project_id', $f['project']));
-        // Switching test identities must also clear the previous Laravel
-        // authentication-session password hash.
+        $this->get('/dd-phase3/dashboard')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->component('dd-phase3/RoleDashboard')->where('role', 'engineer')->missing('mapCoverages'));
+        $url = '/dd-phase3/dashboard/map-roads';
+        $this->getJson($url.'?engineer_id='.$other)->assertOk()->assertJsonCount(3, 'data')
+            ->assertJsonPath('data.0.id', $unassigned)->assertJsonPath('data.0.my_project', false)
+            ->assertJsonPath('data.0.project_id', null)
+            ->assertJsonPath('data.1.id', $road)->assertJsonPath('data.1.my_project', true)
+            ->assertJsonPath('data.1.created_by_me', true)->assertJsonPath('data.1.assigned_to_me', false)
+            ->assertJsonPath('data.2.id', $f['road'])->assertJsonPath('data.2.my_project', true)
+            ->assertJsonPath('data.2.created_by_me', true)->assertJsonPath('data.2.assigned_to_me', true)
+            ->assertJsonPath('data.2.my_record_count', 2)->assertJsonPath('data.2.project_id', $f['project']);
         $this->flushSession();
-        $this->actingAs($otherLogin)->get('/dd-phase3/dashboard')->assertOk()->assertInertia(fn (Assert $page) => $page
-            ->where('mapCoverages.0.my_project', false)->where('mapCoverages.1.my_project', true)
-            ->where('mapCoverages.1.created_by_me', false)->where('mapCoverages.1.assigned_to_me', true)
-            ->where('mapCoverages.2.my_project', false));
+        $this->actingAs($otherLogin)->getJson($url)->assertOk()
+            ->assertJsonPath('data.0.my_project', false)->assertJsonPath('data.1.my_project', true)
+            ->assertJsonPath('data.1.created_by_me', false)->assertJsonPath('data.1.assigned_to_me', true)
+            ->assertJsonPath('data.2.my_project', false);
         $this->flushSession();
-        $this->actingAs($this->account('Viewer'))->get('/dd-phase3/dashboard')->assertOk()->assertInertia(fn (Assert $page) => $page
-            ->has('mapCoverages', 3)
-            ->where('mapCoverages.1.created_by_me', false)->where('mapCoverages.1.assigned_to_me', false)
-            ->where('mapCoverages.2.my_record_count', 0));
-        $this->getJson('/dd-phase3/dashboard/map-roads?before='.$unassigned)->assertOk()
+        $this->actingAs($this->account('Viewer'))->get('/dd-phase3/dashboard')->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('dd-phase3/RoleDashboard')->where('role', 'viewer')->missing('mapCoverages'));
+        $this->getJson($url)->assertOk()->assertJsonCount(3, 'data')
+            ->assertJsonPath('data.1.created_by_me', false)->assertJsonPath('data.1.assigned_to_me', false)
+            ->assertJsonPath('data.2.my_record_count', 0);
+        $this->getJson($url.'?before='.$unassigned)->assertOk()
             ->assertJsonPath('data.0.id', $road)->assertJsonPath('data.0.my_project', false);
+        $this->getJson($url.'?before=0')->assertUnprocessable();
     }
 
     public function test_engineer_road_inspector_returns_only_related_summary_and_no_private_paths(): void
