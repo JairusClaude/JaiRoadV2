@@ -279,7 +279,8 @@ export default function Index({
                             municipalities.
                         </p>
                     </div>
-                    <Button
+                    {canEdit && (
+<Button
                         className="jr-primary"
                         disabled={!canEdit}
                         onClick={() =>
@@ -294,6 +295,7 @@ export default function Index({
                         <Plus />
                         Add Road Coverage
                     </Button>
+)}
                 </div>
 
                 {/* Main White Content Container matching Maintenance Documents smooth fully-rounded top corners */}
@@ -675,7 +677,8 @@ export default function Index({
                                                     event.stopPropagation()
                                                 }
                                             >
-                                                <DropdownMenu>
+                                                {canEdit || effectiveCanDelete && (
+<DropdownMenu>
                                                     <DropdownMenuTrigger
                                                         asChild
                                                     >
@@ -735,6 +738,7 @@ export default function Index({
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
+)}
                                             </td>
                                         </tr>
                                     ))}
