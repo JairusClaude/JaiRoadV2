@@ -1,27 +1,37 @@
 import '../../../css/jairoads-login.css';
-import { ShieldCheck } from 'lucide-react';
+import { ArrowRight, ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import AuthShowcase from './auth-showcase';
 
 export const authInputClass =
-    'h-12 rounded-xl border-[#dce4ec] bg-[#fdfefe] px-4 text-sm text-[#17283e] placeholder:text-[#a1afbd] focus-visible:border-[#a45b30] focus-visible:ring-[#a45b30]/20';
+    'h-12 rounded-lg border-[#e3d9cc] bg-[#fffdfa] px-4 text-sm text-[#3e2a20] placeholder:text-[#968b83] focus-visible:border-[#a45b30] focus-visible:ring-[#a45b30]/20';
 export const authButtonClass =
-    'h-12 w-full rounded-xl bg-[#964b23] text-sm font-semibold text-white shadow-[0_6px_18px_rgba(121,56,21,0.17)] hover:bg-[#783a1a] focus-visible:ring-[#bd835a]/30 disabled:opacity-65';
+    'h-12 w-full rounded-lg bg-[#692c14] text-sm font-semibold text-white shadow-[0_6px_18px_rgba(121,56,21,0.17)] hover:bg-[#783a1a] focus-visible:ring-[#bd835a]/30 disabled:opacity-65';
 export default function AuthShell({
     eyebrow,
     title,
     description,
     children,
+    showMobileIntro = false,
 }: {
     eyebrow: string;
     title: string;
     description: string;
     children: ReactNode;
+    showMobileIntro?: boolean;
 }) {
+    const [intro, setIntro] = useState(false);
     return (
-        <div className="jr-login">
+        <div className="jr-login" data-mobile-intro={showMobileIntro && intro}>
             <div className="jr-login-frame">
-                <AuthShowcase />
+                <AuthShowcase
+                    expandedMobile={showMobileIntro && intro}
+                    onContinue={() => {
+                        setIntro(false);
+                        requestAnimationFrame(() => document.getElementById('email')?.focus({ preventScroll: true }));
+                    }}
+                />
                 <main className="jr-login-panel">
                     <div className="jr-login-secure-label flex flex-wrap items-center justify-between gap-2 text-[11px] font-semibold tracking-[.16em] text-[#586d83] uppercase">
                         <span className="inline-flex items-center gap-2">
@@ -31,7 +41,7 @@ export default function AuthShell({
                             />{' '}
                             Secure workspace
                         </span>
-                        <span>PEO-DDO</span>
+                        <span>JaiROADS</span>
                     </div>
                     <div className="jr-login-form">
                         <div className="jr-login-form-intro mb-6 space-y-2">
@@ -46,6 +56,11 @@ export default function AuthShell({
                             </p>
                         </div>
                         {children}
+                        {showMobileIntro && (
+                            <button type="button" className="jr-login-explore" onClick={() => setIntro(true)}>
+                                Explore JaiROADS <ArrowRight aria-hidden="true" className="size-4" />
+                            </button>
+                        )}
                     </div>
                     <div className="jr-login-footer">
                         <span>© {new Date().getFullYear()} JaiROADS</span>
