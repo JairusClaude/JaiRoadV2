@@ -536,3 +536,37 @@ html.jr-reduce-motion .jr-delete-premium .animate-spin {
         grid-column: 1 / -1;
     }
 }
+
+/* Keep a single permanent-action warning in the heading; the body is a task flow. */
+.jr-delete-premium .jr-delete-verification {
+    transition: border-color 160ms ease, background-color 160ms ease;
+}
+.jr-delete-premium .jr-delete-verification[data-complete='true'] {
+    border-color: var(--jr-display-accent, #64748b);
+}
+.jr-delete-premium .jr-delete-verification[data-complete='true'] .jr-delete-step {
+    background: var(--jr-role-accent, #166534);
+    color: white;
+}
+.jr-delete-premium .jr-delete-field-hint {
+    margin: 0;
+    color: var(--delete-muted);
+    font-size: 12px;
+    line-height: 1.4;
+}
+.jr-delete-premium .jr-delete-footer-hint {
+    flex: 1 1 170px;
+    min-width: 0;
+    font-size: 12px;
+}
+.jr-delete-premium .jr-delete-footer-hint[data-ready='true'] {
+    color: var(--jr-display-accent, #166534);
+    font-weight: 600;
+}
+.jr-delete-premium .jr-delete-footer-hint svg { flex: none; }
+.jr-delete-premium .jr-delete-body { align-content: start; }
+.jr-delete-premium .jr-delete-confirm { transition: background-color 160ms ease, color 160ms ease; }
+@media (prefers-reduced-motion: reduce) {
+    .jr-delete-premium :is(.jr-delete-verification, .jr-delete-confirm) { transition: none; }
+}
+html.jr-reduce-motion .jr-delete-premium :is(.jr-delete-verification, .jr-delete-confirm) { transition: none; }
