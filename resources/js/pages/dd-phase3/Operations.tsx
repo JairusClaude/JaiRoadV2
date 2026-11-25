@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { KeyRound, Settings2, ShieldCheck } from 'lucide-react';
+import { Settings2, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import type { ComponentProps } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
@@ -421,15 +421,15 @@ export default function Operations({
                                     </p>
                                     <div className="flex flex-wrap items-center gap-3 pt-2">
                                         <Link
-                                            href="/settings/security?tab=passkeys"
+                                            href="/settings/security?tab=two-factor"
                                             className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition focus-visible:outline-2 focus-visible:outline-offset-2 ${isAdmin ? 'bg-[#C8293D] hover:bg-[#A81424] focus-visible:outline-[#C8293D]' : isEngineer ? 'bg-[#A94B0C] hover:bg-[#873A0D] focus-visible:outline-[#A94B0C]' : isViewer ? 'bg-[#1D5DB5] hover:bg-[#124A9C] focus-visible:outline-[#1D5DB5]' : 'bg-[#90451f] hover:bg-[#773917] focus-visible:outline-amber-600'}`}
                                         >
-                                            <KeyRound className="size-4" />{' '}
-                                            Manage passkeys
+                                            <ShieldCheck className="size-4" />{' '}
+                                            Two-factor authentication
                                         </Link>
                                         <span className="text-xs text-slate-500">
-                                            Register a device for passwordless
-                                            sign-in. Recent password
+                                            Manage your additional sign-in verification.
+                                            Recent password
                                             confirmation is required.
                                         </span>
                                     </div>
