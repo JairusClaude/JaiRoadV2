@@ -2,7 +2,6 @@ import { Form, Head, Link } from '@inertiajs/react';
 import {
     ArrowLeft,
     Fingerprint,
-    KeyRound,
     LockKeyhole,
     ShieldCheck,
 } from 'lucide-react';
@@ -11,19 +10,16 @@ import type { ReactNode } from 'react';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import InputError from '@/components/input-error';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
-import ManagePasskeys from '@/components/manage-passkeys';
-import type { Props as ManagePasskeysProps } from '@/components/manage-passkeys';
 import ManageTwoFactor from '@/components/manage-two-factor';
 import type { Props as ManageTwoFactorProps } from '@/components/manage-two-factor';
 import PasswordInput from '@/components/password-input';
 
-type Props = { passwordRules: string } & ManagePasskeysProps &
+type Props = { passwordRules: string } &
     ManageTwoFactorProps;
-type Tab = 'password' | 'two-factor' | 'passkeys';
+type Tab = 'password' | 'two-factor';
 const sections: { id: Tab; title: string; icon: typeof LockKeyhole }[] = [
     { id: 'password', title: 'Change password', icon: LockKeyhole },
     { id: 'two-factor', title: 'Two-factor authentication', icon: Fingerprint },
-    { id: 'passkeys', title: 'Passkeys', icon: KeyRound },
 ];
 const inputClass =
     'mt-2 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 focus:border-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-300 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100';
@@ -59,7 +55,7 @@ function Container({ children }: { children: ReactNode }) {
         </div>
     );
 }
-/** Uses Fortify's existing credential routes and native 2FA/passkey components, not a second auth system. */
+/** Uses Fortify's existing credential routes and native 2FA components, not a second auth system. */
 export default function Security(props: Props) {
     const [tab, setTab] = useState<Tab>(() => {
         const requested =
@@ -67,7 +63,7 @@ export default function Security(props: Props) {
                 ? null
                 : new URLSearchParams(window.location.search).get('tab');
 
-        return requested === 'two-factor' || requested === 'passkeys'
+        return requested === 'two-factor'
             ? requested
             : 'password';
     });
@@ -92,8 +88,7 @@ export default function Security(props: Props) {
                             Account & Security
                         </h1>
                         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                            Protect your JaiROADS sign-in account with passkeys
-                            and two-factor authentication.
+                            Protect your JaiROADS sign-in account with two-factor authentication.
                         </p>
                     </div>
                     <Link
@@ -274,34 +269,10 @@ export default function Security(props: Props) {
                                 )}
                             </Container>
                         )}
-                        {tab === 'passkeys' && (
-                            <Container>
-                                <PanelTitle
-                                    icon={KeyRound}
-                                    title="Manage passkeys"
-                                    detail="Register a device passkey for passwordless sign-in, if enabled on this server."
-                                />
-                                {props.canManagePasskeys ? (
-                                    <ManagePasskeys
-                                        canManagePasskeys={
-                                            props.canManagePasskeys
-                                        }
-                                        passkeys={props.passkeys}
-                                    />
-                                ) : (
-                                    <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                                        Passkeys are not currently enabled in
-                                        Laravel Fortify. Secure registration
-                                        requires the backend passkey feature and
-                                        compatible HTTPS/origin settings.
-                                    </p>
-                                )}
-                            </Container>
-                        )}
                     </section>
                 </div>
                 <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">
-                    Changing password, 2FA, or passkeys may require recent
+                    Changing password or 2FA may require recent
                     password confirmation. Your administrative permissions,
                     Engineer assignment and operational account role are not
                     changed here.
