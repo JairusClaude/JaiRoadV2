@@ -42,27 +42,6 @@ final class PreservedHistoryController extends Controller
             ->header('Cache-Control', 'private, no-store');
     }
 
-    public function camera(Request $request): JsonResponse
-    {
-        $login = $this->login($request);
-        $actor = $this->identities->resolve($login);
-        $scope = $request->query('scope');
-        $token = $request->header('X-Deletion-Challenge', '');
-        abort_unless(in_array($scope, ['project', 'record'], true) && strlen($token) <= 4096, 422);
-        // Accept only a small raw JPEG, not a form field that could be flashed
-        // to a session on validation failure. Never log or store the snapshot.
-        abort_unless($request->header('Content-Type') === 'image/jpeg', 415);
-        abort_if((int) $request->header('Content-Length', '0') > 524288, 413);
-        try {
-            $receipt = app(DeletionChallenge::class)->cameraReceipt($actor['account_id'], $scope, $token, $request->getContent());
-        } catch (ValidationException $error) {
-            return response()->json(['message' => $error->getMessage(), 'errors' => $error->errors()], 422)
-                ->header('Cache-Control', 'private, no-store');
-        }
-
-        return response()->json(['receipt' => $receipt])->header('Cache-Control', 'private, no-store');
-    }
-
     public function preview(Request $request, int $id): JsonResponse
     {
         return response()->json($this->deletions->preview($this->login($request), $id))->header('Cache-Control', 'private, no-store');
