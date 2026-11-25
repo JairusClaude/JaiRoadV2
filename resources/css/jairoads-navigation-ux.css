@@ -354,3 +354,17 @@
 @keyframes jr-auth-handoff-track { from { transform: scaleX(.15); } to { transform: scaleX(1); } }
 @media (prefers-reduced-motion: reduce) { .jr-auth-handoff { display: none; } }
 html.jr-reduce-motion .jr-auth-handoff { display: none; }
+
+/* Navigation should not cover page controls for normal, short requests. */
+.jr-loading-track { background: var(--jr-display-soft, #f4e8db); }
+.jr-loading-track-stripe {
+    background: var(--jr-display-accent, #93501d);
+    box-shadow: none;
+}
+.jr-loading-notice {
+    top: 76px;
+    border-color: var(--jr-display-accent, #ecdac8);
+}
+@media (max-width: 760px) { .jr-loading-notice { top: 64px; } }
+html.jr-reduce-motion :is(.jr-loading-track-stripe, .jr-loading-road::before, .jr-spin) { animation: none; }
+html.jr-reduce-motion :is(.jr-quick-search, .jr-quick-refresh) { transition: none; }
