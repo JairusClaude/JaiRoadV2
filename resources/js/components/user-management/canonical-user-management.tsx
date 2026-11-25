@@ -13,6 +13,8 @@ import {
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { DirectoryFilter, DirectoryPagination } from '@/components/directory-controls';
+import { DirectoryActions } from '@/components/maintenance-projects/project-workspace';
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import AccountTypeBadge from '@/components/user-management/account-type-badge';
 import DdAccountLifecycle from '@/pages/dd-phase3/DdAccountLifecycle';
 import DdEngineerLifecycle from '@/pages/dd-phase3/DdEngineerLifecycle';
@@ -153,31 +155,23 @@ function Field({
 }
 function CreateForm({
     kind,
-    eligible,
-    eligibleTotal,
     roles: allowed,
     onClose,
     onBusy,
     onProfileOnly,
 }: {
     kind: 'add-account' | 'add-engineer';
-    eligible: EligibleEngineer[];
-    eligibleTotal: number;
     roles: Role[];
     onClose: () => void;
     onBusy: (busy: boolean) => void;
     onProfileOnly: () => void;
 }) {
     const isAccount = kind === 'add-account';
-    const [profileMode, setProfileMode] = useState<'new' | 'existing'>(
-        eligibleTotal > 0 ? 'existing' : 'new',
-    );
     const [account, setAccount] = useState({
         username: '',
         email: '',
         name: '',
         account_type: allowed[0] ?? 'Viewer',
-        engineer_id: '',
         password: '',
         password_confirmation: '',
     });
@@ -190,90 +184,11 @@ function CreateForm({
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [busy, setBusy] = useState(false);
-    const [eligibleSearch, setEligibleSearch] = useState('');
-    const [lookup, setLookup] = useState<{
-        query: string;
-        engineers: EligibleEngineer[];
-        total: number;
-        error: string;
-    }>({ query: '', engineers: [], total: 0, error: '' });
-    const [chosenEngineer, setChosenEngineer] =
-        useState<EligibleEngineer | null>(null);
-    const searchTerm = Array.from(eligibleSearch.trim()).slice(0, 100).join('');
-    useEffect(() => {
-        if (!isAccount || profileMode !== 'existing' || searchTerm === '') {
-            return;
-        }
-
-        const controller = new AbortController();
-        const timer = setTimeout(() => {
-            void fetch(
-                `/dd-phase3/eligible-engineers?search=${encodeURIComponent(searchTerm)}`,
-                {
-                    credentials: 'same-origin',
-                    headers: { Accept: 'application/json' },
-                    cache: 'no-store',
-                    signal: controller.signal,
-                },
-            )
-                .then(async (response) => {
-                    if (!response.ok) {
-                        throw new Error(
-                            'Eligible Engineer search is unavailable.',
-                        );
-                    }
-
-                    return (await response.json()) as {
-                        engineers: EligibleEngineer[];
-                        total: number;
-                    };
-                })
-                .then((result) => {
-                    if (!controller.signal.aborted) {
-                        setLookup({
-                            query: searchTerm,
-                            engineers: result.engineers,
-                            total: result.total,
-                            error: '',
-                        });
-                    }
-                })
-                .catch(() => {
-                    if (!controller.signal.aborted) {
-                        setLookup({
-                            query: searchTerm,
-                            engineers: [],
-                            total: 0,
-                            error: 'Search unavailable. Please try again.',
-                        });
-                    }
-                });
-        }, 300);
-
-        return () => {
-            clearTimeout(timer);
-            controller.abort();
-        };
-    }, [isAccount, profileMode, searchTerm]);
-    const searchResolved = searchTerm === lookup.query;
-    const visibleEligible =
-        searchTerm === '' ? eligible : searchResolved ? lookup.engineers : [];
-    // A chosen profile must stay selectable even when the search is changed.
-    const eligibleChoices =
-        chosenEngineer &&
-        !visibleEligible.some((e) => e.id === chosenEngineer.id)
-            ? [chosenEngineer, ...visibleEligible]
-            : visibleEligible;
+    const needsProfile = isAccount && account.account_type !== 'Viewer';
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
-        if (
-            busy ||
-            (isAccount &&
-                (!allowed.includes(account.account_type) ||
-                    (profileMode === 'existing' &&
-                        (!chosenEngineer || String(chosenEngineer.id) !== account.engineer_id))))
-        ) {
+        if (busy || (isAccount && !allowed.includes(account.account_type))) {
             return;
         }
 
@@ -289,8 +204,8 @@ function CreateForm({
         router.post(
             isAccount ? '/dd-phase3/accounts' : '/dd-phase3/engineers',
             isAccount
-                ? profileMode === 'new'
-                    ? { ...account, engineer_id: null, profile: engineer }
+                ? needsProfile
+                    ? { ...account, profile: engineer }
                     : account
                 : engineer,
             {
@@ -340,7 +255,7 @@ function CreateForm({
             {isAccount ? (
                 <>
                     <div className="um-form-note">
-                        Create a new profile and account together, or link an active, unused Engineer profile. All account types retain the profile requirement; linking a profile does not grant Engineer permissions.
+                        {needsProfile ? 'A new Engineer profile will be created and linked automatically when the account is saved. Profile linkage does not grant Engineer permissions.' : 'Viewer accounts have read-only access and do not require an Engineer profile.'}
                     </div>
                     <div className="um-form-grid">
                         {af(
@@ -358,12 +273,14 @@ function CreateForm({
                                 className="um-input"
                                 required
                                 value={account.account_type}
-                                onChange={(e) =>
-                                    setAccount((old) => ({
-                                        ...old,
-                                        account_type: e.target.value as Role,
-                                    }))
-                                }
+                                onChange={(e) => {
+                                    const nextRole = e.target.value as Role;
+                                    setAccount((old) => ({ ...old, account_type: nextRole }));
+                                    setErrors({});
+                                    if (nextRole === 'Viewer') {
+                                        setEngineer({ first_name: '', middle_name: '', last_name: '', contact_no: '', rank: '' });
+                                    }
+                                }}
                             >
                                 {allowed.map((role) => (
                                     <option key={role}>{role}</option>
@@ -375,17 +292,9 @@ function CreateForm({
                                 </small>
                             )}
                         </label>
-                        <fieldset className="um-span min-w-0 space-y-3">
-                            <legend className="mb-2 text-sm font-semibold">Engineer profile</legend>
-                            <div className="flex flex-wrap gap-2">
-                                <button type="button" className={profileMode === 'new' ? 'um-primary' : 'um-secondary'} aria-pressed={profileMode === 'new'} disabled={busy} onClick={() => setProfileMode('new')}>
-                                    Create new profile
-                                </button>
-                                <button type="button" className={profileMode === 'existing' ? 'um-primary' : 'um-secondary'} aria-pressed={profileMode === 'existing'} disabled={busy} onClick={() => setProfileMode('existing')}>
-                                    Link existing profile
-                                </button>
-                            </div>
-                            {profileMode === 'new' ? (
+                        {needsProfile && (
+                            <fieldset className="um-span min-w-0 space-y-3">
+                                <legend className="mb-2 text-sm font-semibold">Engineer profile</legend>
                                 <div className="um-form-grid">
                                     {ef('first_name', 'First name')}
                                     {ef('middle_name', 'Middle name', true)}
@@ -393,71 +302,8 @@ function CreateForm({
                                     {ef('contact_no', 'Contact number')}
                                     {ef('rank', 'Rank')}
                                 </div>
-                            ) : (
-                                <div className="space-y-3">
-                        <label className="um-field um-span">
-                            Search eligible Engineers
-                            <input
-                                aria-label="Search eligible Engineers"
-                                className="um-input"
-                                type="search"
-                                maxLength={100}
-                                placeholder="Find by name, rank or profile ID"
-                                value={eligibleSearch}
-                                onChange={(e) =>
-                                    setEligibleSearch(e.target.value)
-                                }
-                            />
-                        </label>
-                        <label className="um-field um-span">
-                            Linked Engineer{' '}
-                            <span className="um-required">*</span>
-                            <select
-                                aria-label="Linked Engineer"
-                                className="um-input"
-                                required
-                                value={account.engineer_id}
-                                onChange={(e) => {
-                                    const engineer = eligibleChoices.find(
-                                        (item) =>
-                                            String(item.id) === e.target.value,
-                                    );
-                                    setChosenEngineer(engineer ?? null);
-                                    setAccount((old) => ({
-                                        ...old,
-                                        engineer_id: e.target.value,
-                                    }));
-                                }}
-                            >
-                                <option value="">
-                                    Select an active Engineer
-                                </option>
-                                {eligibleChoices.map((e) => (
-                                    <option key={e.id} value={e.id}>
-                                        {e.first_name} {e.last_name} · {e.rank}
-                                    </option>
-                                ))}
-                            </select>
-                            <small role="status">
-                                {searchTerm === ''
-                                    ? `Showing ${eligible.length} of ${eligibleTotal} available profile(s). Search to find more.`
-                                    : !searchResolved
-                                      ? 'Searching eligible profiles…'
-                                      : lookup.error ||
-                                        `Showing ${visibleEligible.length} of ${lookup.total} matching profile(s).`}
-                                {eligibleTotal === 0 &&
-                                    searchTerm === '' &&
-                                    ' Choose Create new profile to continue.'}
-                            </small>
-                            {errors.engineer_id && (
-                                <small role="alert" className="um-required">
-                                    {errors.engineer_id}
-                                </small>
-                            )}
-                        </label>
-                                </div>
-                            )}
-                        </fieldset>
+                            </fieldset>
+                        )}
                         {af(
                             'password',
                             'Password',
@@ -511,7 +357,7 @@ function CreateForm({
                     className="um-primary"
                     disabled={
                         busy ||
-                        (isAccount && (!allowed.length || (profileMode === 'existing' && !chosenEngineer)))
+                        (isAccount && !allowed.length)
                     }
                 >
                     {busy
@@ -530,7 +376,6 @@ export default function CanonicalUserManagement({
     engineers,
     initialEngineerId,
     directory,
-    eligibleEngineers,
     eligibleEngineerTotal,
     actorId,
     canCreateRoles,
@@ -699,9 +544,9 @@ export default function CanonicalUserManagement({
             Icon: HardHat,
         },
         {
-            label: 'Available profiles',
+            label: 'Unlinked profiles',
             value: eligibleEngineerTotal,
-            detail: 'Ready to link to an account',
+            detail: 'Active profiles without an account',
             Icon: UserRound,
         },
     ];
@@ -1046,26 +891,25 @@ export default function CanonicalUserManagement({
                                                     />
                                                 </td>
                                                 <td>
-                                                    <div className="flex flex-wrap gap-2">
+                                                    {account ? (
+                                                        <DirectoryActions label={'Actions for ' + nameOf(e)}>
+                                                            <DropdownMenuItem onSelect={() => open({ kind: 'engineer', id: e.id })}>
+                                                                <HardHat /> Manage Profile
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onSelect={() => open({ kind: 'account', id: account.id })}>
+                                                                <UserRound /> Manage Account
+                                                            </DropdownMenuItem>
+                                                        </DirectoryActions>
+                                                    ) : (
                                                         <button
                                                             className="um-secondary um-row-action"
                                                             type="button"
                                                             aria-label={'Manage engineer ' + nameOf(e)}
                                                             onClick={() => open({ kind: 'engineer', id: e.id })}
                                                         >
-                                                            Manage profile
+                                                            Manage Profile
                                                         </button>
-                                                        {account && (
-                                                            <button
-                                                                className="um-secondary um-row-action"
-                                                                type="button"
-                                                                aria-label={'Manage account ' + account.username}
-                                                                onClick={() => open({ kind: 'account', id: account.id })}
-                                                            >
-                                                                Manage account
-                                                            </button>
-                                                        )}
-                                                    </div>
+                                                    )}
                                                 </td>
                                             </tr>
                                         );
@@ -1144,7 +988,7 @@ export default function CanonicalUserManagement({
                                 <Dialog.Title>{modalTitle}</Dialog.Title>
                                 <Dialog.Description>
                                     {modal?.kind === 'add-account'
-                                        ? 'Set up a person profile, sign-in details and account access.'
+                                        ? 'Create sign-in details and a linked profile when required.'
                                         : modal?.kind === 'add-engineer'
                                           ? 'Register a professional Engineer profile.'
                                           : 'Review details and make authorized changes.'}
@@ -1166,8 +1010,6 @@ export default function CanonicalUserManagement({
                                 <CreateForm
                                     key={modal.kind}
                                     kind={modal.kind}
-                                    eligible={eligibleEngineers}
-                                    eligibleTotal={eligibleEngineerTotal}
                                     roles={canCreateRoles}
                                     onClose={() => {
                                         setModal(null);
