@@ -12,7 +12,7 @@ import type { ReactNode, RefObject } from 'react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import type { DependentCounts } from '@/types/maintenance-projects';
-import { DeletionCamera } from './deletion-camera';
+import '../../../css/jairoads-deletion-dialog.css';
 
 export function DeletionCounts({
     counts,
@@ -70,7 +70,6 @@ export type DeleteConfirmation = {
     confirmation: string;
     captcha_token: string;
     captcha_answer: string;
-    camera_receipt: string;
 };
 
 export function DeletionDialog({
@@ -123,14 +122,12 @@ export function DeletionDialog({
         token: string;
     } | null>(null);
     const [answer, setAnswer] = useState('');
-    const [cameraReceipt, setCameraReceipt] = useState('');
     const [challengeError, setChallengeError] = useState('');
     const [revision, setRevision] = useState(0);
     const resetVerification = () => {
         setConfirmation('');
         setChallenge(null);
         setAnswer('');
-        setCameraReceipt('');
         setChallengeError('');
     };
     const closeDialog = () => {
@@ -172,7 +169,7 @@ export function DeletionDialog({
     const confirmed =
         (!requireYes || confirmation === 'YES') &&
         (!needsChallenge ||
-            (!!challenge && /^\d{1,3}$/.test(answer) && !!cameraReceipt));
+            (!!challenge && /^\d{1,3}$/.test(answer)));
 
     return (
         <Dialog.Root
@@ -316,9 +313,10 @@ export function DeletionDialog({
                                     className="jr-delete-verification-label"
                                 >
                                     <span className="jr-delete-step">2</span>{' '}
-                                    Verification: solve the equation{' '}
+                                    Solve the verification challenge{' '}
                                     <span className="jr-required">*</span>
                                 </label>
+                                <div className="jr-delete-challenge-row">
                                 <div
                                     className="jr-delete-equation"
                                     aria-live="polite"
@@ -346,13 +344,13 @@ export function DeletionDialog({
                                     onClick={() => {
                                         setChallenge(null);
                                         setAnswer('');
-                                        setCameraReceipt('');
                                         setChallengeError('');
                                         setRevision((value) => value + 1);
                                     }}
                                 >
                                     New challenge
                                 </Button>
+                                </div>
                                 {challengeError && (
                                     <p role="alert" className="jr-field-error">
                                         {challengeError}
@@ -360,19 +358,6 @@ export function DeletionDialog({
                                 )}
                             </div>
                         )}
-                        {open &&
-                            needsChallenge &&
-                            !blocked &&
-                            challenge &&
-                            challengeScope && (
-                                <DeletionCamera
-                                    key={challenge.token}
-                                    token={challenge.token}
-                                    scope={challengeScope}
-                                    disabled={processing}
-                                    onReceipt={setCameraReceipt}
-                                />
-                            )}
                         {error && (
                             <div className="jr-delete-error" role="alert">
                                 <CircleAlert size={18} aria-hidden="true" />
@@ -429,12 +414,14 @@ export function DeletionDialog({
                                                   captcha_token:
                                                       challenge.token,
                                                   captcha_answer: answer,
-                                                  camera_receipt: cameraReceipt,
                                               }
                                             : undefined,
                                     );
 
                                     if (needsChallenge) {
+                                        setChallenge(null);
+                                        setAnswer('');
+                                        setChallengeError('');
                                         setRevision((value) => value + 1);
                                     }
                                 }
