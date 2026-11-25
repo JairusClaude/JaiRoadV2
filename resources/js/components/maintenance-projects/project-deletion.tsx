@@ -188,8 +188,7 @@ export function useProjectDeletion(onDeleted?: () => void) {
 
             if (!response.ok || data.state !== 'completed') {
                 throw new Error(
-                    data.errors?.camera_receipt?.[0] ??
-                        data.errors?.captcha_answer?.[0] ??
+                    data.errors?.captcha_answer?.[0] ??
                         data.errors?.confirmation_token?.[0] ??
                         data.errors?.file?.[0] ??
                         data.message ??
