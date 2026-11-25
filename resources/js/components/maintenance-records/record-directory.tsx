@@ -1,4 +1,14 @@
-import { MoreHorizontal, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import {
+    ClipboardCheck,
+    ClipboardList,
+    Clock,
+    FolderKanban,
+    MoreHorizontal,
+    Pencil,
+    Plus,
+    Search,
+    Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
 import type { RefObject } from 'react';
 import {
@@ -188,22 +198,26 @@ export function RecordDirectory({
                 >
                     <MetricCard
                         title="Total Projects"
+                            icon={<FolderKanban className="size-5" />}
                         value={displayedTotalProjects}
                         subtitle="Active maintenance projects"
                         highlight={true}
                     />
                     <MetricCard
                         title="Total Records"
+                            icon={<ClipboardList className="size-5" />}
                         value={displayedTotalRecords}
                         subtitle="Quarterly maintenance records"
                     />
                     <MetricCard
-                        title="Completed Roads"
+                        title="Completed Records"
+                            icon={<ClipboardCheck className="size-5" />}
                         value={displayedCompletedRoads}
                         subtitle="Completed maintenance"
                     />
                     <MetricCard
-                        title="Ongoing Roads"
+                        title="Ongoing Records"
+                            icon={<Clock className="size-5" />}
                         value={displayedOngoingRoads}
                         subtitle="In progress or scheduled"
                     />
