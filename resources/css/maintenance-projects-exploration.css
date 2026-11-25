@@ -250,3 +250,20 @@ body:has(.jr-directory-exploration) .jr-mobile-shell .jr-nav-link.jr-active {
         flex-basis: 100%;
     }
 }
+
+/* A read-only projects directory has exactly two columns, neither an action column. */
+.jr-directory-exploration .jr-project-table-readonly {
+    width: 100%;
+    min-width: 0;
+}
+.jr-directory-exploration .jr-project-table-readonly th:last-child {
+    text-align: left;
+}
+.jr-directory-exploration .jr-project-table-readonly :is(th, td) {
+    overflow-wrap: anywhere;
+}
+@media (max-width: 540px) {
+    .jr-directory-exploration .jr-project-table-readonly :is(th, td) {
+        padding-inline: 10px;
+    }
+}
