@@ -385,6 +385,7 @@ export default function PolishedWorkspaceLayout({
                             </span>
                         </div>
                         <div className="flex items-center gap-2 sm:gap-3">
+                            <span className="jr-navigation-status-slot" data-jr-navigation-status />
                             <DdNotificationBell />
                             <div
                                 className="h-7 w-px bg-slate-200 dark:bg-slate-700"
