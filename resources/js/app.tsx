@@ -11,6 +11,7 @@ import MaintenanceProjectLayout from '@/layouts/maintenance-project-layout';
 import RoleAwareWorkspaceLayout from '@/layouts/role-aware-workspace-layout';
 import RoleWorkspaceLayout from '@/layouts/role-workspace-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+import '../css/jairoads-motion.css';
 
 const appName = import.meta.env.VITE_APP_NAME || 'JaiROADS';
 
