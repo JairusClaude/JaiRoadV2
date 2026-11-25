@@ -13,9 +13,9 @@ import {
 import { useState } from 'react';
 import { DdDashboardAnalytics } from '@/components/dd-dashboard-analytics';
 import type { DdDashboardSummary } from '@/components/dd-dashboard-analytics';
+import WorkspaceLguDirectory from '@/components/lgus/workspace-directory';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import CanonicalUserManagement from '@/components/user-management/canonical-user-management';
-import DdLguDirectory from '@/pages/dd-phase3/DdLguDirectory';
 import '../../../css/maintenance-projects-exploration.css';
 
 type Role = 'SuperAdmin' | 'Admin' | 'Engineer' | 'Viewer';
@@ -113,7 +113,7 @@ function StatCard({
     );
 }
 
-export default function DdPhase3Workspace({
+export default function WorkspaceDirectory({
     section,
     identity,
     counts,
@@ -145,7 +145,7 @@ export default function DdPhase3Workspace({
                         {status}
                     </div>
                 )}
-                <DdLguDirectory
+                <WorkspaceLguDirectory
                     initialLgus={lgus.map((x) => ({
                         id: Number(x.id),
                         municipalityName: x.municipality_name,

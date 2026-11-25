@@ -100,7 +100,7 @@ final class AuditHistoryController extends Controller
         $summary = ['system_activities' => DB::table('jairoads_next.audit_logs')->whereIn('action', ['CREATE', 'UPDATE', 'DELETE', 'ACTIVATE', 'DEACTIVATE', 'REASSIGN', 'RETIRE'])->count(), 'logins' => $available ? $success : null, 'failed_logins' => $available ? $failures : null, 'online_accounts' => $presence['available'] ? $presence['total'] : null];
         abort_unless($resolver->resolve($user) === $actor, 403);
 
-        return Inertia::render('dd-phase3/AuditHistory', ['events' => $events, 'authentication' => $authentication,
+        return Inertia::render('AuditLogs/History', ['events' => $events, 'authentication' => $authentication,
             'presence' => $presence, 'filters' => $filters, 'actions' => $actions, 'entities' => array_keys(AuditValues::TABLES),
             'monitoring' => ['available' => $available, 'collecting' => $collecting, 'recent_failure_at' => app(AuthenticationTelemetry::class)->recentFailure(), 'message' => $available
                 ? (! $collecting ? 'Collection is disabled or unavailable; retained authentication history remains read-only.' : 'Separate, best-effort security telemetry. Failed attempts are masked and rate-bounded; outages may leave gaps. No IP addresses are stored.')

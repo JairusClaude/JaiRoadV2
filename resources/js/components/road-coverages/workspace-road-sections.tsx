@@ -14,9 +14,9 @@ import { useCallback, useMemo, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { RoadCoverageMap } from '@/components/maintenance-projects/road-coverage-map';
-import DdRoadMunicipalityChange from '@/pages/dd-phase3/DdRoadMunicipalityChange';
-import { requestOperation } from '@/pages/dd-phase3/requests';
-import RoadTraceMap from '@/pages/dd-phase3/RoadTraceMap';
+import RoadMunicipalityChange from '@/components/road-coverages/road-municipality-change';
+import RoadTraceMap from '@/components/road-coverages/road-trace-map';
+import { requestOperation } from '@/lib/operation-request';
 /** UI name: Road Sections; actual entity: a *whole* RoadCoverage. */
 type Pavement = 'Concrete' | 'Asphalt' | 'Gravel' | 'Earth';
 type Condition = 'Good' | 'Fair' | 'Bad';
@@ -33,7 +33,7 @@ export type RoadCoverageSummary = {
     projectTitle: string | null;
     localDraft?: boolean;
 };
-export type DdRoadSectionsProps = {
+export type WorkspaceRoadSectionsProps = {
     initialCoverages?: RoadCoverageSummary[];
     lgus?: {
         id: number;
@@ -198,7 +198,7 @@ function Modal({
         </div>
     );
 }
-export default function DdRoadSections({
+export default function WorkspaceRoadSections({
     initialCoverages = [],
     lgus = [],
     schemaNotice = null,
@@ -206,7 +206,7 @@ export default function DdRoadSections({
     canCreate,
     canEdit,
     canManage,
-}: DdRoadSectionsProps) {
+}: WorkspaceRoadSectionsProps) {
     const [editingId, setEditingId] = useState<number | null>(null);
     const [saving, setSaving] = useState(false);
     const [search, setSearch] = useState('');
@@ -976,7 +976,7 @@ export default function DdRoadSections({
                 </Modal>
             )}
             {canEdit && municipalityRoadId !== null && (
-                <DdRoadMunicipalityChange
+                <RoadMunicipalityChange
                     roadId={municipalityRoadId}
                     lgus={lgus}
                     onClose={() => setMunicipalityRoadId(null)}

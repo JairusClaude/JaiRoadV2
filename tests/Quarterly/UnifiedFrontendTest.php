@@ -62,7 +62,7 @@ final class UnifiedFrontendTest extends PostgresTestCase
             $this->recordData($project, $other) + ['created_by' => $f['user']->dd_user_account_id],
         ]);
         $this->get('/dd-phase3/dashboard?engineer_id='.$other)->assertOk()->assertInertia(fn (Assert $page) => $page
-            ->component('dd-phase3/RoleDashboard')->has('mapCoverages', 3)
+            ->component('RoleDashboard/Canonical')->has('mapCoverages', 3)
             ->where('mapCoverages.0.id', $unassigned)->where('mapCoverages.0.my_project', false)
             ->where('mapCoverages.0.project_id', null)
             ->where('mapCoverages.1.id', $road)->where('mapCoverages.1.my_project', false)

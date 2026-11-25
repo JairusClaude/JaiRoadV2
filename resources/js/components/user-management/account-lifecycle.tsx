@@ -22,7 +22,7 @@ type Details = {
         engineer_status: string;
     } | null;
 };
-export default function DdAccountLifecycle({
+export default function AccountLifecycle({
     accounts,
     actorId,
     initialAccountId,

@@ -18,7 +18,7 @@ final class ProjectAssignmentAuthorizationTest extends PostgresTestCase
         $user = $this->account('Engineer', $engineer);
         $road = $this->road($engineer);
         $this->actingAs($user)->get('/dd-phase3/projects?view=create')->assertOk()
-            ->assertInertia(fn (AssertableInertia $page) => $page->component('dd-phase3/Operations')
+            ->assertInertia(fn (AssertableInertia $page) => $page->component('Workspace/Operations')
                 ->where('capabilities.createProjects', true)->where('capabilities.deleteProjects', false)->has('roads', 1));
         $this->postJson('/dd-phase3/ops/projects', [
             'project_title' => 'Engineer-created project', 'road_coverage_id' => $road,

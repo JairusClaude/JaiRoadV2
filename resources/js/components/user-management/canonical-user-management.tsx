@@ -14,9 +14,9 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
+import AccountLifecycle from '@/components/user-management/account-lifecycle';
 import AccountTypeBadge from '@/components/user-management/account-type-badge';
-import DdAccountLifecycle from '@/pages/dd-phase3/DdAccountLifecycle';
-import DdEngineerLifecycle from '@/pages/dd-phase3/DdEngineerLifecycle';
+import EngineerLifecycle from '@/components/user-management/engineer-lifecycle';
 import '../../../css/canonical-user-management.css';
 
 type Role = 'SuperAdmin' | 'Admin' | 'Engineer' | 'Viewer';
@@ -1166,7 +1166,7 @@ export default function CanonicalUserManagement({
                                     onBusy={setBusy}
                                 />
                             ) : modal?.kind === 'account' ? (
-                                <DdAccountLifecycle
+                                <AccountLifecycle
                                     key={modal.id}
                                     accounts={accounts}
                                     actorId={actorId}
@@ -1174,7 +1174,7 @@ export default function CanonicalUserManagement({
                                     onBusy={setBusy}
                                 />
                             ) : modal?.kind === 'engineer' ? (
-                                <DdEngineerLifecycle
+                                <EngineerLifecycle
                                     key={modal.id}
                                     engineers={engineers}
                                     initialEngineerId={modal.id}

@@ -124,7 +124,7 @@ Exact before/after method inventory: [writer-reader-inventory.md](writer-reader-
 - `docs/audit/verification.md`
 - `docs/audit/writer-reader-inventory.md`
 - `resources/js/components/dd-dashboard-analytics.tsx`
-- `resources/js/pages/dd-phase3/AuditHistory.tsx`
+- `resources/js/pages/AuditLogs/History.tsx`
 - `routes/dd-phase3.php`
 - `tests/Browser/audit-notifications.mjs`
 - `tests/Browser/prepare-unified.php`

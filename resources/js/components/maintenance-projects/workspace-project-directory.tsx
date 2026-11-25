@@ -42,7 +42,7 @@ export type DirectoryProps = {
     busy?: boolean;
 };
 
-export function DdProjectDirectory({
+export function WorkspaceProjectDirectory({
     projects,
     municipalities,
     filters,

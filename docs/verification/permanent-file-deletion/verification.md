@@ -47,7 +47,7 @@ See [the schema-owner and operations handoff](../../permanent-individual-file-de
 - `resources/js/pages/MaintenanceDocuments/Form.tsx`
 - `resources/js/pages/MaintenanceDocuments/Index.tsx`
 - `resources/js/pages/MaintenanceDocuments/Show.tsx`
-- `resources/js/pages/dd-phase3/DdFileRemovalReview.tsx`
+- `resources/js/components/files/file-removal-review.tsx`
 - `resources/js/types/maintenance-documents.ts`
 - `resources/js/types/monthly-updates.ts`
 - `routes/dd-phase3.php`

@@ -143,7 +143,7 @@ branch ref and handoff, avoiding a circular self-hash in this file.
 - `database/proposals/canonical_account_provisioning.sql`
 - `docs/security/canonical-only-access.md`
 - `phpunit.xml`
-- `resources/js/pages/dd-phase3/Workspace.tsx`
+- `resources/js/pages/Workspace/Directory.tsx`
 - `tests/Browser/authenticated-history.mjs`
 - `tests/Browser/passkey-lifecycle.mjs`
 - `tests/Browser/passkey-state.php`

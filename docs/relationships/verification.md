@@ -65,11 +65,11 @@ All write tests use new guarded disposable PostgreSQL 17 clusters, SQLite memory
 - `resources/js/pages/MaintenanceProjects/Records/Show.tsx`
 - `resources/js/pages/MaintenanceRecords/Index.tsx`
 - `resources/js/pages/MaintenanceRecords/PreservedHistory.tsx`
-- `resources/js/pages/dd-phase3/DdManagingEngineerReassignment.tsx`
-- `resources/js/pages/dd-phase3/DdQuarterlyMaintenance.tsx`
-- `resources/js/pages/dd-phase3/DdRoadMunicipalityChange.tsx`
-- `resources/js/pages/dd-phase3/Operations.tsx`
-- `resources/js/pages/dd-phase3/Workspace.tsx`
+- `resources/js/components/maintenance-records/managing-engineer-reassignment.tsx`
+- `resources/js/components/maintenance-records/workspace-records.tsx`
+- `resources/js/components/road-coverages/road-municipality-change.tsx`
+- `resources/js/pages/Workspace/Operations.tsx`
+- `resources/js/pages/Workspace/Directory.tsx`
 - `resources/js/types/maintenance-record-directory.ts`
 - `resources/js/types/maintenance-records.ts`
 - `routes/dd-frontend.php`

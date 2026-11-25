@@ -15,9 +15,9 @@ it('renders each active DD role dashboard using its explicit identity', function
         ->component($component)->missing('auth.user.password')->missing('auth.user.two_factor_secret'));
 })->with([
     ['SuperAdmin', 'dd-superadmin-command-center/Index'],
-    ['Admin', 'dd-phase3/Workspace'],
-    ['Engineer', 'dd-phase3/RoleDashboard'],
-    ['Viewer', 'dd-phase3/RoleDashboard'],
+    ['Admin', 'Workspace/Directory'],
+    ['Engineer', 'RoleDashboard/Canonical'],
+    ['Viewer', 'RoleDashboard/Canonical'],
 ]);
 
 it('denies direct SuperAdmin entry to other roles', function (string $role) {

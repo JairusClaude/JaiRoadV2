@@ -33,7 +33,7 @@ Reference models retain the `Reference` suffix because existing `App\Models\Road
 
 The middleware name now describes its fail-closed responsibility; `bootstrap/app.php` registers the renamed class and the corresponding feature test follows it. No redirect logic or external URLs were modified.
 
-The route *file names* have changed, but public URL paths such as `/dd-phase3/dashboard` and Laravel route names remain unchanged so users' bookmarks, browser tests and active permissions do not silently break. React page names and the `resources/js/pages/dd-phase3` folder are also **left unchanged** for this backend-only refactor; that frontend rename can be a separately tested pass.
+The route *file names* have changed, but public URL paths such as `/dd-phase3/dashboard` and Laravel route names remain unchanged so users' bookmarks, browser tests and active permissions do not silently break. The subsequent frontend refactor moved the active React pages into `AuditLogs`, `RoleDashboard`, and `Workspace`, and moved their embedded controls into feature component directories. The historical page directory was removed.
 
 ## Free local checks (Windows with Git Bash or WSL)
 

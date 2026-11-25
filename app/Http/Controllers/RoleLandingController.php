@@ -223,7 +223,7 @@ final class RoleLandingController extends Controller
         $username = DB::table('jairoads_next.user_accounts')
             ->where('id', $actor['account_id'])->value('username');
 
-        return Inertia::render('dd-phase3/RoleDashboard', [
+        return Inertia::render('RoleDashboard/Canonical', [
             'role' => strtolower($actor['role']),
             'name' => (string) $user->name,
             'username' => (string) $username,

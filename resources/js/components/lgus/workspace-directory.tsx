@@ -23,7 +23,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { requestOperation } from '@/pages/dd-phase3/requests';
+import { requestOperation } from '@/lib/operation-request';
 
 // Linked road coverages or engineer assignments are protected by restrictive
 // foreign keys; the server rejects those deletions, so the UI blocks them early.
@@ -46,7 +46,7 @@ export type LguRecord = {
     localDraft?: boolean;
     localEdited?: boolean;
 };
-export type DdLguDirectoryProps = {
+export type WorkspaceLguDirectoryProps = {
     initialLgus?: LguRecord[];
     schemaNotice?: string | null;
     canCreate?: boolean;
@@ -169,12 +169,12 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
         </div>
     );
 }
-export default function DdLguDirectory({
+export default function WorkspaceLguDirectory({
     initialLgus = [],
     availableFields = {},
     schemaNotice = null,
     canCreate = false,
-}: DdLguDirectoryProps) {
+}: WorkspaceLguDirectoryProps) {
     const [saving, setSaving] = useState(false);
     const [query, setQuery] = useState('');
     const [provinceFilter, setProvinceFilter] = useState('all');

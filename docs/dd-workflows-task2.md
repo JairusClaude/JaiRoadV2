@@ -31,8 +31,9 @@ The authenticated GitHub connection creates these commit objects directly, compa
 - `app/Http/Controllers/DataDictionary/DdPhase3Controller.php` — authenticated account ID in existing directory view props only.
 - `app/Http/Controllers/DataDictionary/DdOperationsController.php` — reassignment and non-mutating file reviews only.
 - `routes/dd-phase3.php` — six focused authenticated routes; no destructive file route.
-- `resources/js/pages/dd-phase3/DdEngineerLifecycle.tsx`, `DdAccountLifecycle.tsx`, `DdFileRemovalReview.tsx`, `DdManagingEngineerReassignment.tsx` — new focused controls.
-- `Workspace.tsx`, `Operations.tsx`, `DdDocuments.tsx`, `DdMonthlyUpdates.tsx`, `DdQuarterlyMaintenance.tsx` in that directory — integrate those controls without redesigning existing screens.
+- `resources/js/components/user-management/` contains the account and engineer lifecycle controls.
+- `resources/js/components/files/file-removal-review.tsx` and `resources/js/components/maintenance-records/managing-engineer-reassignment.tsx` contain the file review and reassignment controls.
+- `resources/js/pages/Workspace/` assembles the feature components for directory and operations pages.
 - `.github/workflows/quarterly-maintenance.yml` — existing integration-branch workflow checks the new tests/controller/components; isolated PostgreSQL only, no deployment or shared credentials.
 
 ## Executed local verification

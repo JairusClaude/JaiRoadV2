@@ -5,8 +5,8 @@ import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialo
 import { ProjectForm } from '@/components/maintenance-projects/project-form';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { RoadCoverageMap } from '@/components/maintenance-projects/road-coverage-map';
+import { WorkspaceProjectDirectory } from '@/components/maintenance-projects/workspace-project-directory';
 import { Button } from '@/components/ui/button';
-import { DdProjectDirectory } from '@/pages/dd-phase3/DdProjectDirectory';
 import type {
     CoverageChoice,
     IntegrationStatus,
@@ -54,7 +54,7 @@ const HOME = '/dd-phase3/projects';
 
 // Uses the original JaiROADS directory and project form, not a generic DD form.
 // Only the URLs and source records change. No legacy business endpoint is called.
-export default function DdMaintenanceProjects({
+export default function WorkspaceProjects({
     canCreate,
     canUpdate,
     canManage,
@@ -177,7 +177,7 @@ export default function DdMaintenanceProjects({
         return (
             <>
                 <Head title="Add Project" />
-                <DdProjectEditor
+                <WorkspaceProjectEditor
                     key="new"
                     coverages={coverages}
                     onCancel={cancel}
@@ -190,7 +190,7 @@ export default function DdMaintenanceProjects({
         return (
             <>
                 <Head title="Edit Project" />
-                <DdProjectEditor
+                <WorkspaceProjectEditor
                     key={`edit-${selected.id}`}
                     project={selected}
                     coverages={coverages}
@@ -307,7 +307,7 @@ export default function DdMaintenanceProjects({
     return (
         <>
             <Head title={title} />
-            <DdProjectDirectory
+            <WorkspaceProjectDirectory
                 key={`${page.url}:${projects.length}`}
                 projects={pagination}
                 municipalities={lgus}
@@ -362,7 +362,7 @@ export default function DdMaintenanceProjects({
     );
 }
 
-function DdProjectEditor({
+function WorkspaceProjectEditor({
     project,
     coverages,
     coverageLocked = false,
