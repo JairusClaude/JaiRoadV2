@@ -18,7 +18,7 @@ use Illuminate\Validation\ValidationException;
 
 final class InternalPasswordRecoveryController extends Controller
 {
-    private const TABLE = 'public.jairoads_password_recovery_requests';
+    private const TABLE = 'jairoads_security.password_recovery_requests';
 
     private const ROLES = ['Admin', 'Engineer', 'Viewer'];
 
@@ -78,7 +78,8 @@ final class InternalPasswordRecoveryController extends Controller
     {
         $this->available();
         $v = $request->validate(['identifier' => ['required', 'string', 'max:255']]);
-        DB::transaction(function () use ($v, $resolver): void {
+        try {
+            DB::transaction(function () use ($v, $resolver): void {
             DB::select('SELECT pg_advisory_xact_lock(1927710916)');
             $login = $this->target($v['identifier'], $resolver, true);
             if ($login === null) {
@@ -94,7 +95,10 @@ final class InternalPasswordRecoveryController extends Controller
                     'expires_at' => now()->addDay(),
                 ]);
             }
-        }, 3);
+            }, 3);
+        } catch (QueryException) {
+            return $this->reply(['message' => 'Internal recovery is unavailable. Contact your SuperAdmin.'], 503);
+        }
 
         return $this->reply(['message' => 'If the account is eligible, your request is available to the SuperAdmin. Verify your identity with them to receive a code.']);
     }
@@ -120,7 +124,8 @@ final class InternalPasswordRecoveryController extends Controller
             'current_password' => ['required', 'string', 'max:1024'],
             'identity_verified' => ['accepted'],
         ]);
-        $code = DB::transaction(function () use ($request, $resolver, $actor, $v, $id): string {
+        try {
+            $code = DB::transaction(function () use ($request, $resolver, $actor, $v, $id): string {
             DB::select('SELECT pg_advisory_xact_lock(1927710916)');
             $admin = User::query()->whereKey($request->user()->getKey())->lockForUpdate()->first();
             abort_unless($admin instanceof User && $resolver->resolve($admin) === $actor, 403);
@@ -143,7 +148,10 @@ final class InternalPasswordRecoveryController extends Controller
             ]);
 
             return $code;
-        }, 3);
+            }, 3);
+        } catch (QueryException) {
+            return $this->reply(['message' => 'Approval could not be completed. No code was issued.'], 503);
+        }
 
         // Only the approving administrator sees the plaintext code, once.
         return $this->reply(['code' => $code, 'expires_in_minutes' => 10]);
