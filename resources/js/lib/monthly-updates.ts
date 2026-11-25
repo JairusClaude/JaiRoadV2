@@ -1,3 +1,4 @@
+import { manilaTimestamp } from '@/lib/manila-time';
 import type {
     MonthlyCreateProps,
     MonthlyUpdateErrors,
@@ -84,10 +85,4 @@ export const updateMonth = (value: string) =>
         timeZone: 'UTC',
     }).format(new Date(`${value}-01T00:00:00Z`));
 
-export const updateTimestamp = (value: string | null) =>
-    value && Number.isFinite(Date.parse(value))
-        ? new Intl.DateTimeFormat('en-PH', {
-              dateStyle: 'medium',
-              timeStyle: 'short',
-          }).format(new Date(value))
-        : 'Unavailable';
+export const updateTimestamp = manilaTimestamp;
