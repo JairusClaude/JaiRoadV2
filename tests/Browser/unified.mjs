@@ -228,6 +228,15 @@ try {
         assert.equal(await viewer.getByRole('button', { name: /^(Add|Create|Upload)\b/i, includeHidden: true }).count(), 0, route);
         assert.equal(await viewer.getByRole('button', { name: /^Select (projects|records|updates|documents|road coverages|LGUs)$/i, includeHidden: true }).count(), 0, route);
     }
+    await viewer.goto(ui + '/maintenance-projects');
+    await viewer.getByText('Browse road maintenance projects and their progress.', { exact: true }).waitFor();
+    assert.equal(await viewer.getByRole('columnheader', { name: 'Actions', exact: true, includeHidden: true }).count(), 0);
+    await viewer.goto(ui + '/maintenance-records');
+    const readOnlyRecord = viewer.locator('a[href*="/records/"]').first();
+    await readOnlyRecord.waitFor();
+    await readOnlyRecord.click();
+    await viewer.getByRole('heading', { name: 'Maintenance Record Details' }).waitFor();
+    assert.equal(await viewer.getByRole('button', { name: /^(Edit Record|Delete Record|Add Monthly Update|Upload Document)$/i, includeHidden: true }).count(), 0);
     await viewer.goto(base + '/dd-phase3/dashboard');
     assert.equal(await viewer.locator('.jr-viewer-sidebar .jr-nav-link.jr-active').first().evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(29, 93, 181)');
 
