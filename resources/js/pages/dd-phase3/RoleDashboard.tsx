@@ -11,12 +11,11 @@ import {
     Route,
     Users,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Component, lazy, Suspense, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { DdDashboardAnalytics } from '@/components/dd-dashboard-analytics';
 import type { DdDashboardSummary } from '@/components/dd-dashboard-analytics';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
-import { SimplifiedCoverageMap } from '@/components/road-coverages/simplified-coverage-map';
 import type { SimplifiedCoverageItem } from '@/components/road-coverages/simplified-coverage-map';
 import '../../../css/maintenance-projects-exploration.css';
 
@@ -31,8 +30,6 @@ type StatKey =
 type Props = {
     role: Role;
     analytics: DdDashboardSummary;
-    mapCoverages: SimplifiedCoverageItem[];
-    mapNextCursor?: number | null;
     name: string;
     username: string;
     engineer: { id: number; name: string; rank: string; status: string } | null;
@@ -50,101 +47,71 @@ type Props = {
     notifications: { id: number; message: string; createdAt: string }[];
 };
 
-function DashboardRoadMap({
-    isEngineer,
-    initialCoverages,
-    initialCursor,
-    total,
-}: {
-    isEngineer: boolean;
-    initialCoverages: SimplifiedCoverageItem[];
-    initialCursor: number | null;
-    total: number | null;
-}) {
-    const [additional, setAdditional] = useState<SimplifiedCoverageItem[]>([]);
-    const [cursor, setCursor] = useState(initialCursor);
+const SimplifiedCoverageMap = lazy(() => import('@/components/road-coverages/simplified-coverage-map'));
+
+function MapPlaceholder({ children }: { children: ReactNode }) {
+    return <div className="grid min-h-[450px] place-items-center rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-600">{children}</div>;
+}
+
+class MapBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+    state = { failed: false };
+    static getDerivedStateFromError() { return { failed: true }; }
+    render() {
+        return this.state.failed
+            ? <MapPlaceholder><div><p role="alert">The map could not initialize. The rest of the dashboard is available.</p><button type="button" className="mt-3 underline" onClick={() => this.setState({ failed: false })}>Retry map</button></div></MapPlaceholder>
+            : this.props.children;
+    }
+}
+
+function DashboardRoadMap({ isEngineer, total }: { isEngineer: boolean; total: number | null }) {
+    const [coverages, setCoverages] = useState<SimplifiedCoverageItem[]>([]);
+    const [cursor, setCursor] = useState<number | null>(null);
+    const [ready, setReady] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const coverages = useMemo(() => [...initialCoverages, ...additional], [initialCoverages, additional]);
+    const [attempt, setAttempt] = useState(0);
+    const [requestCursor, setRequestCursor] = useState<number | null>(null);
 
-    const loadMore = async () => {
-        if (cursor === null || loading) {
-            return;
-        }
-
+    useEffect(() => {
+        const controller = new AbortController();
         setLoading(true);
         setError('');
-
-        try {
-            const response = await fetch(
-                '/dd-phase3/dashboard/map-roads?before=' +
-                    encodeURIComponent(cursor),
-                {
-                    credentials: 'same-origin',
-                    headers: { Accept: 'application/json' },
-                },
-            );
-
-            if (!response.ok) {
-                throw new Error('Road map page unavailable.');
-            }
-
-            const result = (await response.json()) as {
-                data: SimplifiedCoverageItem[];
-                next_cursor: number | null;
-            };
-
-            if (!Array.isArray(result.data)) {
-                throw new Error('Invalid road map response.');
-            }
-
-            setAdditional((prior) => {
-                const seen = new Set(
-                    [...initialCoverages, ...prior].map((road) => road.id),
-                );
-
-                return [
-                    ...prior,
-                    ...result.data.filter((road) => !seen.has(road.id)),
-                ];
-            });
-            setCursor(result.next_cursor);
-        } catch {
-            setError('Unable to load additional road coverages. Please retry.');
-        } finally {
-            setLoading(false);
-        }
-    };
+        const url = '/dd-phase3/dashboard/map-roads' + (requestCursor === null ? '' : '?before=' + encodeURIComponent(requestCursor));
+        fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' }, cache: 'no-store', signal: controller.signal })
+            .then(async response => {
+                if (!response.ok) throw new Error('Road map unavailable');
+                const result = await response.json() as { data: SimplifiedCoverageItem[]; next_cursor: number | null };
+                if (!Array.isArray(result.data)) throw new Error('Invalid map data');
+                if (controller.signal.aborted) return;
+                setCoverages(prior => requestCursor === null ? result.data : [...prior, ...result.data.filter(road => !prior.some(existing => existing.id === road.id))]);
+                setCursor(result.next_cursor);
+                setReady(true);
+            })
+            .catch(() => { if (!controller.signal.aborted) setError('Unable to load road coverages. You can continue using the dashboard.'); })
+            .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+        return () => controller.abort();
+    }, [requestCursor, attempt]);
 
     return (
-        <section aria-label={isEngineer ? "My projects road map" : "Viewer road coverage map"}>
-            <SimplifiedCoverageMap
-                coverages={coverages}
-                engineerView={isEngineer}
-                viewerView={!isEngineer}
-                height={450}
-            />
-            {cursor !== null && (
+        <section aria-label={isEngineer ? 'My projects road map' : 'Viewer road coverage map'} className="min-w-0">
+            {ready ? (
+                <MapBoundary>
+                    <Suspense fallback={<MapPlaceholder><span role="status">Opening road coverage map…</span></MapPlaceholder>}>
+                        <SimplifiedCoverageMap coverages={coverages} engineerView={isEngineer} viewerView={!isEngineer} height={450} />
+                    </Suspense>
+                </MapBoundary>
+            ) : (
+                <MapPlaceholder><span role="status">{error ? 'Road map temporarily unavailable' : 'Loading road coverage map…'}</span></MapPlaceholder>
+            )}
+            {cursor !== null && !error && (
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
-                    <span>
-                        Showing {coverages.length} of {total ?? 'available'}{' '}
-                        road coverages on the map.
-                    </span>
-                    <button
-                        type="button"
-                        disabled={loading}
-                        onClick={() => void loadMore()}
-                        className="rounded-lg border border-slate-300 px-4 py-2 font-semibold text-[var(--jr-display-accent)] hover:bg-[var(--jr-display-soft)] disabled:opacity-50"
-                    >
+                    <span>Showing {coverages.length} of {total ?? 'available'} road coverages on the map.</span>
+                    <button type="button" disabled={loading} onClick={() => setRequestCursor(cursor)} className="rounded-lg border border-slate-300 px-4 py-2 font-semibold text-[var(--jr-display-accent)] hover:bg-[var(--jr-display-soft)] disabled:opacity-50">
                         {loading ? 'Loading roads…' : 'Load more map roads'}
                     </button>
                 </div>
             )}
-            {error && (
-                <p role="alert" className="mt-2 text-sm text-red-700">
-                    {error}
-                </p>
-            )}
+            {error && <div role="alert" className="mt-2 text-sm text-red-700">{error} <button type="button" className="underline" disabled={loading} onClick={() => setAttempt(n => n + 1)}>Retry</button></div>}
         </section>
     );
 }
@@ -185,8 +152,6 @@ export default function RoleDashboard({
     records,
     notifications,
     analytics,
-    mapCoverages = [],
-    mapNextCursor = null,
 }: Props) {
     const isEngineer = role === 'engineer';
     const [refreshing, setRefreshing] = useState(false);
@@ -367,17 +332,7 @@ export default function RoleDashboard({
                         )}
                     </section>
 
-                    <DashboardRoadMap
-                            isEngineer={isEngineer}
-                            key={
-                                role + ':' + String(mapCoverages[0]?.id ?? 0) +
-                                ':' +
-                                String(mapNextCursor ?? 'all')
-                            }
-                            initialCoverages={mapCoverages}
-                            initialCursor={mapNextCursor}
-                            total={stats.roadCoverages}
-                        />
+                    <DashboardRoadMap key={role + ':' + (engineer?.id ?? username)} isEngineer={isEngineer} total={stats.roadCoverages} />
 
                     <DdDashboardAnalytics
                         data={analytics}
