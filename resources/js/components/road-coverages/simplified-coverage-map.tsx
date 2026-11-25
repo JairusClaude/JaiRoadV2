@@ -126,11 +126,19 @@ export function SimplifiedCoverageMap({
         L.control.scale({ imperial: false, maxWidth: 120 }).addTo(map);
 
         map.fitBounds(PROVINCE_BOUNDS);
-        const observer = new ResizeObserver(() => map.invalidateSize());
+        let resizeFrame = 0;
+        const observer = new ResizeObserver(() => {
+            if (resizeFrame) cancelAnimationFrame(resizeFrame);
+            resizeFrame = requestAnimationFrame(() => {
+                resizeFrame = 0;
+                map.invalidateSize({ pan: false, debounceMoveend: true });
+            });
+        });
         observer.observe(containerRef.current);
 
         return () => {
             observer.disconnect();
+            if (resizeFrame) cancelAnimationFrame(resizeFrame);
             map.remove();
             mapRef.current = null;
         };
