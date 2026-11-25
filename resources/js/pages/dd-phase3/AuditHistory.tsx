@@ -335,7 +335,7 @@ function Filters({
             )}
             <div className="flex flex-wrap items-end gap-2 sm:col-span-2 xl:col-span-3">
                 <button
-                    className="rounded-xl bg-[#90451f] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                    className="rounded-xl bg-[var(--jr-role-accent)] hover:bg-[var(--jr-role-accent-hover)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
                     disabled={busy}
                 >
                     {busy ? 'Loading…' : 'Apply filters'}
@@ -523,7 +523,7 @@ export default function AuditHistory({
                                     </td>
                                     <td>
                                         <details className="min-w-52">
-                                            <summary className="cursor-pointer font-semibold text-[#90451f]">
+                                            <summary className="cursor-pointer font-semibold text-[var(--jr-role-accent)]">
                                                 Safe before / after values
                                             </summary>
                                             <div className="mt-3 max-w-md space-y-2 text-xs">
@@ -696,7 +696,7 @@ export default function AuditHistory({
                                     <td>{e.client_description}</td>
                                     <td>
                                         <details>
-                                            <summary className="cursor-pointer font-semibold text-[#90451f]">
+                                            <summary className="cursor-pointer font-semibold text-[var(--jr-role-accent)]">
                                                 Authentication details
                                             </summary>
                                             <p className="mt-2 text-xs">
