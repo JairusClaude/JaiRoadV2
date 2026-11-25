@@ -66,7 +66,7 @@ export function MaintenanceRecordForm({
                 : engineers.length === 0
                   ? 'No eligible managing engineers. An active Engineer account must be linked to an active engineer profile. A linked Admin may select themselves.'
                   : 'Eligible active engineers from all municipalities are listed.'
-            : undefined;
+            : 'Assignment is read-only here. An authorized administrator can change it through the separate reassignment process.';
     const required = (
         <span className="jr-required" aria-hidden="true">
             *
