@@ -11,6 +11,8 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Laravel\Fortify\Fortify;
+use Laravel\Fortify\Contracts\LoginResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -19,7 +21,20 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Keep credential verification in Fortify. Only the successful response
+        // changes: start a clean document across the authentication boundary.
+        $this->app->singleton(LoginResponse::class, static fn () => new class implements LoginResponse
+        {
+            public function toResponse($request): Response
+            {
+                if ($request->wantsJson()) {
+                    return response()->json(['two_factor' => false]);
+                }
+
+                $redirect = redirect()->intended(Fortify::redirects('login'));
+                return $request->header('X-Inertia') ? Inertia::location($redirect) : $redirect;
+            }
+        });
     }
 
     /**
