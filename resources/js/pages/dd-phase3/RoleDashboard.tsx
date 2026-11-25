@@ -159,7 +159,7 @@ function Metric({
         <div className="rounded-2xl border border-slate-200 bg-white px-5 py-5">
             <div className="flex items-start justify-between gap-3">
                 <span className="text-sm text-slate-500">{label}</span>
-                <span className="text-amber-800">{icon}</span>
+                <span className="text-[var(--jr-role-accent)]">{icon}</span>
             </div>
             <div className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 tabular-nums">
                 {value ?? '—'}
@@ -193,7 +193,7 @@ export default function RoleDashboard({
             id="notifications"
         >
             <h2 className="flex items-center gap-2 text-lg font-bold text-slate-950">
-                <Bell className="h-5 w-5 text-amber-800" /> My notifications
+                <Bell className="h-5 w-5 text-[var(--jr-role-accent)]" /> My notifications
             </h2>
             <p className="mt-1 text-sm text-slate-500">
                 Updates and messages for your account.
@@ -250,6 +250,7 @@ export default function RoleDashboard({
                                 : `Welcome, ${username || name}. Explore road coverage, maintenance projects and progress across JaiROADS.`}
                         </p>
                     </div>
+                    {isEngineer && (
                     <button
                         type="button"
                         className={
@@ -271,6 +272,7 @@ export default function RoleDashboard({
                         />
                         {refreshing ? 'Refreshing…' : 'Refresh dashboard'}
                     </button>
+                    )}
                 </div>
 
                 <main className="relative mx-0 -mt-3.5 min-w-0 space-y-6 rounded-t-[20px] bg-white px-4 pt-7 pb-10 shadow-sm sm:px-6 lg:-mx-7 lg:px-7">
@@ -342,7 +344,7 @@ export default function RoleDashboard({
                                 className={`mt-4 flex items-start gap-3 rounded-xl border px-4 py-3 ${limitedAccess ? 'border-amber-200 bg-amber-50' : 'border-emerald-200 bg-emerald-50'}`}
                             >
                                 <CircleAlert
-                                    className={`mt-0.5 h-5 w-5 shrink-0 ${limitedAccess ? 'text-amber-800' : 'text-emerald-700'}`}
+                                    className={`mt-0.5 h-5 w-5 shrink-0 ${limitedAccess ? 'text-[var(--jr-role-accent)]' : 'text-emerald-700'}`}
                                 />
                                 <div className="text-sm leading-6 text-slate-700">
                                     <strong className="block">
@@ -381,7 +383,7 @@ export default function RoleDashboard({
                         omitInventoryMetrics
                         omitOngoingMetric={isEngineer}
                         showActivity={false}
-                        activityReplacement={notificationPanel}
+                        activityReplacement={isEngineer ? notificationPanel : undefined}
                     />
 
                     <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
@@ -401,7 +403,7 @@ export default function RoleDashboard({
                                 </p>
                             </div>
                             <span
-                                className={`rounded-full border px-3 py-1 text-xs font-bold ${isEngineer ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-slate-200 bg-slate-50 text-slate-600'}`}
+                                className={`rounded-full border px-3 py-1 text-xs font-bold ${isEngineer ? 'border-amber-200 bg-amber-50 text-[var(--jr-role-accent)]' : 'border-slate-200 bg-slate-50 text-slate-600'}`}
                             >
                                 {isEngineer
                                     ? 'Create / Update across municipalities'
