@@ -57,7 +57,10 @@ export default function AuthShell({
                         </div>
                         {children}
                         {showMobileIntro && (
-                            <button type="button" className="jr-login-explore" onClick={() => setIntro(true)}>
+                            <button type="button" className="jr-login-explore" onClick={() => {
+                                setIntro(true);
+                                requestAnimationFrame(() => document.getElementById('jr-login-continue')?.focus({ preventScroll: true }));
+                            }}>
                                 Explore JaiROADS <ArrowRight aria-hidden="true" className="size-4" />
                             </button>
                         )}
