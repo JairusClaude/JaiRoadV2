@@ -415,7 +415,10 @@ try {
     // A confirmed account can remove its own passkey. That credential no
     // longer establishes a session, and password sign-in remains available.
     const [{ id: removedId }] = JSON.parse(keyIds);
-    const removal = await request(page, `/user/passkeys/${removedId}`, {}, 'DELETE');
+    const removalPath = `/user/passkeys/${removedId}`;
+    assert.equal((await request(page, removalPath, {}, 'DELETE')).status, 423);
+    assert.equal((await request(page, '/user/confirm-password', { password })).status, 201);
+    const removal = await request(page, removalPath, {}, 'DELETE');
     assert.equal(removal.status, 200);
     assert.equal(removal.body.status, 'passkey-deleted');
     assert.deepEqual(JSON.parse(state(user, 'snapshot')), []);
