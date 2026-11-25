@@ -64,15 +64,8 @@ export function IntegrationNotice({
     );
 }
 
-export function ProjectActions({
-    project,
-    onEdit,
-    onDelete,
-}: {
-    project: ProjectSummary;
-    onEdit: () => void;
-    onDelete: () => void;
-}) {
+/** Shared three-dot directory action menu (including keyboard navigation). */
+export function DirectoryActions({ label, children }: { label: string; children: ReactNode }) {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -80,7 +73,7 @@ export function ProjectActions({
                     variant="ghost"
                     size="icon"
                     className="jr-action-trigger"
-                    aria-label={`Actions for ${project.project_title}`}
+                    aria-label={label}
                     onClick={(event) => event.stopPropagation()}
                 >
                     <MoreHorizontal className="size-[18px]" />
@@ -91,20 +84,29 @@ export function ProjectActions({
                 align="end"
                 onClick={(event) => event.stopPropagation()}
             >
-                <DropdownMenuItem
-                    disabled={!project.can_edit}
-                    onSelect={onEdit}
-                >
-                    <Pencil /> Edit Project
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                    variant="destructive"
-                    disabled={!project.can_delete}
-                    onSelect={onDelete}
-                >
-                    <Trash2 /> Delete Project
-                </DropdownMenuItem>
+                {children}
             </DropdownMenuContent>
         </DropdownMenu>
+    );
+}
+
+export function ProjectActions({
+    project,
+    onEdit,
+    onDelete,
+}: {
+    project: ProjectSummary;
+    onEdit: () => void;
+    onDelete: () => void;
+}) {
+    return (
+        <DirectoryActions label={`Actions for ${project.project_title}`}>
+            <DropdownMenuItem disabled={!project.can_edit} onSelect={onEdit}>
+                <Pencil /> Edit Project
+            </DropdownMenuItem>
+            <DropdownMenuItem variant="destructive" disabled={!project.can_delete} onSelect={onDelete}>
+                <Trash2 /> Delete Project
+            </DropdownMenuItem>
+        </DirectoryActions>
     );
 }
