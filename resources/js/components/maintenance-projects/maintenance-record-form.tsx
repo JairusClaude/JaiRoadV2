@@ -247,7 +247,7 @@ export function MaintenanceRecordForm({
                         </h1>
                         <p>
                             {mode === 'edit'
-                                ? 'Update this maintenance record and its managing engineer.'
+                                ? 'Update the maintenance record details. Managing Engineer assignment is handled separately.'
                                 : 'Record a maintenance occurrence for this project.'}
                         </p>
                     </div>
@@ -441,7 +441,7 @@ export function MaintenanceRecordForm({
                         <p>
                             {preview
                                 ? 'Sample data only · restarting the preview resets maintenance records.'
-                                : 'Saved to the canonical MaintenanceRecord; assignment changes use the separate reassignment action.'}
+                                : 'Record details are saved here. Only authorized administrators can change an existing Managing Engineer assignment through the separate reassignment process.'}
                         </p>
                         <div className="flex gap-2">
                             <Button
