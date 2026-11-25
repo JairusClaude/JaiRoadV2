@@ -1,3 +1,4 @@
+import { manilaTimestamp } from '@/lib/manila-time';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
@@ -22,13 +23,7 @@ const date = (value?: string | null) =>
               timeZone: 'UTC',
           }).format(new Date(`${value}T00:00:00Z`))
         : 'Unavailable';
-const timestamp = (value: string | null) =>
-    value && Number.isFinite(Date.parse(value))
-        ? new Intl.DateTimeFormat('en-PH', {
-              dateStyle: 'medium',
-              timeStyle: 'short',
-          }).format(new Date(value))
-        : 'Unavailable';
+const timestamp = (value: string | null) => manilaTimestamp(value);
 
 export default function ShowRecord({
     project,
@@ -47,6 +42,7 @@ export default function ShowRecord({
     managerChoices?: { id: number; first_name: string; last_name: string }[];
 }) {
     const page = usePage();
+    const isViewer = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role?.toLowerCase() === 'viewer';
     const deletion = useRecordDeletion();
 
     return (
@@ -71,8 +67,9 @@ export default function ShowRecord({
                             ID: {record.id}
                         </p>
                     </div>
-                    <div className="jr-header-actions">
-                        <Button
+                    {!isViewer && (record.edit_url || record.delete_url) && <div className="jr-header-actions">
+                        {!isViewer && Boolean(record.edit_url) && (
+<Button
                             variant="outline"
                             disabled={!record.edit_url}
                             onClick={() => {
@@ -85,14 +82,17 @@ export default function ShowRecord({
                         >
                             <Pencil /> Edit Record
                         </Button>
-                        <Button
+)}
+                        {!isViewer && Boolean(record.delete_url) && (
+<Button
                             className="jr-danger"
                             disabled={!record.delete_url}
                             onClick={() => deletion.open(record)}
                         >
                             <Trash2 /> Delete Record
                         </Button>
-                    </div>
+)}
+                    </div>}
                 </div>
                 <div className="jr-record-context">
                     <span className="jr-record-context-label">
