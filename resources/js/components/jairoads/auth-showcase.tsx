@@ -270,7 +270,7 @@ export default function AuthShowcase({ expandedMobile = false, onContinue }: { e
                     </div>
                 </div>
                 {expandedMobile && (
-                    <button type="button" className="jr-login-continue" onClick={onContinue}>
+                    <button type="button" id="jr-login-continue" className="jr-login-continue" onClick={onContinue}>
                         Continue to sign in
                     </button>
                 )}
