@@ -376,7 +376,25 @@ throw new Error('Wave transform is static');
     assert.equal(await dashboardMap.locator('.jr-dashboard-road-mine').count(), mineCount);
     await myProjects.uncheck();
     await dashboardMap.locator('.jr-dashboard-road-other').first().waitFor();
-    assert.equal(await viewer.getByRole('region', { name: 'My projects road map' }).count(), 0);
+    const relationship = dashboardMap.getByRole('combobox', { name: 'Filter project relationship' });
+    await relationship.selectOption('created');
+    assert.equal(await dashboardMap.locator('.jr-dashboard-road-other, .jr-dashboard-road-assigned').count(), 0);
+    await relationship.selectOption('assigned');
+    assert.equal(await dashboardMap.locator('.jr-dashboard-road-other, .jr-dashboard-road-created').count(), 0);
+    await relationship.selectOption('both');
+    assert.equal(await dashboardMap.locator('.jr-dashboard-road-other, .jr-dashboard-road-created, .jr-dashboard-road-assigned').count(), 0);
+    await relationship.selectOption('all');
+    await viewer.goto(base + '/dd-phase3/dashboard');
+    const viewerMap = viewer.getByRole('region', { name: 'Viewer road coverage map' });
+    await viewerMap.waitFor();
+    await viewerMap.locator('.jr-directory-road-line').first().waitFor();
+    assert.equal(await viewerMap.getByRole('switch', { name: 'My projects only' }).count(), 0);
+    assert.equal(await viewerMap.locator('.jr-dashboard-road-mine').count(), 0);
+    await viewerMap.getByRole('combobox', { name: 'Inspect a road' }).selectOption({ index: 1 });
+    const viewerRoadDetails = viewerMap.getByRole('complementary', { name: 'Road details' });
+    await viewerRoadDetails.getByRole('heading', { name: 'Maintenance project', exact: true }).waitFor();
+    assert.equal(await viewerRoadDetails.locator('[data-relationship]').count(), 0);
+    await viewerRoadDetails.getByRole('button', { name: 'Close road details' }).click();
 
     await verifyRoleAcceptanceMatrix({
         browser,
