@@ -55,6 +55,7 @@ export default function Index({
     mapNextCursor,
 }: RoadCoverageDirectoryProps) {
     const page = usePage();
+    const isViewer = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role?.toLowerCase() === 'viewer';
     const effectiveCanDelete = canDelete ?? canEdit;
     const displayedTotalCoverages =
         totalCoverages ?? coverages?.total ?? coverages?.data?.length ?? 0;
@@ -279,7 +280,7 @@ export default function Index({
                             municipalities.
                         </p>
                     </div>
-                    {canEdit && (
+                    {!isViewer && canEdit && (
 <Button
                         className="jr-primary"
                         disabled={!canEdit}
@@ -516,7 +517,7 @@ export default function Index({
                             total={coverages.total}
                             singular="road coverage"
                             plural="road coverages"
-                            canDelete={effectiveCanDelete}
+                            canDelete={!isViewer && effectiveCanDelete}
                             disabled={busy}
                             onSelect={() => setSelecting(true)}
                             onCancel={clearSelection}
@@ -677,7 +678,7 @@ export default function Index({
                                                     event.stopPropagation()
                                                 }
                                             >
-                                                {canEdit || effectiveCanDelete && (
+                                                {!isViewer && (canEdit || effectiveCanDelete) && (
 <DropdownMenu>
                                                     <DropdownMenuTrigger
                                                         asChild
