@@ -15,6 +15,7 @@ import { DdDashboardAnalytics } from '@/components/dd-dashboard-analytics';
 import type { DdDashboardSummary } from '@/components/dd-dashboard-analytics';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import CanonicalUserManagement from '@/components/user-management/canonical-user-management';
+import InternalRecoveryQueue from '@/components/user-management/internal-recovery-queue';
 import DdLguDirectory from '@/pages/dd-phase3/DdLguDirectory';
 import '../../../css/maintenance-projects-exploration.css';
 
@@ -235,6 +236,10 @@ export default function DdPhase3Workspace({
                 </div>
 
                 <main className="relative mx-0 -mt-3.5 min-w-0 space-y-6 rounded-t-[20px] bg-white px-4 pt-7 pb-10 shadow-sm sm:px-6 lg:-mx-7 lg:px-7">
+                    {section === 'users' && identity.role === 'SuperAdmin' && (
+                        <InternalRecoveryQueue />
+                    )}
+
                     {section === 'users' && canManage && (
                         <CanonicalUserManagement
                             key={initialEngineerId ?? 'directory'}
