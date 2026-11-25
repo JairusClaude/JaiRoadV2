@@ -179,6 +179,25 @@ try {
     const superadmin = await signIn(f.superadmin_email);
     lastPage = engineer;
 
+    // Each canonical role must inherit its own icon foreground and background.
+    for (const [page, foreground, background] of [
+        [engineer, 'rgb(169, 75, 12)', 'rgb(255, 240, 227)'],
+        [admin, 'rgb(200, 41, 61)', 'rgb(253, 231, 234)'],
+        [viewer, 'rgb(29, 93, 181)', 'rgb(230, 239, 255)'],
+    ]) {
+        for (const path of ['/maintenance-records', '/monthly-updates', '/road-coverages', '/lgus']) {
+            await page.goto(ui + path);
+            const icons = page.locator('.jr-metric-card .jr-metric-icon');
+            await icons.first().waitFor();
+            const colors = await icons.evaluateAll(elements => elements.map(el => {
+                const style = getComputedStyle(el);
+                return [style.color, style.backgroundColor];
+            }));
+            for (const pair of colors) assert.deepEqual(pair, [foreground, background], path);
+        }
+        await page.goto(base + '/dd-phase3/dashboard');
+    }
+
     // Viewer palette is selected from the signed-in canonical role, not URL or preference.
     await viewer.locator('.jr-viewer-workspace').waitFor();
     await viewer.locator('.jr-viewer-brand-logo').first().waitFor();
