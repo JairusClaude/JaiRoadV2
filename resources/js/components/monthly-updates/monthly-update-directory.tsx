@@ -141,6 +141,7 @@ export function MonthlyUpdateDirectory({
                             reports.
                         </p>
                     </div>
+                    {canWrite && (
                     <Button
                         className="jr-primary"
                         disabled={!canWrite}
@@ -149,6 +150,7 @@ export function MonthlyUpdateDirectory({
                         <Plus />
                         Add Monthly Update
                     </Button>
+                    )}
                 </div>
                 <form
                     className="jr-filters"
@@ -259,7 +261,7 @@ export function MonthlyUpdateDirectory({
                     total={updates.total}
                     singular="update"
                     plural="updates"
-                    canDelete={true}
+                    canDelete={canWrite}
                     disabled={busy}
                     onSelect={() => setSelecting(true)}
                     onCancel={() => {
@@ -401,7 +403,7 @@ export function MonthlyUpdateDirectory({
                                             event.stopPropagation()
                                         }
                                     >
-                                        {!selecting && (
+                                        {!selecting && canWrite && (
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <Button
