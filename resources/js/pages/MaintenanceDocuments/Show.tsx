@@ -53,7 +53,8 @@ export default function Show({ document: doc }: { document: DocumentSummary }) {
                             <p>Document ID: {doc.id}</p>
                         </div>
                         <div className="jr-header-actions">
-                            <Button
+                            {enabled && (
+<Button
                                 variant="outline"
                                 disabled={!enabled}
                                 onClick={() =>
@@ -70,7 +71,9 @@ export default function Show({ document: doc }: { document: DocumentSummary }) {
                                 <Pencil />
                                 Edit Document
                             </Button>
-                            <Button
+)}
+                            {enabled || Boolean(doc.delete_url) && (
+<Button
                                 className="jr-danger"
                                 disabled={
                                     page.props.canonicalFrontend === true
@@ -82,6 +85,7 @@ export default function Show({ document: doc }: { document: DocumentSummary }) {
                                 <Trash2 />
                                 Delete Document
                             </Button>
+)}
                         </div>
                     </div>
                     <section className="jr-report-context">
