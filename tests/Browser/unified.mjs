@@ -99,12 +99,39 @@ async function signIn(email) {
         (await page.locator('img').count()) > 0,
         'Photographic login remains visible',
     );
+    // Exercise the mobile welcome screen and the successful role handoff
+    // with the disposable SuperAdmin fixture; all other roles retain the
+    // reduced-motion test setup.
+    if (email === f.superadmin_email) {
+        await page.setViewportSize({ width: 390, height: 844 });
+        await page.getByRole('button', { name: 'Explore JaiROADS' }).click();
+        await page.getByRole('button', { name: 'Continue to sign in' }).click();
+        await page.getByLabel('Email address').waitFor({ state: 'visible' });
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+        await page.setViewportSize({ width: 1440, height: 1080 });
+        await page.emulateMedia({ reducedMotion: 'no-preference' });
+        await page.evaluate(() => {
+            const observer = new MutationObserver(() => {
+                const overlay = document.querySelector('.jr-auth-handoff');
+                if (overlay) {
+                    document.documentElement.dataset.testAuthHandoff = overlay.getAttribute('data-role');
+                    observer.disconnect();
+                }
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+        });
+    }
     await page.getByLabel('Email address').fill(email);
     await page
         .getByLabel('Password', { exact: true })
         .fill('Disposable-Test!123');
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     await page.waitForURL(/dd-phase3\/dashboard|dd-superadmin-landing/);
+    if (email === f.superadmin_email) {
+        await page.waitForFunction(() => document.documentElement.dataset.testAuthHandoff === 'superadmin');
+        await page.locator('.jr-auth-handoff').waitFor({ state: 'detached' });
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+    }
 
     return page;
 }
