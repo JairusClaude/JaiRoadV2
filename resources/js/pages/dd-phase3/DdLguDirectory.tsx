@@ -775,7 +775,8 @@ export default function DdLguDirectory({
                                                 >
                                                     <Info /> View Details
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem
+                                                {canCreate && (<>
+<DropdownMenuItem
                                                     disabled={!canCreate}
                                                     onSelect={() =>
                                                         openEdit(item)
@@ -799,6 +800,7 @@ export default function DdLguDirectory({
                                                 >
                                                     <Trash2 /> Delete LGU
                                                 </DropdownMenuItem>
+</>)}
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     )}
