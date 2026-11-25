@@ -206,7 +206,10 @@ export default function DdSuperAdminCommandCenter({
                                             <p className="mt-1 text-xs break-words text-slate-500">
                                                 By {event.actor}
                                             </p>
-                                            <time className="mt-1 block text-xs text-slate-400">
+                                            <time
+                                                dateTime={event.createdAt}
+                                                className="mt-1 block text-xs text-slate-400"
+                                            >
                                                 {new Intl.DateTimeFormat('en-PH', {
                                                     timeZone: 'Asia/Manila',
                                                     dateStyle: 'medium',
