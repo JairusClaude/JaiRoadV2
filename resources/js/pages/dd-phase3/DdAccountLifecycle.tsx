@@ -316,9 +316,7 @@ export default function DdAccountLifecycle({
                         </div>
                         <p className="text-sm text-slate-600">
                             Set a new password for this account without sending
-                            an email. Existing sign-in sessions are revoked;
-                            registered passkeys and two-factor authentication
-                            are unchanged.
+                            an email. Existing sign-in sessions and remember-me credentials are revoked according to the configured session storage.
                         </p>
                         {!detail.can_reset_password && (
                             <p role="status" className="um-form-note">
