@@ -105,6 +105,7 @@ export default function Index({
                             maintenance records.
                         </p>
                     </div>
+                    {enabled && (
                     <Button
                         className="jr-primary"
                         disabled={!enabled}
@@ -122,6 +123,7 @@ export default function Index({
                         <Upload />
                         Upload Document
                     </Button>
+                    )}
                 </div>
                 <form
                     className="jr-filters"
@@ -180,7 +182,7 @@ export default function Index({
                     total={documents.total}
                     singular="document"
                     plural="documents"
-                    canDelete={true}
+                    canDelete={enabled}
                     disabled={deletion.processing || !enabled}
                     onSelect={() => setSelecting(true)}
                     onCancel={() => {
@@ -322,7 +324,7 @@ export default function Index({
                                         className="text-right"
                                         onClick={(e) => e.stopPropagation()}
                                     >
-                                        {!selecting && (
+                                        {!selecting && enabled && (
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <Button
