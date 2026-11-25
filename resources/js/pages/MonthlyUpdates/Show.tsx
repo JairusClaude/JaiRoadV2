@@ -76,7 +76,7 @@ export default function Show({
                                 <Pencil /> Edit Update
                             </Button>
 )}
-                            {preview || Boolean(update.delete_url) && (
+                            {(preview || Boolean(update.delete_url)) && (
 <Button
                                 className="jr-danger"
                                 disabled={!preview}
