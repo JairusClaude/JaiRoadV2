@@ -1,5 +1,10 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { RefreshCw } from 'lucide-react';
+import {
+    Activity,
+    RefreshCw,
+    ShieldCheck,
+    UsersRound,
+} from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
@@ -74,7 +79,7 @@ type Props = {
     };
 };
 const field =
-    'mt-1 block w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900';
+    'jr-audit-filter mt-1 block w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900';
 const button =
     'rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 disabled:opacity-50';
 function time(value: string | null) {
@@ -407,12 +412,14 @@ export default function AuditHistory({
                     >
                         <MetricCard
                             title="System Activities"
+                            icon={<Activity className="size-5" />}
                             value={summary.system_activities}
                             subtitle="Permanent business entries; historical copies remain preserved."
                             highlight={true}
                         />
                         <MetricCard
                             title="Authentication in Period"
+                            icon={<ShieldCheck className="size-5" />}
                             value={
                                 monitoring.available
                                     ? `${summary.logins ?? 0} logins`
@@ -426,6 +433,7 @@ export default function AuditHistory({
                         />
                         <MetricCard
                             title="Unique Online Accounts"
+                            icon={<UsersRound className="size-5" />}
                             value={
                                 summary.online_accounts === null
                                     ? 'Unavailable'
