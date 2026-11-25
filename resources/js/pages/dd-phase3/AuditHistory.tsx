@@ -142,7 +142,7 @@ function Table({
 }
 function PaginationLinks({ page, label }: { page: Pagination; label: string }) {
     return (
-        <nav aria-label={label} className="mt-4 flex flex-wrap gap-2 text-sm">
+        <nav aria-label={label} className="jr-audit-pagination mt-4 flex flex-wrap gap-2 text-sm">
             {page.links.map((link, i) =>
                 link.url ? (
                     <Link
@@ -535,7 +535,7 @@ export default function AuditHistory({
                                                     {e.action} · {e.entity_type}{' '}
                                                     #{e.entity_id ?? '—'}
                                                 </p>
-                                                <p>{e.created_at}</p>
+                                                <p>{time(e.created_at)}</p>
                                                 <p className="break-words">
                                                     {e.description}
                                                 </p>
@@ -701,7 +701,7 @@ export default function AuditHistory({
                                             </summary>
                                             <p className="mt-2 text-xs">
                                                 Event #{e.id} · {e.method} ·{' '}
-                                                {e.created_at}
+                                                {time(e.created_at)}
                                             </p>
                                             <p className="text-xs">
                                                 {e.user_account_id === null
