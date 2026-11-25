@@ -112,22 +112,6 @@ export async function verifyPreservedRelationships({
     // The separate fixture project has no MaintenanceRecords: UI confirmation
     // may delete it without affecting the referenced project or Storage.
     const emptyPath = `/maintenance-projects/${emptyId}`;
-    // Disposable synthetic stream: no real person's camera or image is used.
-    await admin.addInitScript(() => {
-        Object.defineProperty(navigator.mediaDevices, 'getUserMedia', {
-            configurable: true,
-            value: async () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = 640; canvas.height = 480;
-                const ctx = canvas.getContext('2d');
-                ctx.fillStyle = '#5680a3'; ctx.fillRect(0, 0, 640, 480);
-                const stream = canvas.captureStream(10);
-                setTimeout(() => ctx.fillRect(0, 0, 640, 480), 100);
-
-                return stream;
-            },
-        });
-    });
     await admin.goto(`${ui}${emptyPath}`);
     await admin.getByRole('button', { name: 'Delete Project', exact: true }).click();
     let dialog = admin.getByRole('dialog', { name: 'Delete project?', exact: true });
@@ -149,10 +133,8 @@ export async function verifyPreservedRelationships({
     await equation.waitFor();
     const numbers = (await equation.innerText()).match(/\d+/g).map(Number);
     await dialog.getByPlaceholder('Enter answer').fill(String(numbers[0] + numbers[1]));
-    assert.equal(await confirm.isDisabled(), true);
-    await dialog.getByRole('button', { name: 'Turn on webcam' }).click();
-    await dialog.getByRole('button', { name: 'Take picture' }).click();
-    await dialog.getByText('Photo accepted. Camera is off.').waitFor();
+    assert.equal(await dialog.getByRole('button', { name: /webcam|take picture/i, includeHidden: true }).count(), 0);
+    assert.equal(await confirm.isEnabled(), true);
     await confirm.click();
     await admin.waitForURL(`${ui}/maintenance-projects`);
     assert.equal((await admin.request.get(`${ui}${emptyPath}`)).status(), 404);
