@@ -9,6 +9,7 @@ use App\Models\StagingUserAccount;
 use App\Models\User;
 use App\Services\AccountIdentityResolver;
 use App\Services\DashboardAnalytics;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -89,7 +90,7 @@ final class SuperAdminLandingController extends Controller
                 'action' => (string) $row->action,
                 'entity' => (string) $row->entity_type,
                 'actor' => (string) $row->actor_identifier,
-                'createdAt' => (string) $row->created_at,
+                'createdAt' => CarbonImmutable::parse($row->created_at, 'UTC')->utc()->toIso8601String(),
             ])->all();
 
         // Compact, genuine monthly-report preview; no stored file paths or
