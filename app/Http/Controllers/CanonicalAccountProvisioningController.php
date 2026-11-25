@@ -33,7 +33,13 @@ final class CanonicalAccountProvisioningController extends Controller
             'email' => ['required', 'email:rfc', 'max:255'],
             'name' => ['required', 'string', 'max:255'],
             'account_type' => ['required', Rule::in($allowed)],
-            'engineer_id' => ['required', 'integer', 'min:1'],
+            'engineer_id' => ['nullable', 'required_without:profile', 'integer', 'min:1', 'prohibits:profile'],
+            'profile' => ['nullable', 'required_without:engineer_id', 'array:first_name,middle_name,last_name,contact_no,rank'],
+            'profile.first_name' => ['required_with:profile', 'string', 'max:100'],
+            'profile.middle_name' => ['nullable', 'string', 'max:100'],
+            'profile.last_name' => ['required_with:profile', 'string', 'max:100'],
+            'profile.contact_no' => ['required_with:profile', 'string', 'max:30'],
+            'profile.rank' => ['required_with:profile', 'string', 'max:100'],
             'password' => ['required', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()],
         ]);
         $username = strtolower(trim((string) $v['username']));
@@ -53,7 +59,16 @@ final class CanonicalAccountProvisioningController extends Controller
                 if (DB::table('jairoads_next.user_accounts')->whereRaw('LOWER(username) = ?', [$username])->exists()) {
                     throw ValidationException::withMessages(['username' => 'Username already exists.']);
                 }
-                if ($engineerId !== null) {
+                // New profile and both account identities commit or roll back together.
+                // All account types retain the canonical active-profile requirement.
+                if ($engineerId === null) {
+                    $profile = $v['profile'];
+                    $profile['engineer_status'] = 'Active';
+                    $engineerId = (int) DB::table('jairoads_next.engineers')->insertGetId($profile);
+                    $this->audit($actor, 'CREATE', 'Engineer', $engineerId, 'Authorized administrator created an Engineer during account provisioning.', [
+                        'engineer_id' => $engineerId, 'engineer_status' => 'Active',
+                    ]);
+                } else {
                     $engineer = DB::table('jairoads_next.engineers')->where('id', $engineerId)->lockForUpdate()->first(['engineer_status']);
                     if (! $engineer || (string) $engineer->engineer_status !== 'Active'
                         || DB::table('jairoads_next.user_accounts')->where('engineer_id', $engineerId)->exists()) {
@@ -79,7 +94,7 @@ final class CanonicalAccountProvisioningController extends Controller
                 ]);
             }, 2);
         } catch (QueryException) {
-            throw ValidationException::withMessages(['account_type' => 'The database rejected account provisioning. No account was created. Confirm the active UserAccount constraints and submitted values.']);
+            throw ValidationException::withMessages(['account_type' => 'The database rejected account provisioning. No account or new profile was saved. Confirm the active UserAccount constraints and submitted values.']);
         }
 
         return redirect()->route('jairoads.dd-phase3.show', ['section' => 'users'])->with('dd_phase3_status', 'Account created.');
