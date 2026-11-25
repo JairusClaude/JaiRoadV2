@@ -119,7 +119,7 @@ export default function AuthShowcase({ expandedMobile = false, onContinue }: { e
                             className="absolute inset-0 h-full w-full object-cover object-center"
                         />
                     )}
-                    <img
+                    {(index === visibleSlide || loadedImages.includes(index)) && <img
                         src={item.image}
                         alt=""
                         aria-hidden="true"
@@ -139,7 +139,7 @@ export default function AuthShowcase({ expandedMobile = false, onContinue }: { e
                             )
                         }
                         className={`absolute inset-0 h-full w-full object-cover object-center ${'fallback' in item && !loadedImages.includes(index) ? 'opacity-0' : 'opacity-100'}`}
-                    />
+                    />}
                 </div>
             ))}
             <div
