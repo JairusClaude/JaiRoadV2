@@ -181,7 +181,7 @@ export default function DdSuperAdminCommandCenter({
                                             Recent Activity
                                         </h2>
                                         <p className="mt-1 text-sm text-slate-500">
-                                            Latest recorded system operations
+                                            Latest recorded system operations (Asia/Manila)
                                         </p>
                                     </div>
                                     <Link
@@ -207,7 +207,11 @@ export default function DdSuperAdminCommandCenter({
                                                 By {event.actor}
                                             </p>
                                             <time className="mt-1 block text-xs text-slate-400">
-                                                {event.createdAt}
+                                                {new Intl.DateTimeFormat('en-PH', {
+                                                    timeZone: 'Asia/Manila',
+                                                    dateStyle: 'medium',
+                                                    timeStyle: 'medium',
+                                                }).format(new Date(event.createdAt))}
                                             </time>
                                         </li>
                                     ))}
