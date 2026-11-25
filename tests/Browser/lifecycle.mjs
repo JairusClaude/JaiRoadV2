@@ -57,6 +57,8 @@ try {
     const engineer = admin.getByRole('region', {
         name: 'Engineer profile lifecycle',
     });
+    const saveProfile = engineer.getByRole('button', { name: 'Save profile', exact: true });
+    assert.equal(await saveProfile.evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(200, 41, 61)');
     await engineer.getByLabel('Rank', { exact: true }).fill('Engineer IV');
     await engineer
         .getByRole('button', { name: 'Save profile', exact: true })
