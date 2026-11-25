@@ -173,7 +173,8 @@ export function RecordDirectory({
                         projects.
                     </p>
                 </div>
-                <Button
+                {canCreate && (
+<Button
                     className="jr-primary"
                     disabled={!integration.ready || !canCreate || busy}
                     ref={addButtonRef}
@@ -182,6 +183,7 @@ export function RecordDirectory({
                     <Plus />
                     Add Record
                 </Button>
+)}
             </div>
             <IntegrationNotice integration={integration} />
             <form
