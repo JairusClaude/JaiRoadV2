@@ -13,8 +13,8 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { DdDashboardAnalytics } from '@/components/dd-dashboard-analytics';
-import type { DdDashboardSummary } from '@/components/dd-dashboard-analytics';
+import { DashboardAnalytics } from '@/components/dashboard/dashboard-analytics';
+import type { DashboardSummary } from '@/components/dashboard/dashboard-analytics';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { SimplifiedCoverageMap } from '@/components/road-coverages/simplified-coverage-map';
 import type { SimplifiedCoverageItem } from '@/components/road-coverages/simplified-coverage-map';
@@ -30,7 +30,7 @@ type StatKey =
     | 'lgus';
 type Props = {
     role: Role;
-    analytics: DdDashboardSummary;
+    analytics: DashboardSummary;
     mapCoverages: SimplifiedCoverageItem[];
     mapNextCursor?: number | null;
     name: string;
@@ -375,7 +375,7 @@ export default function RoleDashboard({
                         />
                     )}
 
-                    <DdDashboardAnalytics
+                    <DashboardAnalytics
                         data={analytics}
                         compact={isEngineer}
                         omitInventoryMetrics

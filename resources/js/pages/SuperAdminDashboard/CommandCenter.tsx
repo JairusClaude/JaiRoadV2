@@ -11,8 +11,8 @@ import {
     UsersRound,
 } from 'lucide-react';
 import { useState } from 'react';
-import { DdDashboardAnalytics } from '@/components/dd-dashboard-analytics';
-import type { DdDashboardSummary } from '@/components/dd-dashboard-analytics';
+import { DashboardAnalytics } from '@/components/dashboard/dashboard-analytics';
+import type { DashboardSummary } from '@/components/dashboard/dashboard-analytics';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { MetricCard } from '@/components/metric-card';
 import { MonthlyProgress } from '@/components/monthly-updates/monthly-progress';
@@ -68,7 +68,7 @@ type MonthlyPreview = {
 
 type Props = {
     username: string;
-    analytics: DdDashboardSummary;
+    analytics: DashboardSummary;
     counts: Counts;
     privilegedAccounts: PrivilegedAccount[];
     recentEvents: AuditEvent[];
@@ -84,7 +84,7 @@ type Props = {
 const format = (value: number) => value.toLocaleString();
 
 /** System Command Center Dashboard styled consistently with the JaiROADS system design. */
-export default function DdSuperAdminCommandCenter({
+export default function SuperAdminCommandCenter({
     username,
     counts,
     analytics,
@@ -164,7 +164,7 @@ export default function DdSuperAdminCommandCenter({
 
                     {/* Real counts and reporting chart, with a concise operations rail. */}
                     <div className="jr-command-overview grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(290px,0.9fr)]">
-                        <DdDashboardAnalytics
+                        <DashboardAnalytics
                             data={analytics}
                             compact
                             showActivity={false}

@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { DdNotificationBell } from '@/components/dd-notification-bell';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 type Identity = { role: string; username: string; name: string } | null;
@@ -138,7 +138,9 @@ export default function PolishedWorkspaceLayout({
     const page = usePage<{ jairoadsIdentity?: Identity }>();
     const identity = page.props.jairoadsIdentity ?? null;
     const role = identity?.role;
-    const isDdWorkspace = page.url.split('?')[0].startsWith('/dd-phase3/');
+    const isCanonicalWorkspace = page.url
+        .split('?')[0]
+        .startsWith('/dd-phase3/');
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
     const isMobile = useIsMobile();
     // Read the persisted icon rail preference once; subsequent writes use its event handler.
@@ -184,7 +186,7 @@ export default function PolishedWorkspaceLayout({
     }
 
     const activeRole: WorkspaceRole = role;
-    const nav = isDdWorkspace
+    const nav = isCanonicalWorkspace
         ? activeRole === 'admin'
             ? ddAdminLinks
             : ddCommonLinks
@@ -226,7 +228,7 @@ export default function PolishedWorkspaceLayout({
                 >
                     <Link
                         href={
-                            isDdWorkspace
+                            isCanonicalWorkspace
                                 ? '/dd-phase3/dashboard'
                                 : '/dashboard'
                         }
@@ -385,7 +387,7 @@ export default function PolishedWorkspaceLayout({
                             </span>
                         </div>
                         <div className="flex items-center gap-2 sm:gap-3">
-                            <DdNotificationBell />
+                            <NotificationBell />
                             <div
                                 className="h-7 w-px bg-slate-200 dark:bg-slate-700"
                                 aria-hidden="true"
@@ -415,7 +417,7 @@ export default function PolishedWorkspaceLayout({
                                         </div>
                                         <Link
                                             href={
-                                                isDdWorkspace
+                                                isCanonicalWorkspace
                                                     ? '/dd-phase3/settings'
                                                     : '/settings-preview'
                                             }

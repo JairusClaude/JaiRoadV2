@@ -31,7 +31,7 @@ const cards = [
     { key: 'AuditLogs', label: 'Audit events', icon: LockKeyhole },
 ];
 
-export default function DdSuperAdminLanding({
+export default function SuperAdminLanding({
     username,
     counts,
     auditEvents,

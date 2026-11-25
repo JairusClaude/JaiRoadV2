@@ -3,9 +3,9 @@
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
-use Tests\DdOperationsTestCase;
+use Tests\CanonicalOperationsTestCase;
 
-uses(DdOperationsTestCase::class);
+uses(CanonicalOperationsTestCase::class);
 
 it('renders each active DD role dashboard using its explicit identity', function (string $role, string $component) {
     $login = $this->linkedLogin($role);
@@ -14,7 +14,7 @@ it('renders each active DD role dashboard using its explicit identity', function
     $this->get($destination)->assertOk()->assertInertia(fn (Assert $page) => $page
         ->component($component)->missing('auth.user.password')->missing('auth.user.two_factor_secret'));
 })->with([
-    ['SuperAdmin', 'dd-superadmin-command-center/Index'],
+    ['SuperAdmin', 'SuperAdminDashboard/CommandCenter'],
     ['Admin', 'Workspace/Directory'],
     ['Engineer', 'RoleDashboard/Canonical'],
     ['Viewer', 'RoleDashboard/Canonical'],

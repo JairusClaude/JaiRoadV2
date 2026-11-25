@@ -24,7 +24,7 @@ createInertiaApp({
                 return null;
             case name.startsWith('auth/'):
                 return AuthLayout;
-            case name.startsWith('dd-superadmin-command-center/'):
+            case name === 'SuperAdminDashboard/CommandCenter':
             case name.startsWith('Workspace/'):
             case name === 'RoleDashboard/Canonical':
             case name.startsWith('RoadCoverages/'):
@@ -38,6 +38,8 @@ createInertiaApp({
                 return MaintenanceProjectLayout;
             case name.startsWith('RoleDashboard/'):
                 return RoleWorkspaceLayout;
+            case name === 'SuperAdminDashboard/Landing':
+                return AppLayout;
             case name.startsWith('SuperAdminDashboard/'):
                 return RoleAwareWorkspaceLayout;
             case name.startsWith('monthly-updates/'):

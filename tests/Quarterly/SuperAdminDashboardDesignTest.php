@@ -24,7 +24,7 @@ final class SuperAdminDashboardDesignTest extends PostgresTestCase
         ]);
 
         $this->get('/dd-superadmin-landing')->assertOk()->assertInertia(fn (Assert $page) => $page
-            ->component('dd-superadmin-command-center/Index')
+            ->component('SuperAdminDashboard/CommandCenter')
             ->has('recentMonthlyUpdates', 1)
             ->where('recentMonthlyUpdates.0.id', $updateId)
             ->where('recentMonthlyUpdates.0.projectTitle', 'Test project')

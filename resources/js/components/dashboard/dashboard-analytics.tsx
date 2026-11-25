@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-export type DdDashboardSummary = {
+export type DashboardSummary = {
     scope: string;
     metrics: {
         records: number;
@@ -47,7 +47,7 @@ const prettyDate = (value: string) => {
           }).format(date);
 };
 
-export function DdDashboardAnalytics({
+export function DashboardAnalytics({
     data,
     compact = false,
     omitInventoryMetrics = false,
@@ -55,7 +55,7 @@ export function DdDashboardAnalytics({
     showActivity = true,
     activityReplacement,
 }: {
-    data: DdDashboardSummary;
+    data: DashboardSummary;
     compact?: boolean;
     omitInventoryMetrics?: boolean;
     omitOngoingMetric?: boolean;

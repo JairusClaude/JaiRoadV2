@@ -17,11 +17,11 @@ import {
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { toast } from 'sonner';
-import { DdNotificationBell } from '@/components/dd-notification-bell';
 import {
     AlternativeNavigation,
     isAlternativeNavigation,
 } from '@/components/maintenance-projects/alternative-navigation';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -418,7 +418,7 @@ export function MaintenanceProjectShell({
                     </div>
                     <div className="jr-top-actions">
                         {canonical ? (
-                            <DdNotificationBell />
+                            <NotificationBell />
                         ) : (
                             <button
                                 type="button"

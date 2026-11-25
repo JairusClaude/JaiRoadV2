@@ -8,7 +8,7 @@ import {
 import { useJaiRoadsNotificationFeed } from '@/components/use-jairoads-notification-feed';
 
 /** Header feed: the API enforces recipient_user_id against the authenticated DD identity. */
-export function DdNotificationBell({
+export function NotificationBell({
     variant = 'light',
 }: {
     variant?: 'light' | 'dark';
