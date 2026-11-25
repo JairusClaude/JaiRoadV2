@@ -2,6 +2,7 @@ import { usePage } from '@inertiajs/react';
 import * as Dialog from '@radix-ui/react-dialog';
 import {
     CircleAlert,
+    Check,
     LockKeyhole,
     ShieldCheck,
     Trash2,
@@ -166,10 +167,29 @@ export function DeletionDialog({
 
         return () => controller.abort();
     }, [open, title, needsChallenge, challengeScope, revision, blocked]);
-    const confirmed =
-        (!requireYes || confirmation === 'YES') &&
-        (!needsChallenge ||
-            (!!challenge && /^\d{1,3}$/.test(answer)));
+    const yesReady = !requireYes || confirmation.trim().toUpperCase() === 'YES';
+    // The equation is already public. This is immediate form feedback only;
+    // the server still validates the signed challenge, expiry and single use.
+    const operands = challenge?.question.match(/^(\d+)\s*\+\s*(\d+)$/);
+    const answerReady = !needsChallenge || (
+        !!challenge && /^\d{1,3}$/.test(answer) &&
+        (!operands || Number(answer) === Number(operands[1]) + Number(operands[2]))
+    );
+    const confirmed = yesReady && answerReady;
+    const footerHint = processing
+        ? 'Deleting… please keep this window open.'
+        : blocked
+          ? 'Protected records'
+          : reviewing
+            ? 'Checking affected data…'
+            : confirmDisabled
+              ? 'Deletion is not available yet.'
+              : !yesReady
+                ? 'Type YES to continue.'
+                : !answerReady
+                  ? challenge ? 'Enter the correct answer to continue.' : 'Waiting for verification…'
+                  : 'Ready to delete. Review the selected data.';
+
 
     return (
         <Dialog.Root
@@ -244,6 +264,7 @@ export function DeletionDialog({
                             <Dialog.Title>{title}</Dialog.Title>
                             <Dialog.Description>
                                 {description}
+                                {irreversible && !blocked && !/cannot be undone|irreversible|permanent/i.test(description) && ' This action cannot be undone.'}
                             </Dialog.Description>
                         </div>
                     </div>
@@ -257,21 +278,11 @@ export function DeletionDialog({
                             </div>
                             {children}
                         </section>
-                        {blocked ? (
+                        {blocked && (
                             <div className="jr-delete-notice" role="status">
                                 <LockKeyhole size={17} aria-hidden="true" />
-                                <span>
-                                    Deletion is unavailable until the blocking
-                                    conditions are resolved.
-                                </span>
+                                <span>Deletion is unavailable until the blocking conditions are resolved.</span>
                             </div>
-                        ) : (
-                            irreversible && (
-                                <div className="jr-delete-notice">
-                                    <CircleAlert size={17} aria-hidden="true" />
-                                    <span>This action cannot be undone.</span>
-                                </div>
-                            )
                         )}
                         {reviewing && (
                             <p className="jr-delete-progress" role="status">
@@ -279,12 +290,12 @@ export function DeletionDialog({
                             </p>
                         )}
                         {requireYes && !blocked && (
-                            <div className="jr-delete-verification">
+                            <div className="jr-delete-verification" data-complete={yesReady}>
                                 <label
                                     htmlFor={confirmationId}
                                     className="jr-delete-verification-label"
                                 >
-                                    <span className="jr-delete-step">1</span>{' '}
+                                    <span className="jr-delete-step" aria-hidden="true">{yesReady ? <Check size={14} /> : 1}</span>{' '}
                                     Type YES to confirm permanent deletion{' '}
                                     <span className="jr-required">
                                         * Required
@@ -294,6 +305,9 @@ export function DeletionDialog({
                                     id={confirmationId}
                                     type="text"
                                     autoComplete="off"
+                                    autoCapitalize="characters"
+                                    spellCheck={false}
+                                    maxLength={12}
                                     value={confirmation}
                                     onChange={(event) =>
                                         setConfirmation(event.target.value)
@@ -307,12 +321,12 @@ export function DeletionDialog({
                             </div>
                         )}
                         {needsChallenge && !blocked && (
-                            <div className="jr-delete-verification">
+                            <div className="jr-delete-verification" data-complete={answerReady}>
                                 <label
                                     htmlFor={confirmationId + '-captcha'}
                                     className="jr-delete-verification-label"
                                 >
-                                    <span className="jr-delete-step">2</span>{' '}
+                                    <span className="jr-delete-step" aria-hidden="true">{answerReady ? <Check size={14} /> : 2}</span>{' '}
                                     Solve the verification challenge{' '}
                                     <span className="jr-required">*</span>
                                 </label>
@@ -331,9 +345,11 @@ export function DeletionDialog({
                                     autoComplete="off"
                                     value={answer}
                                     onChange={(event) =>
-                                        setAnswer(event.target.value)
+                                        setAnswer(event.target.value.replace(/[^0-9]/g, '').slice(0, 3))
                                     }
                                     placeholder="Enter answer"
+                                    maxLength={3}
+                                    aria-describedby={confirmationId + '-answer-hint'}
                                     disabled={processing || !challenge}
                                     className="jr-delete-input"
                                 />
@@ -351,6 +367,9 @@ export function DeletionDialog({
                                     New challenge
                                 </Button>
                                 </div>
+                                <p id={confirmationId + '-answer-hint'} className="jr-delete-field-hint">
+                                    {answerReady ? 'Answer correct.' : answer ? 'Check your answer.' : 'Enter the sum shown above.'}
+                                </p>
                                 {challengeError && (
                                     <p role="alert" className="jr-field-error">
                                         {challengeError}
@@ -366,17 +385,13 @@ export function DeletionDialog({
                         )}
                     </div>
                     <div className="jr-dialog-actions">
-                        <span className="jr-delete-footer-hint">
+                        <span className="jr-delete-footer-hint" role="status" aria-live="polite" data-ready={confirmed && !processing && !blocked && !reviewing && !confirmDisabled}>
                             {blocked ? (
                                 <LockKeyhole size={15} />
                             ) : (
                                 <ShieldCheck size={15} />
                             )}{' '}
-                            {processing
-                                ? 'Please keep this window open.'
-                                : blocked
-                                  ? 'Protected records'
-                                  : 'Review before confirming'}
+                            {footerHint}
                         </span>
                         <Button
                             ref={cancelRef}
@@ -410,7 +425,7 @@ export function DeletionDialog({
                                     onConfirm(
                                         needsChallenge && challenge
                                             ? {
-                                                  confirmation,
+                                                  confirmation: 'YES',
                                                   captcha_token:
                                                       challenge.token,
                                                   captcha_answer: answer,
