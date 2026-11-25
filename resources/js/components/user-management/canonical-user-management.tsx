@@ -617,6 +617,7 @@ export default function CanonicalUserManagement({
                 e.contact_no,
                 e.id,
                 linkedAccounts.get(e.id)?.username,
+                linkedAccounts.get(e.id)?.email,
             ]
                 .join(' ')
                 .toLowerCase()
@@ -692,7 +693,7 @@ export default function CanonicalUserManagement({
             Icon: ShieldCheck,
         },
         {
-            label: 'Engineer profiles',
+            label: 'Total engineers',
             value: directory?.engineerTotal ?? engineers.length,
             detail: activeEngineers + ' active in directory',
             Icon: HardHat,
@@ -768,26 +769,31 @@ export default function CanonicalUserManagement({
                             {directory?.accountTotal ?? accounts.length}
                         </span>
                     </button>
-                    {roles.map((accountRole) => (
-                        <button
-                            key={accountRole}
-                            type="button"
-                            aria-pressed={tab === 'accounts' && role === accountRole}
-                            onClick={() => switchTab('accounts', accountRole)}
-                        >
-                            {accountRole === 'Engineer' ? 'Engineer Accounts' : `${accountRole}s`}
-                        </button>
-                    ))}
-                    <button
-                        type="button"
-                        aria-pressed={tab === 'engineers'}
-                        onClick={() => switchTab('engineers')}
-                    >
-                        <HardHat size={17} /> Engineer Profiles{' '}
-                        <span>
-                            {directory?.engineerTotal ?? engineers.length}
-                        </span>
-                    </button>
+                    {roles.map((accountRole) =>
+                        accountRole === 'Engineer' ? (
+                            <button
+                                key={accountRole}
+                                type="button"
+                                aria-label="Engineers"
+                                aria-pressed={tab === 'engineers'}
+                                onClick={() => switchTab('engineers')}
+                            >
+                                <HardHat size={17} /> Engineers
+                                <span>
+                                    {directory?.engineerTotal ?? engineers.length}
+                                </span>
+                            </button>
+                        ) : (
+                            <button
+                                key={accountRole}
+                                type="button"
+                                aria-pressed={tab === 'accounts' && role === accountRole}
+                                onClick={() => switchTab('accounts', accountRole)}
+                            >
+                                {`${accountRole}s`}
+                            </button>
+                        ),
+                    )}
                 </nav>
                 <div className="um-toolbar">
                     <label className="um-search">
@@ -801,7 +807,7 @@ export default function CanonicalUserManagement({
                             placeholder={
                                 tab === 'accounts'
                                     ? 'Search username, email or Engineer…'
-                                    : 'Search Engineer name, rank or contact…'
+                                    : 'Search name, rank, contact or account…'
                             }
                             value={search}
                             maxLength={150}
@@ -953,7 +959,7 @@ export default function CanonicalUserManagement({
                                     <th>Engineer</th>
                                     <th>Rank</th>
                                     <th>Linked Account</th>
-                                    <th>Status</th>
+                                    <th>Engineer Status</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -1004,12 +1010,16 @@ export default function CanonicalUserManagement({
                                                                     account.username
                                                                 }
                                                             </strong>
+                                                            <small>{account.email}</small>
                                                             <div className="mt-1">
                                                                 <AccountTypeBadge
                                                                     role={
                                                                         account.account_type
                                                                     }
                                                                 />
+                                                                <span className="ml-2">
+                                                                    <Status active={account.is_active} label={account.is_active ? 'Active account' : 'Inactive account'} />
+                                                                </span>
                                                             </div>
                                                         </>
                                                     ) : e.engineer_status ===
@@ -1036,22 +1046,26 @@ export default function CanonicalUserManagement({
                                                     />
                                                 </td>
                                                 <td>
-                                                    <button
-                                                        className="um-secondary um-row-action"
-                                                        type="button"
-                                                        aria-label={
-                                                            'Manage engineer ' +
-                                                            nameOf(e)
-                                                        }
-                                                        onClick={() =>
-                                                            open({
-                                                                kind: 'engineer',
-                                                                id: e.id,
-                                                            })
-                                                        }
-                                                    >
-                                                        Manage
-                                                    </button>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        <button
+                                                            className="um-secondary um-row-action"
+                                                            type="button"
+                                                            aria-label={'Manage engineer ' + nameOf(e)}
+                                                            onClick={() => open({ kind: 'engineer', id: e.id })}
+                                                        >
+                                                            Manage profile
+                                                        </button>
+                                                        {account && (
+                                                            <button
+                                                                className="um-secondary um-row-action"
+                                                                type="button"
+                                                                aria-label={'Manage account ' + account.username}
+                                                                onClick={() => open({ kind: 'account', id: account.id })}
+                                                            >
+                                                                Manage account
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );
