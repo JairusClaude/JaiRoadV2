@@ -78,7 +78,7 @@ export function DirectorySelectionToolbar({
                     ? `${selectedCount} selected`
                     : `${total} ${total === 1 ? singular : plural} found`}
             </span>
-            {selecting ? (
+            {!canDelete ? null : selecting ? (
                 <div className="flex gap-2">
                     <Button variant="outline" onClick={onCancel}>
                         Cancel selection
