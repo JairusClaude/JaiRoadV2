@@ -17,7 +17,7 @@ import { RoadCoverageMap } from '@/components/maintenance-projects/road-coverage
 import DdRoadMunicipalityChange from '@/pages/dd-phase3/DdRoadMunicipalityChange';
 import { requestOperation } from '@/pages/dd-phase3/requests';
 import RoadTraceMap from '@/pages/dd-phase3/RoadTraceMap';
-/** UI name: Road Sections; actual entity: a *whole* RoadCoverage. */
+/** UI name: Road Coverages; actual entity: a *whole* RoadCoverage. */
 type Pavement = 'Concrete' | 'Asphalt' | 'Gravel' | 'Earth';
 type Condition = 'Good' | 'Fair' | 'Bad';
 export type RoadCoverageSummary = {
@@ -416,7 +416,7 @@ export default function DdRoadSections({
         <ProjectWorkspace>
             <div className="jr-page-head">
                 <div>
-                    <h1>Road Sections</h1>
+                    <h1>Road Coverages</h1>
                     <p>
                         Browse complete mapped road coverages and their linked
                         maintenance projects.
