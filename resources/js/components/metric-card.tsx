@@ -34,7 +34,7 @@ export function MetricCard({
             )}
             {icon && (
                 <span
-                    className="jr-metric-icon absolute top-4 right-4 flex size-10 items-center justify-center rounded-xl bg-[#F0E8FF] text-[#51269B]"
+                    className="jr-metric-icon absolute top-4 right-4 flex size-10 items-center justify-center rounded-xl bg-[var(--jr-role-accent-soft,#f4e9dc)] text-[var(--jr-role-accent,#90451f)]"
                     aria-hidden="true"
                 >
                     {icon}
