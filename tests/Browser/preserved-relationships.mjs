@@ -132,7 +132,13 @@ export async function verifyPreservedRelationships({
     const equation = dialog.getByText(/^\d+ \+ \d+ = \?$/);
     await equation.waitFor();
     const numbers = (await equation.innerText()).match(/\d+/g).map(Number);
+    assert.equal(await dialog.getByText('This action cannot be undone.', { exact: true }).count(), 0);
+    await dialog.getByPlaceholder('Enter answer').fill(String(numbers[0] + numbers[1] + 1));
+    await dialog.getByText('Check your answer.', { exact: true }).waitFor();
+    assert.equal(await confirm.isDisabled(), true);
     await dialog.getByPlaceholder('Enter answer').fill(String(numbers[0] + numbers[1]));
+    await dialog.getByText('Answer correct.', { exact: true }).waitFor();
+    await dialog.getByText('Ready to delete. Review the selected data.', { exact: true }).waitFor();
     assert.equal(await dialog.getByRole('button', { name: /webcam|take picture/i, includeHidden: true }).count(), 0);
     assert.equal(await confirm.isEnabled(), true);
     await confirm.click();
