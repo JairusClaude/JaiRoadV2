@@ -328,12 +328,12 @@ export default function DdPhase3Workspace({
                                                 'Review monthly progress and evidence',
                                             ],
                                             [
-                                                'Project Documents',
+                                                'Maintenance Documents',
                                                 '/dd-phase3/documents',
                                                 'Manage formal project documentation',
                                             ],
                                             [
-                                                'Road Sections',
+                                                'Road Coverages',
                                                 '/dd-phase3/roads',
                                                 'Manage mapped road coverages',
                                             ],
