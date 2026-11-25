@@ -1,71 +1,54 @@
 /* JaiROADS navigation experience: scoped and reversible; no global palette changes. */
-.jr-loading-layer {
-    pointer-events: none;
-    position: fixed;
-    inset: 0 auto auto 0;
-    z-index: 9998;
-    width: 100%;
-}
-.jr-loading-track {
-    height: 3px;
-    overflow: hidden;
-    background: rgba(184, 105, 33, 0.15);
-}
-.jr-loading-track-stripe {
-    width: 32%;
-    height: 100%;
-    background: linear-gradient(90deg, #93501d, #eca848, #93501d);
-    box-shadow: 0 0 12px rgba(184, 105, 33, 0.4);
-    animation: jr-progress-motion 1.2s ease-in-out infinite;
-}
-.jr-loading-notice {
-    position: fixed;
-    top: 16px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
+/* Reserved, non-blocking in-header status; no progress bar or repeated motion. */
+.jr-navigation-status-slot {
+    display: inline-flex;
     align-items: center;
-    gap: 10px;
-    width: max-content;
-    max-width: calc(100vw - 24px);
-    padding: 9px 14px;
-    background: #fff;
-    color: #23324a;
-    border: 1px solid #ecdac8;
-    border-radius: 999px;
-    box-shadow: 0 6px 24px rgba(18, 31, 51, 0.15);
-    font-size: 12px;
-    font-weight: 600;
+    justify-content: flex-end;
+    flex: 0 0 132px;
+    min-width: 0;
+    min-height: 22px;
+    pointer-events: none;
+}
+.jr-navigation-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    max-width: 100%;
+    color: var(--jr-display-accent, var(--muted-foreground, #64748b));
+    font-size: 11px;
+    font-weight: 550;
     line-height: 1.4;
+    white-space: nowrap;
+    animation: jr-navigation-status-in 160ms ease-out both;
 }
-.jr-loading-road {
+.jr-navigation-status-dot {
+    display: block;
     flex: none;
-    position: relative;
-    width: 29px;
-    height: 14px;
-    border-radius: 4px;
-    background: #23324a;
-    overflow: hidden;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: .8;
 }
-.jr-loading-road::before {
-    content: '';
-    position: absolute;
-    top: 6px;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: repeating-linear-gradient(
-        90deg,
-        #f5ca75 0 6px,
-        transparent 6px 11px
-    );
-    animation: jr-road-motion 0.5s linear infinite;
+.jr-navigation-status-fallback {
+    position: fixed;
+    z-index: 9998;
+    inset: auto auto max(16px, env(safe-area-inset-bottom)) 50%;
+    transform: translateX(-50%);
+    padding: 9px 14px;
+    border: 1px solid var(--border, #dbe3ec);
+    background: var(--background, #fff);
+    border-radius: 10px;
+    box-shadow: 0 4px 16px #0f172a12;
+    pointer-events: none;
 }
-.dark .jr-loading-notice {
-    color: #e9f0fc;
-    background: #1c2c40;
-    border-color: #455469;
+@keyframes jr-navigation-status-in { from { opacity: 0; } to { opacity: 1; } }
+@media (max-width: 760px) {
+    .jr-navigation-status-slot { flex-basis: 14px; justify-content: center; }
+    .jr-navigation-status-slot .jr-navigation-status-label { display: none; }
 }
+@media (prefers-reduced-motion: reduce) { .jr-navigation-status { animation: none; } }
+html.jr-reduce-motion .jr-navigation-status { animation: none; }
 .jr-quick-search,
 .jr-quick-refresh {
     display: inline-flex;
@@ -266,22 +249,6 @@
 .dark .jr-command-close:hover {
     background: #344760;
 }
-@keyframes jr-progress-motion {
-    0% {
-        transform: translateX(-110%);
-    }
-    100% {
-        transform: translateX(340%);
-    }
-}
-@keyframes jr-road-motion {
-    from {
-        background-position-x: 0;
-    }
-    to {
-        background-position-x: -11px;
-    }
-}
 @keyframes jr-refresh-spin {
     to {
         transform: rotate(360deg);
@@ -298,14 +265,8 @@
     .jr-command-footer-note {
         display: none;
     }
-    .jr-loading-notice {
-        top: 10px;
-        font-size: 11px;
-    }
 }
 @media (prefers-reduced-motion: reduce) {
-    .jr-loading-track-stripe,
-    .jr-loading-road::before,
     .jr-spin {
         animation: none;
     }
@@ -355,16 +316,5 @@
 @media (prefers-reduced-motion: reduce) { .jr-auth-handoff { display: none; } }
 html.jr-reduce-motion .jr-auth-handoff { display: none; }
 
-/* Navigation should not cover page controls for normal, short requests. */
-.jr-loading-track { background: var(--jr-display-soft, #f4e8db); }
-.jr-loading-track-stripe {
-    background: var(--jr-display-accent, #93501d);
-    box-shadow: none;
-}
-.jr-loading-notice {
-    top: 76px;
-    border-color: var(--jr-display-accent, #ecdac8);
-}
-@media (max-width: 760px) { .jr-loading-notice { top: 64px; } }
-html.jr-reduce-motion :is(.jr-loading-track-stripe, .jr-loading-road::before, .jr-spin) { animation: none; }
+html.jr-reduce-motion .jr-spin { animation: none; }
 html.jr-reduce-motion :is(.jr-quick-search, .jr-quick-refresh) { transition: none; }
