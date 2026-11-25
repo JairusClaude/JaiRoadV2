@@ -1,5 +1,14 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { MoreHorizontal, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import {
+    FolderKanban,
+    MapPinned,
+    MoreHorizontal,
+    Pencil,
+    Plus,
+    Ruler,
+    Search,
+    Trash2,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import {
     DirectoryFilter,
@@ -8,6 +17,7 @@ import {
 } from '@/components/directory-controls';
 import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialog';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
+import { MetricCard } from '@/components/metric-card';
 import { SimplifiedCoverageMap } from '@/components/road-coverages/simplified-coverage-map';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -293,42 +303,32 @@ export default function Index({
                         aria-label="Road coverage statistics"
                         className="jr-metrics-grid mb-6 grid gap-4 sm:grid-cols-3"
                     >
-                        <div className="jr-metric-card rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
-                            <p className="text-xs font-semibold tracking-wider text-[#98502D] uppercase">
-                                Total Road Coverages
-                            </p>
-                            <p className="mt-2 text-3xl font-bold text-[#1E293B]">
-                                {displayedTotalCoverages}
-                            </p>
-                            <p className="mt-1 text-xs text-[#64748B]">
-                                Registered road coverages
-                            </p>
-                        </div>
-                        <div className="jr-metric-card rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
-                            <p className="text-xs font-semibold tracking-wider text-[#64748B] uppercase">
-                                Linked Projects
-                            </p>
-                            <p className="mt-2 text-3xl font-bold text-[#1E293B]">
-                                {displayedLinkedProjects}
-                            </p>
-                            <p className="mt-1 text-xs text-[#64748B]">
-                                Maintenance projects linked to coverages
-                            </p>
-                        </div>
-                        <div className="jr-metric-card rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
-                            <p className="text-xs font-semibold tracking-wider text-[#64748B] uppercase">
-                                Total Network Length
-                            </p>
-                            <p className="mt-2 text-3xl font-bold text-[#1E293B]">
-                                {Number(displayedTotalLengthKm).toFixed(2)}{' '}
-                                <span className="text-sm font-medium text-[#64748B]">
-                                    km
-                                </span>
-                            </p>
-                            <p className="mt-1 text-xs text-[#64748B]">
-                                Across all road coverages
-                            </p>
-                        </div>
+                        <MetricCard
+                            title="Total Road Coverages"
+                            value={displayedTotalCoverages}
+                            subtitle="Registered road coverages"
+                            highlight
+                            icon={<MapPinned className="size-5" />}
+                        />
+                        <MetricCard
+                            title="Linked Projects"
+                            value={displayedLinkedProjects}
+                            subtitle="Maintenance projects linked to coverages"
+                            icon={<FolderKanban className="size-5" />}
+                        />
+                        <MetricCard
+                            title="Total Network Length"
+                            value={
+                                <>
+                                    {Number(displayedTotalLengthKm).toFixed(2)}{' '}
+                                    <span className="text-sm font-medium text-[#64748B]">
+                                        km
+                                    </span>
+                                </>
+                            }
+                            subtitle="Across all road coverages"
+                            icon={<Ruler className="size-5" />}
+                        />
                     </section>
 
                     {/* 2. Simplified Coverage Map (Separated Cards Layout) */}

@@ -824,3 +824,271 @@ html.dark .jr-superadmin-workspace .jr-superadmin-dashboard .bg-amber-100 {
         transition: none;
     }
 }
+
+/* SuperAdmin desktop consistency. Preserve role-specific states and dark mode. */
+.jr-app.jr-superadmin-workspace
+    :is(.jr-directory-exploration, .um-table-scroll)
+    table
+    thead
+    th {
+    background: #f4edff;
+    color: #56416e;
+    font-size: 11px;
+    font-weight: 650;
+    letter-spacing: 0.045em;
+    text-transform: uppercase;
+}
+html.dark
+    .jr-app.jr-superadmin-workspace
+    :is(.jr-directory-exploration, .um-table-scroll)
+    table
+    thead
+    th {
+    background: #382255;
+    color: #e9dfff;
+}
+.jr-app.jr-superadmin-workspace
+    .jr-metric-card:has(.jr-metric-icon)
+    > p:first-child {
+    padding-right: 46px;
+    min-height: 32px;
+}
+.jr-app.jr-superadmin-workspace .jr-metric-card .jr-metric-icon {
+    background: #f0e8ff;
+    color: #51269b;
+}
+html.dark .jr-app.jr-superadmin-workspace .jr-metric-card .jr-metric-icon {
+    background: #432868;
+    color: #e9dfff;
+}
+.jr-app.jr-superadmin-workspace .jr-metric-card > p:first-child {
+    color: #655078;
+}
+html.dark .jr-app.jr-superadmin-workspace .jr-metric-card > p:first-child {
+    color: #ded0fb;
+}
+.jr-app.jr-superadmin-workspace
+    .jr-report-context-link
+    .jr-report-context-action {
+    color: #51269b;
+}
+.jr-app.jr-superadmin-workspace
+    .jr-report-context-link:hover
+    .jr-report-context-action {
+    color: #38166b;
+}
+.jr-app.jr-superadmin-workspace .jr-report-overview > div {
+    border-color: #e6dcf4;
+    background: #faf7ff;
+}
+.jr-app.jr-superadmin-workspace .jr-detail-fields > div {
+    min-width: 0;
+    padding: 12px 14px;
+    border: 1px solid #e6dcf4;
+    border-radius: 10px;
+    background: #fff;
+}
+html.dark
+    .jr-app.jr-superadmin-workspace
+    .jr-report-context-link
+    .jr-report-context-action {
+    color: #c4b5fd;
+}
+html.dark
+    .jr-app.jr-superadmin-workspace
+    :is(.jr-report-overview, .jr-detail-fields)
+    > div {
+    background: #30213e;
+    border-color: #594278;
+}
+.jr-app.jr-superadmin-workspace
+    .leaflet-overlay-pane
+    :is(.jr-directory-road-line, .jr-saved-coverage-line) {
+    stroke: #51269b;
+}
+.jr-app.jr-superadmin-workspace .leaflet-marker-icon.jr-saved-location {
+    background: #51269b;
+    border-color: #e9dfff;
+    color: #fff;
+}
+.jr-app.jr-superadmin-workspace
+    :is(
+        .jr-audit-filter,
+        .um-filter,
+        .um-search,
+        .jr-filter-row [data-slot='select-trigger']
+    ) {
+    min-height: 38px;
+    border: 1px solid #ded5e9;
+    border-radius: 9px;
+    font-size: 13px;
+}
+.jr-app.jr-superadmin-workspace
+    :is(
+        .jr-audit-filter,
+        .um-filter,
+        .um-search,
+        .jr-filter-row [data-slot='select-trigger']
+    ):focus-visible,
+.jr-app.jr-superadmin-workspace .um-search:focus-within {
+    outline: 2px solid #a78bfa;
+    outline-offset: 1px;
+}
+html.dark
+    .jr-app.jr-superadmin-workspace
+    :is(
+        .jr-audit-filter,
+        .um-filter,
+        .um-search,
+        .jr-filter-row [data-slot='select-trigger']
+    ) {
+    border-color: #594278;
+    background: #30213e;
+    color: #faf5ff;
+}
+.jr-app.jr-superadmin-workspace .um-row-action {
+    min-height: 33px;
+    border-radius: 9px;
+}
+.jr-app.jr-superadmin-workspace .um-footer {
+    display: block;
+}
+.jr-app.jr-superadmin-workspace .um-footer .jr-table-footer {
+    margin: 0;
+    padding: 0;
+}
+.jr-app.jr-superadmin-workspace
+    :is(.jr-table-footer, .jr-audit-pagination)
+    [aria-current='page'] {
+    background: #eee6ff;
+    border-color: #ded0fb;
+    color: #51269b;
+}
+html.dark
+    .jr-app.jr-superadmin-workspace
+    :is(.jr-table-footer, .jr-audit-pagination)
+    [aria-current='page'] {
+    background: #432868;
+    border-color: #7558a0;
+    color: #faf5ff;
+}
+
+/* Synchronize desktop rail and spacer; keep text mounted for the fade-out. */
+@media (min-width: 768px) {
+    .jr-app [data-slot='sidebar']:has(> .jr-superadmin-sidebar) > :first-child,
+    .jr-app [data-slot='sidebar'] > .jr-superadmin-sidebar {
+        transition-property: width, left, right;
+        transition-duration: 300ms;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .jr-app
+        .jr-superadmin-sidebar
+        :is(
+            .jr-brand-header,
+            .jr-brand,
+            .jr-brand-control,
+            .jr-brand-icon,
+            .jr-brand-toggle,
+            .jr-nav-content,
+            .jr-sidebar-footer
+        ) {
+        transition-property:
+            height, min-height, width, flex-basis, top, left, padding, opacity,
+            transform;
+        transition-duration: 300ms;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .jr-app
+        .jr-superadmin-sidebar
+        :is(.jr-brand-copy, .jr-identity-copy, .jr-nav-link > span) {
+        transition:
+            opacity 170ms ease 100ms,
+            transform 220ms ease 80ms;
+    }
+    /* Keep the logo centered independently of the fading wordmark. */
+    body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-copy {
+        position: absolute;
+        inset: 95px 0 auto;
+        margin: 0;
+        transition:
+            opacity 170ms ease 100ms,
+            transform 220ms ease 80ms,
+            top 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .jr-app .jr-superadmin-sidebar .jr-nav-link {
+        justify-content: flex-start;
+        transition:
+            padding 300ms cubic-bezier(0.4, 0, 0.2, 1),
+            background 150ms ease,
+            color 150ms ease,
+            border-color 150ms ease,
+            box-shadow 150ms ease;
+    }
+    body:has(.jr-superadmin-workspace)
+        [data-state='collapsed']
+        .jr-superadmin-sidebar
+        .jr-brand-copy {
+        display: block;
+        top: 49px;
+        opacity: 0;
+        transform: translateY(-5px);
+        transition-delay: 0ms;
+    }
+    .jr-app
+        [data-state='collapsed']
+        .jr-superadmin-sidebar.jr-sidebar-container
+        .jr-nav-link {
+        justify-content: flex-start;
+        padding-inline: 16px 0;
+    }
+    .jr-app
+        [data-state='collapsed']
+        .jr-superadmin-sidebar
+        :is(.jr-identity-copy, .jr-nav-link > span) {
+        opacity: 0;
+        transform: translateX(-5px);
+        transition-delay: 0ms;
+    }
+    .jr-app .jr-superadmin-sidebar .jr-nav-caption {
+        display: block;
+        overflow: hidden;
+        transition:
+            height 300ms cubic-bezier(0.4, 0, 0.2, 1),
+            min-height 300ms cubic-bezier(0.4, 0, 0.2, 1),
+            padding 300ms cubic-bezier(0.4, 0, 0.2, 1),
+            opacity 170ms ease;
+    }
+    .jr-app
+        [data-state='collapsed']
+        .jr-superadmin-sidebar.jr-sidebar-container
+        .jr-nav-caption {
+        display: block;
+        height: 0;
+        min-height: 0;
+        padding-block: 0;
+        opacity: 0;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .jr-app [data-slot='sidebar']:has(> .jr-superadmin-sidebar) > *,
+    .jr-app .jr-superadmin-sidebar * {
+        transition-duration: 0ms !important;
+        transition-delay: 0ms !important;
+    }
+}
+html.jr-reduce-motion
+    .jr-app
+    [data-slot='sidebar']:has(> .jr-superadmin-sidebar)
+    > *,
+html.jr-reduce-motion .jr-app .jr-superadmin-sidebar * {
+    transition-duration: 0ms !important;
+    transition-delay: 0ms !important;
+}
+
+/* Map-heading icon is application chrome, not the OpenStreetMap basemap. */
+.jr-app.jr-superadmin-workspace .jr-road-map-heading > svg {
+    color: #51269b;
+}
+html.dark .jr-app.jr-superadmin-workspace .jr-road-map-heading > svg {
+    color: #c4b5fd;
+}

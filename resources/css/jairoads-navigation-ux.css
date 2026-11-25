@@ -314,3 +314,82 @@
         transition: none;
     }
 }
+
+/* Verified-login color handoff: never delays the authentication request,
+   changes permissions, or retains a copy of the sign-in form. */
+.jr-auth-handoff {
+    position: fixed;
+    inset: 0;
+    z-index: 10001;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 24px;
+    text-align: center;
+    background-color: #f3eadc;
+    color: #3e2016;
+    animation: jr-auth-role-handoff 1100ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.jr-auth-handoff img {
+    width: 82px;
+    height: 82px;
+    object-fit: contain;
+}
+.jr-auth-handoff strong {
+    font-size: clamp(32px, 6vw, 50px);
+    letter-spacing: -0.045em;
+}
+.jr-auth-handoff > span {
+    font-size: 14px;
+    font-weight: 550;
+}
+.jr-auth-handoff-track {
+    width: 108px;
+    height: 4px;
+    border-radius: 99px;
+    background: currentColor;
+    opacity: 0.65;
+    transform-origin: left center;
+    animation: jr-auth-handoff-track 740ms ease-out both;
+}
+@keyframes jr-auth-role-handoff {
+    0% {
+        opacity: 1;
+        background-color: #f3eadc;
+        color: #3e2016;
+    }
+    36% {
+        opacity: 1;
+        background-color: var(--jr-handoff-accent);
+        color: #fff;
+    }
+    65% {
+        opacity: 1;
+        background-color: var(--jr-handoff-deep);
+        color: #fff;
+    }
+    100% {
+        opacity: 0;
+        background-color: var(--jr-handoff-deep);
+        color: #fff;
+    }
+}
+@keyframes jr-auth-handoff-track {
+    from {
+        transform: scaleX(0.15);
+    }
+    to {
+        transform: scaleX(1);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .jr-auth-handoff {
+        display: none;
+    }
+}
+html.jr-reduce-motion .jr-auth-handoff {
+    display: none;
+}

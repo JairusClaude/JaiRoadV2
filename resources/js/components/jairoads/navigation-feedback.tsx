@@ -2,6 +2,67 @@ import { router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import '../../../css/jairoads-navigation-ux.css';
 
+// Presentation only: the role comes from the authenticated destination's server props.
+const handoffRoles = {
+    superadmin: { label: 'SuperAdmin', accent: '#51269b', deep: '#26104d' },
+    admin: { label: 'Admin', accent: '#c8293d', deep: '#801827' },
+    engineer: { label: 'Engineer', accent: '#a94b0c', deep: '#69310e' },
+    viewer: { label: 'Viewer', accent: '#1d5db5', deep: '#163e78' },
+} as const;
+
+function showAuthenticatedHandoff(props: unknown) {
+    const page = props as {
+        auth?: { user?: unknown };
+        jairoadsIdentity?: { role?: string };
+        identity?: { role?: string };
+    } | null;
+    const role = (
+        page?.jairoadsIdentity?.role ??
+        page?.identity?.role ??
+        ''
+    ).toLowerCase();
+
+    if (
+        !page?.auth?.user ||
+        !Object.prototype.hasOwnProperty.call(handoffRoles, role) ||
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+        document.documentElement.classList.contains('jr-reduce-motion')
+    ) {
+        return;
+    }
+
+    const palette = handoffRoles[role as keyof typeof handoffRoles];
+    document.querySelector('.jr-auth-handoff')?.remove();
+    const overlay = document.createElement('div');
+    overlay.className = 'jr-auth-handoff';
+    overlay.dataset.role = role;
+    overlay.setAttribute('role', 'status');
+    overlay.setAttribute('aria-live', 'polite');
+    overlay.style.setProperty('--jr-handoff-accent', palette.accent);
+    overlay.style.setProperty('--jr-handoff-deep', palette.deep);
+    const logo = document.createElement('img');
+    logo.src = '/images/jairoads/peo-ddo-transparent.webp';
+    logo.alt = '';
+    const brand = document.createElement('strong');
+    brand.textContent = 'JaiROADS';
+    const status = document.createElement('span');
+    status.textContent = `Opening your ${palette.label} workspace…`;
+    const track = document.createElement('div');
+    track.className = 'jr-auth-handoff-track';
+    track.setAttribute('aria-hidden', 'true');
+    overlay.append(logo, brand, status, track);
+    // The new page may already be mounted; this synchronous cover prevents
+    // showing the dashboard until the brief color handoff has completed.
+    document.body.append(overlay);
+    const cleanup = () => overlay.remove();
+    overlay.addEventListener('animationend', (event) => {
+        if (event.target === overlay) {
+            cleanup();
+        }
+    });
+    window.setTimeout(cleanup, 1500);
+}
+
 /**
  * Global, non-blocking Inertia navigation feedback.
  * Progress remains indeterminate until the server completes the request;
@@ -17,6 +78,24 @@ export function JaiRoadsNavigationFeedback() {
 
     useEffect(() => {
         let pending = false;
+        let authAttempt = false;
+
+        // Passkeys intentionally use a fresh document. Consume only a
+        // short-lived marker written after verified passkey authentication.
+        try {
+            if (sessionStorage.getItem('jr-passkey-handoff') === '1') {
+                sessionStorage.removeItem('jr-passkey-handoff');
+                const initial =
+                    document.querySelector('script[data-page]')?.textContent;
+
+                if (initial) {
+                    showAuthenticatedHandoff(JSON.parse(initial).props);
+                }
+            }
+        } catch {
+            // Authentication and navigation do not depend on storage or animation.
+        }
+
         const clearTimers = () => {
             if (delayRef.current) {
                 clearTimeout(delayRef.current);
@@ -61,13 +140,32 @@ export function JaiRoadsNavigationFeedback() {
         };
 
         // Inertia returns unsubscribe functions. Strict Mode cleans these up.
-        const offStart = router.on('start', start);
-        const offFinish = router.on('finish', finish);
+        const offStart = router.on('start', (event) => {
+            const path = window.location.pathname.replace(/\/$/, '');
+            authAttempt =
+                (path === '/login' || path === '/two-factor-challenge') &&
+                event.detail.visit.method.toLowerCase() === 'post';
+            start();
+        });
+        const offNavigate = router.on('navigate', (event) => {
+            if (
+                authAttempt &&
+                !event.detail.page.component.startsWith('auth/')
+            ) {
+                authAttempt = false;
+                showAuthenticatedHandoff(event.detail.page.props);
+            }
+        });
+        const offFinish = router.on('finish', () => {
+            authAttempt = false;
+            finish();
+        });
 
         return () => {
             pending = false;
             clearTimers();
             offStart();
+            offNavigate();
             offFinish();
         };
     }, []);

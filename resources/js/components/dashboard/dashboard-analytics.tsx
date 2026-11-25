@@ -86,7 +86,7 @@ export function DashboardAnalytics({
             icon: FileText,
         },
         {
-            label: 'Project documents',
+            label: 'Maintenance Documents',
             value: data.metrics.documents,
             icon: FileText,
         },

@@ -509,6 +509,9 @@ try {
     await form
         .getByLabel('Account Type', { exact: false })
         .selectOption('Viewer');
+    await form
+        .getByRole('button', { name: 'Link existing profile', exact: true })
+        .click();
     const profile = form.getByLabel('Linked Engineer', { exact: false });
     assert.equal(await profile.isEnabled(), true);
     assert.equal(await profile.getAttribute('required'), '');

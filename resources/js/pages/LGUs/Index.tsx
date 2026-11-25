@@ -1,5 +1,14 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { MoreHorizontal, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import {
+    Building2,
+    MapPinned,
+    MoreHorizontal,
+    Pencil,
+    Plus,
+    Search,
+    Trash2,
+    UsersRound,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import {
     DirectoryFilter,
@@ -234,17 +243,20 @@ export default function Index({
                     >
                         <MetricCard
                             title="Municipalities"
+                            icon={<Building2 className="size-5" />}
                             value={displayedMunicipalities}
                             subtitle="Registered local government units"
                             highlight={true}
                         />
                         <MetricCard
                             title="Road Coverages"
+                            icon={<MapPinned className="size-5" />}
                             value={displayedRoadCoverages}
                             subtitle="Across all municipalities"
                         />
                         <MetricCard
                             title="Engineer Assignments"
+                            icon={<UsersRound className="size-5" />}
                             value={displayedEngineerAssignments}
                             subtitle="Active municipal engineers"
                         />

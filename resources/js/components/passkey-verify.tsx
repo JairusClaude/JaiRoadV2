@@ -37,6 +37,12 @@ export default function PasskeyVerify({
         onSuccess: (response) => {
             if (loginMode) {
                 // A fresh document receives the authenticated session and clears guest history.
+                try {
+                    sessionStorage.setItem('jr-passkey-handoff', '1');
+                } catch {
+                    // A blocked storage API must never prevent sign-in.
+                }
+
                 window.location.assign('/dashboard');
             } else {
                 router.visit(response.redirect ?? '/dashboard');

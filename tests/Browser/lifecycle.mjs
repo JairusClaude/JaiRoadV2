@@ -36,7 +36,31 @@ try {
     const viewer = await signIn(f.viewer_email);
     const admin = await signIn(f.admin_email);
     await admin.goto(`${base}/workspace/users`);
-    await admin.getByRole('button', { name: /^Engineers/ }).click();
+    const directoryViews = admin.getByRole('navigation', {
+        name: 'Directory views',
+    });
+    assert.equal(
+        await directoryViews
+            .getByRole('button', { name: 'Engineers', exact: true })
+            .count(),
+        1,
+    );
+    assert.equal(
+        await directoryViews
+            .getByRole('button', {
+                name: /Engineer Accounts|Engineer Profiles/,
+            })
+            .count(),
+        0,
+    );
+    await directoryViews
+        .getByRole('button', { name: 'Engineers', exact: true })
+        .click();
+    await admin.getByRole('region', { name: 'Engineers table' }).waitFor();
+    await admin
+        .locator(`[data-engineer-id="${f.former_id}"]`)
+        .getByRole('button', { name: /^Manage account/ })
+        .waitFor();
     await admin
         .locator(`[data-engineer-id="${f.former_id}"]`)
         .getByRole('button', { name: /^Manage engineer/ })
@@ -117,20 +141,43 @@ try {
     ]) {
         await admin.goto(`${base}/workspace/${section}`);
         const review = admin.getByRole('region', {
-            name: `${kind} removal preparation`,
+            name: `${kind} removal review`,
         });
+        const openReview = review.getByRole('button', {
+            name: 'Delete selected file',
+            exact: true,
+        });
+        assert.equal(await openReview.isDisabled(), true);
+        await review
+            .getByLabel('Selected file')
+            .selectOption({ label: filename });
+        const reviewed = admin.waitForResponse((response) =>
+            new URL(response.url()).pathname.endsWith('/deletion-review'),
+        );
+        await openReview.click();
+        const response = await reviewed;
+        assert.equal(response.status(), 200);
+        const details = await response.json();
+        assert.equal(details.file_name, filename);
+        assert.equal(details.can_delete, false);
+        const dialog = admin.getByRole('dialog', {
+            name: 'Delete File Permanently?',
+        });
+        await dialog
+            .getByText('Permanent file deletion is temporarily unavailable.', {
+                exact: true,
+            })
+            .waitFor();
         assert.equal(
-            await review
-                .getByRole('button', {
-                    name: 'Delete unavailable pending retention policy',
-                })
+            await dialog
+                .getByRole('button', { name: 'Delete', exact: true })
                 .isDisabled(),
             true,
         );
-        await review
-            .getByLabel(`Review ${kind}`)
-            .selectOption({ label: filename });
-        await review.getByRole('status').waitFor();
+        await dialog
+            .getByRole('button', { name: 'Cancel', exact: true })
+            .click();
+        await dialog.waitFor({ state: 'hidden' });
     }
 
     await admin.goto(`${base}/workspace/users`);

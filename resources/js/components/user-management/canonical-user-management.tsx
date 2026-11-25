@@ -2,8 +2,6 @@ import { router } from '@inertiajs/react';
 import * as Dialog from '@radix-ui/react-dialog';
 import {
     CheckCircle2,
-    ChevronLeft,
-    ChevronRight,
     HardHat,
     Plus,
     Search,
@@ -14,6 +12,10 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
+import {
+    DirectoryFilter,
+    DirectoryPagination,
+} from '@/components/directory-controls';
 import AccountLifecycle from '@/components/user-management/account-lifecycle';
 import AccountTypeBadge from '@/components/user-management/account-type-badge';
 import EngineerLifecycle from '@/components/user-management/engineer-lifecycle';
@@ -159,6 +161,7 @@ function CreateForm({
     roles: allowed,
     onClose,
     onBusy,
+    onProfileOnly,
 }: {
     kind: 'add-account' | 'add-engineer';
     eligible: EligibleEngineer[];
@@ -166,8 +169,12 @@ function CreateForm({
     roles: Role[];
     onClose: () => void;
     onBusy: (busy: boolean) => void;
+    onProfileOnly: () => void;
 }) {
     const isAccount = kind === 'add-account';
+    const [profileMode, setProfileMode] = useState<'new' | 'existing'>(
+        eligibleTotal > 0 ? 'existing' : 'new',
+    );
     const [account, setAccount] = useState({
         username: '',
         email: '',
@@ -197,7 +204,7 @@ function CreateForm({
         useState<EligibleEngineer | null>(null);
     const searchTerm = Array.from(eligibleSearch.trim()).slice(0, 100).join('');
     useEffect(() => {
-        if (!isAccount || searchTerm === '') {
+        if (!isAccount || profileMode !== 'existing' || searchTerm === '') {
             return;
         }
 
@@ -250,7 +257,7 @@ function CreateForm({
             clearTimeout(timer);
             controller.abort();
         };
-    }, [isAccount, searchTerm]);
+    }, [isAccount, profileMode, searchTerm]);
     const searchResolved = searchTerm === lookup.query;
     const visibleEligible =
         searchTerm === '' ? eligible : searchResolved ? lookup.engineers : [];
@@ -267,8 +274,10 @@ function CreateForm({
             busy ||
             (isAccount &&
                 (!allowed.includes(account.account_type) ||
-                    !chosenEngineer ||
-                    String(chosenEngineer.id) !== account.engineer_id))
+                    (profileMode === 'existing' &&
+                        (!chosenEngineer ||
+                            String(chosenEngineer.id) !==
+                                account.engineer_id))))
         ) {
             return;
         }
@@ -284,7 +293,11 @@ function CreateForm({
         setErrors({});
         router.post(
             isAccount ? '/workspace/accounts' : '/workspace/engineers',
-            isAccount ? account : engineer,
+            isAccount
+                ? profileMode === 'new'
+                    ? { ...account, engineer_id: null, profile: engineer }
+                    : account
+                : engineer,
             {
                 preserveScroll: true,
                 onError: setErrors,
@@ -322,7 +335,7 @@ function CreateForm({
             label={label}
             value={engineer[key]}
             onChange={(v) => setEngineer((old) => ({ ...old, [key]: v }))}
-            error={errors[key]}
+            error={errors[`profile.${key}`] ?? errors[key]}
             optional={optional}
         />
     );
@@ -332,9 +345,10 @@ function CreateForm({
             {isAccount ? (
                 <>
                     <div className="um-form-note">
-                        New accounts require an active, unused Engineer profile.
-                        Linking a profile does not change Account Type or its
-                        permissions.
+                        Create a new profile and account together, or link an
+                        active, unused Engineer profile. All account types
+                        retain the profile requirement; linking a profile does
+                        not grant Engineer permissions.
                     </div>
                     <div className="um-form-grid">
                         {af(
@@ -369,66 +383,121 @@ function CreateForm({
                                 </small>
                             )}
                         </label>
-                        <label className="um-field um-span">
-                            Search eligible Engineers
-                            <input
-                                aria-label="Search eligible Engineers"
-                                className="um-input"
-                                type="search"
-                                maxLength={100}
-                                placeholder="Find by name, rank or profile ID"
-                                value={eligibleSearch}
-                                onChange={(e) =>
-                                    setEligibleSearch(e.target.value)
-                                }
-                            />
-                        </label>
-                        <label className="um-field um-span">
-                            Linked Engineer{' '}
-                            <span className="um-required">*</span>
-                            <select
-                                aria-label="Linked Engineer"
-                                className="um-input"
-                                required
-                                value={account.engineer_id}
-                                onChange={(e) => {
-                                    const engineer = eligibleChoices.find(
-                                        (item) =>
-                                            String(item.id) === e.target.value,
-                                    );
-                                    setChosenEngineer(engineer ?? null);
-                                    setAccount((old) => ({
-                                        ...old,
-                                        engineer_id: e.target.value,
-                                    }));
-                                }}
-                            >
-                                <option value="">
-                                    Select an active Engineer
-                                </option>
-                                {eligibleChoices.map((e) => (
-                                    <option key={e.id} value={e.id}>
-                                        {e.first_name} {e.last_name} · {e.rank}
-                                    </option>
-                                ))}
-                            </select>
-                            <small role="status">
-                                {searchTerm === ''
-                                    ? `Showing ${eligible.length} of ${eligibleTotal} available profile(s). Search to find more.`
-                                    : !searchResolved
-                                      ? 'Searching eligible profiles…'
-                                      : lookup.error ||
-                                        `Showing ${visibleEligible.length} of ${lookup.total} matching profile(s).`}
-                                {eligibleTotal === 0 &&
-                                    searchTerm === '' &&
-                                    ' Add an Engineer profile first.'}
-                            </small>
-                            {errors.engineer_id && (
-                                <small role="alert" className="um-required">
-                                    {errors.engineer_id}
-                                </small>
+                        <fieldset className="um-span min-w-0 space-y-3">
+                            <legend className="mb-2 text-sm font-semibold">
+                                Engineer profile
+                            </legend>
+                            <div className="flex flex-wrap gap-2">
+                                <button
+                                    type="button"
+                                    className={
+                                        profileMode === 'new'
+                                            ? 'um-primary'
+                                            : 'um-secondary'
+                                    }
+                                    aria-pressed={profileMode === 'new'}
+                                    disabled={busy}
+                                    onClick={() => setProfileMode('new')}
+                                >
+                                    Create new profile
+                                </button>
+                                <button
+                                    type="button"
+                                    className={
+                                        profileMode === 'existing'
+                                            ? 'um-primary'
+                                            : 'um-secondary'
+                                    }
+                                    aria-pressed={profileMode === 'existing'}
+                                    disabled={busy}
+                                    onClick={() => setProfileMode('existing')}
+                                >
+                                    Link existing profile
+                                </button>
+                            </div>
+                            {profileMode === 'new' ? (
+                                <div className="um-form-grid">
+                                    {ef('first_name', 'First name')}
+                                    {ef('middle_name', 'Middle name', true)}
+                                    {ef('last_name', 'Last name')}
+                                    {ef('contact_no', 'Contact number')}
+                                    {ef('rank', 'Rank')}
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    <label className="um-field um-span">
+                                        Search eligible Engineers
+                                        <input
+                                            aria-label="Search eligible Engineers"
+                                            className="um-input"
+                                            type="search"
+                                            maxLength={100}
+                                            placeholder="Find by name, rank or profile ID"
+                                            value={eligibleSearch}
+                                            onChange={(e) =>
+                                                setEligibleSearch(
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                    </label>
+                                    <label className="um-field um-span">
+                                        Linked Engineer{' '}
+                                        <span className="um-required">*</span>
+                                        <select
+                                            aria-label="Linked Engineer"
+                                            className="um-input"
+                                            required
+                                            value={account.engineer_id}
+                                            onChange={(e) => {
+                                                const engineer =
+                                                    eligibleChoices.find(
+                                                        (item) =>
+                                                            String(item.id) ===
+                                                            e.target.value,
+                                                    );
+                                                setChosenEngineer(
+                                                    engineer ?? null,
+                                                );
+                                                setAccount((old) => ({
+                                                    ...old,
+                                                    engineer_id: e.target.value,
+                                                }));
+                                            }}
+                                        >
+                                            <option value="">
+                                                Select an active Engineer
+                                            </option>
+                                            {eligibleChoices.map((e) => (
+                                                <option key={e.id} value={e.id}>
+                                                    {e.first_name} {e.last_name}{' '}
+                                                    · {e.rank}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <small role="status">
+                                            {searchTerm === ''
+                                                ? `Showing ${eligible.length} of ${eligibleTotal} available profile(s). Search to find more.`
+                                                : !searchResolved
+                                                  ? 'Searching eligible profiles…'
+                                                  : lookup.error ||
+                                                    `Showing ${visibleEligible.length} of ${lookup.total} matching profile(s).`}
+                                            {eligibleTotal === 0 &&
+                                                searchTerm === '' &&
+                                                ' Choose Create new profile to continue.'}
+                                        </small>
+                                        {errors.engineer_id && (
+                                            <small
+                                                role="alert"
+                                                className="um-required"
+                                            >
+                                                {errors.engineer_id}
+                                            </small>
+                                        )}
+                                    </label>
+                                </div>
                             )}
-                        </label>
+                        </fieldset>
                         {af(
                             'password',
                             'Password',
@@ -458,6 +527,16 @@ function CreateForm({
                     </div>
                 </>
             )}
+            {isAccount && (
+                <button
+                    type="button"
+                    className="um-secondary self-start"
+                    disabled={busy}
+                    onClick={onProfileOnly}
+                >
+                    Register an Engineer profile without an account
+                </button>
+            )}
             {Object.keys(errors).length > 0 && (
                 <div role="alert" className="um-error">
                     {Object.values(errors).join(' ')}
@@ -477,7 +556,10 @@ function CreateForm({
                     className="um-primary"
                     disabled={
                         busy ||
-                        (isAccount && (!chosenEngineer || !allowed.length))
+                        (isAccount &&
+                            (!allowed.length ||
+                                (profileMode === 'existing' &&
+                                    !chosenEngineer)))
                     }
                 >
                     {busy
@@ -583,6 +665,7 @@ export default function CanonicalUserManagement({
                 e.contact_no,
                 e.id,
                 linkedAccounts.get(e.id)?.username,
+                linkedAccounts.get(e.id)?.email,
             ]
                 .join(' ')
                 .toLowerCase()
@@ -620,16 +703,15 @@ export default function CanonicalUserManagement({
             { preserveState: true, preserveScroll: true, replace: true },
         );
     }
-    function switchTab(next: typeof tab) {
+    function switchTab(next: typeof tab, nextRole: string = 'all') {
         setTab(next);
         setSearch('');
-        setRole('all');
+        setRole(nextRole);
         setState('all');
         setPage(1);
     }
     function clear() {
         setSearch('');
-        setRole('all');
         setState('all');
         setPage(1);
     }
@@ -659,7 +741,7 @@ export default function CanonicalUserManagement({
             Icon: ShieldCheck,
         },
         {
-            label: 'Engineer profiles',
+            label: 'Total engineers',
             value: directory?.engineerTotal ?? engineers.length,
             detail: activeEngineers + ' active in directory',
             Icon: HardHat,
@@ -716,13 +798,6 @@ export default function CanonicalUserManagement({
                     <div className="um-header-actions">
                         <button
                             type="button"
-                            className="um-secondary"
-                            onClick={() => open({ kind: 'add-engineer' })}
-                        >
-                            <Plus size={16} /> Add Engineer
-                        </button>
-                        <button
-                            type="button"
                             className="um-primary"
                             disabled={!canCreateRoles.length}
                             onClick={() => open({ kind: 'add-account' })}
@@ -734,7 +809,7 @@ export default function CanonicalUserManagement({
                 <nav className="um-tabs" aria-label="Directory views">
                     <button
                         type="button"
-                        aria-pressed={tab === 'accounts'}
+                        aria-pressed={tab === 'accounts' && role === 'all'}
                         onClick={() => switchTab('accounts')}
                     >
                         <Users size={17} /> User Accounts{' '}
@@ -742,16 +817,36 @@ export default function CanonicalUserManagement({
                             {directory?.accountTotal ?? accounts.length}
                         </span>
                     </button>
-                    <button
-                        type="button"
-                        aria-pressed={tab === 'engineers'}
-                        onClick={() => switchTab('engineers')}
-                    >
-                        <HardHat size={17} /> Engineers{' '}
-                        <span>
-                            {directory?.engineerTotal ?? engineers.length}
-                        </span>
-                    </button>
+                    {roles.map((accountRole) =>
+                        accountRole === 'Engineer' ? (
+                            <button
+                                key={accountRole}
+                                type="button"
+                                aria-label="Engineers"
+                                aria-pressed={tab === 'engineers'}
+                                onClick={() => switchTab('engineers')}
+                            >
+                                <HardHat size={17} /> Engineers
+                                <span>
+                                    {directory?.engineerTotal ??
+                                        engineers.length}
+                                </span>
+                            </button>
+                        ) : (
+                            <button
+                                key={accountRole}
+                                type="button"
+                                aria-pressed={
+                                    tab === 'accounts' && role === accountRole
+                                }
+                                onClick={() =>
+                                    switchTab('accounts', accountRole)
+                                }
+                            >
+                                {`${accountRole}s`}
+                            </button>
+                        ),
+                    )}
                 </nav>
                 <div className="um-toolbar">
                     <label className="um-search">
@@ -765,7 +860,7 @@ export default function CanonicalUserManagement({
                             placeholder={
                                 tab === 'accounts'
                                     ? 'Search username, email or Engineer…'
-                                    : 'Search Engineer name, rank or contact…'
+                                    : 'Search name, rank, contact or account…'
                             }
                             value={search}
                             maxLength={150}
@@ -775,38 +870,25 @@ export default function CanonicalUserManagement({
                             }}
                         />
                     </label>
-                    {tab === 'accounts' && (
-                        <select
-                            aria-label="Filter account type"
-                            className="um-filter"
-                            value={role}
-                            onChange={(e) => {
-                                setRole(e.target.value);
-                                setPage(1);
-                            }}
-                        >
-                            <option value="all">All Account Types</option>
-                            {roles.map((r) => (
-                                <option key={r}>{r}</option>
-                            ))}
-                        </select>
-                    )}
-                    <select
-                        aria-label="Filter status"
+                    <DirectoryFilter
+                        label="Filter status"
                         className="um-filter"
                         value={state}
-                        onChange={(e) => {
-                            setState(e.target.value);
+                        onChange={(value) => {
+                            setState(value);
                             setPage(1);
                         }}
-                    >
-                        <option value="all">All Statuses</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">
-                            {tab === 'accounts' ? 'Inactive' : 'Retired'}
-                        </option>
-                    </select>
-                    {(search || role !== 'all' || state !== 'all') && (
+                        options={[
+                            { value: 'all', label: 'All Statuses' },
+                            { value: 'active', label: 'Active' },
+                            {
+                                value: 'inactive',
+                                label:
+                                    tab === 'accounts' ? 'Inactive' : 'Retired',
+                            },
+                        ]}
+                    />
+                    {(search || state !== 'all') && (
                         <button
                             className="um-secondary"
                             type="button"
@@ -934,7 +1016,7 @@ export default function CanonicalUserManagement({
                                     <th>Engineer</th>
                                     <th>Rank</th>
                                     <th>Linked Account</th>
-                                    <th>Status</th>
+                                    <th>Engineer Status</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -985,12 +1067,27 @@ export default function CanonicalUserManagement({
                                                                     account.username
                                                                 }
                                                             </strong>
+                                                            <small>
+                                                                {account.email}
+                                                            </small>
                                                             <div className="mt-1">
                                                                 <AccountTypeBadge
                                                                     role={
                                                                         account.account_type
                                                                     }
                                                                 />
+                                                                <span className="ml-2">
+                                                                    <Status
+                                                                        active={
+                                                                            account.is_active
+                                                                        }
+                                                                        label={
+                                                                            account.is_active
+                                                                                ? 'Active account'
+                                                                                : 'Inactive account'
+                                                                        }
+                                                                    />
+                                                                </span>
                                                             </div>
                                                         </>
                                                     ) : e.engineer_status ===
@@ -1017,22 +1114,42 @@ export default function CanonicalUserManagement({
                                                     />
                                                 </td>
                                                 <td>
-                                                    <button
-                                                        className="um-secondary um-row-action"
-                                                        type="button"
-                                                        aria-label={
-                                                            'Manage engineer ' +
-                                                            nameOf(e)
-                                                        }
-                                                        onClick={() =>
-                                                            open({
-                                                                kind: 'engineer',
-                                                                id: e.id,
-                                                            })
-                                                        }
-                                                    >
-                                                        Manage
-                                                    </button>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        <button
+                                                            className="um-secondary um-row-action"
+                                                            type="button"
+                                                            aria-label={
+                                                                'Manage engineer ' +
+                                                                nameOf(e)
+                                                            }
+                                                            onClick={() =>
+                                                                open({
+                                                                    kind: 'engineer',
+                                                                    id: e.id,
+                                                                })
+                                                            }
+                                                        >
+                                                            Manage profile
+                                                        </button>
+                                                        {account && (
+                                                            <button
+                                                                className="um-secondary um-row-action"
+                                                                type="button"
+                                                                aria-label={
+                                                                    'Manage account ' +
+                                                                    account.username
+                                                                }
+                                                                onClick={() =>
+                                                                    open({
+                                                                        kind: 'account',
+                                                                        id: account.id,
+                                                                    })
+                                                                }
+                                                            >
+                                                                Manage account
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );
@@ -1060,32 +1177,16 @@ export default function CanonicalUserManagement({
                     )}
                 </div>
                 <div className="um-footer">
-                    <span role="status">
-                        {count ? start + 1 : 0}–
-                        {Math.min(start + pageSize, count)} of {count}{' '}
-                        {tab === 'accounts' ? 'accounts' : 'engineers'}
-                    </span>
-                    <div>
-                        <button
-                            type="button"
-                            aria-label="Previous page"
-                            disabled={current === 1}
-                            onClick={() => visitPage(current - 1)}
-                        >
-                            <ChevronLeft size={18} />
-                        </button>
-                        <span>
-                            {current} / {last}
-                        </span>
-                        <button
-                            type="button"
-                            aria-label="Next page"
-                            disabled={current === last}
-                            onClick={() => visitPage(current + 1)}
-                        >
-                            <ChevronRight size={18} />
-                        </button>
-                    </div>
+                    <DirectoryPagination
+                        total={count}
+                        from={count ? start + 1 : 0}
+                        to={Math.min(start + pageSize, count)}
+                        currentPage={current}
+                        lastPage={last}
+                        plural={tab === 'accounts' ? 'accounts' : 'engineers'}
+                        label="User management pagination"
+                        onPage={visitPage}
+                    />
                 </div>
             </section>
             <aside className="um-policy">
@@ -1127,7 +1228,7 @@ export default function CanonicalUserManagement({
                                 <Dialog.Title>{modalTitle}</Dialog.Title>
                                 <Dialog.Description>
                                     {modal?.kind === 'add-account'
-                                        ? 'Set up sign-in details and account access.'
+                                        ? 'Set up a person profile, sign-in details and account access.'
                                         : modal?.kind === 'add-engineer'
                                           ? 'Register a professional Engineer profile.'
                                           : 'Review details and make authorized changes.'}
@@ -1161,9 +1262,13 @@ export default function CanonicalUserManagement({
                                                 ? 'accounts'
                                                 : 'engineers',
                                         );
+                                        setRole('all');
                                         clear();
                                     }}
                                     onBusy={setBusy}
+                                    onProfileOnly={() =>
+                                        open({ kind: 'add-engineer' })
+                                    }
                                 />
                             ) : modal?.kind === 'account' ? (
                                 <AccountLifecycle

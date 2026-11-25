@@ -366,6 +366,67 @@ final class UnifiedFrontendTest extends PostgresTestCase
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
     }
 
+    public function test_combined_account_provisioning_preserves_role_and_profile_link(): void
+    {
+        $this->actingAs($this->account('SuperAdmin'));
+        $payload = [
+            'username' => 'combined-fixture', 'email' => 'combined-fixture@example.test',
+            'name' => 'Combined Fixture', 'account_type' => 'Engineer',
+            'password' => 'Disposable-Test!123', 'password_confirmation' => 'Disposable-Test!123',
+            'profile' => ['first_name' => 'Combined', 'last_name' => 'Fixture',
+                'contact_no' => '09123456789', 'rank' => 'Engineer II'],
+        ];
+        $this->post('/workspace/accounts', $payload)->assertSessionHasNoErrors()->assertRedirect();
+        $account = DB::table('jairoads_next.user_accounts')->where('username', 'combined-fixture')->first();
+        $this->assertNotNull($account);
+        $this->assertSame('Engineer', $account->account_type);
+        $this->assertDatabaseHas('jairoads_next.engineers', ['id' => $account->engineer_id,
+            'first_name' => 'Combined', 'last_name' => 'Fixture', 'engineer_status' => 'Active']);
+        $this->assertDatabaseHas('public.users', ['dd_user_account_id' => $account->id, 'email' => $payload['email']]);
+        $this->assertDatabaseHas('jairoads_security.account_provisioning', ['user_account_id' => $account->id,
+            'engineer_id' => $account->engineer_id, 'provisioned_role' => 'Engineer']);
+        $this->assertDatabaseHas('jairoads_next.audit_logs', ['entity_type' => 'Engineer', 'entity_id' => $account->engineer_id, 'action' => 'CREATE']);
+        $this->assertDatabaseHas('jairoads_next.audit_logs', ['entity_type' => 'UserAccount', 'entity_id' => $account->id, 'action' => 'CREATE']);
+
+        $before = DB::table('jairoads_next.engineers')->count();
+        $this->postJson('/workspace/accounts', array_replace($payload, [
+            'username' => 'combined-invalid', 'email' => 'combined-invalid@example.test',
+            'account_type' => 'SuperAdmin',
+        ]))->assertUnprocessable()->assertJsonValidationErrors('account_type');
+        $this->postJson('/workspace/accounts', array_replace($payload, [
+            'username' => 'combined-conflict', 'email' => 'combined-conflict@example.test',
+            'engineer_id' => $account->engineer_id,
+        ]))->assertUnprocessable()->assertJsonValidationErrors('engineer_id');
+        $this->assertSame($before, DB::table('jairoads_next.engineers')->count());
+    }
+
+    public function test_combined_account_rolls_back_new_profile_on_audit_failure(): void
+    {
+        $this->actingAs($this->account('SuperAdmin'));
+        $before = DB::table('jairoads_next.engineers')->count();
+        DB::statement(<<<'SQL'
+            CREATE FUNCTION jairoads_next.reject_combined_audit() RETURNS trigger LANGUAGE plpgsql AS $$
+            BEGIN
+                IF NEW.entity_type = 'UserAccount' THEN
+                    RAISE EXCEPTION 'Disposable audit failure';
+                END IF;
+                RETURN NEW;
+            END;
+            $$
+            SQL);
+        DB::statement('CREATE TRIGGER reject_combined_audit BEFORE INSERT ON jairoads_next.audit_logs FOR EACH ROW EXECUTE FUNCTION jairoads_next.reject_combined_audit()');
+        $this->postJson('/workspace/accounts', [
+            'username' => 'combined-rollback', 'email' => 'combined-rollback@example.test',
+            'name' => 'Rollback Fixture', 'account_type' => 'Viewer',
+            'password' => 'Disposable-Test!123', 'password_confirmation' => 'Disposable-Test!123',
+            'profile' => ['first_name' => 'Rollback', 'last_name' => 'Fixture',
+                'contact_no' => '09123456789', 'rank' => 'Engineer II'],
+        ])->assertUnprocessable();
+        $this->assertSame($before, DB::table('jairoads_next.engineers')->count());
+        $this->assertDatabaseMissing('jairoads_next.user_accounts', ['username' => 'combined-rollback']);
+        $this->assertDatabaseMissing('public.users', ['email' => 'combined-rollback@example.test']);
+    }
+
     private function record(array $f): int
     {
         return (int) DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer'], 'Q4') + ['created_by' => $f['user']->dd_user_account_id]);

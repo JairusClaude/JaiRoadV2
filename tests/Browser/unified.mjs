@@ -99,12 +99,43 @@ async function signIn(email) {
         (await page.locator('img').count()) > 0,
         'Photographic login remains visible',
     );
+
+    // Exercise the mobile welcome screen and the successful role handoff
+    // with the disposable SuperAdmin fixture; all other roles retain the
+    // reduced-motion test setup.
+    if (email === f.superadmin_email) {
+        await page.setViewportSize({ width: 390, height: 844 });
+        await page.getByRole('button', { name: 'Explore JaiROADS' }).click();
+        await page.getByRole('button', { name: 'Continue to sign in' }).click();
+        await page.getByLabel('Email address').waitFor({ state: 'visible' });
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+        await page.setViewportSize({ width: 1440, height: 1080 });
+        await page.emulateMedia({ reducedMotion: 'no-preference' });
+        await page.evaluate(() => {
+            const observer = new MutationObserver(() => {
+                const overlay = document.querySelector('.jr-auth-handoff');
+
+                if (overlay) {
+                    document.documentElement.dataset.testAuthHandoff = overlay.getAttribute('data-role');
+                    observer.disconnect();
+                }
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+        });
+    }
+
     await page.getByLabel('Email address').fill(email);
     await page
         .getByLabel('Password', { exact: true })
         .fill('Disposable-Test!123');
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     await page.waitForURL(/workspace\/dashboard|dd-superadmin-landing/);
+
+    if (email === f.superadmin_email) {
+        await page.waitForFunction(() => document.documentElement.dataset.testAuthHandoff === 'superadmin');
+        await page.locator('.jr-auth-handoff').waitFor({ state: 'detached' });
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+    }
 
     return page;
 }
@@ -809,6 +840,46 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
 
     // SuperAdmin theme and breadcrumb regressions seen in the deployed UI.
     await superadmin.goto(`${ui}/monthly-updates`);
+    const collapseSidebar = superadmin.getByRole('button', {
+        name: 'Collapse sidebar',
+        exact: true,
+    });
+    const expandSidebar = superadmin.getByRole('button', {
+        name: 'Expand sidebar',
+        exact: true,
+    });
+
+    if (await expandSidebar.isVisible()) {
+        await expandSidebar.click();
+    }
+
+    await superadmin.waitForFunction(() => {
+        const sidebar = document.querySelector('.jr-superadmin-sidebar');
+
+        return sidebar && sidebar.getBoundingClientRect().width >= 240;
+    });
+    await collapseSidebar.click();
+    await superadmin.waitForFunction(() => {
+        const sidebar = document.querySelector('.jr-superadmin-sidebar');
+
+        return sidebar && sidebar.getBoundingClientRect().width <= 80;
+    });
+    await expandSidebar.click();
+    await superadmin.waitForFunction(() => {
+        const sidebar = document.querySelector('.jr-superadmin-sidebar');
+
+        return sidebar && sidebar.getBoundingClientRect().width >= 240;
+    });
+    const monthlyMetrics = superadmin.locator(
+        '[aria-label="Monthly update statistics"] .jr-metric-card',
+    );
+    assert.equal(await monthlyMetrics.count(), 2);
+    assert.equal(await monthlyMetrics.locator('.jr-metric-icon').count(), 2);
+    const monthlyHeader = superadmin.locator('.jr-monthly-table thead th').first();
+    assert.equal(
+        await monthlyHeader.evaluate((el) => getComputedStyle(el).backgroundColor),
+        'rgb(244, 237, 255)',
+    );
     const purpleProgress = superadmin
         .locator('.jr-monthly-progress-track > span')
         .first();
@@ -828,7 +899,16 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         await superadmin.locator('.jr-header-page-title').innerText(),
         'User Management',
     );
-    console.log('PASS: SuperAdmin monthly progress is purple and User Management breadcrumb is correct.');
+    await superadmin
+        .getByRole('navigation', { name: 'User management pagination' })
+        .waitFor();
+    assert.equal(
+        await superadmin.locator('.um-table thead th').first().evaluate(
+            (el) => getComputedStyle(el).backgroundColor,
+        ),
+        'rgb(244, 237, 255)',
+    );
+    console.log('PASS: SuperAdmin sidebar states, monthly metrics, purple headers and progress, shared pagination, and User Management breadcrumb.');
 
     // Both confirmations use the unchanged server-side impact service and its signed snapshot.
     const openRoadMunicipalityChange = async () => {

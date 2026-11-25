@@ -99,15 +99,19 @@ html.dark .jr-canonical-settings button[aria-pressed='true'] {
 }
 html.dark body:has(.jr-superadmin-workspace) .jr-canonical-settings {
     --jr-dark-selection-text: #c4b5fd;
+    --jr-dark-selection-bg: #432868;
 }
 html.dark body:has(.jr-admin-workspace) .jr-canonical-settings {
     --jr-dark-selection-text: #fda4af;
+    --jr-dark-selection-bg: #4b2030;
 }
 html.dark body:has(.jr-engineer-workspace) .jr-canonical-settings {
     --jr-dark-selection-text: #fdba74;
+    --jr-dark-selection-bg: #4a2c1b;
 }
 html.dark body:has(.jr-viewer-workspace) .jr-canonical-settings {
     --jr-dark-selection-text: #93c5fd;
+    --jr-dark-selection-bg: #203b65;
 }
 html.dark .jr-canonical-settings main > [role='status'] {
     border-color: #236c53;
@@ -168,4 +172,9 @@ html.dark .jr-app.jr-theme:has(.jr-settings) {
     --color-border: var(--border);
     --color-input: var(--input);
     color-scheme: dark;
+}
+
+html.dark .jr-dd-settings .jr-appearance-choice[aria-pressed='true'] {
+    background-color: var(--jr-dark-selection-bg, #432868) !important;
+    border-color: var(--jr-dark-selection-text, #c4b5fd) !important;
 }

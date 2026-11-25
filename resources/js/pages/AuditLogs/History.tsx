@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { RefreshCw } from 'lucide-react';
+import { Activity, RefreshCw, ShieldCheck, UsersRound } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
@@ -74,7 +74,7 @@ type Props = {
     };
 };
 const field =
-    'mt-1 block w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900';
+    'jr-audit-filter mt-1 block w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900';
 const button =
     'rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 disabled:opacity-50';
 function time(value: string | null) {
@@ -137,7 +137,10 @@ function Table({
 }
 function PaginationLinks({ page, label }: { page: Pagination; label: string }) {
     return (
-        <nav aria-label={label} className="mt-4 flex flex-wrap gap-2 text-sm">
+        <nav
+            aria-label={label}
+            className="jr-audit-pagination mt-4 flex flex-wrap gap-2 text-sm"
+        >
             {page.links.map((link, i) =>
                 link.url ? (
                     <Link
@@ -407,12 +410,14 @@ export default function AuditHistory({
                     >
                         <MetricCard
                             title="System Activities"
+                            icon={<Activity className="size-5" />}
                             value={summary.system_activities}
                             subtitle="Permanent business entries; historical copies remain preserved."
                             highlight={true}
                         />
                         <MetricCard
                             title="Authentication in Period"
+                            icon={<ShieldCheck className="size-5" />}
                             value={
                                 monitoring.available
                                     ? `${summary.logins ?? 0} logins`
@@ -426,6 +431,7 @@ export default function AuditHistory({
                         />
                         <MetricCard
                             title="Unique Online Accounts"
+                            icon={<UsersRound className="size-5" />}
                             value={
                                 summary.online_accounts === null
                                     ? 'Unavailable'
@@ -527,7 +533,7 @@ export default function AuditHistory({
                                                     {e.action} · {e.entity_type}{' '}
                                                     #{e.entity_id ?? '—'}
                                                 </p>
-                                                <p>{e.created_at}</p>
+                                                <p>{time(e.created_at)}</p>
                                                 <p className="break-words">
                                                     {e.description}
                                                 </p>
@@ -693,7 +699,7 @@ export default function AuditHistory({
                                             </summary>
                                             <p className="mt-2 text-xs">
                                                 Event #{e.id} · {e.method} ·{' '}
-                                                {e.created_at}
+                                                {time(e.created_at)}
                                             </p>
                                             <p className="text-xs">
                                                 {e.user_account_id === null

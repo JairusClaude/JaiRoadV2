@@ -1,8 +1,11 @@
 import { Form, Head } from '@inertiajs/react';
-import { ArrowRight, Info, LockKeyhole } from 'lucide-react';
+import { ArrowRight, Info, LockKeyhole, Mail } from 'lucide-react';
 import { useState } from 'react';
 import InputError from '@/components/input-error';
-import AuthShell from '@/components/jairoads/auth-shell';
+import AuthShell, {
+    authButtonClass,
+    authInputClass,
+} from '@/components/jairoads/auth-shell';
 import PasskeyVerify from '@/components/passkey-verify';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
@@ -31,7 +34,8 @@ export default function Login({
             <AuthShell
                 eyebrow="Welcome to JaiROADS"
                 title="Welcome back"
-                description="Sign in to manage road infrastructure and maintenance."
+                description="Sign in to your JaiROADS workspace."
+                showMobileIntro
             >
                 {status && (
                     <p
@@ -60,24 +64,30 @@ export default function Login({
                                 >
                                     Email address
                                 </Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    name="email"
-                                    required
-                                    autoComplete="email"
-                                    inputMode="email"
-                                    autoCapitalize="none"
-                                    spellCheck={false}
-                                    aria-describedby={
-                                        errors.email
-                                            ? 'login-email-error'
-                                            : undefined
-                                    }
-                                    placeholder="you@example.com"
-                                    aria-invalid={Boolean(errors.email)}
-                                    className="h-12 rounded-xl border-[#dce4ec] bg-[#fdfefe] px-4 text-sm text-[#17283e] placeholder:text-[#a1afbd] focus-visible:border-[#a45b30] focus-visible:ring-[#a45b30]/20"
-                                />
+                                <div className="jr-login-input-wrap">
+                                    <Mail
+                                        aria-hidden="true"
+                                        className="jr-login-input-icon"
+                                    />
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        name="email"
+                                        required
+                                        autoComplete="email"
+                                        inputMode="email"
+                                        autoCapitalize="none"
+                                        spellCheck={false}
+                                        aria-describedby={
+                                            errors.email
+                                                ? 'login-email-error'
+                                                : undefined
+                                        }
+                                        placeholder="you@example.com"
+                                        aria-invalid={Boolean(errors.email)}
+                                        className={`${authInputClass} pl-10`}
+                                    />
+                                </div>
                                 <InputError
                                     id="login-email-error"
                                     role="alert"
@@ -101,36 +111,48 @@ export default function Login({
                                         </a>
                                     )}
                                 </div>
-                                <PasswordInput
-                                    id="password"
-                                    name="password"
-                                    required
-                                    autoComplete="current-password"
-                                    onKeyDown={(event) =>
-                                        setCapsLock(
-                                            event.getModifierState('CapsLock'),
-                                        )
-                                    }
-                                    onKeyUp={(event) =>
-                                        setCapsLock(
-                                            event.getModifierState('CapsLock'),
-                                        )
-                                    }
-                                    onBlur={() => setCapsLock(false)}
-                                    aria-describedby={
-                                        [
-                                            errors.password
-                                                ? 'login-password-error'
-                                                : '',
-                                            capsLock ? 'login-caps-lock' : '',
-                                        ]
-                                            .filter(Boolean)
-                                            .join(' ') || undefined
-                                    }
-                                    placeholder="Enter your password"
-                                    aria-invalid={Boolean(errors.password)}
-                                    className="h-12 rounded-xl border-[#dce4ec] bg-[#fdfefe] px-4 text-sm text-[#17283e] placeholder:text-[#a1afbd] focus-visible:border-[#a45b30] focus-visible:ring-[#a45b30]/20"
-                                />
+                                <div className="jr-login-input-wrap">
+                                    <LockKeyhole
+                                        aria-hidden="true"
+                                        className="jr-login-input-icon"
+                                    />
+                                    <PasswordInput
+                                        id="password"
+                                        name="password"
+                                        required
+                                        autoComplete="current-password"
+                                        onKeyDown={(event) =>
+                                            setCapsLock(
+                                                event.getModifierState(
+                                                    'CapsLock',
+                                                ),
+                                            )
+                                        }
+                                        onKeyUp={(event) =>
+                                            setCapsLock(
+                                                event.getModifierState(
+                                                    'CapsLock',
+                                                ),
+                                            )
+                                        }
+                                        onBlur={() => setCapsLock(false)}
+                                        aria-describedby={
+                                            [
+                                                errors.password
+                                                    ? 'login-password-error'
+                                                    : '',
+                                                capsLock
+                                                    ? 'login-caps-lock'
+                                                    : '',
+                                            ]
+                                                .filter(Boolean)
+                                                .join(' ') || undefined
+                                        }
+                                        placeholder="Enter your password"
+                                        aria-invalid={Boolean(errors.password)}
+                                        className={`${authInputClass} pl-10`}
+                                    />
+                                </div>
                                 <InputError
                                     id="login-password-error"
                                     role="alert"
@@ -176,7 +198,7 @@ export default function Login({
                                 disabled={processing}
                                 data-test="login-button"
                                 aria-busy={processing}
-                                className="mt-1 h-12 w-full rounded-xl bg-[#964b23] text-sm font-semibold text-white shadow-[0_6px_18px_rgba(121,56,21,0.17)] transition hover:bg-[#783a1a] focus-visible:ring-[#bd835a]/30 disabled:opacity-65"
+                                className={`${authButtonClass} mt-1 transition`}
                             >
                                 {processing ? (
                                     <>

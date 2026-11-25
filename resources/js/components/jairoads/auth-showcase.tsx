@@ -50,7 +50,10 @@ function serverCompactSnapshot() {
     return false;
 }
 
-export default function AuthShowcase() {
+export default function AuthShowcase({
+    expandedMobile = false,
+    onContinue,
+}: { expandedMobile?: boolean; onContinue?: () => void } = {}) {
     const compact = useSyncExternalStore(
         subscribeCompact,
         compactSnapshot,
@@ -80,7 +83,7 @@ export default function AuthShowcase() {
         return () => preference.removeEventListener('change', update);
     }, []);
     useEffect(() => {
-        if (!playing || compact) {
+        if (!playing || (compact && !expandedMobile)) {
             return;
         }
 
@@ -90,12 +93,12 @@ export default function AuthShowcase() {
         );
 
         return () => window.clearTimeout(timer);
-    }, [playing, activeSlide, compact]);
+    }, [playing, activeSlide, compact, expandedMobile]);
     const changeSlide = (direction: number) =>
         setActiveSlide(
             (current) => (current + direction + slides.length) % slides.length,
         );
-    const visibleSlide = compact ? 0 : activeSlide;
+    const visibleSlide = compact && !expandedMobile ? 0 : activeSlide;
     const slide = slides[visibleSlide];
 
     return (
@@ -103,45 +106,47 @@ export default function AuthShowcase() {
             aria-label="JaiROADS road infrastructure showcase"
             className="jr-login-showcase relative isolate overflow-hidden bg-[#1b3141] text-white"
             data-active-slide={visibleSlide}
-            data-playing={playing && !compact}
+            data-playing={playing && (!compact || expandedMobile)}
         >
-            {(compact ? slides.slice(0, 1) : slides).map((item, index) => (
-                <div
-                    key={item.image}
-                    className={`jr-login-photo absolute inset-0 transition-opacity duration-1000 motion-reduce:transition-none ${index === visibleSlide ? 'opacity-100' : 'opacity-0'}`}
-                    data-current={index === visibleSlide}
-                >
-                    {'fallback' in item && (
+            {(compact && !expandedMobile ? slides.slice(0, 1) : slides).map(
+                (item, index) => (
+                    <div
+                        key={item.image}
+                        className={`jr-login-photo absolute inset-0 transition-opacity duration-1000 motion-reduce:transition-none ${index === visibleSlide ? 'opacity-100' : 'opacity-0'}`}
+                        data-current={index === visibleSlide}
+                    >
+                        {'fallback' in item && (
+                            <img
+                                src={item.fallback}
+                                alt=""
+                                aria-hidden="true"
+                                className="absolute inset-0 h-full w-full object-cover object-center"
+                            />
+                        )}
                         <img
-                            src={item.fallback}
+                            src={item.image}
                             alt=""
                             aria-hidden="true"
-                            className="absolute inset-0 h-full w-full object-cover object-center"
+                            loading="eager"
+                            decoding="async"
+                            referrerPolicy="no-referrer"
+                            onLoad={() =>
+                                setLoadedImages((previous) =>
+                                    previous.includes(index)
+                                        ? previous
+                                        : [...previous, index],
+                                )
+                            }
+                            onError={() =>
+                                setLoadedImages((previous) =>
+                                    previous.filter((value) => value !== index),
+                                )
+                            }
+                            className={`absolute inset-0 h-full w-full object-cover object-center ${'fallback' in item && !loadedImages.includes(index) ? 'opacity-0' : 'opacity-100'}`}
                         />
-                    )}
-                    <img
-                        src={item.image}
-                        alt=""
-                        aria-hidden="true"
-                        loading="eager"
-                        decoding="async"
-                        referrerPolicy="no-referrer"
-                        onLoad={() =>
-                            setLoadedImages((previous) =>
-                                previous.includes(index)
-                                    ? previous
-                                    : [...previous, index],
-                            )
-                        }
-                        onError={() =>
-                            setLoadedImages((previous) =>
-                                previous.filter((value) => value !== index),
-                            )
-                        }
-                        className={`absolute inset-0 h-full w-full object-cover object-center ${'fallback' in item && !loadedImages.includes(index) ? 'opacity-0' : 'opacity-100'}`}
-                    />
-                </div>
-            ))}
+                    </div>
+                ),
+            )}
             <div
                 aria-hidden="true"
                 className="jr-login-shade absolute inset-0"
@@ -269,6 +274,16 @@ export default function AuthShowcase() {
                         </button>
                     </div>
                 </div>
+                {expandedMobile && (
+                    <button
+                        type="button"
+                        id="jr-login-continue"
+                        className="jr-login-continue"
+                        onClick={onContinue}
+                    >
+                        Continue to sign in
+                    </button>
+                )}
             </div>
         </section>
     );

@@ -169,7 +169,7 @@ export function SimplifiedCoverageMap({
                         ? item.mine
                             ? 'jr-dashboard-road-mine'
                             : 'jr-dashboard-road-other'
-                        : undefined,
+                        : 'jr-directory-road-line',
                     smoothFactor: 0,
                     interactive: true,
                 });

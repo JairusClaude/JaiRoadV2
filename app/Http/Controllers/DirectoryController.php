@@ -126,7 +126,8 @@ class DirectoryController extends Controller
                         ->orWhere('e.rank', 'ilike', $needle)->orWhere('e.contact_no', 'ilike', $needle)
                         ->orWhereRaw('CAST(e.id AS text) ILIKE ?', [$needle])
                         ->orWhereExists(static fn (Builder $linked) => $linked->selectRaw('1')->from('jairoads_next.user_accounts as ua')
-                            ->whereColumn('ua.engineer_id', 'e.id')->where('ua.username', 'ilike', $needle)));
+                            ->whereColumn('ua.engineer_id', 'e.id')->where(static fn (Builder $account) => $account->where('ua.username', 'ilike', $needle)
+                            ->orWhere('ua.email', 'ilike', $needle))));
                 }
                 if ($state !== 'all') {
                     $query->where('e.engineer_status', $state === 'active' ? '=' : '!=', 'Active');
