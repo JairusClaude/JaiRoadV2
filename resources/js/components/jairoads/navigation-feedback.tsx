@@ -114,7 +114,7 @@ export function JaiRoadsNavigationFeedback() {
         // Inertia returns unsubscribe functions. Strict Mode cleans these up.
         const offStart = router.on('start', (event) => {
             const path = window.location.pathname.replace(/\/$/, '');
-            authAttempt = (path === '/login' || path === '/two-factor-challenge') &&
+            authAttempt = (path === '/login') &&
                 event.detail.visit.method.toLowerCase() === 'post';
             start();
         });
@@ -152,7 +152,8 @@ export function JaiRoadsNavigationFeedback() {
             <div className="jr-loading-track" aria-hidden="true">
                 <div className="jr-loading-track-stripe" />
             </div>
-            <div className="jr-loading-notice">
+            {message === 'loading' && <span className="sr-only">Loading…</span>}
+            {message !== 'loading' && <div className="jr-loading-notice">
                 <span className="jr-loading-road" aria-hidden="true">
                     <span />
                 </span>
@@ -163,7 +164,7 @@ export function JaiRoadsNavigationFeedback() {
                           ? 'Still loading… the server is taking longer than usual.'
                           : 'Opening JaiROADS page…'}
                 </span>
-            </div>
+            </div>}
         </div>
     );
 }
