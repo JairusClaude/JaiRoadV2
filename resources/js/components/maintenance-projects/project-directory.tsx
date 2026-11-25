@@ -239,11 +239,11 @@ export function ProjectDirectory({
                 aria-label="Maintenance Projects table"
                 tabIndex={0}
             >
-                <table className="jr-table">
+                <table className={`jr-table${isViewer ? ' jr-project-table-readonly' : ''}`}>
                     <colgroup>
-                        <col style={{ width: '60%' }} />
-                        <col style={{ width: '30%' }} />
-                        <col style={{ width: '10%' }} />
+                        <col style={{ width: isViewer ? '65%' : '60%' }} />
+                        <col style={{ width: isViewer ? '35%' : '30%' }} />
+                        {!isViewer && <col style={{ width: '10%' }} />}
                     </colgroup>
                     <thead>
                         <tr>
