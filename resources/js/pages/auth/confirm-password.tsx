@@ -1,11 +1,6 @@
 import { Form, Head } from '@inertiajs/react';
 import { LockKeyhole, ShieldCheck } from 'lucide-react';
-import {
-    index as confirmOptions,
-    store as confirmStore,
-} from '@/actions/Laravel/Passkeys/Http/Controllers/PasskeyConfirmationController';
 import InputError from '@/components/input-error';
-import PasskeyVerify from '@/components/passkey-verify';
 import PasswordInput from '@/components/password-input';
 import { Spinner } from '@/components/ui/spinner';
 import { store } from '@/routes/password/confirm';
@@ -30,15 +25,6 @@ export default function ConfirmPassword() {
                         </p>
                     </div>
                 </div>
-                <PasskeyVerify
-                    routes={{
-                        options: confirmOptions(),
-                        submit: confirmStore(),
-                    }}
-                    label="Confirm with passkey"
-                    loadingLabel="Confirming…"
-                    separator="Or confirm with password"
-                />
                 <Form {...store.form()} resetOnSuccess={['password']}>
                     {({ processing, errors }) => (
                         <div className="space-y-4">
