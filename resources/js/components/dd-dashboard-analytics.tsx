@@ -109,7 +109,7 @@ export function DdDashboardAnalytics({
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <h2 className="flex items-center gap-2 text-xl font-bold tracking-tight text-slate-900">
-                        <BarChart3 className="h-5 w-5 text-amber-700" />{' '}
+                        <BarChart3 className="h-5 w-5 text-[var(--jr-role-accent)]" />{' '}
                         {data.scope} analytics
                     </h2>
                     <p className="mt-1 text-sm text-slate-500">
@@ -117,7 +117,7 @@ export function DdDashboardAnalytics({
                         sample data.
                     </p>
                 </div>
-                <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800">
+                <span className="rounded-full border border-[var(--jr-role-accent-soft)] bg-[var(--jr-role-accent-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--jr-role-accent-ink)]">
                     {data.scope}
                 </span>
             </div>
@@ -131,7 +131,7 @@ export function DdDashboardAnalytics({
                     >
                         <div className="flex items-center justify-between gap-2 text-xs font-medium text-slate-600">
                             <span>{label}</span>
-                            <Icon className="h-4 w-4 shrink-0 text-amber-700" />
+                            <Icon className="h-4 w-4 shrink-0 text-[var(--jr-role-accent)]" />
                         </div>
                         <p className="mt-3 text-3xl font-bold text-slate-900 tabular-nums">
                             {value.toLocaleString()}
@@ -140,7 +140,7 @@ export function DdDashboardAnalytics({
                 ))}
             </div>
             <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
-                <ClipboardCheck className="h-4 w-4 text-amber-700" />
+                <ClipboardCheck className="h-4 w-4 text-[var(--jr-role-accent)]" />
                 <strong>Reporting coverage this month:</strong>
                 {data.metrics.reportingCoverage === null
                     ? 'Not applicable (no ongoing records)'
@@ -160,7 +160,7 @@ export function DdDashboardAnalytics({
                                 months · {data.scope}
                             </p>
                         </div>
-                        <span className="jr-trend-total rounded-xl bg-[#F2EAFF] px-3 py-2 text-xs font-semibold text-[#51269B]">
+                        <span className="jr-trend-total rounded-xl bg-[var(--jr-role-accent-soft)] px-3 py-2 text-xs font-semibold text-[var(--jr-role-accent)]">
                             <strong className="mr-1 text-lg tabular-nums">
                                 {trendTotal.toLocaleString()}
                             </strong>
@@ -190,7 +190,7 @@ export function DdDashboardAnalytics({
                                     aria-hidden="true"
                                 >
                                     <div
-                                        className="w-full rounded-t-lg bg-gradient-to-t from-amber-700 to-amber-400 transition-all"
+                                        className="w-full rounded-t-lg bg-[var(--jr-role-accent)] transition-all"
                                         style={{
                                             height: `${item.count === 0 ? 0 : Math.max(6, (item.count / max) * 100)}%`,
                                         }}
@@ -209,7 +209,7 @@ export function DdDashboardAnalytics({
                         ))}
                     </div>
                     {trendTotal === 0 && (
-                        <p className="mt-3 rounded-xl bg-[#F8F5FE] px-4 py-3 text-center text-xs text-slate-600">
+                        <p className="mt-3 rounded-xl bg-[var(--jr-role-accent-soft)] px-4 py-3 text-center text-xs text-slate-600">
                             No monthly progress reports were submitted during
                             this six-month period.
                         </p>
