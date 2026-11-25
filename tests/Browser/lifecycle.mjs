@@ -36,16 +36,24 @@ try {
     const viewer = await signIn(f.viewer_email);
     const admin = await signIn(f.admin_email);
     await admin.goto(`${base}/dd-phase3/users`);
+    await admin.getByRole('button', { name: 'Add Account', exact: true }).click();
+    const addAccount = admin.getByRole('dialog');
+    await addAccount.getByLabel('Account Type').selectOption('Viewer');
+    assert.equal(await addAccount.getByRole('group', { name: 'Engineer profile' }).count(), 0);
+    assert.equal(await addAccount.getByRole('button', { name: /Create new profile|Link existing profile/ }).count(), 0);
+    for (const role of ['Admin', 'Engineer']) {
+        await addAccount.getByLabel('Account Type').selectOption(role);
+        await addAccount.getByRole('group', { name: 'Engineer profile' }).waitFor();
+    }
+    await addAccount.getByRole('button', { name: 'Cancel', exact: true }).click();
     const directoryViews = admin.getByRole('navigation', { name: 'Directory views' });
     assert.equal(await directoryViews.getByRole('button', { name: 'Engineers', exact: true }).count(), 1);
     assert.equal(await directoryViews.getByRole('button', { name: /Engineer Accounts|Engineer Profiles/ }).count(), 0);
     await directoryViews.getByRole('button', { name: 'Engineers', exact: true }).click();
     await admin.getByRole('region', { name: 'Engineers table' }).waitFor();
-    await admin.locator(`[data-engineer-id="${f.former_id}"]`).getByRole('button', { name: /^Manage account/ }).waitFor();
-    await admin
-        .locator(`[data-engineer-id="${f.former_id}"]`)
-        .getByRole('button', { name: /^Manage engineer/ })
-        .click();
+    await admin.locator(`[data-engineer-id="${f.former_id}"]`).getByRole('button', { name: /^Actions for/ }).click();
+    await admin.getByRole('menuitem', { name: 'Manage Account', exact: true }).waitFor();
+    await admin.getByRole('menuitem', { name: 'Manage Profile', exact: true }).click();
     const engineer = admin.getByRole('region', {
         name: 'Engineer profile lifecycle',
     });
@@ -140,10 +148,9 @@ try {
 
     await admin.goto(`${base}/dd-phase3/users`);
     await admin.getByRole('button', { name: /^Engineers/ }).click();
-    await admin
-        .locator(`[data-engineer-id="${f.former_id}"]`)
-        .getByRole('button', { name: /^Manage engineer/ })
-        .click();
+    await admin.locator(`[data-engineer-id="${f.former_id}"]`).getByRole('button', { name: /^Actions for/ }).click();
+    await admin.getByRole('menuitem', { name: 'Manage Account', exact: true }).waitFor();
+    await admin.getByRole('menuitem', { name: 'Manage Profile', exact: true }).click();
     await engineer
         .getByRole('button', { name: 'Retire Engineer', exact: true })
         .click();
