@@ -167,11 +167,6 @@ return [
         // Optional ownership confirmation only; administrative provisioning and
         // current canonical eligibility authorize access, not email_verified_at.
         Features::emailVerification(),
-        Features::twoFactorAuthentication([
-            'confirm' => true,
-            'confirmPassword' => true,
-            // 'window' => 0
-        ]),
     ],
 
 ];
