@@ -231,6 +231,26 @@ try {
     await viewer.goto(ui + '/maintenance-projects');
     await viewer.getByText('Browse road maintenance projects and their progress.', { exact: true }).waitFor();
     assert.equal(await viewer.getByRole('columnheader', { name: 'Actions', exact: true, includeHidden: true }).count(), 0);
+    const viewerProjectTable = viewer.getByRole('region', { name: 'Maintenance Projects table', exact: true });
+    const projectLayout = await viewerProjectTable.evaluate(region => {
+        const table = region.querySelector('table');
+        const headers = [...table.querySelectorAll('thead th')];
+        const row = table.querySelector('tbody tr');
+        const last = headers[headers.length - 1];
+        return {
+            columns: table.querySelectorAll('colgroup col').length,
+            headers: headers.length,
+            cells: row?.cells.length,
+            headerAlignment: getComputedStyle(last).textAlign,
+            gap: Math.abs(table.getBoundingClientRect().right - last.getBoundingClientRect().right),
+        };
+    });
+    assert.equal(projectLayout.columns, 2);
+    assert.equal(projectLayout.headers, 2);
+    assert.equal(projectLayout.cells, 2);
+    assert.equal(projectLayout.headerAlignment, 'left');
+    assert.ok(projectLayout.gap <= 1, 'Viewer table must not reserve space for a hidden action column');
+
     await viewer.goto(ui + '/maintenance-records');
     const readOnlyRecord = viewer.locator('a[href*="/records/"]').first();
     await readOnlyRecord.waitFor();
