@@ -209,7 +209,8 @@ export default function Index({
                             Browse and manage registered local government units.
                         </p>
                     </div>
-                    <Button
+                    {lguPermissions.can_edit && (
+<Button
                         className="jr-primary"
                         disabled={!enabled || !lguPermissions.can_edit}
                         onClick={() =>
@@ -223,6 +224,7 @@ export default function Index({
                         <Plus />
                         Add LGU
                     </Button>
+)}
                 </div>
                 {lguReviewNotice && (
                     <p role="note" className="jr-field-hint mb-4">
@@ -473,7 +475,8 @@ export default function Index({
                                             event.stopPropagation()
                                         }
                                     >
-                                        <DropdownMenu>
+                                        {lguPermissions.can_edit || lguPermissions.can_delete && (
+<DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button
                                                     variant="ghost"
@@ -519,6 +522,7 @@ export default function Index({
                                                 )}
                                             </DropdownMenuContent>
                                         </DropdownMenu>
+)}
                                     </td>
                                 </tr>
                             ))}
