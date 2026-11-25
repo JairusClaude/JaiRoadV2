@@ -402,7 +402,7 @@ export default function Operations({
                             <section className="rounded-2xl border border-slate-200/80 bg-[#fdfcfb] p-6 shadow-sm">
                                 <div className="space-y-3">
                                     <div
-                                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${isAdmin ? 'bg-[#FDE7EA] text-[#C8293D]' : isEngineer ? 'bg-[#FFF0E3] text-[#A94B0C]' : isViewer ? 'bg-[#E6EFFF] text-[#1D5DB5]' : 'bg-[#FFF0E2] text-[#995321]'}`}
+                                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${isAdmin ? 'bg-[#FDE7EA] text-[#C8293D]' : isEngineer ? 'bg-[#FFF0E3] text-[#A94B0C]' : isViewer ? 'bg-[#E6EFFF] text-[#1D5DB5]' : 'bg-[#EEE6FF] text-[#51269B]'}`}
                                     >
                                         <ShieldCheck className="h-3.5 w-3.5" />{' '}
                                         Verified {identity.role}
