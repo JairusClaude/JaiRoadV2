@@ -1,3 +1,4 @@
+import { manilaDate } from '@/lib/manila-time';
 export const documentFormats: Record<string, { name: string; mime: string }> = {
     pdf: { name: 'PDF', mime: 'application/pdf' },
     docx: {
@@ -43,10 +44,4 @@ export function documentFileError(file: File) {
     return '';
 }
 
-export const documentDate = (value: string) =>
-    Number.isFinite(Date.parse(value))
-        ? new Intl.DateTimeFormat('en-PH', {
-              dateStyle: 'medium',
-              timeZone: 'UTC',
-          }).format(new Date(value))
-        : 'Unavailable';
+export const documentDate = manilaDate;
