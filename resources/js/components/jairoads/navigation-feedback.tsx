@@ -49,7 +49,7 @@ function showAuthenticatedHandoff(props: unknown) {
     overlay.addEventListener('animationend', (event) => {
         if (event.target === overlay) cleanup();
     });
-    window.setTimeout(cleanup, 1500);
+    window.setTimeout(cleanup, 1100);
 }
 
 /**
@@ -68,6 +68,41 @@ export function JaiRoadsNavigationFeedback() {
     useEffect(() => {
         let pending = false;
         let authAttempt = false;
+        let currentPath = window.location.pathname.replace(/\/$/, '') || '/';
+        let motionFrame = 0;
+        let activeMotion: Animation[] = [];
+        const cancelMotion = () => {
+            if (motionFrame) window.cancelAnimationFrame(motionFrame);
+            motionFrame = 0;
+            activeMotion.forEach(animation => animation.cancel());
+            activeMotion = [];
+        };
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const animateDestination = () => {
+            cancelMotion();
+            if (reduced.matches || document.documentElement.classList.contains('jr-reduce-motion')) return;
+            // Wait for the destination commit, not for an arbitrary animation delay.
+            motionFrame = window.requestAnimationFrame(() => {
+                motionFrame = window.requestAnimationFrame(() => {
+                    motionFrame = 0;
+                    if (reduced.matches || document.documentElement.classList.contains('jr-reduce-motion')) return;
+                    const content = document.querySelector<HTMLElement>('main.jr-content, main.jr-responsive-main');
+                    if (!content || typeof content.animate !== 'function') return;
+                    // Opacity only on the main container: preserve sticky/fixed geometry,
+                    // map canvases, scroll position and the persistent navigation shell.
+                    activeMotion.push(content.animate(
+                        [{ opacity: .88 }, { opacity: 1 }],
+                        { duration: 180, easing: 'cubic-bezier(.2,.8,.2,1)' },
+                    ));
+                    const heading = content.querySelector<HTMLElement>('h1');
+                    if (heading) activeMotion.push(heading.animate(
+                        [{ transform: 'translateY(4px)' }, { transform: 'translateY(0)' }],
+                        { duration: 220, easing: 'cubic-bezier(.2,.8,.2,1)' },
+                    ));
+                });
+            });
+        };
+        reduced.addEventListener('change', cancelMotion);
         const clearTimers = () => {
             if (delayRef.current) {
                 clearTimeout(delayRef.current);
@@ -113,15 +148,22 @@ export function JaiRoadsNavigationFeedback() {
 
         // Inertia returns unsubscribe functions. Strict Mode cleans these up.
         const offStart = router.on('start', (event) => {
+            cancelMotion();
             const path = window.location.pathname.replace(/\/$/, '');
             authAttempt = (path === '/login') &&
                 event.detail.visit.method.toLowerCase() === 'post';
             start();
         });
         const offNavigate = router.on('navigate', (event) => {
+            const nextPath = new URL(event.detail.page.url, window.location.origin).pathname.replace(/\/$/, '') || '/';
+            const changedPage = nextPath !== currentPath;
+            currentPath = nextPath;
             if (authAttempt && !event.detail.page.component.startsWith('auth/')) {
                 authAttempt = false;
+                cancelMotion();
                 showAuthenticatedHandoff(event.detail.page.props);
+            } else if (changedPage) {
+                animateDestination();
             }
         });
         const offFinish = router.on('finish', () => {
@@ -132,6 +174,8 @@ export function JaiRoadsNavigationFeedback() {
         return () => {
             pending = false;
             clearTimers();
+            cancelMotion();
+            reduced.removeEventListener('change', cancelMotion);
             offStart();
             offNavigate();
             offFinish();
