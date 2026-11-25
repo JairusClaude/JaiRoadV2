@@ -120,7 +120,6 @@ return [
     'limiters' => [
         'login' => 'login',
         'two-factor' => 'two-factor',
-        'passkeys' => 'passkeys',
     ],
 
     /*
@@ -165,7 +164,6 @@ return [
 
     'features' => [
         // JaiROADS Final DD: anonymous account registration is disabled; account CRU is SuperAdmin/Admin-only.
-        Features::resetPasswords(),
         // Optional ownership confirmation only; administrative provisioning and
         // current canonical eligibility authorize access, not email_verified_at.
         Features::emailVerification(),
@@ -173,9 +171,6 @@ return [
             'confirm' => true,
             'confirmPassword' => true,
             // 'window' => 0
-        ]),
-        Features::passkeys([
-            'confirmPassword' => true,
         ]),
     ],
 
