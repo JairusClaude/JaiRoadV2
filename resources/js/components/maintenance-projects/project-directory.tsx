@@ -109,7 +109,7 @@ export function ProjectDirectory({
             <div className="jr-page-head">
                 <div>
                     <h1>Maintenance Projects</h1>
-                    <p>Browse and manage road maintenance projects.</p>
+                    <p>{isViewer ? 'Browse road maintenance projects and their progress.' : 'Browse and manage road maintenance projects.'}</p>
                 </div>
                 {!isViewer && canCreate && (
 <Button
@@ -277,7 +277,7 @@ export function ProjectDirectory({
                                 </div>
                             </th>
                             <th>Municipality</th>
-                            <th className="text-right">Actions</th>
+                            {!isViewer && <th className="text-right">Actions</th>}
                         </tr>
                     </thead>
                     <tbody>
@@ -363,6 +363,7 @@ export function ProjectDirectory({
                                         </span>
                                     )}
                                 </td>
+                                {!isViewer && (
                                 <td
                                     className="text-right"
                                     onClick={(event) => event.stopPropagation()}
@@ -384,6 +385,7 @@ export function ProjectDirectory({
                                         />
                                     )}
                                 </td>
+                                )}
                             </tr>
                         ))}
                     </tbody>
@@ -402,7 +404,7 @@ export function ProjectDirectory({
                                 ? 'The interface is ready for approved account and database integration.'
                                 : filters.search || filters.municipality
                                   ? 'Try another search or municipality.'
-                                  : 'Add a project to link an existing road coverage.'}
+                                  : isViewer ? 'Available maintenance projects will appear here.' : 'Add a project to link an existing road coverage.'}
                         </p>
                         {integration.ready &&
                             (filters.search || filters.municipality) && (
