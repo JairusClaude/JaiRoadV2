@@ -68,17 +68,6 @@ export function JaiRoadsNavigationFeedback() {
     useEffect(() => {
         let pending = false;
         let authAttempt = false;
-        // Passkeys intentionally use a fresh document. Consume only a
-        // short-lived marker written after verified passkey authentication.
-        try {
-            if (sessionStorage.getItem('jr-passkey-handoff') === '1') {
-                sessionStorage.removeItem('jr-passkey-handoff');
-                const initial = document.querySelector('script[data-page]')?.textContent;
-                if (initial) showAuthenticatedHandoff(JSON.parse(initial).props);
-            }
-        } catch {
-            // Authentication and navigation do not depend on storage or animation.
-        }
         const clearTimers = () => {
             if (delayRef.current) {
                 clearTimeout(delayRef.current);
