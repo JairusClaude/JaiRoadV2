@@ -222,6 +222,7 @@ export default function SuperAdminCommandLayout({
                             / Privileged workspace
                         </span>
                     </div>
+                    <span className="jr-navigation-status-slot" data-jr-navigation-status />
                     <div className="relative">
                         <button
                             type="button"
