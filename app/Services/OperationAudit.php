@@ -44,7 +44,7 @@ final class OperationAudit
      *
      * @param  array{account_id:int,role:string,engineer_id:?int}  $actor
      */
-    public function recordAdministratorPasswordReset(array $actor, int $id, bool $operatorRoot = false): void
+    public function recordAdministratorPasswordReset(array $actor, int $id, bool $operatorRoot = false, bool $internalCode = false): void
     {
         $login = User::where('dd_user_account_id', $actor['account_id'])->first();
         abort_unless(DB::transactionLevel() > 0 && $actor['role'] === 'SuperAdmin'
@@ -59,7 +59,8 @@ final class OperationAudit
             'user_id' => $actor['account_id'], 'actor_identifier' => $this->actorIdentifier($actor),
             'action' => 'UPDATE', 'entity_type' => 'UserAccount', 'entity_id' => $id,
             'description' => $operatorRoot ? 'Trusted operator recovered a separately reviewed SuperAdmin password. No credentials recorded.'
-                : 'SuperAdmin reset account password without email recovery. No credentials recorded.',
+                : ($internalCode ? 'Account password recovered with a SuperAdmin-approved one-time code. No credentials recorded.'
+                    : 'SuperAdmin reset account password without email recovery. No credentials recorded.'),
             'old_value' => $safe, 'new_value' => $safe,
             'recipient_user_id' => null, 'notification_message' => null, 'created_at' => now(),
         ]);
