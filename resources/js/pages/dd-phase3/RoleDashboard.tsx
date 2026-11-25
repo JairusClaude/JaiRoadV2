@@ -427,14 +427,14 @@ export default function RoleDashboard({
                                         : 'Browse monthly reports',
                                 ],
                                 [
-                                    'Project Documents',
+                                    'Maintenance Documents',
                                     '/dd-phase3/documents',
                                     isEngineer
                                         ? 'Assigned documentation'
                                         : 'Browse formal documents',
                                 ],
                                 [
-                                    'Road Sections',
+                                    'Road Coverages',
                                     '/dd-phase3/roads',
                                     'Road coverage inventory',
                                 ],
