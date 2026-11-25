@@ -69,7 +69,7 @@ final class AccountTypeRankTest extends PostgresTestCase
         $beforeIdentity = $resolver->resolve($f['user']);
         $before = DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->first();
         $beforeCapabilities = RoleAccess::capabilities($beforeIdentity['role'], true, true);
-        // There is no DD profile-update endpoint. Simulate an independent professional-rank
+        // The account provisioning route does not update an Engineer profile. Simulate an independent professional-rank
         // change only in this guarded disposable fixture; no application route is added.
         DB::table('jairoads_next.engineers')->where('id', $f['engineer'])->update(['rank' => 'SuperAdmin']);
         $after = DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->first();
@@ -102,7 +102,7 @@ final class AccountTypeRankTest extends PostgresTestCase
             ->missing('accounts.0.password')->missing('accounts.0.position'));
     }
 
-    public function test_dd_navigation_redirects_legacy_directory_and_blocks_legacy_position_mutations(): void
+    public function test_canonical_navigation_redirects_legacy_directory_and_blocks_legacy_position_mutations(): void
     {
         $this->actingAs($this->account('Admin'))->get('/user-management')->assertRedirect('/dd-phase3/users');
         $this->postJson('/user-management/engineers', ['first_name' => 'Legacy', 'position' => 'Engineer'])->assertForbidden();

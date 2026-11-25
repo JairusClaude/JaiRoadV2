@@ -52,7 +52,7 @@ type Props = {
 const integration: IntegrationStatus = { ready: true, message: null };
 const HOME = '/dd-phase3/projects';
 
-// Uses the original JaiROADS directory and project form, not a generic DD form.
+// Uses the shared JaiROADS project directory and form.
 // Only the URLs and source records change. No legacy business endpoint is called.
 export default function WorkspaceProjects({
     canCreate,

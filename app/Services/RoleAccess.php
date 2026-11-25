@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 /**
- * Role gates for the approved DD business model.
+ * Role gates for canonical business operations.
  *
  * The ordinary entity CRUD matrix intentionally overlaps for SuperAdmin and
  * Admin. This class does NOT confer extra system governance powers on Admin.

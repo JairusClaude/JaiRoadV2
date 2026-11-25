@@ -1,5 +1,7 @@
 # DD workflow completion — Task 2
 
+The implementation paths below are the names used in Task 2. See the [backend path mapping](refactor/backend-standard-layout.md) for their current locations.
+
 Continued on `integration/dd-system-completion` from verified local/remote Task 1 HEAD `bfa80dedb995a0afc25f225dceca21bae2f8c998`. The interruption left the implementation uncommitted; it was inspected and preserved. No restart, reset or replacement branch was used.
 
 ## Delivered modules

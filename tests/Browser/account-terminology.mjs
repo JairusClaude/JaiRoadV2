@@ -271,7 +271,7 @@ try {
     );
     assert.deepEqual(errors, []);
     console.log(
-        'PASS: Account Type labels and all four values; Rank-only Engineer creation; canonical account_type and Engineer link; new credentials work; settings/SuperAdmin labels; native DD navigation and no Position fields.',
+        'PASS: Account Type labels and all four values; Rank-only Engineer creation; canonical account_type and Engineer link; new credentials work; settings/SuperAdmin labels; canonical workspace navigation and no Position fields.',
     );
 } finally {
     await browser.close();

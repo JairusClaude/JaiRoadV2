@@ -283,7 +283,7 @@ try {
         );
         await guest(page);
         console.log(
-            `PASS: ${action} canonical passkey denied; DD and credential-management routes remain guest.`,
+            `PASS: ${action} canonical passkey denied; canonical workspace and credential-management routes remain guest.`,
         );
         assert.equal(
             state(user, 'snapshot'),

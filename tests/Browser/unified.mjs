@@ -825,7 +825,7 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
 
     // Both confirmations use the unchanged server-side impact service and its signed snapshot.
     const openRoadMunicipalityChange = async () => {
-        // The reviewed municipality change flow lives in the canonical DD
+        // The reviewed municipality change flow lives in the canonical
         // road directory, not the legacy road detail view.
         await engineer.goto(`${base}/dd-phase3/roads`);
         await engineer

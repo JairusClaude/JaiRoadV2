@@ -56,9 +56,9 @@ const adminLinks: NavItem[] = [
     ...commonLinks.slice(2),
 ];
 
-// Explicit DD-only destinations for newly provisioned accounts. Never allow a
-// DD-linked account to use legacy public-schema business routes via navigation.
-const ddCommonLinks: NavItem[] = [
+// Canonical accounts use these workspace destinations. Their navigation stays
+// within the routes for the canonical business schema.
+const canonicalCommonLinks: NavItem[] = [
     { label: 'Dashboard', href: '/dd-phase3/dashboard', icon: LayoutDashboard },
     {
         label: 'Maintenance Projects',
@@ -80,11 +80,11 @@ const ddCommonLinks: NavItem[] = [
     { label: 'Settings', href: '/dd-phase3/settings', icon: Settings },
 ];
 
-const ddAdminLinks: NavItem[] = [
-    ...ddCommonLinks.slice(0, 2),
+const canonicalAdminLinks: NavItem[] = [
+    ...canonicalCommonLinks.slice(0, 2),
     { label: 'User Management', href: '/dd-phase3/users', icon: Users },
     { label: 'Audit Log', href: '/dd-phase3/audit-logs', icon: ScrollText },
-    ...ddCommonLinks.slice(2),
+    ...canonicalCommonLinks.slice(2),
 ];
 
 function belongsToPath(path: string, href: string): boolean {
@@ -188,8 +188,8 @@ export default function PolishedWorkspaceLayout({
     const activeRole: WorkspaceRole = role;
     const nav = isCanonicalWorkspace
         ? activeRole === 'admin'
-            ? ddAdminLinks
-            : ddCommonLinks
+            ? canonicalAdminLinks
+            : canonicalCommonLinks
         : activeRole === 'admin'
           ? adminLinks
           : commonLinks;

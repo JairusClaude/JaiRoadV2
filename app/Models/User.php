@@ -60,14 +60,13 @@ class User extends Authenticatable implements PasskeyUser
     }
 
     /**
-     * Separate, explicit bridge to the NEW Data Dictionary account.
-     * Only ddUserAccount() provides canonical business identity. The legacy
-     * userAccount() relation is retained for historical compatibility, not login authority.
-     * Never map legacy numeric user_account_id to this relation.
+     * Explicit link to the canonical account in the Data Dictionary schema.
+     * AccountIdentityResolver validates the link for business access.
+     * The separate userAccount() relation uses the legacy user_account_id.
      *
      * @return BelongsTo<StagingUserAccount, $this>
      */
-    public function ddUserAccount(): BelongsTo
+    public function canonicalUserAccount(): BelongsTo
     {
         return $this->belongsTo(StagingUserAccount::class, 'dd_user_account_id');
     }

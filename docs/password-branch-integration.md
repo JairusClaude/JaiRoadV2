@@ -1,5 +1,7 @@
 # Task 1: password branch integration
 
+The integration table records the paths at the password-branch checkpoint. See the [backend path mapping](refactor/backend-standard-layout.md) for the current PHP layout.
+
 Verified 27 October 2026. Base remote `feature/premerge-policy-alignment` remains at `b0bad2ffd09906bef8640a7d8a6af6d1705b44b1`. Password remote `feature/jairoads-map-demo_PASSWORD_EDIT` remains at `225a63ae0bfa81ae850a3ca14585add99ac33b7f`. Both heads were fetched and verified before creating the previously nonexistent `integration/dd-system-completion` branch from the base. This task ends after integration verification/publication; missing CRUD/lifecycle work is not started.
 
 ## Reviewed selective port

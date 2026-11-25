@@ -52,7 +52,7 @@ Route::middleware(['auth'])->prefix('dd-phase3')->name('jairoads.dd-phase3.')->g
     Route::get('/ops/projects/{id}/deletion-preview', [PreservedHistoryController::class, 'preview'])->whereNumber('id');
     Route::post('/ops/records/{id}/unassignment', [OperationsController::class, 'unassignRecord'])->whereNumber('id')->middleware('throttle:10,1,jr-operations-records-unassign-')->name('operations.records.unassign');
 
-    // Explicitly qualified DD module endpoints; never use legacy CRUD routes.
+    // Canonical module mutations use the canonical business schema.
     Route::post('/ops/roads', [OperationsController::class, 'saveRoad'])->name('operations.roads.store');
     Route::put('/ops/roads/{id}', [OperationsController::class, 'saveRoad'])->whereNumber('id');
     Route::post('/ops/roads/{id}/municipality/preview', [RoadMunicipalityChangeController::class, 'previewRoadMunicipality'])->whereNumber('id')->name('operations.roads.municipality.preview');

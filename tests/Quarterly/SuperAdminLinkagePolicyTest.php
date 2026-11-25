@@ -34,7 +34,7 @@ final class SuperAdminLinkagePolicyTest extends PostgresTestCase
 
         $this->assertNotNull($resolver->resolve($validRoot));
         $this->assertNotNull($resolver->resolve($invalidRoot));
-        // Simulate pre-existing malformed DD identity in disposable scratch DB only.
+        // Simulate a pre-existing malformed canonical account link in disposable scratch DB only.
         DB::table('jairoads_next.user_accounts')->where('id', $invalidRoot->dd_user_account_id)
             ->update(['engineer_id' => $engineerId]);
         $this->assertDatabaseHas('jairoads_next.user_accounts', [

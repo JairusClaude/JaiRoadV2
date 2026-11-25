@@ -46,7 +46,7 @@ final class LinkedPasswordUpdater
 
         try {
             $credentials = $connection->transaction(function () use ($connection, $login, $password, $currentPassword, $recover, $rehash, $force): ?array {
-                // Always lock login first, then its explicit DD target. Never join by email/ID equality.
+                // Always lock login first, then its explicitly linked canonical account. Never join by email/ID equality.
                 $fresh = User::on($connection->getName())->whereKey($login->getKey())->lockForUpdate()->first();
                 if (! $fresh || (string) $fresh->getAttribute('dd_user_account_id') !== (string) $login->getAttribute('dd_user_account_id')
                     || strcasecmp($fresh->email, $login->email) !== 0) {

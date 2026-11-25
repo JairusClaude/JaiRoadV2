@@ -9,7 +9,7 @@ use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Strict, READ-ONLY resolver for an explicitly linked new DD identity.
+ * Strict, READ-ONLY resolver for an explicitly linked canonical account.
  * This does not replace Fortify, issue roles, authorize endpoints or make writes.
  * Data Dictionary: UserAccount(AccountType, IsActive, EngineerID) and
  * Engineer(EngineerStatus). public.users is separate login infrastructure.

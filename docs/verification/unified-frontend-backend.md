@@ -10,9 +10,11 @@ Fourteen actual conflicts were reviewed individually. Backend versions of the co
 
 One additional compatible patch updates `symfony/mime` from 8.1.4 to 8.1.10 for PKSA-wtxr-p26d-nn42 / CVE-2026-45070, disclosed after the backend checkpoint. Composer's local post-update Boost hook requires `APP_ENV=local`; it executed successfully in that environment. Generated Boost guidance changes were not retained.
 
-## Real application interfaces
+## Real application interfaces at integration
 
-`routes/dd-frontend.php` and `DdFrontendController` serve `/dd-phase3/ui` roads, projects, records, monthly updates and documents. These are canonical `jairoads_next` read projections, not translations of legacy public IDs or Node sessions. Writes delegate to the existing DD operations and therefore retain live identity checks, LGU/manager authorization, validation, transactional audit insertion and upload compensation. Canonical actor IDs and creator/uploader references are never accepted from preview form fields.
+At the recorded integration checkpoint, `routes/dd-frontend.php` and `DdFrontendController` served `/dd-phase3/ui` roads, projects, records, monthly updates and documents. These are canonical `jairoads_next` read projections, not translations of legacy public IDs or Node sessions. Writes delegate to the existing DD operations and therefore retain live identity checks, LGU/manager authorization, validation, transactional audit insertion and upload compensation. Canonical actor IDs and creator/uploader references are never accepted from preview form fields.
+
+The current checkout registers these URLs in [`routes/operations-pages.php`](../../routes/operations-pages.php) and uses feature page controllers with the shared [`OperationsFrontendController`](../../app/Http/Controllers/OperationsFrontendController.php). See the [canonical field contract](../contracts/canonical-frontend-field-contract.md) for current source references.
 
 Existing `/dd-phase3` administration, dashboards, lifecycle, reassignment, audit, notification and settings interfaces remain available. Sidebar entry links open the integrated modules. Canonical path normalization preserves active-link styling and enables the real Maintenance Records submenu; legacy preview-only pending controls remain isolated. Legacy-route quarantine stays in place. Engineer listing/choice queries are scoped through active EngineerLGU assignments. The UI's capability flags complement backend guards; direct HTTP requests remain protected.
 

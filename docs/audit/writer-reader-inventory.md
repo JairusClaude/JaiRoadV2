@@ -1,7 +1,7 @@
 # Canonical AuditLog writer/reader inventory
 
 Inspected baseline: `239af5db1d864fedbd58a55a2a9ca7779aaf69ce`.
-All names below are actual current methods, not proposed replacement modules.
+The tables use the implementation names from that checkpoint. See the [backend path mapping](../refactor/backend-standard-layout.md) for the current locations.
 No old AuditLog branch was merged; the implementation was derived from current
 strict-account, deletion-recovery and retained-history code.
 

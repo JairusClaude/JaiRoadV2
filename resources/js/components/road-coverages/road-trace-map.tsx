@@ -66,13 +66,13 @@ type Props = {
     onClear: () => void;
 };
 
-const SAVED = 'dd-road-trace-saved';
-const TRACE = 'dd-road-trace-active';
-const POINTS = 'dd-road-trace-vertices';
-const VICINITY = 'dd-road-trace-vicinity';
-const FILL_LAYER = 'dd-road-trace-vicinity-fill';
-const BORDER_LAYER = 'dd-road-trace-vicinity-border';
-const LABEL_LAYER = 'dd-road-trace-vicinity-label';
+const SAVED = 'jr-road-trace-saved';
+const TRACE = 'jr-road-trace-active';
+const POINTS = 'jr-road-trace-vertices';
+const VICINITY = 'jr-road-trace-vicinity';
+const FILL_LAYER = 'jr-road-trace-vicinity-fill';
+const BORDER_LAYER = 'jr-road-trace-vicinity-border';
+const LABEL_LAYER = 'jr-road-trace-vicinity-label';
 const TOWNS = [
     'Compostela',
     'Laak',
@@ -456,13 +456,13 @@ export default function RoadTraceMap({
                 map.addSource(TRACE, { type: 'geojson', data: empty });
                 map.addSource(POINTS, { type: 'geojson', data: empty });
                 map.addLayer({
-                    id: 'dd-road-saved-halo',
+                    id: 'jr-road-saved-halo',
                     type: 'line',
                     source: SAVED,
                     paint: { 'line-color': '#fff', 'line-width': 8 },
                 });
                 map.addLayer({
-                    id: 'dd-road-saved-lines',
+                    id: 'jr-road-saved-lines',
                     type: 'line',
                     source: SAVED,
                     paint: {
@@ -472,21 +472,21 @@ export default function RoadTraceMap({
                     },
                 });
                 map.addLayer({
-                    id: 'dd-road-active-halo',
+                    id: 'jr-road-active-halo',
                     type: 'line',
                     source: TRACE,
                     layout: { 'line-cap': 'round', 'line-join': 'round' },
                     paint: { 'line-color': '#fff', 'line-width': 13 },
                 });
                 map.addLayer({
-                    id: 'dd-road-active-line',
+                    id: 'jr-road-active-line',
                     type: 'line',
                     source: TRACE,
                     layout: { 'line-cap': 'round', 'line-join': 'round' },
                     paint: { 'line-color': '#c55320', 'line-width': 7 },
                 });
                 map.addLayer({
-                    id: 'dd-road-active-points',
+                    id: 'jr-road-active-points',
                     type: 'circle',
                     source: POINTS,
                     paint: {
@@ -497,7 +497,7 @@ export default function RoadTraceMap({
                     },
                 });
                 map.addLayer({
-                    id: 'dd-road-active-numbers',
+                    id: 'jr-road-active-numbers',
                     type: 'symbol',
                     source: POINTS,
                     layout: {
@@ -628,7 +628,7 @@ export default function RoadTraceMap({
         markers.current = draftPoints.map((point, index) => {
             const el = document.createElement('button');
             el.type = 'button';
-            el.className = 'dd-road-edit-marker';
+            el.className = 'jr-road-edit-marker';
             el.textContent = String(index + 1);
             el.title = `Drag point ${index + 1} to refine this road (arrow keys also work)`;
             el.style.cssText =

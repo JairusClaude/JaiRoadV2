@@ -1,5 +1,7 @@
 # Canonical-only authentication verification
 
+The file inventory records paths at the canonical access verification checkpoint. See the [backend path mapping](../refactor/backend-standard-layout.md) for the current layout.
+
 Date: 6 November 2026 (Asia/Manila).
 
 Source: `fix/security-auth-revocation-passkey-dependencies` at

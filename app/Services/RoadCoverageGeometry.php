@@ -7,7 +7,7 @@ namespace App\Services;
 /**
  * Checks GeoJSON road-line geometry without creating a new business entity,
  * mutating coordinates or making assumptions about road fragmentation.
- * Compatible with the existing DD road tracing/import component.
+ * Compatible with the canonical road tracing and import component.
  */
 final class RoadCoverageGeometry
 {

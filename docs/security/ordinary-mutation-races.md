@@ -1,5 +1,7 @@
 # Ordinary mutation authorization races: test-first investigation
 
+Controller names in this report refer to the investigated branch. The canonical write controller now lives at [`OperationsController.php`](../../app/Http/Controllers/OperationsController.php).
+
 Source: reviewed remote `fix/audit-multirecipient-consistency` at
 `4a8ec0cc26d203bafafcc738c3eff49d97528bd9`, freshly fetched and API-verified.
 Dedicated branch: `fix/ordinary-mutation-authorization-races`.

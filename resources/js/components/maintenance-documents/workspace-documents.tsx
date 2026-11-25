@@ -616,14 +616,14 @@ export default function WorkspaceDocuments({
                                     </tr>
                                 ))}
                                 {visible.length === 0 && (
-                                    <tr className="jr-dd-empty-row">
+                                    <tr className="jr-workspace-empty-row">
                                         <td colSpan={5}>
                                             <div
-                                                className="jr-dd-empty-content"
+                                                className="jr-workspace-empty-content"
                                                 role="status"
                                             >
                                                 <span
-                                                    className="jr-dd-empty-icon"
+                                                    className="jr-workspace-empty-icon"
                                                     aria-hidden="true"
                                                 >
                                                     <FolderOpen className="h-6 w-6" />

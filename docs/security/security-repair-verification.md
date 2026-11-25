@@ -1,5 +1,7 @@
 # Security repair implementation and recovery report
 
+The file inventory records paths at the security repair checkpoint. See the [backend path mapping](../refactor/backend-standard-layout.md) for the current layout.
+
 Date: 5 November 2026 (Asia/Manila). Repository: JairusClaude/JaiRoadV2.
 
 ## Git baseline and recovery

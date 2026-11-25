@@ -14,7 +14,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 
 final class IntegrationCompatibilityTest extends PostgresTestCase
 {
-    public function test_dd_settings_keep_both_password_hashes_synchronized_and_preserve_identity(): void
+    public function test_canonical_settings_keep_both_password_hashes_synchronized_and_preserve_identity(): void
     {
         $f = $this->fixture();
         $password = 'Integrated-Disposable!456';

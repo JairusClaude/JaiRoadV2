@@ -806,14 +806,14 @@ export default function WorkspaceLguDirectory({
                             </tr>
                         ))}
                         {visible.length === 0 && (
-                            <tr className="jr-dd-empty-row">
+                            <tr className="jr-workspace-empty-row">
                                 <td colSpan={6}>
                                     <div
-                                        className="jr-dd-empty-content"
+                                        className="jr-workspace-empty-content"
                                         role="status"
                                     >
                                         <span
-                                            className="jr-dd-empty-icon"
+                                            className="jr-workspace-empty-icon"
                                             aria-hidden="true"
                                         >
                                             <Building2 className="h-6 w-6" />

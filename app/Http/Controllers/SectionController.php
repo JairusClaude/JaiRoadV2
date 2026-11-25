@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 use Inertia\Response;
 
 /**
- * Dispatches one approved DD section to its existing, individually authorized
+ * Dispatches one canonical workspace section to its existing, individually authorized
  * controller. Prevents duplicate wildcard GET routes from replacing each other.
  * Never reads public business entities and never grants authorization.
  */

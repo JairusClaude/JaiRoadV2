@@ -2,7 +2,7 @@
    Scope DD Settings and the modern Settings preview so role accent palettes,
    read-only permissions, and semantic status colors remain unchanged. */
 
-html.dark .jr-app:has(.jr-dd-settings) {
+html.dark .jr-app:has(.jr-canonical-settings) {
     --background: #0b1220;
     --foreground: #e2e8f0;
     --card: #172238;
@@ -28,93 +28,93 @@ html.dark .jr-app:has(.jr-dd-settings) {
     background-color: #0b1220 !important;
 }
 html.dark
-    .jr-app:has(.jr-dd-settings)
+    .jr-app:has(.jr-canonical-settings)
     :is(.jr-stage, .jr-content, .jr-workspace) {
     background-color: #0b1220 !important;
     color: #e2e8f0;
 }
-html.dark .jr-app:has(.jr-dd-settings) .jr-global-header {
+html.dark .jr-app:has(.jr-canonical-settings) .jr-global-header {
     background-color: #172238 !important;
     border-color: #36475d !important;
     color: #cbd5e1;
 }
-html.dark .jr-app:has(.jr-dd-settings) .jr-global-header strong {
+html.dark .jr-app:has(.jr-canonical-settings) .jr-global-header strong {
     color: #f1f5f9;
 }
-html.dark .jr-dd-settings .jr-page-head {
+html.dark .jr-canonical-settings .jr-page-head {
     background-color: #131f31 !important;
 }
-html.dark .jr-dd-settings .jr-page-head::before {
+html.dark .jr-canonical-settings .jr-page-head::before {
     opacity: 0.16;
 }
-html.dark .jr-dd-settings .jr-page-head h1 {
+html.dark .jr-canonical-settings .jr-page-head h1 {
     color: #f1f5f9 !important;
 }
-html.dark .jr-dd-settings .jr-page-head p {
+html.dark .jr-canonical-settings .jr-page-head p {
     color: #aabbd0 !important;
 }
-html.dark .jr-dd-settings main {
+html.dark .jr-canonical-settings main {
     background-color: #0f172a !important;
     color: #e2e8f0;
 }
-html.dark .jr-dd-settings main > section,
-html.dark .jr-dd-settings main > div.grid > section {
+html.dark .jr-canonical-settings main > section,
+html.dark .jr-canonical-settings main > div.grid > section {
     border-color: #36475d !important;
     background-color: #172238 !important;
 }
-html.dark .jr-dd-settings main section .rounded-xl.bg-white,
-html.dark .jr-dd-settings main section .rounded-xl.bg-slate-50 {
+html.dark .jr-canonical-settings main section .rounded-xl.bg-white,
+html.dark .jr-canonical-settings main section .rounded-xl.bg-slate-50 {
     background-color: #223149 !important;
     border-color: #40516a !important;
 }
 html.dark
-    .jr-dd-settings
+    .jr-canonical-settings
     :is(.text-slate-900, .text-slate-800, .text-slate-700) {
     color: #e2e8f0 !important;
 }
-html.dark .jr-dd-settings :is(.text-slate-600, .text-slate-500) {
+html.dark .jr-canonical-settings :is(.text-slate-600, .text-slate-500) {
     color: #b0c0d6 !important;
 }
-html.dark .jr-dd-settings input {
+html.dark .jr-canonical-settings input {
     color-scheme: dark;
     color: #f1f5f9 !important;
     background-color: #223149 !important;
     border-color: #52637a !important;
 }
-html.dark .jr-dd-settings input:focus {
+html.dark .jr-canonical-settings input:focus {
     border-color: var(--jr-role-accent, #a78bfa) !important;
 }
-html.dark .jr-dd-settings button[aria-pressed='false'] {
+html.dark .jr-canonical-settings button[aria-pressed='false'] {
     color: #e2e8f0 !important;
     background-color: #223149 !important;
     border-color: #40516a !important;
 }
-html.dark .jr-dd-settings button[aria-pressed='false']:hover {
+html.dark .jr-canonical-settings button[aria-pressed='false']:hover {
     background-color: #2d405b !important;
 }
-html.dark .jr-dd-settings button[aria-pressed='true'] {
+html.dark .jr-canonical-settings button[aria-pressed='true'] {
     color: var(--jr-dark-selection-text, #c4b5fd) !important;
     background-color: #29374d !important;
     border-color: var(--jr-role-accent, #51269b) !important;
 }
-html.dark body:has(.jr-superadmin-workspace) .jr-dd-settings {
+html.dark body:has(.jr-superadmin-workspace) .jr-canonical-settings {
     --jr-dark-selection-text: #c4b5fd;
 }
-html.dark body:has(.jr-admin-workspace) .jr-dd-settings {
+html.dark body:has(.jr-admin-workspace) .jr-canonical-settings {
     --jr-dark-selection-text: #fda4af;
 }
-html.dark body:has(.jr-engineer-workspace) .jr-dd-settings {
+html.dark body:has(.jr-engineer-workspace) .jr-canonical-settings {
     --jr-dark-selection-text: #fdba74;
 }
-html.dark body:has(.jr-viewer-workspace) .jr-dd-settings {
+html.dark body:has(.jr-viewer-workspace) .jr-canonical-settings {
     --jr-dark-selection-text: #93c5fd;
 }
-html.dark .jr-dd-settings main > [role='status'] {
+html.dark .jr-canonical-settings main > [role='status'] {
     border-color: #236c53;
     background-color: #12372d;
     color: #a7f3d0;
 }
-html.dark .jr-dd-settings main > [role='alert'] {
+html.dark .jr-canonical-settings main > [role='alert'] {
     border-color: #ad3448;
     background-color: #442128;
     color: #fecdd3;

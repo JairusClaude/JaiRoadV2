@@ -15,7 +15,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * DD SuperAdmin Command Center — original JaiROADS command-center presentation,
+ * Canonical SuperAdmin command center with the original JaiROADS presentation,
  * backed ONLY by the approved 11 jairoads_next entities.
  * No legacy business CRUD or account mutations are authorized by this endpoint.
  */
@@ -67,7 +67,7 @@ final class SuperAdminLandingController extends Controller
             'auditEvents' => (int) $table('audit_logs')->whereNull('recipient_user_id')->whereNotIn('action', ['LOGIN', 'LOGOUT'])->count(),
         ];
 
-        // Never return DD hashed credentials or AuditLog old_value/new_value.
+        // Never return canonical password hashes or AuditLog old_value/new_value.
         $privilegedAccounts = $table('user_accounts')
             ->whereIn('account_type', ['SuperAdmin', 'Admin'])
             ->orderBy('id')->limit(30)

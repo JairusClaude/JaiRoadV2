@@ -18,9 +18,8 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * PHASE 3A: DD-only role access + essential identity/LGU administration.
- * Never uses legacy public business tables; public.users is Fortify infrastructure.
- * All writes use existing, approved DD entities + a system-written AuditLog.
+ * Routes canonical dashboard and directory sections and projects account
+ * and LGU data from the canonical business schema. Fortify uses public.users.
  */
 class DirectoryController extends Controller
 {
@@ -60,8 +59,7 @@ class DirectoryController extends Controller
 
     public function show(string $section, Request $request, AccountIdentityResolver $resolver): Response|RedirectResponse
     {
-        // The single named DD GET route dispatches to one of the two DD-only
-        // controllers. Keep these sections separate from legacy public CRUD.
+        // Delegate operation sections to the canonical operations workspace.
         if (in_array($section, ['settings', 'roads', 'projects', 'updates', 'documents'], true)) {
             return app(OperationsController::class)->show($section, $request, $resolver);
         }
@@ -185,7 +183,7 @@ class DirectoryController extends Controller
             'initialEngineerId' => $initialEngineerId, 'directory' => $directory,
             'eligibleEngineers' => $eligibleEngineers, 'eligibleEngineerTotal' => $eligibleEngineerTotal, 'assignments' => [],
             'canManage' => $allowedManager,
-            // Both authorized administrative roles can create standard DD accounts.
+            // Both authorized administrative roles can create standard canonical accounts.
             // Initial SuperAdmin creation is a separate owner-verified bootstrap.
             'canCreateRoles' => $allowedManager ? ['Admin', 'Engineer', 'Viewer'] : [],
             'status' => $request->session()->get('dd_phase3_status'),

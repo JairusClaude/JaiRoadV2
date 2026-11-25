@@ -119,7 +119,7 @@ export default function Operations({
     const isAdmin = role === 'Admin';
     const isEngineer = role === 'Engineer';
     const isViewer = role === 'Viewer';
-    // The DD Settings screen is rendered here, not in settings-preview.
+    // This component renders the canonical account settings screen.
     // Apply the Admin palette to its locally hard-coded accent controls.
     const { appearance, updateAppearance } = useAppearance();
     const submit = (
@@ -365,7 +365,7 @@ export default function Operations({
     }
 
     return (
-        <div className="jr-directory-exploration jr-dd-settings">
+        <div className="jr-directory-exploration jr-canonical-settings">
             <Head title={`JaiROADS — ${names[section]}`} />
             <ProjectWorkspace>
                 <div className="jr-page-head">

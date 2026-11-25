@@ -1,5 +1,7 @@
 # Priority Repair A verification checkpoint
 
+The file inventory records paths at the deletion verification checkpoint. See the [backend path mapping](../../refactor/backend-standard-layout.md) for the current layout.
+
 4 November 2026. Recovered from local HEAD `4910293610d35c69bd9bdb5864610099325f05b9`, remote base `e5a42a985b2d2657011ccab0de486ba5d7d53663`, on `Oct10_Front&BackEnd_Merge_Integration`. The workspace contained 21 modified tracked implementation/test files and eight new implementation/test files; no staged work or published Repair A commit existed. Earlier local preservation merges/audit documents were retained without publishing them as part of this feature.
 
 Recovered backend/frontend implementation and earlier passing logs were inspected rather than recreated. Remaining work completed: final bucket versioning/private-state verification, exact confirmation wording, legacy DD review integration, additional fail-closed regression cases, Docker production-image acceptance, schema/operations handoff and final local verification.

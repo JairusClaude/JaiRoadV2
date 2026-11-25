@@ -13,7 +13,7 @@ use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Fortify;
 use SensitiveParameter;
 
-/** Retains Eloquent/Fortify behavior; synchronizes only explicitly DD-linked rehashes. */
+/** Retains Eloquent/Fortify behavior; synchronizes only rehashes for explicitly linked canonical accounts. */
 final class LinkedPasswordUserProvider extends EloquentUserProvider
 {
     /** @param array<string, mixed> $credentials */

@@ -1,5 +1,7 @@
 # Audit/notification repair verification
 
+File lists in this report use the paths from the audit repair checkpoint. See the [backend path mapping](../refactor/backend-standard-layout.md) for the current layout.
+
 Date: 6 November 2026 (Asia/Manila).
 Source branch/head: `fix/canonical-only-provisioned-auth` /
 `239af5db1d864fedbd58a55a2a9ca7779aaf69ce`.

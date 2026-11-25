@@ -18,7 +18,7 @@ Source inspection shows verified actors come from `public.users.dd_user_account_
 
 pgAudit's documented fields include statement/object information and optionally SQL parameters, not the required OldValue/NewValue business contract. Capturing parameters can also expose credential material. A proof must distinguish committed successful changes from attempted/rolled-back statements, apply safe payload exclusions, establish event correlation and meet the approved permanent-history retention/access requirements. None is proven merely by enabling an extension.
 
-## Current dependencies
+## Dependencies at the October 2026 assessment
 
 | Active reader / page                                                                      | AuditLog dependency                                                                                                  |
 | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
@@ -28,7 +28,7 @@ pgAudit's documented fields include statement/object information and optionally 
 | `JaiRoadsNotificationsController` → `dd-notification-bell.tsx`, `/jairoads/notifications` | Reads canonical or legacy history according to the explicitly verified identity; returns only safe recipient fields. |
 | Legacy role/SuperAdmin dashboards                                                         | Separate `public.audit_logs` notification/activity readers. They must not be redirected to canonical data.           |
 
-`AuditLogPageController` serves the audit index and `AuditHistoryController` serves the canonical history page. `JaiRoadsNotificationsController` serves the per-account feed. The unregistered legacy `AuditLogController` was removed after all consumers were checked.
+In the current checkout, [`DashboardAnalytics`](../app/Services/DashboardAnalytics.php), [`RoleLandingController`](../app/Http/Controllers/RoleLandingController.php), [`SuperAdminLandingController`](../app/Http/Controllers/Dashboard/SuperAdminLandingController.php), and the [notification bell](../resources/js/components/notifications/notification-bell.tsx) are the corresponding canonical components. `AuditLogPageController` serves the audit index and `AuditHistoryController` serves the canonical history page. `JaiRoadsNotificationsController` serves the per-account feed. The unregistered legacy `AuditLogController` was removed after all consumers were checked.
 
 Disabling only writes would freeze these histories, counts and notifications while leaving old rows visible. Dropping/removing their store would break queries. Existing mutation transactions deliberately depend on audit insertion; removing that step changes their accountability guarantee. Supabase logs are not a compatible API/feed for these pages. Notifications have no independent table or delivery backend in the approved design.
 

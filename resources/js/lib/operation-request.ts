@@ -2,7 +2,7 @@ import { router } from '@inertiajs/react';
 
 type Payload = Record<string, string | number | boolean | File | null>;
 
-/** Use only explicit DD endpoints. Validation errors keep the editor open. */
+/** Send requests to canonical operation endpoints. Validation errors keep the editor open. */
 export function requestOperation(
     url: string,
     data: Payload,

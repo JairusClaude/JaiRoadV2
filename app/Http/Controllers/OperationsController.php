@@ -35,7 +35,7 @@ use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 /**
- * Final DD module endpoints. public.users is authentication infrastructure only.
+ * Canonical operations workspace and write endpoints. public.users is authentication infrastructure only.
  * All business SQL is explicitly jairoads_next qualified and audited.
  */
 class OperationsController extends Controller

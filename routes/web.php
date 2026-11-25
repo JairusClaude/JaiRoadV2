@@ -37,8 +37,8 @@ Route::middleware(['auth'])->group(function () {
         }
         $user = request()->user();
         if ($user instanceof User && $user->getAttribute('dd_user_account_id') !== null) {
-            // DD-linked login is resolved exclusively through the approved DD identity.
-            // Never fall back to legacy roles when a DD link is invalid.
+            // Resolve explicitly linked canonical accounts through the canonical identity check.
+            // Invalid canonical links are denied before the legacy path.
             $identity = app(AccountIdentityResolver::class)->resolve($user);
             abort_unless($identity !== null, 403, 'An active linked Data Dictionary UserAccount is required.');
 
@@ -142,7 +142,7 @@ Inertia::share('jairoadsIdentity', static function (): ?array {
         return null;
     }
     try {
-        // Never infer DD authority from an old user_account_id or legacy role.
+        // Never infer canonical authority from an old user_account_id or legacy role.
         if ($user->getAttribute('dd_user_account_id') !== null) {
             $identity = app(AccountIdentityResolver::class)->resolve($user);
             if ($identity === null) {
@@ -178,8 +178,7 @@ Inertia::share('jairoadsIdentity', static function (): ?array {
     }
 });
 
-// Dedicated read-only landing for the first DD-linked SuperAdmin. This does NOT
-// grant legacy CRUD access or replace the existing command center.
+// Read-only command center for an eligible canonical SuperAdmin.
 Route::middleware(['auth'])
     ->get('/dd-superadmin-landing', SuperAdminLandingController::class)
     ->name('jairoads.dd-superadmin-landing');

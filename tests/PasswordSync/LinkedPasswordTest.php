@@ -52,7 +52,7 @@ it('does not change either credential for an invalid reset token', function (): 
         ->and(hash_equals($before, DB::table('jairoads_next.user_accounts')->where('id', 77)->value('password')))->toBeTrue();
 });
 
-it('denies missing inactive mismatched-email ambiguous and retired DD links without partial changes', function (string $problem): void {
+it('denies missing inactive mismatched-email ambiguous and retired canonical account links without partial changes', function (string $problem): void {
     Event::fake([PasswordReset::class]);
     $login = $this->linkedLogin($problem === 'retired' ? 'Engineer' : 'Admin');
     $before = $login->password;
@@ -98,17 +98,17 @@ it('recovers a desynchronized account only through legitimate token-verified res
     expect(app(AccountIdentityResolver::class)->resolve($login)['account_id'])->toBe(77);
 });
 
-it('rejects legacy reset without matching a DD identity by email or number', function (): void {
+it('rejects legacy reset without inferring a canonical account link by email or number', function (): void {
     $linked = $this->linkedLogin();
-    $ddBefore = DB::table('jairoads_next.user_accounts')->where('id', 77)->value('password');
+    $canonicalHashBefore = DB::table('jairoads_next.user_accounts')->where('id', 77)->value('password');
     DB::table('public.users')->where('id', $linked->id)->delete();
     $legacy = User::forceCreate(['id' => 77, 'name' => 'Legacy', 'email' => 'linked@example.test', 'password' => 'old-password', 'user_account_id' => 77, 'dd_user_account_id' => null]);
     $this->post(route('password.update'), resetPayload($legacy))->assertSessionHasErrors('email');
     expect(Hash::check('New-password-42!', $legacy->fresh()->password))->toBeFalse()
-        ->and(hash_equals($ddBefore, DB::table('jairoads_next.user_accounts')->where('id', 77)->value('password')))->toBeTrue();
+        ->and(hash_equals($canonicalHashBefore, DB::table('jairoads_next.user_accounts')->where('id', 77)->value('password')))->toBeTrue();
 });
 
-it('uses the same updater for DD Settings and excludes credentials from its audit rows', function (): void {
+it('uses the same updater for canonical account settings and excludes credentials from its audit rows', function (): void {
     $login = $this->linkedLogin();
     $this->actingAs($login)->put('/dd-phase3/ops/settings', ['username' => 'changed-name',
         'current_password' => 'old-password', 'password' => 'New-password-42!', 'password_confirmation' => 'New-password-42!',
@@ -255,7 +255,7 @@ it('rejects inactive credential login even without a password rehash', function 
     expect(DB::table('jairoads_next.audit_logs')->count())->toBe(0);
 })->with(['SuperAdmin', 'Admin', 'Engineer', 'Viewer']);
 
-it('rejects inconsistent or retired DD credentials at login without changing either hash', function (string $problem): void {
+it('rejects inconsistent or retired canonical account credentials at login without changing either hash', function (string $problem): void {
     $login = $this->linkedLogin($problem === 'retired' ? 'Engineer' : 'Admin', mismatch: $problem === 'hash');
     if ($problem === 'email') {
         DB::table('jairoads_next.user_accounts')->where('id', 77)->update(['email' => 'other@example.test']);

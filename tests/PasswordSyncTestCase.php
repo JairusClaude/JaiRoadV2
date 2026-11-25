@@ -130,10 +130,10 @@ abstract class PasswordSyncTestCase extends TestCase
     protected function assertSynchronized(User $login, string $newPassword): void
     {
         $login->refresh();
-        $ddHash = DB::table('jairoads_next.user_accounts')->where('id', $login->getAttribute('dd_user_account_id'))->value('password');
-        $this->assertTrue(is_string($ddHash) && hash_equals($login->password, $ddHash));
+        $canonicalHash = DB::table('jairoads_next.user_accounts')->where('id', $login->getAttribute('dd_user_account_id'))->value('password');
+        $this->assertTrue(is_string($canonicalHash) && hash_equals($login->password, $canonicalHash));
         $this->assertTrue(Hash::check($newPassword, $login->password));
-        $this->assertTrue(Hash::check($newPassword, $ddHash));
+        $this->assertTrue(Hash::check($newPassword, $canonicalHash));
         $this->assertFalse(Hash::check('old-password', $login->password));
     }
 }

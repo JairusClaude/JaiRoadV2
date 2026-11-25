@@ -21,9 +21,9 @@ use Inertia\Response;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 /**
- * Canonical read projections for the reviewed frontend. Writes delegate to the
- * verified DD operations; legacy IDs, preview sessions and public business data
- * are never translated into canonical identities.
+ * Shared page projections, scoped queries, and request adapters for the
+ * canonical workspace controllers. Each feature controller handles its own
+ * routes and delegates core mutations to OperationsController.
  *
  * @phpstan-type Actor array{account_id:int,role:string,engineer_id:?int}
  */

@@ -7,7 +7,7 @@ import {
 } from '@/components/ui/popover';
 import { useJaiRoadsNotificationFeed } from '@/components/use-jairoads-notification-feed';
 
-/** Header feed: the API enforces recipient_user_id against the authenticated DD identity. */
+/** Header feed: the API enforces recipient_user_id against the authenticated canonical identity. */
 export function NotificationBell({
     variant = 'light',
 }: {

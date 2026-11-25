@@ -7,7 +7,7 @@ use Tests\CanonicalOperationsTestCase;
 
 uses(CanonicalOperationsTestCase::class);
 
-it('renders each active DD role dashboard using its explicit identity', function (string $role, string $component) {
+it('renders the dashboard for each active canonical account role using its explicit identity', function (string $role, string $component) {
     $login = $this->linkedLogin($role);
     $destination = $role === 'SuperAdmin' ? '/dd-superadmin-landing' : '/dd-phase3/dashboard';
     $this->actingAs($login)->get('/dashboard')->assertRedirect($destination);

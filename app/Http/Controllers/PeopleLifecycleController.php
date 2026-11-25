@@ -104,7 +104,7 @@ final class PeopleLifecycleController extends Controller
             }
             $accountId = DB::table('jairoads_next.user_accounts')->where('engineer_id', $id)->value('id');
             if ($accountId !== null) {
-                // Match LinkedPasswordUpdater's login -> DD account -> Engineer lock order.
+                // Match LinkedPasswordUpdater's login -> canonical account -> Engineer lock order.
                 DB::table('public.users')->where('dd_user_account_id', $accountId)->orderBy('id')->lockForUpdate()->get(['id']);
             }
             $account = $accountId === null ? null : DB::table('jairoads_next.user_accounts')->where('id', $accountId)->lockForUpdate()->first();

@@ -1,6 +1,6 @@
 # JaiROADS Data Dictionary change request — authentication, AuditLog and notifications
 
-> **PHASE 11L SUPERSESSION NOTICE (2026-11-09):** Any earlier proposal in this document to detach MaintenanceRecords from projects or unassign ManagingEngineer through NULL conflicts with the user's Final Data Dictionary and is not approved. Preserve both required references, all RESTRICT FKs and existing history. Admin/SuperAdmin may delete only an empty project after confirmation. Other proposed account/audit changes still need their own approvals. See `docs/release/phase11l-strict-dd-integrity-2026-11-09.md`.
+> **PHASE 11L SUPERSESSION NOTICE (2026-11-09):** Any earlier proposal in this document to detach MaintenanceRecords from projects or unassign ManagingEngineer through NULL conflicts with the user's Final Data Dictionary and is not approved. Preserve both required references, all RESTRICT FKs and existing history. Admin/SuperAdmin may delete only an empty project after confirmation. Other proposed account/audit changes still need their own approvals. See [the Phase 11L relationship integrity review](../release/phase11l-canonical-integrity-2026-11-09.md).
 
 
 **Status:** Proposed amendment for Data Dictionary/schema-owner approval. **Not yet a formally approved replacement of the canonical Data Dictionary.**

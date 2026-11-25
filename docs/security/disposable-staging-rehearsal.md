@@ -27,7 +27,7 @@ The `.github/workflows/disposable-staging-rehearsal.yml` workflow starts **two i
 - **Not a persistent staging URL.** A separately approved environment and credential strategy are required for hands-on/manual testing.
 - **Not the final restricted Laravel database role.** The rehearsal creates a NOLOGIN role for auxiliary grants and trigger/RLS checks; production requires a full inventory of ordinary Laravel schema/sequence/function permissions, a managed LOGIN credential, pooler/SSL configuration, and verification that the actual app works with it. Do not copy the staging-only broad synthetic SELECT policies or disposable credentials to Supabase.
 - **Not production schema authorization.** Proposed SQL remains in `database/proposals/`, never in automatic app migrations or startup.
-- **Not official Data Dictionary approval.** `docs/governance/dd-policy-alignment-review-2026-11-07.md` remains a change request.
+- **Not official Data Dictionary approval.** `docs/governance/canonical-policy-alignment-review-2026-11-07.md` remains a change request.
 - **Not complete Storage/e2e validation.** Actual upload/download/deletion with a private Storage test bucket, WebAuthn real origins, password resets, backups/recovery, Admin transition, and teammate integration are separate tasks.
 
 ## Next release gates

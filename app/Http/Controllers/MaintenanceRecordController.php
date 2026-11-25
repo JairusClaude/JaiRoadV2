@@ -183,7 +183,7 @@ class MaintenanceRecordController extends Controller
             'description',
         ]);
 
-        // Phase4C-DB-Mapping: accept documented request keys; persist deployed columns.
+        // Map the documented request keys to the deployed columns.
         $data['maintenance_projects_id'] = $data['project_id'];
         unset($data['project_id']);
         $data['engineers_id'] = $data['managing_engineer_id'];
@@ -238,7 +238,7 @@ class MaintenanceRecordController extends Controller
             'description',
         ]);
 
-        // Phase4C-DB-Mapping: keep project_id as the validated request key.
+        // Validate the incoming project_id before mapping it for storage.
         $data['maintenance_projects_id'] = $data['project_id'];
         unset($data['project_id']);
 

@@ -17,7 +17,7 @@ use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Canonical DD account provisioning; retains original atomic Fortify linkage,
+ * Canonical account provisioning; retains original atomic Fortify linkage,
  * authorization, locks, audit and validation, via the shared canonical directory helpers.
  */
 final class CanonicalAccountProvisioningController extends Controller
@@ -61,7 +61,7 @@ final class CanonicalAccountProvisioningController extends Controller
                     }
                 }
                 $hashed = Hash::make((string) $v['password']);
-                $ddId = (int) DB::table('jairoads_next.user_accounts')->insertGetId([
+                $canonicalAccountId = (int) DB::table('jairoads_next.user_accounts')->insertGetId([
                     'username' => $username, 'email' => $email, 'password' => $hashed,
                     'account_type' => $role, 'engineer_id' => $engineerId,
                     'is_active' => true, 'created_at' => now(), 'updated_at' => now(),
@@ -70,11 +70,11 @@ final class CanonicalAccountProvisioningController extends Controller
                 DB::table('public.users')->insert([
                     'name' => trim((string) $v['name']), 'email' => $email,
                     'password' => $hashed, 'user_account_id' => null,
-                    'dd_user_account_id' => $ddId,
+                    'dd_user_account_id' => $canonicalAccountId,
                     'email_verified_at' => null, 'created_at' => now(), 'updated_at' => now(),
                 ]);
-                app(AccountProvisioning::class)->record($request->user(), $ddId);
-                $this->audit($actor, 'CREATE', 'UserAccount', $ddId, 'Administrator provisioned a DD account with an explicit Fortify link.', [
+                app(AccountProvisioning::class)->record($request->user(), $canonicalAccountId);
+                $this->audit($actor, 'CREATE', 'UserAccount', $canonicalAccountId, 'Administrator provisioned a DD account with an explicit Fortify link.', [
                     'account_type' => $role, 'engineer_id' => $engineerId, 'is_active' => true,
                 ]);
             }, 2);
