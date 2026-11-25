@@ -76,25 +76,28 @@ final class InternalPasswordRecoveryController extends Controller
     // The request table itself records the request, approval and consumption timestamps.
     public function requestCode(Request $request, AccountIdentityResolver $resolver): JsonResponse
     {
+        abort_unless($request->expectsJson(), 406);
         $this->available();
         $v = $request->validate(['identifier' => ['required', 'string', 'max:255']]);
         try {
             DB::transaction(function () use ($v, $resolver): void {
-            DB::select('SELECT pg_advisory_xact_lock(1927710916)');
-            $login = $this->target($v['identifier'], $resolver, true);
-            if ($login === null) {
-                return;
-            }
-            $id = (int) $login->dd_user_account_id;
-            $existing = DB::table(self::TABLE)->where('account_id', $id)
-                ->where('expires_at', '>', now())->whereIn('state', ['pending', 'issued'])->exists();
-            if (! $existing) {
-                DB::table(self::TABLE)->insert([
-                    'account_id' => $id, 'login_id' => $login->getKey(),
-                    'state' => 'pending', 'attempts' => 0, 'requested_at' => now(),
-                    'expires_at' => now()->addDay(),
-                ]);
-            }
+                DB::select('SELECT pg_advisory_xact_lock(1927710916)');
+                $login = $this->target($v['identifier'], $resolver, true);
+                if ($login === null) {
+                    return;
+                }
+                $id = (int) $login->dd_user_account_id;
+                DB::table(self::TABLE)->where('account_id', $id)->where('state', 'issued')->where('expires_at', '<=', now())
+                    ->update(['state' => 'invalidated', 'code_digest' => null, 'credential_digest' => null]);
+                $existing = DB::table(self::TABLE)->where('account_id', $id)
+                    ->where('expires_at', '>', now())->whereIn('state', ['pending', 'issued'])->exists();
+                if (! $existing) {
+                    DB::table(self::TABLE)->insert([
+                        'account_id' => $id, 'login_id' => $login->getKey(),
+                        'state' => 'pending', 'attempts' => 0, 'requested_at' => now(),
+                        'expires_at' => now()->addDay(),
+                    ]);
+                }
             }, 3);
         } catch (QueryException) {
             return $this->reply(['message' => 'Internal recovery is unavailable. Contact your SuperAdmin.'], 503);
@@ -118,6 +121,7 @@ final class InternalPasswordRecoveryController extends Controller
 
     public function approve(Request $request, AccountIdentityResolver $resolver, int $id): JsonResponse
     {
+        abort_unless($request->expectsJson(), 406);
         $actor = $this->administrator($request, $resolver);
         $this->available();
         $v = $request->validate([
@@ -126,28 +130,28 @@ final class InternalPasswordRecoveryController extends Controller
         ]);
         try {
             $code = DB::transaction(function () use ($request, $resolver, $actor, $v, $id): string {
-            DB::select('SELECT pg_advisory_xact_lock(1927710916)');
-            $admin = User::query()->whereKey($request->user()->getKey())->lockForUpdate()->first();
-            abort_unless($admin instanceof User && $resolver->resolve($admin) === $actor, 403);
-            if (! Hash::check($v['current_password'], $admin->getAuthPassword())) {
-                throw ValidationException::withMessages(['current_password' => 'Your SuperAdmin password is incorrect.']);
-            }
-            $row = DB::table(self::TABLE)->where('id', $id)->where('state', 'pending')
-                ->where('expires_at', '>', now())->lockForUpdate()->first();
-            abort_unless($row !== null, 409, 'The request is no longer pending.');
-            $login = User::query()->whereKey($row->login_id)->lockForUpdate()->first();
-            $identity = $login instanceof User ? $resolver->resolveForRecovery($login) : null;
-            abort_unless($identity !== null && $identity['account_id'] === (int) $row->account_id
-                && in_array($identity['role'], self::ROLES, true), 409, 'Account is not eligible for recovery.');
-            $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-            DB::table(self::TABLE)->where('id', $id)->update([
-                'state' => 'issued', 'approved_by' => $actor['account_id'], 'approved_at' => now(),
-                'expires_at' => now()->addMinutes(10), 'attempts' => 0,
-                'code_digest' => $this->digest('code', $id.'|'.$row->account_id.'|'.$code),
-                'credential_digest' => $this->fingerprint($login),
-            ]);
+                DB::select('SELECT pg_advisory_xact_lock(1927710916)');
+                $admin = User::query()->whereKey($request->user()->getKey())->lockForUpdate()->first();
+                abort_unless($admin instanceof User && $resolver->resolve($admin) === $actor, 403);
+                if (! Hash::check($v['current_password'], $admin->getAuthPassword())) {
+                    throw ValidationException::withMessages(['current_password' => 'Your SuperAdmin password is incorrect.']);
+                }
+                $row = DB::table(self::TABLE)->where('id', $id)->where('state', 'pending')
+                    ->where('expires_at', '>', now())->lockForUpdate()->first();
+                abort_unless($row !== null, 409, 'The request is no longer pending.');
+                $login = User::query()->whereKey($row->login_id)->lockForUpdate()->first();
+                $identity = $login instanceof User ? $resolver->resolveForRecovery($login) : null;
+                abort_unless($identity !== null && $identity['account_id'] === (int) $row->account_id
+                    && in_array($identity['role'], self::ROLES, true), 409, 'Account is not eligible for recovery.');
+                $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+                DB::table(self::TABLE)->where('id', $id)->update([
+                    'state' => 'issued', 'approved_by' => $actor['account_id'], 'approved_at' => now(),
+                    'expires_at' => now()->addMinutes(10), 'attempts' => 0,
+                    'code_digest' => $this->digest('code', $id.'|'.$row->account_id.'|'.$code),
+                    'credential_digest' => $this->fingerprint($login),
+                ]);
 
-            return $code;
+                return $code;
             }, 3);
         } catch (QueryException) {
             return $this->reply(['message' => 'Approval could not be completed. No code was issued.'], 503);
@@ -159,6 +163,7 @@ final class InternalPasswordRecoveryController extends Controller
 
     public function redeem(Request $request, AccountIdentityResolver $resolver, LinkedPasswordUpdater $passwords): JsonResponse
     {
+        abort_unless($request->expectsJson(), 406);
         $this->available();
         $v = $request->validate([
             'identifier' => ['required', 'string', 'max:255'],
