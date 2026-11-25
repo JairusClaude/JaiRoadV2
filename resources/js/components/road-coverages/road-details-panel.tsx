@@ -14,6 +14,9 @@ type Details = {
         id: number;
         title: string;
         my_project: boolean;
+        created_by_me: boolean;
+        assigned_to_me: boolean;
+        my_record_count: number;
         record_count: number;
         recent_records: {
             id: number;
@@ -50,12 +53,14 @@ export function RoadDetailsPanel({
     municipality,
     height,
     onClose,
+    engineerView = true,
 }: {
     roadId: number;
     name: string;
     municipality: string;
     height: number | string;
     onClose: () => void;
+    engineerView?: boolean;
 }) {
     const [details, setDetails] = useState<Details | null>(null);
     const [error, setError] = useState('');
@@ -173,18 +178,14 @@ export function RoadDetailsPanel({
                                     <p className="jr-road-details-project">
                                         {project.title}
                                     </p>
-                                    <span
-                                        className={
-                                            'jr-road-details-assignment' +
-                                            (project.my_project
-                                                ? ' is-mine'
-                                                : '')
-                                        }
-                                    >
-                                        {project.my_project
-                                            ? 'My project'
-                                            : 'Other project'}
-                                    </span>
+                                    {engineerView && (
+                                        <>
+                                            <span className="jr-road-details-assignment" data-relationship={project.created_by_me && project.assigned_to_me ? 'both' : project.created_by_me ? 'created' : project.assigned_to_me ? 'assigned' : 'other'}>
+                                                {project.created_by_me && project.assigned_to_me ? 'Created and assigned to you' : project.created_by_me ? 'Created by you' : project.assigned_to_me ? 'Assigned to you' : 'Other project'}
+                                            </span>
+                                            {project.my_record_count > 0 && <p className="jr-road-details-muted">{project.my_record_count} maintenance record(s) assigned to you</p>}
+                                        </>
+                                    )}
                                 </>
                             ) : (
                                 <p className="jr-road-details-muted">
