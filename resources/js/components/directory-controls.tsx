@@ -140,7 +140,7 @@ export function DirectoryPagination({
 
     return (
         <footer className="jr-table-footer">
-            <span>
+            <span role="status">
                 {total > 0
                     ? `Showing ${from}–${to} of ${total} ${plural}`
                     : `0 ${plural}`}
