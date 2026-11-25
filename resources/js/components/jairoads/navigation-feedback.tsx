@@ -3,56 +3,6 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import '../../../css/jairoads-navigation-ux.css';
 
-// Presentation only: the role comes from the authenticated destination's server props.
-const handoffRoles = {
-    superadmin: { label: 'SuperAdmin', accent: '#51269b', deep: '#26104d' },
-    admin: { label: 'Admin', accent: '#c8293d', deep: '#801827' },
-    engineer: { label: 'Engineer', accent: '#a94b0c', deep: '#69310e' },
-    viewer: { label: 'Viewer', accent: '#1d5db5', deep: '#163e78' },
-} as const;
-
-function showAuthenticatedHandoff(props: unknown) {
-    const page = props as {
-        auth?: { user?: unknown };
-        jairoadsIdentity?: { role?: string };
-        identity?: { role?: string };
-    } | null;
-    const role = (page?.jairoadsIdentity?.role ?? page?.identity?.role ?? '').toLowerCase();
-    if (!page?.auth?.user || !Object.prototype.hasOwnProperty.call(handoffRoles, role) ||
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
-        document.documentElement.classList.contains('jr-reduce-motion')) {
-        return;
-    }
-    const palette = handoffRoles[role as keyof typeof handoffRoles];
-    document.querySelector('.jr-auth-handoff')?.remove();
-    const overlay = document.createElement('div');
-    overlay.className = 'jr-auth-handoff';
-    overlay.dataset.role = role;
-    overlay.setAttribute('role', 'status');
-    overlay.setAttribute('aria-live', 'polite');
-    overlay.style.setProperty('--jr-handoff-accent', palette.accent);
-    overlay.style.setProperty('--jr-handoff-deep', palette.deep);
-    const logo = document.createElement('img');
-    logo.src = '/images/jairoads/peo-ddo-transparent.webp';
-    logo.alt = '';
-    const brand = document.createElement('strong');
-    brand.textContent = 'JaiROADS';
-    const status = document.createElement('span');
-    status.textContent = `Opening your ${palette.label} workspace…`;
-    const track = document.createElement('div');
-    track.className = 'jr-auth-handoff-track';
-    track.setAttribute('aria-hidden', 'true');
-    overlay.append(logo, brand, status, track);
-    // The new page may already be mounted; this synchronous cover prevents
-    // showing the dashboard until the brief color handoff has completed.
-    document.body.append(overlay);
-    const cleanup = () => overlay.remove();
-    overlay.addEventListener('animationend', (event) => {
-        if (event.target === overlay) cleanup();
-    });
-    window.setTimeout(cleanup, 1100);
-}
-
 /**
  * Global, non-blocking Inertia navigation feedback.
  * Progress remains indeterminate until the server completes the request;
@@ -68,7 +18,6 @@ export function JaiRoadsNavigationFeedback() {
 
     useEffect(() => {
         let pending = false;
-        let authAttempt = false;
         let currentPath = window.location.pathname.replace(/\/$/, '') || '/';
         let motionFrame = 0;
         let activeMotion: Animation[] = [];
@@ -152,8 +101,6 @@ export function JaiRoadsNavigationFeedback() {
         const offStart = router.on('start', (event) => {
             cancelMotion();
             const path = window.location.pathname.replace(/\/$/, '');
-            authAttempt = (path === '/login') &&
-                event.detail.visit.method.toLowerCase() === 'post';
             const target = event.detail.visit.url.pathname.replace(/\/$/, '') || '/';
             start(event.detail.visit.method.toLowerCase() === 'get' && target !== (path || '/'));
         });
@@ -161,16 +108,11 @@ export function JaiRoadsNavigationFeedback() {
             const nextPath = new URL(event.detail.page.url, window.location.origin).pathname.replace(/\/$/, '') || '/';
             const changedPage = nextPath !== currentPath;
             currentPath = nextPath;
-            if (authAttempt && !event.detail.page.component.startsWith('auth/')) {
-                authAttempt = false;
-                cancelMotion();
-                showAuthenticatedHandoff(event.detail.page.props);
-            } else if (changedPage) {
+            if (changedPage) {
                 animateDestination();
             }
         });
         const offFinish = router.on('finish', () => {
-            authAttempt = false;
             finish();
         });
 
