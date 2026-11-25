@@ -733,3 +733,23 @@ body:has(.jr-admin-workspace) .um-workspace .um-row-action:hover {
     border-radius: 12px;
     padding: 12px;
 }
+
+/* Radix portals mount outside .um-workspace. Use body-level role tokens
+   for lifecycle dialogs as well as the directory itself. */
+body:has(.jr-superadmin-workspace, .jr-admin-workspace, .jr-engineer-workspace, .jr-viewer-workspace) .um-dialog .um-primary {
+    background: var(--jr-role-accent) !important;
+    border-color: var(--jr-role-accent) !important;
+    color: #fff !important;
+    box-shadow: 0 2px 6px color-mix(in srgb, var(--jr-role-accent) 22%, transparent);
+}
+body:has(.jr-superadmin-workspace, .jr-admin-workspace, .jr-engineer-workspace, .jr-viewer-workspace) .um-dialog .um-primary:hover:not(:disabled) {
+    background: var(--jr-role-accent-hover) !important;
+    border-color: var(--jr-role-accent-hover) !important;
+}
+body:has(.jr-superadmin-workspace, .jr-admin-workspace, .jr-engineer-workspace, .jr-viewer-workspace) .um-dialog :is(button:focus-visible, .um-input:focus-visible, .um-password-toggle:focus-visible) {
+    outline: 2px solid var(--jr-display-accent, var(--jr-role-accent)) !important;
+    outline-offset: 2px;
+}
+body:has(.jr-superadmin-workspace, .jr-admin-workspace, .jr-engineer-workspace, .jr-viewer-workspace) .um-dialog .um-input:focus {
+    border-color: var(--jr-display-accent, var(--jr-role-accent)) !important;
+}
