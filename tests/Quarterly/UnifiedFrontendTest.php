@@ -45,7 +45,7 @@ final class UnifiedFrontendTest extends PostgresTestCase
         }
     }
 
-    public function test_engineer_dashboard_map_highlights_managed_projects_not_road_creators(): void
+    public function test_dashboard_map_distinguishes_project_creator_and_record_assignment(): void
     {
         $f = $this->fixture('Engineer');
         $this->record($f);
@@ -65,17 +65,25 @@ final class UnifiedFrontendTest extends PostgresTestCase
             ->component('dd-phase3/RoleDashboard')->has('mapCoverages', 3)
             ->where('mapCoverages.0.id', $unassigned)->where('mapCoverages.0.my_project', false)
             ->where('mapCoverages.0.project_id', null)
-            ->where('mapCoverages.1.id', $road)->where('mapCoverages.1.my_project', false)
+            ->where('mapCoverages.1.id', $road)->where('mapCoverages.1.my_project', true)
+            ->where('mapCoverages.1.created_by_me', true)->where('mapCoverages.1.assigned_to_me', false)
             ->where('mapCoverages.2.id', $f['road'])->where('mapCoverages.2.my_project', true)
+            ->where('mapCoverages.2.created_by_me', true)->where('mapCoverages.2.assigned_to_me', true)
             ->where('mapCoverages.2.my_record_count', 2)->where('mapCoverages.2.project_id', $f['project']));
         // Switching test identities must also clear the previous Laravel
         // authentication-session password hash.
         $this->flushSession();
         $this->actingAs($otherLogin)->get('/dd-phase3/dashboard')->assertOk()->assertInertia(fn (Assert $page) => $page
-            ->where('mapCoverages.0.my_project', false)->where('mapCoverages.1.my_project', true));
+            ->where('mapCoverages.0.my_project', false)->where('mapCoverages.1.my_project', true)
+            ->where('mapCoverages.1.created_by_me', false)->where('mapCoverages.1.assigned_to_me', true)
+            ->where('mapCoverages.2.my_project', false));
         $this->flushSession();
         $this->actingAs($this->account('Viewer'))->get('/dd-phase3/dashboard')->assertOk()->assertInertia(fn (Assert $page) => $page
-            ->has('mapCoverages', 0));
+            ->has('mapCoverages', 3)
+            ->where('mapCoverages.1.created_by_me', false)->where('mapCoverages.1.assigned_to_me', false)
+            ->where('mapCoverages.2.my_record_count', 0));
+        $this->getJson('/dd-phase3/dashboard/map-roads?before='.$unassigned)->assertOk()
+            ->assertJsonPath('data.0.id', $road)->assertJsonPath('data.0.my_project', false);
     }
 
     public function test_engineer_road_inspector_returns_only_related_summary_and_no_private_paths(): void
@@ -90,6 +98,8 @@ final class UnifiedFrontendTest extends PostgresTestCase
             ->assertJsonPath('id', $f['road'])
             ->assertJsonPath('project.id', $f['project'])
             ->assertJsonPath('project.my_project', true)
+            ->assertJsonPath('project.created_by_me', true)
+            ->assertJsonPath('project.assigned_to_me', true)
             ->assertJsonPath('project.record_count', 1)
             ->assertJsonPath('project.recent_records.0.id', $record)
             ->assertJsonPath('project.update_count', 1)
@@ -101,7 +111,10 @@ final class UnifiedFrontendTest extends PostgresTestCase
         $this->getJson($url.'99999999')->assertNotFound();
         $other = $this->account('Engineer');
         $this->withSession(['password_hash_web' => null])->actingAs($other)->getJson($url.$f['road'])->assertOk()->assertJsonPath('project.my_project', false);
-        $this->withSession(['password_hash_web' => null])->actingAs($this->account('Viewer'))->getJson($url.$f['road'])->assertForbidden();
+        $this->withSession(['password_hash_web' => null])->actingAs($this->account('Viewer'))->getJson($url.$f['road'])->assertOk()
+            ->assertJsonPath('project.my_project', false)->assertJsonPath('project.created_by_me', false)
+            ->assertJsonPath('project.assigned_to_me', false)->assertJsonPath('project.my_record_count', 0)
+            ->assertJsonMissingPath('project.latest_document.file_path');
     }
 
     public function test_record_search_by_engineer_and_document_form_source_context(): void
