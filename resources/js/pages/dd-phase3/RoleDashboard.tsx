@@ -50,11 +50,13 @@ type Props = {
     notifications: { id: number; message: string; createdAt: string }[];
 };
 
-function EngineerRoadMap({
+function DashboardRoadMap({
+    isEngineer,
     initialCoverages,
     initialCursor,
     total,
 }: {
+    isEngineer: boolean;
     initialCoverages: SimplifiedCoverageItem[];
     initialCursor: number | null;
     total: number | null;
@@ -115,10 +117,11 @@ function EngineerRoadMap({
     };
 
     return (
-        <section aria-label="My projects road map">
+        <section aria-label={isEngineer ? "My projects road map" : "Viewer road coverage map"}>
             <SimplifiedCoverageMap
                 coverages={coverages}
-                engineerView
+                engineerView={isEngineer}
+                viewerView={!isEngineer}
                 height={450}
             />
             {cursor !== null && (
@@ -131,7 +134,7 @@ function EngineerRoadMap({
                         type="button"
                         disabled={loading}
                         onClick={() => void loadMore()}
-                        className="rounded-lg border border-slate-300 px-4 py-2 font-semibold text-[#A94B0C] hover:bg-orange-50 disabled:opacity-50"
+                        className="rounded-lg border border-slate-300 px-4 py-2 font-semibold text-[var(--jr-display-accent)] hover:bg-[var(--jr-display-soft)] disabled:opacity-50"
                     >
                         {loading ? 'Loading roads…' : 'Load more map roads'}
                     </button>
@@ -364,10 +367,10 @@ export default function RoleDashboard({
                         )}
                     </section>
 
-                    {isEngineer && (
-                        <EngineerRoadMap
+                    <DashboardRoadMap
+                            isEngineer={isEngineer}
                             key={
-                                String(mapCoverages[0]?.id ?? 0) +
+                                role + ':' + String(mapCoverages[0]?.id ?? 0) +
                                 ':' +
                                 String(mapNextCursor ?? 'all')
                             }
@@ -375,7 +378,6 @@ export default function RoleDashboard({
                             initialCursor={mapNextCursor}
                             total={stats.roadCoverages}
                         />
-                    )}
 
                     <DdDashboardAnalytics
                         data={analytics}
