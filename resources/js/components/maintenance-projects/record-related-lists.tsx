@@ -54,7 +54,9 @@ function RelatedActions({
         { role?: string } | undefined;
     const canDelete =
         page.props.previewOnly === true ||
-        ['admin', 'superadmin'].includes(identity?.role ?? '');
+        ['admin', 'superadmin'].includes(identity?.role?.toLowerCase() ?? '');
+
+    if (!enabled || identity?.role?.toLowerCase() === 'viewer') return null;
 
     return (
         <div onClick={(e) => e.stopPropagation()}>
@@ -128,9 +130,9 @@ export function RecordRelatedLists({
     documents: DocumentSummary[];
 }) {
     const page = usePage();
-    const enabled =
-        page.props.previewOnly === true ||
-        (page.props.canonicalFrontend === true && page.props.canWrite === true);
+    const isViewer = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role?.toLowerCase() === 'viewer';
+    const enabled = !isViewer && (page.props.previewOnly === true ||
+        (page.props.canonicalFrontend === true && page.props.canWrite === true));
     const monthlyDeletion = useMonthlyDeletion(`record=${recordId}`);
     const documentDeletion = useDocumentDeletion(recordId);
     const orderedUpdates = [...updates].sort(
@@ -153,7 +155,8 @@ export function RecordRelatedLists({
                                 for this record
                             </p>
                         </div>
-                        <Button
+                        {enabled && Boolean(monthlyUpdateCreateUrl) && (
+<Button
                             className="jr-primary"
                             disabled={!monthlyUpdateCreateUrl}
                             onClick={() =>
@@ -164,6 +167,7 @@ export function RecordRelatedLists({
                             <Plus />
                             Add Monthly Update
                         </Button>
+)}
                     </div>
                     {updates.length ? (
                         <RelatedList label="Monthly updates for this record">
@@ -249,7 +253,8 @@ export function RecordRelatedLists({
                                 for this record
                             </p>
                         </div>
-                        <Button
+                        {enabled && (
+<Button
                             className="jr-primary"
                             disabled={!enabled}
                             onClick={() =>
@@ -263,6 +268,7 @@ export function RecordRelatedLists({
                             <Upload />
                             Upload Document
                         </Button>
+)}
                     </div>
                     {documents.length ? (
                         <RelatedList label="Maintenance documents for this record">
