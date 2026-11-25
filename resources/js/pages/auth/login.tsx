@@ -3,24 +3,18 @@ import { ArrowRight, Info, LockKeyhole, Mail } from 'lucide-react';
 import { useState } from 'react';
 import InputError from '@/components/input-error';
 import AuthShell, { authButtonClass, authInputClass } from '@/components/jairoads/auth-shell';
-import PasskeyVerify from '@/components/passkey-verify';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { store } from '@/routes/login';
-import { request } from '@/routes/password';
 
 type Props = {
     status?: string;
-    canResetPassword: boolean;
-    passkeyReady?: boolean;
 };
 export default function Login({
     status,
-    canResetPassword,
-    passkeyReady = true,
 }: Props) {
     const [remember, setRemember] = useState(false);
     const [capsLock, setCapsLock] = useState(false);
@@ -96,14 +90,6 @@ export default function Login({
                                     >
                                         Password
                                     </Label>
-                                    {canResetPassword && (
-                                        <a
-                                            href={request().url}
-                                            className="text-xs font-semibold text-[#965027] underline-offset-4 hover:underline focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#965027]"
-                                        >
-                                            Forgot password?
-                                        </a>
-                                    )}
                                 </div>
                                 <div className="jr-login-input-wrap">
                                     <LockKeyhole aria-hidden="true" className="jr-login-input-icon" />
@@ -207,49 +193,8 @@ export default function Login({
                     id="login-remember-help"
                     className="jr-login-help mt-2 text-xs leading-5"
                 >
-                    Use only on a private, trusted device. Applies to password
-                    sign-in.
+                    Use only on a private, trusted device.
                 </p>
-                <div className="jr-login-passkey mt-5 space-y-3">
-                    <div className="jr-login-divider">
-                        <span>Or continue with</span>
-                    </div>
-                    {passkeyReady ? (
-                        <PasskeyVerify
-                            label="Sign in with a passkey"
-                            routes={{
-                                options: {
-                                    url: '/passkeys/login/options',
-                                    method: 'get',
-                                },
-                                submit: {
-                                    url: '/passkeys/login',
-                                    method: 'post',
-                                },
-                            }}
-                            loginMode
-                            hideSeparator
-                        />
-                    ) : (
-                        <p role="status" className="text-sm text-[#697b90]">
-                            Passkey sign-in is unavailable on this address. Use
-                            your password or contact your administrator.
-                        </p>
-                    )}
-                    {passkeyReady && (
-                        <details className="jr-login-passkey-help">
-                            <summary>How do passkeys work?</summary>
-                            <p>
-                                Sign in with your password first, then open
-                                Account &amp; Security → Passkeys to add one.
-                                Sign in using the same device or a synced
-                                passkey with your device PIN, fingerprint or
-                                face recognition where supported.
-                            </p>
-                        </details>
-                    )}
-                </div>
-
                 <div className="mt-5">
                     <div className="flex items-start gap-3">
                         <LockKeyhole
@@ -257,7 +202,7 @@ export default function Login({
                             className="mt-0.5 size-[18px] shrink-0 text-[#8a9db0]"
                         />
                         <p className="jr-login-help text-xs leading-5">
-                            Need an account? Contact your system administrator.
+                            Need an account or help signing in? Contact your system administrator.
                         </p>
                     </div>
                 </div>
