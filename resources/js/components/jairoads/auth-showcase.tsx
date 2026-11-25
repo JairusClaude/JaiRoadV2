@@ -50,7 +50,7 @@ function serverCompactSnapshot() {
     return false;
 }
 
-export default function AuthShowcase() {
+export default function AuthShowcase({ expandedMobile = false, onContinue }: { expandedMobile?: boolean; onContinue?: () => void } = {}) {
     const compact = useSyncExternalStore(
         subscribeCompact,
         compactSnapshot,
@@ -80,7 +80,7 @@ export default function AuthShowcase() {
         return () => preference.removeEventListener('change', update);
     }, []);
     useEffect(() => {
-        if (!playing || compact) {
+        if (!playing || (compact && !expandedMobile)) {
             return;
         }
 
@@ -90,12 +90,12 @@ export default function AuthShowcase() {
         );
 
         return () => window.clearTimeout(timer);
-    }, [playing, activeSlide, compact]);
+    }, [playing, activeSlide, compact, expandedMobile]);
     const changeSlide = (direction: number) =>
         setActiveSlide(
             (current) => (current + direction + slides.length) % slides.length,
         );
-    const visibleSlide = compact ? 0 : activeSlide;
+    const visibleSlide = compact && !expandedMobile ? 0 : activeSlide;
     const slide = slides[visibleSlide];
 
     return (
@@ -103,9 +103,9 @@ export default function AuthShowcase() {
             aria-label="JaiROADS road infrastructure showcase"
             className="jr-login-showcase relative isolate overflow-hidden bg-[#1b3141] text-white"
             data-active-slide={visibleSlide}
-            data-playing={playing && !compact}
+            data-playing={playing && (!compact || expandedMobile)}
         >
-            {(compact ? slides.slice(0, 1) : slides).map((item, index) => (
+            {(compact && !expandedMobile ? slides.slice(0, 1) : slides).map((item, index) => (
                 <div
                     key={item.image}
                     className={`jr-login-photo absolute inset-0 transition-opacity duration-1000 motion-reduce:transition-none ${index === visibleSlide ? 'opacity-100' : 'opacity-0'}`}
@@ -269,6 +269,11 @@ export default function AuthShowcase() {
                         </button>
                     </div>
                 </div>
+                {expandedMobile && (
+                    <button type="button" className="jr-login-continue" onClick={onContinue}>
+                        Continue to sign in
+                    </button>
+                )}
             </div>
         </section>
     );
