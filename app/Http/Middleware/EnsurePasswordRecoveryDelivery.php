@@ -16,6 +16,12 @@ final class EnsurePasswordRecoveryDelivery
 {
     public function handle(Request $request, Closure $next): Response
     {
+        // Keep the existing Fortify route names for generated frontend routes,
+        // but make email-based recovery an explicit deployment opt-in.
+        if ($request->isMethod('POST') && $request->routeIs('password.email', 'password.update')
+            && ! config('app.email_password_recovery')) {
+            throw ValidationException::withMessages(['email' => 'Use internal account recovery on the Forgot Password page.']);
+        }
         if (! $request->isMethod('POST') || ! $request->routeIs('password.email')) {
             return $next($request);
         }
