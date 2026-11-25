@@ -203,17 +203,14 @@ export function SimplifiedCoverageMap({
 
         roadGroup.addTo(map);
 
-        // Auto-fit bounds to the road network or fall back to Davao de Oro province bounds
-        if (roadGroup.getLayers().length > 0) {
-            const bounds = roadGroup.getBounds();
+        // Layout and history changes can remove the map before an animated
+        // fit completes. Frame the loaded roads immediately.
+        const bounds = roadGroup.getBounds();
 
-            if (bounds.isValid()) {
-                map.fitBounds(bounds.pad(0.08), { maxZoom: 15 });
-            } else {
-                map.fitBounds(PROVINCE_BOUNDS);
-            }
+        if (bounds.isValid()) {
+            map.fitBounds(bounds.pad(0.08), { maxZoom: 15, animate: false });
         } else {
-            map.fitBounds(PROVINCE_BOUNDS);
+            map.fitBounds(PROVINCE_BOUNDS, { animate: false });
         }
 
         return () => {
