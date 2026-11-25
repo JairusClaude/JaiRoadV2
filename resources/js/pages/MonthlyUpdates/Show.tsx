@@ -58,7 +58,8 @@ export default function Show({
                             <p>Update ID: {update.id}</p>
                         </div>
                         <div className="jr-header-actions">
-                            <Button
+                            {canEdit && (
+<Button
                                 variant="outline"
                                 disabled={!canEdit}
                                 onClick={() =>
@@ -74,13 +75,16 @@ export default function Show({
                             >
                                 <Pencil /> Edit Update
                             </Button>
-                            <Button
+)}
+                            {preview || Boolean(update.delete_url) && (
+<Button
                                 className="jr-danger"
                                 disabled={!preview}
                                 onClick={() => deletion.open([update])}
                             >
                                 <Trash2 /> Delete Update
                             </Button>
+)}
                         </div>
                     </div>
                     <section
