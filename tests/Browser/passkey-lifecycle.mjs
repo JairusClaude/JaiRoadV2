@@ -412,6 +412,21 @@ try {
         'PASS: signed wrong-origin assertion and foreign credential confirmation rejected; legacy-only login denied.',
     );
 
+    // A confirmed account can remove its own passkey. That credential no
+    // longer establishes a session, and password sign-in remains available.
+    const [{ id: removedId }] = JSON.parse(keyIds);
+    const removal = await request(page, `/user/passkeys/${removedId}`, {}, 'DELETE');
+    assert.equal(removal.status, 200);
+    assert.equal(removal.body.status, 'passkey-deleted');
+    assert.deepEqual(JSON.parse(state(user, 'snapshot')), []);
+    await request(page, '/logout', {});
+    await page.goto(base + '/login');
+    const removedCredential = await assertion(page);
+    assert.equal((await request(page, '/passkeys/login', { credential: removedCredential })).status, 422);
+    await guest(page);
+    assert.equal((await request(page, '/login', { email: user.email, password })).status, 200);
+    console.log('PASS: removing a passkey revokes the credential and preserves password sign-in.');
+
     // Exercise the real remember-me cookie, with the session cookie removed.
     const adminSession = sessions.find((s) => s.user.role === 'Admin');
     await adminSession.page.goto(base + '/login');
