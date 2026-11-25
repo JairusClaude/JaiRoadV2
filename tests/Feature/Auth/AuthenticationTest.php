@@ -10,7 +10,7 @@ use Laravel\Fortify\Features;
 test('login screen can be rendered', function () {
     $response = $this->get(route('login'));
 
-    $response->assertOk()->assertInertia(fn (Assert $page) => $page->component('auth/login')->has('passkeyReady'));
+    $response->assertOk()->assertInertia(fn (Assert $page) => $page->component('auth/login')->missing('passkeyReady'));
 });
 
 test('HTTPS public origin preserves client-side login and canonical workspace redirects', function () {
@@ -72,6 +72,14 @@ test('users with two factor enabled are redirected to two factor challenge', fun
     $response->assertRedirect(route('two-factor.login'));
     $response->assertSessionHas('login.id', $user->id);
     $this->assertGuest();
+});
+
+test('Inertia login starts a fresh authenticated document', function () {
+    $user = $this->canonicalUser(User::factory()->create());
+    $this->withHeader('X-Inertia', 'true')->post('/login', [
+        'email' => $user->email, 'password' => 'password',
+    ])->assertStatus(409)->assertHeader('X-Inertia-Location', url('/dashboard'));
+    $this->assertAuthenticatedAs($user);
 });
 
 test('users can not authenticate with invalid password', function () {
