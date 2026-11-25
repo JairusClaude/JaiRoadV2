@@ -1,3 +1,4 @@
+import { manilaDate } from '@/lib/manila-time';
 import {
     Check,
     ChevronLeft,
@@ -25,7 +26,7 @@ import type { FormEvent, ReactNode } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { requestOperation } from '@/pages/dd-phase3/requests';
 /**
- * UI label: Project Documents. Data-dictionary entity: MaintenanceDocument.
+ * UI label: Maintenance Documents. Data-dictionary entity: MaintenanceDocument.
  * Its parent is ALWAYS MaintenanceRecord, not MaintenanceProject.
  * This screen is a read-only backend preview with optional in-memory drafts.
  */
@@ -70,19 +71,7 @@ function fileExtension(name: string) {
         : '';
 }
 function prettyDate(value: string | null) {
-    if (!value) {
-        return 'Not recorded';
-    }
-
-    const date = new Date(value.replace(' ', 'T'));
-
-    return Number.isNaN(date.getTime())
-        ? value
-        : new Intl.DateTimeFormat('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-          }).format(date);
+    return value ? manilaDate(value) : 'Not recorded';
 }
 function FileIcon({ name }: { name: string }) {
     const extension = fileExtension(name);
@@ -354,7 +343,7 @@ export default function DdDocuments({
             {removalReview}
             <div className="jr-page-head">
                 <div>
-                    <h1>Project Documents</h1>
+                    <h1>Maintenance Documents</h1>
                     <p>
                         Manage formal documents associated with maintenance
                         records.
