@@ -63,6 +63,9 @@ return [
 
     'asset_url' => env('ASSET_URL'),
 
+    // Production uses internal recovery; retain the legacy mail path in local tests.
+    'email_password_recovery' => (bool) env('JAIROADS_EMAIL_PASSWORD_RECOVERY', env('APP_ENV', 'production') === 'testing'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone
