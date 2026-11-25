@@ -1,4 +1,0 @@
-{
-  "errors": [],
-  "title": "Add Road Coverage - Laravel"
-}

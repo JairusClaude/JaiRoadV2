@@ -1,5 +1,7 @@
 # Corrected JaiROADS frontend login preview
 
+This report records the earlier standalone login preview. Its review artifacts are available in Git history. The current Node preview entry point is `npm run preview:maintenance-projects`.
+
 ## Authoritative source and result
 
 This revision rebuilds the preview from `source/` in the corrected attachment, `JaiROADS_Road_Coverage_Details_Review (1)(1).zip` (SHA-256 `55e631ca9971e50e11d9bd4a3d9d1f0fddbbf7b9933918b6ebb90dfc595c5f72`). It replaces the earlier Map First Review base. The newer Road Coverage Details page, map preview, directory navigation, editor return behavior, permission checks, and all other application pages come from the corrected ZIP.
@@ -12,15 +14,14 @@ The existing destination branch is updated with a new commit: `feature/frontend-
 
 - `resources/js/pages/auth/login.tsx`: imported photographic login/slideshow, explicit preview credentials, invalid-email retention, no registration UI, unavailable recovery/passkey notice.
 - `resources/css/jairoads-login.css`, `public/images/jairoads/road-rehabilitation.jpg`: login design assets.
-- `resources/js/app.tsx`: full-page login layout and preview-session initialization.
-- `resources/js/lib/preview-session.ts`: preview-only checks on browser Back, page restoration, and focus.
+- `resources/js/app.tsx`: full-page login layout. The earlier preview-only session initializer was disconnected after integration and has since been removed.
 - `resources/js/layouts/maintenance-project-layout.tsx`: demo sign-out action; preserves the corrected ZIP's Details breadcrumb and layout.
 - `tools/maintenance-project-preview/server.mjs`: isolated demo login/logout/session guard, session-derived users, local login image, history clearing, and protected pages/downloads. Preserves the corrected Details route and its shared permission check. Formatting was normalized in this touched file.
-- `README.md`, `review/VIEW-AND-RESTORE.txt`, this report: corrected-source identity and Node-only Windows instructions.
+- The original package launch instructions and this report: corrected-source identity and Node-only Windows instructions.
 - `public/build/`: rebuilt assets for first launch without installing dependencies.
-- `preview-review/`: current browser results, screenshots, and source-preservation hashes.
+- The archived `preview-review/` directory contained the original browser results, screenshots, and source-preservation hashes.
 
-Only six existing files changed beyond generated build assets: README, review launch instructions, app entry, login page, application layout, and preview server. All other packaged originals are byte-identical to the corrected ZIP, including PHP files, authentication configuration, migrations, models, package manifests, Road Coverage Details/map components, the full map editor, geometry utilities, and application pages. `preview-review/source-preservation.json` records the exact comparison and SHA-256 hashes. Historical screenshots and restoration backups containing obsolete generated builds were omitted; they do not participate in the running application.
+Only six existing files changed beyond generated build assets: README, review launch instructions, app entry, login page, application layout, and preview server. All other packaged originals are byte-identical to the corrected ZIP, including PHP files, authentication configuration, migrations, models, package manifests, Road Coverage Details/map components, the full map editor, geometry utilities, and application pages. The archived `preview-review/source-preservation.json` records the exact comparison and SHA-256 hashes. Historical screenshots and restoration backups containing obsolete generated builds were omitted; they do not participate in the running application.
 
 ## Verification
 

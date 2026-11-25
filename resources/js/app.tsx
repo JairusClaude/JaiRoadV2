@@ -18,8 +18,6 @@ createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         switch (true) {
-            case name === 'welcome':
-                return null;
             case name === 'auth/login':
             case name === 'auth/forgot-password':
             case name === 'auth/reset-password':

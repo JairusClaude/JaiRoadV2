@@ -28,7 +28,7 @@ pgAudit's documented fields include statement/object information and optionally 
 | `JaiRoadsNotificationsController` → `dd-notification-bell.tsx`, `/jairoads/notifications` | Reads canonical or legacy history according to the explicitly verified identity; returns only safe recipient fields. |
 | Legacy role/SuperAdmin dashboards                                                         | Separate `public.audit_logs` notification/activity readers. They must not be redirected to canonical data.           |
 
-`AuditLogController` has legacy index/show/feed methods, but this source's active route list does not register its audit-history routes and its referenced AuditLogs React pages are absent. A complete administrative history page is an existing gap, not a replacement implemented here.
+`AuditLogPageController` serves the audit index and `AuditHistoryController` serves the canonical history page. `JaiRoadsNotificationsController` serves the per-account feed. The unregistered legacy `AuditLogController` was removed after all consumers were checked.
 
 Disabling only writes would freeze these histories, counts and notifications while leaving old rows visible. Dropping/removing their store would break queries. Existing mutation transactions deliberately depend on audit insertion; removing that step changes their accountability guarantee. Supabase logs are not a compatible API/feed for these pages. Notifications have no independent table or delivery backend in the approved design.
 
@@ -38,7 +38,7 @@ Disabling only writes would freeze these histories, counts and notifications whi
 2. If AuditLog is removed from the logical design, revise the entity inventory/ERD from 11 to 10 only if no replacement business entity is introduced. Retire all AuditLog fields/relationships from the active contract: AuditLogID, UserID, ActorIdentifier, Action, EntityType, EntityID, Description, OldValue, NewValue, RecipientUserID, NotificationMessage and CreatedAt. Physical historical tables must be retained pending a separately approved archive/retention plan.
 3. Rewrite audit logging, actor attribution, successful-change/rollback, append-only/permanence, Admin/SuperAdmin history access and deferred authentication-event rules to describe the chosen external mechanism and any accepted loss of guarantees.
 4. Explicitly retain, replace or retire personal notifications, their one-recipient policy and safe-read contract. Removing AuditLog without a separate approved notification design removes current notifications; this task does not authorize another Notification entity.
-5. Update Page Specifications and acceptance tests for all dependent readers above, including the existing missing full-history page. Approve retention, ordering, export/restore, access control and secret exclusions rather than assuming dashboard logs provide permanent application history.
+5. Update Page Specifications and acceptance tests for all dependent readers above, including the canonical audit-history page. Approve retention, ordering, export/restore, access control and secret exclusions rather than assuming dashboard logs provide permanent application history.
 
 ## Required approval and proof before migration
 
