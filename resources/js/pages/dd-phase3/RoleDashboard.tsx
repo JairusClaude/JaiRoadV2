@@ -11,7 +11,7 @@ import {
     Route,
     Users,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { DdDashboardAnalytics } from '@/components/dd-dashboard-analytics';
 import type { DdDashboardSummary } from '@/components/dd-dashboard-analytics';
@@ -65,7 +65,7 @@ function DashboardRoadMap({
     const [cursor, setCursor] = useState(initialCursor);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const coverages = [...initialCoverages, ...additional];
+    const coverages = useMemo(() => [...initialCoverages, ...additional], [initialCoverages, additional]);
 
     const loadMore = async () => {
         if (cursor === null || loading) {
