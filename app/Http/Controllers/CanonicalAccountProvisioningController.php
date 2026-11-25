@@ -28,24 +28,25 @@ final class CanonicalAccountProvisioningController extends Controller
     {
         $actor = $this->admin($request, $resolver);
         $allowed = ['Admin', 'Engineer', 'Viewer'];
+        $needsProfile = in_array($request->input('account_type'), ['Admin', 'Engineer'], true);
         $v = $request->validate([
             'username' => ['required', 'string', 'min:3', 'max:100', 'regex:/\A[a-zA-Z0-9_.-]+\z/'],
             'email' => ['required', 'email:rfc', 'max:255'],
             'name' => ['required', 'string', 'max:255'],
             'account_type' => ['required', Rule::in($allowed)],
-            'engineer_id' => ['nullable', 'required_without:profile', 'integer', 'min:1', 'prohibits:profile'],
-            'profile' => ['nullable', 'required_without:engineer_id', 'array:first_name,middle_name,last_name,contact_no,rank'],
-            'profile.first_name' => ['required_with:profile', 'string', 'max:100'],
+            'engineer_id' => ['prohibited'],
+            'profile' => [Rule::requiredIf($needsProfile), Rule::prohibitedIf(! $needsProfile), 'array:first_name,middle_name,last_name,contact_no,rank'],
+            'profile.first_name' => [Rule::requiredIf($needsProfile), 'string', 'max:100'],
             'profile.middle_name' => ['nullable', 'string', 'max:100'],
-            'profile.last_name' => ['required_with:profile', 'string', 'max:100'],
-            'profile.contact_no' => ['required_with:profile', 'string', 'max:30'],
-            'profile.rank' => ['required_with:profile', 'string', 'max:100'],
+            'profile.last_name' => [Rule::requiredIf($needsProfile), 'string', 'max:100'],
+            'profile.contact_no' => [Rule::requiredIf($needsProfile), 'string', 'max:30'],
+            'profile.rank' => [Rule::requiredIf($needsProfile), 'string', 'max:100'],
             'password' => ['required', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()],
         ]);
         $username = strtolower(trim((string) $v['username']));
         $email = strtolower(trim((string) $v['email']));
         $role = $v['account_type'];
-        $engineerId = ! empty($v['engineer_id']) ? (int) $v['engineer_id'] : null;
+        $engineerId = null;
         try {
             DB::transaction(function () use ($request, $resolver, $actor, $v, $username, $email, $role, $engineerId): void {
                 DB::select('SELECT pg_advisory_xact_lock_shared(1927710916)');
@@ -60,20 +61,14 @@ final class CanonicalAccountProvisioningController extends Controller
                     throw ValidationException::withMessages(['username' => 'Username already exists.']);
                 }
                 // New profile and both account identities commit or roll back together.
-                // All account types retain the canonical active-profile requirement.
-                if ($engineerId === null) {
+                // Only Admin and Engineer accounts receive a newly created active profile.
+                if ($role !== 'Viewer') {
                     $profile = $v['profile'];
                     $profile['engineer_status'] = 'Active';
                     $engineerId = (int) DB::table('jairoads_next.engineers')->insertGetId($profile);
                     $this->audit($actor, 'CREATE', 'Engineer', $engineerId, 'Authorized administrator created an Engineer during account provisioning.', [
                         'engineer_id' => $engineerId, 'engineer_status' => 'Active',
                     ]);
-                } else {
-                    $engineer = DB::table('jairoads_next.engineers')->where('id', $engineerId)->lockForUpdate()->first(['engineer_status']);
-                    if (! $engineer || (string) $engineer->engineer_status !== 'Active'
-                        || DB::table('jairoads_next.user_accounts')->where('engineer_id', $engineerId)->exists()) {
-                        throw ValidationException::withMessages(['engineer_id' => 'Engineer is retired, missing or already linked to an account.']);
-                    }
                 }
                 $hashed = Hash::make((string) $v['password']);
                 $ddId = (int) DB::table('jairoads_next.user_accounts')->insertGetId([
