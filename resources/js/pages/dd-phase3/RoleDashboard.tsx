@@ -332,7 +332,9 @@ export default function RoleDashboard({
                         )}
                     </section>
 
-                    <DashboardRoadMap key={role + ':' + (engineer?.id ?? username)} isEngineer={isEngineer} total={stats.roadCoverages} />
+                    {isEngineer && (
+                        <DashboardRoadMap key={role + ':' + (engineer?.id ?? username)} isEngineer={isEngineer} total={stats.roadCoverages} />
+                    )}
 
                     <DdDashboardAnalytics
                         data={analytics}
