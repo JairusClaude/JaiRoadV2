@@ -34,9 +34,9 @@
     }
 }
 .jr-app .jr-alternative-submenu-transition {
-    transition-duration: var(--jr-motion-normal);
-    transition-timing-function: var(--jr-motion-layout);
+    transition: grid-template-rows var(--jr-motion-normal) var(--jr-motion-layout), visibility 0s var(--jr-motion-normal);
 }
+.jr-app .jr-alternative-submenu-transition[data-open='true'] { transition-delay: 0s; }
 .jr-app .jr-alternative-chevron svg {
     transition: transform var(--jr-motion-normal) var(--jr-motion-in);
 }
