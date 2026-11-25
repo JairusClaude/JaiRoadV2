@@ -377,17 +377,20 @@ throw new Error('Wave transform is static');
     await relationship.selectOption('both');
     assert.equal(await dashboardMap.locator('.jr-dashboard-road-other, .jr-dashboard-road-created, .jr-dashboard-road-assigned').count(), 0);
     await relationship.selectOption('all');
-    await viewer.goto(base + '/dd-phase3/dashboard');
-    const viewerMap = viewer.getByRole('region', { name: 'Viewer road coverage map' });
-    await viewerMap.waitFor();
-    await viewerMap.locator('.jr-directory-road-line').first().waitFor();
-    assert.equal(await viewerMap.getByRole('switch', { name: 'My projects only' }).count(), 0);
-    assert.equal(await viewerMap.locator('.jr-dashboard-road-mine').count(), 0);
-    await viewerMap.getByRole('combobox', { name: 'Inspect a road' }).selectOption({ index: 1 });
-    const viewerRoadDetails = viewerMap.getByRole('complementary', { name: 'Road details' });
-    await viewerRoadDetails.getByRole('heading', { name: 'Maintenance project', exact: true }).waitFor();
-    assert.equal(await viewerRoadDetails.locator('[data-relationship]').count(), 0);
-    await viewerRoadDetails.getByRole('button', { name: 'Close road details' }).click();
+    const viewerMapRequests = [];
+    const recordViewerMapRequest = request => {
+        if (new URL(request.url()).pathname === '/dd-phase3/dashboard/map-roads') viewerMapRequests.push(request.url());
+    };
+    viewer.on('request', recordViewerMapRequest);
+    try {
+        await viewer.goto(base + '/dd-phase3/dashboard');
+        await viewer.getByRole('heading', { name: 'Road Maintenance Overview' }).waitFor();
+        assert.equal(await viewer.getByRole('region', { name: /Viewer road coverage map|My projects road map/ }).count(), 0);
+        assert.equal(await viewer.locator('.jr-road-map-panel').count(), 0);
+        assert.equal(viewerMapRequests.length, 0);
+    } finally {
+        viewer.off('request', recordViewerMapRequest);
+    }
 
     await verifyRoleAcceptanceMatrix({
         browser,
