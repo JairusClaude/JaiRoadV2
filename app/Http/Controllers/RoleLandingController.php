@@ -20,13 +20,13 @@ use Inertia\Response;
  */
 final class RoleLandingController extends Controller
 {
-    /** Read-only, on-demand summary for the Engineer dashboard map. */
+    /** Read-only, on-demand summary for Engineer and Viewer dashboard maps. */
     public function roadDetails(Request $request, AccountIdentityResolver $resolver, int $road): JsonResponse
     {
         $user = $request->user();
         abort_unless($user instanceof User && $user->getAttribute('dd_user_account_id') !== null, 403);
         $actor = $resolver->resolve($user);
-        abort_unless($actor !== null && $actor['role'] === 'Engineer' && $actor['engineer_id'] !== null, 403);
+        abort_unless($actor !== null && ($actor['role'] === 'Viewer' || ($actor['role'] === 'Engineer' && $actor['engineer_id'] !== null)), 403);
 
         // Same cross-municipality read access as the canonical road/project pages.
         $coverage = DB::table('jairoads_next.road_coverages as rc')
@@ -34,7 +34,7 @@ final class RoleLandingController extends Controller
             ->leftJoin('jairoads_next.maintenance_projects as p', 'p.road_coverage_id', '=', 'rc.id')
             ->where('rc.id', $road)
             ->first(['rc.id', 'rc.road_name', 'rc.kilometers', 'rc.pavement_type', 'rc.state_category',
-                'l.municipality_name', 'p.id as project_id', 'p.project_title']);
+                'l.municipality_name', 'p.id as project_id', 'p.project_title', 'p.created_by as project_creator']);
         abort_unless($coverage !== null, 404);
 
         $project = null;
@@ -51,10 +51,15 @@ final class RoleLandingController extends Controller
                 ->first(['u.id', 'u.update_month', 'u.progress_percentage']);
             $latestDocument = (clone $documents)->orderByDesc('d.uploaded_at')->orderByDesc('d.id')
                 ->first(['d.id', 'd.document_title', 'd.uploaded_at']);
+            $createdByMe = $actor['role'] === 'Engineer' && (int) $coverage->project_creator === $actor['account_id'];
+            $myRecordCount = $actor['role'] === 'Engineer' ? (clone $records)->where('m.managing_engineer_id', $actor['engineer_id'])->count() : 0;
             $project = [
                 'id' => $projectId,
                 'title' => $coverage->project_title,
-                'my_project' => (clone $records)->where('m.managing_engineer_id', $actor['engineer_id'])->exists(),
+                'my_project' => $createdByMe || $myRecordCount > 0,
+                'created_by_me' => $createdByMe,
+                'assigned_to_me' => $myRecordCount > 0,
+                'my_record_count' => $myRecordCount,
                 'record_count' => (clone $records)->count(),
                 'recent_records' => (clone $records)
                     ->leftJoin('jairoads_next.engineers as e', 'e.id', '=', 'm.managing_engineer_id')
@@ -88,29 +93,31 @@ final class RoleLandingController extends Controller
         ])->header('Cache-Control', 'private, no-store');
     }
 
-    /** Engineer-only continuation endpoint for dashboard road geometries. */
+    /** Read-only continuation endpoint for both dashboard roles. */
     public function roadMapPage(Request $request, AccountIdentityResolver $resolver): JsonResponse
     {
         $user = $request->user();
         abort_unless($user instanceof User && $user->getAttribute('dd_user_account_id') !== null, 403);
         $actor = $resolver->resolve($user);
-        abort_unless($actor !== null && $actor['role'] === 'Engineer' && $actor['engineer_id'] !== null, 403);
+        abort_unless($actor !== null && ($actor['role'] === 'Viewer' || ($actor['role'] === 'Engineer' && $actor['engineer_id'] !== null)), 403);
         $validated = $request->validate(['before' => ['required', 'integer', 'min:1']]);
 
-        return response()->json($this->roadMapBatch((int) $actor['engineer_id'], (int) $validated['before']))
+        return response()->json($this->roadMapBatch($actor, (int) $validated['before']))
             ->header('Cache-Control', 'private, no-store');
     }
 
     /** @return array{data:list<array<string,mixed>>,next_cursor:?int} */
-    private function roadMapBatch(int $engineerId, ?int $before = null): array
+    private function roadMapBatch(array $actor, ?int $before = null): array
     {
+        $engineerId = $actor['role'] === 'Engineer' ? $actor['engineer_id'] : null;
+        $accountId = $actor['role'] === 'Engineer' ? $actor['account_id'] : null;
         $query = DB::table('jairoads_next.road_coverages as rc')
             ->join('jairoads_next.lgus as l', 'l.id', '=', 'rc.lgu_id')
             ->leftJoin('jairoads_next.maintenance_projects as p', 'p.road_coverage_id', '=', 'rc.id')
-            ->select(['rc.id', 'rc.road_name', 'rc.geojson', 'l.municipality_name', 'p.id as project_id', 'p.project_title'])
+            ->select(['rc.id', 'rc.road_name', 'rc.geojson', 'l.municipality_name', 'p.id as project_id', 'p.project_title', 'p.created_by as project_creator'])
             ->selectSub(DB::table('jairoads_next.maintenance_records as mr')
                 ->selectRaw('count(*)')->whereColumn('mr.project_id', 'p.id')
-                ->where('mr.managing_engineer_id', $engineerId), 'my_record_count');
+                ->whereNotNull('mr.managing_engineer_id')->where('mr.managing_engineer_id', $engineerId), 'my_record_count');
         if ($before !== null) {
             $query->where('rc.id', '<', $before);
         }
@@ -126,7 +133,9 @@ final class RoleLandingController extends Controller
                 'assigned' => $road->project_id !== null,
                 'project_id' => $road->project_id === null ? null : (int) $road->project_id,
                 'project_title' => $road->project_title,
-                'my_project' => (int) $road->my_record_count > 0,
+                'my_project' => ($accountId !== null && (int) $road->project_creator === $accountId) || (int) $road->my_record_count > 0,
+                'created_by_me' => $accountId !== null && (int) $road->project_creator === $accountId,
+                'assigned_to_me' => (int) $road->my_record_count > 0,
                 'my_record_count' => (int) $road->my_record_count,
             ])->values()->all()),
             'next_cursor' => $rows->count() > 100 ? (int) $page->last()->id : null,
@@ -180,14 +189,6 @@ final class RoleLandingController extends Controller
             $stats['roadCoverages'] = (int) DB::table('jairoads_next.road_coverages')->count();
             $stats['projects'] = (int) DB::table('jairoads_next.maintenance_projects')->count();
 
-            // All visible road coverages, including roads with no project. A road
-            // is "mine" only if its linked project has a record managed by this
-            // authenticated Engineer. Counting via a correlated subquery avoids
-            // duplicating roads with multiple quarterly records.
-            $mapPage = $this->roadMapBatch($id);
-            $mapCoverages = $mapPage['data'];
-            $mapNextCursor = $mapPage['next_cursor'];
-
             // Dashboard lists own managed records across municipalities.
             $scope = DB::table('jairoads_next.maintenance_records as mr')
                 ->join('jairoads_next.maintenance_projects as p', 'p.id', '=', 'mr.project_id')
@@ -217,6 +218,12 @@ final class RoleLandingController extends Controller
                     'period' => '', 'status' => '', 'inActiveLgu' => false,
                 ])->all();
         }
+
+        // Creator account and managing Engineer are distinct foreign keys.
+        // Viewers receive the same inventory, with no personalized relationship flags.
+        $mapPage = $this->roadMapBatch($actor);
+        $mapCoverages = $mapPage['data'];
+        $mapNextCursor = $mapPage['next_cursor'];
 
         $notifications = array_map(static fn (array $n): array => ['id' => $n['id'], 'message' => $n['notification_message'], 'createdAt' => $n['created_at']], app(ActivityNotifications::class)->feed($actor['account_id'], 8));
 
