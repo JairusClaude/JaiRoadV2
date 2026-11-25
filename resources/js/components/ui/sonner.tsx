@@ -11,8 +11,10 @@ function Toaster({ ...props }: ToasterProps) {
         <Sonner
             theme={appearance}
             className="toaster group"
-            position="top-right"
-            duration={4500}
+            position="top-center"
+            duration={3000}
+            offset={76}
+            mobileOffset={64}
             closeButton
             richColors
             style={
