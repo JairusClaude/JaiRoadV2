@@ -57,6 +57,7 @@ export function ProjectDirectory({
     busy = false,
 }: DirectoryProps) {
     const page = usePage();
+    const isViewer = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role?.toLowerCase() === 'viewer';
     const [search, setSearch] = useState(filters.search);
     const [selecting, setSelecting] = useState(false);
     const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -110,7 +111,7 @@ export function ProjectDirectory({
                     <h1>Maintenance Projects</h1>
                     <p>Browse and manage road maintenance projects.</p>
                 </div>
-                {canCreate && (
+                {!isViewer && canCreate && (
 <Button
                     className="jr-primary"
                     disabled={integration.ready && !canCreate}
@@ -215,7 +216,7 @@ export function ProjectDirectory({
                 total={projects.total}
                 singular="project"
                 plural="projects"
-                canDelete={canBulkDelete}
+                canDelete={!isViewer && canBulkDelete}
                 disabled={!integration.ready || busy}
                 onSelect={() => setSelecting(true)}
                 onCancel={() => {
@@ -366,7 +367,7 @@ export function ProjectDirectory({
                                     className="text-right"
                                     onClick={(event) => event.stopPropagation()}
                                 >
-                                    {!selecting && (project.can_edit || project.can_delete) && (
+                                    {!isViewer && !selecting && (project.can_edit || project.can_delete) && (
                                         <ProjectActions
                                             project={project}
                                             onEdit={() =>
