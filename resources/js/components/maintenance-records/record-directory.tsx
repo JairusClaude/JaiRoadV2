@@ -198,26 +198,26 @@ export function RecordDirectory({
                 >
                     <MetricCard
                         title="Total Projects"
-                            icon={<FolderKanban className="size-5" />}
+                        icon={<FolderKanban className="size-5" />}
                         value={displayedTotalProjects}
                         subtitle="Active maintenance projects"
                         highlight={true}
                     />
                     <MetricCard
                         title="Total Records"
-                            icon={<ClipboardList className="size-5" />}
+                        icon={<ClipboardList className="size-5" />}
                         value={displayedTotalRecords}
                         subtitle="Quarterly maintenance records"
                     />
                     <MetricCard
                         title="Completed Records"
-                            icon={<ClipboardCheck className="size-5" />}
+                        icon={<ClipboardCheck className="size-5" />}
                         value={displayedCompletedRoads}
                         subtitle="Completed maintenance"
                     />
                     <MetricCard
                         title="Ongoing Records"
-                            icon={<Clock className="size-5" />}
+                        icon={<Clock className="size-5" />}
                         value={displayedOngoingRoads}
                         subtitle="In progress or scheduled"
                     />
