@@ -712,7 +712,7 @@ export default function Operations({
                                         type="button"
                                         aria-pressed={appearance === mode}
                                         onClick={() => updateAppearance(mode)}
-                                        className={`rounded-xl border px-5 py-4 text-left text-sm font-semibold capitalize transition focus-visible:outline-2 focus-visible:outline-offset-2 ${isAdmin ? 'focus-visible:outline-[#C8293D]' : isEngineer ? 'focus-visible:outline-[#A94B0C]' : isViewer ? 'focus-visible:outline-[#1D5DB5]' : 'focus-visible:outline-[#51269B]'} ${
+                                        className={`jr-appearance-choice rounded-xl border px-5 py-4 text-left text-sm font-semibold capitalize transition focus-visible:outline-2 focus-visible:outline-offset-2 ${isAdmin ? 'focus-visible:outline-[#C8293D]' : isEngineer ? 'focus-visible:outline-[#A94B0C]' : isViewer ? 'focus-visible:outline-[#1D5DB5]' : 'focus-visible:outline-[#51269B]'} ${
                                             appearance === mode
                                                 ? isAdmin
                                                     ? 'border-[#C8293D] bg-[#FDE7EA] text-[#C8293D] shadow-xs'
