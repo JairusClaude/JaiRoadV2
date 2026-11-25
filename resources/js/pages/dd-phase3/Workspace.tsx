@@ -165,7 +165,7 @@ export default function DdPhase3Workspace({
                         mayorMiddle: true,
                         mayorLast: true,
                     }}
-                    canCreate={canManage}
+                    canCreate={identity.role !== 'Viewer' && canManage}
                 />
             </>
         );
