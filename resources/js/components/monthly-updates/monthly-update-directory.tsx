@@ -1,3 +1,4 @@
+import { manilaDate } from '@/lib/manila-time';
 import { usePage } from '@inertiajs/react';
 import {
     CalendarDays,
@@ -35,11 +36,7 @@ import type {
 } from '@/types/monthly-updates';
 
 export { updateMonth } from '@/lib/monthly-updates';
-const modifiedDate = (value: string) =>
-    new Intl.DateTimeFormat('en-PH', {
-        dateStyle: 'medium',
-        timeZone: 'UTC',
-    }).format(new Date(value));
+const modifiedDate = manilaDate;
 
 export type MonthlyDirectoryProps = {
     totalReports?: number;
