@@ -94,8 +94,8 @@ html.dark .jr-dd-settings button[aria-pressed='false']:hover {
 }
 html.dark .jr-dd-settings button[aria-pressed='true'] {
     color: var(--jr-dark-selection-text, #c4b5fd) !important;
-    background-color: var(--jr-dark-selection-bg, #432868) !important;
-    border-color: var(--jr-dark-selection-text, #c4b5fd) !important;
+    background-color: #29374d !important;
+    border-color: var(--jr-role-accent, #51269b) !important;
 }
 html.dark body:has(.jr-superadmin-workspace) .jr-dd-settings {
     --jr-dark-selection-text: #c4b5fd;
@@ -172,4 +172,9 @@ html.dark .jr-app.jr-theme:has(.jr-settings) {
     --color-border: var(--border);
     --color-input: var(--input);
     color-scheme: dark;
+}
+
+html.dark .jr-dd-settings .jr-appearance-choice[aria-pressed='true'] {
+    background-color: var(--jr-dark-selection-bg, #432868) !important;
+    border-color: var(--jr-dark-selection-text, #c4b5fd) !important;
 }
