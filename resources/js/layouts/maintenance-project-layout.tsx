@@ -417,7 +417,7 @@ export function MaintenanceProjectShell({
                         </strong>
                     </div>
                     <div className="jr-top-actions">
-                        {canonical ? (
+                        {viewerTheme ? null : canonical ? (
                             <DdNotificationBell />
                         ) : (
                             <button
