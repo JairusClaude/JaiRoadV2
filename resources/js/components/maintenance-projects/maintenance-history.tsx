@@ -39,6 +39,7 @@ export function MaintenanceHistory({
     expandedYear?: number;
 }) {
     const page = usePage();
+    const isViewer = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role?.toLowerCase() === 'viewer';
     const deletion = useRecordDeletion(page.url);
     const years = [...new Set(records.map((record) => record.year))].sort(
         (a, b) => b - a,
@@ -52,6 +53,7 @@ export function MaintenanceHistory({
                         <h2>Maintenance History</h2>
                         <p>Records grouped by year and quarter</p>
                     </div>
+                    {!isViewer && Boolean(recordCreateUrl) && (
                     <Button
                         type="button"
                         className="jr-primary"
@@ -69,6 +71,7 @@ export function MaintenanceHistory({
                     >
                         <Plus /> Add Record
                     </Button>
+                    )}
                 </div>
                 {records.length === 0 ? (
                     <div className="jr-history-empty">
