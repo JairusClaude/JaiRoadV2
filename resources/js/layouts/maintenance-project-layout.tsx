@@ -102,7 +102,7 @@ export function MaintenanceProjectShell({
         if (operationPage && typeof status === 'string' && status) {
             toast.success(status, {
                 id: 'jr-operation-status',
-                duration: 4500,
+                duration: 3000,
             });
         }
     }, [page, operationPage, preview]);
