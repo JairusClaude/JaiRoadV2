@@ -1,5 +1,13 @@
 import { usePage } from '@inertiajs/react';
-import { MoreHorizontal, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import {
+    CalendarDays,
+    ClipboardList,
+    MoreHorizontal,
+    Pencil,
+    Plus,
+    Search,
+    Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
 import {
     DirectoryFilter,
@@ -156,12 +164,14 @@ export function MonthlyUpdateDirectory({
                     >
                         <MetricCard
                             title="Total Monthly Reports"
+                            icon={<ClipboardList className="size-5" />}
                             value={displayedTotalReports}
                             subtitle="Submitted progress reports"
                             highlight={true}
                         />
                         <MetricCard
                             title="Reports this Month"
+                            icon={<CalendarDays className="size-5" />}
                             value={displayedReportsThisMonth}
                             subtitle="For current reporting period"
                         />
