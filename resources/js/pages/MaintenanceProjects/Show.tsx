@@ -1,3 +1,4 @@
+import { manilaTimestamp } from '@/lib/manila-time';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 import { MaintenanceHistory } from '@/components/maintenance-projects/maintenance-history';
@@ -14,13 +15,7 @@ import type { ProjectSummary } from '@/types/maintenance-projects';
 import type { MaintenanceRecordSummary } from '@/types/maintenance-records';
 import '../../../css/maintenance-project-details.css';
 
-const date = (value: string | null) =>
-    value
-        ? new Intl.DateTimeFormat('en-PH', {
-              dateStyle: 'medium',
-              timeStyle: 'short',
-          }).format(new Date(value))
-        : 'Unavailable';
+const date = manilaTimestamp;
 
 export default function Show({
     project,
