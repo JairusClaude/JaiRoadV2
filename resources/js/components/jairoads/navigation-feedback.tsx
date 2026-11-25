@@ -1,5 +1,6 @@
 import { router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import '../../../css/jairoads-navigation-ux.css';
 
 // Presentation only: the role comes from the authenticated destination's server props.
@@ -120,15 +121,16 @@ export function JaiRoadsNavigationFeedback() {
             slowRef.current = null;
             verySlowRef.current = null;
         };
-        const start = () => {
+        const start = (pageNavigation: boolean) => {
             clearTimers();
             pending = true;
             setMessage('hidden');
-            delayRef.current = setTimeout(() => {
-                if (pending) {
-                    setMessage('loading');
-                }
-            }, 220);
+            // Avoid flicker on fast visits and redundant indicators on local form actions.
+            if (pageNavigation) {
+                delayRef.current = setTimeout(() => {
+                    if (pending) setMessage('loading');
+                }, 350);
+            }
             slowRef.current = setTimeout(() => {
                 if (pending) {
                     setMessage('slow');
@@ -152,7 +154,8 @@ export function JaiRoadsNavigationFeedback() {
             const path = window.location.pathname.replace(/\/$/, '');
             authAttempt = (path === '/login') &&
                 event.detail.visit.method.toLowerCase() === 'post';
-            start();
+            const target = event.detail.visit.url.pathname.replace(/\/$/, '') || '/';
+            start(event.detail.visit.method.toLowerCase() === 'get' && target !== (path || '/'));
         });
         const offNavigate = router.on('navigate', (event) => {
             const nextPath = new URL(event.detail.page.url, window.location.origin).pathname.replace(/\/$/, '') || '/';
@@ -182,33 +185,26 @@ export function JaiRoadsNavigationFeedback() {
         };
     }, []);
 
-    if (message === 'hidden') {
-        return null;
-    }
+    if (message === 'hidden') return null;
 
-    return (
-        <div
-            className="jr-loading-layer"
-            role="status"
-            aria-live="polite"
-            aria-atomic="true"
-        >
-            <div className="jr-loading-track" aria-hidden="true">
-                <div className="jr-loading-track-stripe" />
-            </div>
-            {message === 'loading' && <span className="sr-only">Loading…</span>}
-            {message !== 'loading' && <div className="jr-loading-notice">
-                <span className="jr-loading-road" aria-hidden="true">
-                    <span />
-                </span>
-                <span>
-                    {message === 'very-slow'
-                        ? 'Still waiting for the server. Navigation has not finished.'
-                        : message === 'slow'
-                          ? 'Still loading… the server is taking longer than usual.'
-                          : 'Opening JaiROADS page…'}
-                </span>
-            </div>}
-        </div>
+    const slot = document.querySelector('[data-jr-navigation-status]');
+    const label = message === 'loading'
+        ? 'Opening page…'
+        : message === 'slow'
+          ? 'Still loading…'
+          : 'Waiting for server…';
+    const announcement = message === 'very-slow'
+        ? 'Still waiting for the server. You can continue navigating.'
+        : label;
+    const indicator = (
+        <span className={`jr-navigation-status${slot ? '' : ' jr-navigation-status-fallback'}`} role="status" aria-live="polite" aria-atomic="true" title={announcement}>
+            <span className="jr-navigation-status-dot" aria-hidden="true" />
+            <span className="jr-navigation-status-label" aria-hidden="true">{label}</span>
+            <span className="sr-only">{announcement}</span>
+        </span>
     );
+
+    // Keep feedback in the existing workspace header, never on the browser edge.
+    // Outside a workspace, local form controls handle short waits.
+    return slot ? createPortal(indicator, slot) : message === 'loading' ? null : indicator;
 }
