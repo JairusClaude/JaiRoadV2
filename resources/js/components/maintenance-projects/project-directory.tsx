@@ -110,7 +110,8 @@ export function ProjectDirectory({
                     <h1>Maintenance Projects</h1>
                     <p>Browse and manage road maintenance projects.</p>
                 </div>
-                <Button
+                {canCreate && (
+<Button
                     className="jr-primary"
                     disabled={integration.ready && !canCreate}
                     onClick={() =>
@@ -122,6 +123,7 @@ export function ProjectDirectory({
                     <Plus />
                     Add Project
                 </Button>
+)}
             </div>
             <IntegrationNotice integration={integration} />
             <form
@@ -364,7 +366,7 @@ export function ProjectDirectory({
                                     className="text-right"
                                     onClick={(event) => event.stopPropagation()}
                                 >
-                                    {!selecting && (
+                                    {!selecting && (project.can_edit || project.can_delete) && (
                                         <ProjectActions
                                             project={project}
                                             onEdit={() =>
