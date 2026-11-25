@@ -230,7 +230,7 @@ html.dark .jr-delete-premium[data-blocked='true'] .jr-delete-eyebrow {
     color: var(--delete-muted);
     font-size: 13px;
 }
-.jr-delete-premium :is(.jr-delete-verification, .jr-deletion-camera) {
+.jr-delete-premium .jr-delete-verification {
     display: grid;
     gap: 10px;
     margin: 0;
@@ -284,14 +284,6 @@ html.dark .jr-delete-premium[data-blocked='true'] .jr-delete-eyebrow {
     padding: 12px;
     border-radius: 8px;
     background: var(--delete-soft);
-}
-.jr-delete-premium .jr-deletion-camera .jr-field-hint {
-    color: var(--delete-muted);
-    font-size: 12px;
-    line-height: 1.5;
-}
-.jr-delete-premium .jr-deletion-camera-preview {
-    max-height: 160px;
 }
 .jr-delete-premium .jr-dialog-actions {
     position: static;
@@ -496,4 +488,51 @@ html.jr-reduce-motion .jr-delete-premium .animate-spin {
 }
 .jr-delete-account[aria-busy='true'] > button {
     pointer-events: none;
+}
+
+/* Compact camera-free verification: equation, input and refresh stay aligned. */
+.jr-delete-premium .jr-delete-challenge-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+}
+.jr-delete-premium .jr-delete-challenge-row .jr-delete-equation {
+    display: grid;
+    place-items: center;
+    min-height: 44px;
+    padding: 8px 12px;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+.jr-delete-premium .jr-delete-challenge-row .jr-delete-input {
+    min-width: 0;
+}
+.jr-delete-premium .jr-delete-challenge-row button {
+    min-height: 44px;
+    border-radius: 9px;
+    white-space: normal;
+}
+.jr-delete-premium .jr-delete-step {
+    color: var(--jr-display-accent, var(--delete-alert));
+    background: var(--jr-display-soft, var(--delete-alert-bg));
+}
+.jr-delete-premium .jr-delete-input:focus-visible,
+.jr-delete-premium .jr-dialog-actions button:focus-visible {
+    outline-color: var(--jr-display-accent, #dc2626);
+}
+.jr-delete-premium .jr-dialog-actions .jr-delete-confirm.jr-danger:not(:disabled) {
+    background: var(--delete-button) !important;
+    color: #fff !important;
+}
+.jr-delete-premium .jr-dialog-actions .jr-delete-confirm.jr-danger:hover:not(:disabled) {
+    background: var(--delete-hover) !important;
+}
+@media (max-width: 520px) {
+    .jr-delete-premium .jr-delete-challenge-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+    .jr-delete-premium .jr-delete-challenge-row .jr-delete-equation {
+        grid-column: 1 / -1;
+    }
 }
