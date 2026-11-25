@@ -229,9 +229,9 @@ export default function Operations({
                             ? 'Before creating a road coverage, create an active Engineer profile in User Management. The selected Engineer must have prepared the mapped road.'
                             : null
                     }
-                    canCreate={capabilities.createRoads}
-                    canEdit={capabilities.updateRoads}
-                    canManage={capabilities.deleteRoads}
+                    canCreate={!isViewer && capabilities.createRoads}
+                    canEdit={!isViewer && capabilities.updateRoads}
+                    canManage={!isViewer && capabilities.deleteRoads}
                 />
             </>
         );
@@ -277,8 +277,8 @@ export default function Operations({
                             })),
                     }))}
                     maintenanceRecords={recordChoices}
-                    canWrite={capabilities.createUpdates}
-                    canManage={canManage}
+                    canWrite={!isViewer && capabilities.createUpdates}
+                    canManage={!isViewer && canManage}
                     writableRecordIds={writableRecordIds}
                     mediaReady={mediaReady}
                 />
@@ -313,7 +313,7 @@ export default function Operations({
                         uploadedAt: x.uploaded_at ?? null,
                     }))}
                     maintenanceRecords={recordChoices}
-                    canUpload={capabilities.createDocuments}
+                    canUpload={!isViewer && capabilities.createDocuments}
                     uploadsReady={documentsReady}
                     writableRecordIds={writableRecordIds}
                 />
@@ -336,9 +336,9 @@ export default function Operations({
             <>
                 {notice}
                 <DdMaintenanceProjects
-                    canCreate={capabilities.createProjects}
-                    canUpdate={capabilities.updateProjects}
-                    canManage={capabilities.deleteProjects}
+                    canCreate={!isViewer && capabilities.createProjects}
+                    canUpdate={!isViewer && capabilities.updateProjects}
+                    canManage={!isViewer && capabilities.deleteProjects}
                     roads={roads}
                     lgus={lgus}
                     projects={projects}
@@ -354,8 +354,8 @@ export default function Operations({
                         schedule={maintenanceSchedule}
                         managers={managerChoices}
                         canUnassign={canUnassign}
-                        canCreate={capabilities.createProjects}
-                        canManage={canManage}
+                        canCreate={!isViewer && capabilities.createProjects}
+                        canManage={!isViewer && canManage}
                         engineerId={engineerId}
                         canEdit={role === 'Engineer' && hasAssignment}
                     />
