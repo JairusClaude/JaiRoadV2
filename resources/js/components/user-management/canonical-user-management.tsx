@@ -2,8 +2,6 @@ import { router } from '@inertiajs/react';
 import * as Dialog from '@radix-ui/react-dialog';
 import {
     CheckCircle2,
-    ChevronLeft,
-    ChevronRight,
     HardHat,
     Plus,
     Search,
@@ -14,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
+import { DirectoryPagination } from '@/components/directory-controls';
 import AccountTypeBadge from '@/components/user-management/account-type-badge';
 import DdAccountLifecycle from '@/pages/dd-phase3/DdAccountLifecycle';
 import DdEngineerLifecycle from '@/pages/dd-phase3/DdEngineerLifecycle';
@@ -1060,32 +1059,16 @@ export default function CanonicalUserManagement({
                     )}
                 </div>
                 <div className="um-footer">
-                    <span role="status">
-                        {count ? start + 1 : 0}–
-                        {Math.min(start + pageSize, count)} of {count}{' '}
-                        {tab === 'accounts' ? 'accounts' : 'engineers'}
-                    </span>
-                    <div>
-                        <button
-                            type="button"
-                            aria-label="Previous page"
-                            disabled={current === 1}
-                            onClick={() => visitPage(current - 1)}
-                        >
-                            <ChevronLeft size={18} />
-                        </button>
-                        <span>
-                            {current} / {last}
-                        </span>
-                        <button
-                            type="button"
-                            aria-label="Next page"
-                            disabled={current === last}
-                            onClick={() => visitPage(current + 1)}
-                        >
-                            <ChevronRight size={18} />
-                        </button>
-                    </div>
+                    <DirectoryPagination
+                        total={count}
+                        from={count ? start + 1 : 0}
+                        to={Math.min(start + pageSize, count)}
+                        currentPage={current}
+                        lastPage={last}
+                        plural={tab === 'accounts' ? 'accounts' : 'engineers'}
+                        label="User management pagination"
+                        onPage={visitPage}
+                    />
                 </div>
             </section>
             <aside className="um-policy">
