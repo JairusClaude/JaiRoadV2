@@ -189,3 +189,13 @@ require __DIR__.'/role-dashboard.php';
 // Dedicated governance command center, never exposed to Admin/Engineer/Viewer.
 require __DIR__.'/superadmin-dashboard.php';
 require __DIR__.'/operations.php';
+
+// Internal recovery never sends an email; guest requests return a generic response.
+Route::middleware('guest')->prefix('internal-recovery')->group(function (): void {
+    Route::post('/request', [\App\Http\Controllers\InternalPasswordRecoveryController::class, 'requestCode'])->middleware('throttle:5,1,jr-recovery-request-');
+    Route::post('/redeem', [\App\Http\Controllers\InternalPasswordRecoveryController::class, 'redeem'])->middleware('throttle:5,1,jr-recovery-redeem-');
+});
+Route::middleware('auth')->prefix('dd-phase3/password-recovery')->group(function (): void {
+    Route::get('/requests', [\App\Http\Controllers\InternalPasswordRecoveryController::class, 'index'])->middleware('throttle:30,1,jr-recovery-list-');
+    Route::post('/requests/{id}/approve', [\App\Http\Controllers\InternalPasswordRecoveryController::class, 'approve'])->whereNumber('id')->middleware('throttle:5,1,jr-recovery-approve-');
+});
