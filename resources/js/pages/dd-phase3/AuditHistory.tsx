@@ -1,3 +1,4 @@
+import { manilaTimestamp } from '@/lib/manila-time';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     Activity,
@@ -86,13 +87,7 @@ const field =
 const button =
     'rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 disabled:opacity-50';
 function time(value: string | null) {
-    return value === null
-        ? 'Not recorded'
-        : new Intl.DateTimeFormat('en-PH', {
-              timeZone: 'Asia/Manila',
-              dateStyle: 'medium',
-              timeStyle: 'medium',
-          }).format(new Date(value));
+    return value === null ? 'Not recorded' : manilaTimestamp(value, 'medium');
 }
 function value(data: unknown): string {
     return data === null || data === undefined
