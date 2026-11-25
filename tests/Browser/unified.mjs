@@ -221,7 +221,14 @@ try {
     assert.equal(viewerLogo.shadow, 'none');
     await viewer.getByRole('heading', { name: 'Road Maintenance Overview' }).waitFor();
     await viewer.getByText('Read-Only Access', { exact: true }).waitFor();
-    await viewer.getByRole('button', { name: 'Refresh dashboard' }).waitFor();
+    assert.equal(await viewer.getByRole('button', { name: 'Refresh dashboard', includeHidden: true }).count(), 0);
+    for (const route of ['/maintenance-projects', '/maintenance-records', '/monthly-updates', '/maintenance-documents', '/road-coverages', '/lgus']) {
+        await viewer.goto(ui + route);
+        await viewer.locator('.jr-viewer-workspace').waitFor();
+        assert.equal(await viewer.getByRole('button', { name: /^(Add|Create|Upload)\b/i, includeHidden: true }).count(), 0, route);
+        assert.equal(await viewer.getByRole('button', { name: /^Select (projects|records|updates|documents|road coverages|LGUs)$/i, includeHidden: true }).count(), 0, route);
+    }
+    await viewer.goto(base + '/dd-phase3/dashboard');
     assert.equal(await viewer.locator('.jr-viewer-sidebar .jr-nav-link.jr-active').first().evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(29, 93, 181)');
 
     for (const other of [engineer, admin, superadmin]) {
