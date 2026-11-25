@@ -553,3 +553,23 @@ body:has(.jr-viewer-workspace) .jr-responsive-shell aside [aria-current='page'],
     color: #1d5db5 !important;
     background-color: #e6efff !important;
 }
+
+/* Shared directory metric icons follow the active workspace, not a fixed role. */
+body:has(.jr-admin-workspace) .jr-metric-card .jr-metric-icon,
+body:has(.jr-engineer-workspace) .jr-metric-card .jr-metric-icon,
+body:has(.jr-viewer-workspace) .jr-metric-card .jr-metric-icon {
+    background-color: var(--jr-role-accent-soft);
+    color: var(--jr-role-accent);
+}
+html.dark body:has(.jr-admin-workspace) .jr-metric-card .jr-metric-icon {
+    background-color: #4b2030;
+    color: #fda4af;
+}
+html.dark body:has(.jr-engineer-workspace) .jr-metric-card .jr-metric-icon {
+    background-color: #4a2c1b;
+    color: #fdba74;
+}
+html.dark body:has(.jr-viewer-workspace) .jr-metric-card .jr-metric-icon {
+    background-color: #203b65;
+    color: #93c5fd;
+}
