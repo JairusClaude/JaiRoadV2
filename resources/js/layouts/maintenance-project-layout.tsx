@@ -417,6 +417,7 @@ export function MaintenanceProjectShell({
                         </strong>
                     </div>
                     <div className="jr-top-actions">
+                        <span className="jr-navigation-status-slot" data-jr-navigation-status />
                         {viewerTheme ? null : canonical ? (
                             <DdNotificationBell />
                         ) : (
