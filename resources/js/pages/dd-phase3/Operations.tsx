@@ -1,4 +1,4 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { Settings2, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import type { ComponentProps } from 'react';
@@ -74,7 +74,7 @@ const tiny =
 const input =
     'mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-100';
 const action =
-    'rounded-lg bg-[#90451f] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#773917] disabled:opacity-60';
+    'rounded-lg bg-[var(--jr-role-accent)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--jr-role-accent-hover)] disabled:opacity-60';
 const names: Record<Props['section'], string> = {
     settings: 'Settings',
     roads: 'Road Sections',
@@ -419,20 +419,6 @@ export default function Operations({
                                                 ? 'Your operational identity and local appearance preferences. Account changes require an administrator.'
                                                 : 'Your read-only identity and personal display preferences.'}
                                     </p>
-                                    <div className="flex flex-wrap items-center gap-3 pt-2">
-                                        <Link
-                                            href="/settings/security?tab=two-factor"
-                                            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition focus-visible:outline-2 focus-visible:outline-offset-2 ${isAdmin ? 'bg-[#C8293D] hover:bg-[#A81424] focus-visible:outline-[#C8293D]' : isEngineer ? 'bg-[#A94B0C] hover:bg-[#873A0D] focus-visible:outline-[#A94B0C]' : isViewer ? 'bg-[#1D5DB5] hover:bg-[#124A9C] focus-visible:outline-[#1D5DB5]' : 'bg-[#90451f] hover:bg-[#773917] focus-visible:outline-amber-600'}`}
-                                        >
-                                            <ShieldCheck className="size-4" />{' '}
-                                            Two-factor authentication
-                                        </Link>
-                                        <span className="text-xs text-slate-500">
-                                            Manage your additional sign-in verification.
-                                            Recent password
-                                            confirmation is required.
-                                        </span>
-                                    </div>
                                     <div className="grid gap-3 pt-2 sm:grid-cols-3">
                                         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
                                             <div className="text-xs font-semibold tracking-wider text-slate-500 uppercase">
@@ -479,7 +465,7 @@ export default function Operations({
                                 <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
                                     <div className="flex items-center gap-2">
                                         <Settings2
-                                            className={`h-5 w-5 ${isAdmin ? 'text-[#C8293D]' : isEngineer ? 'text-[#A94B0C]' : isViewer ? 'text-[#1D5DB5]' : 'text-amber-700'}`}
+                                            className={`h-5 w-5 ${isAdmin ? 'text-[#C8293D]' : isEngineer ? 'text-[#A94B0C]' : isViewer ? 'text-[#1D5DB5]' : 'text-[var(--jr-role-accent)]'}`}
                                         />
                                         <h2 className="text-lg font-bold text-slate-900">
                                             Update credentials
