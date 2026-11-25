@@ -439,7 +439,7 @@ export default function RoleDashboard({
                                     'Road coverage inventory',
                                 ],
                                 [
-                                    'LGU Directory',
+                                    'LGU',
                                     '/dd-phase3/lgus',
                                     'Municipality information',
                                 ],
