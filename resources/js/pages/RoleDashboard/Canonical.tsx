@@ -75,7 +75,7 @@ function EngineerRoadMap({
 
         try {
             const response = await fetch(
-                '/dd-phase3/dashboard/map-roads?before=' +
+                '/workspace/dashboard/map-roads?before=' +
                     encodeURIComponent(cursor),
                 {
                     credentials: 'same-origin',
@@ -412,33 +412,33 @@ export default function RoleDashboard({
                             {[
                                 [
                                     'Maintenance Projects',
-                                    '/dd-phase3/projects',
+                                    '/workspace/projects',
                                     isEngineer
                                         ? 'Project and maintenance history'
                                         : 'Browse projects',
                                 ],
                                 [
                                     'Monthly Updates',
-                                    '/dd-phase3/updates',
+                                    '/workspace/updates',
                                     isEngineer
                                         ? 'My monthly progress reporting'
                                         : 'Browse monthly reports',
                                 ],
                                 [
                                     'Project Documents',
-                                    '/dd-phase3/documents',
+                                    '/workspace/documents',
                                     isEngineer
                                         ? 'Assigned documentation'
                                         : 'Browse formal documents',
                                 ],
                                 [
                                     'Road Sections',
-                                    '/dd-phase3/roads',
+                                    '/workspace/roads',
                                     'Road coverage inventory',
                                 ],
                                 [
                                     'LGU Directory',
-                                    '/dd-phase3/lgus',
+                                    '/workspace/lgus',
                                     'Municipality information',
                                 ],
                             ].map(([label, href, summary]) => (
@@ -493,8 +493,8 @@ export default function RoleDashboard({
                                         <Link
                                             href={
                                                 record.projectId
-                                                    ? `/dd-phase3/ui/maintenance-projects/${record.projectId}${isEngineer ? `/records/${record.id}` : ''}`
-                                                    : '/dd-phase3/projects'
+                                                    ? `/workspace/ui/maintenance-projects/${record.projectId}${isEngineer ? `/records/${record.id}` : ''}`
+                                                    : '/workspace/projects'
                                             }
                                             className={cardLink}
                                         >
@@ -511,7 +511,7 @@ export default function RoleDashboard({
                                 )}
                             </div>
                             <Link
-                                href="/dd-phase3/projects"
+                                href="/workspace/projects"
                                 className={`${cardLink} mt-4`}
                             >
                                 Browse maintenance projects

@@ -59,31 +59,31 @@ const adminLinks: NavItem[] = [
 // Canonical accounts use these workspace destinations. Their navigation stays
 // within the routes for the canonical business schema.
 const canonicalCommonLinks: NavItem[] = [
-    { label: 'Dashboard', href: '/dd-phase3/dashboard', icon: LayoutDashboard },
+    { label: 'Dashboard', href: '/workspace/dashboard', icon: LayoutDashboard },
     {
         label: 'Maintenance Projects',
-        href: '/dd-phase3/ui/maintenance-projects',
+        href: '/workspace/ui/maintenance-projects',
         icon: FolderKanban,
     },
     {
         label: 'Monthly Updates',
-        href: '/dd-phase3/ui/monthly-updates',
+        href: '/workspace/ui/monthly-updates',
         icon: FileText,
     },
     {
         label: 'Project Documents',
-        href: '/dd-phase3/ui/maintenance-documents',
+        href: '/workspace/ui/maintenance-documents',
         icon: FileText,
     },
-    { label: 'Road Sections', href: '/dd-phase3/ui/road-coverages', icon: Map },
-    { label: 'LGU', href: '/dd-phase3/lgus', icon: Building2 },
-    { label: 'Settings', href: '/dd-phase3/settings', icon: Settings },
+    { label: 'Road Sections', href: '/workspace/ui/road-coverages', icon: Map },
+    { label: 'LGU', href: '/workspace/lgus', icon: Building2 },
+    { label: 'Settings', href: '/workspace/settings', icon: Settings },
 ];
 
 const canonicalAdminLinks: NavItem[] = [
     ...canonicalCommonLinks.slice(0, 2),
-    { label: 'User Management', href: '/dd-phase3/users', icon: Users },
-    { label: 'Audit Log', href: '/dd-phase3/audit-logs', icon: ScrollText },
+    { label: 'User Management', href: '/workspace/users', icon: Users },
+    { label: 'Audit Log', href: '/workspace/audit-logs', icon: ScrollText },
     ...canonicalCommonLinks.slice(2),
 ];
 
@@ -140,7 +140,7 @@ export default function PolishedWorkspaceLayout({
     const role = identity?.role;
     const isCanonicalWorkspace = page.url
         .split('?')[0]
-        .startsWith('/dd-phase3/');
+        .startsWith('/workspace/');
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
     const isMobile = useIsMobile();
     // Read the persisted icon rail preference once; subsequent writes use its event handler.
@@ -229,7 +229,7 @@ export default function PolishedWorkspaceLayout({
                     <Link
                         href={
                             isCanonicalWorkspace
-                                ? '/dd-phase3/dashboard'
+                                ? '/workspace/dashboard'
                                 : '/dashboard'
                         }
                         className={`flex min-w-0 items-center gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-700 ${sidebarCollapsed ? 'lg:hidden' : ''}`}
@@ -418,7 +418,7 @@ export default function PolishedWorkspaceLayout({
                                         <Link
                                             href={
                                                 isCanonicalWorkspace
-                                                    ? '/dd-phase3/settings'
+                                                    ? '/workspace/settings'
                                                     : '/settings-preview'
                                             }
                                             onClick={() =>
@@ -445,7 +445,7 @@ export default function PolishedWorkspaceLayout({
                     </header>
                 </div>
                 <main
-                    className={`jr-responsive-main jr-normal-workspace mx-auto w-full max-w-[1680px] px-4 pt-1 pb-8 sm:px-6 lg:px-7 ${path === '/dashboard' || path === '/dd-phase3/dashboard' || path.startsWith('/admin-dashboard') || path.startsWith('/role-dashboard') ? 'jr-dashboard-view' : 'jr-content-view'} ${path === '/maintenance-projects' || path === '/dd-phase3/ui/maintenance-projects' ? 'jr-projects-directory' : ''}`}
+                    className={`jr-responsive-main jr-normal-workspace mx-auto w-full max-w-[1680px] px-4 pt-1 pb-8 sm:px-6 lg:px-7 ${path === '/dashboard' || path === '/workspace/dashboard' || path.startsWith('/admin-dashboard') || path.startsWith('/role-dashboard') ? 'jr-dashboard-view' : 'jr-content-view'} ${path === '/maintenance-projects' || path === '/workspace/ui/maintenance-projects' ? 'jr-projects-directory' : ''}`}
                     id="jairoads-main-content"
                 >
                     {children}

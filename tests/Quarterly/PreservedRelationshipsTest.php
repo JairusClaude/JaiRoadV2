@@ -53,7 +53,7 @@ final class PreservedRelationshipsTest extends PostgresTestCase
     public function test_empty_project_requires_confirmation_but_can_be_deleted(string $role): void
     {
         $f = $this->fixture($role);
-        $url = '/dd-phase3/ui/maintenance-projects/'.$f['project'];
+        $url = '/workspace/ui/maintenance-projects/'.$f['project'];
         $this->deleteJson($url)->assertUnprocessable();
         $preview = $this->getJson($url.'/deletion-preview')->assertOk()
             ->assertJsonPath('counts.maintenance_records', 0)->json();
@@ -70,7 +70,7 @@ final class PreservedRelationshipsTest extends PostgresTestCase
     public function test_project_with_files_is_blocked_when_storage_deletion_disabled(string $role): void
     {
         $f = $this->withChildren($role);
-        $url = '/dd-phase3/ui/maintenance-projects/'.$f['project'];
+        $url = '/workspace/ui/maintenance-projects/'.$f['project'];
         config(['jairoads_file_deletion.operationally_enabled' => false]);
         $token = $this->getJson($url.'/deletion-preview')->assertOk()->assertJsonPath('can_delete', false)->json('confirmation_token');
         $this->deleteJson($url, $this->deletionVerification('project') + ['confirmation_token' => $token])->assertStatus(503);
@@ -103,7 +103,7 @@ final class PreservedRelationshipsTest extends PostgresTestCase
             '*/storage/v1/bucket/*' => fn ($request) => Http::response(['id' => basename($request->url()), 'public' => false, 'versioning_status' => 'DISABLED']),
             '*/storage/v1/object/*' => fn ($request) => Http::response(['message' => 'Successfully deleted']),
         ]);
-        $url = '/dd-phase3/ui/maintenance-projects/'.$f['project'];
+        $url = '/workspace/ui/maintenance-projects/'.$f['project'];
         $preview = $this->getJson($url.'/deletion-preview')->assertOk()
             ->assertJsonPath('counts.maintenance_records', 1)
             ->assertJsonPath('counts.monthly_updates', 1)
@@ -127,7 +127,7 @@ final class PreservedRelationshipsTest extends PostgresTestCase
     public function test_new_record_after_empty_project_preview_blocks_confirmation(): void
     {
         $f = $this->fixture();
-        $url = '/dd-phase3/ui/maintenance-projects/'.$f['project'];
+        $url = '/workspace/ui/maintenance-projects/'.$f['project'];
         $token = $this->getJson($url.'/deletion-preview')->assertOk()->json('confirmation_token');
         $record = (int) DB::table('jairoads_next.maintenance_records')->insertGetId(
             $this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->dd_user_account_id]
@@ -142,7 +142,7 @@ final class PreservedRelationshipsTest extends PostgresTestCase
     public function test_managing_engineer_unassignment_is_forbidden_even_for_admins(string $role): void
     {
         $f = $this->withChildren($role);
-        $this->postJson('/dd-phase3/ops/records/'.$f['record'].'/unassignment', [
+        $this->postJson('/workspace/ops/records/'.$f['record'].'/unassignment', [
             'expected_current_manager_id' => $f['engineer'],
         ])->assertForbidden();
         $this->assertDatabaseHas('jairoads_next.maintenance_records', [
@@ -157,7 +157,7 @@ final class PreservedRelationshipsTest extends PostgresTestCase
         // rate limit allows; disable only throttling in this isolated test.
         $this->withoutMiddleware(ThrottleRequests::class);
         $f = $this->fixture();
-        $url = '/dd-phase3/ui/maintenance-projects/'.$f['project'];
+        $url = '/workspace/ui/maintenance-projects/'.$f['project'];
         $token = $this->getJson($url.'/deletion-preview')->assertOk()->json('confirmation_token');
         $this->deleteJson($url, ['confirmation' => 'YES', 'confirmation_token' => $token])->assertUnprocessable()->assertJsonValidationErrors('captcha_token');
         $verification = $this->deletionVerification('project');
@@ -180,7 +180,7 @@ final class PreservedRelationshipsTest extends PostgresTestCase
     public function test_invalid_and_stale_tokens_cannot_delete_empty_project(): void
     {
         $f = $this->fixture();
-        $url = '/dd-phase3/ui/maintenance-projects/'.$f['project'];
+        $url = '/workspace/ui/maintenance-projects/'.$f['project'];
         $token = $this->getJson($url.'/deletion-preview')->assertOk()->json('confirmation_token');
         $this->deleteJson($url, $this->deletionVerification('project') + ['confirmation_token' => 'corrupt'])->assertUnprocessable();
         DB::table('jairoads_next.maintenance_projects')->where('id', $f['project'])->update(['project_title' => 'Changed']);
@@ -191,7 +191,7 @@ final class PreservedRelationshipsTest extends PostgresTestCase
     public function test_engineer_and_viewer_cannot_access_admin_delete_endpoint(): void
     {
         $f = $this->fixture();
-        $url = '/dd-phase3/ui/maintenance-projects/'.$f['project'];
+        $url = '/workspace/ui/maintenance-projects/'.$f['project'];
         $token = $this->getJson($url.'/deletion-preview')->assertOk()->json('confirmation_token');
         foreach (['Engineer', 'Viewer'] as $role) {
             $this->withSession(['password_hash_web' => null])->actingAs($this->account($role));
@@ -235,9 +235,9 @@ final class PreservedRelationshipsTest extends PostgresTestCase
         // Disposable test schema only; confirm backward compatibility is fail-closed.
         (require base_path('database/proposals/preserve_project_history.php'))->up();
         $f = $this->withChildren();
-        $this->getJson('/dd-phase3/ui/maintenance-projects/'.$f['project'].'/deletion-preview')
+        $this->getJson('/workspace/ui/maintenance-projects/'.$f['project'].'/deletion-preview')
             ->assertOk()->assertJsonPath('can_delete', false)->assertJsonPath('counts.maintenance_records', 1);
-        $this->postJson('/dd-phase3/ops/records/'.$f['record'].'/unassignment', [
+        $this->postJson('/workspace/ops/records/'.$f['record'].'/unassignment', [
             'expected_current_manager_id' => $f['engineer'],
         ])->assertForbidden();
         $this->assertDatabaseHas('jairoads_next.maintenance_records', [

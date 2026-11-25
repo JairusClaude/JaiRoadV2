@@ -57,7 +57,7 @@ export default function FileRemovalReview({
                         kind,
                         file_name: file.file_name,
                         parent_label: 'Maintenance activity',
-                        delete_url: `/dd-phase3/files/${kind}/${file.id}`,
+                        delete_url: `/workspace/files/${kind}/${file.id}`,
                     })
                 }
             >

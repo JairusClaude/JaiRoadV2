@@ -29,7 +29,7 @@ type Details = {
     };
 };
 
-const base = '/dd-phase3/ui';
+const base = '/workspace/ui';
 const monthLabel = (month: string) => {
     const match = /^(\d{4})-(\d{2})/.exec(month);
 
@@ -63,7 +63,7 @@ export function RoadDetailsPanel({
 
     useEffect(() => {
         const controller = new AbortController();
-        fetch('/dd-phase3/dashboard/roads/' + roadId, {
+        fetch('/workspace/dashboard/roads/' + roadId, {
             headers: { Accept: 'application/json' },
             credentials: 'same-origin',
             cache: 'no-store',

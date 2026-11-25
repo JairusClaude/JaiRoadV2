@@ -33,7 +33,7 @@ Reference models retain the `Reference` suffix because existing `App\Models\Road
 
 The middleware name now describes its fail-closed responsibility; `bootstrap/app.php` registers the renamed class and the corresponding feature test follows it. No redirect logic or external URLs were modified.
 
-The route *file names* have changed, but public URL paths such as `/dd-phase3/dashboard` and Laravel route names remain unchanged so users' bookmarks, browser tests and active permissions do not silently break. The subsequent frontend refactor moved the active React pages into `AuditLogs`, `RoleDashboard`, and `Workspace`, and moved their embedded controls into feature component directories. The historical page directory was removed.
+At this structural-refactor checkpoint, the route *file names* changed while public URL paths such as `/dd-phase3/dashboard` and Laravel route names stayed unchanged so users' bookmarks, browser tests and active permissions do not silently break. The subsequent frontend refactor moved the active React pages into `AuditLogs`, `RoleDashboard`, and `Workspace`, and moved their embedded controls into feature component directories. The historical page directory was removed. The later [workspace URL migration](../workspace-route-migration.md) documents the current paths and compatibility aliases.
 
 ## Free local checks (Windows with Git Bash or WSL)
 
@@ -53,7 +53,7 @@ php scripts/refactor/verify-backend-layout.php
 
 # Use existing composer packages; do not install a paid service:
 composer dump-autoload --no-scripts
-php artisan route:list --path=dd-phase3
+php artisan route:list --path=workspace
 
 # Rebuild only the LOCAL application while retaining its synthetic database:
 bash scripts/staging/free-local.sh up

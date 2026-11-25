@@ -21,6 +21,6 @@ DB::purge('pgsql');
 DB::statement("SET application_name = 'quarterly_concurrency_worker'");
 Auth::guard()->setUser(User::findOrFail((int) $argv[1]));
 $data = json_decode($argv[2], true, flags: JSON_THROW_ON_ERROR);
-$request = Request::create('/dd-phase3/ops/records', 'POST', $data, server: ['HTTP_ACCEPT' => 'application/json']);
+$request = Request::create('/workspace/ops/records', 'POST', $data, server: ['HTTP_ACCEPT' => 'application/json']);
 $response = $app->make(Illuminate\Contracts\Http\Kernel::class)->handle($request);
 echo json_encode(['status' => $response->getStatusCode(), 'body' => $response->getContent()], JSON_THROW_ON_ERROR);

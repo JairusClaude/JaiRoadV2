@@ -320,7 +320,7 @@ export default function WorkspaceDocuments({
 
         try {
             await requestOperation(
-                '/dd-phase3/ops/documents',
+                '/workspace/ops/documents',
                 {
                     maintenance_id: recordId,
                     document_title: title.trim(),
@@ -956,7 +956,7 @@ export default function WorkspaceDocuments({
 
                                                 try {
                                                     await requestOperation(
-                                                        `/dd-phase3/ops/documents/${details.id}`,
+                                                        `/workspace/ops/documents/${details.id}`,
                                                         {
                                                             document_title:
                                                                 editDocument.title.trim(),
@@ -1049,7 +1049,7 @@ export default function WorkspaceDocuments({
                             )}
                         <a
                             className={primary}
-                            href={`/dd-phase3/files/document/${details.id}`}
+                            href={`/workspace/files/document/${details.id}`}
                         >
                             Download document
                         </a>

@@ -9,7 +9,7 @@ uses(CanonicalOperationsTestCase::class);
 
 it('renders the dashboard for each active canonical account role using its explicit identity', function (string $role, string $component) {
     $login = $this->linkedLogin($role);
-    $destination = $role === 'SuperAdmin' ? '/dd-superadmin-landing' : '/dd-phase3/dashboard';
+    $destination = $role === 'SuperAdmin' ? '/dd-superadmin-landing' : '/workspace/dashboard';
     $this->actingAs($login)->get('/dashboard')->assertRedirect($destination);
     $this->get($destination)->assertOk()->assertInertia(fn (Assert $page) => $page
         ->component($component)->missing('auth.user.password')->missing('auth.user.two_factor_secret'));
@@ -25,18 +25,18 @@ it('denies direct SuperAdmin entry to other roles', function (string $role) {
 })->with(['Admin', 'Engineer', 'Viewer']);
 
 it('keeps account management private to administrative roles', function (string $role) {
-    $this->actingAs($this->linkedLogin($role))->get('/dd-phase3/users')->assertForbidden();
-    $this->postJson('/dd-phase3/accounts', [])->assertForbidden();
+    $this->actingAs($this->linkedLogin($role))->get('/workspace/users')->assertForbidden();
+    $this->postJson('/workspace/accounts', [])->assertForbidden();
 })->with(['Engineer', 'Viewer']);
 
 it('denies Viewer mutations through direct HTTP requests', function () {
     $this->actingAs($this->linkedLogin('Viewer'));
     foreach (['roads', 'projects', 'records', 'updates', 'documents', 'media'] as $entity) {
-        $this->postJson('/dd-phase3/ops/'.$entity, [])->assertForbidden();
+        $this->postJson('/workspace/ops/'.$entity, [])->assertForbidden();
     }
     foreach (['roads', 'projects', 'records', 'updates'] as $entity) {
-        $this->putJson('/dd-phase3/ops/'.$entity.'/1', [])->assertForbidden();
-        $this->deleteJson('/dd-phase3/ops/'.$entity.'/1')->assertForbidden();
+        $this->putJson('/workspace/ops/'.$entity.'/1', [])->assertForbidden();
+        $this->deleteJson('/workspace/ops/'.$entity.'/1')->assertForbidden();
     }
     $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
 });
@@ -46,7 +46,7 @@ it('revokes protected dashboard and mutation access for existing inactive sessio
     $this->actingAs($login)->get('/dashboard')->assertRedirect();
     DB::table('jairoads_next.user_accounts')->where('id', $login->dd_user_account_id)->update(['is_active' => false]);
     $this->get('/dashboard')->assertForbidden();
-    $this->postJson('/dd-phase3/ops/projects', [])->assertUnauthorized();
+    $this->postJson('/workspace/ops/projects', [])->assertUnauthorized();
     $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
 })->with(['SuperAdmin', 'Admin', 'Engineer', 'Viewer']);
 
@@ -55,24 +55,24 @@ it('requires current ManagingEngineer and active LGU assignment for record edits
     $own = $this->record($login->dd_user_account_id);
     $other = $this->record($login->dd_user_account_id, 99);
     $outside = $this->record($login->dd_user_account_id, 88, 18);
-    $this->actingAs($login)->put('/dd-phase3/ops/records/'.$own, $this->recordPayload($own))->assertRedirect('/dd-phase3/projects?view=show&project='.DB::table('jairoads_next.maintenance_records')->where('id', $own)->value('project_id'));
-    $this->putJson('/dd-phase3/ops/records/'.$other, $this->recordPayload($other))->assertForbidden();
+    $this->actingAs($login)->put('/workspace/ops/records/'.$own, $this->recordPayload($own))->assertRedirect('/workspace/projects?view=show&project='.DB::table('jairoads_next.maintenance_records')->where('id', $own)->value('project_id'));
+    $this->putJson('/workspace/ops/records/'.$other, $this->recordPayload($other))->assertForbidden();
     // Current managing Engineers may update their own records across LGUs.
-    $this->putJson('/dd-phase3/ops/records/'.$outside, $this->recordPayload($outside))
-        ->assertRedirect('/dd-phase3/projects?view=show&project='.DB::table('jairoads_next.maintenance_records')->where('id', $outside)->value('project_id'));
-    $this->deleteJson('/dd-phase3/ops/records/'.$own)->assertForbidden();
+    $this->putJson('/workspace/ops/records/'.$outside, $this->recordPayload($outside))
+        ->assertRedirect('/workspace/projects?view=show&project='.DB::table('jairoads_next.maintenance_records')->where('id', $outside)->value('project_id'));
+    $this->deleteJson('/workspace/ops/records/'.$own)->assertForbidden();
     DB::table('jairoads_next.engineer_lgus')->where('engineer_id', 88)->update(['is_active' => false]);
-    $this->putJson('/dd-phase3/ops/records/'.$own, $this->recordPayload($own))
-        ->assertRedirect('/dd-phase3/projects?view=show&project='.DB::table('jairoads_next.maintenance_records')->where('id', $own)->value('project_id'));
+    $this->putJson('/workspace/ops/records/'.$own, $this->recordPayload($own))
+        ->assertRedirect('/workspace/projects?view=show&project='.DB::table('jairoads_next.maintenance_records')->where('id', $own)->value('project_id'));
     $this->assertSame(88, DB::table('jairoads_next.maintenance_records')->where('id', $own)->value('managing_engineer_id'));
 });
 
 it('allows administrative corrections without silently reassigning the ManagingEngineer', function (string $role) {
     $login = $this->linkedLogin($role);
     $record = $this->record($login->dd_user_account_id, 99, 18);
-    $this->actingAs($login)->put('/dd-phase3/ops/records/'.$record, $this->recordPayload($record))->assertRedirect('/dd-phase3/projects?view=show&project='.DB::table('jairoads_next.maintenance_records')->where('id', $record)->value('project_id'));
+    $this->actingAs($login)->put('/workspace/ops/records/'.$record, $this->recordPayload($record))->assertRedirect('/workspace/projects?view=show&project='.DB::table('jairoads_next.maintenance_records')->where('id', $record)->value('project_id'));
     DB::table('jairoads_next.engineers')->insert(['id' => 100, 'engineer_status' => 'Active']);
-    $this->putJson('/dd-phase3/ops/records/'.$record, [...$this->recordPayload($record), 'managing_engineer_id' => 100])
+    $this->putJson('/workspace/ops/records/'.$record, [...$this->recordPayload($record), 'managing_engineer_id' => 100])
         ->assertUnprocessable()->assertJsonValidationErrors('project_id');
     $this->assertSame(99, DB::table('jairoads_next.maintenance_records')->where('id', $record)->value('managing_engineer_id'));
 })->with(['SuperAdmin', 'Admin']);
@@ -80,10 +80,10 @@ it('allows administrative corrections without silently reassigning the ManagingE
 it('attributes project creation to the authenticated UserAccount and preserves secret-free audit evidence', function (string $role) {
     $login = $this->linkedLogin($role);
     $road = $this->road();
-    $this->actingAs($login)->post('/dd-phase3/ops/projects', [
+    $this->actingAs($login)->post('/workspace/ops/projects', [
         'project_title' => 'Authorized project', 'road_coverage_id' => $road,
         'created_by' => 98765, 'status' => 'Completed',
-    ])->assertRedirect('/dd-phase3/projects');
+    ])->assertRedirect('/workspace/projects');
     $project = DB::table('jairoads_next.maintenance_projects')->first();
     $event = DB::table('jairoads_next.audit_logs')->whereNull('recipient_user_id')->first();
     $this->assertSame((int) $login->dd_user_account_id, $project->created_by);
@@ -102,7 +102,7 @@ it('rolls a business mutation back when its audit insert fails', function () {
     $login = $this->linkedLogin('Admin');
     $road = $this->road();
     DB::unprepared("CREATE FUNCTION jairoads_next.fail_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'fixture audit unavailable'; END; $$; CREATE TRIGGER fail_audit BEFORE INSERT ON jairoads_next.audit_logs FOR EACH ROW EXECUTE FUNCTION jairoads_next.fail_audit()");
-    $this->actingAs($login)->postJson('/dd-phase3/ops/projects', ['project_title' => 'Must roll back', 'road_coverage_id' => $road])->assertServerError();
+    $this->actingAs($login)->postJson('/workspace/ops/projects', ['project_title' => 'Must roll back', 'road_coverage_id' => $road])->assertServerError();
     $this->assertSame(0, DB::table('jairoads_next.maintenance_projects')->count());
     $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
 });

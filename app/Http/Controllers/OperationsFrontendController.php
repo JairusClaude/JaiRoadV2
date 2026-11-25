@@ -29,7 +29,7 @@ use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
  */
 class OperationsFrontendController extends Controller
 {
-    protected const BASE = '/dd-phase3/ui';
+    protected const BASE = '/workspace/ui';
 
     /** @var array<int,bool> */
     private array $writeAccess = [];
@@ -303,8 +303,8 @@ class OperationsFrontendController extends Controller
         return DB::table('jairoads_next.media')->where('monthly_update_id', $update)->orderBy('id')
             ->get(['id', 'file_name', 'file_type'])->map(fn (\stdClass $m): array => [
                 'id' => (int) $m->id, 'file_name' => (string) $m->file_name, 'mime_type' => (string) $m->file_type, 'size' => null,
-                'available' => $this->media->configured(), 'preview_url' => $this->media->configured() ? '/dd-phase3/files/media/'.$m->id : null,
-                'delete_url' => RoleAccess::managesBusinessData($actor['role']) && $this->fileDeletions->operationallyEnabled() ? '/dd-phase3/files/media/'.$m->id : null,
+                'available' => $this->media->configured(), 'preview_url' => $this->media->configured() ? '/workspace/files/media/'.$m->id : null,
+                'delete_url' => RoleAccess::managesBusinessData($actor['role']) && $this->fileDeletions->operationallyEnabled() ? '/workspace/files/media/'.$m->id : null,
                 'parent_label' => 'MonthlyUpdate #'.$update,
             ])->all();
     }
@@ -330,8 +330,8 @@ class OperationsFrontendController extends Controller
         return ['id' => (int) $d->id, 'maintenance_id' => (int) $d->maintenance_id, 'document_title' => $d->document_title,
             'description' => $d->description, 'file_name' => $d->file_name, 'uploaded_by' => $d->uploader_name,
             'uploaded_at' => $d->uploaded_at, 'updated_at' => $d->updated_at, 'available' => $d->file_path !== '' && $this->documents->configured(),
-            'delete_url' => RoleAccess::managesBusinessData($actor['role']) && ($d->file_path === '' || $this->fileDeletions->operationallyEnabled()) ? '/dd-phase3/ui/maintenance-documents/bulk' : null,
-            'download_url' => $d->file_path !== '' ? '/dd-phase3/files/document/'.$d->id : null, 'can_edit' => $this->canWriteRecord($d, $actor),
+            'delete_url' => RoleAccess::managesBusinessData($actor['role']) && ($d->file_path === '' || $this->fileDeletions->operationallyEnabled()) ? '/workspace/ui/maintenance-documents/bulk' : null,
+            'download_url' => $d->file_path !== '' ? '/workspace/files/document/'.$d->id : null, 'can_edit' => $this->canWriteRecord($d, $actor),
             'project' => ['id' => (int) $d->project_id, 'project_title' => $d->project_title, 'municipality' => $d->municipality_name],
             'record' => ['id' => (int) $d->maintenance_id, 'project_id' => (int) $d->project_id, 'year' => (int) $d->maintenance_year, 'quarter' => $d->quarter]];
     }

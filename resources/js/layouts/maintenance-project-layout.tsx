@@ -123,7 +123,7 @@ export function MaintenanceProjectShell({
             : adminTheme
               ? ' jr-admin-sidebar'
               : '';
-    const path = page.url.split('?')[0].replace(/^\/dd-phase3\/ui/, '');
+    const path = page.url.split('?')[0].replace(/^\/workspace\/ui/, '');
     const alternativeNavigation = isAlternativeNavigation(page.component);
     const documentPageName = path.startsWith('/maintenance-documents')
         ? path.endsWith('/create')
@@ -146,13 +146,13 @@ export function MaintenanceProjectShell({
                   : undefined;
     const pageName =
         (path === '/dashboard' ||
-        path.startsWith('/dd-phase3/dashboard') ||
+        path.startsWith('/workspace/dashboard') ||
         path.startsWith('/dd-superadmin-landing')
             ? 'Dashboard'
             : undefined) ??
         (path.startsWith('/settings') ||
-        path.startsWith('/dd-phase3/settings') ||
-        path.startsWith('/dd-phase3/ops/settings')
+        path.startsWith('/workspace/settings') ||
+        path.startsWith('/workspace/ops/settings')
             ? 'Settings'
             : undefined) ??
         (path.startsWith('/road-coverages')
@@ -167,12 +167,12 @@ export function MaintenanceProjectShell({
         lguPageName ??
         documentPageName ??
         (path.startsWith('/audit-logs') ||
-        path.startsWith('/dd-phase3/audit-logs')
+        path.startsWith('/workspace/audit-logs')
             ? 'Audit Log'
             : undefined) ??
         (path.startsWith('/user-management') ||
         path.startsWith('/user-accounts') ||
-        path.startsWith('/dd-phase3/users') ||
+        path.startsWith('/workspace/users') ||
         path === '/users'
             ? 'User Management'
             : undefined) ??
@@ -356,15 +356,17 @@ export function MaintenanceProjectShell({
                                     href: canonical
                                         ? ({
                                               '/dashboard':
-                                                  '/dd-phase3/dashboard',
-                                              '/user-management':
-                                                  '/user-management',
-                                              '/user-accounts':
-                                                  '/user-management',
+                                                  '/workspace/dashboard',
+                                              '/user-management': preview
+                                                  ? '/user-management'
+                                                  : '/workspace/users',
+                                              '/user-accounts': preview
+                                                  ? '/user-management'
+                                                  : '/workspace/users',
                                               '/audit-logs':
-                                                  '/dd-phase3/audit-logs',
+                                                  '/workspace/audit-logs',
                                               '/settings/profile':
-                                                  '/dd-phase3/settings',
+                                                  '/workspace/settings',
                                           }[item.href] ??
                                           workspaceHref(item.href))
                                         : item.href,
@@ -465,7 +467,7 @@ export function MaintenanceProjectShell({
                                         user={user}
                                         settingsHref={
                                             canonical
-                                                ? '/dd-phase3/settings'
+                                                ? '/workspace/settings'
                                                 : undefined
                                         }
                                     />

@@ -18,7 +18,7 @@ final class EngineerAssignmentAuditActionsTest extends PostgresTestCase
         $this->assertGreaterThan(0, $lguId);
         $this->withSession(['password_hash_web' => null])->actingAs($this->account('SuperAdmin'));
 
-        $url = '/dd-phase3/assignments';
+        $url = '/workspace/assignments';
         $payload = ['engineer_id' => $engineerId, 'lgu_id' => $lguId];
         $history = fn () => DB::table('jairoads_next.audit_logs')
             ->where('entity_type', 'EngineerLGU')->where('entity_id', $engineerId)

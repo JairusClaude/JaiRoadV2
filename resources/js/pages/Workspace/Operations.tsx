@@ -509,7 +509,7 @@ export default function Operations({
                                             onSubmit={(e) => {
                                                 e.preventDefault();
                                                 submit(
-                                                    '/dd-phase3/ops/settings',
+                                                    '/workspace/ops/settings',
                                                     settings,
                                                     'put',
                                                     () =>

@@ -28,10 +28,11 @@ export async function verifyRoleAcceptanceMatrix({
 
     try {
         for (const path of [
-            '/dd-phase3/dashboard',
+            '/workspace/dashboard',
+            '/workspace/users',
             '/dd-phase3/users',
-            '/dd-phase3/audit-logs',
-            '/dd-phase3/ui/road-coverages',
+            '/workspace/audit-logs',
+            '/workspace/ui/road-coverages',
             '/jairoads/notifications',
         ]) {
             const response = await guest.request.get(`${base}${path}`, {
@@ -46,27 +47,27 @@ export async function verifyRoleAcceptanceMatrix({
 
     const expectations = [
         {
-            path: '/dd-phase3/dashboard',
+            path: '/workspace/dashboard',
             statuses: [200, 200, 200, 200],
         },
         {
-            path: '/dd-phase3/users',
+            path: '/workspace/users',
             statuses: [200, 200, 403, 403],
         },
         {
-            path: '/dd-phase3/audit-logs',
+            path: '/workspace/audit-logs',
             statuses: [200, 200, 403, 403],
         },
         {
-            path: '/dd-phase3/ui/road-coverages',
+            path: '/workspace/ui/road-coverages',
             statuses: [200, 200, 200, 200],
         },
         {
-            path: '/dd-phase3/ui/road-coverages/create',
+            path: '/workspace/ui/road-coverages/create',
             statuses: [200, 200, 200, 403],
         },
         {
-            path: '/dd-phase3/ui/maintenance-projects/create',
+            path: '/workspace/ui/maintenance-projects/create',
             statuses: [200, 200, 200, 403],
         },
     ];
@@ -109,15 +110,43 @@ export async function verifyRoleAcceptanceMatrix({
         assert.equal(result, 403, `Unauthorized mutation must be denied: ${path}`);
     }
 
+    const version = JSON.parse(
+        await admin.locator('script[data-page]').textContent(),
+    ).version;
+    const oldPage = '/dd-phase3/users?search=Test%20Member&page=2';
+    const currentPage = '/workspace/users?search=Test%20Member&page=2';
+    const inertiaHeaders = {
+        'X-Inertia': 'true',
+        'X-Inertia-Version': version,
+    };
+    const redirect = await admin.request.get(`${base}${oldPage}`, {
+        headers: inertiaHeaders,
+        maxRedirects: 0,
+    });
+    assert.equal(redirect.status(), 302);
+    assert.equal(redirect.headers().location, `${base}${currentPage}`);
+    const destination = await admin.request.get(`${base}${currentPage}`, {
+        headers: inertiaHeaders,
+    });
+    assert.equal(destination.status(), 200);
+    assert.equal((await destination.json()).component, 'Workspace/Directory');
+
+    const csrfDenied = await admin.request.post(`${base}/dd-phase3/lgus`, {
+        headers: { Accept: 'application/json' },
+        data: {},
+    });
+    assert.equal(csrfDenied.status(), 419);
+    await deniedWrite(viewer, '/dd-phase3/lgus');
+
     // These are genuine HTTP POST attempts, not simply hidden buttons.
     // Authorization must run before validation, and no business row is created.
-    await deniedWrite(viewer, '/dd-phase3/ops/roads');
-    await deniedWrite(viewer, '/dd-phase3/ops/projects');
-    await deniedWrite(viewer, '/dd-phase3/ops/updates');
-    await deniedWrite(viewer, '/dd-phase3/ops/documents');
-    await deniedWrite(viewer, '/dd-phase3/accounts');
-    await deniedWrite(engineer, '/dd-phase3/accounts');
-    await deniedWrite(engineer, '/dd-phase3/lgus');
+    await deniedWrite(viewer, '/workspace/ops/roads');
+    await deniedWrite(viewer, '/workspace/ops/projects');
+    await deniedWrite(viewer, '/workspace/ops/updates');
+    await deniedWrite(viewer, '/workspace/ops/documents');
+    await deniedWrite(viewer, '/workspace/accounts');
+    await deniedWrite(engineer, '/workspace/accounts');
+    await deniedWrite(engineer, '/workspace/lgus');
 
     console.log(
         'PASS: real-session SuperAdmin/Admin/Engineer/Viewer route matrix; guest JSON denial; privileged audit/account reads; Viewer write denial and Engineer account/LGU governance denial.',

@@ -63,7 +63,7 @@ Route::middleware(['web'])->group(function (): void {
             $identity = app(AccountIdentityResolver::class)->resolve(request()->user());
             abort_unless($identity !== null && RoleAccess::canManageAccounts($identity['role']), 403);
 
-            return redirect()->route('jairoads.dd-phase3.show', ['section' => 'users']);
+            return redirect()->route('jairoads.workspace.show', ['section' => 'users']);
         }
         $role = app(VerifiedProjectAccount::class)->role(request()->user());
         if ($role === null) {

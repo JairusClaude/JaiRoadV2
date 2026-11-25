@@ -25,7 +25,7 @@ async function signIn(email, password = 'Disposable-Test!123') {
     await page.getByLabel('Email address').fill(email);
     await page.getByLabel('Password', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-    await page.waitForURL(/dd-phase3\/dashboard|dd-superadmin-landing/);
+    await page.waitForURL(/workspace\/dashboard|dd-superadmin-landing/);
 
     return page;
 }
@@ -35,9 +35,9 @@ try {
     const nav = page
         .getByRole('link', { name: 'User Management', exact: true })
         .first();
-    assert.equal(await nav.getAttribute('href'), '/dd-phase3/users');
+    assert.equal(await nav.getAttribute('href'), '/workspace/users');
     await nav.click();
-    await page.waitForURL(`${base}/dd-phase3/users`);
+    await page.waitForURL(`${base}/workspace/users`);
     await page
         .getByRole('columnheader', { name: 'Account Type', exact: true })
         .waitFor();
@@ -139,7 +139,7 @@ try {
     const engineerRequest = page.waitForRequest(
         (request) =>
             request.method() === 'POST' &&
-            new URL(request.url()).pathname === '/dd-phase3/engineers',
+            new URL(request.url()).pathname === '/workspace/engineers',
     );
     await engineerForm
         .getByRole('button', { name: 'Create engineer', exact: true })
@@ -191,7 +191,7 @@ try {
     const accountRequest = page.waitForRequest(
         (request) =>
             request.method() === 'POST' &&
-            new URL(request.url()).pathname === '/dd-phase3/accounts',
+            new URL(request.url()).pathname === '/workspace/accounts',
     );
     await accountForm
         .getByRole('button', { name: 'Create account', exact: true })
@@ -200,7 +200,10 @@ try {
     assert.equal(accountPayload.account_type, 'Engineer');
     assert.equal(String(accountPayload.engineer_id), engineerId);
     assert.equal(Object.hasOwn(accountPayload, 'position'), false);
-    await page.getByText('Account created.', { exact: true }).waitFor();
+    await page
+        .getByRole('status')
+        .and(page.getByText('Account created.', { exact: true }))
+        .waitFor();
     await page
         .getByRole('textbox', { name: 'Search accounts' })
         .fill('ui-type-engineer@example.test');
@@ -222,7 +225,7 @@ try {
 
         if (
             request.method() === 'GET' &&
-            url.pathname === '/dd-phase3/users' &&
+            url.pathname === '/workspace/users' &&
             url.searchParams.has('directory_search')
         ) {
             redundantSearches.push(url.searchParams.get('directory_search'));
@@ -236,11 +239,11 @@ try {
     page.off('request', recordSearch);
     assert.deepEqual(redundantSearches, []);
     await row.waitFor();
-    await page.goto(`${base}/dd-phase3/settings`);
+    await page.goto(`${base}/workspace/settings`);
     await page.getByText('Account Type', { exact: true }).waitFor();
     assert.equal(await page.getByText('Role', { exact: true }).count(), 0);
     await page.goto(`${base}/user-management`);
-    await page.waitForURL(`${base}/dd-phase3/users`);
+    await page.waitForURL(`${base}/workspace/users`);
     assert.equal(await page.getByLabel(/Position/i).count(), 0);
     assert.doesNotMatch(
         await page.locator('body').innerText(),
@@ -250,25 +253,21 @@ try {
         'ui-type-engineer@example.test',
         'Typed-Disposable!123',
     );
-    const denied = await created.request.get(`${base}/dd-phase3/users`);
+    const denied = await created.request.get(`${base}/workspace/users`);
     assert.equal(denied.status(), 403);
     const superAdmin = await signIn(fixture.superadmin_email);
     await superAdmin
-        .getByRole('heading', {
-            name: 'Account Type distribution',
-            exact: true,
-        })
+        .getByRole('heading', { name: 'System Command Center', exact: true })
         .waitFor();
+    const superAdminNav = superAdmin
+        .getByRole('link', { name: 'User Management', exact: true })
+        .first();
+    assert.equal(await superAdminNav.getAttribute('href'), '/workspace/users');
+    await superAdminNav.click();
+    await superAdmin.waitForURL(`${base}/workspace/users`);
     await superAdmin
         .getByRole('columnheader', { name: 'Account Type', exact: true })
         .waitFor();
-    assert.equal(
-        await superAdmin
-            .getByRole('link', { name: 'User Management', exact: true })
-            .first()
-            .getAttribute('href'),
-        '/dd-phase3/users',
-    );
     assert.deepEqual(errors, []);
     console.log(
         'PASS: Account Type labels and all four values; Rank-only Engineer creation; canonical account_type and Engineer link; new credentials work; settings/SuperAdmin labels; canonical workspace navigation and no Position fields.',

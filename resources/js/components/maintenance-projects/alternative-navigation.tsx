@@ -35,7 +35,7 @@ export function AlternativeNavigation({
     const canonical = page.props.canonicalFrontend === true;
     const directoryUrl = alternativeDirectoryFor(page.props.sidebarTheme);
     const path = page.url.split('?')[0];
-    const normalized = path.replace(/^\/dd-phase3\/ui(?=\/|$)/, '');
+    const normalized = path.replace(/^\/workspace\/ui(?=\/|$)/, '');
     const section = mainNavigation
         ? normalized.startsWith('/maintenance-records') ||
           normalized.includes('/records/') ||
@@ -46,7 +46,7 @@ export function AlternativeNavigation({
               ? 'road-coverages'
               : normalized.startsWith('/lgus') ||
                   path.startsWith(workspaceHref('/lgus')) ||
-                  path.startsWith('/dd-phase3/lgus')
+                  path.startsWith('/workspace/lgus')
                 ? 'lgus'
                 : normalized.startsWith('/maintenance-documents') ||
                     path.startsWith(workspaceHref('/maintenance-documents'))
@@ -55,21 +55,21 @@ export function AlternativeNavigation({
                       path.startsWith(workspaceHref('/monthly-updates'))
                     ? 'monthly-updates'
                     : normalized.startsWith('/dashboard') ||
-                        path.startsWith('/dd-phase3/dashboard') ||
+                        path.startsWith('/workspace/dashboard') ||
                         path.startsWith('/dd-superadmin-landing')
                       ? 'dashboard'
                       : normalized.startsWith('/user-accounts') ||
                           normalized.startsWith('/user-management') ||
-                          path.startsWith('/dd-phase3/users') ||
+                          path.startsWith('/workspace/users') ||
                           path.startsWith('/user-management')
                         ? 'user-management'
                         : normalized.startsWith('/audit-logs') ||
-                            path.startsWith('/dd-phase3/audit-logs') ||
+                            path.startsWith('/workspace/audit-logs') ||
                             path.startsWith(workspaceHref('/audit-logs'))
                           ? 'audit-logs'
                           : normalized.startsWith('/settings') ||
-                              path.startsWith('/dd-phase3/settings') ||
-                              path.startsWith('/dd-phase3/ops/settings') ||
+                              path.startsWith('/workspace/settings') ||
+                              path.startsWith('/workspace/ops/settings') ||
                               path.startsWith('/settings/profile')
                             ? 'settings'
                             : 'maintenance-projects'
@@ -118,21 +118,21 @@ export function AlternativeNavigation({
             aria-label="Main navigation"
         >
             {items.map(({ title, href, icon: Icon }) => {
-                const moduleHref = href.replace(/^\/dd-phase3\/ui(?=\/)/, '');
+                const moduleHref = href.replace(/^\/workspace\/ui(?=\/)/, '');
                 const key =
                     (
                         {
                             '/dd-superadmin-landing': 'dashboard',
                             '/settings/profile': 'settings',
-                            '/dd-phase3/dashboard': 'dashboard',
+                            '/workspace/dashboard': 'dashboard',
                             '/user-management': 'user-management',
                             '/user-accounts': 'user-management',
-                            '/dd-phase3/users': 'user-management',
-                            '/dd-phase3/audit-logs': 'audit-logs',
+                            '/workspace/users': 'user-management',
+                            '/workspace/audit-logs': 'audit-logs',
                             '/audit-logs': 'audit-logs',
-                            '/dd-phase3/lgus': 'lgus',
-                            '/dd-phase3/settings': 'settings',
-                            '/dd-phase3/ops/settings': 'settings',
+                            '/workspace/lgus': 'lgus',
+                            '/workspace/settings': 'settings',
+                            '/workspace/ops/settings': 'settings',
                         } as Record<string, string>
                     )[moduleHref] ?? moduleHref.slice(1);
                 const parent = key === 'maintenance-projects';
@@ -161,14 +161,14 @@ export function AlternativeNavigation({
                                     workspaceHref('/road-coverages'),
                                     workspaceHref('/audit-logs'),
                                     '/audit-logs',
-                                    '/dd-phase3/audit-logs',
+                                    '/workspace/audit-logs',
                                     workspaceHref('/user-management'),
                                     '/user-management',
                                     '/user-accounts',
                                     '/dashboard',
-                                    '/dd-phase3/dashboard',
+                                    '/workspace/dashboard',
                                     '/settings/profile',
-                                    '/dd-phase3/settings',
+                                    '/workspace/settings',
                                 ].includes(href)
                             ) {
                                 event.preventDefault();

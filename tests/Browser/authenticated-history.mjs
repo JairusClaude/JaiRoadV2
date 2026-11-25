@@ -87,7 +87,7 @@ export async function verifyAuthenticatedHistory(
         .getByLabel('Password', { exact: true })
         .fill('Disposable-Test!123');
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-    await page.waitForURL((url) => url.pathname.startsWith('/dd-phase3/'));
+    await page.waitForURL((url) => url.pathname.startsWith('/workspace/'));
     await page
         .getByRole('link', { name: 'Road Coverages', exact: true })
         .first()

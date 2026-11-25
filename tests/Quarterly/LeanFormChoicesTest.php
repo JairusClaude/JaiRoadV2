@@ -20,15 +20,15 @@ it('keeps all authorized choices without geometry or full record payloads', func
     }
     DB::enableQueryLog();
     DB::flushQueryLog();
-    $this->get('/dd-phase3/ui/maintenance-records/create')->assertInertia(fn (Assert $page) => $page
+    $this->get('/workspace/ui/maintenance-records/create')->assertInertia(fn (Assert $page) => $page
         ->has('projects', 110)->has('records', 110)->has('engineers')->missing('managerChoicesByProject')->missing('projects.0.geojson')->missing('projects.0.description')
         ->missing('records.0.description')->missing('records.0.created_by'));
     expect(count(DB::getQueryLog()))->toBeLessThanOrEqual(12); // 110 LGUs must not cause 110 eligibility queries.
     DB::disableQueryLog();
-    $this->get('/dd-phase3/ui/monthly-updates/create')->assertInertia(fn (Assert $page) => $page
+    $this->get('/workspace/ui/monthly-updates/create')->assertInertia(fn (Assert $page) => $page
         ->has('projects', 110)->has('records', 110)->missing('projects.0.geojson')->missing('records.0.created_by'));
     $last = end($records);
-    $this->get('/dd-phase3/ui/monthly-updates/create?maintenance_id='.$last)->assertInertia(fn (Assert $page) => $page
+    $this->get('/workspace/ui/monthly-updates/create?maintenance_id='.$last)->assertInertia(fn (Assert $page) => $page
         ->has('projects', 1)->has('records', 1)->where('records.0.id', (int) $last)->where('contextRecordId', (int) $last));
 });
 
@@ -39,12 +39,12 @@ it('preserves fixed context authorization and only relevant report uniqueness da
     foreach ([$first, $second] as $record) {
         DB::table('jairoads_next.monthly_updates')->insert(['maintenance_id' => $record, 'update_month' => '2026-01', 'progress_percentage' => 10, 'created_by' => $f['user']->dd_user_account_id]);
     }
-    $this->get('/dd-phase3/ui/monthly-updates/create?maintenance_id='.$second)->assertInertia(fn (Assert $page) => $page
+    $this->get('/workspace/ui/monthly-updates/create?maintenance_id='.$second)->assertInertia(fn (Assert $page) => $page
         ->has('records', 1)->has('existingUpdates', 1)->where('existingUpdates.0.maintenance_id', (int) $second));
-    $this->get('/dd-phase3/ui/maintenance-documents/create?maintenance_id='.$first)->assertInertia(fn (Assert $page) => $page->has('records', 1));
+    $this->get('/workspace/ui/maintenance-documents/create?maintenance_id='.$first)->assertInertia(fn (Assert $page) => $page->has('records', 1));
     DB::table('jairoads_next.maintenance_records')->where('id', $second)->update(['managing_engineer_id' => $this->engineer()]);
-    $this->get('/dd-phase3/ui/monthly-updates/create?maintenance_id='.$second)->assertForbidden();
-    $this->get('/dd-phase3/ui/maintenance-documents/create?maintenance_id='.$second)->assertForbidden();
+    $this->get('/workspace/ui/monthly-updates/create?maintenance_id='.$second)->assertForbidden();
+    $this->get('/workspace/ui/maintenance-documents/create?maintenance_id='.$second)->assertForbidden();
 });
 
 it('batches manager choices with exactly the same eligibility as individual LGU lookups', function (string $role): void {
@@ -68,10 +68,10 @@ it('retains every project history entry while deferring unrendered details to it
         $data['description'] = $description;
         $last = DB::table('jairoads_next.maintenance_records')->insertGetId($data + ['created_by' => $f['user']->dd_user_account_id]);
     }
-    $this->get('/dd-phase3/ui/maintenance-projects/'.$f['project'])->assertInertia(fn (Assert $page) => $page
+    $this->get('/workspace/ui/maintenance-projects/'.$f['project'])->assertInertia(fn (Assert $page) => $page
         ->has('records', 300)->missing('records.0.description')->has('records.0.details_url')->has('records.0.managing_engineer')
         ->has('project.geojson'));
-    $this->get('/dd-phase3/ui/maintenance-projects/'.$f['project'].'/records/'.$last)->assertInertia(fn (Assert $page) => $page
+    $this->get('/workspace/ui/maintenance-projects/'.$f['project'].'/records/'.$last)->assertInertia(fn (Assert $page) => $page
         ->where('record.description', $description));
     expect(DB::table('jairoads_next.maintenance_records')->count())->toBe(300);
 });

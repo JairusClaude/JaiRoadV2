@@ -39,7 +39,7 @@ final class AdministratorProvisionedAccessTest extends PostgresTestCase
         $admin = $this->account('Admin');
         $engineer = $this->engineer();
         $road = $this->road($engineer);
-        $this->actingAs($admin)->postJson('/dd-phase3/accounts', [
+        $this->actingAs($admin)->postJson('/workspace/accounts', [
             'name' => 'Provisioned test account',
             'username' => 'provisioned-account', 'email' => 'provisioned@example.test', 'account_type' => $role,
             'engineer_id' => $engineer, 'is_active' => true,
@@ -52,26 +52,26 @@ final class AdministratorProvisionedAccessTest extends PostgresTestCase
         $this->postJson('/logout')->assertNoContent();
         $this->postJson('/login', ['email' => $login->email, 'password' => 'Provisioned-Secure!123'])->assertOk();
         $this->assertAuthenticatedAs($login);
-        $this->get('/dashboard')->assertRedirect('/dd-phase3/dashboard');
-        $this->get('/dd-phase3/dashboard')->assertOk();
+        $this->get('/dashboard')->assertRedirect('/workspace/dashboard');
+        $this->get('/workspace/dashboard')->assertOk();
         $projectData = ['project_title' => 'Provisioned project', 'road_coverage_id' => $road];
         if ($role === 'Viewer') {
             foreach (['projects', 'records', 'updates', 'media', 'documents'] as $module) {
-                $this->postJson('/dd-phase3/ops/'.$module, $projectData)->assertForbidden();
+                $this->postJson('/workspace/ops/'.$module, $projectData)->assertForbidden();
             }
         } else {
-            $this->postJson('/dd-phase3/ops/projects', $projectData)->assertRedirect();
+            $this->postJson('/workspace/ops/projects', $projectData)->assertRedirect();
             $project = DB::table('jairoads_next.maintenance_projects')->first();
             $this->assertSame((int) $account->id, (int) $project->created_by);
-            $this->putJson('/dd-phase3/ops/projects/'.$project->id, $projectData + ['description' => 'Authorized edit'])->assertRedirect();
+            $this->putJson('/workspace/ops/projects/'.$project->id, $projectData + ['description' => 'Authorized edit'])->assertRedirect();
             if ($role === 'Engineer') {
                 $otherRoad = $this->road();
                 // An active provisioned Engineer can work across municipalities.
-                $this->putJson('/dd-phase3/ops/projects/'.$project->id, array_replace($projectData, ['road_coverage_id' => $otherRoad]))->assertRedirect();
+                $this->putJson('/workspace/ops/projects/'.$project->id, array_replace($projectData, ['road_coverage_id' => $otherRoad]))->assertRedirect();
                 $this->assertDatabaseHas('jairoads_next.maintenance_projects', ['id' => $project->id, 'road_coverage_id' => $otherRoad]);
-                $this->postJson('/dd-phase3/ops/records', $this->recordData((int) $project->id, $engineer))->assertRedirect();
+                $this->postJson('/workspace/ops/records', $this->recordData((int) $project->id, $engineer))->assertRedirect();
                 $record = DB::table('jairoads_next.maintenance_records')->first();
-                $this->postJson('/dd-phase3/ops/updates', ['maintenance_id' => $record->id, 'update_month' => '2027-12', 'progress_percentage' => 25])->assertRedirect();
+                $this->postJson('/workspace/ops/updates', ['maintenance_id' => $record->id, 'update_month' => '2027-12', 'progress_percentage' => 25])->assertRedirect();
                 $monthly = DB::table('jairoads_next.monthly_updates')->first();
                 foreach ([PrivateSupabaseStorage::class, PrivateMonthlyMediaStorage::class] as $storage) {
                     $this->mock($storage, function (MockInterface $mock): void {
@@ -79,14 +79,14 @@ final class AdministratorProvisionedAccessTest extends PostgresTestCase
                         $mock->shouldReceive('upload')->once();
                     });
                 }
-                $this->post('/dd-phase3/ops/documents', ['maintenance_id' => $record->id, 'document_title' => 'Inspection',
+                $this->post('/workspace/ops/documents', ['maintenance_id' => $record->id, 'document_title' => 'Inspection',
                     'file' => UploadedFile::fake()->createWithContent('inspection.pdf', "%PDF-1.4\nDisposable\n%%EOF")])->assertRedirect();
-                $this->post('/dd-phase3/ops/media', ['monthly_update_id' => $monthly->id,
+                $this->post('/workspace/ops/media', ['monthly_update_id' => $monthly->id,
                     'file' => UploadedFile::fake()->createWithContent('evidence.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jWZkAAAAASUVORK5CYII='))])->assertRedirect();
                 $this->assertDatabaseHas('jairoads_next.maintenance_documents', ['maintenance_id' => $record->id, 'uploaded_by' => $account->id]);
                 $this->assertDatabaseHas('jairoads_next.media', ['monthly_update_id' => $monthly->id, 'uploaded_by' => $account->id]);
             } else {
-                $this->get('/dd-phase3/users')->assertOk();
+                $this->get('/workspace/users')->assertOk();
             }
         }
         $this->assertNull($login->fresh()->email_verified_at);

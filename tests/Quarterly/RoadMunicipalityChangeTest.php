@@ -36,7 +36,7 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
         $this->assertEquals($road, DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->first());
         $this->assertSame($before, $this->history()); // Review, followed by Cancel, has no write at all.
         $this->assertSame(1, DB::table('jairoads_next.audit_logs')->count());
-        $this->confirm($f, $preview['confirmation_token'])->assertRedirect('/dd-phase3/roads')
+        $this->confirm($f, $preview['confirmation_token'])->assertRedirect('/workspace/roads')
             ->assertSessionHas('dd_operations_status', 'Municipality changed from Test municipality to Destination town. Road geometry and maintenance history were preserved.');
         $after = DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->first();
         foreach (['geojson', 'kilometers', 'road_name', 'pavement_type', 'state_category', 'created_by', 'created_at'] as $field) {
@@ -227,7 +227,7 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
         $this->confirm($f, 'tampered')->assertUnprocessable();
         $this->confirm($f, $token.'tampered')->assertUnprocessable();
         $otherRoad = $this->road();
-        $this->postJson('/dd-phase3/ops/roads/'.$otherRoad.'/municipality/confirm', ['confirmation_token' => $token])->assertUnprocessable();
+        $this->postJson('/workspace/ops/roads/'.$otherRoad.'/municipality/confirm', ['confirmation_token' => $token])->assertUnprocessable();
         $this->withSession(['password_hash_web' => null])->actingAs($this->account());
         $this->confirm($f, $token)->assertUnprocessable();
         $this->withSession(['password_hash_web' => null])->actingAs($f['user']);
@@ -259,7 +259,7 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
         $road = DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->first();
         $data = ['road_name' => 'Must not save', 'lgu_id' => $f['destination'], 'kilometers' => 55,
             'pavement_type' => 'Gravel', 'state_category' => 'Bad', 'geojson' => '{"type":"LineString","coordinates":[[122,12],[123,13]]}'];
-        $this->putJson('/dd-phase3/ops/roads/'.$f['road'], $data)->assertUnprocessable()->assertJsonValidationErrors('lgu_id');
+        $this->putJson('/workspace/ops/roads/'.$f['road'], $data)->assertUnprocessable()->assertJsonValidationErrors('lgu_id');
         $this->assertEquals($road, DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->first());
         $token = $this->preview($f)->assertOk()->json('confirmation_token');
         $this->postJson($this->url($f, 'confirm'), $data + ['confirmation_token' => $token])->assertRedirect();
@@ -274,7 +274,7 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
         $source = DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->value('lgu_id');
         $this->postJson($this->url($f, 'preview'), ['lgu_id' => $source])->assertUnprocessable();
         $this->postJson($this->url($f, 'preview'), ['lgu_id' => 999999])->assertUnprocessable();
-        $this->postJson('/dd-phase3/ops/roads/999999/municipality/preview', ['lgu_id' => $f['destination']])->assertNotFound();
+        $this->postJson('/workspace/ops/roads/999999/municipality/preview', ['lgu_id' => $f['destination']])->assertNotFound();
         $this->assertSame(1, DB::table('jairoads_next.audit_logs')->count());
     }
 
@@ -289,7 +289,7 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
         foreach ([$source, $f['destination']] as $lgu) {
             DB::table('jairoads_next.engineer_lgus')->insert(['engineer_id' => $replacement, 'lgu_id' => $lgu, 'is_active' => true]);
         }
-        $this->postJson('/dd-phase3/ops/records/'.$f['record'].'/reassignment', ['managing_engineer_id' => $replacement, 'expected_current_manager_id' => $f['engineer']])->assertRedirect();
+        $this->postJson('/workspace/ops/records/'.$f['record'].'/reassignment', ['managing_engineer_id' => $replacement, 'expected_current_manager_id' => $f['engineer']])->assertRedirect();
         $this->confirm($f, $token)->assertUnprocessable();
         $fresh = $this->preview($f)->assertOk()->assertJsonPath('can_confirm', true)->assertJsonPath('managers.0.engineer_id', $replacement)->json('confirmation_token');
         $before = $this->history();
@@ -382,7 +382,7 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
 
     private function url(array $f, string $stage): string
     {
-        return '/dd-phase3/ops/roads/'.$f['road'].'/municipality/'.$stage;
+        return '/workspace/ops/roads/'.$f['road'].'/municipality/'.$stage;
     }
 
     private function preview(array $f): TestResponse

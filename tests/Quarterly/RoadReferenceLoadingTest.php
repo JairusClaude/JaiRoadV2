@@ -12,12 +12,12 @@ beforeEach(function (): void {
     $this->f = $this->fixture('Engineer');
     $this->lgu = (int) DB::table('jairoads_next.road_coverages')->where('id', $this->f['road'])->value('lgu_id');
     $this->bounds = ['west' => 125.9, 'east' => 126.0, 'south' => 7.5, 'north' => 7.7];
-    $this->referenceUrl = fn (array $params = []): string => '/dd-phase3/ui/map/roads?'.http_build_query($params + $this->bounds);
+    $this->referenceUrl = fn (array $params = []): string => '/workspace/ui/map/roads?'.http_build_query($params + $this->bounds);
 });
 
 it('does not embed the reference network in the road form', function (): void {
-    $this->get('/dd-phase3/ui/road-coverages/create')->assertInertia(fn (Assert $page) => $page
-        ->where('referenceCoverages', [])->where('referenceUrl', '/dd-phase3/ui/map/roads'));
+    $this->get('/workspace/ui/road-coverages/create')->assertInertia(fn (Assert $page) => $page
+        ->where('referenceCoverages', [])->where('referenceUrl', '/workspace/ui/map/roads'));
 });
 
 it('filters all accepted saved line wrappers by bounds without rewriting their coordinates', function (string $type): void {

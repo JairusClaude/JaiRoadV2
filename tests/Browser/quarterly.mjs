@@ -28,9 +28,9 @@ try {
         .getByLabel('Password', { exact: true })
         .fill('Disposable-Test!123');
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-    await page.waitForURL(/dd-phase3\/dashboard/);
+    await page.waitForURL(/workspace\/dashboard/);
     await page.goto(
-        `${base}/dd-phase3/projects?view=show&project=${fixture.project}`,
+        `${base}/workspace/projects?view=show&project=${fixture.project}`,
     );
     await page
         .getByText('No quarterly records recorded yet.', { exact: true })

@@ -151,7 +151,7 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
             'projects' => $this->projectChoices($actor)->orderBy('p.project_title')->get()->map(fn (\stdClass $p): array => $this->projectChoiceData($p)),
             'municipalities' => $this->municipalities($actor)->map(fn (\stdClass $l): array => ['value' => (string) $l->id, 'label' => $l->municipality_name]),
             'years' => $this->records($actor)->reorder()->select('m.maintenance_year')->distinct()->orderByDesc('m.maintenance_year')->pluck('m.maintenance_year'),
-            'historyUrl' => RoleAccess::managesBusinessData($actor['role']) && app(PreservedProjectDeletion::class)->available() ? '/dd-phase3/history/records' : null,
+            'historyUrl' => RoleAccess::managesBusinessData($actor['role']) && app(PreservedProjectDeletion::class)->available() ? '/workspace/history/records' : null,
             'filters' => $filters, 'canCreate' => $this->writable($actor), 'canDelete' => RoleAccess::canDeleteOperations($actor['role']),
             'canBulkDelete' => RoleAccess::canDeleteOperations($actor['role']), 'integration' => ['ready' => true, 'message' => null],
         ]);

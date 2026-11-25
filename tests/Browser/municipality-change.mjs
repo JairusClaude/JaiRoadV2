@@ -46,11 +46,11 @@ try {
         await page
             .getByRole('button', { name: 'Sign in', exact: true })
             .click();
-        await page.waitForURL(/dd-phase3\/dashboard/);
+        await page.waitForURL(/workspace\/dashboard/);
     }
 
     async function openReview(lgu) {
-        await page.goto(`${base}/dd-phase3/roads`);
+        await page.goto(`${base}/workspace/roads`);
         await page
             .getByRole('button', {
                 name: /Municipality acceptance road Coverage ID/,
@@ -120,7 +120,7 @@ try {
         const xsrf = document.cookie
             .split('; ')
             .find((cookie) => cookie.startsWith('XSRF-TOKEN='));
-        const result = await fetch('/dd-phase3/assignments', {
+        const result = await fetch('/workspace/assignments', {
             method: 'POST',
             headers: {
                 Accept: 'application/json',
@@ -165,7 +165,7 @@ try {
         const xsrf = document.cookie
             .split('; ')
             .find((cookie) => cookie.startsWith('XSRF-TOKEN='));
-        const response = await fetch('/dd-phase3/assignments', {
+        const response = await fetch('/workspace/assignments', {
             method: 'POST',
             headers: {
                 Accept: 'application/json',
@@ -239,7 +239,7 @@ try {
     );
 
     await login(fixture.viewer_email);
-    await page.goto(`${base}/dd-phase3/roads`);
+    await page.goto(`${base}/workspace/roads`);
     await page
         .getByRole('button', {
             name: /Municipality acceptance road Coverage ID/,

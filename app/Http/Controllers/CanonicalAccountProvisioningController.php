@@ -82,6 +82,6 @@ final class CanonicalAccountProvisioningController extends Controller
             throw ValidationException::withMessages(['account_type' => 'The database rejected account provisioning. No account was created. Confirm the active UserAccount constraints and submitted values.']);
         }
 
-        return redirect()->route('jairoads.dd-phase3.show', ['section' => 'users'])->with('dd_phase3_status', 'Account created.');
+        return redirect()->route('jairoads.workspace.show', ['section' => 'users'])->with('dd_phase3_status', 'Account created.');
     }
 }

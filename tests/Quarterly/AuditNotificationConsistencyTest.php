@@ -42,7 +42,7 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
         DB::table('jairoads_next.user_accounts')->where('id', $badEvidence->dd_user_account_id)->update(['engineer_id' => $this->engineer()]);
         $badHash = $this->account('SuperAdmin');
         DB::table('public.users')->where('id', $badHash->id)->update(['password' => 'Invalid matching credential state']);
-        $this->post('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer']))->assertRedirect();
+        $this->post('/workspace/ops/records', $this->recordData($f['project'], $f['engineer']))->assertRedirect();
         $event = DB::table('jairoads_next.audit_logs')->sole();
         $this->assertSame('CREATE', $event->action);
         $this->assertSame((int) $f['user']->dd_user_account_id, (int) $event->user_id);
@@ -77,11 +77,11 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
         $month = ['maintenance_id' => $id, 'update_month' => '2027-12', 'progress_percentage' => '12.30', 'summary_of_text_reports' => null];
         $update = (int) DB::table('jairoads_next.monthly_updates')->insertGetId($month + ['created_by' => $f['user']->dd_user_account_id]);
         $persisted = DB::table('jairoads_next.monthly_updates')->where('id', $update)->first();
-        $this->put('/dd-phase3/ops/records/'.$id, $data)->assertRedirect();
-        $this->put('/dd-phase3/ops/updates/'.$update, array_replace($month, ['progress_percentage' => '12.300']))->assertRedirect();
-        $this->put('/dd-phase3/ops/projects/'.$f['project'], ['project_title' => 'Test project', 'road_coverage_id' => $f['road'], 'description' => ''])->assertRedirect();
+        $this->put('/workspace/ops/records/'.$id, $data)->assertRedirect();
+        $this->put('/workspace/ops/updates/'.$update, array_replace($month, ['progress_percentage' => '12.300']))->assertRedirect();
+        $this->put('/workspace/ops/projects/'.$f['project'], ['project_title' => 'Test project', 'road_coverage_id' => $f['road'], 'description' => ''])->assertRedirect();
         $lgu = (int) DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->value('lgu_id');
-        $this->post('/dd-phase3/assignments', ['engineer_id' => $f['engineer'], 'lgu_id' => $lgu, 'is_active' => '1'])->assertRedirect();
+        $this->post('/workspace/assignments', ['engineer_id' => $f['engineer'], 'lgu_id' => $lgu, 'is_active' => '1'])->assertRedirect();
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
         $this->assertSame(0, DB::table(self::DELIVERIES)->count());
         $this->assertEquals($persisted, DB::table('jairoads_next.monthly_updates')->where('id', $update)->first());
@@ -93,13 +93,13 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
         $id = (int) DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->dd_user_account_id]);
         $month = ['maintenance_id' => $id, 'update_month' => '2027-12', 'progress_percentage' => '10', 'summary_of_text_reports' => 'Old report'];
         $update = (int) DB::table('jairoads_next.monthly_updates')->insertGetId($month + ['created_by' => $f['user']->dd_user_account_id]);
-        $this->put('/dd-phase3/ops/updates/'.$update, array_replace($month, ['progress_percentage' => '15', 'summary_of_text_reports' => 'New report']))->assertRedirect();
+        $this->put('/workspace/ops/updates/'.$update, array_replace($month, ['progress_percentage' => '15', 'summary_of_text_reports' => 'New report']))->assertRedirect();
         $event = DB::table('jairoads_next.audit_logs')->sole();
         $this->assertSame(['progress_percentage' => '10.00', 'summary_of_text_reports' => 'Old report'], json_decode($event->old_value, true));
         $this->assertSame(['progress_percentage' => '15.00', 'summary_of_text_reports' => 'New report'], json_decode($event->new_value, true));
         $historical = json_encode($event);
         DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->update(['username' => 'renamed-account']);
-        $this->delete('/dd-phase3/ops/updates/'.$update)->assertRedirect();
+        $this->delete('/workspace/ops/updates/'.$update)->assertRedirect();
         $deleted = DB::table('jairoads_next.audit_logs')->where('action', 'DELETE')->sole();
         $this->assertSame('15.00', json_decode($deleted->old_value, true)['progress_percentage']);
         $this->assertNull($deleted->new_value);
@@ -112,18 +112,18 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
     {
         $f = $this->fixture();
         $road = DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->first();
-        $this->put('/dd-phase3/ops/roads/'.$f['road'], ['road_name' => $road->road_name, 'lgu_id' => (string) $road->lgu_id,
+        $this->put('/workspace/ops/roads/'.$f['road'], ['road_name' => $road->road_name, 'lgu_id' => (string) $road->lgu_id,
             'kilometers' => '1.000', 'pavement_type' => $road->pavement_type, 'state_category' => $road->state_category,
             'geojson' => '{"coordinates":[[123.0,10.0],[123.1,10.1]],"type":"LineString"}'])->assertRedirect();
         $this->assertEquals($road, DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->first());
         $lgu = (array) DB::table('jairoads_next.lgus')->where('id', $road->lgu_id)->first();
-        $this->put('/dd-phase3/lgus/'.$road->lgu_id, $lgu)->assertRedirect();
+        $this->put('/workspace/lgus/'.$road->lgu_id, $lgu)->assertRedirect();
         $record = (int) DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->dd_user_account_id]);
         $document = (int) DB::table('jairoads_next.maintenance_documents')->insertGetId(['maintenance_id' => $record, 'document_title' => 'Same title', 'file_name' => 'same.pdf', 'file_path' => 'private-never-audited', 'uploaded_by' => $f['user']->dd_user_account_id]);
-        $this->put('/dd-phase3/ops/documents/'.$document, ['document_title' => 'Same title', 'description' => ''])->assertRedirect();
+        $this->put('/workspace/ops/documents/'.$document, ['document_title' => 'Same title', 'description' => ''])->assertRedirect();
         $username = DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->value('username');
-        $this->put('/dd-phase3/ops/settings', ['username' => $username, 'current_password' => 'Disposable-Test!123'])->assertRedirect();
-        $this->patch('/dd-phase3/accounts/'.$f['user']->dd_user_account_id.'/status', ['is_active' => '1'])->assertRedirect();
+        $this->put('/workspace/ops/settings', ['username' => $username, 'current_password' => 'Disposable-Test!123'])->assertRedirect();
+        $this->patch('/workspace/accounts/'.$f['user']->dd_user_account_id.'/status', ['is_active' => '1'])->assertRedirect();
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
         $this->assertSame(0, DB::table(self::DELIVERIES)->count());
     }
@@ -146,7 +146,7 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
     {
         $f = $this->fixture();
         DB::unprepared("CREATE FUNCTION jairoads_next.fail_delivery_test() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'Disposable recipient failure'; END $$; CREATE TRIGGER fail_delivery_test BEFORE INSERT ON ".self::DELIVERIES.' FOR EACH ROW EXECUTE FUNCTION jairoads_next.fail_delivery_test()');
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer']))->assertServerError();
+        $this->postJson('/workspace/ops/records', $this->recordData($f['project'], $f['engineer']))->assertServerError();
         $this->assertSame(0, DB::table('jairoads_next.maintenance_records')->count());
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
         $this->assertSame(0, DB::table(self::DELIVERIES)->count());
@@ -196,7 +196,7 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
     public function test_history_and_deliveries_reject_mutation_and_duplicate_delivery(): void
     {
         $f = $this->fixture();
-        $this->post('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer']))->assertRedirect();
+        $this->post('/workspace/ops/records', $this->recordData($f['project'], $f['engineer']))->assertRedirect();
         foreach (['jairoads_next.audit_logs', self::DELIVERIES] as $table) {
             foreach (['UPDATE '.$table.' SET created_at = CURRENT_TIMESTAMP', 'DELETE FROM '.$table, 'TRUNCATE '.$table.' CASCADE'] as $sql) {
                 try {
@@ -233,14 +233,14 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
         DB::table(self::DELIVERIES)->insert(['audit_log_id' => $id, 'recipient_user_id' => $other->dd_user_account_id, 'notification_message' => 'Someone else']);
         $history = DB::table('jairoads_next.audit_logs')->get()->toJson();
         $this->getJson('/jairoads/notifications?recipient_user_id='.$other->dd_user_account_id)->assertOk()->assertExactJson(['notifications' => [['id' => $id, 'notification_message' => 'Current addressed message', 'created_at' => DB::table(self::DELIVERIES)->value('created_at')]]]);
-        $response = $this->get('/dd-phase3/audit-logs');
+        $response = $this->get('/workspace/audit-logs');
         if (in_array($role, ['Admin', 'SuperAdmin'], true)) {
             $response->assertOk()->assertDontSee('NEVER-RETURN');
         } else {
             $response->assertForbidden();
         }
-        $this->put('/dd-phase3/audit-logs/'.$id, [])->assertNotFound();
-        $this->delete('/dd-phase3/audit-logs/'.$id)->assertNotFound();
+        $this->put('/workspace/audit-logs/'.$id, [])->assertNotFound();
+        $this->delete('/workspace/audit-logs/'.$id)->assertNotFound();
         $this->assertSame($history, DB::table('jairoads_next.audit_logs')->get()->toJson());
     }
 
@@ -259,7 +259,7 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
     {
         $f = $this->fixture();
         DB::statement('DROP TABLE '.self::DELIVERIES);
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer']))->assertStatus(503);
+        $this->postJson('/workspace/ops/records', $this->recordData($f['project'], $f['engineer']))->assertStatus(503);
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
         $this->assertSame(0, DB::table('jairoads_next.maintenance_records')->count());
         $this->getJson('/jairoads/notifications')->assertOk()->assertExactJson(['notifications' => []]);
@@ -269,12 +269,12 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
     {
         $f = $this->fixture();
         $data = $this->recordData($f['project'], $f['engineer']);
-        $this->postJson('/dd-phase3/ops/records', array_replace($data, ['start_date' => '2027-01-01']))->assertUnprocessable();
-        $this->withSession(['password_hash_web' => null])->actingAs($this->account('Viewer'))->postJson('/dd-phase3/ops/records', $data)->assertForbidden();
+        $this->postJson('/workspace/ops/records', array_replace($data, ['start_date' => '2027-01-01']))->assertUnprocessable();
+        $this->withSession(['password_hash_web' => null])->actingAs($this->account('Viewer'))->postJson('/workspace/ops/records', $data)->assertForbidden();
         $this->withSession(['password_hash_web' => null])->actingAs($f['user']);
         $record = (int) DB::table('jairoads_next.maintenance_records')->insertGetId($data + ['created_by' => $f['user']->dd_user_account_id]);
         DB::table('jairoads_next.monthly_updates')->insert(['maintenance_id' => $record, 'update_month' => '2026-01', 'progress_percentage' => 10, 'created_by' => $f['user']->dd_user_account_id]);
-        $this->deleteJson('/dd-phase3/ops/records/'.$record)->assertUnprocessable();
+        $this->deleteJson('/workspace/ops/records/'.$record)->assertUnprocessable();
         $this->assertDatabaseHas('jairoads_next.maintenance_records', ['id' => $record]);
         $actor = app(AccountIdentityResolver::class)->resolve($f['user']);
         try {
@@ -295,7 +295,7 @@ final class AuditNotificationConsistencyTest extends PostgresTestCase
     public function test_auxiliary_table_requires_explicit_privileges_and_rls_policy(): void
     {
         $f = $this->fixture();
-        $this->post('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer']))->assertRedirect();
+        $this->post('/workspace/ops/records', $this->recordData($f['project'], $f['engineer']))->assertRedirect();
         DB::statement('CREATE ROLE jairoads_delivery_rehearsal NOLOGIN');
         DB::statement('GRANT USAGE ON SCHEMA jairoads_next TO jairoads_delivery_rehearsal');
         try {

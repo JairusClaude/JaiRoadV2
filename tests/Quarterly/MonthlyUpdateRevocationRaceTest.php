@@ -43,7 +43,7 @@ final class MonthlyUpdateRevocationRaceTest extends PostgresTestCase
             // Same parent -> record order as the explicit reassignment workflow.
             DB::table('jairoads_next.maintenance_records')->where('id', $record)->lockForUpdate()->first();
             $worker = new Process([PHP_BINARY, __DIR__.'/monthly-concurrency-request.php', (string) $f['user']->id,
-                $method, '/dd-phase3/ops/updates'.($id === null ? '' : '/'.$id),
+                $method, '/workspace/ops/updates'.($id === null ? '' : '/'.$id),
                 json_encode(['maintenance_id' => $record, 'update_month' => '2026-01',
                     'progress_percentage' => 40, 'summary_of_text_reports' => 'Authorized revision'], JSON_THROW_ON_ERROR)]);
             $worker->setTimeout(20);

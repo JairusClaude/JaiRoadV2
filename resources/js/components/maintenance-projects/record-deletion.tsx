@@ -41,7 +41,7 @@ export function useRecordDeletion(returnUrl?: string) {
         if (targets.length === 1) {
             const url =
                 targets[0].delete_url ||
-                `/dd-phase3/ui/maintenance-records/${targets[0].id}`;
+                `/workspace/ui/maintenance-records/${targets[0].id}`;
             router.delete(
                 returnUrl
                     ? `${url}?${new URLSearchParams({ return_to: returnUrl })}`
@@ -56,7 +56,7 @@ export function useRecordDeletion(returnUrl?: string) {
                 },
             );
         } else {
-            router.delete(`/dd-phase3/ui/maintenance-records/bulk`, {
+            router.delete(`/workspace/ui/maintenance-records/bulk`, {
                 data: { ...verification, record_ids: targets.map((t) => t.id) },
                 preserveScroll: true,
                 onError: (errors) => setError(Object.values(errors).join(' ')),

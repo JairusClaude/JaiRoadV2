@@ -28,12 +28,12 @@ final class GuardLegacyRoutesForCanonicalAccounts
         $user = $request->user();
         if ($user instanceof User && $user->getAttribute('dd_user_account_id') !== null) {
             $canonicalUiModules = [
-                'road-coverages' => '/dd-phase3/ui/road-coverages',
-                'maintenance-projects' => '/dd-phase3/ui/maintenance-projects',
-                'maintenance-records' => '/dd-phase3/ui/maintenance-records',
-                'monthly-updates' => '/dd-phase3/ui/monthly-updates',
-                'maintenance-documents' => '/dd-phase3/ui/maintenance-documents',
-                'lgus' => '/dd-phase3/ui/lgus',
+                'road-coverages' => '/workspace/ui/road-coverages',
+                'maintenance-projects' => '/workspace/ui/maintenance-projects',
+                'maintenance-records' => '/workspace/ui/maintenance-records',
+                'monthly-updates' => '/workspace/ui/monthly-updates',
+                'maintenance-documents' => '/workspace/ui/maintenance-documents',
+                'lgus' => '/workspace/ui/lgus',
             ];
             $cleanPath = trim($request->path(), '/');
             if (($request->isMethod('GET') || $request->isMethod('HEAD')) && isset($canonicalUiModules[$cleanPath])) {
@@ -62,7 +62,7 @@ final class GuardLegacyRoutesForCanonicalAccounts
                 $identity = app(AccountIdentityResolver::class)->resolve($user);
                 abort_unless($identity !== null, 403, 'Your account is unavailable. Please contact your administrator.');
 
-                return redirect()->route('jairoads.dd-phase3.show', ['section' => $section]);
+                return redirect()->route('jairoads.workspace.show', ['section' => $section]);
             }
             // Legacy profile/password actions modify only public.users and can
             // invalidate a canonical identity whose two password hashes must match.

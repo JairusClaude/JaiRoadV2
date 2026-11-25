@@ -195,7 +195,7 @@ export default function Show({
                                             {engineerDetailsAvailable ? (
                                                 <Link
                                                     className="jr-project-title underline underline-offset-2"
-                                                    href={`/dd-phase3/users?engineer_id=${assignment.engineer_id}`}
+                                                    href={`/workspace/users?engineer_id=${assignment.engineer_id}`}
                                                 >
                                                     {assignment.full_name}
                                                 </Link>

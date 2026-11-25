@@ -46,6 +46,6 @@ final class EngineerAssignmentController extends Controller
             $this->audit($actor, $action, 'EngineerLGU', (int) $v['engineer_id'], 'Authorized administrator maintained an EngineerLGU assignment.', $key + ['is_active' => (bool) $v['is_active']], $existing ? $key + ['is_active' => $existing->is_active] : []);
         });
 
-        return redirect()->route('jairoads.dd-phase3.show', ['section' => 'users'])->with('dd_phase3_status', 'Engineer assignment saved.');
+        return redirect()->route('jairoads.workspace.show', ['section' => 'users'])->with('dd_phase3_status', 'Engineer assignment saved.');
     }
 }

@@ -100,7 +100,7 @@ async function session() {
 
     async function submitCamera(token, jpeg) {
         return request(
-            '/dd-phase3/ui/deletion-challenge/camera?scope=project',
+            '/workspace/ui/deletion-challenge/camera?scope=project',
             {
                 method: 'POST',
                 body: jpeg,
@@ -122,7 +122,7 @@ async function session() {
 
 async function verifiedProjectDeletion(client) {
     const challengeResponse = await client.request(
-        '/dd-phase3/ui/deletion-challenge?scope=project',
+        '/workspace/ui/deletion-challenge?scope=project',
         { headers: { Accept: 'application/json' } },
     );
     assert.equal(challengeResponse.status, 200);
@@ -279,26 +279,26 @@ try {
                 location.pathname,
                 role === 'SuperAdmin'
                     ? '/dd-superadmin-landing'
-                    : '/dd-phase3/dashboard',
+                    : '/workspace/dashboard',
             );
             assert.equal((await s.request(location.pathname)).status, 200);
 
             if (role === 'Viewer') {
                 assert.equal(
                     (
-                        await s.post('/dd-phase3/ops/projects', {
+                        await s.post('/workspace/ops/projects', {
                             project_title: 'Denied',
                             road_coverage_id: '1',
                         })
                     ).status,
                     403,
                 );
-                assert.equal((await s.request('/dd-phase3/users')).status, 403);
+                assert.equal((await s.request('/workspace/users')).status, 403);
             }
 
             if (role === 'Engineer') {
                 const file = await s.request(
-                    `/dd-phase3/files/document/${fixture.document_id}`,
+                    `/workspace/files/document/${fixture.document_id}`,
                 );
                 assert.equal(file.status, 200);
                 assert.deepEqual(Buffer.from(await file.arrayBuffer()), pdf);
@@ -315,7 +315,7 @@ try {
         // Permission to write or delete remains separately restricted.
         const before = mock.counts.downloads;
         const otherEngineerDownload = await rogue.request(
-            `/dd-phase3/files/document/${fixture.document_id}`,
+            `/workspace/files/document/${fixture.document_id}`,
         );
         assert.equal(otherEngineerDownload.status, 200);
         assert.deepEqual(
@@ -327,7 +327,7 @@ try {
         assert.equal(
             (
                 await guest.request(
-                    `/dd-phase3/files/document/${fixture.document_id}`,
+                    `/workspace/files/document/${fixture.document_id}`,
                 )
             ).status,
             302,
@@ -343,22 +343,22 @@ try {
                 password: 'Disposable-Test!123',
             });
             const result = await client.remove(
-                `/dd-phase3/files/${kind}/${id}`,
+                `/workspace/files/${kind}/${id}`,
             );
             assert.equal(result.status, 200, `${kind} deletion status`);
             assert.equal((await result.json()).state, 'completed');
             const repeated = await client.remove(
-                `/dd-phase3/files/${kind}/${id}`,
+                `/workspace/files/${kind}/${id}`,
             );
             assert.equal(repeated.status, 200);
             assert.equal(
-                (await client.request(`/dd-phase3/files/${kind}/${id}`)).status,
+                (await client.request(`/workspace/files/${kind}/${id}`)).status,
                 404,
             );
             assert.equal(
                 (
                     await client.request(
-                        `/dd-phase3/ui/maintenance-projects/${fixture.project_id}`,
+                        `/workspace/ui/maintenance-projects/${fixture.project_id}`,
                     )
                 ).status,
                 200,
@@ -371,8 +371,8 @@ try {
             password: 'Disposable-Test!123',
         });
         const retainedFiles = [
-            `/dd-phase3/files/document/${fixture.preserved_document}`,
-            `/dd-phase3/files/media/${fixture.preserved_media}`,
+            `/workspace/files/document/${fixture.preserved_document}`,
+            `/workspace/files/media/${fixture.preserved_media}`,
         ];
         const retainedBytes = await Promise.all(
             retainedFiles.map(async (path) => {
@@ -382,7 +382,7 @@ try {
                 return Buffer.from(await result.arrayBuffer());
             }),
         );
-        const blockedProject = `/dd-phase3/ui/maintenance-projects/${fixture.preserved_project}`;
+        const blockedProject = `/workspace/ui/maintenance-projects/${fixture.preserved_project}`;
         const blockedPreview = await historicalAdmin.request(
             `${blockedProject}/deletion-preview`,
             { headers: { Accept: 'application/json' } },
@@ -395,7 +395,7 @@ try {
         assert.equal(
             (
                 await historicalAdmin.post(
-                    `/dd-phase3/ops/records/${fixture.preserved_record}/unassignment`,
+                    `/workspace/ops/records/${fixture.preserved_record}/unassignment`,
                     { expected_current_manager_id: fixture.engineer_id },
                 )
             ).status,
@@ -424,7 +424,7 @@ try {
             );
         }
 
-        const emptyProject = `/dd-phase3/ui/maintenance-projects/${fixture.empty_project}`;
+        const emptyProject = `/workspace/ui/maintenance-projects/${fixture.empty_project}`;
         const emptyPreviewResponse = await historicalAdmin.request(
             `${emptyProject}/deletion-preview`,
             { headers: { Accept: 'application/json' } },

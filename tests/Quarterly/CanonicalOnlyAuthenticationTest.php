@@ -30,14 +30,14 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
         $this->assertSame(0, DB::table(AccountProvisioning::TABLE)->count());
         $this->assertNull($login->email_verified_at);
         $this->postJson('/login', ['email' => $login->email, 'password' => 'Disposable-Root!123'])->assertOk();
-        $this->get('/dd-phase3/users')->assertOk();
-        $this->postJson('/dd-phase3/engineers', ['first_name' => 'New', 'last_name' => 'Profile', 'contact_no' => '09000000000', 'rank' => 'Engineer I'])->assertRedirect();
+        $this->get('/workspace/users')->assertOk();
+        $this->postJson('/workspace/engineers', ['first_name' => 'New', 'last_name' => 'Profile', 'contact_no' => '09000000000', 'rank' => 'Engineer I'])->assertRedirect();
         $engineer = DB::table('jairoads_next.engineers')->value('id');
-        $this->postJson('/dd-phase3/accounts', $this->provision('Viewer', (int) $engineer))->assertRedirect();
+        $this->postJson('/workspace/accounts', $this->provision('Viewer', (int) $engineer))->assertRedirect();
         $account = DB::table('jairoads_next.user_accounts')->where('username', 'ordinary')->first();
         $this->assertDatabaseHas(AccountProvisioning::TABLE, ['user_account_id' => $account->id, 'provisioned_by' => $id, 'method' => 'administrator']);
         $this->assertSame('Viewer', $account->account_type);
-        $this->postJson('/dd-phase3/accounts', array_replace($this->provision('SuperAdmin', (int) $engineer), ['username' => 'fake-root']))->assertUnprocessable();
+        $this->postJson('/workspace/accounts', array_replace($this->provision('SuperAdmin', (int) $engineer), ['username' => 'fake-root']))->assertUnprocessable();
         try {
             app(TrustedSuperAdminBootstrap::class)->create('second-root', 'second@example.test', 'Second', 'Disposable-Root!123');
             $this->fail('Bootstrap may not create additional SuperAdmins.');
@@ -154,7 +154,7 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
                 throw new \RuntimeException('Isolated provenance failure');
             }
         });
-        $this->postJson('/dd-phase3/accounts', $this->provision('Viewer', $this->engineer()))->assertServerError();
+        $this->postJson('/workspace/accounts', $this->provision('Viewer', $this->engineer()))->assertServerError();
         $this->assertSame($before, DB::table('public.users')->count());
         $this->assertSame($before, DB::table('jairoads_next.user_accounts')->count());
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
@@ -167,7 +167,7 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
         DB::statement('ALTER TABLE jairoads_security.account_provisioning RENAME TO offline_evidence');
         $this->assertNull(app(AccountIdentityResolver::class)->resolve($login));
         $this->assertNotNull(app(AccountIdentityResolver::class)->resolve($root));
-        $this->actingAs($root)->postJson('/dd-phase3/accounts', $this->provision('Viewer', $this->engineer()))->assertStatus(503);
+        $this->actingAs($root)->postJson('/workspace/accounts', $this->provision('Viewer', $this->engineer()))->assertStatus(503);
     }
 
     public function test_last_eligible_superadmin_is_protected_when_another_active_root_has_no_bridge(): void
@@ -176,7 +176,7 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
         $broken = $this->account('SuperAdmin');
         DB::table('public.users')->where('id', $broken->id)->update(['dd_user_account_id' => null]);
         $admin = $this->account('Admin');
-        $this->actingAs($admin)->patchJson('/dd-phase3/accounts/'.$root->dd_user_account_id.'/status', ['is_active' => false])
+        $this->actingAs($admin)->patchJson('/workspace/accounts/'.$root->dd_user_account_id.'/status', ['is_active' => false])
             ->assertUnprocessable()->assertJsonValidationErrors('is_active');
         $this->assertDatabaseHas('jairoads_next.user_accounts', ['id' => $root->dd_user_account_id, 'is_active' => true]);
     }
@@ -212,12 +212,12 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
 
         // Legacy module entry points redirect to canonical pages.
         $this->get('/monthly-updates-preview')
-            ->assertRedirect(route('jairoads.dd-phase3.show', [
+            ->assertRedirect(route('jairoads.workspace.show', [
                 'section' => 'updates',
             ]));
 
         $this->get('/project-documents-preview')
-            ->assertRedirect(route('jairoads.dd-phase3.show', [
+            ->assertRedirect(route('jairoads.workspace.show', [
                 'section' => 'documents',
             ]));
 
@@ -248,7 +248,7 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
         $this->postJson('/two-factor-challenge', ['code' => (new Google2FA)->getCurrentOtp($secret)])->assertNoContent();
         $this->assertAuthenticatedAs($login);
         $this->assertSame('Viewer', $this->identity($login)['role']);
-        $this->postJson('/dd-phase3/ops/projects', [])->assertForbidden();
+        $this->postJson('/workspace/ops/projects', [])->assertForbidden();
     }
 
     private function identity(User $user): array

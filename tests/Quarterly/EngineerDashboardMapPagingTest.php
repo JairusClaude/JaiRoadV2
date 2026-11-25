@@ -28,24 +28,24 @@ it('pages dashboard maps without dropping older assigned roads', function (): vo
         ];
     }
     DB::table('jairoads_next.road_coverages')->insert($batch);
-    $this->get('/dd-phase3/dashboard')->assertOk()
+    $this->get('/workspace/dashboard')->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->has('mapCoverages', 100)->where('mapNextCursor', fn ($v) => is_int($v) && $v > 0));
 
-    $response = $this->get('/dd-phase3/dashboard');
+    $response = $this->get('/workspace/dashboard');
     $page = $response->viewData('page');
     $cursor = $page['props']['mapNextCursor'];
-    $result = $this->getJson('/dd-phase3/dashboard/map-roads?before='.$cursor)
+    $result = $this->getJson('/workspace/dashboard/map-roads?before='.$cursor)
         ->assertOk()->assertHeader('Cache-Control', 'no-store, private')
         ->assertJsonCount(5, 'data')->assertJsonPath('next_cursor', null);
     $older = collect($result->json('data'))->firstWhere('id', $f['road']);
     expect($older)->not->toBeNull();
     expect($older['my_project'])->toBeTrue();
-    $this->getJson('/dd-phase3/dashboard/map-roads?before=not-a-number')
+    $this->getJson('/workspace/dashboard/map-roads?before=not-a-number')
         ->assertUnprocessable();
 });
 
 it('rejects non-engineers from the dashboard road map endpoint', function (): void {
     $this->fixture('Viewer');
-    $this->getJson('/dd-phase3/dashboard/map-roads?before=1')->assertForbidden();
+    $this->getJson('/workspace/dashboard/map-roads?before=1')->assertForbidden();
 });

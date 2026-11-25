@@ -10,7 +10,7 @@ uses(PostgresTestCase::class);
 it('deletes a road with exactly one actor-attributed canonical audit event', function (): void {
     $fixture = $this->fixture('Admin');
     $roadId = $this->road($fixture['engineer']);
-    $this->delete('/dd-phase3/ui/road-coverages/'.$roadId)->assertRedirect();
+    $this->delete('/workspace/ui/road-coverages/'.$roadId)->assertRedirect();
 
     $this->assertDatabaseMissing('jairoads_next.road_coverages', ['id' => $roadId]);
     $event = DB::table('jairoads_next.audit_logs')->where('entity_type', 'RoadCoverage')
@@ -21,7 +21,7 @@ it('deletes a road with exactly one actor-attributed canonical audit event', fun
 
 it('blocks deletion of roads referenced by projects without recording a delete audit', function (): void {
     $fixture = $this->fixture('Admin');
-    $this->delete('/dd-phase3/ui/road-coverages/'.$fixture['road'])
+    $this->delete('/workspace/ui/road-coverages/'.$fixture['road'])
         ->assertSessionHasErrors('delete');
     $this->assertDatabaseHas('jairoads_next.road_coverages', ['id' => $fixture['road']]);
     expect(DB::table('jairoads_next.audit_logs')->where('action', 'DELETE')->count())->toBe(0);
@@ -30,7 +30,7 @@ it('blocks deletion of roads referenced by projects without recording a delete a
 it('validates all bulk IDs before removing any roads', function (): void {
     $fixture = $this->fixture('Admin');
     $road = $this->road($fixture['engineer']);
-    $url = '/dd-phase3/ui/road-coverages/bulk';
+    $url = '/workspace/ui/road-coverages/bulk';
 
     $this->deleteJson($url, ['ids' => [$road, $road]])->assertUnprocessable()->assertJsonValidationErrors('ids.1');
     $this->deleteJson($url, ['ids' => array_fill(0, 101, $road)])->assertUnprocessable()->assertJsonValidationErrors('ids');
@@ -60,7 +60,7 @@ END $$;
 CREATE TRIGGER reject_road_delete_audit BEFORE INSERT ON jairoads_next.audit_logs
 FOR EACH ROW EXECUTE FUNCTION jairoads_next.reject_road_delete_audit();
 SQL);
-    $this->deleteJson('/dd-phase3/ui/road-coverages/'.$road)->assertServerError();
+    $this->deleteJson('/workspace/ui/road-coverages/'.$road)->assertServerError();
     $this->assertDatabaseHas('jairoads_next.road_coverages', ['id' => $road]);
     expect(DB::table('jairoads_next.audit_logs')->where('entity_type', 'RoadCoverage')->count())->toBe(0);
 });

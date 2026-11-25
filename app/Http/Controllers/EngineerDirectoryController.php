@@ -36,6 +36,6 @@ final class EngineerDirectoryController extends Controller
             $this->audit($actor, 'CREATE', 'Engineer', $id, 'Authorized administrator created an Engineer.', ['engineer_id' => $id, 'engineer_status' => 'Active']);
         });
 
-        return redirect()->route('jairoads.dd-phase3.show', ['section' => 'users'])->with('dd_phase3_status', 'Engineer profile created.');
+        return redirect()->route('jairoads.workspace.show', ['section' => 'users'])->with('dd_phase3_status', 'Engineer profile created.');
     }
 }

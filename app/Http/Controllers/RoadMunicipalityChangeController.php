@@ -43,7 +43,7 @@ final class RoadMunicipalityChangeController extends OperationsController
         });
 
         $message = 'Municipality changed from '.$impact['previous']['municipality'].' to '.$impact['proposed']['municipality'].'. Road geometry and maintenance history were preserved.';
-        $details = '/dd-phase3/ui/road-coverages/'.$id;
+        $details = '/workspace/ui/road-coverages/'.$id;
         if ($request->input('return_to') === $details) {
             return redirect($details)->with('dd_operations_status', $message);
         }

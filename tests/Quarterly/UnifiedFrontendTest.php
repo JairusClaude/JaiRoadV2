@@ -12,7 +12,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 
 final class UnifiedFrontendTest extends PostgresTestCase
 {
-    private const UI = '/dd-phase3/ui';
+    private const UI = '/workspace/ui';
 
     public static function roles(): iterable
     {
@@ -61,7 +61,7 @@ final class UnifiedFrontendTest extends PostgresTestCase
             $this->recordData($f['project'], $f['engineer'], 'Q2') + ['created_by' => $f['user']->dd_user_account_id],
             $this->recordData($project, $other) + ['created_by' => $f['user']->dd_user_account_id],
         ]);
-        $this->get('/dd-phase3/dashboard?engineer_id='.$other)->assertOk()->assertInertia(fn (Assert $page) => $page
+        $this->get('/workspace/dashboard?engineer_id='.$other)->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('RoleDashboard/Canonical')->has('mapCoverages', 3)
             ->where('mapCoverages.0.id', $unassigned)->where('mapCoverages.0.my_project', false)
             ->where('mapCoverages.0.project_id', null)
@@ -71,10 +71,10 @@ final class UnifiedFrontendTest extends PostgresTestCase
         // Switching test identities must also clear the previous Laravel
         // authentication-session password hash.
         $this->flushSession();
-        $this->actingAs($otherLogin)->get('/dd-phase3/dashboard')->assertOk()->assertInertia(fn (Assert $page) => $page
+        $this->actingAs($otherLogin)->get('/workspace/dashboard')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->where('mapCoverages.0.my_project', false)->where('mapCoverages.1.my_project', true));
         $this->flushSession();
-        $this->actingAs($this->account('Viewer'))->get('/dd-phase3/dashboard')->assertOk()->assertInertia(fn (Assert $page) => $page
+        $this->actingAs($this->account('Viewer'))->get('/workspace/dashboard')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->has('mapCoverages', 0));
     }
 
@@ -85,7 +85,7 @@ final class UnifiedFrontendTest extends PostgresTestCase
         $update = $this->monthly($f, $record);
         $document = $this->document($f, $record);
         $unassigned = $this->road();
-        $url = '/dd-phase3/dashboard/roads/';
+        $url = '/workspace/dashboard/roads/';
         $this->getJson($url.$f['road'])->assertOk()
             ->assertJsonPath('id', $f['road'])
             ->assertJsonPath('project.id', $f['project'])
@@ -327,13 +327,13 @@ final class UnifiedFrontendTest extends PostgresTestCase
         $this->post(self::UI.'/maintenance-documents', ['maintenance_id' => $record, 'document_title' => 'Mismatched extension',
             'attachment' => UploadedFile::fake()->createWithContent('inspection.txt', "%PDF-1.4\nDisposable\n%%EOF")])->assertSessionHasErrors(['attachment']);
         $this->get(self::UI.'/maintenance-documents/'.$doc->id)->assertInertia(fn (Assert $page) => $page
-            ->where('document.download_url', '/dd-phase3/files/document/'.$doc->id)->missing('document.file_path')->missing('document.password'));
+            ->where('document.download_url', '/workspace/files/document/'.$doc->id)->missing('document.file_path')->missing('document.password'));
         Http::assertSentCount(1);
         $this->withSession(['password_hash_web' => null])->actingAs($this->account('Engineer', $this->engineer()));
         // Verified Engineer reads remain cross-municipality, without write or
         // file-path disclosure privileges.
         $this->get(self::UI.'/maintenance-documents/'.$doc->id)->assertOk();
-        $this->get('/dd-phase3/files/document/'.$doc->id)->assertOk();
+        $this->get('/workspace/files/document/'.$doc->id)->assertOk();
         Http::assertSentCount(2);
     }
 

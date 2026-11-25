@@ -204,7 +204,7 @@ function CreateForm({
         const controller = new AbortController();
         const timer = setTimeout(() => {
             void fetch(
-                `/dd-phase3/eligible-engineers?search=${encodeURIComponent(searchTerm)}`,
+                `/workspace/eligible-engineers?search=${encodeURIComponent(searchTerm)}`,
                 {
                     credentials: 'same-origin',
                     headers: { Accept: 'application/json' },
@@ -283,7 +283,7 @@ function CreateForm({
         onBusy(true);
         setErrors({});
         router.post(
-            isAccount ? '/dd-phase3/accounts' : '/dd-phase3/engineers',
+            isAccount ? '/workspace/accounts' : '/workspace/engineers',
             isAccount ? account : engineer,
             {
                 preserveScroll: true,
@@ -533,7 +533,7 @@ export default function CanonicalUserManagement({
 
         const timer = setTimeout(() => {
             router.get(
-                '/dd-phase3/users',
+                '/workspace/users',
                 {
                     directory_tab: tab,
                     directory_search: normalizedSearch,
@@ -609,7 +609,7 @@ export default function CanonicalUserManagement({
         }
 
         router.get(
-            '/dd-phase3/users',
+            '/workspace/users',
             {
                 directory_tab: tab,
                 directory_search: normalizedSearch,

@@ -21,7 +21,7 @@ final class RoadMetadataRevocationRaceTest extends PostgresTestCase
             DB::beginTransaction();
             DB::select('SELECT pg_advisory_xact_lock(1927710916)');
             $worker = new Process([PHP_BINARY, __DIR__.'/monthly-concurrency-request.php', (string) $f['user']->id,
-                'PUT', '/dd-phase3/ops/roads/'.$f['road'], json_encode([
+                'PUT', '/workspace/ops/roads/'.$f['road'], json_encode([
                     'road_name' => 'Must not commit', 'lgu_id' => $before->lgu_id, 'kilometers' => $before->kilometers,
                     'pavement_type' => $before->pavement_type, 'state_category' => $before->state_category,
                 ], JSON_THROW_ON_ERROR)]);
@@ -66,7 +66,7 @@ final class RoadMetadataRevocationRaceTest extends PostgresTestCase
             DB::beginTransaction();
             DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->lockForUpdate()->first();
             $worker = new Process([PHP_BINARY, __DIR__.'/monthly-concurrency-request.php', (string) $f['user']->id,
-                'PUT', '/dd-phase3/ops/roads/'.$f['road'], json_encode([
+                'PUT', '/workspace/ops/roads/'.$f['road'], json_encode([
                     'road_name' => 'Authorized metadata revision', 'lgu_id' => $before->lgu_id,
                     'kilometers' => $before->kilometers, 'pavement_type' => $before->pavement_type,
                     'state_category' => $before->state_category,

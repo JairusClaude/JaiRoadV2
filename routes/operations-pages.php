@@ -13,7 +13,7 @@ use App\Http\Controllers\RoadCoveragePageController;
 use Illuminate\Support\Facades\Route;
 
 // These page routes use canonical projections and scoped operations.
-Route::middleware(['auth'])->prefix('dd-phase3/ui')->name('jairoads.ui.')->group(function (): void {
+Route::middleware(['auth'])->prefix('workspace/ui')->name('jairoads.ui.')->group(function (): void {
     Route::get('/map/roads', [RoadCoveragePageController::class, 'roadReferences'])->name('roads.references');
     Route::get('/map/road-index', [RoadCoveragePageController::class, 'roadMapPage'])->name('roads.map-page');
     Route::get('/road-coverages', [RoadCoveragePageController::class, 'roadIndex'])->name('roads.index');
@@ -30,7 +30,7 @@ Route::middleware(['auth'])->prefix('dd-phase3/ui')->name('jairoads.ui.')->group
     Route::get('/maintenance-projects/{id}/edit', [MaintenanceProjectPageController::class, 'projectForm'])->whereNumber('id')->name('projects.edit');
     Route::get('/deletion-challenge', [PreservedHistoryController::class, 'challenge'])->middleware('throttle:20,1,jr-deletion-challenge-')->name('deletion.challenge');
     Route::post('/deletion-challenge/camera', [PreservedHistoryController::class, 'camera'])->middleware('throttle:20,1,jr-deletion-camera-')->name('deletion.camera');
-    Route::get('/maintenance-projects/{id}/deletion-preview', [PreservedHistoryController::class, 'preview'])->whereNumber('id');
+    Route::get('/maintenance-projects/{id}/deletion-preview', [PreservedHistoryController::class, 'preview'])->whereNumber('id')->name('projects.deletion-preview');
     Route::delete('/maintenance-projects/bulk', [PreservedHistoryController::class, 'bulkDelete'])->name('projects.bulk-destroy');
     Route::delete('/maintenance-projects/{id}', [PreservedHistoryController::class, 'delete'])->whereNumber('id')->middleware('throttle:6,1,jr-projects-destroy-')->name('projects.destroy');
     Route::post('/maintenance-projects', [MaintenanceProjectPageController::class, 'saveProject'])->name('projects.store');

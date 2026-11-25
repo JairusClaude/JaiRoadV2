@@ -99,7 +99,7 @@ final class PermanentFileDeletion
             'maintenance_id' => (int) $row->maintenance_id, 'monthly_update_id' => $row->monthly_update_id ?? null,
             'pending' => $pending, 'can_delete' => $enabled, 'policy_status' => $enabled ? 'permanent_individual_deletion' : 'pending_schema_owner',
             'message' => $enabled ? 'Only this selected file and its private Storage object will be permanently removed.' : 'Permanent file deletion is temporarily unavailable.',
-            'delete_url' => $enabled ? '/dd-phase3/files/'.$kind.'/'.$id : null];
+            'delete_url' => $enabled ? '/workspace/files/'.$kind.'/'.$id : null];
     }
 
     /** Verify the approved target without making a Storage deletion. */

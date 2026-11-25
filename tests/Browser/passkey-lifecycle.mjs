@@ -467,7 +467,7 @@ try {
     );
     assert.equal(
         (
-            await request(root.page, '/dd-phase3/engineers', {
+            await request(root.page, '/workspace/engineers', {
                 first_name: 'Browser',
                 last_name: 'Provisioning',
                 contact_no: '09000000000',
@@ -476,7 +476,7 @@ try {
         ).status,
         200,
     );
-    await root.page.goto(base + '/dd-phase3/users');
+    await root.page.goto(base + '/workspace/users');
     await root.page.getByRole('button', { name: 'Add Account', exact: true }).click();
     const form = root.page.getByRole('dialog', { name: 'Add Account', exact: true }).locator('form');
     await form
@@ -504,7 +504,7 @@ try {
         .fill('Browser-Provisioned!123');
     const saved = root.page.waitForResponse(
         (response) =>
-            response.url().endsWith('/dd-phase3/accounts') &&
+            response.url().endsWith('/workspace/accounts') &&
             response.request().method() === 'POST',
     );
     await form
@@ -525,7 +525,7 @@ try {
     );
     assert.equal(
         (
-            await request(root.page, '/dd-phase3/ops/projects', {
+            await request(root.page, '/workspace/ops/projects', {
                 project_title: 'Forbidden',
             })
         ).status,

@@ -16,12 +16,12 @@ it('preserves the LGU create update and delete route contracts after extraction'
     foreach ($cases as [$nameSuffix, $verb, $pathSuffix, $handler, $throttle, $numericId]) {
         $matches = collect(Route::getRoutes()->getRoutes())
             ->filter(static fn ($route): bool => is_string($route->getName())
-                && $route->getName() === ('jairoads.dd-phase3.'.$nameSuffix))
+                && $route->getName() === ('jairoads.workspace.'.$nameSuffix))
             ->values();
 
         expect($matches)->toHaveCount(1);
         $route = $matches->first();
-        expect($route->uri())->toBe('dd-phase3/'.$pathSuffix);
+        expect($route->uri())->toBe('workspace/'.$pathSuffix);
         expect($route->methods())->toContain($verb);
         expect($route->getActionName())->toBe(LguDirectoryController::class.'@'.$handler);
         expect($route->gatherMiddleware())->toContain($throttle);

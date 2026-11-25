@@ -14,7 +14,7 @@ final class AdministratorPasswordRecoveryTest extends PostgresTestCase
     {
         $root = $this->account('SuperAdmin');
         $target = $this->account('SuperAdmin');
-        $this->actingAs($root)->postJson('/dd-phase3/accounts/'.$target->dd_user_account_id.'/password-reset', [
+        $this->actingAs($root)->postJson('/workspace/accounts/'.$target->dd_user_account_id.'/password-reset', [
             'current_password' => 'Disposable-Test!123',
             'password' => 'New-Root-Disposable!456',
             'password_confirmation' => 'New-Root-Disposable!456',
@@ -44,8 +44,8 @@ final class AdministratorPasswordRecoveryTest extends PostgresTestCase
         $target->forceFill(['remember_token' => 'old-remember-token'])->save();
         DB::table('public.password_reset_tokens')->insert(['email' => $target->email, 'token' => Hash::make('old-token'), 'created_at' => now()]);
         $this->actingAs($root);
-        $this->getJson('/dd-phase3/accounts/'.$id)->assertOk()->assertJsonPath('can_reset_password', true)->assertJsonPath('password_reset_blocker', null);
-        $this->postJson('/dd-phase3/accounts/'.$id.'/password-reset', [
+        $this->getJson('/workspace/accounts/'.$id)->assertOk()->assertJsonPath('can_reset_password', true)->assertJsonPath('password_reset_blocker', null);
+        $this->postJson('/workspace/accounts/'.$id.'/password-reset', [
             'current_password' => 'Disposable-Test!123',
             'password' => 'Replacement-Disposable!456',
             'password_confirmation' => 'Replacement-Disposable!456',
@@ -69,10 +69,10 @@ final class AdministratorPasswordRecoveryTest extends PostgresTestCase
         // An existing active Viewer without reviewed provenance is not a valid login.
         $target = $this->account('Viewer', null, true, false);
         $id = (int) $target->dd_user_account_id;
-        $this->actingAs($root)->getJson('/dd-phase3/accounts/'.$id)
+        $this->actingAs($root)->getJson('/workspace/accounts/'.$id)
             ->assertOk()->assertJsonPath('can_reset_password', false)
             ->assertJsonPath('password_reset_blocker', 'This existing account lacks matching administrator provisioning approval. A database administrator must complete the approved account review before password recovery.');
-        $this->postJson('/dd-phase3/accounts/'.$id.'/password-reset', [
+        $this->postJson('/workspace/accounts/'.$id.'/password-reset', [
             'current_password' => 'Disposable-Test!123',
             'password' => 'Replacement-Disposable!456',
             'password_confirmation' => 'Replacement-Disposable!456',
@@ -88,9 +88,9 @@ final class AdministratorPasswordRecoveryTest extends PostgresTestCase
         $otherRoot = $this->account('SuperAdmin');
         $inactive = $this->account('Engineer', null, false);
         $id = (int) $target->dd_user_account_id;
-        $url = fn ($u) => '/dd-phase3/accounts/'.$u->dd_user_account_id.'/password-reset';
+        $url = fn ($u) => '/workspace/accounts/'.$u->dd_user_account_id.'/password-reset';
         $data = ['current_password' => 'Disposable-Test!123', 'password' => 'Replacement-Disposable!456', 'password_confirmation' => 'Replacement-Disposable!456'];
-        $this->actingAs($admin)->getJson('/dd-phase3/accounts/'.$id)->assertOk()->assertJsonPath('can_reset_password', false);
+        $this->actingAs($admin)->getJson('/workspace/accounts/'.$id)->assertOk()->assertJsonPath('can_reset_password', false);
         $this->postJson($url($target), $data)->assertForbidden();
         $this->withSession(['password_hash_web' => null])->actingAs($root)
             ->postJson($url($target), array_replace($data, ['current_password' => 'wrong']))->assertUnprocessable()->assertJsonValidationErrors('current_password');

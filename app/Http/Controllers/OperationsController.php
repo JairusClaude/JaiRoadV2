@@ -153,7 +153,7 @@ class OperationsController extends Controller
 
     protected function done(string $section, string $message): RedirectResponse
     {
-        return redirect()->route('jairoads.dd-phase3.show', ['section' => $section])->with('dd_operations_status', $message);
+        return redirect()->route('jairoads.workspace.show', ['section' => $section])->with('dd_operations_status', $message);
     }
 
     public function show(string $section, Request $request, AccountIdentityResolver $resolver): Response
@@ -498,7 +498,7 @@ class OperationsController extends Controller
             throw $error;
         }
 
-        return redirect()->route('jairoads.dd-phase3.show', ['section' => 'projects', 'view' => 'show', 'project' => $v['project_id']])
+        return redirect()->route('jairoads.workspace.show', ['section' => 'projects', 'view' => 'show', 'project' => $v['project_id']])
             ->with('dd_operations_status', 'Maintenance record saved.');
     }
 
@@ -544,7 +544,7 @@ class OperationsController extends Controller
             $this->audit($actor, 'REASSIGN', 'MaintenanceRecord', $id, 'Administrator explicitly reassigned ManagingEngineer.', $new, $old);
         }, 3);
 
-        return redirect()->route('jairoads.dd-phase3.show', ['section' => 'projects', 'view' => 'show', 'project' => $projectId])
+        return redirect()->route('jairoads.workspace.show', ['section' => 'projects', 'view' => 'show', 'project' => $projectId])
             ->with('dd_operations_status', 'ManagingEngineer reassigned.');
     }
 

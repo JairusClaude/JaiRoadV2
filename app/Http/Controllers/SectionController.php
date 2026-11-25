@@ -26,12 +26,12 @@ final class SectionController extends Controller
     ): Response|RedirectResponse {
         if (OperationsFrontendController::isPreview($request)) {
             return match ($section) {
-                'lgus' => redirect('/dd-phase3/ui/lgus'),
-                'roads' => redirect('/dd-phase3/ui/road-coverages'),
-                'projects' => redirect('/dd-phase3/ui/maintenance-projects'),
-                'updates' => redirect('/dd-phase3/ui/monthly-updates'),
-                'documents' => redirect('/dd-phase3/ui/maintenance-documents'),
-                default => redirect('/dd-phase3/ui/road-coverages'),
+                'lgus' => redirect('/workspace/ui/lgus'),
+                'roads' => redirect('/workspace/ui/road-coverages'),
+                'projects' => redirect('/workspace/ui/maintenance-projects'),
+                'updates' => redirect('/workspace/ui/monthly-updates'),
+                'documents' => redirect('/workspace/ui/maintenance-documents'),
+                default => redirect('/workspace/ui/road-coverages'),
             };
         }
 

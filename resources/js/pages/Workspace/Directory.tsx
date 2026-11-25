@@ -316,32 +316,32 @@ export default function WorkspaceDirectory({
                                         {[
                                             [
                                                 'Maintenance Projects',
-                                                '/dd-phase3/projects',
+                                                '/workspace/projects',
                                                 'Create and maintain projects and records',
                                             ],
                                             [
                                                 'Monthly Updates',
-                                                '/dd-phase3/updates',
+                                                '/workspace/updates',
                                                 'Review monthly progress and evidence',
                                             ],
                                             [
                                                 'Project Documents',
-                                                '/dd-phase3/documents',
+                                                '/workspace/documents',
                                                 'Manage formal project documentation',
                                             ],
                                             [
                                                 'Road Sections',
-                                                '/dd-phase3/roads',
+                                                '/workspace/roads',
                                                 'Manage mapped road coverages',
                                             ],
                                             [
                                                 'LGU',
-                                                '/dd-phase3/lgus',
+                                                '/workspace/lgus',
                                                 'Manage municipality details',
                                             ],
                                             [
                                                 'User Management',
-                                                '/dd-phase3/users',
+                                                '/workspace/users',
                                                 'Provision accounts and manage Engineer profiles',
                                             ],
                                         ].map(([label, href, summary]) => (

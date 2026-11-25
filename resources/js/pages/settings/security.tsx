@@ -97,7 +97,7 @@ export default function Security(props: Props) {
                         </p>
                     </div>
                     <Link
-                        href="/dd-phase3/settings"
+                        href="/workspace/settings"
                         className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
                     >
                         <ArrowLeft className="size-4" />

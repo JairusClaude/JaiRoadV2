@@ -6,14 +6,14 @@ Original verification scope: `Oct10_Front&BackEnd_Merge_Integration`, after Repa
 
 ## Boundaries and naming rules
 
-- [`routes/operations-pages.php`](../../routes/operations-pages.php) registers the authenticated `/dd-phase3/ui` Laravel/Inertia pages. Feature page controllers handle the routes, and the existing presentation aliases remain supported.
-- [`routes/operations.php`](../../routes/operations.php) registers the `/dd-phase3/ops` endpoints. They accept canonical request names. [`OperationsController`](../../app/Http/Controllers/OperationsController.php) owns shared mutation validation, authorization, and audit writes with its eligibility and storage services.
+- [`routes/operations-pages.php`](../../routes/operations-pages.php) registers the authenticated `/workspace/ui` Laravel/Inertia pages. Feature page controllers handle the routes, and the existing presentation aliases remain supported.
+- [`routes/operations.php`](../../routes/operations.php) registers the `/workspace/ops` endpoints. They accept canonical request names. [`OperationsController`](../../app/Http/Controllers/OperationsController.php) owns shared mutation validation, authorization, and audit writes with its eligibility and storage services.
 - [`OperationsFrontendController`](../../app/Http/Controllers/OperationsFrontendController.php) provides shared road, record, project, update, document, and media projections. Its `inputAlias` maps the two form ID aliases and its `write` maps validation errors back to form fields.
 - If both an ID alias and its canonical field occur on a UI request, they must be the same integer/identical decimal string. Contradictory, null or structured duplicates fail under the visible form field before mutation. Canonical-only requests do not substitute for the UI's required alias. Existing equivalent duplicate payloads remain compatible; canonical operations have no alias adapter.
 - Read-projection names are not write permissions. Unknown creator/uploader/path/MIME fields are excluded by existing server write allowlists. Client identity never overrides the authenticated, verified account.
 - Logical Data Dictionary names such as `MaintenanceYear` map to the existing snake_case columns, e.g. `maintenance_year`. This is documentation, not a proposal to rename columns.
 
-In the matrices, “UI API” means the submitted field at `/dd-phase3/ui`, followed by the canonical operation field when it differs. “Server” means generated or resolved after authorization, not an accepted ownership input. A dash means no independent stored column.
+In the matrices, “UI API” means the submitted field at `/workspace/ui`, followed by the canonical operation field when it differs. “Server” means generated or resolved after authorization, not an accepted ownership input. A dash means no independent stored column.
 
 ## RoadCoverage — `jairoads_next.road_coverages`
 
@@ -111,7 +111,7 @@ Types: `maintenance-documents.ts`. Form: `MaintenanceDocuments/Form.tsx`. Server
 | `uploaded_at`, `updated_at`                         | Server                                                 | Same names                         | Upload and metadata-update timestamps                                                                        |
 | `available`, `download_url`, related project/record | Response-only projection                               | —                                  | Configuration/authorized download/context, not public Storage URLs                                           |
 
-Create accepts the UI `attachment` transport name; `/dd-phase3/ops/documents` uses `file`. Edit prohibits replacement `attachment` and validates only approved metadata. Canonical MIME/size policy and private storage compensation remain unchanged. `write` translates canonical `file` validation errors back to `attachment`.
+Create accepts the UI `attachment` transport name; `/workspace/ops/documents` uses `file`. Edit prohibits replacement `attachment` and validates only approved metadata. Canonical MIME/size policy and private storage compensation remain unchanged. `write` translates canonical `file` validation errors back to `attachment`.
 
 ## Media — `jairoads_next.media`
 

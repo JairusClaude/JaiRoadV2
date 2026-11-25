@@ -70,7 +70,7 @@ class DirectoryController extends Controller
             return redirect()->route('jairoads.dd-superadmin-landing');
         }
         if ($section === 'lgus') {
-            return redirect('/dd-phase3/ui/lgus');
+            return redirect('/workspace/ui/lgus');
         }
         if ($section === 'users') {
             abort_unless(RoleAccess::canManageAccounts($actor['role']), 403);
@@ -176,7 +176,7 @@ class DirectoryController extends Controller
             'section' => $section,
             'identity' => ['role' => $actor['role'], 'username' => (string) $userName, 'accountId' => $actor['account_id']],
             'counts' => $counts,
-            'historyUrl' => $allowedManager && app(PreservedProjectDeletion::class)->available() ? '/dd-phase3/history/records' : null,
+            'historyUrl' => $allowedManager && app(PreservedProjectDeletion::class)->available() ? '/workspace/history/records' : null,
             'analytics' => $section === 'dashboard' ? app(DashboardAnalytics::class)->summary($actor) : null,
             'lgus' => $lgus, 'accounts' => $accounts,
             'engineers' => $engineers,

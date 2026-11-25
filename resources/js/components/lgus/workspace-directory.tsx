@@ -230,7 +230,7 @@ export default function WorkspaceLguDirectory({
         for (const item of deleteTargets) {
             try {
                 await requestOperation(
-                    `/dd-phase3/lgus/${item.id}`,
+                    `/workspace/lgus/${item.id}`,
                     {},
                     'delete',
                     false,
@@ -397,8 +397,8 @@ export default function WorkspaceLguDirectory({
         try {
             await requestOperation(
                 editor.kind === 'add'
-                    ? '/dd-phase3/lgus'
-                    : `/dd-phase3/lgus/${editor.id}`,
+                    ? '/workspace/lgus'
+                    : `/workspace/lgus/${editor.id}`,
                 {
                     municipality_name: normalized.municipalityName,
                     province: normalized.province,

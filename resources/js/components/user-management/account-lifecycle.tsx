@@ -76,7 +76,7 @@ export default function AccountLifecycle({
             }
 
             const response = await fetch(
-                `/dd-phase3/accounts/${detail.account.id}/password-reset`,
+                `/workspace/accounts/${detail.account.id}/password-reset`,
                 {
                     method: 'POST',
                     credentials: 'same-origin',
@@ -148,7 +148,7 @@ export default function AccountLifecycle({
         }
 
         try {
-            const response = await fetch(`/dd-phase3/accounts/${id}`, {
+            const response = await fetch(`/workspace/accounts/${id}`, {
                 headers: { Accept: 'application/json' },
                 credentials: 'same-origin',
                 cache: 'no-store',
@@ -283,7 +283,7 @@ export default function AccountLifecycle({
                                 onBusy?.(true);
                                 setErrors({});
                                 router.patch(
-                                    `/dd-phase3/accounts/${detail.account.id}/status`,
+                                    `/workspace/accounts/${detail.account.id}/status`,
                                     { is_active: active },
                                     {
                                         preserveScroll: true,

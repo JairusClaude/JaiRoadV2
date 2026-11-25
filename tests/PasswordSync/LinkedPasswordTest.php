@@ -37,7 +37,7 @@ it('keeps each role and its correct dashboard after reset', function (string $ro
     $login = $this->linkedLogin($role);
     $this->post(route('password.update'), resetPayload($login))->assertSessionHasNoErrors();
     $this->post(route('login.store'), ['email' => $login->email, 'password' => 'New-password-42!'])->assertRedirect('/dashboard');
-    $this->get('/dashboard')->assertRedirect($role === 'SuperAdmin' ? route('jairoads.dd-superadmin-landing') : route('jairoads.dd-phase3.show', ['section' => 'dashboard']));
+    $this->get('/dashboard')->assertRedirect($role === 'SuperAdmin' ? route('jairoads.dd-superadmin-landing') : route('jairoads.workspace.show', ['section' => 'dashboard']));
     expect(app(AccountIdentityResolver::class)->resolve($login)['role'])->toBe($role);
     if ($role === 'Engineer') {
         expect(DB::table('jairoads_next.engineer_lgus')->where('engineer_id', 88)->value('is_active'))->toBeTrue();
@@ -110,10 +110,10 @@ it('rejects legacy reset without inferring a canonical account link by email or 
 
 it('uses the same updater for canonical account settings and excludes credentials from its audit rows', function (): void {
     $login = $this->linkedLogin();
-    $this->actingAs($login)->put('/dd-phase3/ops/settings', ['username' => 'changed-name',
+    $this->actingAs($login)->put('/workspace/ops/settings', ['username' => 'changed-name',
         'current_password' => 'old-password', 'password' => 'New-password-42!', 'password_confirmation' => 'New-password-42!',
         'account_type' => 'SuperAdmin', 'is_active' => false, 'engineer_id' => 999, 'dd_user_account_id' => 999,
-    ])->assertSessionHasNoErrors()->assertRedirect(route('jairoads.dd-phase3.show', ['section' => 'settings']));
+    ])->assertSessionHasNoErrors()->assertRedirect(route('jairoads.workspace.show', ['section' => 'settings']));
     $this->assertSynchronized($login, 'New-password-42!');
     expect(DB::table('jairoads_next.user_accounts')->where('id', 77)->value('username'))->toBe('changed-name');
     expect(DB::table('jairoads_next.user_accounts')->where('id', 77)->value('account_type'))->toBe('Admin')
@@ -126,7 +126,7 @@ it('uses the same updater for canonical account settings and excludes credential
 it('preserves Viewer and Engineer read-only account settings restrictions', function (string $role): void {
     $login = $this->linkedLogin($role);
     $before = $login->password;
-    $this->actingAs($login)->put('/dd-phase3/ops/settings', ['username' => 'changed-name', 'current_password' => 'old-password',
+    $this->actingAs($login)->put('/workspace/ops/settings', ['username' => 'changed-name', 'current_password' => 'old-password',
         'password' => 'New-password-42!', 'password_confirmation' => 'New-password-42!', 'account_type' => 'SuperAdmin', 'is_active' => true,
     ])->assertForbidden();
     expect(hash_equals($before, $login->fresh()->password))->toBeTrue()
@@ -138,7 +138,7 @@ it('denies protected operations immediately when an existing session account is 
     $this->actingAs($login)->get('/dashboard')->assertRedirect();
     DB::table('jairoads_next.user_accounts')->where('id', 77)->update(['is_active' => false]);
     $this->get('/dashboard')->assertForbidden();
-    $this->putJson('/dd-phase3/ops/settings', [])->assertUnauthorized();
+    $this->putJson('/workspace/ops/settings', [])->assertUnauthorized();
 });
 
 it('synchronizes automatic login rehashing instead of disabling hash upgrades', function (): void {
@@ -235,7 +235,7 @@ it('rolls back Settings credentials and username when its enclosing audit fails'
         FOR EACH ROW EXECUTE FUNCTION jairoads_next.reject_audit();
         SQL);
     $this->withoutExceptionHandling();
-    expect(fn () => $this->actingAs($login)->put('/dd-phase3/ops/settings', [
+    expect(fn () => $this->actingAs($login)->put('/workspace/ops/settings', [
         'username' => 'changed-name', 'current_password' => 'old-password',
         'password' => 'New-password-42!', 'password_confirmation' => 'New-password-42!',
     ]))->toThrow(QueryException::class);

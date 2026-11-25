@@ -81,7 +81,7 @@ async function signIn(email) {
         .getByLabel('Password', { exact: true })
         .fill('Disposable-Test!123');
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-    await page.waitForURL(/dd-phase3\/dashboard|dd-superadmin-landing/);
+    await page.waitForURL(/workspace\/dashboard|dd-superadmin-landing/);
 
     return page;
 }
@@ -92,7 +92,7 @@ async function chooseMatching(select, text) {
 }
 async function mobile(page, section) {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(`${base}/dd-phase3/${section}`);
+    await page.goto(`${base}/workspace/${section}`);
     await page.getByRole('heading', { level: 1 }).first().waitFor();
     assert.ok(
         await page.evaluate(
@@ -125,7 +125,7 @@ try {
     await superadmin
         .getByRole('heading', { name: /Account Type distribution/ })
         .waitFor();
-    await engineer.goto(`${base}/dd-phase3/roads`);
+    await engineer.goto(`${base}/workspace/roads`);
     await engineer
         .getByText('Seeded three point road', { exact: true })
         .first()
@@ -181,7 +181,7 @@ try {
     const roadRequest = engineer.waitForRequest(
         (r) =>
             r.method() === 'POST' &&
-            new URL(r.url()).pathname === '/dd-phase3/ops/roads',
+            new URL(r.url()).pathname === '/workspace/ops/roads',
     );
     await engineer
         .getByRole('button', {
@@ -194,7 +194,7 @@ try {
         .getByText('Browser workflow road', { exact: true })
         .first()
         .waitFor();
-    await engineer.goto(`${base}/dd-phase3/projects`);
+    await engineer.goto(`${base}/workspace/projects`);
     await engineer
         .getByRole('button', { name: 'Add Project', exact: true })
         .click();
@@ -230,7 +230,7 @@ try {
             .count(),
         0,
     );
-    await engineer.goto(`${base}/dd-phase3/updates`);
+    await engineer.goto(`${base}/workspace/updates`);
     await engineer
         .getByRole('button', { name: 'Add Update', exact: false })
         .click();
@@ -271,7 +271,7 @@ try {
         .getByText('browser-evidence.png', { exact: false })
         .first()
         .waitFor();
-    await engineer.goto(`${base}/dd-phase3/documents`);
+    await engineer.goto(`${base}/workspace/documents`);
     await engineer
         .getByRole('button', { name: /Add Document|Upload Document/i })
         .first()
@@ -303,7 +303,7 @@ try {
         ['media', f.media_id, png],
     ]) {
         const response = await engineer.request.get(
-            `${base}/dd-phase3/files/${kind}/${id}`,
+            `${base}/workspace/files/${kind}/${id}`,
         );
         assert.equal(response.status(), 200);
         assert.deepEqual(await response.body(), expected);
@@ -319,7 +319,7 @@ try {
     ]) {
         assert.equal(
             (
-                await rogue.request.get(`${base}/dd-phase3/files/${kind}/${id}`)
+                await rogue.request.get(`${base}/workspace/files/${kind}/${id}`)
             ).status(),
             403,
         );
@@ -327,12 +327,12 @@ try {
 
     assert.equal(storage.counts.downloads, downloadsBefore);
     assert.equal(
-        (await viewer.request.get(`${base}/dd-phase3/users`)).status(),
+        (await viewer.request.get(`${base}/workspace/users`)).status(),
         403,
     );
 
     for (const section of ['roads', 'projects', 'updates', 'documents']) {
-        await viewer.goto(`${base}/dd-phase3/${section}`);
+        await viewer.goto(`${base}/workspace/${section}`);
         assert.equal(
             await viewer
                 .getByRole('button', {

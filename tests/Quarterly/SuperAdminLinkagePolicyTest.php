@@ -54,10 +54,10 @@ final class SuperAdminLinkagePolicyTest extends PostgresTestCase
         $this->assertTrue($resolver->notificationRecipients(null)
             ->where('account.id', $validRoot->dd_user_account_id)->exists());
         $this->withSession(['password_hash_web' => null])->actingAs($invalidRoot)
-            ->getJson('/dd-phase3/users')->assertForbidden();
+            ->getJson('/workspace/users')->assertForbidden();
         $this->assertGuest();
         $this->withSession(['password_hash_web' => null])->actingAs($validRoot)
-            ->getJson('/dd-phase3/users')->assertOk();
+            ->getJson('/workspace/users')->assertOk();
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
     }
 

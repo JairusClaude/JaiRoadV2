@@ -20,7 +20,7 @@ config(['database.connections.pgsql.sslmode' => 'disable']);
 DB::purge('pgsql');
 DB::statement("SET application_name = 'municipality_concurrency_worker'");
 Auth::guard()->setUser(User::findOrFail((int) $argv[1]));
-$request = Request::create('/dd-phase3/ops/roads/'.(int) $argv[2].'/municipality/confirm', 'POST',
+$request = Request::create('/workspace/ops/roads/'.(int) $argv[2].'/municipality/confirm', 'POST',
     ['confirmation_token' => $argv[3]], server: ['HTTP_ACCEPT' => 'application/json']);
 $response = $app->make(Illuminate\Contracts\Http\Kernel::class)->handle($request);
 echo json_encode(['status' => $response->getStatusCode()], JSON_THROW_ON_ERROR);

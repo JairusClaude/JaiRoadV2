@@ -73,7 +73,7 @@ test('password can be updated', function () {
     $response = $this
         ->actingAs($user)
         ->from(route('security.edit'))
-        ->put('/dd-phase3/ops/settings', [
+        ->put('/workspace/ops/settings', [
             'username' => 'safe-settings-user',
             'current_password' => 'password',
             'password' => 'New-Password!123',
@@ -82,7 +82,7 @@ test('password can be updated', function () {
 
     $response
         ->assertSessionHasNoErrors()
-        ->assertRedirect('/dd-phase3/settings');
+        ->assertRedirect('/workspace/settings');
 
     expect(Hash::check('New-Password!123', $user->refresh()->password))->toBeTrue();
 });
@@ -93,7 +93,7 @@ test('correct password must be provided to update password', function () {
     $response = $this
         ->actingAs($user)
         ->from(route('security.edit'))
-        ->put('/dd-phase3/ops/settings', [
+        ->put('/workspace/ops/settings', [
             'username' => 'safe-settings-user',
             'current_password' => 'wrong-password',
             'password' => 'New-Password!123',

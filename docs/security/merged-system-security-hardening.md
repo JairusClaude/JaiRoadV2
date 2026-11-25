@@ -7,7 +7,7 @@ These controls apply to the canonical JaiROADS Laravel workspace.
 - `APP_ENV=production` (or `staging`) must **not** enable synthetic preview authentication.
 - `JAIROADS_PREVIEW_MODE=false` is the default. A standalone isolated fixture-based preview requires **both** `APP_ENV=preview` and `JAIROADS_PREVIEW_MODE=true`. This must never be combined with production credentials, databases or public internet access.
 - `TRUSTED_PROXIES` should contain only the actual reverse proxy IP addresses or CIDR ranges when behind a trusted load balancer. The default leaves forwarding headers untrusted. Do not use `*`. In multi-proxy deployments include the correct hop addresses.
-- The canonical `dd-phase3/ui/*` mutation URLs now use Laravel's default CSRF protection. Inertia/axios writes send XSRF credentials automatically; custom `fetch` calls must forward the XSRF cookie using `X-XSRF-TOKEN`.
+- Canonical `/workspace/ui/*` mutations and their temporary compatibility aliases use Laravel's default CSRF protection. Inertia/axios writes send XSRF credentials automatically; custom `fetch` calls must forward the XSRF cookie using `X-XSRF-TOKEN`.
 
 ## Expected protections and checks
 

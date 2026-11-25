@@ -25,7 +25,7 @@ export async function verifyPreservedRelationships({
     assert.ok(doc, 'Attached document must be present before deletion refusal');
     const documentUrl = `${base}${doc.download_url}`;
     const documentBytes = await (await admin.request.get(documentUrl)).body();
-    const mediaUrl = `${base}/dd-phase3/files/media/${fixture.media_id}`;
+    const mediaUrl = `${base}/workspace/files/media/${fixture.media_id}`;
     const mediaBytes = await (await admin.request.get(mediaUrl)).body();
     const storageBefore = storage.counts.compensations;
 
@@ -60,7 +60,7 @@ export async function verifyPreservedRelationships({
             (
                 await csrf(
                     page,
-                    `/dd-phase3/ops/records/${recordId}/unassignment`,
+                    `/workspace/ops/records/${recordId}/unassignment`,
                     'POST',
                     { expected_current_manager_id: fixture.engineer_id },
                 )
@@ -73,7 +73,7 @@ export async function verifyPreservedRelationships({
     for (const page of [engineer, viewer, rogue]) {
         assert.equal(
             (
-                await csrf(page, `/dd-phase3/ui${projectPath}`, 'DELETE', {
+                await csrf(page, `/workspace/ui${projectPath}`, 'DELETE', {
                     confirmation_token: 'not authority',
                 })
             ).status,
@@ -88,7 +88,7 @@ export async function verifyPreservedRelationships({
     assert.equal(blockedPreview.status(), 200);
     assert.equal(
         (
-            await csrf(admin, `/dd-phase3/ui${projectPath}`, 'DELETE', {
+            await csrf(admin, `/workspace/ui${projectPath}`, 'DELETE', {
                 confirmation_token: 'invalid', confirmation: 'YES',
             })
         ).status,

@@ -143,7 +143,7 @@ export function DeletionDialog({
         }
 
         const controller = new AbortController();
-        fetch(`/dd-phase3/ui/deletion-challenge?scope=${challengeScope}`, {
+        fetch(`/workspace/ui/deletion-challenge?scope=${challengeScope}`, {
             headers: { Accept: 'application/json' },
             cache: 'no-store',
             signal: controller.signal,

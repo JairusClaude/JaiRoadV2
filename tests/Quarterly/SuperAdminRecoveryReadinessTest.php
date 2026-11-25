@@ -31,7 +31,7 @@ final class SuperAdminRecoveryReadinessTest extends PostgresTestCase
 
         $this->assertSame(0, DB::table('jairoads_next.engineers')->count());
         $this->postJson('/login', ['email' => $root->email, 'password' => 'Disposable-Root!123'])->assertOk();
-        $this->getJson('/dd-phase3/users')->assertOk();
+        $this->getJson('/workspace/users')->assertOk();
         $this->postJson('/logout')->assertNoContent();
 
         // Simulate canonical/Fortify credential drift; only a valid broker token
@@ -56,7 +56,7 @@ final class SuperAdminRecoveryReadinessTest extends PostgresTestCase
         );
         $this->postJson('/login', ['email' => $root->email, 'password' => 'Recovered-Synthetic!123'])->assertOk();
         $this->assertAuthenticatedAs($root);
-        $this->getJson('/dd-phase3/users')->assertOk();
+        $this->getJson('/workspace/users')->assertOk();
         $this->assertNull(app(AccountIdentityResolver::class)->resolve($root)['engineer_id']);
         $this->assertSame(1, DB::table('jairoads_next.user_accounts')->where('account_type', 'SuperAdmin')->count());
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
@@ -116,7 +116,7 @@ final class SuperAdminRecoveryReadinessTest extends PostgresTestCase
 
         DB::table('public.users')->where('id', $second->id)->update(['dd_user_account_id' => null]);
         $this->withSession(['password_hash_web' => null])->actingAs($admin);
-        $this->patchJson('/dd-phase3/accounts/'.$id.'/status', ['is_active' => false])
+        $this->patchJson('/workspace/accounts/'.$id.'/status', ['is_active' => false])
             ->assertUnprocessable()->assertJsonValidationErrors('is_active');
         $this->assertDatabaseHas('jairoads_next.user_accounts', ['id' => $id, 'is_active' => true]);
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
@@ -124,11 +124,11 @@ final class SuperAdminRecoveryReadinessTest extends PostgresTestCase
         // The second root must actually be eligible, not merely active in a row.
         DB::table('public.users')->where('id', $second->id)
             ->update(['dd_user_account_id' => $second->dd_user_account_id]);
-        $this->patchJson('/dd-phase3/accounts/'.$id.'/status', ['is_active' => false])
+        $this->patchJson('/workspace/accounts/'.$id.'/status', ['is_active' => false])
             ->assertRedirect();
         $this->assertDatabaseHas('jairoads_next.user_accounts', ['id' => $id, 'is_active' => false]);
         $this->assertNull(app(AccountIdentityResolver::class)->resolve($root));
-        $this->patchJson('/dd-phase3/accounts/'.$id.'/status', ['is_active' => true])
+        $this->patchJson('/workspace/accounts/'.$id.'/status', ['is_active' => true])
             ->assertRedirect();
         $this->assertDatabaseHas('jairoads_next.user_accounts', ['id' => $id, 'is_active' => true]);
         $this->assertSame($password, $root->fresh()->password);
@@ -138,7 +138,7 @@ final class SuperAdminRecoveryReadinessTest extends PostgresTestCase
 
         // Explicit self-lockout is still forbidden, even with a backup root.
         $this->withSession(['password_hash_web' => null])->actingAs($root);
-        $this->patchJson('/dd-phase3/accounts/'.$id.'/status', ['is_active' => false])
+        $this->patchJson('/workspace/accounts/'.$id.'/status', ['is_active' => false])
             ->assertUnprocessable()->assertJsonValidationErrors('is_active');
         $this->assertSame(2, DB::table('jairoads_next.audit_logs')->count());
     }
@@ -186,7 +186,7 @@ final class SuperAdminRecoveryReadinessTest extends PostgresTestCase
         $this->postJson('/two-factor-challenge', ['recovery_code' => 'valid-disposable-recovery'])
             ->assertNoContent();
         $this->assertAuthenticatedAs($root);
-        $this->getJson('/dd-phase3/users')->assertOk();
+        $this->getJson('/workspace/users')->assertOk();
         $this->assertSame('SuperAdmin', app(AccountIdentityResolver::class)->resolve($root)['role']);
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
     }

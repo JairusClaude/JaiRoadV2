@@ -50,7 +50,7 @@ $benchmark = new class('runMeasurements') extends PostgresTestCase
                 'monthly' => '/monthly-updates/create', 'fixed-monthly' => '/monthly-updates/create?maintenance_id='.$record,
                 'project-history' => '/maintenance-projects/'.$f['project']] as $name => $path) {
                 // Warm once, then three observations. Response bytes are uncompressed JSON.
-                $warm = $this->get('/dd-phase3/ui'.$path, $headers);
+                $warm = $this->get('/workspace/ui'.$path, $headers);
                 if ($warm->getStatusCode() !== 200) {
                     throw new RuntimeException('Benchmark response: '.$warm->getStatusCode().' '.$warm->getContent());
                 }
@@ -61,7 +61,7 @@ $benchmark = new class('runMeasurements') extends PostgresTestCase
                     memory_reset_peak_usage();
                     $startMemory = memory_get_usage();
                     $start = hrtime(true);
-                    $response = $this->get('/dd-phase3/ui'.$path, $headers);
+                    $response = $this->get('/workspace/ui'.$path, $headers);
                     $samples[] = ['bytes' => strlen($response->getContent()), 'queries' => count(DB::getQueryLog()),
                         'milliseconds' => round((hrtime(true) - $start) / 1e6, 3), 'peak_delta_bytes' => max(0, memory_get_peak_usage() - $startMemory)];
                     DB::disableQueryLog();
@@ -82,7 +82,7 @@ $benchmark = new class('runMeasurements') extends PostgresTestCase
                         DB::flushQueryLog();
                         memory_reset_peak_usage();
                         $memory = memory_get_usage();
-                        $response = $this->getJson('/dd-phase3/ui/map/roads?'.http_build_query(['west' => 125.9, 'east' => 126, 'south' => 7.5, 'north' => 7.7, 'after' => $cursor]));
+                        $response = $this->getJson('/workspace/ui/map/roads?'.http_build_query(['west' => 125.9, 'east' => 126, 'south' => 7.5, 'north' => 7.7, 'after' => $cursor]));
                         if ($response->getStatusCode() !== 200) {
                             throw new RuntimeException('Reference benchmark response: '.$response->getStatusCode());
                         }

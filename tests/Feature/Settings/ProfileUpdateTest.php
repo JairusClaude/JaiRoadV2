@@ -9,7 +9,7 @@ test('profile page is displayed', function () {
         ->actingAs($user)
         ->get(route('profile.edit'));
 
-    $response->assertRedirect('/dd-phase3/settings');
+    $response->assertRedirect('/workspace/settings');
 });
 
 test('legacy profile cannot rewrite canonical identity', function () {

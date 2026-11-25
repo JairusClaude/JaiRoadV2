@@ -20,7 +20,7 @@ assert.equal(process.env.JAIROADS_SCRATCH_APPROVAL, 'DISPOSABLE_LOCAL_ONLY');
 const f = JSON.parse(
     await readFile(process.env.QUARTERLY_BROWSER_FIXTURE, 'utf8'),
 );
-const ui = `${base}/dd-phase3/ui`;
+const ui = `${base}/workspace/ui`;
 const storage = await startStorageMock();
 const browser = await chromium.launch({
     executablePath: process.env.CHROME_EXECUTABLE,
@@ -104,7 +104,7 @@ async function signIn(email) {
         .getByLabel('Password', { exact: true })
         .fill('Disposable-Test!123');
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-    await page.waitForURL(/dd-phase3\/dashboard|dd-superadmin-landing/);
+    await page.waitForURL(/workspace\/dashboard|dd-superadmin-landing/);
 
     return page;
 }
@@ -424,7 +424,7 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         const savedResponse = engineer.waitForResponse(
             (r) =>
                 r.request().method() === 'PUT' &&
-                new URL(r.url()).pathname === `/dd-phase3/ui${path}`,
+                new URL(r.url()).pathname === `/workspace/ui${path}`,
         );
         await engineer
             .getByRole('button', { name: 'Save Changes', exact: true })
@@ -494,7 +494,7 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     const saved = engineer.waitForResponse(
         (r) =>
             r.request().method() === 'POST' &&
-            new URL(r.url()).pathname === '/dd-phase3/ui/road-coverages',
+            new URL(r.url()).pathname === '/workspace/ui/road-coverages',
     );
     await engineer
         .getByRole('button', { name: 'Save Road Coverage', exact: true })
@@ -594,7 +594,7 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         (
             await csrfPost(
                 engineer,
-                `/dd-phase3/ui/maintenance-projects/${project.id}/records`,
+                `/workspace/ui/maintenance-projects/${project.id}/records`,
                 period,
             )
         ).status,
@@ -625,7 +625,7 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     await engineer
         .getByRole('button', { name: /Save Monthly Update|Save Update/ })
         .click();
-    await engineer.waitForURL(/dd-phase3\/ui\/monthly-updates\/\d+$/);
+    await engineer.waitForURL(/workspace\/ui\/monthly-updates\/\d+$/);
     const report = (
         await props(
             engineer,
@@ -688,6 +688,13 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     const download = await engineer.request.get(`${base}${doc.download_url}`);
     assert.equal(download.status(), 200);
     assert.deepEqual(await download.body(), pdf);
+    assert.match(doc.download_url, /^\/workspace\/files\/document\//);
+    const oldDownload = await engineer.request.get(
+        `${base}${doc.download_url.replace(/^\/workspace\//, '/dd-phase3/')}`,
+        { maxRedirects: 0 },
+    );
+    assert.equal(oldDownload.status(), 200);
+    assert.deepEqual(await oldDownload.body(), pdf);
     console.log(
         'PASS: Leaflet search and 2/3-point road persisted; canonical project/Q2/monthly/media/document writes; duplicate rejection; private download.',
     );
@@ -696,7 +703,7 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     for (const month of ['2027-12', '2026-01']) {
         const savedReport = await csrfPost(
             engineer,
-            '/dd-phase3/ui/monthly-updates',
+            '/workspace/ui/monthly-updates',
             {
                 maintenance_id: record.id,
                 update_month: month,
@@ -717,13 +724,13 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         .click();
     await engineer.waitForURL(`${ui}/monthly-updates/${january.id}`);
     // Both modules must return to all three explicit edit origins and keep filters.
-    const parentOrigin = `/dd-phase3/ui/maintenance-projects/${project.id}/records/${record.id}`;
+    const parentOrigin = `/workspace/ui/maintenance-projects/${project.id}/records/${record.id}`;
 
     for (const [module, entity, directoryQuery] of [
         ['monthly-updates', january, `?project=${project.id}&year=2026&sort=oldest&page=1`],
         ['maintenance-documents', doc, `?project=${project.id}&sort=oldest&page=1`],
     ]) {
-        const directory = `/dd-phase3/ui/${module}`;
+        const directory = `/workspace/ui/${module}`;
         const detail = `${directory}/${entity.id}`;
 
         for (const origin of [directory + directoryQuery, detail, parentOrigin]) {
@@ -812,7 +819,7 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         ),
         /rgb\(81, 38, 155\)/,
     );
-    await superadmin.goto(`${base}/dd-phase3/users`);
+    await superadmin.goto(`${base}/workspace/users`);
     await superadmin.getByRole('heading', {
         name: 'User Management',
         exact: true,
@@ -827,7 +834,7 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     const openRoadMunicipalityChange = async () => {
         // The reviewed municipality change flow lives in the canonical
         // road directory, not the legacy road detail view.
-        await engineer.goto(`${base}/dd-phase3/roads`);
+        await engineer.goto(`${base}/workspace/roads`);
         await engineer
             .getByRole('button', {
                 name: new RegExp(`Unified browser road.*Coverage ID: ${road.id}`, 's'),
@@ -895,7 +902,7 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     );
     assert.equal(
         (
-            await csrfPost(viewer, '/dd-phase3/ui/maintenance-projects', {
+            await csrfPost(viewer, '/workspace/ui/maintenance-projects', {
                 road_coverage_id: road.id,
                 project_title: 'Forbidden',
             })
@@ -967,7 +974,7 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         await engineer
             .getByRole('menuitem', { name: 'Settings', exact: true })
             .getAttribute('href'),
-        '/dd-phase3/settings',
+        '/workspace/settings',
     );
     await verifyAuthenticatedHistory(
         engineer,

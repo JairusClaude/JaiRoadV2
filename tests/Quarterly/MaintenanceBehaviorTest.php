@@ -24,7 +24,7 @@ final class MaintenanceBehaviorTest extends PostgresTestCase
     {
         $f = $this->fixture('Engineer');
         foreach ([2026, 2027] as $year) {
-            $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], $quarter, $year))->assertRedirect();
+            $this->postJson('/workspace/ops/records', $this->recordData($f['project'], $f['engineer'], $quarter, $year))->assertRedirect();
             $this->assertDatabaseHas('jairoads_next.maintenance_records', ['project_id' => $f['project'], 'maintenance_year' => $year, 'quarter' => $quarter]);
         }
         $this->assertSame(2, DB::table('jairoads_next.maintenance_records')->count());
@@ -52,7 +52,7 @@ final class MaintenanceBehaviorTest extends PostgresTestCase
     public function test_invalid_record_never_writes_business_or_audit(array $changes, string $field): void
     {
         $f = $this->fixture();
-        $this->postJson('/dd-phase3/ops/records', array_replace($this->recordData($f['project'], $f['engineer']), $changes))
+        $this->postJson('/workspace/ops/records', array_replace($this->recordData($f['project'], $f['engineer']), $changes))
             ->assertUnprocessable()->assertJsonValidationErrors($field);
         $this->assertSame(0, DB::table('jairoads_next.maintenance_records')->count());
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
@@ -63,9 +63,9 @@ final class MaintenanceBehaviorTest extends PostgresTestCase
         $f = $this->fixture('Engineer');
         foreach (['Q4', 'Q1', 'Q2', 'Q3'] as $quarter) {
             $data = $this->recordData($f['project'], $f['engineer'], $quarter);
-            $this->postJson('/dd-phase3/ops/records', $data)->assertRedirect();
+            $this->postJson('/workspace/ops/records', $data)->assertRedirect();
             $auditCount = DB::table('jairoads_next.audit_logs')->count();
-            $this->postJson('/dd-phase3/ops/records', $data)->assertUnprocessable()->assertJsonValidationErrors('quarter');
+            $this->postJson('/workspace/ops/records', $data)->assertUnprocessable()->assertJsonValidationErrors('quarter');
             $this->assertSame($auditCount, DB::table('jairoads_next.audit_logs')->count());
         }
         $this->assertSame(4, DB::table('jairoads_next.maintenance_records')->count());
@@ -78,7 +78,7 @@ final class MaintenanceBehaviorTest extends PostgresTestCase
         $first = $this->fixture();
         $second = $this->fixture();
         foreach ([$first, $second] as $f) {
-            $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q3'))->assertRedirect();
+            $this->postJson('/workspace/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q3'))->assertRedirect();
         }
         $this->assertSame(2, DB::table('jairoads_next.maintenance_records')->where('quarter', 'Q3')->count());
     }
@@ -91,7 +91,7 @@ final class MaintenanceBehaviorTest extends PostgresTestCase
         }
         $history = DB::table('jairoads_next.maintenance_records')->orderBy('id')->get();
         $this->assertFalse($this->summary($f['project'])['conflict']);
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q2'))->assertRedirect();
+        $this->postJson('/workspace/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q2'))->assertRedirect();
         $this->assertSame($history->toJson(), DB::table('jairoads_next.maintenance_records')->whereIn('id', $history->pluck('id'))->orderBy('id')->get()->toJson());
     }
 
@@ -102,16 +102,16 @@ final class MaintenanceBehaviorTest extends PostgresTestCase
             DB::table('jairoads_next.maintenance_records')->insert($this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->dd_user_account_id]);
         }
         $this->assertTrue($this->summary($f['project'])['conflict']);
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer']))->assertUnprocessable();
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q3'))->assertRedirect();
+        $this->postJson('/workspace/ops/records', $this->recordData($f['project'], $f['engineer']))->assertUnprocessable();
+        $this->postJson('/workspace/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q3'))->assertRedirect();
         $this->assertSame(3, DB::table('jairoads_next.maintenance_records')->count());
     }
 
     public function test_details_expose_existing_and_available_quarters_without_an_enforced_pair(): void
     {
         $f = $this->fixture();
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q2'))->assertRedirect();
-        $this->get('/dd-phase3/projects?view=show&project='.$f['project'])->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+        $this->postJson('/workspace/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q2'))->assertRedirect();
+        $this->get('/workspace/projects?view=show&project='.$f['project'])->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
             ->has('maintenanceHistory', 1)->where('maintenanceSchedule.years.0.available', ['Q1', 'Q3', 'Q4'])
             ->missing('maintenanceSchedule.pattern')->missing('maintenanceSchedule.next'));
     }
@@ -127,10 +127,10 @@ final class MaintenanceBehaviorTest extends PostgresTestCase
             }
         }
         DB::table('jairoads_next.maintenance_records')->insert($rows);
-        $this->get('/dd-phase3/projects?view=show&project='.$f['project'])->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+        $this->get('/workspace/projects?view=show&project='.$f['project'])->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
             ->has('records', 300)->has('maintenanceHistory', 301)->where('maintenanceSchedule.conflict', false));
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q2', 1900))->assertUnprocessable();
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q4', 2051))->assertRedirect();
+        $this->postJson('/workspace/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q2', 1900))->assertUnprocessable();
+        $this->postJson('/workspace/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q4', 2051))->assertRedirect();
         $this->assertSame(302, DB::table('jairoads_next.maintenance_records')->count());
     }
 
@@ -138,12 +138,12 @@ final class MaintenanceBehaviorTest extends PostgresTestCase
     {
         $f = $this->fixture();
         $data = $this->recordData($f['project'], $f['engineer']);
-        $this->postJson('/dd-phase3/ops/records', $data)->assertRedirect();
+        $this->postJson('/workspace/ops/records', $data)->assertRedirect();
         $id = DB::table('jairoads_next.maintenance_records')->value('id');
-        $this->putJson('/dd-phase3/ops/records/'.$id, array_replace($data, ['start_date' => '2026-02-10', 'estimated_duration_days' => 9]))->assertRedirect();
+        $this->putJson('/workspace/ops/records/'.$id, array_replace($data, ['start_date' => '2026-02-10', 'estimated_duration_days' => 9]))->assertRedirect();
         $this->assertDatabaseHas('jairoads_next.maintenance_records', ['id' => $id, 'start_date' => '2026-02-10', 'estimated_duration_days' => 9]);
-        $this->putJson('/dd-phase3/ops/records/'.$id, $this->recordData($f['project'], $f['engineer'], 'Q3'))->assertUnprocessable()->assertJsonValidationErrors('quarter');
-        $this->putJson('/dd-phase3/ops/records/'.$id, array_replace($data, ['managing_engineer_id' => $this->engineer()]))->assertUnprocessable();
+        $this->putJson('/workspace/ops/records/'.$id, $this->recordData($f['project'], $f['engineer'], 'Q3'))->assertUnprocessable()->assertJsonValidationErrors('quarter');
+        $this->putJson('/workspace/ops/records/'.$id, array_replace($data, ['managing_engineer_id' => $this->engineer()]))->assertUnprocessable();
         $this->assertDatabaseHas('jairoads_next.maintenance_records', ['id' => $id, 'quarter' => 'Q1', 'managing_engineer_id' => $f['engineer']]);
     }
 

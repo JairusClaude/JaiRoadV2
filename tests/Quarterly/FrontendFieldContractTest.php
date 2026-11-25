@@ -30,10 +30,10 @@ beforeEach(function (): void {
 });
 
 it('maps RoadCoverage municipality on create and edit and preserves server attribution', function (): void {
-    $this->post('/dd-phase3/ui/road-coverages', ($this->roadPayload)() + ['created_by' => 999999])->assertSessionHasNoErrors()->assertRedirect();
+    $this->post('/workspace/ui/road-coverages', ($this->roadPayload)() + ['created_by' => 999999])->assertSessionHasNoErrors()->assertRedirect();
     $row = DB::table('jairoads_next.road_coverages')->where('road_name', 'Contract road')->first();
     expect((int) $row->lgu_id)->toBe($this->lgu)->and((int) $row->created_by)->toBe($this->f['engineer']);
-    $url = '/dd-phase3/ui/road-coverages/'.$row->id;
+    $url = '/workspace/ui/road-coverages/'.$row->id;
     $this->get($url)->assertInertia(fn (Assert $page) => $page->where('coverage.lgus_id', $this->lgu)
         ->where('coverage.lgu.id', $this->lgu)->where('coverage.created_by', $this->f['engineer']));
     $payload = ($this->roadPayload)();
@@ -47,10 +47,10 @@ it('maps RoadCoverage municipality on create and edit and preserves server attri
 it('keeps project municipality inherited and creator IDs server controlled on create and edit', function (): void {
     $road = $this->road($this->f['engineer']);
     $data = ['road_coverage_id' => $road, 'project_title' => 'Contract project', 'description' => 'Initial', 'lgu_id' => 999999, 'created_by' => 999999];
-    $this->post('/dd-phase3/ui/maintenance-projects', $data)->assertSessionHasNoErrors();
+    $this->post('/workspace/ui/maintenance-projects', $data)->assertSessionHasNoErrors();
     $project = DB::table('jairoads_next.maintenance_projects')->where('road_coverage_id', $road)->first();
     expect((int) $project->created_by)->toBe((int) $this->f['user']->dd_user_account_id);
-    $url = '/dd-phase3/ui/maintenance-projects/'.$project->id;
+    $url = '/workspace/ui/maintenance-projects/'.$project->id;
     $this->put($url, array_replace($data, ['description' => 'Edited']))->assertSessionHasNoErrors();
     $this->get($url)->assertInertia(fn (Assert $page) => $page->where('project.road_coverage_id', $road)
         ->where('project.description', 'Edited')->where('project.municipality', 'Test municipality')
@@ -59,7 +59,7 @@ it('keeps project municipality inherited and creator IDs server controlled on cr
 });
 
 it('maps ManagingEngineer and quarterly year without confusing manager creator or route parent', function (): void {
-    $url = '/dd-phase3/ui/maintenance-projects/'.$this->f['project'].'/records';
+    $url = '/workspace/ui/maintenance-projects/'.$this->f['project'].'/records';
     $data = ($this->recordPayload)() + ['created_by' => 999999];
     $this->post($url, array_replace($data, ['project_id' => 999999]))->assertSessionHasNoErrors();
     $row = DB::table('jairoads_next.maintenance_records')->first();
@@ -73,11 +73,11 @@ it('maps ManagingEngineer and quarterly year without confusing manager creator o
 
 it('rejects contradictory or structured aliases before a business mutation', function (string $workflow, mixed $other): void {
     if ($workflow === 'road') {
-        $url = '/dd-phase3/ui/road-coverages';
+        $url = '/workspace/ui/road-coverages';
         $data = ($this->roadPayload)() + ['lgu_id' => $other];
         $field = 'lgus_id';
     } else {
-        $url = '/dd-phase3/ui/maintenance-projects/'.$this->f['project'].'/records';
+        $url = '/workspace/ui/maintenance-projects/'.$this->f['project'].'/records';
         $data = ($this->recordPayload)() + ['managing_engineer_id' => $other];
         $field = 'engineers_id';
     }
@@ -89,13 +89,13 @@ it('rejects contradictory or structured aliases before a business mutation', fun
 
 it('keeps equivalent duplicate IDs compatible while canonical operations use canonical names', function (): void {
     $data = ($this->recordPayload)();
-    $this->post('/dd-phase3/ui/maintenance-projects/'.$this->f['project'].'/records', $data + ['managing_engineer_id' => $this->f['engineer']])->assertSessionHasNoErrors();
-    $this->post('/dd-phase3/ops/records', $this->recordData($this->f['project'], $this->f['engineer'], 'Q4'))->assertSessionHasNoErrors();
+    $this->post('/workspace/ui/maintenance-projects/'.$this->f['project'].'/records', $data + ['managing_engineer_id' => $this->f['engineer']])->assertSessionHasNoErrors();
+    $this->post('/workspace/ops/records', $this->recordData($this->f['project'], $this->f['engineer'], 'Q4'))->assertSessionHasNoErrors();
     expect(DB::table('jairoads_next.maintenance_records')->orderBy('quarter')->pluck('quarter')->all())->toBe(['Q2', 'Q4']);
 });
 
 it('keeps manager selection authorization and canonical actor attribution behind the alias adapter', function (): void {
-    $url = '/dd-phase3/ui/maintenance-projects/'.$this->f['project'].'/records';
+    $url = '/workspace/ui/maintenance-projects/'.$this->f['project'].'/records';
     $this->postJson($url, array_replace(($this->recordPayload)(), ['engineers_id' => $this->engineer()]))->assertForbidden();
     expect(DB::table('jairoads_next.maintenance_records')->count())->toBe(0);
     $admin = $this->account('Admin');
@@ -109,24 +109,24 @@ it('keeps manager selection authorization and canonical actor attribution behind
 it('returns alias validation errors under the actual HTML form fields', function (): void {
     $road = ($this->roadPayload)();
     unset($road['lgus_id']);
-    $this->post('/dd-phase3/ui/road-coverages', $road)->assertSessionHasErrors('lgus_id')->assertSessionDoesntHaveErrors('lgu_id');
+    $this->post('/workspace/ui/road-coverages', $road)->assertSessionHasErrors('lgus_id')->assertSessionDoesntHaveErrors('lgu_id');
     $record = ($this->recordPayload)();
     unset($record['engineers_id']);
-    $this->post('/dd-phase3/ui/maintenance-projects/'.$this->f['project'].'/records', $record)->assertSessionHasErrors('engineers_id')->assertSessionDoesntHaveErrors('managing_engineer_id');
+    $this->post('/workspace/ui/maintenance-projects/'.$this->f['project'].'/records', $record)->assertSessionHasErrors('engineers_id')->assertSessionDoesntHaveErrors('managing_engineer_id');
     expect(DB::table('jairoads_next.maintenance_records')->count())->toBe(0);
 });
 
 it('keeps a reporting month independent of the quarterly year and rejects missing canonical year', function (): void {
     $record = ($this->record)();
-    $this->post('/dd-phase3/ui/monthly-updates', ['maintenance_id' => $record, 'project_id' => 999999,
+    $this->post('/workspace/ui/monthly-updates', ['maintenance_id' => $record, 'project_id' => 999999,
         'update_month' => '2027-12', 'progress_percentage' => '33.50', 'created_by' => 999999])->assertSessionHasNoErrors();
     $row = DB::table('jairoads_next.monthly_updates')->first();
     expect($row->update_month)->toBe('2027-12')->and((int) $row->created_by)->toBe((int) $this->f['user']->dd_user_account_id);
-    $this->get('/dd-phase3/ui/monthly-updates?year=2027')->assertInertia(fn (Assert $page) => $page
+    $this->get('/workspace/ui/monthly-updates?year=2027')->assertInertia(fn (Assert $page) => $page
         ->where('updates.data.0.update_month', '2027-12')->where('updates.data.0.record.year', 2026));
     $data = ($this->recordPayload)();
     unset($data['maintenance_year']);
-    $this->postJson('/dd-phase3/ui/maintenance-projects/'.$this->f['project'].'/records', $data + ['year' => 2027])
+    $this->postJson('/workspace/ui/maintenance-projects/'.$this->f['project'].'/records', $data + ['year' => 2027])
         ->assertUnprocessable()->assertJsonValidationErrors('maintenance_year');
 });
 
@@ -134,20 +134,20 @@ it('maps document attachment errors and prevents client ownership or private-pat
     $record = ($this->record)();
     $data = ['maintenance_id' => $record, 'document_title' => 'Contract document', 'uploaded_by' => 999999,
         'file_path' => 'public/forged.pdf', 'file_name' => 'forged.pdf'];
-    $this->post('/dd-phase3/ui/maintenance-documents', $data)->assertSessionHasErrors('attachment')->assertSessionDoesntHaveErrors('file');
-    $this->get('/dd-phase3/ui/maintenance-documents/create')->assertOk();
-    $this->postJson('/dd-phase3/ui/maintenance-documents', $data + ['attachment' => 'not-an-upload'])
+    $this->post('/workspace/ui/maintenance-documents', $data)->assertSessionHasErrors('attachment')->assertSessionDoesntHaveErrors('file');
+    $this->get('/workspace/ui/maintenance-documents/create')->assertOk();
+    $this->postJson('/workspace/ui/maintenance-documents', $data + ['attachment' => 'not-an-upload'])
         ->assertUnprocessable()->assertJsonValidationErrors('attachment');
     config(['jairoads_documents.supabase_url' => 'http://127.0.0.1:5799', 'jairoads_documents.service_role_key' => 'disposable-mock-only']);
     Http::preventStrayRequests();
     Http::fake(['http://127.0.0.1:5799/*' => Http::response('', 200)]);
-    $this->post('/dd-phase3/ui/maintenance-documents', $data + ['attachment' => UploadedFile::fake()->createWithContent('actual.pdf', "%PDF-1.4\nDisposable\n%%EOF")])->assertSessionHasNoErrors();
+    $this->post('/workspace/ui/maintenance-documents', $data + ['attachment' => UploadedFile::fake()->createWithContent('actual.pdf', "%PDF-1.4\nDisposable\n%%EOF")])->assertSessionHasNoErrors();
     $doc = DB::table('jairoads_next.maintenance_documents')->first();
     expect((int) $doc->uploaded_by)->toBe((int) $this->f['user']->dd_user_account_id)->and($doc->file_name)->toBe('actual.pdf')
         ->and($doc->file_path)->toStartWith('maintenance-records/'.$record.'/');
-    $this->put('/dd-phase3/ui/maintenance-documents/'.$doc->id, ['document_title' => 'Edited', 'maintenance_id' => 999999, 'uploaded_by' => 999999])->assertSessionHasNoErrors();
+    $this->put('/workspace/ui/maintenance-documents/'.$doc->id, ['document_title' => 'Edited', 'maintenance_id' => 999999, 'uploaded_by' => 999999])->assertSessionHasNoErrors();
     expect((int) DB::table('jairoads_next.maintenance_documents')->where('id', $doc->id)->value('maintenance_id'))->toBe($record);
-    $this->get('/dd-phase3/ui/maintenance-documents/'.$doc->id)->assertInertia(fn (Assert $page) => $page
+    $this->get('/workspace/ui/maintenance-documents/'.$doc->id)->assertInertia(fn (Assert $page) => $page
         ->missing('document.file_path')->where('document.file_name', 'actual.pdf')->where('document.document_title', 'Edited'));
 });
 
@@ -158,11 +158,11 @@ it('takes media parent from the route and uploader MIME and private path from th
     Http::preventStrayRequests();
     Http::fake(['http://127.0.0.1:5799/*' => Http::response('', 200)]);
     $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZsGQAAAAASUVORK5CYII=');
-    $this->post('/dd-phase3/ui/monthly-updates/'.$update.'/media', ['monthly_update_id' => 999999, 'uploaded_by' => 999999,
+    $this->post('/workspace/ui/monthly-updates/'.$update.'/media', ['monthly_update_id' => 999999, 'uploaded_by' => 999999,
         'file_path' => 'public/forged', 'file_type' => 'video/mp4', 'file' => UploadedFile::fake()->createWithContent('actual.png', $png)])->assertSessionHasNoErrors();
     $media = DB::table('jairoads_next.media')->first();
     expect((int) $media->monthly_update_id)->toBe((int) $update)->and((int) $media->uploaded_by)->toBe((int) $this->f['user']->dd_user_account_id)
         ->and($media->file_type)->toBe('image/png')->and($media->file_path)->toStartWith('monthly-updates/'.$update.'/');
-    $this->get('/dd-phase3/ui/monthly-updates/'.$update)->assertInertia(fn (Assert $page) => $page
+    $this->get('/workspace/ui/monthly-updates/'.$update)->assertInertia(fn (Assert $page) => $page
         ->where('media.0.mime_type', 'image/png')->where('media.0.file_name', 'actual.png')->missing('media.0.file_path')->missing('media.0.uploaded_by'));
 });

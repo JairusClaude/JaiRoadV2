@@ -149,7 +149,7 @@ otherwise historic copies remain distinct history. No heuristic matching of old
 copies or descriptions is used. Viewer can still read an old addressed entry,
 while receiving no new routine deliveries.
 
-`GET /dd-phase3/audit-logs` is an explicitly checked Admin/SuperAdmin-only,
+`GET /workspace/audit-logs` is an explicitly checked Admin/SuperAdmin-only,
 read-only, 25-row paginated view of **all** retained entries, including historical
 notification copies and LOGIN entries with clear labels. Safe allowlists filter
 legacy payload projections without changing stored bytes. Engineer/Viewer direct

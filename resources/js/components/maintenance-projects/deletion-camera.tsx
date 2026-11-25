@@ -174,7 +174,7 @@ export function DeletionCamera({
             }
 
             const response = await fetch(
-                `/dd-phase3/ui/deletion-challenge/camera?scope=${scope}`,
+                `/workspace/ui/deletion-challenge/camera?scope=${scope}`,
                 {
                     method: 'POST',
                     cache: 'no-store',

@@ -49,11 +49,11 @@ status, target = open_page("/login", {"email": email, "password": "Disposable-Te
 assert status == 200 and urllib.parse.urlparse(target).path != "/login", (
     f"Canonical SuperAdmin login did not complete: {status} {target}"
 )
-status, target = open_page("/dd-phase3/users")
+status, target = open_page("/workspace/users")
 assert status == 200 and urllib.parse.urlparse(target).path != "/login", (
     f"Authenticated canonical directory inaccessible: {status} {target}"
 )
-status, target = open_page("/dd-phase3/lgus", {
+status, target = open_page("/workspace/lgus", {
     "municipality_name": "Staging Restricted Role LGU",
     "province": "Synthetic",
     "region": "Synthetic",

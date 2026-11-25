@@ -20,25 +20,25 @@ final class FullMaintenanceWorkflowTest extends PostgresTestCase
         $lgu = DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->value('lgu_id');
         $geometry = ['type' => 'LineString', 'coordinates' => [[125.95, 7.59], [125.96, 7.60], [125.97, 7.61]]];
         $roadData = ['road_name' => 'Three point road', 'lgu_id' => $lgu, 'kilometers' => 3.2, 'pavement_type' => 'Concrete', 'state_category' => 'Good', 'geojson' => json_encode($geometry)];
-        $this->postJson('/dd-phase3/ops/roads', $roadData)->assertRedirect();
+        $this->postJson('/workspace/ops/roads', $roadData)->assertRedirect();
         $road = DB::table('jairoads_next.road_coverages')->where('road_name', 'Three point road')->first();
         $this->assertSame($geometry, json_decode($road->geojson, true));
         $this->assertSame($f['engineer'], (int) $road->created_by);
-        $this->putJson('/dd-phase3/ops/roads/'.$road->id, array_replace($roadData, ['road_name' => 'Edited three point road']))->assertRedirect();
-        $this->postJson('/dd-phase3/ops/projects', ['project_title' => 'Full workflow project', 'road_coverage_id' => $road->id, 'lgu_id' => 999999, 'created_by' => 999999])->assertRedirect();
+        $this->putJson('/workspace/ops/roads/'.$road->id, array_replace($roadData, ['road_name' => 'Edited three point road']))->assertRedirect();
+        $this->postJson('/workspace/ops/projects', ['project_title' => 'Full workflow project', 'road_coverage_id' => $road->id, 'lgu_id' => 999999, 'created_by' => 999999])->assertRedirect();
         $project = DB::table('jairoads_next.maintenance_projects')->where('project_title', 'Full workflow project')->first();
         $this->assertSame((int) $f['user']->dd_user_account_id, (int) $project->created_by);
         $this->assertSame((int) $lgu, (int) DB::table('jairoads_next.road_coverages')->where('id', $project->road_coverage_id)->value('lgu_id'));
-        $this->postJson('/dd-phase3/ops/records', $this->recordData((int) $project->id, $f['engineer'], 'Q4'))->assertRedirect();
+        $this->postJson('/workspace/ops/records', $this->recordData((int) $project->id, $f['engineer'], 'Q4'))->assertRedirect();
         $record = DB::table('jairoads_next.maintenance_records')->where('project_id', $project->id)->first();
         $monthly = ['maintenance_id' => $record->id, 'update_month' => '2026-10', 'progress_percentage' => 33.25, 'summary_of_text_reports' => 'Inspected drainage.'];
-        $this->postJson('/dd-phase3/ops/updates', $monthly)->assertRedirect();
+        $this->postJson('/workspace/ops/updates', $monthly)->assertRedirect();
         $update = DB::table('jairoads_next.monthly_updates')->where('maintenance_id', $record->id)->first();
         $this->assertSame('33.25', $update->progress_percentage);
         $auditCount = DB::table('jairoads_next.audit_logs')->count();
-        $this->postJson('/dd-phase3/ops/updates', $monthly)->assertUnprocessable()->assertJsonValidationErrors('update_month');
+        $this->postJson('/workspace/ops/updates', $monthly)->assertUnprocessable()->assertJsonValidationErrors('update_month');
         foreach ([-1, 101] as $progress) {
-            $this->putJson('/dd-phase3/ops/updates/'.$update->id, array_replace($monthly, ['progress_percentage' => $progress]))->assertUnprocessable()->assertJsonValidationErrors('progress_percentage');
+            $this->putJson('/workspace/ops/updates/'.$update->id, array_replace($monthly, ['progress_percentage' => $progress]))->assertUnprocessable()->assertJsonValidationErrors('progress_percentage');
         }
         $this->assertSame($auditCount, DB::table('jairoads_next.audit_logs')->count());
         foreach ([['document', PrivateSupabaseStorage::class], ['media', PrivateMonthlyMediaStorage::class]] as [$kind, $class]) {
@@ -49,15 +49,15 @@ final class FullMaintenanceWorkflowTest extends PostgresTestCase
             $mock->shouldNotReceive('removeAfterFailure');
             $this->app->instance($class, $mock);
         }
-        $this->post('/dd-phase3/ops/documents', ['maintenance_id' => $record->id, 'document_title' => 'Inspection', 'file' => $this->file('document')])->assertRedirect();
-        $this->post('/dd-phase3/ops/media', ['monthly_update_id' => $update->id, 'file' => $this->file('media')])->assertRedirect();
+        $this->post('/workspace/ops/documents', ['maintenance_id' => $record->id, 'document_title' => 'Inspection', 'file' => $this->file('document')])->assertRedirect();
+        $this->post('/workspace/ops/media', ['monthly_update_id' => $update->id, 'file' => $this->file('media')])->assertRedirect();
         $document = DB::table('jairoads_next.maintenance_documents')->first();
         $media = DB::table('jairoads_next.media')->first();
         foreach ([['document', $document], ['media', $media]] as [$kind, $row]) {
             $this->assertSame((int) $f['user']->dd_user_account_id, (int) $row->uploaded_by);
-            $this->get('/dd-phase3/files/'.$kind.'/'.$row->id)->assertOk()->assertContent('Disposable private '.$kind)->assertHeader('Cache-Control', 'no-store, private')->assertHeader('X-Content-Type-Options', 'nosniff');
+            $this->get('/workspace/files/'.$kind.'/'.$row->id)->assertOk()->assertContent('Disposable private '.$kind)->assertHeader('Cache-Control', 'no-store, private')->assertHeader('X-Content-Type-Options', 'nosniff');
         }
-        $this->putJson('/dd-phase3/ops/records/'.$record->id, array_replace($this->recordData((int) $project->id, $f['engineer'], 'Q4'), ['status' => 'Completed', 'complete_date' => '2026-10-10']))->assertRedirect();
+        $this->putJson('/workspace/ops/records/'.$record->id, array_replace($this->recordData((int) $project->id, $f['engineer'], 'Q4'), ['status' => 'Completed', 'complete_date' => '2026-10-10']))->assertRedirect();
         $this->assertDatabaseHas('jairoads_next.maintenance_records', ['id' => $record->id, 'status' => 'Completed', 'created_by' => $f['user']->dd_user_account_id]);
         $this->assertSame(1, DB::table('jairoads_next.monthly_updates')->count());
         $this->assertSame(1, DB::table('jairoads_next.maintenance_documents')->count());
@@ -94,7 +94,7 @@ final class FullMaintenanceWorkflowTest extends PostgresTestCase
         $this->app->instance($class, $mock);
         $file = UploadedFile::fake()->createWithContent($overlongName, file_get_contents($file->getRealPath()));
 
-        $this->post('/dd-phase3/ops/'.($kind === 'document' ? 'documents' : 'media'), $payload + ['file' => $file])
+        $this->post('/workspace/ops/'.($kind === 'document' ? 'documents' : 'media'), $payload + ['file' => $file])
             ->assertSessionHasErrors(['file']);
         $this->assertSame(0, DB::table('jairoads_next.maintenance_documents')->count());
         $this->assertSame(0, DB::table('jairoads_next.media')->count());
@@ -125,7 +125,7 @@ final class FullMaintenanceWorkflowTest extends PostgresTestCase
             }
         });
         $payload = $kind === 'document' ? ['maintenance_id' => $record, 'document_title' => 'Atomic upload'] : ['monthly_update_id' => $update];
-        $this->post('/dd-phase3/ops/'.($kind === 'document' ? 'documents' : 'media'), $payload + ['file' => $this->file($kind)])->assertServerError();
+        $this->post('/workspace/ops/'.($kind === 'document' ? 'documents' : 'media'), $payload + ['file' => $this->file($kind)])->assertServerError();
         $this->assertNotNull($uploaded);
         $this->assertSame(0, DB::table('jairoads_next.maintenance_documents')->count());
         $this->assertSame(0, DB::table('jairoads_next.media')->count());
@@ -175,7 +175,7 @@ final class FullMaintenanceWorkflowTest extends PostgresTestCase
         }
         $this->app->instance($class, $mock);
         $payload = $kind === 'document' ? ['maintenance_id' => $record, 'document_title' => 'Reviewed upload'] : ['monthly_update_id' => $update];
-        $response = $this->post('/dd-phase3/ops/'.($kind === 'document' ? 'documents' : 'media'), $payload + ['file' => $this->file($kind)]);
+        $response = $this->post('/workspace/ops/'.($kind === 'document' ? 'documents' : 'media'), $payload + ['file' => $this->file($kind)]);
         if ($change === 'unassigned') {
             $response->assertRedirect()->assertSessionHasNoErrors();
             $this->assertSame(1, DB::table('jairoads_next.'.($kind === 'document' ? 'maintenance_documents' : 'media'))->count());

@@ -113,7 +113,7 @@ final class PermanentFileDeletionTest extends PostgresTestCase
             }
             $snapshots[$name] = $q->get()->toJson();
         }
-        $url = '/dd-phase3/files/'.$kind.'/'.$id;
+        $url = '/workspace/files/'.$kind.'/'.$id;
         $this->getJson($url.'/deletion-review')->assertOk()->assertJsonPath('can_delete', true)->assertJsonMissingPath('file_path');
         Http::assertNothingSent();
         $this->deleteJson($url, ['requested_by' => 999999, 'user_id' => 999999])->assertOk()->assertJsonPath('state', 'completed');
@@ -149,7 +149,7 @@ final class PermanentFileDeletionTest extends PostgresTestCase
         config(['jairoads_file_deletion.operationally_enabled' => true]);
         $f = $this->files();
         Http::fake(fn ($request) => $request->method() === 'DELETE' ? Http::response(['message' => 'Successfully deleted']) : null);
-        $ui = '/dd-phase3/ui';
+        $ui = '/workspace/ui';
         $this->get($ui.'/monthly-updates/'.$f['update'].'/edit')->assertOk();
         $this->get($ui.'/maintenance-documents/'.$f['documents'][0].'/edit')->assertOk();
         Http::assertNothingSent();
@@ -184,7 +184,7 @@ final class PermanentFileDeletionTest extends PostgresTestCase
         config(['jairoads_file_deletion.operationally_enabled' => true]);
         $f = $this->files();
         $other = (int) DB::table('jairoads_next.monthly_updates')->insertGetId(['maintenance_id' => $f['record'], 'update_month' => '2026-02', 'progress_percentage' => 20, 'created_by' => $f['user']->dd_user_account_id]);
-        $this->putJson('/dd-phase3/ui/monthly-updates/'.$other, ['maintenance_id' => $f['record'], 'update_month' => '2026-02', 'progress_percentage' => 20, 'removed_media_ids' => [$f['media'][0]]])
+        $this->putJson('/workspace/ui/monthly-updates/'.$other, ['maintenance_id' => $f['record'], 'update_month' => '2026-02', 'progress_percentage' => 20, 'removed_media_ids' => [$f['media'][0]]])
             ->assertUnprocessable()->assertJsonValidationErrors('attachments');
         $this->assertDatabaseHas('jairoads_next.media', ['id' => $f['media'][0]]);
         Http::assertNothingSent();
@@ -206,8 +206,8 @@ final class PermanentFileDeletionTest extends PostgresTestCase
         }
         Http::fake();
         foreach (['document' => $f['documents'][0], 'media' => $f['media'][0]] as $kind => $id) {
-            $this->actingAs($f['user'])->deleteJson('/dd-phase3/files/'.$kind.'/'.$id)->assertForbidden();
-            $this->actingAs($f['user'])->getJson('/dd-phase3/files/'.$kind.'/'.$id.'/deletion-review')->assertForbidden();
+            $this->actingAs($f['user'])->deleteJson('/workspace/files/'.$kind.'/'.$id)->assertForbidden();
+            $this->actingAs($f['user'])->getJson('/workspace/files/'.$kind.'/'.$id.'/deletion-review')->assertForbidden();
         }
         $this->assertSame(0, DB::table('jairoads_next.file_deletions')->count());
         Http::assertNothingSent();
@@ -234,7 +234,7 @@ final class PermanentFileDeletionTest extends PostgresTestCase
             $sequence->push($body, $status);
         }
         $sequence->push(['code' => 'NoSuchKey'], 404);
-        $url = '/dd-phase3/files/document/'.$f['documents'][0];
+        $url = '/workspace/files/document/'.$f['documents'][0];
         $history = $this->history();
         $response = $this->deleteJson($url)->assertStatus(202)->assertJsonPath('state', 'pending');
         $this->assertStringNotContainsString('sb_secret_disposable', $response->getContent());
@@ -263,7 +263,7 @@ final class PermanentFileDeletionTest extends PostgresTestCase
     {
         $f = $this->files();
         $this->bucketOverrides = $metadata;
-        $this->deleteJson('/dd-phase3/files/document/'.$f['documents'][0])->assertStatus(202)->assertJsonPath('state', 'pending');
+        $this->deleteJson('/workspace/files/document/'.$f['documents'][0])->assertStatus(202)->assertJsonPath('state', 'pending');
         Http::assertNotSent(fn ($request) => $request->method() === 'DELETE');
         $this->assertDatabaseHas('jairoads_next.maintenance_documents', ['id' => $f['documents'][0]]);
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->where('action', 'DELETE')->count());
@@ -274,11 +274,11 @@ final class PermanentFileDeletionTest extends PostgresTestCase
         $f = $this->files();
         Http::fake(['*/storage/v1/object/*' => fn () => Http::response(['message' => 'Successfully deleted'])]);
         DB::unprepared("CREATE FUNCTION jairoads_next.reject_permanent_delete_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.action = 'DELETE' THEN RAISE EXCEPTION 'Disposable audit insertion failure'; END IF; RETURN NEW; END $$; CREATE TRIGGER reject_permanent_delete_audit BEFORE INSERT ON jairoads_next.audit_logs FOR EACH ROW EXECUTE FUNCTION jairoads_next.reject_permanent_delete_audit()");
-        $url = '/dd-phase3/files/media/'.$f['media'][0];
+        $url = '/workspace/files/media/'.$f['media'][0];
         $this->deleteJson($url)->assertStatus(202);
         $this->assertDatabaseHas('jairoads_next.media', ['id' => $f['media'][0]]);
         $this->assertDatabaseHas('jairoads_next.file_deletions', ['state' => 'pending', 'last_error_code' => 'database_finalize_failed']);
-        $this->getJson('/dd-phase3/files/media/'.$f['media'][0])->assertStatus(409);
+        $this->getJson('/workspace/files/media/'.$f['media'][0])->assertStatus(409);
         DB::statement('DROP TRIGGER reject_permanent_delete_audit ON jairoads_next.audit_logs');
         Http::fake(['*/storage/v1/object/*' => fn () => Http::response(['code' => 'NoSuchKey'], 404)]);
         $this->artisan('jairoads:resume-file-deletions')->assertSuccessful();
@@ -299,7 +299,7 @@ final class PermanentFileDeletionTest extends PostgresTestCase
         $f = $this->files();
         $id = $f[$kind === 'document' ? 'documents' : 'media'][0];
         $table = 'jairoads_next.'.($kind === 'document' ? 'maintenance_documents' : 'media');
-        $url = '/dd-phase3/files/'.$kind.'/'.$id;
+        $url = '/workspace/files/'.$kind.'/'.$id;
         $history = $this->history();
         Http::fake(['*/storage/v1/object/*' => fn () => Http::response(['message' => 'Successfully deleted'])]);
         DB::unprepared("CREATE FUNCTION jairoads_next.fail_deletion_delivery() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'Disposable notification failure'; END $$; CREATE TRIGGER fail_deletion_delivery BEFORE INSERT ON jairoads_next.audit_notification_recipients FOR EACH ROW EXECUTE FUNCTION jairoads_next.fail_deletion_delivery()");
@@ -328,7 +328,7 @@ final class PermanentFileDeletionTest extends PostgresTestCase
     {
         $f = $this->files();
         Http::fake();
-        $url = '/dd-phase3/files/document/'.$f['documents'][0];
+        $url = '/workspace/files/document/'.$f['documents'][0];
         $this->deleteJson($url, ['file_path' => 'any/arbitrary/object'])->assertUnprocessable();
         foreach (['../escape.pdf', 'maintenance-records/999/00000000-0000-4000-8000-000000000001.pdf', 'maintenance-records/'.$f['record']."/00000000-0000-4000-8000-000000000001.pdf\n"] as $path) {
             DB::table('jairoads_next.maintenance_documents')->where('id', $f['documents'][0])->update(['file_path' => $path]);
@@ -346,7 +346,7 @@ final class PermanentFileDeletionTest extends PostgresTestCase
         $f = $this->files();
         config(['jairoads_documents.service_role_key' => 'sb_publishable_not_a_server_key']);
         Http::fake();
-        $this->deleteJson('/dd-phase3/files/document/'.$f['documents'][0])->assertStatus(202);
+        $this->deleteJson('/workspace/files/document/'.$f['documents'][0])->assertStatus(202);
         Http::assertNothingSent();
         $this->assertDatabaseHas('jairoads_next.maintenance_documents', ['id' => $f['documents'][0]]);
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->where('action', 'DELETE')->count());
@@ -356,7 +356,7 @@ final class PermanentFileDeletionTest extends PostgresTestCase
     {
         $f = $this->files();
         Http::fake(['*/storage/v1/object/*' => fn () => Http::response([], 503)]);
-        $url = '/dd-phase3/files/document/'.$f['documents'][0];
+        $url = '/workspace/files/document/'.$f['documents'][0];
         $this->deleteJson($url)->assertStatus(202);
         config(['jairoads_documents.bucket' => 'other-private-bucket']);
         Http::fake();
@@ -374,7 +374,7 @@ final class PermanentFileDeletionTest extends PostgresTestCase
     {
         $f = $this->files();
         Http::fakeSequence('*/storage/v1/object/*')->push([], 503)->push(['code' => 'NoSuchKey'], 404);
-        $url = '/dd-phase3/files/document/'.$f['documents'][0];
+        $url = '/workspace/files/document/'.$f['documents'][0];
         $this->deleteJson($url)->assertStatus(202);
         DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->update(['is_active' => false]);
         $count = Http::recorded()->count();
@@ -394,7 +394,7 @@ final class PermanentFileDeletionTest extends PostgresTestCase
         $f = $this->files();
         DB::unprepared("CREATE FUNCTION jairoads_next.reject_delete_intent() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'disposable intent failure'; END $$; CREATE TRIGGER reject_delete_intent BEFORE INSERT ON jairoads_next.file_deletions FOR EACH ROW EXECUTE FUNCTION jairoads_next.reject_delete_intent()");
         Http::fake();
-        $this->deleteJson('/dd-phase3/files/document/'.$f['documents'][0])->assertStatus(503)->assertJsonPath('state', 'unconfirmed');
+        $this->deleteJson('/workspace/files/document/'.$f['documents'][0])->assertStatus(503)->assertJsonPath('state', 'unconfirmed');
         Http::assertNothingSent();
         $this->assertSame(0, DB::table('jairoads_next.file_deletions')->count());
         $this->assertSame(2, DB::table('jairoads_next.maintenance_documents')->count());
@@ -406,7 +406,7 @@ final class PermanentFileDeletionTest extends PostgresTestCase
         DB::statement('CREATE TABLE jairoads_next.test_file_dependency (media_id bigint REFERENCES jairoads_next.media(id) ON DELETE RESTRICT)');
         DB::table('jairoads_next.test_file_dependency')->insert(['media_id' => $f['media'][0]]);
         Http::fakeSequence('*/storage/v1/object/*')->push(['message' => 'Successfully deleted'])->push(['code' => 'NoSuchKey'], 404);
-        $url = '/dd-phase3/files/media/'.$f['media'][0];
+        $url = '/workspace/files/media/'.$f['media'][0];
         $this->deleteJson($url)->assertStatus(202)->assertJsonPath('state', 'pending');
         $this->assertDatabaseHas('jairoads_next.media', ['id' => $f['media'][0]]);
         $this->assertDatabaseHas('jairoads_next.file_deletions', ['last_error_code' => 'database_finalize_failed']);
@@ -421,7 +421,7 @@ final class PermanentFileDeletionTest extends PostgresTestCase
         $f = $this->files();
         DB::unprepared('CREATE FUNCTION jairoads_next.retain_test_document() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NULL; END $$; CREATE TRIGGER retain_test_document BEFORE UPDATE ON jairoads_next.maintenance_documents FOR EACH ROW EXECUTE FUNCTION jairoads_next.retain_test_document()');
         Http::fakeSequence('*/storage/v1/object/*')->push(['message' => 'Successfully deleted'])->push(['code' => 'NoSuchKey'], 404);
-        $url = '/dd-phase3/files/document/'.$f['documents'][0];
+        $url = '/workspace/files/document/'.$f['documents'][0];
         $this->deleteJson($url)->assertStatus(202)->assertJsonPath('state', 'pending');
         $this->assertDatabaseHas('jairoads_next.maintenance_documents', ['id' => $f['documents'][0]]);
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->where('action', 'DELETE')->count());
@@ -491,7 +491,7 @@ final class PermanentFileDeletionTest extends PostgresTestCase
     public function test_concurrent_requests_or_process_death_keep_durable_exactly_once_recovery(bool $kill): void
     {
         $f = $this->files();
-        $url = '/dd-phase3/files/document/'.$f['documents'][0];
+        $url = '/workspace/files/document/'.$f['documents'][0];
         if ($kill) {
             Http::fakeSequence('*/storage/v1/object/*')->push([], 503)->push(['code' => 'NoSuchKey'], 404);
             $this->deleteJson($url)->assertStatus(202); // Commit intent before the crash/recovery worker starts.

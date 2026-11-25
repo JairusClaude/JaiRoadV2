@@ -44,7 +44,7 @@ Route::middleware(['auth'])->group(function () {
 
             return match ($identity['role']) {
                 'SuperAdmin' => redirect()->route('jairoads.dd-superadmin-landing'),
-                'Admin', 'Engineer', 'Viewer' => redirect()->route('jairoads.dd-phase3.show', ['section' => 'dashboard']),
+                'Admin', 'Engineer', 'Viewer' => redirect()->route('jairoads.workspace.show', ['section' => 'dashboard']),
                 default => abort(403, 'This Data Dictionary role awaits the guarded module cutover.'),
             };
         }
@@ -188,3 +188,4 @@ require __DIR__.'/role-dashboard.php';
 // Dedicated governance command center, never exposed to Admin/Engineer/Viewer.
 require __DIR__.'/superadmin-dashboard.php';
 require __DIR__.'/operations.php';
+require __DIR__.'/workspace-compatibility.php';

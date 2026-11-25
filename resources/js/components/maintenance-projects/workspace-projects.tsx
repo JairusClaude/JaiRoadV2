@@ -50,7 +50,7 @@ type Props = {
     records: Record[];
 };
 const integration: IntegrationStatus = { ready: true, message: null };
-const HOME = '/dd-phase3/projects';
+const HOME = '/workspace/projects';
 
 // Uses the shared JaiROADS project directory and form.
 // Only the URLs and source records change. No legacy business endpoint is called.
@@ -163,7 +163,7 @@ export default function WorkspaceProjects({
 
         setDeleting(true);
         setDeleteError('');
-        router.delete(`/dd-phase3/ops/projects/${deleteTarget.id}`, {
+        router.delete(`/workspace/ops/projects/${deleteTarget.id}`, {
             preserveScroll: true,
             onSuccess: () => setDeleteTarget(null),
             onError: (errors) =>
@@ -388,11 +388,11 @@ function WorkspaceProjectEditor({
     }));
     const onSave = () => {
         if (project) {
-            form.put(`/dd-phase3/ops/projects/${project.id}`, {
+            form.put(`/workspace/ops/projects/${project.id}`, {
                 preserveScroll: true,
             });
         } else {
-            form.post('/dd-phase3/ops/projects', { preserveScroll: true });
+            form.post('/workspace/ops/projects', { preserveScroll: true });
         }
     };
 

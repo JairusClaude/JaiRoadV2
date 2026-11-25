@@ -55,16 +55,16 @@ export function JaiRoadsQuickActions() {
     const path = page.url.split('?')[0];
     const role = page.props.jairoadsIdentity?.role;
     const isDd =
-        path.startsWith('/dd-phase3/') || path.startsWith('/dd-superadmin-');
+        path.startsWith('/workspace/') || path.startsWith('/dd-superadmin-');
     const canonicalPaths = [
-        '/dd-phase3/dashboard',
-        '/dd-phase3/projects',
-        '/dd-phase3/users',
-        '/dd-phase3/updates',
-        '/dd-phase3/documents',
-        '/dd-phase3/roads',
-        '/dd-phase3/lgus',
-        '/dd-phase3/settings',
+        '/workspace/dashboard',
+        '/workspace/projects',
+        '/workspace/users',
+        '/workspace/updates',
+        '/workspace/documents',
+        '/workspace/roads',
+        '/workspace/lgus',
+        '/workspace/settings',
     ];
     const allowedDestinations = destinations.flatMap((entry, index) => {
         if (

@@ -101,7 +101,7 @@ export default function Index({
 
         try {
             const response = await fetch(
-                `/dd-phase3/ui/map/road-index?before=${encodeURIComponent(mapCursor)}`,
+                `/workspace/ui/map/road-index?before=${encodeURIComponent(mapCursor)}`,
                 {
                     credentials: 'same-origin',
                     headers: { Accept: 'application/json' },

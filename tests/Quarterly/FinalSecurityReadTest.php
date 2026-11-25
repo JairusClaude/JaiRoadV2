@@ -42,8 +42,8 @@ final class FinalSecurityReadTest extends PostgresTestCase
                 'created_at' => '2026-11-03 10:00:00']],
         ]);
         // The canonical ops router deliberately has no audit mutation resource.
-        $this->putJson('/dd-phase3/ops/audit_logs/'.$own, ['actor_identifier' => 'Tampered'])->assertNotFound();
-        $this->deleteJson('/dd-phase3/ops/audit_logs/'.$own)->assertNotFound();
+        $this->putJson('/workspace/ops/audit_logs/'.$own, ['actor_identifier' => 'Tampered'])->assertNotFound();
+        $this->deleteJson('/workspace/ops/audit_logs/'.$own)->assertNotFound();
         DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->update(['is_active' => false]);
         $this->getJson('/jairoads/notifications')->assertForbidden();
         $this->assertSame($history, DB::table('jairoads_next.audit_logs')->orderBy('id')->get()->toJson());

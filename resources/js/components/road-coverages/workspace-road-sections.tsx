@@ -382,7 +382,7 @@ export default function WorkspaceRoadSections({
 
         try {
             await requestOperation(
-                `/dd-phase3/ops/roads${editingId === null ? '' : `/${editingId}`}`,
+                `/workspace/ops/roads${editingId === null ? '' : `/${editingId}`}`,
                 {
                     road_name: name.trim(),
                     lgu_id: lguId,
@@ -948,7 +948,7 @@ export default function WorkspaceRoadSections({
 
                                     try {
                                         await requestOperation(
-                                            `/dd-phase3/ops/roads/${selected.id}`,
+                                            `/workspace/ops/roads/${selected.id}`,
                                             {},
                                             'delete',
                                         );
