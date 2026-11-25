@@ -94,20 +94,24 @@ html.dark .jr-dd-settings button[aria-pressed='false']:hover {
 }
 html.dark .jr-dd-settings button[aria-pressed='true'] {
     color: var(--jr-dark-selection-text, #c4b5fd) !important;
-    background-color: #29374d !important;
-    border-color: var(--jr-role-accent, #51269b) !important;
+    background-color: var(--jr-dark-selection-bg, #432868) !important;
+    border-color: var(--jr-dark-selection-text, #c4b5fd) !important;
 }
 html.dark body:has(.jr-superadmin-workspace) .jr-dd-settings {
     --jr-dark-selection-text: #c4b5fd;
+    --jr-dark-selection-bg: #432868;
 }
 html.dark body:has(.jr-admin-workspace) .jr-dd-settings {
     --jr-dark-selection-text: #fda4af;
+    --jr-dark-selection-bg: #4b2030;
 }
 html.dark body:has(.jr-engineer-workspace) .jr-dd-settings {
     --jr-dark-selection-text: #fdba74;
+    --jr-dark-selection-bg: #4a2c1b;
 }
 html.dark body:has(.jr-viewer-workspace) .jr-dd-settings {
     --jr-dark-selection-text: #93c5fd;
+    --jr-dark-selection-bg: #203b65;
 }
 html.dark .jr-dd-settings main > [role='status'] {
     border-color: #236c53;
