@@ -1,3 +1,4 @@
+import { usePage } from '@inertiajs/react';
 import {
     ClipboardCheck,
     ClipboardList,
@@ -77,6 +78,8 @@ export function RecordDirectory({
     onAdd: () => void;
     onDelete: (records: RecordDirectoryRow[], bulk?: boolean) => void;
 }) {
+    const page = usePage();
+    const isViewer = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role?.toLowerCase() === 'viewer';
     const [search, setSearch] = useState(filters.search);
     const [selecting, setSelecting] = useState(false);
     const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -173,7 +176,7 @@ export function RecordDirectory({
                         projects.
                     </p>
                 </div>
-                {canCreate && (
+                {!isViewer && canCreate && (
 <Button
                     className="jr-primary"
                     disabled={!integration.ready || !canCreate || busy}
@@ -314,7 +317,7 @@ export function RecordDirectory({
                 total={records.total}
                 singular="record"
                 plural="records"
-                canDelete={canBulkDelete}
+                canDelete={!isViewer && canBulkDelete}
                 disabled={!integration.ready || busy}
                 onSelect={() => setSelecting(true)}
                 onCancel={() => {
@@ -495,7 +498,7 @@ export function RecordDirectory({
                                     className="text-right"
                                     onClick={(event) => event.stopPropagation()}
                                 >
-                                    {!selecting && (
+                                    {!isViewer && !selecting && (
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button
