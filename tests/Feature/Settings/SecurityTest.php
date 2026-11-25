@@ -12,9 +12,6 @@ test('security page is displayed', function () {
         'confirm' => true,
         'confirmPassword' => true,
     ]);
-    Features::passkeys([
-        'confirmPassword' => true,
-    ]);
 
     $user = $this->canonicalUser(User::factory()->create());
 
@@ -23,8 +20,8 @@ test('security page is displayed', function () {
         ->get(route('security.edit'))
         ->assertInertia(fn (Assert $page) => $page
             ->component('settings/security')
-            ->where('canManagePasskeys', true)
-            ->where('passkeys', [])
+            ->missing('canManagePasskeys')
+            ->missing('passkeys')
             ->where('canManageTwoFactor', true)
             ->where('twoFactorEnabled', false),
         );
@@ -59,8 +56,8 @@ test('security page renders without two factor when feature is disabled', functi
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('settings/security')
-            ->where('canManagePasskeys', false)
-            ->where('passkeys', [])
+            ->missing('canManagePasskeys')
+            ->missing('passkeys')
             ->where('canManageTwoFactor', false)
             ->missing('twoFactorEnabled')
             ->missing('requiresConfirmation'),
