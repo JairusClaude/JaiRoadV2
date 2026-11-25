@@ -855,6 +855,33 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
 
     // SuperAdmin theme and breadcrumb regressions seen in the deployed UI.
     await superadmin.goto(`${ui}/monthly-updates`);
+    // Hold a real sidebar visit so the delayed, non-blocking header status is observable.
+    const navTarget = superadmin.locator('a[href$="/road-coverages"]').first();
+    const targetHref = await navTarget.getAttribute('href');
+    assert.ok(targetHref);
+    const targetURL = new URL(targetHref, base).href;
+    let releaseVisit;
+    const visitGate = new Promise(resolve => { releaseVisit = resolve; });
+    const holdVisit = async route => {
+        if (route.request().headers()['x-inertia']) await visitGate;
+        await route.continue();
+    };
+    await superadmin.route(targetURL, holdVisit);
+    const navClick = navTarget.click();
+    const navigationStatus = superadmin.locator('[data-jr-navigation-status] .jr-navigation-status');
+    try {
+        await navigationStatus.waitFor({ state: 'visible' });
+        assert.equal(await superadmin.locator('.jr-loading-layer, .jr-loading-track').count(), 0);
+        assert.equal(await navigationStatus.evaluate(el => Boolean(el.closest('header'))), true);
+        assert.equal(await navigationStatus.evaluate(el => getComputedStyle(el).pointerEvents), 'none');
+    } finally {
+        releaseVisit();
+        await navClick;
+        await superadmin.unroute(targetURL, holdVisit);
+    }
+    await superadmin.waitForURL(targetURL);
+    await navigationStatus.waitFor({ state: 'detached' });
+    await superadmin.goto(`${ui}/monthly-updates`);
     const motionToken = () => superadmin.evaluate(() =>
         getComputedStyle(document.documentElement).getPropertyValue('--jr-motion-panel').trim(),
     );
