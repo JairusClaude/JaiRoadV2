@@ -994,3 +994,11 @@ html.jr-reduce-motion .jr-app .jr-superadmin-sidebar * {
     transition-duration: 0ms !important;
     transition-delay: 0ms !important;
 }
+
+/* Map-heading icon is application chrome, not the OpenStreetMap basemap. */
+.jr-app.jr-superadmin-workspace .jr-road-map-heading > svg {
+    color: #51269b;
+}
+html.dark .jr-app.jr-superadmin-workspace .jr-road-map-heading > svg {
+    color: #c4b5fd;
+}
