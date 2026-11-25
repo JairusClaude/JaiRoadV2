@@ -1,3 +1,4 @@
+import { manilaTimestamp } from '@/lib/manila-time';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
@@ -11,13 +12,7 @@ import type { RoadCoverageDetailsProps } from '@/types/road-coverages';
 import '../../../css/road-coverage-directory.css';
 import '../../../css/road-coverage-details.css';
 
-const date = (value?: string | null) =>
-    value && Number.isFinite(new Date(value).getTime())
-        ? new Intl.DateTimeFormat('en-PH', {
-              dateStyle: 'medium',
-              timeStyle: 'short',
-          }).format(new Date(value))
-        : 'Unavailable';
+const date = manilaTimestamp;
 const length = (value: string | number | null) =>
     value !== null && value !== '' && Number.isFinite(Number(value))
         ? `${new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value))} km`
