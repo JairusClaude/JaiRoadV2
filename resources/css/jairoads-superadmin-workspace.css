@@ -915,12 +915,12 @@ html.dark .jr-app.jr-superadmin-workspace :is(.jr-audit-filter, .um-filter, .um-
     margin: 0;
     padding: 0;
 }
-.jr-app.jr-superadmin-workspace .jr-table-footer [aria-current='page'] {
+.jr-app.jr-superadmin-workspace :is(.jr-table-footer, .jr-audit-pagination) [aria-current='page'] {
     background: #eee6ff;
     border-color: #ded0fb;
     color: #51269b;
 }
-html.dark .jr-app.jr-superadmin-workspace .jr-table-footer [aria-current='page'] {
+html.dark .jr-app.jr-superadmin-workspace :is(.jr-table-footer, .jr-audit-pagination) [aria-current='page'] {
     background: #432868;
     border-color: #7558a0;
     color: #faf5ff;
@@ -942,14 +942,27 @@ html.dark .jr-app.jr-superadmin-workspace .jr-table-footer [aria-current='page']
     .jr-app .jr-superadmin-sidebar :is(.jr-brand-copy, .jr-identity-copy, .jr-nav-link > span) {
         transition: opacity 170ms ease 100ms, transform 220ms ease 80ms;
     }
+    /* Keep the logo centered independently of the fading wordmark. */
+    body:has(.jr-superadmin-workspace) .jr-superadmin-sidebar .jr-brand-copy {
+        position: absolute;
+        inset: 95px 0 auto;
+        margin: 0;
+        transition: opacity 170ms ease 100ms, transform 220ms ease 80ms, top 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
     .jr-app .jr-superadmin-sidebar .jr-nav-link {
+        justify-content: flex-start;
         transition: padding 300ms cubic-bezier(0.4, 0, 0.2, 1), background 150ms ease, color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
     }
     body:has(.jr-superadmin-workspace) [data-state='collapsed'] .jr-superadmin-sidebar .jr-brand-copy {
         display: block;
+        top: 49px;
         opacity: 0;
         transform: translateY(-5px);
         transition-delay: 0ms;
+    }
+    .jr-app [data-state='collapsed'] .jr-superadmin-sidebar.jr-sidebar-container .jr-nav-link {
+        justify-content: flex-start;
+        padding-inline: 16px 0;
     }
     .jr-app [data-state='collapsed'] .jr-superadmin-sidebar :is(.jr-identity-copy, .jr-nav-link > span) {
         opacity: 0;
