@@ -75,8 +75,9 @@ export function MonthlyUpdateDirectory({
     ) => void;
 }) {
     const page = usePage();
+    const isViewer = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role?.toLowerCase() === 'viewer';
     const canonical = page.props.canonicalFrontend === true;
-    const canWrite = !canonical || page.props.canWrite === true;
+    const canWrite = !isViewer && (!canonical || page.props.canWrite === true);
     const [search, setSearch] = useState(filters.search);
     const [selecting, setSelecting] = useState(false);
     const [selected, setSelected] = useState<Set<number>>(new Set());
