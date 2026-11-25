@@ -712,7 +712,7 @@ export default function Operations({
                                         type="button"
                                         aria-pressed={appearance === mode}
                                         onClick={() => updateAppearance(mode)}
-                                        className={`rounded-xl border px-5 py-4 text-left text-sm font-semibold capitalize transition focus-visible:outline-2 focus-visible:outline-offset-2 ${isAdmin ? 'focus-visible:outline-[#C8293D]' : isEngineer ? 'focus-visible:outline-[#A94B0C]' : isViewer ? 'focus-visible:outline-[#1D5DB5]' : 'focus-visible:outline-amber-600'} ${
+                                        className={`rounded-xl border px-5 py-4 text-left text-sm font-semibold capitalize transition focus-visible:outline-2 focus-visible:outline-offset-2 ${isAdmin ? 'focus-visible:outline-[#C8293D]' : isEngineer ? 'focus-visible:outline-[#A94B0C]' : isViewer ? 'focus-visible:outline-[#1D5DB5]' : 'focus-visible:outline-[#51269B]'} ${
                                             appearance === mode
                                                 ? isAdmin
                                                     ? 'border-[#C8293D] bg-[#FDE7EA] text-[#C8293D] shadow-xs'
@@ -720,7 +720,7 @@ export default function Operations({
                                                       ? 'border-[#A94B0C] bg-[#FFF0E3] text-[#A94B0C] shadow-xs'
                                                       : isViewer
                                                         ? 'border-[#1D5DB5] bg-[#E6EFFF] text-[#1D5DB5] shadow-xs'
-                                                        : 'border-[#a15b34] bg-[#fff1e3] text-[#90451f] shadow-xs'
+                                                        : 'border-[#51269B] bg-[#EEE6FF] text-[#51269B] shadow-xs dark:border-[#A78BFA] dark:bg-[#432868] dark:text-[#E9DFFF]'
                                                 : 'border-slate-200 bg-[#fdfcfb] text-slate-700 hover:bg-slate-50'
                                         }`}
                                     >
