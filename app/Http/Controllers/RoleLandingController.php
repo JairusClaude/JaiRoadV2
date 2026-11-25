@@ -100,9 +100,9 @@ final class RoleLandingController extends Controller
         abort_unless($user instanceof User && $user->getAttribute('dd_user_account_id') !== null, 403);
         $actor = $resolver->resolve($user);
         abort_unless($actor !== null && ($actor['role'] === 'Viewer' || ($actor['role'] === 'Engineer' && $actor['engineer_id'] !== null)), 403);
-        $validated = $request->validate(['before' => ['required', 'integer', 'min:1']]);
+        $validated = $request->validate(['before' => ['sometimes', 'integer', 'min:1']]);
 
-        return response()->json($this->roadMapBatch($actor, (int) $validated['before']))
+        return response()->json($this->roadMapBatch($actor, isset($validated['before']) ? (int) $validated['before'] : null))
             ->header('Cache-Control', 'private, no-store');
     }
 
@@ -152,8 +152,6 @@ final class RoleLandingController extends Controller
         $engineer = null;
         $assigned = [];
         $records = [];
-        $mapCoverages = [];
-        $mapNextCursor = null;
         $stats = [
             'assignedLgus' => 0, 'managedRecords' => 0, 'ongoingRecords' => 0,
             'roadCoverages' => 0, 'projects' => 0, 'lgus' => 0,
@@ -221,9 +219,6 @@ final class RoleLandingController extends Controller
 
         // Creator account and managing Engineer are distinct foreign keys.
         // Viewers receive the same inventory, with no personalized relationship flags.
-        $mapPage = $this->roadMapBatch($actor);
-        $mapCoverages = $mapPage['data'];
-        $mapNextCursor = $mapPage['next_cursor'];
 
         $notifications = array_map(static fn (array $n): array => ['id' => $n['id'], 'message' => $n['notification_message'], 'createdAt' => $n['created_at']], app(ActivityNotifications::class)->feed($actor['account_id'], 8));
 
@@ -240,8 +235,6 @@ final class RoleLandingController extends Controller
             'stats' => $stats,
             'analytics' => app(DashboardAnalytics::class)->summary($actor),
             'records' => $records,
-            'mapCoverages' => $mapCoverages,
-            'mapNextCursor' => $mapNextCursor,
             'notifications' => $notifications,
             'canonicalFrontend' => true,
             'jairoadsIdentity' => ['role' => strtolower($actor['role'])],
