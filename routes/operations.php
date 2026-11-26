@@ -23,6 +23,7 @@ Route::middleware(['auth'])->prefix('workspace')->name('jairoads.workspace.')->g
     Route::get('/dashboard/roads/{road}', [RoleLandingController::class, 'roadDetails'])->whereNumber('road')->name('dashboard.road-details');
     Route::get('/dashboard/map-roads', [RoleLandingController::class, 'roadMapPage'])->name('dashboard.map-roads');
     Route::get('/audit-logs', AuditHistoryController::class)->name('audit.index');
+    Route::get('/audit-logs/presence', [AuditHistoryController::class, 'presence'])->middleware('throttle:12,1,jr-audit-presence-')->name('audit.presence');
     // A single GET section router: registration of two /{section} routes
     // previously replaced the named dashboard route and caused routing failures.
     Route::get('/ops/{section}', SectionController::class)

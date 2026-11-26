@@ -67,6 +67,7 @@ type Props = {
         message: string;
         recent_failure_at: string | null;
     };
+    presencePolling?: boolean;
     presence: {
         available: boolean;
         message: string;
@@ -524,10 +525,88 @@ export default function AuditHistory({
     actions,
     entities,
     monitoring,
-    presence,
+    presence: initialPresence,
+    presencePolling = false,
     summary,
 }: Props) {
     const [refreshing, setRefreshing] = useState(false);
+    const [snapshot, setSnapshot] = useState<{
+        source: Props['presence'];
+        data: Props['presence'];
+    } | null>(null);
+    const presence =
+        snapshot?.source === initialPresence ? snapshot.data : initialPresence;
+
+    useEffect(() => {
+        if (!presencePolling) {
+            return;
+        }
+
+        let pending: AbortController | null = null;
+        let lastInteraction = Date.now();
+        const markInteraction = () => {
+            lastInteraction = Date.now();
+        };
+        const refreshPresence = async () => {
+            if (
+                pending ||
+                document.hidden ||
+                Date.now() - lastInteraction > 120_000
+            ) {
+                return;
+            }
+
+            const controller = new AbortController();
+            pending = controller;
+
+            try {
+                const response = await fetch('/workspace/audit-logs/presence', {
+                    credentials: 'same-origin',
+                    headers: { Accept: 'application/json' },
+                    cache: 'no-store',
+                    signal: controller.signal,
+                });
+
+                if (!response.ok) {
+                    throw new Error('Presence unavailable');
+                }
+
+                const data: Props['presence'] = await response.json();
+
+                if (!controller.signal.aborted) {
+                    setSnapshot({ source: initialPresence, data });
+                }
+            } catch {
+                if (!controller.signal.aborted) {
+                    setSnapshot({
+                        source: initialPresence,
+                        data: {
+                            available: false,
+                            accounts: [],
+                            total: 0,
+                            window_seconds: initialPresence.window_seconds,
+                            message:
+                                'Live presence refresh unavailable. Refresh monitoring to retry.',
+                        },
+                    });
+                }
+            } finally {
+                pending = null;
+            }
+        };
+        const timer = window.setInterval(() => {
+            void refreshPresence();
+        }, 30_000);
+        document.addEventListener('pointerdown', markInteraction);
+        document.addEventListener('keydown', markInteraction);
+
+        return () => {
+            window.clearInterval(timer);
+            pending?.abort();
+            document.removeEventListener('pointerdown', markInteraction);
+            document.removeEventListener('keydown', markInteraction);
+        };
+    }, [initialPresence, presencePolling]);
 
     return (
         <div className="jr-directory-exploration jr-audit-history">
@@ -587,9 +666,9 @@ export default function AuditHistory({
                             title="Unique Online Accounts"
                             icon={<UsersRound className="size-5" />}
                             value={
-                                summary.online_accounts === null
-                                    ? 'Unavailable'
-                                    : summary.online_accounts
+                                presence.available
+                                    ? presence.total
+                                    : 'Unavailable'
                             }
                             subtitle={`${Math.round(presence.window_seconds / 60)}-minute activity window; multiple sessions count once.`}
                         />
@@ -900,6 +979,12 @@ export default function AuditHistory({
                             {presence.message} Closing a tab may leave a valid
                             session recently active until this window elapses.
                         </p>
+                        {presencePolling && (
+                            <p className="mb-4 text-xs text-slate-500">
+                                Refreshes every 30 seconds while this tab is
+                                visible and recently used.
+                            </p>
+                        )}
                         <Table
                             title="Currently Online Users"
                             headers={[

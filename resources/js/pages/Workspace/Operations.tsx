@@ -1,17 +1,31 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import { Settings2, ShieldCheck } from 'lucide-react';
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import type { ComponentProps } from 'react';
-import FileRemovalReview from '@/components/files/file-removal-review';
-import WorkspaceDocuments from '@/components/maintenance-documents/workspace-documents';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
-import WorkspaceProjects from '@/components/maintenance-projects/workspace-projects';
-import WorkspaceRecords from '@/components/maintenance-records/workspace-records';
 import type { QuarterlyProps } from '@/components/maintenance-records/workspace-records';
-import WorkspaceUpdates from '@/components/monthly-updates/workspace-updates';
-import WorkspaceRoadSections from '@/components/road-coverages/workspace-road-sections';
 import { useAppearance } from '@/hooks/use-appearance';
 import '../../../css/maintenance-projects-exploration.css';
+
+// Keep settings and unrelated modules from downloading the map engine.
+const FileRemovalReview = lazy(
+    () => import('@/components/files/file-removal-review'),
+);
+const WorkspaceDocuments = lazy(
+    () => import('@/components/maintenance-documents/workspace-documents'),
+);
+const WorkspaceProjects = lazy(
+    () => import('@/components/maintenance-projects/workspace-projects'),
+);
+const WorkspaceRecords = lazy(
+    () => import('@/components/maintenance-records/workspace-records'),
+);
+const WorkspaceUpdates = lazy(
+    () => import('@/components/monthly-updates/workspace-updates'),
+);
+const WorkspaceRoadSections = lazy(
+    () => import('@/components/road-coverages/workspace-road-sections'),
+);
 
 type Role = 'SuperAdmin' | 'Admin' | 'Engineer' | 'Viewer';
 type Row = Record<string, any>;
@@ -82,7 +96,21 @@ const names: Record<Props['section'], string> = {
     updates: 'Monthly Updates',
     documents: 'Project Documents',
 };
-export default function Operations({
+export default function Operations(props: Props) {
+    return (
+        <Suspense
+            fallback={
+                <p className="p-6 text-sm text-slate-600" role="status">
+                    Loading {names[props.section]}…
+                </p>
+            }
+        >
+            <OperationsContent {...props} />
+        </Suspense>
+    );
+}
+
+function OperationsContent({
     section,
     role,
     canManage,

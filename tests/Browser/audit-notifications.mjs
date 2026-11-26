@@ -347,6 +347,26 @@ export async function verifyAuditNotifications({
         .filter({ has: superadmin.getByText('You', { exact: true }) });
     await ownRow.getByText('SuperAdmin', { exact: true }).waitFor();
     await ownRow.getByText('Active', { exact: true }).waitFor();
+
+    const presencePath = base + '/workspace/audit-logs/presence';
+
+    for (const page of [engineer, viewer]) {
+        assert.equal(
+            (await page.request.get(presencePath, { headers: { Accept: 'application/json' } })).status(),
+            403,
+        );
+    }
+
+    for (const page of [admin, superadmin]) {
+        const response = await page.request.get(presencePath, {
+            headers: { Accept: 'application/json' },
+        });
+        assert.equal(response.status(), 200);
+        assert.match(response.headers()['cache-control'], /no-store/);
+        const live = await response.json();
+        assert.ok(live.accounts.some((account) => account.is_current));
+        assert.ok(!('events' in live) && !('authentication' in live));
+    }
     console.log(
         'PASS: one real Engineer update appears in each eligible Admin/SuperAdmin/actor feed; Viewer receives none; safe unique feed IDs; privileged read-only audit snapshots/pagination; historical LOGIN preserved without new authentication events.',
     );

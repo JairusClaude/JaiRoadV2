@@ -15,6 +15,7 @@ use App\Services\SecurityMonitoring\OnlinePresence;
 use App\Services\SecurityMonitoring\SessionCatalog;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -110,7 +111,7 @@ final class AuditHistoryController extends Controller
         abort_unless($resolver->resolve($user) === $actor, 403);
 
         return Inertia::render('AuditLogs/History', ['events' => $events, 'authentication' => $authentication,
-            'presence' => $presence, 'filters' => $filters, 'actions' => $actions, 'entities' => array_keys(AuditValues::TABLES),
+            'presence' => $presence, 'presencePolling' => true, 'filters' => $filters, 'actions' => $actions, 'entities' => array_keys(AuditValues::TABLES),
             'monitoring' => ['available' => $available, 'collecting' => $collecting, 'recent_failure_at' => app(AuthenticationTelemetry::class)->recentFailure(), 'message' => $available
                 ? (! $collecting ? 'Collection is disabled or unavailable; retained authentication history remains read-only.' : 'Separate, best-effort security telemetry. Failed attempts are masked and rate-bounded; outages may leave gaps. No IP addresses are stored.')
                 : 'Authentication monitoring is unavailable until its auxiliary schema and runtime permissions are approved and activated. Business history remains available.'],
@@ -119,6 +120,19 @@ final class AuditHistoryController extends Controller
             'jairoadsIdentity' => ['role' => strtolower($actor['role'])],
             'navigationSection' => 'audit-logs',
         ]);
+    }
+
+    /** Refresh presence only; never reload paginated business or authentication history. */
+    public function presence(Request $request, AccountIdentityResolver $resolver): JsonResponse
+    {
+        $user = $request->user();
+        $actor = $user instanceof User ? $resolver->resolve($user) : null;
+        abort_unless($actor !== null && RoleAccess::managesBusinessData($actor['role']), 403);
+
+        $presence = app(OnlinePresence::class)->readForRequest($request, $actor);
+        abort_unless($resolver->resolve($user) === $actor, 403);
+
+        return response()->json($presence)->header('Cache-Control', 'no-store, private');
     }
 
     /** UI calendar dates are Asia/Manila; stored timestamps remain UTC. Range predicates avoid date casts. */
