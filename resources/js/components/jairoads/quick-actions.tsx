@@ -54,7 +54,7 @@ export function JaiRoadsQuickActions() {
     const page = usePage<{ jairoadsIdentity?: { role: string } | null }>();
     const path = page.url.split('?')[0];
     const role = page.props.jairoadsIdentity?.role;
-    const isDd =
+    const isCanonicalWorkspace =
         path.startsWith('/dd-phase3/') || path.startsWith('/dd-superadmin-');
     const canonicalPaths = [
         '/dd-phase3/dashboard',
@@ -78,7 +78,7 @@ export function JaiRoadsQuickActions() {
         return [
             {
                 ...entry,
-                href: isDd
+                href: isCanonicalWorkspace
                     ? index === 0 && role === 'superadmin'
                         ? '/dd-superadmin-landing'
                         : canonicalPaths[index]
