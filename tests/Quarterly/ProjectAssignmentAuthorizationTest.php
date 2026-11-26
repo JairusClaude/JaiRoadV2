@@ -34,6 +34,25 @@ final class ProjectAssignmentAuthorizationTest extends PostgresTestCase
         $this->assertDatabaseHas('jairoads_next.audit_logs', ['entity_type' => 'MaintenanceProject', 'entity_id' => $project->id, 'user_id' => $user->canonical_user_account_id]);
     }
 
+    public function test_older_compatibility_project_forms_retain_all_road_choices_and_exact_assignment_state(): void
+    {
+        $f = $this->fixture('Engineer');
+        for ($i = 0; $i < 301; $i++) {
+            $road = $this->road($f['engineer']);
+            DB::table('jairoads_next.maintenance_projects')->insert([
+                'project_title' => 'Later project '.$i, 'road_coverage_id' => $road,
+                'created_by' => $f['user']->canonical_user_account_id,
+            ]);
+        }
+        $this->get('/workspace/projects?view=create')->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page->has('roads', 302)
+                ->where('roads.301.id', $f['road'])->where('roads.301.assigned_project_id', $f['project']));
+        $this->get('/workspace/projects?view=edit&project='.$f['project'])->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page->has('projects', 1)
+                ->where('projects.0.id', $f['project'])->has('roads', 302)
+                ->where('roads.301.assigned_project_id', $f['project']));
+    }
+
     public static function ineligibleProjectActors(): iterable
     {
         foreach (['Viewer', 'unlinked', 'inactive_account', 'retired'] as $case) {

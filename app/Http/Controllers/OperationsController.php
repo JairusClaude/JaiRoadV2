@@ -230,17 +230,22 @@ class OperationsController extends Controller
             $media->whereIn('r.lgu_id', $activeLgus);
         }
 
-        // Project Details uses the complete scoped history; the general listing is paginated separately.
+        // Explicit compatibility forms must resolve the requested project, even beyond older directory limits.
+        $projectView = $section === 'projects' ? $request->query('view') : null;
+        $projectForm = in_array($projectView, ['create', 'edit'], true);
         $maintenanceHistory = collect();
         $maintenanceSchedule = null;
         $managerChoices = collect();
-        if ($section === 'projects' && $request->query('view') === 'show') {
-            $projectId = (int) $request->query('project');
+        if (in_array($projectView, ['show', 'edit'], true)) {
+            $projectId = $request->integer('project');
             $projectLgu = $this->projectLgu($projectId);
             abort_unless($projectLgu !== null, 404);
             $this->lguAllowed($actor, $projectLgu);
             $projects->where('p.id', $projectId);
-            $roads->where('id', $this->t('maintenance_projects')->where('id', $projectId)->value('road_coverage_id'));
+            $records->where('mr.project_id', $projectId);
+            if ($projectView === 'show') {
+                $roads->where('id', $this->t('maintenance_projects')->where('id', $projectId)->value('road_coverage_id'));
+            }
             $maintenanceHistory = $this->t('maintenance_records as mr')
                 ->leftJoin('jairoads_next.engineers as e', 'e.id', '=', 'mr.managing_engineer_id')
                 ->where('mr.project_id', $projectId)->orderBy('mr.maintenance_year')->orderBy('mr.quarter')->orderBy('mr.id')
@@ -252,7 +257,15 @@ class OperationsController extends Controller
                 $managerChoices = app(ManagingEngineerEligibility::class)->choices($actor, $projectLgu)->get();
             }
         }
+        if ($projectView === 'create') {
+            $projects->whereRaw('1 = 0');
+            $records->whereRaw('1 = 0');
+        }
         $account = $this->t('user_accounts')->where('id', $actor['account_id'])->first(['username', 'email', 'account_type', 'is_active']);
+        $roadColumns = ['id', 'road_name', 'lgu_id', 'kilometers', 'pavement_type', 'state_category', 'created_by', 'geojson'];
+        $roadRows = $projectForm
+            ? $roads->select($roadColumns)->selectSub($this->t('maintenance_projects')->select('id')->whereColumn('road_coverage_id', 'road_coverages.id')->limit(1), 'assigned_project_id')->get()
+            : $roads->limit(300)->get($roadColumns);
 
         return Inertia::render('Workspace/Operations', [
             'managerChoices' => $managerChoices,
@@ -262,7 +275,7 @@ class OperationsController extends Controller
             'engineerId' => $actor['engineer_id'], 'hasAssignment' => count($activeLgus) > 0,
             'capabilities' => RoleAccess::capabilities($actor['role'], count($activeLgus) > 0, $actor['engineer_id'] !== null),
             'identity' => ['username' => (string) $account->username, 'email' => (string) $account->email, 'role' => $actor['role']],
-            'lgus' => $this->t('lgus')->when($restricted, fn ($q) => $q->whereIn('id', $activeLgus))->orderBy('id')->limit(300)->get(['id', 'municipality_name']),
+            'lgus' => $this->t('lgus')->when($restricted, fn ($q) => $q->whereIn('id', $activeLgus))->orderBy('id')->when(! $projectForm, fn ($q) => $q->limit(300))->get(['id', 'municipality_name']),
             'engineers' => $this->t('engineers')->where('engineer_status', 'Active')->when($restricted, fn ($q) => $q->where('id', $actor['engineer_id']))->orderBy('id')->limit(300)->get(['id', 'first_name', 'last_name']),
             // For manager-initiated RoadCoverage creation, the actual Engineer
             // who prepared the mapped coverage must be chosen explicitly.
@@ -272,9 +285,9 @@ class OperationsController extends Controller
                     ->orderBy('e.last_name')->orderBy('e.first_name')->limit(500)
                     ->get(['e.id', 'e.first_name', 'e.last_name'])
                 : collect(),
-            'roads' => $roads->limit(300)->get(['id', 'road_name', 'lgu_id', 'kilometers', 'pavement_type', 'state_category', 'created_by', 'geojson']),
+            'roads' => $roadRows,
             'projects' => $projects->limit(300)->get(['p.id', 'p.project_title', 'p.road_coverage_id', 'p.description', 'p.created_by', 'r.lgu_id']),
-            'records' => $records->limit(300)->get(['mr.id', 'mr.project_id', 'mr.managing_engineer_id', 'mr.maintenance_year', 'mr.quarter', 'mr.start_date', 'mr.estimated_duration_days', 'mr.complete_date', 'mr.status', 'mr.description', 'r.lgu_id']),
+            'records' => $records->when(! in_array($projectView, ['show', 'edit'], true), fn ($q) => $q->limit(300))->get(['mr.id', 'mr.project_id', 'mr.managing_engineer_id', 'mr.maintenance_year', 'mr.quarter', 'mr.start_date', 'mr.estimated_duration_days', 'mr.complete_date', 'mr.status', 'mr.description', 'r.lgu_id']),
             'updates' => $section === 'updates' ? $updates->limit(300)->get(['author.username as author_name', 'mu.id', 'mu.maintenance_id', 'mu.update_month', 'mu.progress_percentage', 'mu.summary_of_text_reports', 'mr.managing_engineer_id', 'r.lgu_id']) : [],
             'documents' => $section === 'documents' ? $docs->limit(300)->get(['uploader.username as uploader_name', 'd.description', 'd.id', 'd.maintenance_id', 'd.document_title', 'd.file_name', 'd.uploaded_at', 'mr.managing_engineer_id']) : [],
             'media' => $section === 'updates' ? $media->limit(300)->get(['m.id', 'm.monthly_update_id', 'm.file_name', 'm.file_type', 'mr.managing_engineer_id']) : [],

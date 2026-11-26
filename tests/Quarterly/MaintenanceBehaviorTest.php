@@ -128,7 +128,7 @@ final class MaintenanceBehaviorTest extends PostgresTestCase
         }
         DB::table('jairoads_next.maintenance_records')->insert($rows);
         $this->get('/workspace/projects?view=show&project='.$f['project'])->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
-            ->has('records', 300)->has('maintenanceHistory', 301)->where('maintenanceSchedule.conflict', false));
+            ->has('records', 301)->has('maintenanceHistory', 301)->where('maintenanceSchedule.conflict', false));
         $this->postJson('/workspace/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q2', 1900))->assertUnprocessable();
         $this->postJson('/workspace/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q4', 2051))->assertRedirect();
         $this->assertSame(302, DB::table('jairoads_next.maintenance_records')->count());

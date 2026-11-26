@@ -28,6 +28,7 @@ type Coverage = {
     kilometers: number | string;
     pavement_type: 'Concrete' | 'Asphalt' | 'Gravel' | 'Earth';
     geojson: unknown | null;
+    assigned_project_id?: number | null;
 };
 type Lgu = { id: number; municipality_name: string };
 type Project = {
@@ -85,9 +86,12 @@ export default function WorkspaceProjects({
         municipality: lguNames.get(Number(r.lgu_id)) ?? null,
         kilometers: String(r.kilometers ?? 0),
         geojson: r.geojson,
-        assigned: projects.some(
-            (p) => Number(p.road_coverage_id) === Number(r.id),
-        ),
+        assigned:
+            r.assigned_project_id !== undefined
+                ? r.assigned_project_id !== null
+                : projects.some(
+                      (p) => Number(p.road_coverage_id) === Number(r.id),
+                  ),
     }));
     const countByProject = new Map<number, number>();
     records.forEach((r) =>
