@@ -68,6 +68,7 @@ type Props = {
         recent_failure_at: string | null;
     };
     presencePolling?: boolean;
+    presenceCheckedAt?: string | null;
     presence: {
         available: boolean;
         message: string;
@@ -527,15 +528,20 @@ export default function AuditHistory({
     monitoring,
     presence: initialPresence,
     presencePolling = false,
+    presenceCheckedAt = null,
     summary,
 }: Props) {
     const [refreshing, setRefreshing] = useState(false);
     const [snapshot, setSnapshot] = useState<{
         source: Props['presence'];
         data: Props['presence'];
+        checkedAt: string | null;
+        paused: boolean;
     } | null>(null);
-    const presence =
-        snapshot?.source === initialPresence ? snapshot.data : initialPresence;
+    const current = snapshot?.source === initialPresence ? snapshot : null;
+    const presence = current?.data ?? initialPresence;
+    const checkedAt = current ? current.checkedAt : presenceCheckedAt;
+    const paused = current?.paused ?? false;
 
     useEffect(() => {
         if (!presencePolling) {
@@ -543,21 +549,49 @@ export default function AuditHistory({
         }
 
         let pending: AbortController | null = null;
+        let disposed = false;
         let lastInteraction = Date.now();
-        const markInteraction = () => {
-            lastInteraction = Date.now();
+        let lastStarted = Date.now();
+        let isPaused = false;
+        const pause = () => {
+            if (isPaused) {
+                return;
+            }
+
+            isPaused = true;
+            pending?.abort();
+            setSnapshot((previous) => ({
+                source: initialPresence,
+                data:
+                    previous?.source === initialPresence
+                        ? previous.data
+                        : initialPresence,
+                checkedAt:
+                    previous?.source === initialPresence
+                        ? previous.checkedAt
+                        : presenceCheckedAt,
+                paused: true,
+            }));
         };
         const refreshPresence = async () => {
-            if (
-                pending ||
-                document.hidden ||
-                Date.now() - lastInteraction > 120_000
-            ) {
+            if (document.hidden || Date.now() - lastInteraction > 120_000) {
+                pause();
+
+                return;
+            }
+
+            if (pending || Date.now() - lastStarted < 10_000) {
                 return;
             }
 
             const controller = new AbortController();
             pending = controller;
+            lastStarted = Date.now();
+            let timedOut = false;
+            const timeout = window.setTimeout(() => {
+                timedOut = true;
+                controller.abort();
+            }, 12_000);
 
             try {
                 const response = await fetch('/workspace/audit-logs/presence', {
@@ -573,11 +607,26 @@ export default function AuditHistory({
 
                 const data: Props['presence'] = await response.json();
 
-                if (!controller.signal.aborted) {
-                    setSnapshot({ source: initialPresence, data });
+                if (
+                    typeof data.available !== 'boolean' ||
+                    !Array.isArray(data.accounts) ||
+                    typeof data.total !== 'number'
+                ) {
+                    throw new Error('Invalid presence response');
+                }
+
+                if (!disposed && !controller.signal.aborted) {
+                    isPaused = false;
+                    setSnapshot({
+                        source: initialPresence,
+                        data,
+                        checkedAt: new Date().toISOString(),
+                        paused: false,
+                    });
                 }
             } catch {
-                if (!controller.signal.aborted) {
+                if (!disposed && (timedOut || !controller.signal.aborted)) {
+                    isPaused = false;
                     setSnapshot({
                         source: initialPresence,
                         data: {
@@ -586,12 +635,30 @@ export default function AuditHistory({
                             total: 0,
                             window_seconds: initialPresence.window_seconds,
                             message:
-                                'Live presence refresh unavailable. Refresh monitoring to retry.',
+                                'Live presence unavailable. Retrying while this tab is active.',
                         },
+                        checkedAt: null,
+                        paused: false,
                     });
                 }
             } finally {
+                window.clearTimeout(timeout);
                 pending = null;
+            }
+        };
+        const markInteraction = () => {
+            lastInteraction = Date.now();
+
+            if (isPaused) {
+                void refreshPresence();
+            }
+        };
+        const visibilityChanged = () => {
+            if (document.hidden) {
+                pause();
+            } else {
+                markInteraction();
+                void refreshPresence();
             }
         };
         const timer = window.setInterval(() => {
@@ -599,14 +666,17 @@ export default function AuditHistory({
         }, 30_000);
         document.addEventListener('pointerdown', markInteraction);
         document.addEventListener('keydown', markInteraction);
+        document.addEventListener('visibilitychange', visibilityChanged);
 
         return () => {
+            disposed = true;
             window.clearInterval(timer);
             pending?.abort();
             document.removeEventListener('pointerdown', markInteraction);
             document.removeEventListener('keydown', markInteraction);
+            document.removeEventListener('visibilitychange', visibilityChanged);
         };
-    }, [initialPresence, presencePolling]);
+    }, [initialPresence, presenceCheckedAt, presencePolling]);
 
     return (
         <div className="jr-directory-exploration jr-audit-history">
@@ -666,9 +736,11 @@ export default function AuditHistory({
                             title="Unique Online Accounts"
                             icon={<UsersRound className="size-5" />}
                             value={
-                                presence.available
-                                    ? presence.total
-                                    : 'Unavailable'
+                                paused
+                                    ? 'Paused'
+                                    : presence.available
+                                      ? presence.total
+                                      : 'Unavailable'
                             }
                             subtitle={`${Math.round(presence.window_seconds / 60)}-minute activity window; multiple sessions count once.`}
                         />
@@ -981,8 +1053,11 @@ export default function AuditHistory({
                         </p>
                         {presencePolling && (
                             <p className="mb-4 text-xs text-slate-500">
-                                Refreshes every 30 seconds while this tab is
-                                visible and recently used.
+                                {paused
+                                    ? 'Live refresh paused. Rows show last verified activity; return to this tab or interact to resume.'
+                                    : 'Refreshes every 30 seconds while this tab is visible and recently used.'}
+                                {' Last check: '}
+                                {manilaTimestamp(checkedAt, 'medium')}.
                             </p>
                         )}
                         <Table
@@ -1020,7 +1095,9 @@ export default function AuditHistory({
                                                     : 'font-medium'
                                             }
                                         >
-                                            {a.status}
+                                            {paused
+                                                ? 'Last seen: ' + a.status
+                                                : a.status}
                                         </span>
                                         <span className="block text-xs text-slate-500">
                                             {a.session_count} valid session
