@@ -40,3 +40,33 @@
     outline: 2px solid currentColor;
     outline-offset: 2px;
 }
+
+/* Native horizontal scrolling, with mouse grab gestures on wide tables. */
+.jr-audit-history .jr-audit-scroll-hint {
+    margin: 0 0 8px;
+    color: var(--muted-foreground, #64748b);
+    font-size: 12px;
+    line-height: 1.4;
+}
+.jr-audit-history .jr-audit-table-scroll {
+    scroll-behavior: auto;
+    -webkit-overflow-scrolling: touch;
+}
+@media (any-pointer: fine) {
+    .jr-audit-history .jr-audit-table-scroll[data-overflow="true"] {
+        cursor: grab;
+    }
+    .jr-audit-history .jr-audit-table-scroll[data-overflow="true"] :is(a, button, summary, [role="button"]) {
+        cursor: pointer;
+    }
+    .jr-audit-history .jr-audit-table-scroll[data-overflow="true"] :is(input, textarea, [contenteditable]) {
+        cursor: text;
+    }
+    .jr-audit-history .jr-audit-table-scroll[data-dragging="true"],
+    .jr-audit-history .jr-audit-table-scroll[data-dragging="true"] * {
+        cursor: grabbing !important;
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        scroll-behavior: auto !important;
+    }
+}
