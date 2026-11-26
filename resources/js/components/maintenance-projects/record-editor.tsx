@@ -67,7 +67,9 @@ export function RecordEditor({
     const selectedProject =
         project ??
         projects.find((item) => String(item.id) === projectId) ??
-        (String(remoteProject?.id) === projectId ? remoteProject : null);
+        (String(remoteProject?.id) === projectId
+            ? (remoteProject ?? undefined)
+            : undefined);
     const fallback =
         record?.details_url ??
         (project
@@ -194,7 +196,10 @@ export function RecordEditor({
         }
 
         if (periodPending) {
-            form.setError('quarter', 'Wait until the reporting periods are verified.');
+            form.setError(
+                'quarter',
+                'Wait until the reporting periods are verified.',
+            );
 
             return;
         }
@@ -306,11 +311,11 @@ export function RecordEditor({
                                     if (value !== projectId) {
                                         form.setData('engineers_id', '');
                                         form.clearErrors('engineers_id');
+                                        setPeriodResult(null);
                                     }
 
                                     setProjectId(value);
                                     setRemoteProject(choice ?? null);
-                                    setPeriodResult(null);
                                     setProjectError('');
                                     form.clearErrors('quarter');
                                 }}

@@ -302,7 +302,9 @@ export function ProjectSelector<T extends MonthlyParentProject>({
                                 variant="outline"
                                 size="sm"
                                 disabled={(current?.page ?? 1) <= 1}
-                                onClick={() => setPage((current?.page ?? 1) - 1)}
+                                onClick={() =>
+                                    setPage((current?.page ?? 1) - 1)
+                                }
                             >
                                 Previous
                             </Button>
@@ -317,7 +319,9 @@ export function ProjectSelector<T extends MonthlyParentProject>({
                                     (current?.page ?? 1) >=
                                     (current?.last_page ?? 1)
                                 }
-                                onClick={() => setPage((current?.page ?? 1) + 1)}
+                                onClick={() =>
+                                    setPage((current?.page ?? 1) + 1)
+                                }
                             >
                                 Next
                             </Button>

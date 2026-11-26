@@ -28,6 +28,7 @@ it('keeps all authorized choices without geometry or full record payloads', func
     $this->getJson('/workspace/ui/record-period-choices?project='.$f['project'].'&year=2026')->assertOk()
         ->assertJsonCount(1, 'data')->assertJsonMissingPath('data.0.description')->assertHeader('Cache-Control', 'no-store, private');
     $this->getJson('/workspace/ui/record-period-choices?project='.$f['project'].'&year=1999')->assertUnprocessable();
+    $this->getJson('/workspace/ui/record-period-choices?project='.$f['project'].'&year=2027')->assertOk()->assertJsonCount(0, 'data');
     foreach (['monthly-updates', 'maintenance-documents'] as $directory) {
         $this->get('/workspace/ui/'.$directory)->assertInertia(fn (Assert $page) => $page
             ->has('projects', 0)->where('projectFilterUrl', '/workspace/ui/project-filter-choices'));
