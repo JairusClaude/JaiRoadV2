@@ -96,7 +96,8 @@ export function ProjectForm({
             }
 
             try {
-                const response = await fetch(`${coverageChoiceUrl}?${params}`, {
+                const url = `${coverageChoiceUrl}?${params}`;
+                const response = await fetch(url, {
                     credentials: 'same-origin',
                     headers: { Accept: 'application/json' },
                     cache: 'no-store',
@@ -171,6 +172,9 @@ export function ProjectForm({
     const availableCount =
         pagination?.available ?? matches.length - assignedCount;
     const loading = remote && !initial && current === null;
+    const empty = !loading && !current?.error && visible.length === 0;
+    const selectedOffPage =
+        selected && !visible.some((coverage) => coverage.id === selected.id);
     const error = (field: keyof ProjectFormValues) =>
         localErrors[field] ??
         (create &&
@@ -391,35 +395,29 @@ export function ProjectForm({
                                     </Button>
                                 </div>
                             )}
-                            {!loading &&
-                                !current?.error &&
-                                visible.length === 0 && (
-                                    <div className="jr-empty">
-                                        <p>
-                                            {!integration.ready
-                                                ? 'Road coverages will appear when integration is available.'
-                                                : search
-                                                  ? create && !showAssigned
-                                                      ? 'No available coverages match your search. Turn on Show assigned to include unavailable entries.'
-                                                      : 'No coverages match your search.'
-                                                  : create &&
-                                                      !showAssigned &&
-                                                      assignedCount > 0
-                                                    ? 'All road coverages are already assigned. Turn on Show assigned to view them.'
-                                                    : 'No road coverages are available to this account.'}
-                                        </p>
-                                    </div>
-                                )}
-                        </div>
-                        {selected &&
-                            !visible.some(
-                                (coverage) => coverage.id === selected.id,
-                            ) && (
-                                <p className="jr-field-hint mt-2" role="status">
-                                    Selected: {selected.road_name} (outside this
-                                    page).
-                                </p>
+                            {empty && (
+                                <div className="jr-empty">
+                                    <p>
+                                        {!integration.ready
+                                            ? 'Road coverages will appear when integration is available.'
+                                            : search
+                                              ? create && !showAssigned
+                                                  ? 'No available coverages match your search. Turn on Show assigned to include unavailable entries.'
+                                                  : 'No coverages match your search.'
+                                              : create &&
+                                                  !showAssigned &&
+                                                  assignedCount > 0
+                                                ? 'All road coverages are already assigned. Turn on Show assigned to view them.'
+                                                : 'No road coverages are available to this account.'}
+                                    </p>
+                                </div>
                             )}
+                        </div>
+                        {selected && selectedOffPage && (
+                            <p className="jr-field-hint mt-2" role="status">
+                                {`Selected: ${selected.road_name} (outside this page).`}
+                            </p>
+                        )}
                         {pagination && pagination.last_page > 1 && (
                             <div className="mt-3 flex items-center justify-between gap-2">
                                 <Button

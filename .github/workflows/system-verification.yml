@@ -129,10 +129,20 @@ jobs:
         env: { CHECK: '${{ matrix.check }}' }
         run: |
           case "$CHECK" in
-            pint) composer lint:check ;;
+            pint)
+              if ! composer lint:check; then
+                composer lint || true
+                git diff -- app config database routes tests
+                exit 1
+              fi ;;
             phpstan) composer types:check ;;
             eslint) npm run lint:check -- --max-warnings=0 ;;
-            prettier) npm run format:check ;;
+            prettier)
+              if ! npm run format:check; then
+                npm run format || true
+                git diff -- resources
+                exit 1
+              fi ;;
             typescript) npm run types:check ;;
             build) npm run build ;;
             laravel)

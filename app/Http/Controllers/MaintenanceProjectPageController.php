@@ -72,7 +72,9 @@ final class MaintenanceProjectPageController extends OperationsFrontendControlle
         $this->writer($actor);
         $v = $request->validate(['project' => ['nullable', 'integer', 'min:1'], 'page' => ['nullable', 'integer', 'min:1']]);
         $id = isset($v['project']) ? (int) $v['project'] : null;
-        abort_if($id !== null && ! $this->projects($actor, false)->where('p.id', $id)->exists(), 404);
+        if ($id !== null) {
+            abort_unless($this->projects($actor, false)->where('p.id', $id)->exists(), 404);
+        }
 
         return response()->json($this->coverageChoicePage($actor, $id, LiteralDirectorySearch::normalize($request->query('search')), $request->boolean('show_assigned'), (int) ($v['page'] ?? 1)))
             ->header('Cache-Control', 'private, no-store');
@@ -90,7 +92,7 @@ final class MaintenanceProjectPageController extends OperationsFrontendControlle
             ->header('Cache-Control', 'private, no-store');
     }
 
-    /** @param array{account_id:int,role:string,engineer_id:?int} $actor */
+    /** @param  array{account_id:int,role:string,engineer_id:?int}  $actor */
     private function coverageChoiceQuery(array $actor): Builder
     {
         return $this->roads($actor)->select(['rc.id', 'rc.road_name', 'rc.kilometers', 'l.municipality_name', 'p.id as project_id', 'p.project_title']);
@@ -106,7 +108,7 @@ final class MaintenanceProjectPageController extends OperationsFrontendControlle
     }
 
     /**
-     * @param array{account_id:int,role:string,engineer_id:?int} $actor
+     * @param  array{account_id:int,role:string,engineer_id:?int}  $actor
      * @return array{data:array<int,array<string,mixed>>,available:int,assigned:int,page:int,last_page:int}
      */
     private function coverageChoicePage(array $actor, ?int $project, string $search, bool $showAssigned, int $page): array
