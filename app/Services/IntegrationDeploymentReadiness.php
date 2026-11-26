@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use Illuminate\Routing\Route as RegisteredRoute;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Routing\Route as RegisteredRoute;
 use Laravel\Fortify\Features;
 
 /**

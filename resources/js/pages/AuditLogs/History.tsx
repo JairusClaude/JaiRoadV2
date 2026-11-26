@@ -1,7 +1,12 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Activity, RefreshCw, ShieldCheck, UsersRound } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
-import type { FormEvent, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
+import type {
+    FormEvent,
+    KeyboardEvent as ReactKeyboardEvent,
+    PointerEvent as ReactPointerEvent,
+    ReactNode,
+} from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { MetricCard } from '@/components/metric-card';
 import { Button } from '@/components/ui/button';
@@ -82,8 +87,14 @@ const button =
     'rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 disabled:opacity-50';
 /** Prefer the historical recorded name, never infer identity from a role. */
 function actorName(identifier: string | null | undefined): string {
-    if (!identifier) return 'Unavailable account';
-    const match = identifier.match(/^(?:DD-UserAccount#|User\s*Account\s*#)\d+\s+\((.+)\)$/i);
+    if (!identifier) {
+        return 'Unavailable account';
+    }
+
+    const match = identifier.match(
+        /^(?:DD-UserAccount#|User\s*Account\s*#)\d+\s+\((.+)\)$/i,
+    );
+
     return match?.[1]?.trim() || identifier;
 }
 function time(value: string | null) {
@@ -117,38 +128,79 @@ function Table({
     const scrollRef = useRef<HTMLDivElement>(null);
     const hintId = useId();
     const [hasOverflow, setHasOverflow] = useState(false);
-    const drag = useRef<{ pointerId: number; x: number; left: number; moved: boolean } | null>(null);
+    const drag = useRef<{
+        pointerId: number;
+        x: number;
+        left: number;
+        moved: boolean;
+    } | null>(null);
 
     useEffect(() => {
         const region = scrollRef.current;
-        if (!region) return;
-        const measure = () => setHasOverflow(region.scrollWidth > region.clientWidth + 1);
+
+        if (!region) {
+            return;
+        }
+
+        const measure = () =>
+            setHasOverflow(region.scrollWidth > region.clientWidth + 1);
         measure();
         const observer = new ResizeObserver(measure);
         observer.observe(region);
         const table = region.querySelector('table');
-        if (table) observer.observe(table);
+
+        if (table) {
+            observer.observe(table);
+        }
+
         return () => observer.disconnect();
     }, []);
 
     function startDrag(event: ReactPointerEvent<HTMLDivElement>) {
         const region = event.currentTarget;
+
         // Touch and trackpad retain native scrolling; Shift+drag can select text.
-        if (event.pointerType !== 'mouse' || !event.isPrimary || event.button !== 0 ||
-            event.shiftKey || event.ctrlKey || event.altKey || event.metaKey ||
+        if (
+            event.pointerType !== 'mouse' ||
+            !event.isPrimary ||
+            event.button !== 0 ||
+            event.shiftKey ||
+            event.ctrlKey ||
+            event.altKey ||
+            event.metaKey ||
             region.scrollWidth <= region.clientWidth + 1 ||
-            !(event.target instanceof Element) || !event.target.closest('table') ||
-            event.target.closest('a, button, input, select, textarea, label, summary, [role="button"], [contenteditable]')) return;
+            !(event.target instanceof Element) ||
+            !event.target.closest('table') ||
+            event.target.closest(
+                'a, button, input, select, textarea, label, summary, [role="button"], [contenteditable]',
+            )
+        ) {
+            return;
+        }
+
         event.preventDefault();
-        drag.current = { pointerId: event.pointerId, x: event.clientX, left: region.scrollLeft, moved: false };
+        drag.current = {
+            pointerId: event.pointerId,
+            x: event.clientX,
+            left: region.scrollLeft,
+            moved: false,
+        };
         region.setPointerCapture(event.pointerId);
     }
 
     function moveDrag(event: ReactPointerEvent<HTMLDivElement>) {
         const active = drag.current;
-        if (!active || active.pointerId !== event.pointerId) return;
+
+        if (!active || active.pointerId !== event.pointerId) {
+            return;
+        }
+
         const distance = event.clientX - active.x;
-        if (!active.moved && Math.abs(distance) < 4) return;
+
+        if (!active.moved && Math.abs(distance) < 4) {
+            return;
+        }
+
         active.moved = true;
         const region = event.currentTarget;
         region.dataset.dragging = 'true';
@@ -157,56 +209,82 @@ function Table({
     }
 
     function endDrag(event: ReactPointerEvent<HTMLDivElement>) {
-        if (drag.current?.pointerId !== event.pointerId) return;
+        if (drag.current?.pointerId !== event.pointerId) {
+            return;
+        }
+
         drag.current = null;
         delete event.currentTarget.dataset.dragging;
     }
 
     function scrollWithKeyboard(event: ReactKeyboardEvent<HTMLDivElement>) {
-        if (event.target !== event.currentTarget || !hasOverflow ||
-            event.altKey || event.ctrlKey || event.metaKey || event.shiftKey ||
-            !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+        if (
+            event.target !== event.currentTarget ||
+            !hasOverflow ||
+            event.altKey ||
+            event.ctrlKey ||
+            event.metaKey ||
+            event.shiftKey ||
+            !['ArrowLeft', 'ArrowRight'].includes(event.key)
+        ) {
+            return;
+        }
+
         event.preventDefault();
-        event.currentTarget.scrollBy({ left: event.key === 'ArrowRight' ? 100 : -100, behavior: 'instant' });
+        event.currentTarget.scrollBy({
+            left: event.key === 'ArrowRight' ? 100 : -100,
+            behavior: 'instant',
+        });
     }
 
     return (
         <>
-        {hasOverflow && <p id={hintId} className="jr-audit-scroll-hint">Drag or swipe left and right to see all columns. <span className="sr-only">Keyboard: focus the table region and use the left and right arrow keys.</span></p>}
-        <div
-            className="jr-audit-table-scroll max-w-full overflow-x-auto rounded-xl border border-slate-200"
-            ref={scrollRef}
-            data-overflow={hasOverflow}
-            role="region"
-            aria-label={title}
-            aria-describedby={hasOverflow ? hintId : undefined}
-            tabIndex={0}
-            onPointerDown={startDrag}
-            onPointerMove={moveDrag}
-            onPointerUp={endDrag}
-            onPointerCancel={endDrag}
-            onLostPointerCapture={endDrag}
-            onKeyDown={scrollWithKeyboard}
-        >
-            <table className="jr-audit-grid w-full text-left text-sm" data-columns={headers.length}>
-                <thead className="bg-slate-50 text-xs text-slate-600">
-                    <tr>
-                        {headers.map((h) => (
-                            <th
-                                key={h}
-                                scope="col"
-                                className="px-3 py-3 font-semibold"
-                            >
-                                {h}
-                            </th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 [&_td]:px-3 [&_td]:py-3 [&_td]:align-top">
-                    {children}
-                </tbody>
-            </table>
-        </div>
+            {hasOverflow && (
+                <p id={hintId} className="jr-audit-scroll-hint">
+                    Drag or swipe left and right to see all columns.{' '}
+                    <span className="sr-only">
+                        Keyboard: focus the table region and use the left and
+                        right arrow keys.
+                    </span>
+                </p>
+            )}
+            <div
+                className="jr-audit-table-scroll max-w-full overflow-x-auto rounded-xl border border-slate-200"
+                ref={scrollRef}
+                data-overflow={hasOverflow}
+                role="region"
+                aria-label={title}
+                aria-describedby={hasOverflow ? hintId : undefined}
+                tabIndex={0}
+                onPointerDown={startDrag}
+                onPointerMove={moveDrag}
+                onPointerUp={endDrag}
+                onPointerCancel={endDrag}
+                onLostPointerCapture={endDrag}
+                onKeyDown={scrollWithKeyboard}
+            >
+                <table
+                    className="jr-audit-grid w-full text-left text-sm"
+                    data-columns={headers.length}
+                >
+                    <thead className="bg-slate-50 text-xs text-slate-600">
+                        <tr>
+                            {headers.map((h) => (
+                                <th
+                                    key={h}
+                                    scope="col"
+                                    className="px-3 py-3 font-semibold"
+                                >
+                                    {h}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 [&_td]:px-3 [&_td]:py-3 [&_td]:align-top">
+                        {children}
+                    </tbody>
+                </table>
+            </div>
         </>
     );
 }
@@ -555,9 +633,12 @@ export default function AuditHistory({
                                         </time>
                                     </td>
                                     <td className="max-w-64 min-w-40 break-words">
-                                        <span className="font-medium">{actorName(e.actor_identifier)}</span>
+                                        <span className="font-medium">
+                                            {actorName(e.actor_identifier)}
+                                        </span>
                                         <span className="mt-1 block text-xs text-slate-500">
-                                            Account ID: {e.user_id ?? 'Not recorded'}
+                                            Account ID:{' '}
+                                            {e.user_id ?? 'Not recorded'}
                                         </span>
                                     </td>
                                     <td>
@@ -750,17 +831,27 @@ export default function AuditHistory({
                                         {time(e.created_at)}
                                     </td>
                                     <td className="min-w-48 break-words">
-                                        <span className="font-medium">{actorName(e.actor_identifier ?? e.attempted_identifier)}</span>
+                                        <span className="font-medium">
+                                            {actorName(
+                                                e.actor_identifier ??
+                                                    e.attempted_identifier,
+                                            )}
+                                        </span>
                                         <span className="block text-xs text-slate-500">
-                                            {e.user_account_id === null ? 'Unverified identifier' : `Account ID: ${e.user_account_id}`}
+                                            {e.user_account_id === null
+                                                ? 'Unverified identifier'
+                                                : `Account ID: ${e.user_account_id}`}
                                         </span>
                                     </td>
                                     <td>{e.account_type ?? 'Not verified'}</td>
                                     <td>
                                         <Badge action={e.event} />
-                                        {e.event === 'LOGIN' && e.method === 'remember' && (
-                                            <span className="mt-1 block text-xs text-slate-500">Session restored</span>
-                                        )}
+                                        {e.event === 'LOGIN' &&
+                                            e.method === 'remember' && (
+                                                <span className="mt-1 block text-xs text-slate-500">
+                                                    Session restored
+                                                </span>
+                                            )}
                                     </td>
                                     <td>{e.outcome}</td>
                                     <td>{e.client_description}</td>
@@ -770,8 +861,13 @@ export default function AuditHistory({
                                                 Authentication details
                                             </summary>
                                             <p className="mt-2 text-xs">
-                                                Event #{e.id} · {e.method === 'remember' ? 'Remembered session restored' : e.method === 'password' ? 'Password sign-in' : e.method} ·{' '}
-                                                {time(e.created_at)}
+                                                Event #{e.id} ·{' '}
+                                                {e.method === 'remember'
+                                                    ? 'Remembered session restored'
+                                                    : e.method === 'password'
+                                                      ? 'Password sign-in'
+                                                      : e.method}{' '}
+                                                · {time(e.created_at)}
                                             </p>
                                             <p className="text-xs">
                                                 {e.user_account_id === null
@@ -818,15 +914,29 @@ export default function AuditHistory({
                             {presence.accounts.map((a) => (
                                 <tr key={a.account_id}>
                                     <td>
-                                        <span className="font-medium">{a.username}</span>
-                                        {a.is_current && <span className="ml-2 inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800">You</span>}
+                                        <span className="font-medium">
+                                            {a.username}
+                                        </span>
+                                        {a.is_current && (
+                                            <span className="ml-2 inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                                                You
+                                            </span>
+                                        )}
                                         <span className="block text-xs text-slate-500">
                                             Account ID: {a.account_id}
                                         </span>
                                     </td>
                                     <td>{a.account_type}</td>
                                     <td>
-                                        <span className={a.status === 'Active' ? 'font-medium text-emerald-700 dark:text-emerald-300' : 'font-medium'}>{a.status}</span>
+                                        <span
+                                            className={
+                                                a.status === 'Active'
+                                                    ? 'font-medium text-emerald-700 dark:text-emerald-300'
+                                                    : 'font-medium'
+                                            }
+                                        >
+                                            {a.status}
+                                        </span>
                                         <span className="block text-xs text-slate-500">
                                             {a.session_count} valid session
                                             {a.session_count === 1 ? '' : 's'}

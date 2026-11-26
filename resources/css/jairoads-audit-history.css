@@ -15,24 +15,120 @@
     width: 100%;
     min-width: 900px;
 }
-.jr-audit-history .jr-audit-grid[data-columns='8'] { min-width: 1670px; }
-.jr-audit-history .jr-audit-grid[data-columns='7'] { min-width: 1270px; }
-.jr-audit-history .jr-audit-grid[data-columns='8'] > thead > tr > th:nth-child(1) { width: 13%; }
-.jr-audit-history .jr-audit-grid[data-columns='8'] > thead > tr > th:nth-child(2) { width: 11%; }
-.jr-audit-history .jr-audit-grid[data-columns='8'] > thead > tr > th:nth-child(3) { width: 8%; }
-.jr-audit-history .jr-audit-grid[data-columns='8'] > thead > tr > th:nth-child(4) { width: 7%; }
-.jr-audit-history .jr-audit-grid[data-columns='8'] > thead > tr > th:nth-child(5) { width: 11%; }
-.jr-audit-history .jr-audit-grid[data-columns='8'] > thead > tr > th:nth-child(6) { width: 12%; }
-.jr-audit-history .jr-audit-grid[data-columns='8'] > thead > tr > th:nth-child(7) { width: 14%; }
-.jr-audit-history .jr-audit-grid[data-columns='8'] > thead > tr > th:nth-child(8) { width: 24%; }
-.jr-audit-history .jr-audit-grid[data-columns='7'] > thead > tr > th:nth-child(1) { width: 18%; }
-.jr-audit-history .jr-audit-grid[data-columns='7'] > thead > tr > th:nth-child(2) { width: 17%; }
-.jr-audit-history .jr-audit-grid[data-columns='7'] > thead > tr > th:nth-child(3) { width: 11%; }
-.jr-audit-history .jr-audit-grid[data-columns='7'] > thead > tr > th:nth-child(4) { width: 10%; }
-.jr-audit-history .jr-audit-grid[data-columns='7'] > thead > tr > th:nth-child(5) { width: 9%; }
-.jr-audit-history .jr-audit-grid[data-columns='7'] > thead > tr > th:nth-child(6) { width: 13%; }
-.jr-audit-history .jr-audit-grid[data-columns='7'] > thead > tr > th:nth-child(7) { width: 22%; }
-.jr-audit-history .jr-audit-grid[data-columns='6'] > thead > tr > th { width: 16.6667%; }
+.jr-audit-history .jr-audit-grid[data-columns='8'] {
+    min-width: 1670px;
+}
+.jr-audit-history .jr-audit-grid[data-columns='7'] {
+    min-width: 1270px;
+}
+.jr-audit-history
+    .jr-audit-grid[data-columns='8']
+    > thead
+    > tr
+    > th:nth-child(1) {
+    width: 13%;
+}
+.jr-audit-history
+    .jr-audit-grid[data-columns='8']
+    > thead
+    > tr
+    > th:nth-child(2) {
+    width: 11%;
+}
+.jr-audit-history
+    .jr-audit-grid[data-columns='8']
+    > thead
+    > tr
+    > th:nth-child(3) {
+    width: 8%;
+}
+.jr-audit-history
+    .jr-audit-grid[data-columns='8']
+    > thead
+    > tr
+    > th:nth-child(4) {
+    width: 7%;
+}
+.jr-audit-history
+    .jr-audit-grid[data-columns='8']
+    > thead
+    > tr
+    > th:nth-child(5) {
+    width: 11%;
+}
+.jr-audit-history
+    .jr-audit-grid[data-columns='8']
+    > thead
+    > tr
+    > th:nth-child(6) {
+    width: 12%;
+}
+.jr-audit-history
+    .jr-audit-grid[data-columns='8']
+    > thead
+    > tr
+    > th:nth-child(7) {
+    width: 14%;
+}
+.jr-audit-history
+    .jr-audit-grid[data-columns='8']
+    > thead
+    > tr
+    > th:nth-child(8) {
+    width: 24%;
+}
+.jr-audit-history
+    .jr-audit-grid[data-columns='7']
+    > thead
+    > tr
+    > th:nth-child(1) {
+    width: 18%;
+}
+.jr-audit-history
+    .jr-audit-grid[data-columns='7']
+    > thead
+    > tr
+    > th:nth-child(2) {
+    width: 17%;
+}
+.jr-audit-history
+    .jr-audit-grid[data-columns='7']
+    > thead
+    > tr
+    > th:nth-child(3) {
+    width: 11%;
+}
+.jr-audit-history
+    .jr-audit-grid[data-columns='7']
+    > thead
+    > tr
+    > th:nth-child(4) {
+    width: 10%;
+}
+.jr-audit-history
+    .jr-audit-grid[data-columns='7']
+    > thead
+    > tr
+    > th:nth-child(5) {
+    width: 9%;
+}
+.jr-audit-history
+    .jr-audit-grid[data-columns='7']
+    > thead
+    > tr
+    > th:nth-child(6) {
+    width: 13%;
+}
+.jr-audit-history
+    .jr-audit-grid[data-columns='7']
+    > thead
+    > tr
+    > th:nth-child(7) {
+    width: 22%;
+}
+.jr-audit-history .jr-audit-grid[data-columns='6'] > thead > tr > th {
+    width: 16.6667%;
+}
 .jr-audit-history .jr-audit-grid > :is(thead, tbody) > tr > :is(th, td) {
     min-width: 0;
     max-width: none;
@@ -92,17 +188,21 @@
     -webkit-overflow-scrolling: touch;
 }
 @media (any-pointer: fine) {
-    .jr-audit-history .jr-audit-table-scroll[data-overflow="true"] {
+    .jr-audit-history .jr-audit-table-scroll[data-overflow='true'] {
         cursor: grab;
     }
-    .jr-audit-history .jr-audit-table-scroll[data-overflow="true"] :is(a, button, summary, [role="button"]) {
+    .jr-audit-history
+        .jr-audit-table-scroll[data-overflow='true']
+        :is(a, button, summary, [role='button']) {
         cursor: pointer;
     }
-    .jr-audit-history .jr-audit-table-scroll[data-overflow="true"] :is(input, textarea, [contenteditable]) {
+    .jr-audit-history
+        .jr-audit-table-scroll[data-overflow='true']
+        :is(input, textarea, [contenteditable]) {
         cursor: text;
     }
-    .jr-audit-history .jr-audit-table-scroll[data-dragging="true"],
-    .jr-audit-history .jr-audit-table-scroll[data-dragging="true"] * {
+    .jr-audit-history .jr-audit-table-scroll[data-dragging='true'],
+    .jr-audit-history .jr-audit-table-scroll[data-dragging='true'] * {
         cursor: grabbing !important;
         user-select: none !important;
         -webkit-user-select: none !important;
