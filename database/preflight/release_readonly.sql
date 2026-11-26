@@ -13,14 +13,14 @@ WITH
 audit_guard AS (
  SELECT
   COALESCE(bool_or(tgenabled <> 'D'
-    AND tgname IN ('jairoads_auditlog_reject_changes',
+    AND tgname IN ('jairoads_auditlog_reject_changes', 'jairoads_dd_auditlog_reject_changes',
                    'canonical_audit_history_immutable')
     AND (tgtype::int & 1) <> 0
     AND (tgtype::int & 2) <> 0
     AND (tgtype::int & 8) <> 0
     AND (tgtype::int & 16) <> 0), false) AS has_update_delete,
   COALESCE(bool_or(tgenabled <> 'D'
-    AND tgname IN ('jairoads_auditlog_reject_truncate',
+    AND tgname IN ('jairoads_auditlog_reject_truncate', 'jairoads_dd_auditlog_reject_truncate',
                    'canonical_audit_history_no_truncate')
     AND (tgtype::int & 32) <> 0), false) AS has_truncate
  FROM pg_trigger
