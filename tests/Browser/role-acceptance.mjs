@@ -33,6 +33,10 @@ export async function verifyRoleAcceptanceMatrix({
             '/workspace/audit-logs',
             '/workspace/ui/road-coverages',
             '/jairoads/notifications',
+            '/workspace/ui/project-filter-choices',
+            '/workspace/ui/project-road-choices',
+            '/workspace/dashboard/map-roads',
+            '/workspace/audit-logs/presence',
         ]) {
             const response = await guest.request.get(`${base}${path}`, {
                 headers: { Accept: 'application/json' },
@@ -69,9 +73,29 @@ export async function verifyRoleAcceptanceMatrix({
             path: '/workspace/ui/maintenance-projects/create',
             statuses: [200, 200, 200, 403],
         },
+        {
+            path: '/workspace/ui/project-filter-choices',
+            statuses: [200, 200, 200, 200],
+            noStore: true,
+        },
+        {
+            path: '/workspace/ui/project-road-choices',
+            statuses: [200, 200, 200, 403],
+            noStore: true,
+        },
+        {
+            path: '/workspace/dashboard/map-roads',
+            statuses: [403, 403, 200, 403],
+            noStore: true,
+        },
+        {
+            path: '/workspace/audit-logs/presence',
+            statuses: [200, 200, 403, 403],
+            noStore: true,
+        },
     ];
 
-    for (const { path, statuses } of expectations) {
+    for (const { path, statuses, noStore } of expectations) {
         for (const [index, [role, page]] of Object.entries(roles).entries()) {
             const response = await page.request.get(`${base}${path}`, {
                 headers: { Accept: 'application/json' },
@@ -81,6 +105,11 @@ export async function verifyRoleAcceptanceMatrix({
                 statuses[index],
                 `${role}: ${path} should return ${statuses[index]}`,
             );
+
+            if (noStore && response.status() === 200) {
+                assert.match(response.headers()['cache-control'] || '', /private/);
+                assert.match(response.headers()['cache-control'] || '', /no-store/);
+            }
         }
     }
 
@@ -120,6 +149,6 @@ export async function verifyRoleAcceptanceMatrix({
     await deniedWrite(engineer, '/workspace/lgus');
 
     console.log(
-        'PASS: real-session SuperAdmin/Admin/Engineer/Viewer route matrix; guest JSON denial; privileged audit/account reads; Viewer write denial and Engineer account/LGU governance denial.',
+        'PASS: real-session SuperAdmin/Admin/Engineer/Viewer route matrix; guest JSON denial; privileged audit/account reads; private paginated endpoint authorization and no-store headers; Viewer write denial and Engineer account/LGU governance denial.',
     );
 }

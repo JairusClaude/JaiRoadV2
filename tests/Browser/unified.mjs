@@ -409,6 +409,7 @@ throw new Error('Wave transform is static');
     const holdMap = (route) => {
         heldMapRoute = route;
     };
+
     try {
         await mapTimeoutPage.clock.install();
         await mapTimeoutPage.route(mapEndpoint, holdMap);
@@ -428,6 +429,7 @@ throw new Error('Wave transform is static');
     } finally {
         await mapTimeoutPage.close();
     }
+
     const viewerMapRequests = [];
     const recordViewerMapRequest = request => {
         if (new URL(request.url()).pathname === '/workspace/dashboard/map-roads') {
