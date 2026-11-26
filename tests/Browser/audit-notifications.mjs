@@ -367,6 +367,7 @@ export async function verifyAuditNotifications({
         assert.ok(live.accounts.some((account) => account.is_current));
         assert.ok(!('events' in live) && !('authentication' in live));
     }
+
     console.log(
         'PASS: one real Engineer update appears in each eligible Admin/SuperAdmin/actor feed; Viewer receives none; safe unique feed IDs; privileged read-only audit snapshots/pagination; historical LOGIN preserved without new authentication events.',
     );
