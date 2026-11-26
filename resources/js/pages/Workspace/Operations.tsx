@@ -4,20 +4,20 @@ import { useState } from 'react';
 import type { ComponentProps } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { useAppearance } from '@/hooks/use-appearance';
-import DdDocuments from '@/pages/dd-phase3/DdDocuments';
-import DdFileRemovalReview from '@/pages/dd-phase3/DdFileRemovalReview';
-import DdMaintenanceProjects from '@/pages/dd-phase3/DdMaintenanceProjects';
-import DdMonthlyUpdates from '@/pages/dd-phase3/DdMonthlyUpdates';
-import DdQuarterlyMaintenance from '@/pages/dd-phase3/DdQuarterlyMaintenance';
-import type { QuarterlyProps } from '@/pages/dd-phase3/DdQuarterlyMaintenance';
-import DdRoadSections from '@/pages/dd-phase3/DdRoadSections';
+import WorkspaceDocuments from '@/components/maintenance-documents/workspace-documents';
+import FileRemovalReview from '@/components/files/file-removal-review';
+import WorkspaceProjects from '@/components/maintenance-projects/workspace-projects';
+import WorkspaceUpdates from '@/components/monthly-updates/workspace-updates';
+import WorkspaceRecords from '@/components/maintenance-records/workspace-records';
+import type { QuarterlyProps } from '@/components/maintenance-records/workspace-records';
+import WorkspaceRoadSections from '@/components/road-coverages/workspace-road-sections';
 import '../../../css/maintenance-projects-exploration.css';
 
 type Role = 'SuperAdmin' | 'Admin' | 'Engineer' | 'Viewer';
 type Row = Record<string, any>;
 // Reuse the project adapter's exact incoming prop contract. The backend already
 // supplies the fields from jairoads_next; do not erase them to generic Row[].
-type ProjectInputs = ComponentProps<typeof DdMaintenanceProjects>;
+type ProjectInputs = ComponentProps<typeof WorkspaceProjects>;
 type Props = {
     section: 'settings' | 'roads' | 'projects' | 'updates' | 'documents';
     role: Role;
@@ -196,7 +196,7 @@ export default function Operations({
             <>
                 <Head title="Road Sections" />
                 {notice}
-                <DdRoadSections
+                <WorkspaceRoadSections
                     initialCoverages={roads.map((x) => {
                         const row = x as typeof x & {
                             state_category: string;
@@ -242,10 +242,10 @@ export default function Operations({
             <>
                 <Head title="Monthly Updates" />
                 {notice}
-                <DdMonthlyUpdates
+                <WorkspaceUpdates
                     removalReview={
                         canManage ? (
-                            <DdFileRemovalReview
+                            <FileRemovalReview
                                 kind="media"
                                 files={media.map((m) => ({
                                     id: Number(m.id),
@@ -291,10 +291,10 @@ export default function Operations({
             <>
                 <Head title="Project Documents" />
                 {notice}
-                <DdDocuments
+                <WorkspaceDocuments
                     removalReview={
                         canManage ? (
-                            <DdFileRemovalReview
+                            <FileRemovalReview
                                 kind="document"
                                 files={documents.map((d) => ({
                                     id: Number(d.id),
@@ -335,7 +335,7 @@ export default function Operations({
         return (
             <>
                 {notice}
-                <DdMaintenanceProjects
+                <WorkspaceProjects
                     canCreate={!isViewer && capabilities.createProjects}
                     canUpdate={!isViewer && capabilities.updateProjects}
                     canManage={!isViewer && capabilities.deleteProjects}
@@ -347,7 +347,7 @@ export default function Operations({
                     }
                 />
                 {projectView === 'show' && selectedProject && (
-                    <DdQuarterlyMaintenance
+                    <WorkspaceRecords
                         key={selectedProject.id}
                         project={selectedProject}
                         records={maintenanceHistory}

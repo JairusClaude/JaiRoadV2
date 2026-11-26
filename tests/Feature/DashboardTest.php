@@ -15,5 +15,5 @@ test('a verified active viewer is routed to and can read their role dashboard', 
     $user = $this->canonicalUser(User::factory()->create(), 'Viewer');
     $target = route('jairoads.dd-phase3.show', ['section' => 'dashboard']);
     $this->actingAs($user)->get(route('dashboard'))->assertRedirect($target);
-    $this->get($target)->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->component('dd-phase3/RoleDashboard'));
+    $this->get($target)->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->component('RoleDashboard/Canonical'));
 });

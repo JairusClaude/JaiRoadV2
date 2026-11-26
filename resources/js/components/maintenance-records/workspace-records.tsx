@@ -2,7 +2,7 @@ import { router } from '@inertiajs/react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
-import DdManagingEngineerReassignment from '@/pages/dd-phase3/DdManagingEngineerReassignment';
+import ManagingEngineerReassignment from '@/components/maintenance-records/managing-engineer-reassignment';
 
 type Quarter = 'Q1' | 'Q2' | 'Q3' | 'Q4';
 type Maintenance = {
@@ -68,7 +68,7 @@ function suggestedDate(year: number, quarter: Quarter) {
         : `${year}-${String(month).padStart(2, '0')}-01`;
 }
 
-export default function DdQuarterlyMaintenance({
+export default function WorkspaceRecords({
     project,
     records,
     schedule,
@@ -479,7 +479,7 @@ export default function DdQuarterlyMaintenance({
                                     <td className="p-2">{record.start_date}</td>
                                     <td className="space-x-2 p-2">
                                         {canManage && (
-                                            <DdManagingEngineerReassignment
+                                            <ManagingEngineerReassignment
                                                 record={record}
                                                 canUnassign={canUnassign}
                                                 managers={managers}

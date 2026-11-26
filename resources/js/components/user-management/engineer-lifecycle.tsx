@@ -10,7 +10,7 @@ type Engineer = {
     rank: string;
     engineer_status: string;
 };
-export default function DdEngineerLifecycle({
+export default function EngineerLifecycle({
     engineers,
     initialEngineerId,
     onBusy,

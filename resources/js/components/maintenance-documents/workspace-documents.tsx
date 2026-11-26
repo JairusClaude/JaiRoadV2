@@ -24,7 +24,7 @@ import {
 import { useMemo, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
-import { requestOperation } from '@/pages/dd-phase3/requests';
+import { requestOperation } from '@/lib/operation-request';
 /**
  * UI label: Maintenance Documents. Data-dictionary entity: MaintenanceDocument.
  * Its parent is ALWAYS MaintenanceRecord, not MaintenanceProject.
@@ -47,7 +47,7 @@ export type MaintenanceRecordOption = {
     quarter: string | null;
     status: string;
 };
-export type DdDocumentsProps = {
+export type WorkspaceDocumentsProps = {
     removalReview?: ReactNode;
     initialDocuments?: MaintenanceDocumentSummary[];
     maintenanceRecords?: MaintenanceRecordOption[];
@@ -168,7 +168,7 @@ function Modal({
         </div>
     );
 }
-export default function DdDocuments({
+export default function WorkspaceDocuments({
     removalReview,
     initialDocuments = [],
     maintenanceRecords = [],
@@ -176,7 +176,7 @@ export default function DdDocuments({
     canUpload,
     uploadsReady,
     writableRecordIds,
-}: DdDocumentsProps) {
+}: WorkspaceDocumentsProps) {
     const [uploadFile, setUploadFile] = useState<File | null>(null);
     const [saving, setSaving] = useState(false);
     const eligibleRecords = maintenanceRecords.filter((r) =>

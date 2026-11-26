@@ -20,7 +20,7 @@ import { useCallback, useMemo, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialog';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
-import { requestOperation } from '@/pages/dd-phase3/requests';
+import { requestOperation } from '@/lib/operation-request';
 type MediaItem = {
     name: string;
     kind: 'Photo' | 'Video';
@@ -51,7 +51,7 @@ export type MaintenanceRecordOption = {
     quarter: string | null;
     status: string;
 };
-export type DdMonthlyUpdatesProps = {
+export type WorkspaceUpdatesProps = {
     removalReview?: ReactNode;
     initialUpdates?: MonthlyUpdate[];
     maintenanceRecords?: MaintenanceRecordOption[];
@@ -146,7 +146,7 @@ function Empty({ title, description }: { title: string; description: string }) {
     );
 }
 const pageSize = 8;
-export default function DdMonthlyUpdates({
+export default function WorkspaceUpdates({
     removalReview,
     initialUpdates = [],
     maintenanceRecords = [],
@@ -156,7 +156,7 @@ export default function DdMonthlyUpdates({
     canManage,
     writableRecordIds,
     mediaReady,
-}: DdMonthlyUpdatesProps) {
+}: WorkspaceUpdatesProps) {
     const [editingId, setEditingId] = useState<number | null>(null);
     const [attachment, setAttachment] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);

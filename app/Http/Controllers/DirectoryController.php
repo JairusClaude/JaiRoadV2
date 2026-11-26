@@ -175,7 +175,7 @@ class DirectoryController extends Controller
         ];
         $userName = $t('user_accounts')->where('id', $actor['account_id'])->value('username');
 
-        return Inertia::render('dd-phase3/Workspace', [
+        return Inertia::render('Workspace/Directory', [
             'section' => $section,
             'identity' => ['role' => $actor['role'], 'username' => (string) $userName, 'accountId' => $actor['account_id']],
             'counts' => $counts,

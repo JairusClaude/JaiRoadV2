@@ -2,7 +2,7 @@ import { router } from '@inertiajs/react';
 import { useState } from 'react';
 
 type Manager = { id: number; first_name: string; last_name: string };
-export default function DdManagingEngineerReassignment({
+export default function ManagingEngineerReassignment({
     record,
     managers,
     submitUrl,

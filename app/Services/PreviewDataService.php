@@ -1625,7 +1625,7 @@ final class PreviewDataService
 
         $authPaginator = new LengthAwarePaginator([], 0, 25, 1, ['path' => $request->url(), 'pageName' => 'auth_page']);
 
-        return self::render('dd-phase3/AuditHistory', $request, [
+        return self::render('AuditLogs/History', $request, [
             'events' => $paginator,
             'authentication' => $authPaginator,
             'filters' => [

@@ -231,7 +231,7 @@ class OperationsController extends Controller
         }
         $account = $this->t('user_accounts')->where('id', $actor['account_id'])->first(['username', 'email', 'account_type', 'is_active']);
 
-        return Inertia::render('dd-phase3/Operations', [
+        return Inertia::render('Workspace/Operations', [
             'managerChoices' => $managerChoices,
             'canUnassign' => false,
             'maintenanceHistory' => $maintenanceHistory, 'maintenanceSchedule' => $maintenanceSchedule,

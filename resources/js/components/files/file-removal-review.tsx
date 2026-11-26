@@ -6,7 +6,7 @@ import {
 } from '@/components/files/permanent-file-deletion';
 import { Button } from '@/components/ui/button';
 
-export default function DdFileRemovalReview({
+export default function FileRemovalReview({
     kind,
     files,
 }: {

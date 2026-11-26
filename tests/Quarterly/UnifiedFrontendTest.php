@@ -62,7 +62,7 @@ final class UnifiedFrontendTest extends PostgresTestCase
             $this->recordData($project, $other) + ['created_by' => $f['user']->dd_user_account_id],
         ]);
         $this->get('/dd-phase3/dashboard')->assertOk()->assertInertia(fn (Assert $page) => $page
-            ->component('dd-phase3/RoleDashboard')->where('role', 'engineer')->missing('mapCoverages'));
+            ->component('RoleDashboard/Canonical')->where('role', 'engineer')->missing('mapCoverages'));
         $url = '/dd-phase3/dashboard/map-roads';
         $this->getJson($url.'?engineer_id='.$other)->assertOk()->assertJsonCount(3, 'data')
             ->assertJsonPath('data.0.id', $unassigned)->assertJsonPath('data.0.my_project', false)
@@ -79,7 +79,7 @@ final class UnifiedFrontendTest extends PostgresTestCase
             ->assertJsonPath('data.2.my_project', false);
         $this->flushSession();
         $this->actingAs($this->account('Viewer'))->get('/dd-phase3/dashboard')->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->component('dd-phase3/RoleDashboard')->where('role', 'viewer')->missing('mapCoverages'));
+            ->assertInertia(fn (Assert $page) => $page->component('RoleDashboard/Canonical')->where('role', 'viewer')->missing('mapCoverages'));
         $this->getJson($url)->assertOk()->assertJsonCount(3, 'data')
             ->assertJsonPath('data.1.created_by_me', false)->assertJsonPath('data.1.assigned_to_me', false)
             ->assertJsonPath('data.2.my_record_count', 0);

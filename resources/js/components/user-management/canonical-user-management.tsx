@@ -16,8 +16,8 @@ import { DirectoryFilter, DirectoryPagination } from '@/components/directory-con
 import { DirectoryActions } from '@/components/maintenance-projects/project-workspace';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import AccountTypeBadge from '@/components/user-management/account-type-badge';
-import DdAccountLifecycle from '@/pages/dd-phase3/DdAccountLifecycle';
-import DdEngineerLifecycle from '@/pages/dd-phase3/DdEngineerLifecycle';
+import AccountLifecycle from '@/components/user-management/account-lifecycle';
+import EngineerLifecycle from '@/components/user-management/engineer-lifecycle';
 import '../../../css/canonical-user-management.css';
 
 type Role = 'SuperAdmin' | 'Admin' | 'Engineer' | 'Viewer';
@@ -1027,7 +1027,7 @@ export default function CanonicalUserManagement({
                                     onProfileOnly={() => open({ kind: 'add-engineer' })}
                                 />
                             ) : modal?.kind === 'account' ? (
-                                <DdAccountLifecycle
+                                <AccountLifecycle
                                     key={modal.id}
                                     accounts={accounts}
                                     actorId={actorId}
@@ -1035,7 +1035,7 @@ export default function CanonicalUserManagement({
                                     onBusy={setBusy}
                                 />
                             ) : modal?.kind === 'engineer' ? (
-                                <DdEngineerLifecycle
+                                <EngineerLifecycle
                                     key={modal.id}
                                     engineers={engineers}
                                     initialEngineerId={modal.id}

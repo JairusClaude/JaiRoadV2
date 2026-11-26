@@ -7,7 +7,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { requestOperation } from '@/pages/dd-phase3/requests';
+import { requestOperation } from '@/lib/operation-request';
 
 type Review = {
     confirmation_token: string;
@@ -35,7 +35,7 @@ type Review = {
 const button =
     'rounded-xl border px-4 py-2 text-sm font-semibold disabled:opacity-50';
 
-export default function DdRoadMunicipalityChange({
+export default function RoadMunicipalityChange({
     roadId,
     lgus,
     onClose,
