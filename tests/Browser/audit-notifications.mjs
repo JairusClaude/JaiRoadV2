@@ -107,30 +107,24 @@ export async function verifyAuditNotifications({
                 Number(e.entity_id) === report.id,
         ),
     );
-    // At a normal desktop viewport, the details button must fit its table cell.
-    await admin.setViewportSize({ width: 1440, height: 900 });
+    // The original inline disclosure is restored; the scroll region contains wide data.
     const activityTable = admin.getByRole('region', { name: 'System Activity History', exact: true });
-    const detailButton = activityTable.getByRole('button', { name: /View details|Safe before \/ after values/ }).first();
-    await detailButton.waitFor();
-    const rowHeight = await detailButton.evaluate(el => el.closest('tr').getBoundingClientRect().height);
-    await detailButton.click();
-    const detailDialog = admin.getByRole('dialog');
-    await detailDialog.getByRole('heading', { name: /^Activity #/ }).waitFor();
-    await detailDialog.getByRole('region', { name: 'Recorded event details' }).waitFor();
-    assert.equal(await detailButton.evaluate(el => el.closest('tr').getBoundingClientRect().height), rowHeight);
-    assert.ok(await detailDialog.evaluate(el => {
-        const r = el.getBoundingClientRect();
-
-        return r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight;
-    }));
-    await detailDialog.getByRole('button', { name: 'Done', exact: true }).click();
-    await detailDialog.waitFor({ state: 'hidden' });
-    await admin.setViewportSize({ width: 390, height: 844 });
-    await detailButton.click();
-    await detailDialog.waitFor();
-    assert.ok(await detailDialog.evaluate(el => el.scrollWidth <= el.clientWidth + 1));
-    await detailDialog.getByRole('button', { name: 'Done', exact: true }).click();
-    await detailDialog.waitFor({ state: 'hidden' });
+    const details = activityTable.locator('details').first();
+    const summary = details.locator('summary');
+    for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+        await admin.setViewportSize(viewport);
+        await summary.scrollIntoViewIfNeeded();
+        await summary.click();
+        assert.equal(await details.evaluate(el => el.open), true);
+        assert.ok(await details.evaluate(el => {
+            const region = el.closest('.jr-audit-table-scroll');
+            return region && ['auto', 'scroll'].includes(getComputedStyle(region).overflowX)
+                && el.getBoundingClientRect().width >= 350
+                && el.scrollWidth <= el.clientWidth + 1;
+        }));
+        await summary.click();
+        assert.equal(await details.evaluate(el => el.open), false);
+    }
     await admin.setViewportSize({ width: 1440, height: 900 });
     assert.ok(
         await admin
