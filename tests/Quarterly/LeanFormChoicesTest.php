@@ -25,6 +25,20 @@ it('keeps all authorized choices without geometry or full record payloads', func
         ->missing('records.0.description')->missing('records.0.created_by'));
     expect(count(DB::getQueryLog()))->toBeLessThanOrEqual(12); // 110 LGUs must not cause 110 eligibility queries.
     DB::disableQueryLog();
+    foreach (['monthly-updates', 'maintenance-documents'] as $directory) {
+        $this->get('/workspace/ui/'.$directory)->assertInertia(fn (Assert $page) => $page
+            ->has('projects', 0)->where('projectFilterUrl', '/workspace/ui/project-filter-choices'));
+        $this->get('/workspace/ui/'.$directory.'?project='.$f['project'])->assertInertia(fn (Assert $page) => $page
+            ->has('projects', 1)->where('projects.0.id', $f['project']));
+    }
+    $this->get('/workspace/ui/maintenance-records')->assertInertia(fn (Assert $page) => $page
+        ->has('projects', 0)->where('totalProjects', 110));
+    $this->getJson('/workspace/ui/project-filter-choices')->assertOk()->assertJsonCount(30, 'data')
+        ->assertJsonPath('last_page', 4)->assertHeader('Cache-Control', 'no-store, private');
+    $this->getJson('/workspace/ui/project-filter-choices?page=4')->assertOk()->assertJsonCount(20, 'data');
+    $this->getJson('/workspace/ui/project-filter-choices?search=Choice%20109')->assertOk()->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.project_title', 'Choice 109')->assertJsonMissingPath('data.0.geojson');
+    $this->getJson('/workspace/ui/project-filter-choices?search=%25')->assertOk()->assertJsonCount(0, 'data');
     $this->get('/workspace/ui/monthly-updates/create')->assertInertia(fn (Assert $page) => $page
         ->has('projects', 110)->has('records', 110)->missing('projects.0.geojson')->missing('records.0.created_by'));
     $last = end($records);

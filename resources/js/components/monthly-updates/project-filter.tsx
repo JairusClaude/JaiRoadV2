@@ -94,7 +94,9 @@ export function MonthlyProjectFilter({
             label: project.project_title,
         })),
     ];
-    const selectedProject = projects.find((project) => String(project.id) === value);
+    const selectedProject = projects.find(
+        (project) => String(project.id) === value,
+    );
     const selected = selectedProject
         ? { value, label: selectedProject.project_title }
         : options.find((option) => option.value === value);
@@ -103,6 +105,8 @@ export function MonthlyProjectFilter({
             .toLocaleLowerCase()
             .includes(query.trim().toLocaleLowerCase()),
     );
+    const currentPage = current?.page ?? 1;
+    const lastPage = current?.last_page ?? 1;
     const select = (next: string) => {
         setOpen(false);
         onChange(next);
@@ -250,7 +254,11 @@ export function MonthlyProjectFilter({
                     {current?.error && (
                         <div role="alert" className="p-3">
                             Unable to load projects.{' '}
-                            <Button type="button" variant="outline" onClick={() => setRetry((previous) => previous + 1)}>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setRetry((previous) => previous + 1)}
+                            >
                                 Retry
                             </Button>
                         </div>
@@ -261,13 +269,27 @@ export function MonthlyProjectFilter({
                         </p>
                     )}
                 </div>
-                {current?.last_page && current.last_page > 1 && (
+                {lastPage > 1 && (
                     <div className="flex items-center justify-between gap-2 p-2">
-                        <Button type="button" variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={currentPage <= 1}
+                            onClick={() => setPage(currentPage - 1)}
+                        >
                             Previous
                         </Button>
-                        <span className="text-xs">Page {current.page} of {current.last_page}</span>
-                        <Button type="button" variant="outline" size="sm" disabled={page >= current.last_page} onClick={() => setPage(page + 1)}>
+                        <span className="text-xs">
+                            Page {currentPage} of {lastPage}
+                        </span>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={currentPage >= lastPage}
+                            onClick={() => setPage(currentPage + 1)}
+                        >
                             Next
                         </Button>
                     </div>
