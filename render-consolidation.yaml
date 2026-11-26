@@ -1,0 +1,24 @@
+# Review-only Blueprint. Existing resources are adopted, not recreated.
+# Do not apply unless the preview preserves existing environment variables,
+# runtime settings, and both service identities. No secrets are committed.
+services:
+  - type: web
+    name: jairoads-merged-system-refactor
+    runtime: docker
+    repo: https://github.com/JairusClaude/JaiRoadV2
+    branch: merged-system2
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeployTrigger: off
+  - type: web
+    name: JaiRoadV2
+    runtime: docker
+    repo: https://github.com/JairusClaude/JaiRoadV2
+    branch: merged-system2
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeployTrigger: off
