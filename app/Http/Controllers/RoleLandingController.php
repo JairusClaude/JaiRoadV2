@@ -26,7 +26,7 @@ final class RoleLandingController extends Controller
         $user = $request->user();
         abort_unless($user instanceof User && $user->getAttribute('dd_user_account_id') !== null, 403);
         $actor = $resolver->resolve($user);
-        abort_unless($actor !== null && ($actor['role'] === 'Viewer' || ($actor['role'] === 'Engineer' && $actor['engineer_id'] !== null)), 403);
+        abort_unless($actor !== null && $actor['role'] === 'Engineer' && $actor['engineer_id'] !== null, 403);
 
         // Same cross-municipality read access as the canonical road/project pages.
         $coverage = DB::table('jairoads_next.road_coverages as rc')

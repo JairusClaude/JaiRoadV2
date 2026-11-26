@@ -38,7 +38,7 @@ for name in files:
     content = original
     for a, b in docs.items():
         content = content.replace(a, b)
-    if not is_doc:
+    if not is_doc and name != "tests/Integration/assert-reviewed-history.sh":
         content = content.replace("jairoads.dd-superadmin-landing", "jairoads.superadmin-home")
         content = content.replace("dd-superadmin-landing", "superadmin-home")
         content = content.replace("dd-phase3", "workspace")

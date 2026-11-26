@@ -12,6 +12,9 @@ jobs:
     if: github.ref_name == 'merged-system2'
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -32,6 +35,10 @@ jobs:
         run: |
           composer install --no-interaction --prefer-dist
           npm ci
+      - name: Generate Laravel Wayfinder route definitions
+        run: |
+          touch .env
+          php artisan wayfinder:generate --with-form
       - name: Apply repository formatters
         run: |
           composer lint

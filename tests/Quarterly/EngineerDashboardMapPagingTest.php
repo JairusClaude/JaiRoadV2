@@ -30,11 +30,12 @@ it('pages dashboard maps without dropping older assigned roads', function (): vo
     DB::table('jairoads_next.road_coverages')->insert($batch);
     $this->get('/dd-phase3/dashboard')->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->has('mapCoverages', 100)->where('mapNextCursor', fn ($v) => is_int($v) && $v > 0));
+            ->missing('mapCoverages')->missing('mapNextCursor'));
 
-    $response = $this->get('/dd-phase3/dashboard');
-    $page = $response->viewData('page');
-    $cursor = $page['props']['mapNextCursor'];
+    $response = $this->getJson('/dd-phase3/dashboard/map-roads')
+        ->assertOk()->assertJsonCount(100, 'data');
+    $cursor = $response->json('next_cursor');
+    expect($cursor)->toBeInt()->toBeGreaterThan(0);
     $result = $this->getJson('/dd-phase3/dashboard/map-roads?before='.$cursor)
         ->assertOk()->assertHeader('Cache-Control', 'no-store, private')
         ->assertJsonCount(5, 'data')->assertJsonPath('next_cursor', null);
