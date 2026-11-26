@@ -5,8 +5,8 @@ import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialo
 import { ProjectForm } from '@/components/maintenance-projects/project-form';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { RoadCoverageMap } from '@/components/maintenance-projects/road-coverage-map';
-import { Button } from '@/components/ui/button';
 import { WorkspaceProjectDirectory } from '@/components/maintenance-projects/workspace-project-directory';
+import { Button } from '@/components/ui/button';
 import type {
     CoverageChoice,
     IntegrationStatus,

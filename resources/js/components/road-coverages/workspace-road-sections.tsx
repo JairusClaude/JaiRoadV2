@@ -15,8 +15,8 @@ import type { FormEvent, ReactNode } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { RoadCoverageMap } from '@/components/maintenance-projects/road-coverage-map';
 import RoadMunicipalityChange from '@/components/road-coverages/road-municipality-change';
-import { requestOperation } from '@/lib/operation-request';
 import RoadTraceMap from '@/components/road-coverages/road-trace-map';
+import { requestOperation } from '@/lib/operation-request';
 /** UI name: Road Coverages; actual entity: a *whole* RoadCoverage. */
 type Pavement = 'Concrete' | 'Asphalt' | 'Gravel' | 'Earth';
 type Condition = 'Good' | 'Fair' | 'Bad';

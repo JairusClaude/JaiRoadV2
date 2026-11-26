@@ -13,9 +13,9 @@ import {
 import { useState } from 'react';
 import { DashboardAnalytics } from '@/components/dashboard/dashboard-analytics';
 import type { DashboardSummary } from '@/components/dashboard/dashboard-analytics';
+import WorkspaceLguDirectory from '@/components/lgus/workspace-directory';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import CanonicalUserManagement from '@/components/user-management/canonical-user-management';
-import WorkspaceLguDirectory from '@/components/lgus/workspace-directory';
 import '../../../css/maintenance-projects-exploration.css';
 
 type Role = 'SuperAdmin' | 'Admin' | 'Engineer' | 'Viewer';
@@ -301,10 +301,7 @@ export default function WorkspaceDirectory({
                                 />
                             </section>
                             {analytics && (
-                                <DashboardAnalytics
-                                    data={analytics}
-                                    compact
-                                />
+                                <DashboardAnalytics data={analytics} compact />
                             )}
                             <section className="grid gap-5 xl:grid-cols-[1.2fr_.8fr]">
                                 <div className={panel}>

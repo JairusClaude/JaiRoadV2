@@ -15,8 +15,8 @@ import type { FormEvent } from 'react';
 import { DirectoryFilter, DirectoryPagination } from '@/components/directory-controls';
 import { DirectoryActions } from '@/components/maintenance-projects/project-workspace';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import AccountTypeBadge from '@/components/user-management/account-type-badge';
 import AccountLifecycle from '@/components/user-management/account-lifecycle';
+import AccountTypeBadge from '@/components/user-management/account-type-badge';
 import EngineerLifecycle from '@/components/user-management/engineer-lifecycle';
 import '../../../css/canonical-user-management.css';
 
