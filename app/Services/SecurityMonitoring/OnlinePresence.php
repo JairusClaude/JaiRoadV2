@@ -11,8 +11,41 @@ use Illuminate\Support\Facades\DB;
 /** Recent activity is an estimate, verified against live server sessions and eligibility. */
 final class OnlinePresence
 {
+    /** The request itself proves its authenticated session is active, even before
+     * the outer telemetry middleware has persisted this request's activity. */
+    public function readForRequest(\Illuminate\Http\Request $request, array $actor): array
+    {
+        if (! config('security-monitoring.enabled')) {
+            return $this->read();
+        }
+        $user = $request->user();
+        if (! $user instanceof \App\Models\User || ! $request->hasSession()
+            || (string) $request->session()->get(\Illuminate\Support\Facades\Auth::guard('web')->getName()) !== (string) $user->getKey()
+            || app(AccountIdentityResolver::class)->resolve($user) !== $actor) {
+            return $this->read();
+        }
+        $username = DB::table('jairoads_next.user_accounts')->where('id', $actor['account_id'])->value('username');
+        if (! is_string($username) || $username === '') {
+            return $this->read();
+        }
+        $loginAt = $request->session()->get('security.login_at');
+        $current = ['account_id' => (int) $actor['account_id'], 'username' => $username, 'account_type' => $actor['role'],
+            'session_count' => 1, 'last_activity' => now()->utc()->toIso8601String(),
+            'login_at' => is_string($loginAt) ? $loginAt : null,
+            'client_description' => AuthenticationTelemetry::client($request), 'status' => 'Active', 'is_current' => true];
+        $reference = SessionCatalog::reference($request->session()->getId());
+        $result = $this->read($current, $reference);
+        if (! $result['available']) {
+            $result['accounts'] = [$current];
+            $result['total'] = 1;
+            $result['message'] .= ' Your authenticated session is shown; the status of other accounts is unavailable.';
+        }
+
+        return $result;
+    }
+
     /** @return array{available:bool,message:string,window_seconds:int,accounts:list<array<string,mixed>>,total:int} */
-    public function read(): array
+    public function read(?array $current = null, ?string $currentReference = null): array
     {
         $window = max(30, min(900, (int) config('security-monitoring.online_seconds', 300)));
         $result = ['available' => false, 'message' => 'Online presence requires approved monitoring tables and file/database sessions.',
@@ -62,6 +95,13 @@ final class OnlinePresence
                     $accounts[$id]['client_description'] = $row->client_description;
                     $accounts[$id]['login_at'] = $login;
                 }
+            }
+            if ($current !== null && $currentReference !== null) {
+                $id = $current['account_id'];
+                // Count each verified session once. The live request may not yet
+                // be present in the recent-session catalogue.
+                $count = ($accounts[$id]['session_count'] ?? 0) + (isset($live[$currentReference]) ? 0 : 1);
+                $accounts[$id] = array_replace($current, ['session_count' => max(1, $count)]);
             }
             usort($accounts, static fn (array $a, array $b): int => [$b['last_activity'], $b['account_id']] <=> [$a['last_activity'], $a['account_id']]);
 
