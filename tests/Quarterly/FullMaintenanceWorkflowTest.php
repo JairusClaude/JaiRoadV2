@@ -134,6 +134,27 @@ final class FullMaintenanceWorkflowTest extends PostgresTestCase
         $this->assertSame(1, DB::table('jairoads_next.monthly_updates')->count());
     }
 
+    #[DataProvider('kinds')]
+    public function test_interrupted_upload_leaves_pending_exact_object_intent_when_journal_enabled(string $kind, string $class): void
+    {
+        DB::unprepared(file_get_contents(base_path('database/proposals/canonical_upload_journal.sql')));
+        config(['jairoads_file_deletion.upload_journal_enabled' => true]);
+        $f = $this->fixture('Engineer');
+        $record = (int) DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer'], 'Q4') + ['created_by' => $f['user']->canonical_user_account_id]);
+        $update = (int) DB::table('jairoads_next.monthly_updates')->insertGetId(['maintenance_id' => $record, 'update_month' => '2026-10', 'progress_percentage' => 10, 'created_by' => $f['user']->canonical_user_account_id]);
+        $mock = Mockery::mock($class);
+        $mock->shouldReceive('configured')->once()->andReturnTrue();
+        $mock->shouldReceive('permanentLocation')->once()->andReturn(['origin' => 'https://storage.invalid', 'bucket' => 'private-fixture']);
+        $mock->shouldReceive('upload')->once()->andThrow(new \RuntimeException('Synthetic ambiguous transfer'));
+        $mock->shouldNotReceive('removeAfterFailure');
+        $this->app->instance($class, $mock);
+        $payload = $kind === 'document' ? ['maintenance_id' => $record, 'document_title' => 'Interrupted upload'] : ['monthly_update_id' => $update];
+        $this->post('/workspace/ops/'.($kind === 'document' ? 'documents' : 'media'), $payload + ['file' => $this->file($kind)])->assertSessionHasErrors(['file']);
+        $this->assertDatabaseHas('jairoads_next.upload_journal', ['kind' => $kind, 'state' => 'pending', 'parent_id' => $kind === 'document' ? $record : $update]);
+        $this->assertSame(0, DB::table('jairoads_next.maintenance_documents')->count());
+        $this->assertSame(0, DB::table('jairoads_next.media')->count());
+    }
+
     public static function revokedUploads(): iterable
     {
         foreach (['document', 'media'] as $kind) {

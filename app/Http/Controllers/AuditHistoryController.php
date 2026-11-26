@@ -80,25 +80,25 @@ final class AuditHistoryController extends Controller
         if ($available) {
             try {
                 $auth = DB::table(AuthenticationTelemetry::EVENTS);
-            $this->dates($auth, $v, 'auth', 'created_at');
-            $success = (clone $auth)->where('event', 'LOGIN')->count();
-            $failures = (clone $auth)->where('event', 'FAILED_LOGIN')->count();
-            if (! empty($v['auth_event'])) {
-                $auth->where('event', $v['auth_event']);
-            }
-            if (! empty($v['auth_search'])) {
-                $search = '%'.$v['auth_search'].'%';
-                $reference = SessionCatalog::reference(mb_strtolower(trim($v['auth_search'])), 'attempt');
-                $auth->where(static fn (Builder $q) => $q->where('actor_identifier', 'ilike', $search)->orWhereRaw("regexp_replace(actor_identifier, '^DD-UserAccount#', 'User Account #', 'i') ILIKE ?", [$search])->orWhere('attempted_identifier', 'ilike', $search)->orWhere('attempt_reference', $reference));
-            }
-            $authentication = $auth->orderByDesc('created_at')->orderByDesc('id')->paginate(25,
-                ['id', 'user_account_id', 'actor_identifier', 'account_type', 'attempted_identifier', 'event', 'outcome', 'method', 'client_description', 'created_at'], 'auth_page')
-                ->withPath($request->getPathInfo())->withQueryString()->through(static function (\stdClass $row): array {
-                    $row->actor_identifier = AuditActorIdentifier::display($row->actor_identifier);
-                    $row->created_at = CarbonImmutable::parse($row->created_at, 'UTC')->utc()->toIso8601String();
+                $this->dates($auth, $v, 'auth', 'created_at');
+                $success = (clone $auth)->where('event', 'LOGIN')->count();
+                $failures = (clone $auth)->where('event', 'FAILED_LOGIN')->count();
+                if (! empty($v['auth_event'])) {
+                    $auth->where('event', $v['auth_event']);
+                }
+                if (! empty($v['auth_search'])) {
+                    $search = '%'.$v['auth_search'].'%';
+                    $reference = SessionCatalog::reference(mb_strtolower(trim($v['auth_search'])), 'attempt');
+                    $auth->where(static fn (Builder $q) => $q->where('actor_identifier', 'ilike', $search)->orWhereRaw("regexp_replace(actor_identifier, '^DD-UserAccount#', 'User Account #', 'i') ILIKE ?", [$search])->orWhere('attempted_identifier', 'ilike', $search)->orWhere('attempt_reference', $reference));
+                }
+                $authentication = $auth->orderByDesc('created_at')->orderByDesc('id')->paginate(25,
+                    ['id', 'user_account_id', 'actor_identifier', 'account_type', 'attempted_identifier', 'event', 'outcome', 'method', 'client_description', 'created_at'], 'auth_page')
+                    ->withPath($request->getPathInfo())->withQueryString()->through(static function (\stdClass $row): array {
+                        $row->actor_identifier = AuditActorIdentifier::display($row->actor_identifier);
+                        $row->created_at = CarbonImmutable::parse($row->created_at, 'UTC')->utc()->toIso8601String();
 
-                    return (array) $row;
-                });
+                        return (array) $row;
+                    });
             } catch (\Throwable) {
                 $available = $collecting = false;
                 $authentication = new LengthAwarePaginator([], 0, 25, max(1, $request->integer('auth_page', 1)), ['path' => $request->getPathInfo(), 'pageName' => 'auth_page']);

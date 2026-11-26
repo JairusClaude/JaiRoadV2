@@ -704,9 +704,10 @@ class OperationsController extends Controller
     private function savePrivateUpload(string $kind, int $parent, string $path, PrivateSupabaseStorage|PrivateMonthlyMediaStorage $storage, \Illuminate\Http\UploadedFile $file, callable $persist): void
     {
         $journal = app(UploadJournal::class);
-        $id = $journal->begin($kind, $parent, $path, $storage);
+        $id = null;
         $uploaded = false;
         try {
+            $id = $journal->begin($kind, $parent, $path, $storage);
             if ($id === null) {
                 $storage->upload($file, $path);
                 $uploaded = true;
@@ -770,13 +771,13 @@ class OperationsController extends Controller
         }
         $path = 'maintenance-records/'.(int) $v['maintenance_id'].'/'.(string) Str::uuid().'.'.$ext;
         $this->savePrivateUpload('document', (int) $v['maintenance_id'], $path, $storage, $file, function () use ($request, $resolver, $actor, $v, $filename, $path): void {
-                $this->lockUploadAuthorization($request, $resolver, $actor, (int) $v['maintenance_id']);
-                $id = (int) $this->t('maintenance_documents')->insertGetId([
-                    'maintenance_id' => (int) $v['maintenance_id'], 'document_title' => $v['document_title'],
-                    'description' => $v['description'] ?? null, 'file_name' => $filename,
-                    'file_path' => $path, 'uploaded_by' => $actor['account_id'], 'uploaded_at' => now(), 'updated_at' => now(),
-                ]);
-                $this->audit($actor, 'CREATE', 'MaintenanceDocument', $id, 'Formal maintenance document uploaded.');
+            $this->lockUploadAuthorization($request, $resolver, $actor, (int) $v['maintenance_id']);
+            $id = (int) $this->t('maintenance_documents')->insertGetId([
+                'maintenance_id' => (int) $v['maintenance_id'], 'document_title' => $v['document_title'],
+                'description' => $v['description'] ?? null, 'file_name' => $filename,
+                'file_path' => $path, 'uploaded_by' => $actor['account_id'], 'uploaded_at' => now(), 'updated_at' => now(),
+            ]);
+            $this->audit($actor, 'CREATE', 'MaintenanceDocument', $id, 'Formal maintenance document uploaded.');
         });
 
         return $this->done('documents', 'Document uploaded.');
@@ -806,14 +807,14 @@ class OperationsController extends Controller
         };
         $path = 'monthly-updates/'.(int) $v['monthly_update_id'].'/'.(string) Str::uuid().'.'.$ext;
         $this->savePrivateUpload('media', (int) $v['monthly_update_id'], $path, $storage, $file, function () use ($request, $resolver, $actor, $v, $filename, $path, $mime, $update): void {
-                $this->lockUploadAuthorization($request, $resolver, $actor, (int) $update->maintenance_id);
-                $currentUpdate = $this->t('monthly_updates')->where('id', $v['monthly_update_id'])->sharedLock()->first(['maintenance_id']);
-                abort_unless($currentUpdate !== null && (int) $currentUpdate->maintenance_id === (int) $update->maintenance_id, 409);
-                $id = (int) $this->t('media')->insertGetId([
-                    'monthly_update_id' => (int) $v['monthly_update_id'], 'file_name' => $filename,
-                    'file_path' => $path, 'file_type' => $mime, 'uploaded_by' => $actor['account_id'], 'created_at' => now(),
-                ]);
-                $this->audit($actor, 'CREATE', 'Media', $id, 'MonthlyUpdate media evidence uploaded.');
+            $this->lockUploadAuthorization($request, $resolver, $actor, (int) $update->maintenance_id);
+            $currentUpdate = $this->t('monthly_updates')->where('id', $v['monthly_update_id'])->sharedLock()->first(['maintenance_id']);
+            abort_unless($currentUpdate !== null && (int) $currentUpdate->maintenance_id === (int) $update->maintenance_id, 409);
+            $id = (int) $this->t('media')->insertGetId([
+                'monthly_update_id' => (int) $v['monthly_update_id'], 'file_name' => $filename,
+                'file_path' => $path, 'file_type' => $mime, 'uploaded_by' => $actor['account_id'], 'created_at' => now(),
+            ]);
+            $this->audit($actor, 'CREATE', 'Media', $id, 'MonthlyUpdate media evidence uploaded.');
         });
 
         return $this->done('updates', 'Evidence uploaded.');
@@ -918,7 +919,11 @@ class OperationsController extends Controller
         return response()->stream(static function () use ($body): void {
             try {
                 while (! $body->eof()) {
-                    echo $body->read(65536);
+                    $chunk = $body->read(65536);
+                    if ($chunk === '' && ! $body->eof()) {
+                        throw new \RuntimeException('Private file transfer interrupted.');
+                    }
+                    echo $chunk;
                 }
             } finally {
                 $body->close();

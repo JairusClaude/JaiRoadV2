@@ -106,7 +106,18 @@ final class AuthenticationTelemetry
             $failed = $authRoute && ($request->attributes->getBoolean('security.failed') || in_array($status, [401, 403, 422, 429], true)
                 || ($status === 302 && $request->session()->has('errors')));
             $user = $logout instanceof User ? $logout : $request->user();
-            if ((! $failed && ! $user instanceof User) || ! $this->available(true)) {
+            if (! $failed && ! $user instanceof User) {
+                return;
+            }
+            if (! $authRoute && ! $login && ! ($logout instanceof User) && $user instanceof User) {
+                // A normal authenticated request needs at most one presence touch
+                // per short window; authentication events are never throttled here.
+                $touchKey = 'security-monitor-touch:'.SessionCatalog::reference($request->session()->getId());
+                if (! Cache::store((string) config('security-monitoring.cache_store'))->add($touchKey, true, max(1, (int) config('security-monitoring.touch_seconds')))) {
+                    return;
+                }
+            }
+            if (! $this->available(true)) {
                 return;
             }
             $fresh = $user instanceof User ? User::query()->find($user->getKey()) : null;

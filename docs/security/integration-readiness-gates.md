@@ -12,3 +12,5 @@ The configuration-only command `php artisan jairoads:integration-readiness` chec
 - Verify the restricted PostgreSQL runtime role, RLS, backup and independent restore; record actual evidence privately.
 
 CI uses disposable PostgreSQL, browser automation and mock Storage/map providers. Passing CI does not authorize a real deployment. Do not include credentials, raw identity records or human approval evidence in GitHub.
+
+Private upload journal activation and deletion reconciliation scheduling are separate owner-approved deployment steps; see `docs/security/upload-reconciliation.md`. No migration or scheduler is started by the preflight.

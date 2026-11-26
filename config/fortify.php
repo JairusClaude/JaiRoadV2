@@ -140,7 +140,8 @@ return [
     | Passkeys
     |--------------------------------------------------------------------------
     |
-    | These settings configure Fortify's passkey (WebAuthn) support.
+    | Retained framework configuration defaults only; passkey routes and
+    | the passkey feature are disabled. No active authentication depends on these.
     |
     */
 

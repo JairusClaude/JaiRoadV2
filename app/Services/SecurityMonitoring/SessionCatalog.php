@@ -38,18 +38,18 @@ final class SessionCatalog
         if (! in_array($driver, ['file', 'database'], true)) {
             throw new \RuntimeException('Presence supports file and database sessions only.');
         }
-        $store = Session::driver();
         $ids = [];
+        $oldest = now()->subSeconds(min(max(30, min(900, (int) config('security-monitoring.online_seconds'))), (int) config('session.lifetime') * 60))->timestamp;
         if ($driver === 'database') {
             $connection = DB::connection(config('session.connection'));
             $ids = $connection->table((string) config('session.table', 'sessions'))
-                ->where('last_activity', '>=', now()->subSeconds(min(max(30, min(900, (int) config('security-monitoring.online_seconds'))), (int) config('session.lifetime') * 60))->timestamp)
+                ->where('last_activity', '>=', $oldest)
                 ->limit((int) config('security-monitoring.max_session_files') + 1)->pluck('id')->all();
         } else {
             $directory = new \FilesystemIterator((string) config('session.files'), \FilesystemIterator::SKIP_DOTS);
             foreach ($directory as $file) {
                 if ($file instanceof \SplFileInfo && $file->isFile() && ! $file->isLink()
-                    && $file->getMTime() >= now()->subSeconds(min(max(30, min(900, (int) config('security-monitoring.online_seconds'))), (int) config('session.lifetime') * 60))->timestamp) {
+                    && $file->getMTime() >= $oldest) {
                     $ids[] = $file->getFilename();
                     if (count($ids) > (int) config('security-monitoring.max_session_files')) {
                         break;
