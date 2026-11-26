@@ -111,6 +111,7 @@ export async function verifyAuditNotifications({
     const activityTable = admin.getByRole('region', { name: 'System Activity History', exact: true });
     const details = activityTable.locator('details').first();
     const summary = details.locator('summary');
+
     for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
         await admin.setViewportSize(viewport);
         await summary.scrollIntoViewIfNeeded();
@@ -118,6 +119,7 @@ export async function verifyAuditNotifications({
         assert.equal(await details.evaluate(el => el.open), true);
         assert.ok(await details.evaluate(el => {
             const region = el.closest('.jr-audit-table-scroll');
+
             return region && ['auto', 'scroll'].includes(getComputedStyle(region).overflowX)
                 && el.getBoundingClientRect().width >= 350
                 && el.scrollWidth <= el.clientWidth + 1;
@@ -125,6 +127,7 @@ export async function verifyAuditNotifications({
         await summary.click();
         assert.equal(await details.evaluate(el => el.open), false);
     }
+
     await admin.setViewportSize({ width: 1440, height: 900 });
     assert.ok(
         await admin

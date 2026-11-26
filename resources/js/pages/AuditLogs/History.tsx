@@ -1,10 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import {
-    Activity,
-    RefreshCw,
-    ShieldCheck,
-    UsersRound,
-} from 'lucide-react';
+import { Activity, RefreshCw, ShieldCheck, UsersRound } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
@@ -123,7 +118,11 @@ function Table({
                 <thead className="bg-slate-50 text-xs text-slate-600">
                     <tr>
                         {headers.map((h) => (
-                            <th key={h} scope="col" className="px-3 py-3 font-semibold">
+                            <th
+                                key={h}
+                                scope="col"
+                                className="px-3 py-3 font-semibold"
+                            >
                                 {h}
                             </th>
                         ))}

@@ -125,11 +125,15 @@ try {
             );
     }
 
-    await page.getByRole('button', { name: 'Add Account', exact: true }).click();
-    await page.getByRole('button', {
-        name: 'Register an Engineer profile without an account',
-        exact: true,
-    }).click();
+    await page
+        .getByRole('button', { name: 'Add Account', exact: true })
+        .click();
+    await page
+        .getByRole('button', {
+            name: 'Register an Engineer profile without an account',
+            exact: true,
+        })
+        .click();
     const rank = page.getByLabel('Rank', { exact: true });
     const engineerForm = page.locator('form').filter({ has: rank });
     await engineerForm
@@ -160,9 +164,17 @@ try {
         .filter({ has: page.getByLabel(/^Account Type/) });
     const accountType = accountForm.getByLabel(/^Account Type/);
     await accountType.selectOption('Engineer');
-    assert.equal(await accountForm.getByRole('button', { name: 'Link existing profile', exact: true }).count(), 0);
+    assert.equal(
+        await accountForm
+            .getByRole('button', { name: 'Link existing profile', exact: true })
+            .count(),
+        0,
+    );
     await accountType.selectOption('Viewer');
-    assert.equal(await accountForm.getByLabel('First name', { exact: true }).count(), 0);
+    assert.equal(
+        await accountForm.getByLabel('First name', { exact: true }).count(),
+        0,
+    );
     await accountType.selectOption('Admin');
     await accountForm.getByLabel('First name', { exact: true }).waitFor();
     await accountType.selectOption('Engineer');
@@ -195,8 +207,12 @@ try {
     assert.equal(accountPayload.profile.rank, 'Engineer III');
     assert.equal(Object.hasOwn(accountPayload, 'position'), false);
     await page.getByText('Account created.', { exact: true }).waitFor();
-    await page.getByRole('button', { name: 'Engineer Accounts', exact: true }).click();
-    await page.getByRole('textbox', { name: 'Search accounts' }).fill('ui-type-engineer@example.test');
+    await page
+        .getByRole('button', { name: 'Engineer Accounts', exact: true })
+        .click();
+    await page
+        .getByRole('textbox', { name: 'Search accounts' })
+        .fill('ui-type-engineer@example.test');
     const row = page
         .getByRole('row')
         .filter({ hasText: 'ui-type-engineer@example.test' });
@@ -232,28 +248,45 @@ try {
     await row.waitFor();
 
     // The combined form can create a new profile and account without a separate request.
-    await page.getByRole('button', { name: 'Add Account', exact: true }).click();
-    const combined = page.getByRole('dialog', { name: 'Add Account', exact: true });
+    await page
+        .getByRole('button', { name: 'Add Account', exact: true })
+        .click();
+    const combined = page.getByRole('dialog', {
+        name: 'Add Account',
+        exact: true,
+    });
     await combined.getByLabel(/^Account Type/).selectOption('Engineer');
     await combined.getByLabel('First name', { exact: true }).fill('Combined');
     await combined.getByLabel('Last name', { exact: true }).fill('Fixture');
     await combined.getByLabel(/^Contact number/).fill('09123456789');
     await combined.getByLabel('Rank', { exact: true }).fill('Engineer II');
     await combined.getByLabel(/^Username/).fill('ui-combined-engineer');
-    await combined.getByLabel('Email', { exact: true }).fill('ui-combined-engineer@example.test');
-    await combined.getByLabel('Display name', { exact: true }).fill('Combined Fixture');
+    await combined
+        .getByLabel('Email', { exact: true })
+        .fill('ui-combined-engineer@example.test');
+    await combined
+        .getByLabel('Display name', { exact: true })
+        .fill('Combined Fixture');
     await combined.getByLabel(/^Password/).fill('Typed-Disposable!123');
     await combined.getByLabel(/^Confirm password/).fill('Typed-Disposable!123');
-    const combinedRequest = page.waitForRequest((request) =>
-        request.method() === 'POST' && new URL(request.url()).pathname === '/workspace/accounts',
+    const combinedRequest = page.waitForRequest(
+        (request) =>
+            request.method() === 'POST' &&
+            new URL(request.url()).pathname === '/workspace/accounts',
     );
-    await combined.getByRole('button', { name: 'Create account', exact: true }).click();
+    await combined
+        .getByRole('button', { name: 'Create account', exact: true })
+        .click();
     const combinedPayload = (await combinedRequest).postDataJSON();
     assert.equal(combinedPayload.engineer_id ?? null, null);
     assert.equal(combinedPayload.profile.rank, 'Engineer II');
     await combined.waitFor({ state: 'hidden' });
-    await page.getByRole('textbox', { name: 'Search accounts' }).fill('ui-combined-engineer@example.test');
-    const combinedRow = page.getByRole('row').filter({ hasText: 'ui-combined-engineer@example.test' });
+    await page
+        .getByRole('textbox', { name: 'Search accounts' })
+        .fill('ui-combined-engineer@example.test');
+    const combinedRow = page
+        .getByRole('row')
+        .filter({ hasText: 'ui-combined-engineer@example.test' });
     await combinedRow.waitFor();
     assert.match(await combinedRow.innerText(), /Combined Fixture/);
 
