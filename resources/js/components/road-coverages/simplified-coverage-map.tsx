@@ -165,6 +165,7 @@ export function SimplifiedCoverageMap({
 
             resizeFrame = requestAnimationFrame(() => {
                 resizeFrame = 0;
+
                 if (mapRef.current === map) {
                     map.invalidateSize({ pan: false });
                 }
