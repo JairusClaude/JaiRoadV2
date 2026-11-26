@@ -1,4 +1,4 @@
-# Class demonstration starter for JaiROADS (Laravel 13 / PHP 8.3 / Vite).
+# JaiROADS (Laravel 13 / PHP 8.4 / Vite).
 # Nginx + PHP-FPM; no PHP development server exposed.
 FROM node:22-bookworm AS node-runtime
 

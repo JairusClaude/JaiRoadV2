@@ -154,7 +154,9 @@ jobs:
               export DB_CONNECTION=pgsql DB_HOST=127.0.0.1 DB_PORT=5432 DB_DATABASE=jairoads_scratch_repository DB_USERNAME=postgres DB_PASSWORD=disposable-ci-only
               export JAIROADS_SCRATCH_APPROVAL=DISPOSABLE_LOCAL_ONLY
               php artisan test ;;
-            routes) php artisan route:list --except-vendor ;;
+            routes)
+              php scripts/refactor/verify-backend-layout.php &&
+              php artisan route:list --except-vendor ;;
             composer-audit) composer audit --locked --no-interaction ;;
             npm-audit) npm audit --audit-level=high ;;
           esac

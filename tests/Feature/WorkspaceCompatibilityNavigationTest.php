@@ -13,7 +13,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 /** No database access: verifies only the legacy-route boundary and redirects. */
-final class CanonicalWorkspaceNavigationTest extends TestCase
+final class WorkspaceCompatibilityNavigationTest extends TestCase
 {
     private function requestFor(string $path, string $method = 'GET', bool $linked = true): Request
     {

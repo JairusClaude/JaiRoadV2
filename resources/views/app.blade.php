@@ -39,6 +39,10 @@
         </x-inertia::head>
     </head>
     <body class="font-sans antialiased">
+        <main id="jairoads-startup" style="max-width: 32rem; margin: 4rem auto; padding: 1rem">
+            <p id="jairoads-startup-message" role="status">JaiROADS is loading. If this takes a while, reload the page.</p>
+            <a href="" style="text-decoration: underline">Reload page</a>
+        </main>
         <x-inertia::app />
     </body>
 </html>

@@ -1,5 +1,5 @@
 import { createInertiaApp } from '@inertiajs/react';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import '../css/jairoads-role-components.css';
 import '../css/jairoads-dark-appearance.css';
 import { JaiRoadsNavigationFeedback } from '@/components/jairoads/navigation-feedback';
@@ -25,7 +25,15 @@ const SettingsLayout = lazy(() => import('@/layouts/settings/layout'));
 
 const appName = import.meta.env.VITE_APP_NAME || 'JaiROADS';
 
-createInertiaApp({
+function DismissStartupMessage() {
+    useEffect(() => {
+        document.getElementById('jairoads-startup')?.remove();
+    }, []);
+
+    return null;
+}
+
+void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         switch (true) {
@@ -106,12 +114,20 @@ createInertiaApp({
                         {app}
                     </Suspense>
                 </RenderErrorBoundary>
+                <DismissStartupMessage />
                 <JaiRoadsNavigationFeedback />
                 <Toaster />
             </TooltipProvider>
         );
     },
     progress: false,
+}).catch(() => {
+    const message = document.getElementById('jairoads-startup-message');
+
+    if (message) {
+        message.textContent =
+            'JaiROADS could not load. Check your connection and reload the page.';
+    }
 });
 
 // This will set light / dark mode on load...

@@ -20,6 +20,9 @@ assert.equal(process.env.JAIROADS_SCRATCH_APPROVAL, 'DISPOSABLE_LOCAL_ONLY');
 const f = JSON.parse(
     await readFile(process.env.QUARTERLY_BROWSER_FIXTURE, 'utf8'),
 );
+const manifest = JSON.parse(
+    await readFile(new URL('../../public/build/manifest.json', import.meta.url), 'utf8'),
+);
 const ui = `${base}/workspace/ui`;
 const storage = await startStorageMock();
 const browser = await chromium.launch({
@@ -174,6 +177,30 @@ async function csrfPost(page, path, data) {
 }
 
 try {
+    for (const entry of ['resources/js/app.tsx', 'resources/js/pages/auth/login.tsx']) {
+        assert.ok(manifest[entry]?.file, `Missing startup asset for ${entry}`);
+        const asset = `${base}/build/${manifest[entry].file}`;
+        const startupPage = await browser.newPage();
+
+        try {
+            await startupPage.route(asset, (route) => route.abort());
+            const failedAsset = startupPage.waitForEvent('requestfailed', (request) => request.url() === asset);
+            await startupPage.goto(`${base}/login`);
+            await failedAsset;
+            const reload = startupPage.getByRole('link', { name: 'Reload page', exact: true });
+            await reload.waitFor({ state: 'visible' });
+            assert.equal(await startupPage.getByLabel('Email address').count(), 0);
+            await startupPage.unroute(asset);
+            await reload.click();
+            await startupPage.getByLabel('Email address').waitFor();
+            await reload.waitFor({ state: 'detached' });
+        } finally {
+            await startupPage.close();
+        }
+    }
+
+    console.log('PASS: login has a reload action even when its initial JavaScript is unavailable.');
+
     const engineer = await signIn(f.engineer_email);
     const admin = await signIn(f.admin_email);
     const viewer = await signIn(f.viewer_email);
@@ -430,9 +457,6 @@ throw new Error('Wave transform is static');
         await mapTimeoutPage.close();
     }
 
-    const manifest = JSON.parse(
-        await readFile(new URL('../../public/build/manifest.json', import.meta.url), 'utf8'),
-    );
     const mapModule = manifest['resources/js/components/road-coverages/simplified-coverage-map.tsx'];
     assert.ok(mapModule?.file, 'The dashboard map module must have a build entry');
     const mapModuleUrl = `${base}/build/${mapModule.file}`;
