@@ -1,4 +1,5 @@
-/* Original Audit Log layout, with only overflow containment retained. */
+/* Stable audit column geometry. Disclosing details changes row height only.
+   Keep all columns readable at native zoom; the existing region scrolls horizontally. */
 .jr-audit-history,
 .jr-audit-history .jr-audit-table-scroll {
     min-width: 0;
@@ -9,36 +10,74 @@
     overflow-x: auto;
     overscroll-behavior-inline: contain;
 }
-.jr-audit-history .jr-audit-table-scroll > table {
-    table-layout: auto;
-    width: 100%;
-}
-.jr-audit-history .jr-audit-table-scroll > table > tbody > tr > td {
-    word-break: normal;
-    overflow-wrap: normal;
-}
-.jr-audit-history .jr-audit-table-scroll details {
-    min-width: 13rem;
-}
-.jr-audit-history .jr-audit-table-scroll details[open] {
-    min-width: 22rem;
-}
-.jr-audit-history .jr-audit-table-scroll details[open] > div {
-    max-width: 28rem;
-    overflow-wrap: anywhere;
-}
-.jr-audit-history .jr-audit-table-scroll details table {
+.jr-audit-history .jr-audit-table-scroll > .jr-audit-grid {
     table-layout: fixed;
     width: 100%;
+    min-width: 900px;
 }
-.jr-audit-history .jr-audit-table-scroll details table :is(th, td) {
+.jr-audit-history .jr-audit-grid[data-columns='8'] { min-width: 1670px; }
+.jr-audit-history .jr-audit-grid[data-columns='7'] { min-width: 1270px; }
+.jr-audit-history .jr-audit-grid[data-columns='8'] > thead > tr > th:nth-child(1) { width: 13%; }
+.jr-audit-history .jr-audit-grid[data-columns='8'] > thead > tr > th:nth-child(2) { width: 11%; }
+.jr-audit-history .jr-audit-grid[data-columns='8'] > thead > tr > th:nth-child(3) { width: 8%; }
+.jr-audit-history .jr-audit-grid[data-columns='8'] > thead > tr > th:nth-child(4) { width: 7%; }
+.jr-audit-history .jr-audit-grid[data-columns='8'] > thead > tr > th:nth-child(5) { width: 11%; }
+.jr-audit-history .jr-audit-grid[data-columns='8'] > thead > tr > th:nth-child(6) { width: 12%; }
+.jr-audit-history .jr-audit-grid[data-columns='8'] > thead > tr > th:nth-child(7) { width: 14%; }
+.jr-audit-history .jr-audit-grid[data-columns='8'] > thead > tr > th:nth-child(8) { width: 24%; }
+.jr-audit-history .jr-audit-grid[data-columns='7'] > thead > tr > th:nth-child(1) { width: 18%; }
+.jr-audit-history .jr-audit-grid[data-columns='7'] > thead > tr > th:nth-child(2) { width: 17%; }
+.jr-audit-history .jr-audit-grid[data-columns='7'] > thead > tr > th:nth-child(3) { width: 11%; }
+.jr-audit-history .jr-audit-grid[data-columns='7'] > thead > tr > th:nth-child(4) { width: 10%; }
+.jr-audit-history .jr-audit-grid[data-columns='7'] > thead > tr > th:nth-child(5) { width: 9%; }
+.jr-audit-history .jr-audit-grid[data-columns='7'] > thead > tr > th:nth-child(6) { width: 13%; }
+.jr-audit-history .jr-audit-grid[data-columns='7'] > thead > tr > th:nth-child(7) { width: 22%; }
+.jr-audit-history .jr-audit-grid[data-columns='6'] > thead > tr > th { width: 16.6667%; }
+.jr-audit-history .jr-audit-grid > :is(thead, tbody) > tr > :is(th, td) {
+    min-width: 0;
+    max-width: none;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: anywhere;
+}
+.jr-audit-history .jr-audit-grid details,
+.jr-audit-history .jr-audit-grid details[open] {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+}
+.jr-audit-history .jr-audit-grid details > :is(div, p) {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+.jr-audit-history .jr-audit-grid details table {
+    table-layout: fixed;
+    width: 100%;
+    min-width: 0;
+}
+.jr-audit-history .jr-audit-grid details table :is(th, td) {
     white-space: normal;
     overflow-wrap: anywhere;
     word-break: normal;
 }
-.jr-audit-history .jr-audit-table-scroll summary:focus-visible {
+/* Do not draw a full-cell focus rectangle on mouse clicks. Keyboard users
+   retain a compact visible focus indicator around the actual disclosure. */
+.jr-audit-history .jr-audit-grid summary {
+    display: list-item;
+    width: fit-content;
+    max-width: 100%;
+    border-radius: 3px;
+    padding: 2px 3px;
+}
+.jr-audit-history .jr-audit-grid summary:focus:not(:focus-visible) {
+    outline: none;
+    box-shadow: none;
+}
+.jr-audit-history .jr-audit-grid summary:focus-visible {
     outline: 2px solid currentColor;
     outline-offset: 2px;
+    box-shadow: none;
 }
 
 /* Native horizontal scrolling, with mouse grab gestures on wide tables. */
