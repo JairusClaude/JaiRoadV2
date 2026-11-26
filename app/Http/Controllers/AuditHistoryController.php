@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\AuditActorIdentifier;
 use App\Services\AccountIdentityResolver;
 use App\Services\AuditValues;
 use App\Services\PreviewDataService;
@@ -46,7 +47,7 @@ final class AuditHistoryController extends Controller
         $query = DB::table('jairoads_next.audit_logs as audit')->leftJoin('jairoads_next.user_accounts as account', 'account.id', '=', 'audit.user_id');
         if (! empty($v['activity_search'])) {
             $search = '%'.$v['activity_search'].'%';
-            $query->where(static fn (Builder $q) => $q->where('audit.actor_identifier', 'ilike', $search)->orWhere('account.username', 'ilike', $search)
+            $query->where(static fn (Builder $q) => $q->where('audit.actor_identifier', 'ilike', $search)->orWhereRaw("regexp_replace(audit.actor_identifier, '^DD-UserAccount#', 'User Account #', 'i') ILIKE ?", [$search])->orWhere('account.username', 'ilike', $search)
                 ->orWhere('audit.description', 'ilike', $search)->orWhereRaw('CAST(audit.entity_id AS text) ILIKE ?', [$search]));
         }
         if (! empty($v['activity_action'])) {
@@ -61,11 +62,13 @@ final class AuditHistoryController extends Controller
             ->paginate(25, ['audit.id', 'audit.user_id', 'audit.actor_identifier', 'audit.action', 'audit.entity_type', 'audit.entity_id', 'audit.description',
                 'audit.old_value', 'audit.new_value', 'audit.recipient_user_id', 'audit.notification_message', 'audit.created_at', 'account.account_type as current_account_type'])
             ->withQueryString()->through(function (\stdClass $row): array {
+                $row->description = AuditActorIdentifier::description($row->description);
                 foreach (['old_value', 'new_value'] as $field) {
                     $payload = $row->$field === null ? null : json_decode($row->$field, true);
                     $row->$field = is_array($payload) && isset(AuditValues::TABLES[$row->entity_type])
                         ? app(AuditValues::class)->safe($row->entity_type, $payload) : null;
                 }
+                $row->actor_identifier = AuditActorIdentifier::display($row->actor_identifier);
                 $row->created_at = CarbonImmutable::parse($row->created_at, 'UTC')->utc()->toIso8601String();
 
                 return (array) $row;
@@ -85,11 +88,12 @@ final class AuditHistoryController extends Controller
             if (! empty($v['auth_search'])) {
                 $search = '%'.$v['auth_search'].'%';
                 $reference = SessionCatalog::reference(mb_strtolower(trim($v['auth_search'])), 'attempt');
-                $auth->where(static fn (Builder $q) => $q->where('actor_identifier', 'ilike', $search)->orWhere('attempted_identifier', 'ilike', $search)->orWhere('attempt_reference', $reference));
+                $auth->where(static fn (Builder $q) => $q->where('actor_identifier', 'ilike', $search)->orWhereRaw("regexp_replace(actor_identifier, '^DD-UserAccount#', 'User Account #', 'i') ILIKE ?", [$search])->orWhere('attempted_identifier', 'ilike', $search)->orWhere('attempt_reference', $reference));
             }
             $authentication = $auth->orderByDesc('created_at')->orderByDesc('id')->paginate(25,
                 ['id', 'user_account_id', 'actor_identifier', 'account_type', 'attempted_identifier', 'event', 'outcome', 'method', 'client_description', 'created_at'], 'auth_page')
                 ->withQueryString()->through(static function (\stdClass $row): array {
+                    $row->actor_identifier = AuditActorIdentifier::display($row->actor_identifier);
                     $row->created_at = CarbonImmutable::parse($row->created_at, 'UTC')->utc()->toIso8601String();
 
                     return (array) $row;

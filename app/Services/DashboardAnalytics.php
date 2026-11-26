@@ -80,7 +80,7 @@ final class DashboardAnalytics
                 ->get(['l.id', 'l.action', 'l.entity_type', 'l.created_at', 'l.actor_identifier', 'u.account_type'])
                 ->map(static fn ($v): array => [
                     'id' => (int) $v->id, 'action' => (string) $v->action,
-                    'entity' => (string) $v->entity_type, 'username' => (string) $v->actor_identifier,
+                    'entity' => (string) $v->entity_type, 'username' => AuditActorIdentifier::display((string) $v->actor_identifier),
                     'role' => (string) $v->account_type, 'at' => (string) $v->created_at,
                 ])->all();
 

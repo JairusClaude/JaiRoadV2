@@ -84,7 +84,7 @@ final class CanonicalAccountProvisioningController extends Controller
                     'email_verified_at' => null, 'created_at' => now(), 'updated_at' => now(),
                 ]);
                 app(AccountProvisioning::class)->record($request->user(), $ddId);
-                $this->audit($actor, 'CREATE', 'UserAccount', $ddId, 'Administrator provisioned a DD account with an explicit Fortify link.', [
+                $this->audit($actor, 'CREATE', 'UserAccount', $ddId, 'Administrator provisioned a user account with an explicit Fortify link.', [
                     'account_type' => $role, 'engineer_id' => $engineerId, 'is_active' => true,
                 ]);
             }, 2);

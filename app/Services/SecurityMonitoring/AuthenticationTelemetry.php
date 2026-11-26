@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\SecurityMonitoring;
 
 use App\Models\User;
+use App\Services\AuditActorIdentifier;
 use App\Services\AccountIdentityResolver;
 use App\Services\PostgresBoolean;
 use Illuminate\Cache\RateLimiter;
@@ -138,7 +139,7 @@ final class AuthenticationTelemetry
                     $verified = $event !== 'FAILED_LOGIN' && $actor !== null;
                     $db->table(self::EVENTS)->insert([
                         'user_account_id' => $verified ? $actor['account_id'] : null,
-                        'actor_identifier' => $verified ? 'DD-UserAccount#'.$actor['account_id'].' ('.$db->table('jairoads_next.user_accounts')->where('id', $actor['account_id'])->value('username').')' : null,
+                        'actor_identifier' => $verified ? AuditActorIdentifier::format($actor['account_id'], (string) $db->table('jairoads_next.user_accounts')->where('id', $actor['account_id'])->value('username')) : null,
                         'account_type' => $verified ? $actor['role'] : null,
                         ...($event === 'FAILED_LOGIN' ? self::attempt($request) : ['attempted_identifier' => null, 'attempt_reference' => null]),
                         'event' => $event, 'outcome' => match ($event) {

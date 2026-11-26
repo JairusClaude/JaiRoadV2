@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Services\AuditActorIdentifier;
 use App\Models\StagingUserAccount;
 use App\Models\User;
 use App\Services\AccountIdentityResolver;
@@ -89,7 +90,7 @@ final class SuperAdminLandingController extends Controller
                 'id' => (int) $row->id,
                 'action' => (string) $row->action,
                 'entity' => (string) $row->entity_type,
-                'actor' => (string) $row->actor_identifier,
+                'actor' => AuditActorIdentifier::display((string) $row->actor_identifier),
                 'createdAt' => CarbonImmutable::parse($row->created_at, 'UTC')->utc()->toIso8601String(),
             ])->all();
 

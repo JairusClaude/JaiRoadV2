@@ -36,7 +36,7 @@ final class OperationAudit
 
         $username = DB::table('jairoads_next.user_accounts')->where('id', $actor['account_id'])->value('username');
 
-        return 'DD-UserAccount#'.$actor['account_id'].' ('.$username.')';
+        return AuditActorIdentifier::format($actor['account_id'], (string) $username);
     }
 
     /**

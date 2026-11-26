@@ -1473,7 +1473,7 @@ final class PreviewDataService
             [
                 'id' => 107,
                 'user_id' => 1,
-                'actor_identifier' => 'DD-UserAccount#1 (UserTest)',
+                'actor_identifier' => 'User Account #1 (UserTest)',
                 'current_account_type' => 'superadmin',
                 'action' => 'LOGIN',
                 'entity_type' => 'UserAccount',
@@ -1488,7 +1488,7 @@ final class PreviewDataService
             [
                 'id' => 106,
                 'user_id' => 1,
-                'actor_identifier' => 'DD-UserAccount#1 (UserTest)',
+                'actor_identifier' => 'User Account #1 (UserTest)',
                 'current_account_type' => 'superadmin',
                 'action' => 'UPDATE',
                 'entity_type' => 'MaintenanceProject',
@@ -1503,7 +1503,7 @@ final class PreviewDataService
             [
                 'id' => 105,
                 'user_id' => 3,
-                'actor_identifier' => 'DD-UserAccount#3 (maria.cruz)',
+                'actor_identifier' => 'User Account #3 (maria.cruz)',
                 'current_account_type' => 'admin',
                 'action' => 'CREATE',
                 'entity_type' => 'MaintenanceDocument',
@@ -1518,7 +1518,7 @@ final class PreviewDataService
             [
                 'id' => 104,
                 'user_id' => 2,
-                'actor_identifier' => 'DD-UserAccount#2 (juan.delacruz)',
+                'actor_identifier' => 'User Account #2 (juan.delacruz)',
                 'current_account_type' => 'admin',
                 'action' => 'CREATE',
                 'entity_type' => 'MonthlyUpdate',
@@ -1533,7 +1533,7 @@ final class PreviewDataService
             [
                 'id' => 103,
                 'user_id' => 1,
-                'actor_identifier' => 'DD-UserAccount#1 (superadmin)',
+                'actor_identifier' => 'User Account #1 (superadmin)',
                 'current_account_type' => 'superadmin',
                 'action' => 'UPDATE',
                 'entity_type' => 'RoadCoverage',
@@ -1548,7 +1548,7 @@ final class PreviewDataService
             [
                 'id' => 102,
                 'user_id' => 1,
-                'actor_identifier' => 'DD-UserAccount#1 (superadmin)',
+                'actor_identifier' => 'User Account #1 (superadmin)',
                 'current_account_type' => 'superadmin',
                 'action' => 'CREATE',
                 'entity_type' => 'UserAccount',
@@ -1563,7 +1563,7 @@ final class PreviewDataService
             [
                 'id' => 101,
                 'user_id' => 1,
-                'actor_identifier' => 'DD-UserAccount#1 (superadmin)',
+                'actor_identifier' => 'User Account #1 (superadmin)',
                 'current_account_type' => 'superadmin',
                 'action' => 'CREATE',
                 'entity_type' => 'MaintenanceProject',
@@ -1578,7 +1578,7 @@ final class PreviewDataService
             [
                 'id' => 100,
                 'user_id' => 1,
-                'actor_identifier' => 'DD-UserAccount#1 (superadmin)',
+                'actor_identifier' => 'User Account #1 (superadmin)',
                 'current_account_type' => 'superadmin',
                 'action' => 'ACTIVATE',
                 'entity_type' => 'UserAccount',
@@ -1593,7 +1593,7 @@ final class PreviewDataService
             [
                 'id' => 99,
                 'user_id' => 1,
-                'actor_identifier' => 'DD-UserAccount#1 (superadmin)',
+                'actor_identifier' => 'User Account #1 (superadmin)',
                 'current_account_type' => 'superadmin',
                 'action' => 'DELETE',
                 'entity_type' => 'RoadCoverage',
