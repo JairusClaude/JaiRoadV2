@@ -111,6 +111,32 @@ export async function verifyAuditNotifications({
     const activityTable = admin.getByRole('region', { name: 'System Activity History', exact: true });
     const details = activityTable.locator('details').first();
     const summary = details.locator('summary');
+    // Opening a disclosure must not alter any column widths, including at 100% zoom.
+    const columnWidths = region => region.locator('table.jr-audit-grid > thead > tr > th').evaluateAll(cells => cells.map(cell => cell.getBoundingClientRect().width));
+    const verifyStableDisclosure = async (region, disclosure) => {
+        const trigger = disclosure.locator('summary');
+        await trigger.scrollIntoViewIfNeeded();
+        const before = await columnWidths(region);
+        const initialWidth = await region.evaluate(el => el.scrollWidth);
+        await trigger.click();
+        assert.equal(await disclosure.evaluate(el => el.open), true);
+        const after = await columnWidths(region);
+        assert.equal(after.length, before.length);
+        assert.ok(after.every((width, index) => Math.abs(width - before[index]) <= 1), 'Expanding details must not resize columns');
+        assert.ok(Math.abs(await region.evaluate(el => el.scrollWidth) - initialWidth) <= 1, 'Expanding details must not change the horizontal scroll range');
+        assert.ok(await trigger.evaluate(el => el.getBoundingClientRect().width < el.closest('td').getBoundingClientRect().width), 'Disclosure focus must be confined to the label');
+        await trigger.click();
+        assert.equal(await disclosure.evaluate(el => el.open), false);
+        assert.ok((await columnWidths(region)).every((width, index) => Math.abs(width - before[index]) <= 1));
+    };
+    const authRegion = admin.getByRole('region', { name: 'Authentication History', exact: true });
+    for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+        await admin.setViewportSize(viewport);
+        await verifyStableDisclosure(activityTable, details);
+        const authDisclosure = authRegion.locator('details').first();
+        if (await authDisclosure.count()) await verifyStableDisclosure(authRegion, authDisclosure);
+    }
+
     // A narrow viewport guarantees horizontal overflow even with short audit values.
     await admin.setViewportSize({ width: 390, height: 844 });
     await activityTable.locator('thead th').first().scrollIntoViewIfNeeded();
