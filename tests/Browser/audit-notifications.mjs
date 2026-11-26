@@ -111,6 +111,40 @@ export async function verifyAuditNotifications({
     const activityTable = admin.getByRole('region', { name: 'System Activity History', exact: true });
     const details = activityTable.locator('details').first();
     const summary = details.locator('summary');
+    // A narrow viewport guarantees horizontal overflow even with short audit values.
+    await admin.setViewportSize({ width: 390, height: 844 });
+    await activityTable.locator('thead th').first().scrollIntoViewIfNeeded();
+    await activityTable.evaluate(el => { el.scrollLeft = 0; });
+    await admin.waitForFunction(() => {
+        const el = document.querySelector('[aria-label="System Activity History"]');
+        return el?.getAttribute('data-overflow') === 'true';
+    });
+    const visibleHeader = await activityTable.locator('thead th').first().boundingBox();
+    const regionBox = await activityTable.boundingBox();
+    assert.ok(visibleHeader && regionBox);
+    const dragX = Math.min(regionBox.x + regionBox.width - 24, visibleHeader.x + visibleHeader.width - 12);
+    const dragY = visibleHeader.y + visibleHeader.height / 2;
+    assert.ok(dragX - regionBox.x > 45, 'Need a visible header area for mouse dragging');
+    const distance = Math.min(80, dragX - regionBox.x - 12);
+    await admin.mouse.move(dragX, dragY);
+    await admin.mouse.down();
+    await admin.mouse.move(dragX - distance, dragY, { steps: 8 });
+    assert.equal(await activityTable.getAttribute('data-dragging'), 'true');
+    await admin.mouse.up();
+    assert.ok(await activityTable.evaluate(el => el.scrollLeft) > 0, 'Dragging left reveals later columns');
+    assert.equal(await activityTable.getAttribute('data-dragging'), null);
+    await admin.mouse.move(dragX - distance, dragY);
+    await admin.mouse.down();
+    await admin.mouse.move(dragX, dragY, { steps: 8 });
+    await admin.mouse.up();
+    assert.ok(await activityTable.evaluate(el => el.scrollLeft) <= 2, 'Dragging right returns to the first columns');
+    await activityTable.focus();
+    await admin.keyboard.press('ArrowRight');
+    assert.ok(await activityTable.evaluate(el => el.scrollLeft) > 0, 'Keyboard users can scroll horizontally');
+    await admin.keyboard.press('ArrowLeft');
+    assert.ok(await activityTable.evaluate(el => el.scrollLeft) <= 2);
+
+
     for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
         await admin.setViewportSize(viewport);
         await summary.scrollIntoViewIfNeeded();
