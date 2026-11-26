@@ -10,6 +10,7 @@ use App\Services\AuditValues;
 use App\Services\Documents\PrivateSupabaseStorage;
 use App\Services\DuplicateMaintenancePeriod;
 use App\Services\Files\PermanentFileDeletion;
+use App\Services\Files\UploadJournal;
 use App\Services\LinkedPasswordUpdater;
 use App\Services\ManagingEngineerEligibility;
 use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
@@ -26,6 +27,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -696,6 +698,50 @@ class OperationsController extends Controller
         }
     }
 
+    /**
+     * @param  callable():void  $persist
+     */
+    private function savePrivateUpload(string $kind, int $parent, string $path, PrivateSupabaseStorage|PrivateMonthlyMediaStorage $storage, \Illuminate\Http\UploadedFile $file, callable $persist): void
+    {
+        $journal = app(UploadJournal::class);
+        $id = $journal->begin($kind, $parent, $path, $storage);
+        $uploaded = false;
+        try {
+            if ($id === null) {
+                $storage->upload($file, $path);
+                $uploaded = true;
+                DB::transaction($persist);
+            } else {
+                // The separately committed journal survives worker death, and its
+                // row lock excludes an operator retry until this transaction ends.
+                DB::transaction(function () use ($journal, $id, $storage, $file, $path, $persist, &$uploaded): void {
+                    $journal->lockPending($id);
+                    $storage->upload($file, $path);
+                    $uploaded = true;
+                    $persist();
+                    $journal->complete($id);
+                });
+            }
+        } catch (\Throwable $error) {
+            // Never delete an object on an ambiguous upload or commit result.
+            // With journaling enabled, the operator can reconcile the exact path.
+            if ($id === null && $uploaded) {
+                try {
+                    if (! $this->t($kind === 'document' ? 'maintenance_documents' : 'media')->where('file_path', $path)->exists()) {
+                        $storage->removeAfterFailure($path);
+                    }
+                } catch (\Throwable) {
+                    Log::warning('Private upload compensation could not be confirmed.');
+                }
+            }
+            if ($error instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface || $error instanceof ValidationException) {
+                throw $error;
+            }
+            Log::warning('Private upload could not be confirmed.', ['kind' => $kind, 'stage' => $uploaded ? 'metadata' : 'storage']);
+            throw ValidationException::withMessages(['file' => 'The upload could not be confirmed. Check the directory before retrying or contact your administrator.']);
+        }
+    }
+
     public function uploadDocument(Request $request, AccountIdentityResolver $resolver, PrivateSupabaseStorage $storage): RedirectResponse
     {
         $actor = $this->actor($request, $resolver);
@@ -723,9 +769,7 @@ class OperationsController extends Controller
             ]);
         }
         $path = 'maintenance-records/'.(int) $v['maintenance_id'].'/'.(string) Str::uuid().'.'.$ext;
-        $storage->upload($file, $path);
-        try {
-            DB::transaction(function () use ($request, $resolver, $actor, $v, $filename, $path): void {
+        $this->savePrivateUpload('document', (int) $v['maintenance_id'], $path, $storage, $file, function () use ($request, $resolver, $actor, $v, $filename, $path): void {
                 $this->lockUploadAuthorization($request, $resolver, $actor, (int) $v['maintenance_id']);
                 $id = (int) $this->t('maintenance_documents')->insertGetId([
                     'maintenance_id' => (int) $v['maintenance_id'], 'document_title' => $v['document_title'],
@@ -733,15 +777,7 @@ class OperationsController extends Controller
                     'file_path' => $path, 'uploaded_by' => $actor['account_id'], 'uploaded_at' => now(), 'updated_at' => now(),
                 ]);
                 $this->audit($actor, 'CREATE', 'MaintenanceDocument', $id, 'Formal maintenance document uploaded.');
-            });
-        } catch (\Throwable $e) {
-            try {
-                $storage->removeAfterFailure($path);
-            } catch (\Throwable $cleanup) {
-                report($cleanup);
-            }
-            throw $e;
-        }
+        });
 
         return $this->done('documents', 'Document uploaded.');
     }
@@ -769,9 +805,7 @@ class OperationsController extends Controller
             default => throw ValidationException::withMessages(['file' => 'Unsupported media MIME type.']),
         };
         $path = 'monthly-updates/'.(int) $v['monthly_update_id'].'/'.(string) Str::uuid().'.'.$ext;
-        $storage->upload($file, $path);
-        try {
-            DB::transaction(function () use ($request, $resolver, $actor, $v, $filename, $path, $mime, $update): void {
+        $this->savePrivateUpload('media', (int) $v['monthly_update_id'], $path, $storage, $file, function () use ($request, $resolver, $actor, $v, $filename, $path, $mime, $update): void {
                 $this->lockUploadAuthorization($request, $resolver, $actor, (int) $update->maintenance_id);
                 $currentUpdate = $this->t('monthly_updates')->where('id', $v['monthly_update_id'])->sharedLock()->first(['maintenance_id']);
                 abort_unless($currentUpdate !== null && (int) $currentUpdate->maintenance_id === (int) $update->maintenance_id, 409);
@@ -780,15 +814,7 @@ class OperationsController extends Controller
                     'file_path' => $path, 'file_type' => $mime, 'uploaded_by' => $actor['account_id'], 'created_at' => now(),
                 ]);
                 $this->audit($actor, 'CREATE', 'Media', $id, 'MonthlyUpdate media evidence uploaded.');
-            });
-        } catch (\Throwable $e) {
-            try {
-                $storage->removeAfterFailure($path);
-            } catch (\Throwable $cleanup) {
-                report($cleanup);
-            }
-            throw $e;
-        }
+        });
 
         return $this->done('updates', 'Evidence uploaded.');
     }
@@ -851,6 +877,15 @@ class OperationsController extends Controller
         return response()->json($result, $result['state'] === 'completed' ? 200 : 202)->header('Cache-Control', 'private, no-store');
     }
 
+    private function fetchPrivateFile(PrivateSupabaseStorage|PrivateMonthlyMediaStorage $storage, string $path): \Illuminate\Http\Client\Response
+    {
+        try {
+            return $storage->fetch($path);
+        } catch (\Throwable) {
+            abort(503, 'The private file is temporarily unavailable. Try again later.');
+        }
+    }
+
     public function download(Request $request, AccountIdentityResolver $resolver, string $kind, int $id, PrivateSupabaseStorage $documents, PrivateMonthlyMediaStorage $media): HttpResponse
     {
         abort_unless(in_array($kind, ['document', 'media'], true), 404);
@@ -860,7 +895,7 @@ class OperationsController extends Controller
             abort_unless($row !== null && $row->file_path !== '', 404, 'No document attachment.');
             $this->recordScope($actor, (int) $row->maintenance_id);
             app(PermanentFileDeletion::class)->assertNotPending('document', $id);
-            $result = $documents->fetch((string) $row->file_path);
+            $result = $this->fetchPrivateFile($documents, (string) $row->file_path);
             $mime = match (strtolower(pathinfo($row->file_name, PATHINFO_EXTENSION))) {
                 'pdf' => 'application/pdf','docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                 'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -873,12 +908,22 @@ class OperationsController extends Controller
             abort_unless($row !== null, 404);
             $this->recordScope($actor, (int) $row->maintenance_id);
             app(PermanentFileDeletion::class)->assertNotPending('media', $id);
-            $result = $media->fetch((string) $row->file_path);
+            $result = $this->fetchPrivateFile($media, (string) $row->file_path);
             $mime = (string) $row->file_type;
         }
         $filename = basename(str_replace(['\\', '/'], '', (string) $row->file_name));
 
-        return response($result->body(), 200, [
+        $body = $result->toPsrResponse()->getBody();
+
+        return response()->stream(static function () use ($body): void {
+            try {
+                while (! $body->eof()) {
+                    echo $body->read(65536);
+                }
+            } finally {
+                $body->close();
+            }
+        }, 200, [
             'Content-Type' => $mime, 'X-Content-Type-Options' => 'nosniff',
             'Cache-Control' => 'private, no-store',
             'Content-Disposition' => ($kind === 'media' ? 'inline' : 'attachment')."; filename*=UTF-8''".rawurlencode($filename),

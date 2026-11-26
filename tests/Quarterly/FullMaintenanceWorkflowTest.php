@@ -55,7 +55,7 @@ final class FullMaintenanceWorkflowTest extends PostgresTestCase
         $media = DB::table('jairoads_next.media')->first();
         foreach ([['document', $document], ['media', $media]] as [$kind, $row]) {
             $this->assertSame((int) $f['user']->canonical_user_account_id, (int) $row->uploaded_by);
-            $this->get('/workspace/files/'.$kind.'/'.$row->id)->assertOk()->assertContent('Disposable private '.$kind)->assertHeader('Cache-Control', 'no-store, private')->assertHeader('X-Content-Type-Options', 'nosniff');
+            $this->get('/workspace/files/'.$kind.'/'.$row->id)->assertOk()->assertStreamedContent('Disposable private '.$kind)->assertHeader('Cache-Control', 'no-store, private')->assertHeader('X-Content-Type-Options', 'nosniff');
         }
         $this->putJson('/workspace/ops/records/'.$record->id, array_replace($this->recordData((int) $project->id, $f['engineer'], 'Q4'), ['status' => 'Completed', 'complete_date' => '2026-10-10']))->assertRedirect();
         $this->assertDatabaseHas('jairoads_next.maintenance_records', ['id' => $record->id, 'status' => 'Completed', 'created_by' => $f['user']->canonical_user_account_id]);
@@ -125,7 +125,7 @@ final class FullMaintenanceWorkflowTest extends PostgresTestCase
             }
         });
         $payload = $kind === 'document' ? ['maintenance_id' => $record, 'document_title' => 'Atomic upload'] : ['monthly_update_id' => $update];
-        $this->post('/workspace/ops/'.($kind === 'document' ? 'documents' : 'media'), $payload + ['file' => $this->file($kind)])->assertServerError();
+        $this->post('/workspace/ops/'.($kind === 'document' ? 'documents' : 'media'), $payload + ['file' => $this->file($kind)])->assertSessionHasErrors(['file']);
         $this->assertNotNull($uploaded);
         $this->assertSame(0, DB::table('jairoads_next.maintenance_documents')->count());
         $this->assertSame(0, DB::table('jairoads_next.media')->count());

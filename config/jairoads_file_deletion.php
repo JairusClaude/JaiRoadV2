@@ -9,4 +9,6 @@ return [
     // Default is false, including on production Render services.
     'operationally_enabled' => env('JAIROADS_PERMANENT_FILE_DELETION_ENABLED', false),
     'scheduled_reconciliation' => env('JAIROADS_FILE_DELETION_SCHEDULE_ENABLED', false),
+    // Enable only after the additive upload journal has been installed and verified.
+    'upload_journal_enabled' => env('JAIROADS_UPLOAD_JOURNAL_ENABLED', false),
 ];

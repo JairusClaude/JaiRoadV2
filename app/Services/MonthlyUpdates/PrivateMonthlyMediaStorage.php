@@ -71,12 +71,18 @@ class PrivateMonthlyMediaStorage
     public function upload(UploadedFile $file, string $path): void
     {
         $mime = (string) ($file->getMimeType() ?: 'application/octet-stream');
-        $bytes = file_get_contents($file->getRealPath());
-        if ($bytes === false) {
+        $stream = fopen($file->getRealPath(), 'rb');
+        if ($stream === false) {
             throw new RuntimeException('Unable to read the uploaded file.');
         }
-        $response = $this->request()->withHeaders(['x-upsert' => 'false'])
-            ->withBody($bytes, $mime)->post($this->objectUrl($path));
+        try {
+            $response = $this->request()->withHeaders(['x-upsert' => 'false'])
+                ->withBody(\GuzzleHttp\Psr7\Utils::streamFor($stream), $mime)->post($this->objectUrl($path));
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }
         if (! $response->successful()) {
             // TEMPORARY: capture only a safe Storage error identifier; never log its response body.
             $code = $response->json('code') ?? $response->json('errorCode') ?? $response->json('error');
@@ -95,7 +101,7 @@ class PrivateMonthlyMediaStorage
     /** Returns a response without sharing storage credentials or object URLs with the browser. */
     public function fetch(string $path): Response
     {
-        $response = $this->request()->get($this->objectUrl($path, true));
+        $response = $this->request()->withOptions(['stream' => true])->get($this->objectUrl($path, true));
         if (! $response->successful()) {
             throw new RuntimeException('Media is unavailable from private storage.');
         }
