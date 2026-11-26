@@ -46,6 +46,7 @@ type AuthenticationEvent = {
     created_at: string;
 };
 type OnlineAccount = {
+    is_current?: boolean;
     account_id: number;
     username: string;
     account_type: string;
@@ -84,6 +85,12 @@ const field =
     'jr-audit-filter mt-1 block w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900';
 const button =
     'rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 disabled:opacity-50';
+/** Prefer the historical recorded name, never infer identity from a role. */
+function actorName(identifier: string | null | undefined): string {
+    if (!identifier) return 'Unavailable account';
+    const match = identifier.match(/^(?:DD-UserAccount#|User\s*Account\s*#)\d+\s+\((.+)\)$/i);
+    return match?.[1]?.trim() || identifier;
+}
 function time(value: string | null) {
     return value === null ? 'Not recorded' : manilaTimestamp(value, 'medium');
 }
@@ -213,6 +220,7 @@ function PaginationLinks({ page, label }: { page: Pagination; label: string }) {
                         key={i}
                         href={link.url}
                         preserveScroll
+                        preserveState
                         className={`${button} ${link.active ? 'border-amber-700 text-amber-900' : ''}`}
                         aria-current={link.active ? 'page' : undefined}
                     >
@@ -545,12 +553,9 @@ export default function AuditHistory({
                                         </time>
                                     </td>
                                     <td className="max-w-64 min-w-40 break-words">
-                                        {e.actor_identifier}
+                                        <span className="font-medium">{actorName(e.actor_identifier)}</span>
                                         <span className="mt-1 block text-xs text-slate-500">
-                                            UserAccount{' '}
-                                            {e.user_id === null
-                                                ? 'not recorded'
-                                                : `#${e.user_id}`}
+                                            Account ID: {e.user_id ?? 'Not recorded'}
                                         </span>
                                     </td>
                                     <td>
@@ -743,14 +748,10 @@ export default function AuditHistory({
                                         {time(e.created_at)}
                                     </td>
                                     <td className="min-w-48 break-words">
-                                        {e.actor_identifier ??
-                                            e.attempted_identifier ??
-                                            'Unavailable account'}
-                                        {e.user_account_id === null && (
-                                            <span className="block text-xs text-slate-500">
-                                                Unverified identifier
-                                            </span>
-                                        )}
+                                        <span className="font-medium">{actorName(e.actor_identifier ?? e.attempted_identifier)}</span>
+                                        <span className="block text-xs text-slate-500">
+                                            {e.user_account_id === null ? 'Unverified identifier' : `Account ID: ${e.user_account_id}`}
+                                        </span>
                                     </td>
                                     <td>{e.account_type ?? 'Not verified'}</td>
                                     <td>
@@ -812,14 +813,15 @@ export default function AuditHistory({
                             {presence.accounts.map((a) => (
                                 <tr key={a.account_id}>
                                     <td>
-                                        {a.username}
+                                        <span className="font-medium">{a.username}</span>
+                                        {a.is_current && <span className="ml-2 inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800">You</span>}
                                         <span className="block text-xs text-slate-500">
-                                            UserAccount #{a.account_id}
+                                            Account ID: {a.account_id}
                                         </span>
                                     </td>
                                     <td>{a.account_type}</td>
                                     <td>
-                                        {a.status}
+                                        <span className={a.status === 'Active' ? 'font-medium text-emerald-700 dark:text-emerald-300' : 'font-medium'}>{a.status}</span>
                                         <span className="block text-xs text-slate-500">
                                             {a.session_count} valid session
                                             {a.session_count === 1 ? '' : 's'}
