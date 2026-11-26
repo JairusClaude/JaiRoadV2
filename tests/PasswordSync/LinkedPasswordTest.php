@@ -21,21 +21,22 @@ function resetPayload(User $login, ?string $token = null): array
         'password' => 'New-password-42!', 'password_confirmation' => 'New-password-42!'];
 }
 
-it('resets both credentials through Fortify and consumes the token only on success', function (): void {
+it('denies public reset and synchronizes credentials through authorized recovery service', function (): void {
     Event::fake([PasswordReset::class]);
     $login = $this->linkedLogin();
     $payload = resetPayload($login);
-    $this->post(route('password.update'), $payload)->assertSessionHasNoErrors()->assertRedirect(route('login'));
+    $this->postJson('/reset-password', $payload)->assertNotFound();
+    expect(Password::broker()->tokenExists($login, $payload['token']))->toBeTrue();
+    app(LinkedPasswordUpdater::class)->reset($login, $payload['password']);
     $this->assertSynchronized($login, $payload['password']);
-    expect(Password::broker()->tokenExists($login, $payload['token']))->toBeFalse();
-    Event::assertDispatched(PasswordReset::class);
+    Event::assertNotDispatched(PasswordReset::class);
     $this->post(route('login.store'), ['email' => $login->email, 'password' => 'old-password'])->assertSessionHasErrors('email');
     $this->assertGuest();
 });
 
 it('keeps each role and its correct dashboard after reset', function (string $role): void {
     $login = $this->linkedLogin($role);
-    $this->post(route('password.update'), resetPayload($login))->assertSessionHasNoErrors();
+    app(LinkedPasswordUpdater::class)->reset($login, 'New-password-42!');
     $this->post(route('login.store'), ['email' => $login->email, 'password' => 'New-password-42!'])->assertRedirect('/dashboard');
     $this->get('/dashboard')->assertRedirect($role === 'SuperAdmin' ? route('jairoads.superadmin-home') : route('jairoads.workspace.show', ['section' => 'dashboard']));
     expect(app(AccountIdentityResolver::class)->resolve($login)['role'])->toBe($role);
@@ -47,12 +48,12 @@ it('keeps each role and its correct dashboard after reset', function (string $ro
 it('does not change either credential for an invalid reset token', function (): void {
     $login = $this->linkedLogin();
     $before = $login->password;
-    $this->post(route('password.update'), resetPayload($login, 'invalid-token'))->assertSessionHasErrors('email');
+    $this->postJson('/reset-password', resetPayload($login, 'invalid-token'))->assertNotFound();
     expect(hash_equals($before, $login->fresh()->password))->toBeTrue()
         ->and(hash_equals($before, DB::table('jairoads_next.user_accounts')->where('id', 77)->value('password')))->toBeTrue();
 });
 
-it('denies missing inactive mismatched-email ambiguous and retired DD links without partial changes', function (string $problem): void {
+it('denies missing inactive mismatched-email ambiguous and retired canonical links without partial changes', function (string $problem): void {
     Event::fake([PasswordReset::class]);
     $login = $this->linkedLogin($problem === 'retired' ? 'Engineer' : 'Admin');
     $before = $login->password;
@@ -64,7 +65,7 @@ it('denies missing inactive mismatched-email ambiguous and retired DD links with
         'retired' => DB::table('jairoads_next.engineers')->update(['engineer_status' => 'Retired']),
     };
     $payload = resetPayload($login);
-    $this->post(route('password.update'), $payload)->assertSessionHasErrors('email');
+    expect(fn () => app(LinkedPasswordUpdater::class)->reset($login, $payload['password']))->toThrow(ValidationException::class);
     expect(hash_equals($before, $login->fresh()->password))->toBeTrue();
     if ($problem !== 'missing') {
         expect(hash_equals($before, DB::table('jairoads_next.user_accounts')->where('id', 77)->value('password')))->toBeTrue();
@@ -83,27 +84,27 @@ it('rolls back the first update when PostgreSQL rejects the second update', func
         CREATE TRIGGER reject_password BEFORE UPDATE OF password ON jairoads_next.user_accounts
         FOR EACH ROW EXECUTE FUNCTION jairoads_next.reject_password();
         SQL);
-    $this->post(route('password.update'), resetPayload($login))->assertSessionHasErrors('email');
+    expect(fn () => app(LinkedPasswordUpdater::class)->reset($login, 'New-password-42!'))->toThrow(ValidationException::class);
     expect(hash_equals($before, $login->fresh()->password))->toBeTrue()
         ->and(hash_equals($before, DB::table('jairoads_next.user_accounts')->where('id', 77)->value('password')))->toBeTrue()
         ->and(hash_equals($remember, $login->fresh()->remember_token))->toBeTrue();
 });
 
-it('recovers a desynchronized account only through legitimate token-verified reset', function (): void {
+it('recovers a desynchronized account only through authorized recovery service', function (): void {
     $login = $this->linkedLogin(mismatch: true);
     expect(app(AccountIdentityResolver::class)->resolve($login))->toBeNull();
     expect(fn () => app(LinkedPasswordUpdater::class)->change($login, 'old-password', 'New-password-42!'))->toThrow(ValidationException::class);
-    $this->post(route('password.update'), resetPayload($login))->assertSessionHasNoErrors();
+    app(LinkedPasswordUpdater::class)->reset($login, 'New-password-42!');
     $this->assertSynchronized($login, 'New-password-42!');
     expect(app(AccountIdentityResolver::class)->resolve($login)['account_id'])->toBe(77);
 });
 
-it('rejects legacy reset without matching a DD identity by email or number', function (): void {
+it('rejects legacy reset without matching a canonical identity by email or number', function (): void {
     $linked = $this->linkedLogin();
     $canonicalBefore = DB::table('jairoads_next.user_accounts')->where('id', 77)->value('password');
     DB::table('public.users')->where('id', $linked->id)->delete();
     $legacy = User::forceCreate(['id' => 77, 'name' => 'Legacy', 'email' => 'linked@example.test', 'password' => 'old-password', 'user_account_id' => 77, 'canonical_user_account_id' => null]);
-    $this->post(route('password.update'), resetPayload($legacy))->assertSessionHasErrors('email');
+    expect(fn () => app(LinkedPasswordUpdater::class)->reset($legacy, 'New-password-42!'))->toThrow(ValidationException::class);
     expect(Hash::check('New-password-42!', $legacy->fresh()->password))->toBeFalse()
         ->and(hash_equals($canonicalBefore, DB::table('jairoads_next.user_accounts')->where('id', 77)->value('password')))->toBeTrue();
 });
@@ -155,26 +156,25 @@ it('synchronizes automatic login rehashing instead of disabling hash upgrades', 
     $this->get('/dashboard')->assertRedirect();
 });
 
-it('keeps MFA secrets and the recovery-code login challenge after a reset', function (): void {
+it('preserves historic MFA data while password-only sign-in remains enforced', function (): void {
     $login = $this->linkedLogin();
     $login->forceFill(['two_factor_secret' => encrypt('secret'), 'two_factor_recovery_codes' => encrypt(json_encode(['fixture-recovery-code'])), 'two_factor_confirmed_at' => now()])->save();
     $secret = $login->two_factor_secret;
-    $this->post(route('password.update'), resetPayload($login))->assertSessionHasNoErrors();
+    app(LinkedPasswordUpdater::class)->reset($login, 'New-password-42!');
     expect(hash_equals($secret, $login->fresh()->two_factor_secret))->toBeTrue();
-    $this->post(route('login.store'), ['email' => $login->email, 'password' => 'New-password-42!'])->assertRedirect(route('two-factor.login'));
-    $this->assertGuest();
-    $this->post(route('two-factor.login'), ['recovery_code' => 'fixture-recovery-code'])->assertSessionHasNoErrors()->assertRedirect('/dashboard');
+    $this->post(route('login.store'), ['email' => $login->email, 'password' => 'New-password-42!'])->assertRedirect('/dashboard');
     $this->assertAuthenticatedAs($login);
+    $this->postJson('/logout')->assertNoContent();
+    $this->postJson('/two-factor-challenge', ['recovery_code' => 'fixture-recovery-code'])->assertNotFound();
 });
 
 it('preserves passkey ownership and credential material across password recovery', function (): void {
     $login = $this->linkedLogin();
     DB::table('public.passkeys')->insert(['user_id' => $login->id, 'name' => 'Existing fixture', 'credential_id' => 'fixture-id', 'credential' => json_encode(['fixture' => true]), 'created_at' => now(), 'updated_at' => now()]);
     $before = DB::table('public.passkeys')->first();
-    $this->post(route('password.update'), resetPayload($login))->assertSessionHasNoErrors();
+    app(LinkedPasswordUpdater::class)->reset($login, 'New-password-42!');
     expect((array) DB::table('public.passkeys')->first())->toBe((array) $before);
-    expect($login->fresh()->passkeys()->count())->toBe(1);
-    $this->getJson(route('passkey.login-options'))->assertOk()->assertJsonStructure(['options']);
+    $this->getJson('/passkeys/login/options')->assertNotFound();
 });
 
 it('rejects a stale principal after an administrator changes the explicit account link', function (): void {

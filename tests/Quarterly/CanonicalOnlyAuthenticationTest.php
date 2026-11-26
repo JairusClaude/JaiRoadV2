@@ -8,15 +8,11 @@ use App\Models\User;
 use App\Services\AccountIdentityResolver;
 use App\Services\AccountProvisioning;
 use App\Services\TrustedSuperAdminBootstrap;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
-use Laravel\Passkeys\Passkey;
-use Laravel\Passkeys\Passkeys;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PragmaRX\Google2FA\Google2FA;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
@@ -32,12 +28,11 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
         $this->postJson('/login', ['email' => $login->email, 'password' => 'Disposable-Root!123'])->assertOk();
         $this->get('/workspace/users')->assertOk();
         $this->postJson('/workspace/engineers', ['first_name' => 'New', 'last_name' => 'Profile', 'contact_no' => '09000000000', 'rank' => 'Engineer I'])->assertRedirect();
-        $engineer = DB::table('jairoads_next.engineers')->value('id');
-        $this->postJson('/workspace/accounts', $this->provision('Viewer', (int) $engineer))->assertRedirect();
+        $this->postJson('/workspace/accounts', $this->provision('Viewer'))->assertRedirect();
         $account = DB::table('jairoads_next.user_accounts')->where('username', 'ordinary')->first();
         $this->assertDatabaseHas(AccountProvisioning::TABLE, ['user_account_id' => $account->id, 'provisioned_by' => $id, 'method' => 'administrator']);
         $this->assertSame('Viewer', $account->account_type);
-        $this->postJson('/workspace/accounts', array_replace($this->provision('SuperAdmin', (int) $engineer), ['username' => 'fake-root']))->assertUnprocessable();
+        $this->postJson('/workspace/accounts', array_replace($this->provision('SuperAdmin'), ['username' => 'fake-root']))->assertUnprocessable();
         try {
             app(TrustedSuperAdminBootstrap::class)->create('second-root', 'second@example.test', 'Second', 'Disposable-Root!123');
             $this->fail('Bootstrap may not create additional SuperAdmins.');
@@ -55,18 +50,18 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
     }
 
     #[DataProvider('roles')]
-    public function test_eligible_accounts_with_optional_verification_can_login_reset_and_use_settings(string $role): void
+    public function test_eligible_accounts_can_login_use_settings_and_cannot_publicly_reset(string $role): void
     {
         $login = $this->account($role);
         $login->forceFill(['email_verified_at' => null])->save();
-        $this->postJson('/login', ['email' => $login->email, 'password' => 'Disposable-Test!123'])->assertOk();
+        $this->postJson('/login', ['email' => $login->email, 'password' => 'Disposable-Test!123'])->assertOk()->assertJson(['two_factor' => false]);
         $this->postJson('/user/confirm-password', ['password' => 'Disposable-Test!123'])->assertCreated();
         $this->getJson('/settings/security')->assertOk();
         $this->postJson('/logout')->assertNoContent();
         $token = Password::broker()->createToken($login);
         $this->postJson('/reset-password', ['email' => $login->email, 'token' => $token,
-            'password' => 'Replacement-Test!123', 'password_confirmation' => 'Replacement-Test!123'])->assertOk();
-        $this->postJson('/login', ['email' => $login->email, 'password' => 'Replacement-Test!123'])->assertOk();
+            'password' => 'Replacement-Test!123', 'password_confirmation' => 'Replacement-Test!123'])->assertNotFound();
+        $this->postJson('/login', ['email' => $login->email, 'password' => 'Disposable-Test!123'])->assertOk();
         $this->assertAuthenticatedAs($login);
         $this->assertSame($login->fresh()->password, DB::table('jairoads_next.user_accounts')->where('id', $login->canonical_user_account_id)->value('password'));
         $this->assertNull($login->fresh()->email_verified_at);
@@ -81,7 +76,7 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
     }
 
     #[DataProvider('failures')]
-    public function test_invalid_identity_cannot_login_reset_or_use_a_passkey_callback(string $case): void
+    public function test_invalid_identity_cannot_login_or_use_retired_authentication_routes(string $case): void
     {
         if ($case === 'legacy') {
             $login = User::forceCreate(['name' => 'Legacy', 'email' => 'legacy@example.test', 'password' => Hash::make('Disposable-Test!123')]);
@@ -105,14 +100,11 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
         $before = DB::table('jairoads_next.user_accounts')->orderBy('id')->get()->toJson();
         $this->postJson('/login', ['email' => $login->email, 'password' => 'Disposable-Test!123', 'account_type' => 'SuperAdmin', 'canonical_user_account_id' => 1])->assertUnprocessable();
         $this->assertGuest();
-        $passkey = new Passkey(['credential' => []]);
-        $passkey->user_id = $login->id;
-        $passkey->setRelation('user', $login);
-        $this->assertFalse(Passkeys::allowsLogin(Request::create('/passkeys/login'), $passkey));
+        $this->postJson('/passkeys/login', ['credential' => []])->assertNotFound();
         if ($case !== 'hash') {
             $token = Password::broker()->createToken($login);
             $this->postJson('/reset-password', ['email' => $login->email, 'token' => $token,
-                'password' => 'Invalid-Reset!123', 'password_confirmation' => 'Invalid-Reset!123'])->assertUnprocessable();
+                'password' => 'Invalid-Reset!123', 'password_confirmation' => 'Invalid-Reset!123'])->assertNotFound();
         }
         $this->assertSame($before, DB::table('jairoads_next.user_accounts')->orderBy('id')->get()->toJson());
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
@@ -132,17 +124,16 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
     public function test_remember_tokens_and_pending_mfa_cannot_bypass_revocation(): void
     {
         $login = $this->account('Admin');
-        $login->forceFill(['remember_token' => 'synthetic-remember', 'two_factor_secret' => encrypt('fixture-secret'),
-            'two_factor_recovery_codes' => encrypt(json_encode(['fixture-recovery'])), 'two_factor_confirmed_at' => now()])->save();
+        $login->forceFill(['remember_token' => 'synthetic-remember'])->save();
         $provider = Auth::getProvider();
         $this->assertNotNull($provider->retrieveByToken($login->id, 'synthetic-remember'));
-        $this->postJson('/login', ['email' => $login->email, 'password' => 'Disposable-Test!123'])->assertOk()->assertJson(['two_factor' => true]);
-        $secret = $login->two_factor_recovery_codes;
+        $this->postJson('/login', ['email' => $login->email, 'password' => 'Disposable-Test!123'])->assertOk()->assertJson(['two_factor' => false]);
+        $this->postJson('/logout')->assertNoContent();
         DB::table('jairoads_next.user_accounts')->where('id', $login->canonical_user_account_id)->update(['is_active' => false]);
         $this->assertNull($provider->retrieveByToken($login->id, 'synthetic-remember'));
-        $this->postJson('/two-factor-challenge', ['recovery_code' => 'fixture-recovery'])->assertUnprocessable()->assertSessionMissing('login.id');
+        $this->postJson('/two-factor-challenge', ['recovery_code' => 'fixture-recovery'])->assertNotFound();
+        $this->postJson('/login', ['email' => $login->email, 'password' => 'Disposable-Test!123'])->assertUnprocessable();
         $this->assertGuest();
-        $this->assertSame($secret, $login->fresh()->two_factor_recovery_codes);
     }
 
     public function test_provisioning_evidence_failure_rolls_back_both_account_rows_and_audit(): void
@@ -154,7 +145,7 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
                 throw new \RuntimeException('Isolated provenance failure');
             }
         });
-        $this->postJson('/workspace/accounts', $this->provision('Viewer', $this->engineer()))->assertServerError();
+        $this->postJson('/workspace/accounts', $this->provision('Viewer'))->assertServerError();
         $this->assertSame($before, DB::table('public.users')->count());
         $this->assertSame($before, DB::table('jairoads_next.user_accounts')->count());
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
@@ -167,7 +158,7 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
         DB::statement('ALTER TABLE jairoads_security.account_provisioning RENAME TO offline_evidence');
         $this->assertNull(app(AccountIdentityResolver::class)->resolve($login));
         $this->assertNotNull(app(AccountIdentityResolver::class)->resolve($root));
-        $this->actingAs($root)->postJson('/workspace/accounts', $this->provision('Viewer', $this->engineer()))->assertStatus(503);
+        $this->actingAs($root)->postJson('/workspace/accounts', $this->provision('Viewer'))->assertStatus(503);
     }
 
     public function test_last_eligible_superadmin_is_protected_when_another_active_root_has_no_bridge(): void
@@ -237,18 +228,17 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
         $this->assertAuthenticatedAs($login);
     }
 
-    public function test_valid_mfa_totp_completes_without_changing_canonical_role_or_link(): void
+    public function test_retired_mfa_does_not_change_canonical_role_or_link(): void
     {
         $login = $this->account('Viewer');
-        $secret = 'JBSWY3DPEHPK3PXP';
-        $login->forceFill(['two_factor_secret' => encrypt($secret), 'two_factor_recovery_codes' => encrypt(json_encode(['fixture-recovery'])),
-            'two_factor_confirmed_at' => now()])->save();
-        $this->postJson('/login', ['email' => $login->email, 'password' => 'Disposable-Test!123'])->assertOk()->assertJson(['two_factor' => true]);
-        $this->assertGuest();
-        $this->postJson('/two-factor-challenge', ['code' => (new Google2FA)->getCurrentOtp($secret)])->assertNoContent();
+        $login->forceFill(['two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'), 'two_factor_confirmed_at' => now()])->save();
+        $this->postJson('/login', ['email' => $login->email, 'password' => 'Disposable-Test!123'])->assertOk()->assertJson(['two_factor' => false]);
         $this->assertAuthenticatedAs($login);
         $this->assertSame('Viewer', $this->identity($login)['role']);
         $this->postJson('/workspace/ops/projects', [])->assertForbidden();
+        $this->postJson('/logout')->assertNoContent();
+        $this->postJson('/two-factor-challenge', ['code' => '123456'])->assertNotFound();
+        $this->assertGuest();
     }
 
     private function identity(User $user): array
@@ -256,10 +246,10 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
         return app(AccountIdentityResolver::class)->resolve($user);
     }
 
-    private function provision(string $role, int $engineer): array
+    private function provision(string $role): array
     {
         return ['username' => 'ordinary', 'name' => 'Ordinary account', 'email' => 'ordinary@example.test',
-            'account_type' => $role, 'engineer_id' => $engineer, 'password' => 'Disposable-User!123',
+            'account_type' => $role, 'password' => 'Disposable-User!123',
             'password_confirmation' => 'Disposable-User!123', 'provisioned_by' => 999999, 'created_by' => 999999];
     }
 }

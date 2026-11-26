@@ -6,10 +6,8 @@ namespace Tests\Quarterly;
 
 use App\Models\User;
 use App\Services\AccountIdentityResolver;
-use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 final class IntegrationCompatibilityTest extends PostgresTestCase
@@ -27,21 +25,17 @@ final class IntegrationCompatibilityTest extends PostgresTestCase
         $this->assertStringNotContainsString($password, DB::table('jairoads_next.audit_logs')->get()->toJson());
     }
 
-    public function test_fortify_password_reset_keeps_both_hashes_synchronized_and_new_login_works(): void
+    public function test_superadmin_password_reset_keeps_both_hashes_synchronized_and_new_login_works(): void
     {
-        Notification::fake();
         $user = $this->account('Engineer', $this->engineer());
+        $root = User::where('canonical_user_account_id', DB::table('jairoads_next.user_accounts')->where('account_type', 'SuperAdmin')->value('id'))->firstOrFail();
         $password = 'Reset-Disposable!456';
-        $this->post(route('password.email'), ['email' => $user->email])->assertSessionHasNoErrors();
-        Notification::assertSentTo($user, ResetPassword::class, function (ResetPassword $notification) use ($user, $password): bool {
-            $this->post(route('password.update'), [
-                'email' => $user->email, 'token' => $notification->token,
-                'password' => $password, 'password_confirmation' => $password,
-            ])->assertSessionHasNoErrors()->assertRedirect(route('login'));
-
-            return true;
-        });
+        $this->postJson('/forgot-password', ['email' => $user->email])->assertNotFound();
+        $this->actingAs($root)->postJson('/workspace/accounts/'.$user->canonical_user_account_id.'/password-reset', [
+            'current_password' => 'Disposable-Test!123', 'password' => $password, 'password_confirmation' => $password,
+        ])->assertOk();
         $this->assertSynchronizedIdentity($user->fresh(), $password);
+        $this->postJson('/logout')->assertNoContent();
         $this->post(route('login'), ['email' => $user->email, 'password' => $password])->assertSessionHasNoErrors();
         $this->assertAuthenticatedAs($user);
         $this->get('/workspace/projects')->assertOk();

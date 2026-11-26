@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Quarterly;
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Laravel\Passkeys\Passkey;
-use Laravel\Passkeys\Passkeys;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 final class PasskeyEligibilityTest extends PostgresTestCase
@@ -21,19 +18,17 @@ final class PasskeyEligibilityTest extends PostgresTestCase
     }
 
     #[DataProvider('roles')]
-    public function test_canonical_passkey_gate_and_management_follow_current_lifecycle(string $role): void
+    public function test_retired_passkey_endpoints_cannot_bypass_current_lifecycle(string $role): void
     {
         $f = $this->fixture($role);
-        $passkey = new Passkey(['credential' => []]);
-        $passkey->user_id = $f['user']->id;
-        $passkey->setRelation('user', $f['user']);
-        $this->assertTrue(Passkeys::allowsLogin(Request::create('/passkeys/login'), $passkey));
+        $this->getJson('/passkeys/login/options')->assertNotFound();
+        $this->postJson('/user/passkeys/options', [])->assertNotFound();
+        $this->postJson('/passkeys/login', ['credential' => []])->assertNotFound();
         DB::table('jairoads_next.user_accounts')->where('id', $f['user']->canonical_user_account_id)->update(['is_active' => false]);
-        $this->assertFalse(Passkeys::allowsLogin(Request::create('/passkeys/login'), $passkey));
-        foreach (['/user/passkeys/options', '/passkeys/confirm/options', '/settings/security'] as $i => $path) {
-            $this->getJson($path)->assertStatus($i === 0 ? 403 : 401);
-        }
-        $this->postJson('/logout')->assertUnauthorized();
+        $this->getJson('/settings/security')->assertForbidden();
+        $this->assertGuest();
+        $this->postJson('/passkeys/login', ['credential' => []])->assertNotFound();
+        $this->postJson('/login', ['email' => $f['user']->email, 'password' => 'Disposable-Test!123'])->assertUnprocessable();
         $this->assertGuest();
     }
 }

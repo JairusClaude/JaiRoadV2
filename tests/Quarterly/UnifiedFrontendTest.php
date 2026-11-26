@@ -80,12 +80,9 @@ final class UnifiedFrontendTest extends PostgresTestCase
         $this->flushSession();
         $this->actingAs($this->account('Viewer'))->get('/workspace/dashboard')->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('RoleDashboard/Canonical')->where('role', 'viewer')->missing('mapCoverages'));
-        $this->getJson($url)->assertOk()->assertJsonCount(3, 'data')
-            ->assertJsonPath('data.1.created_by_me', false)->assertJsonPath('data.1.assigned_to_me', false)
-            ->assertJsonPath('data.2.my_record_count', 0);
-        $this->getJson($url.'?before='.$unassigned)->assertOk()
-            ->assertJsonPath('data.0.id', $road)->assertJsonPath('data.0.my_project', false);
-        $this->getJson($url.'?before=0')->assertUnprocessable();
+        $this->getJson($url)->assertForbidden();
+        $this->getJson($url.'?before='.$unassigned)->assertForbidden();
+        $this->actingAs($otherLogin)->getJson($url.'?before=0')->assertUnprocessable();
     }
 
     public function test_engineer_road_inspector_returns_only_related_summary_and_no_private_paths(): void

@@ -6,13 +6,11 @@ namespace Tests\Quarterly;
 
 use App\Models\User;
 use App\Services\AccountIdentityResolver;
+use App\Services\LinkedPasswordUpdater;
 use App\Services\TrustedSuperAdminBootstrap;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
-use Laravel\Passkeys\Passkey;
-use Laravel\Passkeys\Passkeys;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
@@ -48,7 +46,9 @@ final class SuperAdminRecoveryReadinessTest extends PostgresTestCase
             'token' => $token,
             'password' => 'Recovered-Synthetic!123',
             'password_confirmation' => 'Recovered-Synthetic!123',
-        ])->assertOk();
+        ])->assertNotFound();
+        $this->assertGuest();
+        app(LinkedPasswordUpdater::class)->reset($root, 'Recovered-Synthetic!123');
 
         $this->assertSame(
             $root->fresh()->password,
@@ -96,7 +96,7 @@ final class SuperAdminRecoveryReadinessTest extends PostgresTestCase
             'token' => $token,
             'password' => 'Unauthorized-Recovery!123',
             'password_confirmation' => 'Unauthorized-Recovery!123',
-        ])->assertUnprocessable();
+        ])->assertNotFound();
         $this->postJson('/login', [
             'email' => $root->email, 'password' => 'Disposable-Test!123',
         ])->assertUnprocessable();
@@ -146,48 +146,27 @@ final class SuperAdminRecoveryReadinessTest extends PostgresTestCase
     public function test_pending_superadmin_mfa_challenge_cannot_consume_recovery_code_after_revocation(): void
     {
         $root = $this->account('SuperAdmin');
-        $root->forceFill([
-            'two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'),
-            'two_factor_recovery_codes' => encrypt(json_encode(['recovery-only-in-disposable-test'], JSON_THROW_ON_ERROR)),
-            'two_factor_confirmed_at' => now(),
-        ])->save();
+        $root->forceFill(['two_factor_recovery_codes' => encrypt(json_encode(['recovery-only-in-disposable-test'], JSON_THROW_ON_ERROR))])->save();
         $originalCodes = $root->fresh()->two_factor_recovery_codes;
-
-        $this->postJson('/login', ['email' => $root->email, 'password' => 'Disposable-Test!123'])
-            ->assertOk()->assertJson(['two_factor' => true]);
-        $this->assertGuest();
-        DB::table('jairoads_next.user_accounts')->where('id', $root->canonical_user_account_id)
-            ->update(['is_active' => false]);
-        $this->postJson('/two-factor-challenge', ['recovery_code' => 'recovery-only-in-disposable-test'])
-            ->assertUnprocessable()->assertSessionMissing('login.id');
+        DB::table('jairoads_next.user_accounts')->where('id', $root->canonical_user_account_id)->update(['is_active' => false]);
+        $this->postJson('/two-factor-challenge', ['recovery_code' => 'recovery-only-in-disposable-test'])->assertNotFound();
+        $this->postJson('/passkeys/login', ['credential' => []])->assertNotFound();
+        $this->postJson('/login', ['email' => $root->email, 'password' => 'Disposable-Test!123'])->assertUnprocessable();
         $this->assertGuest();
         $this->assertSame($originalCodes, $root->fresh()->two_factor_recovery_codes);
-
-        $passkey = new Passkey(['credential' => []]);
-        $passkey->user_id = $root->id;
-        $passkey->setRelation('user', $root);
-        $this->assertFalse(Passkeys::allowsLogin(Request::create('/passkeys/login'), $passkey));
         $this->getJson('/settings/security')->assertUnauthorized();
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
     }
 
-    public function test_valid_superadmin_mfa_recovery_completes_without_new_permissions_or_business_audit(): void
+    public function test_superadmin_password_login_preserves_permissions_and_retired_mfa_is_unavailable(): void
     {
         $root = $this->account('SuperAdmin');
-        $root->forceFill([
-            'two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'),
-            'two_factor_recovery_codes' => encrypt(json_encode(['valid-disposable-recovery'], JSON_THROW_ON_ERROR)),
-            'two_factor_confirmed_at' => now(),
-        ])->save();
-
-        $this->postJson('/login', ['email' => $root->email, 'password' => 'Disposable-Test!123'])
-            ->assertOk()->assertJson(['two_factor' => true]);
-        $this->assertGuest();
-        $this->postJson('/two-factor-challenge', ['recovery_code' => 'valid-disposable-recovery'])
-            ->assertNoContent();
+        $this->postJson('/login', ['email' => $root->email, 'password' => 'Disposable-Test!123'])->assertOk()->assertJson(['two_factor' => false]);
         $this->assertAuthenticatedAs($root);
         $this->getJson('/workspace/users')->assertOk();
         $this->assertSame('SuperAdmin', app(AccountIdentityResolver::class)->resolve($root)['role']);
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
+        $this->postJson('/logout')->assertNoContent();
+        $this->postJson('/two-factor-challenge', ['recovery_code' => 'valid-disposable-recovery'])->assertNotFound();
     }
 }

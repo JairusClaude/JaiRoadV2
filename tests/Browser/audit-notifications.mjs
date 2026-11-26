@@ -110,7 +110,7 @@ export async function verifyAuditNotifications({
     // At a normal desktop viewport, the details button must fit its table cell.
     await admin.setViewportSize({ width: 1440, height: 900 });
     const activityTable = admin.getByRole('region', { name: 'System Activity History', exact: true });
-    const detailButton = activityTable.getByRole('button', { name: 'Safe before / after values', exact: true }).first();
+    const detailButton = activityTable.getByRole('button', { name: /View details|Safe before \/ after values/ }).first();
     await detailButton.waitFor();
     const rowHeight = await detailButton.evaluate(el => el.closest('tr').getBoundingClientRect().height);
     await detailButton.click();

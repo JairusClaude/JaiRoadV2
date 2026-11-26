@@ -38,12 +38,17 @@ final class AccountTypeRankTest extends PostgresTestCase
         $this->actingAs($this->account('SuperAdmin'));
         $engineer = $this->engineer();
         $data = ['username' => 'typed-account', 'email' => 'typed@example.test', 'name' => 'Typed account',
-            'account_type' => $type, 'engineer_id' => $engineer, 'password' => 'Typed-Disposable!123', 'password_confirmation' => 'Typed-Disposable!123'];
+            'account_type' => $type, 'password' => 'Typed-Disposable!123', 'password_confirmation' => 'Typed-Disposable!123'];
+        if ($type !== 'Viewer') {
+            $data['profile'] = ['first_name' => 'New', 'last_name' => 'Profile', 'contact_no' => '09123456789', 'rank' => 'Engineer II'];
+        }
         $this->postJson('/workspace/accounts', $data)->assertRedirect('/workspace/users');
         $account = DB::table('jairoads_next.user_accounts')->where('username', 'typed-account')->first();
         $login = DB::table('public.users')->where('email', 'typed@example.test')->first();
         $this->assertSame($type, $account->account_type);
-        $this->assertSame($engineer, $account->engineer_id);
+        $this->assertNotEquals($engineer, $account->engineer_id);
+        $engineer = $account->engineer_id;
+        $this->assertSame($type === 'Viewer', $engineer === null);
         $this->assertSame($account->id, $login->canonical_user_account_id);
         $this->assertTrue(hash_equals($account->password, $login->password));
         $this->assertTrue(Hash::check('Typed-Disposable!123', $account->password));

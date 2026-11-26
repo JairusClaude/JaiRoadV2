@@ -23,19 +23,28 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
     }
 
     #[DataProvider('linkedTypes')]
-    public function test_new_admin_and_engineer_accounts_require_explicit_active_unused_links(string $actor, string $type): void
+    public function test_new_admin_and_engineer_accounts_create_new_profiles_and_viewers_have_none(string $actor, string $type): void
     {
         $this->actingAs($this->account($actor));
         $data = $this->input($type);
-        $this->postJson('/workspace/accounts', $data)->assertUnprocessable()->assertJsonValidationErrors('engineer_id');
-        $this->assertSame($actor === 'Admin' ? 2 : 1, DB::table('public.users')->count());
-        $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
-        $engineer = $this->engineer();
-        $this->postJson('/workspace/accounts', $data + ['engineer_id' => $engineer])->assertRedirect();
+        $existing = $this->engineer();
+        $this->postJson('/workspace/accounts', $data + ['engineer_id' => $existing])->assertUnprocessable()->assertJsonValidationErrors('engineer_id');
+        $before = DB::table('jairoads_next.engineers')->count();
+        if ($type !== 'Viewer') {
+            $this->postJson('/workspace/accounts', $data)->assertUnprocessable()->assertJsonValidationErrors('profile');
+            $data['profile'] = ['first_name' => 'New', 'last_name' => 'Profile', 'contact_no' => '09123456789', 'rank' => 'Engineer II'];
+        }
+        $this->postJson('/workspace/accounts', $data)->assertRedirect();
         $account = DB::table('jairoads_next.user_accounts')->where('username', 'linked-new')->first();
         $login = DB::table('public.users')->where('canonical_user_account_id', $account->id)->first();
         $this->assertSame($type, $account->account_type);
-        $this->assertSame($engineer, (int) $account->engineer_id);
+        $this->assertSame($before + ($type === 'Viewer' ? 0 : 1), DB::table('jairoads_next.engineers')->count());
+        if ($type === 'Viewer') {
+            $this->assertNull($account->engineer_id);
+        } else {
+            $this->assertNotNull($account->engineer_id);
+            $this->assertNotEquals($existing, $account->engineer_id);
+        }
         $this->assertTrue(hash_equals($account->password, $login->password));
         $this->assertTrue(Hash::check('Linked-Disposable!123', $login->password));
         $this->assertDatabaseHas('jairoads_next.audit_logs', ['entity_type' => 'UserAccount', 'entity_id' => $account->id, 'action' => 'CREATE']);
@@ -66,14 +75,13 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
     }
 
-    public function test_viewer_requires_a_profile_and_ordinary_creation_cannot_escalate_to_superadmin(): void
+    public function test_viewer_has_no_profile_and_ordinary_creation_cannot_escalate_to_superadmin(): void
     {
         $this->actingAs($this->account('SuperAdmin'));
-        $this->postJson('/workspace/accounts', $this->input('Viewer'))->assertUnprocessable()->assertJsonValidationErrors('engineer_id');
+        $this->postJson('/workspace/accounts', $this->input('Viewer') + ['profile' => ['first_name' => 'New', 'last_name' => 'Profile', 'contact_no' => '09123456789', 'rank' => 'Engineer II']])->assertUnprocessable()->assertJsonValidationErrors('profile');
         $this->postJson('/workspace/accounts', $this->input('SuperAdmin'))->assertUnprocessable()->assertJsonValidationErrors('account_type');
-        $engineer = $this->engineer();
-        $this->postJson('/workspace/accounts', $this->input('Viewer') + ['engineer_id' => $engineer])->assertRedirect();
-        $this->assertDatabaseHas('jairoads_next.user_accounts', ['username' => 'linked-new', 'account_type' => 'Viewer', 'engineer_id' => $engineer]);
+        $this->postJson('/workspace/accounts', $this->input('Viewer'))->assertRedirect();
+        $this->assertDatabaseHas('jairoads_next.user_accounts', ['username' => 'linked-new', 'account_type' => 'Viewer', 'engineer_id' => null]);
     }
 
     public function test_available_profiles_are_filtered_against_all_accounts_not_the_limited_directory(): void
@@ -215,7 +223,7 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
                 throw new \RuntimeException('Deliberate disposable account audit failure.');
             }
         });
-        $this->postJson('/workspace/accounts', $this->input('Admin') + ['engineer_id' => $engineer])->assertServerError();
+        $this->postJson('/workspace/accounts', $this->input('Admin') + ['profile' => ['first_name' => 'New', 'last_name' => 'Profile', 'contact_no' => '09123456789', 'rank' => 'Engineer II']])->assertServerError();
         $this->assertSame(2, DB::table('public.users')->count());
         $this->assertSame(2, DB::table('jairoads_next.user_accounts')->count());
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
@@ -226,13 +234,14 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
     {
         $this->actingAs($this->account());
         $engineer = $this->engineer();
-        $this->postJson('/workspace/accounts', $this->input('Admin') + ['engineer_id' => $engineer])->assertRedirect();
+        $this->postJson('/workspace/accounts', $this->input('Admin') + ['profile' => ['first_name' => 'New', 'last_name' => 'Profile', 'contact_no' => '09123456789', 'rank' => 'Engineer II']])->assertRedirect();
         $this->post(route('logout'))->assertRedirect();
         $this->post(route('login'), ['email' => 'linked-new@example.test', 'password' => 'Linked-Disposable!123'])->assertSessionHasNoErrors();
         $login = User::where('email', 'linked-new@example.test')->firstOrFail();
         $identity = app(AccountIdentityResolver::class)->resolve($login);
         $this->assertSame('Admin', $identity['role']);
-        $this->assertSame($engineer, $identity['engineer_id']);
+        $this->assertNotEquals($engineer, $identity['engineer_id']);
+        $engineer = $identity['engineer_id'];
         $road = $this->road($engineer);
         $this->postJson('/workspace/ops/projects', ['project_title' => 'New linked Admin own work', 'road_coverage_id' => $road])->assertRedirect();
         $project = (int) DB::table('jairoads_next.maintenance_projects')->value('id');

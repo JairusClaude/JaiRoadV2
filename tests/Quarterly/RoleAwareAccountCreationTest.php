@@ -66,6 +66,7 @@ final class RoleAwareAccountCreationTest extends PostgresTestCase
 
     public function test_missing_required_profile_and_unwanted_profile_links_are_rejected(): void
     {
+        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
         $actor = $this->account('SuperAdmin');
         $this->actingAs($actor);
         $existing = $this->engineer();
