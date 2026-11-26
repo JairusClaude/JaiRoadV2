@@ -402,6 +402,32 @@ throw new Error('Wave transform is static');
     await engineer.goto(base + '/workspace/dashboard');
     await dashboardMap.locator('.jr-dashboard-road-mine').first().waitFor();
     assert.deepEqual(errors, [], 'Map navigation must not leave uncaught browser exceptions');
+    // A stalled map request must not block the Engineer workspace or its retry.
+    const mapTimeoutPage = await engineer.context().newPage();
+    const mapEndpoint = base + '/workspace/dashboard/map-roads';
+    let heldMapRoute;
+    const holdMap = (route) => {
+        heldMapRoute = route;
+    };
+    try {
+        await mapTimeoutPage.clock.install();
+        await mapTimeoutPage.route(mapEndpoint, holdMap);
+        const mapRequest = mapTimeoutPage.waitForRequest(mapEndpoint);
+        await mapTimeoutPage.goto(base + '/workspace/dashboard');
+        await mapRequest;
+        const slowMap = mapTimeoutPage.getByRole('region', { name: 'My projects road map' });
+        await slowMap.waitFor();
+        await mapTimeoutPage.getByRole('button', { name: 'Refresh dashboard' }).waitFor();
+        await mapTimeoutPage.clock.fastForward(12_100);
+        await slowMap.getByText('Road map request timed out. You can retry.').waitFor();
+        await mapTimeoutPage.unroute(mapEndpoint, holdMap);
+        await heldMapRoute?.abort().catch(() => {});
+        await slowMap.getByRole('button', { name: 'Retry', exact: true }).click();
+        await slowMap.locator('.jr-dashboard-road-mine').first().waitFor();
+        console.log('PASS: dashboard remains available during a stalled map request; deadline and retry recover the map.');
+    } finally {
+        await mapTimeoutPage.close();
+    }
     const viewerMapRequests = [];
     const recordViewerMapRequest = request => {
         if (new URL(request.url()).pathname === '/workspace/dashboard/map-roads') {
