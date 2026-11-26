@@ -24,6 +24,7 @@ export default function Show({
     createdByName,
     associatedProject,
     municipalities = [],
+    canChangeMunicipality = false,
     canEdit,
     canDelete: canDeleteAllowed,
     backUrl,
@@ -98,7 +99,7 @@ export default function Show({
                                 <Pencil /> Edit Road Coverage
                             </Button>
                         )}
-                        {canEdit && municipalities.length > 0 && (
+                        {canChangeMunicipality && municipalities.length > 0 && (
                             <Button
                                 variant="outline"
                                 onClick={() => setChangeMunicipality(true)}
@@ -223,7 +224,7 @@ export default function Show({
                     )}
                 </section>
             </ProjectWorkspace>
-            {changeMunicipality && canEdit && (
+            {changeMunicipality && canChangeMunicipality && (
                 <RoadMunicipalityChange
                     roadId={coverage.id}
                     lgus={municipalities.map((lgu) => ({

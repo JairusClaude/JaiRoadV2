@@ -84,7 +84,9 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
 
         return $this->render('MonthlyUpdates/Create', $request, $parents + [
             'update' => $u === null ? null : $this->updateData($u, $actor), 'media' => $id === null ? [] : $this->mediaData($id, $actor),
-            'existingUpdates' => $this->updateQuery($actor)->when($parents['contextRecordId'] !== null, fn (Builder $q) => $q->where('u.maintenance_id', $parents['contextRecordId']))->get(['u.id', 'u.maintenance_id', 'u.update_month']),
+            'existingUpdates' => $this->updateQuery($actor)
+                ->whereIn('u.maintenance_id', $parents['records']->pluck('id'))
+                ->select(['u.id', 'u.maintenance_id', 'u.update_month'])->get(),
             'submitUrl' => self::BASE.'/monthly-updates'.($id === null ? '' : '/'.$id),
             'cancelUrl' => self::BASE.'/monthly-updates'.($id === null ? '' : '/'.$id),
         ]);

@@ -1,10 +1,9 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Pencil } from 'lucide-react';
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialog';
 import { ProjectForm } from '@/components/maintenance-projects/project-form';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
-import { RoadCoverageMap } from '@/components/maintenance-projects/road-coverage-map';
 import { WorkspaceProjectDirectory } from '@/components/maintenance-projects/workspace-project-directory';
 import { Button } from '@/components/ui/button';
 import type {
@@ -15,6 +14,12 @@ import type {
     ProjectSummary,
     Pagination,
 } from '@/types/maintenance-projects';
+
+const RoadCoverageMap = lazy(() =>
+    import('@/components/maintenance-projects/road-coverage-map').then(
+        (module) => ({ default: module.RoadCoverageMap }),
+    ),
+);
 
 type Coverage = {
     id: number;
@@ -271,12 +276,20 @@ export default function WorkspaceProjects({
                             </div>
                             <div>
                                 {chosen && (
-                                    <RoadCoverageMap
-                                        coverages={[chosen]}
-                                        selectedId={chosen.id}
-                                        onSelectCoverage={() => {}}
-                                        selectionDisabled
-                                    />
+                                    <Suspense
+                                        fallback={
+                                            <p role="status">
+                                                Loading road coverage map…
+                                            </p>
+                                        }
+                                    >
+                                        <RoadCoverageMap
+                                            coverages={[chosen]}
+                                            selectedId={chosen.id}
+                                            onSelectCoverage={() => {}}
+                                            selectionDisabled
+                                        />
+                                    </Suspense>
                                 )}
                             </div>
                         </div>

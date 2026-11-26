@@ -71,6 +71,7 @@ export type RoadCoverageFormProps = {
 };
 
 export type RoadCoverageDetailsProps = {
+    canChangeMunicipality?: boolean;
     municipalities?: { id: number; municipality_name: string }[];
     coverage: RoadCoverage & {
         lgu: { id: number; municipality_name: string } | null;

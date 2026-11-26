@@ -45,6 +45,9 @@ it('preserves fixed context authorization and only relevant report uniqueness da
     DB::table('jairoads_next.maintenance_records')->where('id', $second)->update(['managing_engineer_id' => $this->engineer()]);
     $this->get('/workspace/ui/monthly-updates/create?maintenance_id='.$second)->assertForbidden();
     $this->get('/workspace/ui/maintenance-documents/create?maintenance_id='.$second)->assertForbidden();
+    $this->get('/workspace/ui/monthly-updates/create')->assertInertia(fn (Assert $page) => $page
+        ->has('records', 1)->has('existingUpdates', 1)->where('existingUpdates.0.maintenance_id', (int) $first)
+        ->missing('existingUpdates.0.summary_of_text_reports')->missing('existingUpdates.0.created_by')->missing('existingUpdates.0.media_count'));
 });
 
 it('batches manager choices with exactly the same eligibility as individual LGU lookups', function (string $role): void {

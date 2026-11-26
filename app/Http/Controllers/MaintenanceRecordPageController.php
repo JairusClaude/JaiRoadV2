@@ -48,7 +48,7 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
         return $this->render('MaintenanceProjects/Records/'.($id === null ? 'Create' : 'Edit'), $request, [
             'duplicatePeriod' => $this->duplicatePeriod($request, $actor),
             'project' => $this->projectChoiceData($p), 'engineers' => $engineers,
-            'records' => $this->records($actor)->where('m.project_id', $project)->get(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter'])->map(fn (\stdClass $r): array => $this->periodChoiceData($r)),
+            'records' => $this->records($actor)->where('m.project_id', $project)->select(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter'])->get()->map(fn (\stdClass $r): array => $this->periodChoiceData($r)),
             'record' => $record === null ? null : $this->recordData($record, $actor), 'canWrite' => true,
             'submitUrl' => self::BASE.'/maintenance-projects/'.$project.'/records'.($id === null ? '' : '/'.$id),
             'cancelUrl' => self::BASE.'/maintenance-projects/'.$project.($id === null ? '' : '/records/'.$id),
@@ -173,7 +173,7 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
         return $this->render('MaintenanceProjects/Records/Create', $request, [
             'duplicatePeriod' => $this->duplicatePeriod($request, $actor),
             'projects' => $projects->map(fn (\stdClass $p): array => $this->projectChoiceData($p)), 'engineers' => $choices,
-            'records' => $this->records($actor)->get(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter'])->map(fn (\stdClass $r): array => $this->periodChoiceData($r)),
+            'records' => $this->records($actor)->select(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter'])->get()->map(fn (\stdClass $r): array => $this->periodChoiceData($r)),
             'canWrite' => true, 'cancelUrl' => self::BASE.'/maintenance-records',
         ]);
     }

@@ -285,7 +285,9 @@ class OperationsFrontendController extends Controller
     {
         $context = $fixedRecord ?? ($request->integer('maintenance_id', $request->integer('record')) ?: null);
         $records = $this->records($actor)->when($context !== null, fn (Builder $q) => $q->where('m.id', $context))
-            ->orderByDesc('m.maintenance_year')->get(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter', 'm.managing_engineer_id'])
+            ->when($actor['role'] === 'Engineer', fn (Builder $q) => $q->where('m.managing_engineer_id', $actor['engineer_id']))
+            ->select(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter', 'm.managing_engineer_id'])
+            ->orderByDesc('m.maintenance_year')->get()
             ->filter(fn (\stdClass $r): bool => $this->canWriteRecord($r, $actor));
         abort_if($context !== null && ! $records->contains('id', $context), 403);
 

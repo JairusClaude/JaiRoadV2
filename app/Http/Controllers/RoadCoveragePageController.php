@@ -137,6 +137,7 @@ final class RoadCoveragePageController extends OperationsFrontendController
             'coverage' => $this->roadData($road), 'createdByName' => trim($road->first_name.' '.$road->last_name),
             'associatedProject' => $road->project_id === null ? null : ['id' => (int) $road->project_id, 'project_title' => $road->project_title],
             'canEdit' => $this->writable($actor),
+            'canChangeMunicipality' => $this->writable($actor),
             'canDelete' => RoleAccess::canDeleteOperations($actor['role']),
             'backUrl' => self::BASE.'/road-coverages',
             'municipalities' => $this->municipalities($actor),
