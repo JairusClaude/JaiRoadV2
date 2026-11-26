@@ -67,15 +67,13 @@ function DashboardRoadMap({ isEngineer, total }: { isEngineer: boolean; total: n
     const [coverages, setCoverages] = useState<SimplifiedCoverageItem[]>([]);
     const [cursor, setCursor] = useState<number | null>(null);
     const [ready, setReady] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [attempt, setAttempt] = useState(0);
     const [requestCursor, setRequestCursor] = useState<number | null>(null);
 
     useEffect(() => {
         const controller = new AbortController();
-        setLoading(true);
-        setError('');
         const url = '/dd-phase3/dashboard/map-roads' + (requestCursor === null ? '' : '?before=' + encodeURIComponent(requestCursor));
         fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' }, cache: 'no-store', signal: controller.signal })
             .then(async response => {
@@ -106,12 +104,12 @@ function DashboardRoadMap({ isEngineer, total }: { isEngineer: boolean; total: n
             {cursor !== null && !error && (
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
                     <span>Showing {coverages.length} of {total ?? 'available'} road coverages on the map.</span>
-                    <button type="button" disabled={loading} onClick={() => setRequestCursor(cursor)} className="rounded-lg border border-slate-300 px-4 py-2 font-semibold text-[var(--jr-display-accent)] hover:bg-[var(--jr-display-soft)] disabled:opacity-50">
+                    <button type="button" disabled={loading} onClick={() => { setLoading(true); setError(''); setRequestCursor(cursor); }} className="rounded-lg border border-slate-300 px-4 py-2 font-semibold text-[var(--jr-display-accent)] hover:bg-[var(--jr-display-soft)] disabled:opacity-50">
                         {loading ? 'Loading roads…' : 'Load more map roads'}
                     </button>
                 </div>
             )}
-            {error && <div role="alert" className="mt-2 text-sm text-red-700">{error} <button type="button" className="underline" disabled={loading} onClick={() => setAttempt(n => n + 1)}>Retry</button></div>}
+            {error && <div role="alert" className="mt-2 text-sm text-red-700">{error} <button type="button" className="underline" disabled={loading} onClick={() => { setLoading(true); setError(''); setAttempt(n => n + 1); }}>Retry</button></div>}
         </section>
     );
 }

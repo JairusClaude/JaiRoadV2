@@ -1,5 +1,7 @@
 // Run: node tests/Browser/manila-time.mjs (requires the project's TypeScript dev dependency).
 import assert from 'node:assert/strict';
+import { Buffer } from 'node:buffer';
+import process from 'node:process';
 import { readFile } from 'node:fs/promises';
 import ts from 'typescript';
 const source = await readFile(new URL('../../resources/js/lib/manila-time.ts', import.meta.url), 'utf8');

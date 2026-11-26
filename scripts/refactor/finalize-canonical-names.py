@@ -47,7 +47,8 @@ for name in files:
         content = content.replace("dd_user_account_id", "canonical_user_account_id")
         # Rename DD-prefixed source identifiers and CSS selectors consistently,
         # not substrings in ordinary words, dependency versions, hashes or SQL date formats.
-        content = re.sub(r"(?<![A-Za-z0-9])dd-(?=[a-z])", "workspace-", content)
+        if name not in legacy_audit_readers:
+            content = re.sub(r"(?<![A-Za-z0-9])dd-(?=[a-z])", "workspace-", content)
         content = re.sub(r"(?<![A-Za-z0-9_])dd([A-Z][A-Za-z0-9_]*)\b", r"canonical\1", content)
         content = re.sub(r"(?<![A-Za-z0-9_])Dd([A-Z][A-Za-z0-9_]*)\b", r"Canonical\1", content)
         content = re.sub(r"\$dd\b", "$canonical", content)
@@ -57,7 +58,7 @@ for name in files:
             content = content.replace("DD-only", "canonical-only").replace("DD account", "user account")
         content = content.replace("JaiROADS Data Dictionary AuditLog is append-only", "JaiROADS audit log is append-only")
     if name.endswith("RoleLandingController.php"):
-        content = content.replace("    private function roadMapBatch(array $actor", "    /** @param array{account_id:int,role:string,engineer_id:?int} $actor */\n    private function roadMapBatch(array $actor") if "private function roadMapBatch(array $actor" in content and "@param array{account_id:int,role:string,engineer_id:?int} $actor */\n    private function roadMapBatch" not in content else content
+        content = content.replace("    /** @return array{data:list<array<string,mixed>>,next_cursor:?int} */\n    private function roadMapBatch", "    /**\n     * @param  array{account_id:int,role:string,engineer_id:?int}  $actor\n     * @return array{data:list<array<string,mixed>>,next_cursor:?int}\n     */\n    private function roadMapBatch")
     if content != original:
         path.write_text(content, encoding="utf-8")
         changed.append(name)
