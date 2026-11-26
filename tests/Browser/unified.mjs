@@ -646,6 +646,15 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     assert.equal(await assignedRoad.isDisabled(), true);
     await engineer.getByText('Linked project: Test project', { exact: true }).waitFor();
     await engineer.getByRole('radio', { name: /Unified browser road/ }).check();
+    await engineer.locator('.jr-saved-coverage-line').waitFor();
+    const choiceSearch = engineer.getByRole('searchbox', {
+        name: 'Search road coverage by name or municipality',
+    });
+    await choiceSearch.fill('Unified browser road');
+    await engineer.getByRole('radio', { name: /Unified browser road/ }).waitFor();
+    assert.equal(await engineer.getByRole('radio', { name: /Unified browser road/ }).isChecked(), true);
+    await choiceSearch.clear();
+    await assignedRoad.waitFor({ state: 'visible' });
     await assignedSwitch.uncheck();
     assert.equal(await assignedRoad.count(), 0);
     assert.equal(await engineer.getByRole('radio', { name: /Unified browser road/ }).isChecked(), true);

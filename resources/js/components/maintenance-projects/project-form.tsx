@@ -80,6 +80,10 @@ export function ProjectForm({
         }
 
         const controller = new AbortController();
+        const deadline = window.setTimeout(() => {
+            controller.abort();
+            setResult({ key, error: 'Road choices timed out.' });
+        }, 12_000);
         const timer = window.setTimeout(async () => {
             const params = new URLSearchParams({
                 search: query,
@@ -92,15 +96,12 @@ export function ProjectForm({
             }
 
             try {
-                const response = await fetch(
-                    `${coverageChoiceUrl}?${params}`,
-                    {
-                        credentials: 'same-origin',
-                        headers: { Accept: 'application/json' },
-                        cache: 'no-store',
-                        signal: controller.signal,
-                    },
-                );
+                const response = await fetch(`${coverageChoiceUrl}?${params}`, {
+                    credentials: 'same-origin',
+                    headers: { Accept: 'application/json' },
+                    cache: 'no-store',
+                    signal: controller.signal,
+                });
 
                 if (!response.ok) {
                     throw new Error('Road choices unavailable');
@@ -116,11 +117,14 @@ export function ProjectForm({
                 if (!controller.signal.aborted) {
                     setResult({ key, error: 'Unable to load road choices.' });
                 }
+            } finally {
+                window.clearTimeout(deadline);
             }
         }, 200);
 
         return () => {
             window.clearTimeout(timer);
+            window.clearTimeout(deadline);
             controller.abort();
         };
     }, [
@@ -143,7 +147,9 @@ export function ProjectForm({
         : undefined;
     const rows = remote && !initial ? (current?.data ?? []) : coverages;
     const selected =
-        rows.find((coverage) => String(coverage.id) === values.road_coverage_id) ??
+        rows.find(
+            (coverage) => String(coverage.id) === values.road_coverage_id,
+        ) ??
         [remembered, selectedCoverage, ...coverages].find(
             (coverage) => String(coverage?.id) === values.road_coverage_id,
         );
@@ -368,40 +374,75 @@ export function ProjectForm({
                                     )}
                                 </label>
                             ))}
-                            {loading && <p role="status">Loading road choices…</p>}
+                            {loading && (
+                                <p role="status">Loading road choices…</p>
+                            )}
                             {current?.error && (
                                 <div role="alert" className="p-3">
                                     {current.error}{' '}
-                                    <Button type="button" variant="outline" onClick={() => setRetry((value) => value + 1)}>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() =>
+                                            setRetry((value) => value + 1)
+                                        }
+                                    >
                                         Retry
                                     </Button>
                                 </div>
                             )}
-                            {!loading && !current?.error && visible.length === 0 && (
-                                <div className="jr-empty">
-                                    <p>
-                                        {!integration.ready
-                                            ? 'Road coverages will appear when integration is available.'
-                                            : search
-                                              ? create && !showAssigned
-                                                  ? 'No available coverages match your search. Turn on Show assigned to include unavailable entries.'
-                                                  : 'No coverages match your search.'
-                                              : create &&
-                                                  !showAssigned &&
-                                                  assignedCount > 0
-                                                ? 'All road coverages are already assigned. Turn on Show assigned to view them.'
-                                                : 'No road coverages are available to this account.'}
-                                    </p>
-                                </div>
-                            )}
+                            {!loading &&
+                                !current?.error &&
+                                visible.length === 0 && (
+                                    <div className="jr-empty">
+                                        <p>
+                                            {!integration.ready
+                                                ? 'Road coverages will appear when integration is available.'
+                                                : search
+                                                  ? create && !showAssigned
+                                                      ? 'No available coverages match your search. Turn on Show assigned to include unavailable entries.'
+                                                      : 'No coverages match your search.'
+                                                  : create &&
+                                                      !showAssigned &&
+                                                      assignedCount > 0
+                                                    ? 'All road coverages are already assigned. Turn on Show assigned to view them.'
+                                                    : 'No road coverages are available to this account.'}
+                                        </p>
+                                    </div>
+                                )}
                         </div>
+                        {selected &&
+                            !visible.some(
+                                (coverage) => coverage.id === selected.id,
+                            ) && (
+                                <p className="jr-field-hint mt-2" role="status">
+                                    Selected: {selected.road_name} (outside this
+                                    page).
+                                </p>
+                            )}
                         {pagination && pagination.last_page > 1 && (
                             <div className="mt-3 flex items-center justify-between gap-2">
-                                <Button type="button" variant="outline" disabled={processing || pagination.page <= 1} onClick={() => setPage(pagination.page - 1)}>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled={processing || pagination.page <= 1}
+                                    onClick={() => setPage(pagination.page - 1)}
+                                >
                                     Previous
                                 </Button>
-                                <span className="text-xs">Page {pagination.page} of {pagination.last_page}</span>
-                                <Button type="button" variant="outline" disabled={processing || pagination.page >= pagination.last_page} onClick={() => setPage(pagination.page + 1)}>
+                                <span className="text-xs">
+                                    Page {pagination.page} of{' '}
+                                    {pagination.last_page}
+                                </span>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled={
+                                        processing ||
+                                        pagination.page >= pagination.last_page
+                                    }
+                                    onClick={() => setPage(pagination.page + 1)}
+                                >
                                     Next
                                 </Button>
                             </div>
@@ -679,6 +720,10 @@ function ProjectCoveragePreview({
         }
 
         const controller = new AbortController();
+        const deadline = window.setTimeout(() => {
+            controller.abort();
+            setGeometry({ failed: true });
+        }, 12_000);
 
         fetch(`${choiceUrl}/${coverage.id}/geometry`, {
             credentials: 'same-origin',
@@ -701,9 +746,13 @@ function ProjectCoveragePreview({
                 if (!controller.signal.aborted) {
                     setGeometry({ failed: true });
                 }
-            });
+            })
+            .finally(() => window.clearTimeout(deadline));
 
-        return () => controller.abort();
+        return () => {
+            window.clearTimeout(deadline);
+            controller.abort();
+        };
     }, [choiceUrl, coverage.id, retry]);
 
     if (choiceUrl && (!geometry || geometry.failed)) {
@@ -712,10 +761,16 @@ function ProjectCoveragePreview({
                 {geometry?.failed ? (
                     <>
                         <span>Map preview could not be loaded.</span>
-                        <Button type="button" variant="outline" onClick={() => {
-                            setGeometry(null);
-                            setRetry((value) => value + 1);
-                        }}>Retry map</Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                                setGeometry(null);
+                                setRetry((value) => value + 1);
+                            }}
+                        >
+                            Retry map
+                        </Button>
                     </>
                 ) : (
                     'Loading map preview…'
