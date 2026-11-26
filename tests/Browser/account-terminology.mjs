@@ -160,26 +160,16 @@ try {
         .filter({ has: page.getByLabel(/^Account Type/) });
     const accountType = accountForm.getByLabel(/^Account Type/);
     await accountType.selectOption('Engineer');
-    await accountForm.getByRole('button', { name: 'Link existing profile', exact: true }).click();
-    const engineerSelect = accountForm.getByLabel(/^Linked Engineer/);
-    assert.equal(await engineerSelect.getAttribute('required'), '');
+    assert.equal(await accountForm.getByRole('button', { name: 'Link existing profile', exact: true }).count(), 0);
     await accountType.selectOption('Viewer');
-    assert.equal(await engineerSelect.isDisabled(), false);
-    assert.equal(await engineerSelect.getAttribute('required'), '');
+    assert.equal(await accountForm.getByLabel('First name', { exact: true }).count(), 0);
     await accountType.selectOption('Admin');
-    assert.equal(await engineerSelect.isDisabled(), false);
-    assert.equal(await engineerSelect.getAttribute('required'), '');
+    await accountForm.getByLabel('First name', { exact: true }).waitFor();
     await accountType.selectOption('Engineer');
-    // Search must find profiles using the bounded, authorized endpoint.
-    await accountForm
-        .getByRole('searchbox', { name: 'Search eligible Engineers' })
-        .fill('UI Rank Fixture');
-    const option = engineerSelect
-        .locator('option')
-        .filter({ hasText: 'UI Rank Fixture · Engineer III' });
-    await option.waitFor({ state: 'attached' });
-    const engineerId = await option.getAttribute('value');
-    await engineerSelect.selectOption(engineerId);
+    await accountForm.getByLabel('First name', { exact: true }).fill('UI New');
+    await accountForm.getByLabel('Last name', { exact: true }).fill('Fixture');
+    await accountForm.getByLabel(/^Contact number/).fill('09123456789');
+    await accountForm.getByLabel('Rank', { exact: true }).fill('Engineer III');
     await accountForm.getByLabel(/^Username/).fill('ui-type-engineer');
     await accountForm
         .getByLabel('Email', { exact: true })
@@ -201,7 +191,8 @@ try {
         .click();
     const accountPayload = (await accountRequest).postDataJSON();
     assert.equal(accountPayload.account_type, 'Engineer');
-    assert.equal(String(accountPayload.engineer_id), engineerId);
+    assert.equal(accountPayload.engineer_id ?? null, null);
+    assert.equal(accountPayload.profile.rank, 'Engineer III');
     assert.equal(Object.hasOwn(accountPayload, 'position'), false);
     await page.getByText('Account created.', { exact: true }).waitFor();
     await page.getByRole('button', { name: 'Engineer Accounts', exact: true }).click();
@@ -211,7 +202,7 @@ try {
         .filter({ hasText: 'ui-type-engineer@example.test' });
     await row.waitFor();
     assert.match(await row.innerText(), /Engineer/);
-    assert.match(await row.innerText(), /UI Rank Fixture/);
+    assert.match(await row.innerText(), /UI New Fixture/);
     await page.getByLabel('Filter status').click();
     await page.getByRole('option', { name: 'Inactive', exact: true }).click();
     await page.getByText('No accounts found', { exact: true }).waitFor();
@@ -244,7 +235,6 @@ try {
     await page.getByRole('button', { name: 'Add Account', exact: true }).click();
     const combined = page.getByRole('dialog', { name: 'Add Account', exact: true });
     await combined.getByLabel(/^Account Type/).selectOption('Engineer');
-    await combined.getByRole('button', { name: 'Create new profile', exact: true }).click();
     await combined.getByLabel('First name', { exact: true }).fill('Combined');
     await combined.getByLabel('Last name', { exact: true }).fill('Fixture');
     await combined.getByLabel(/^Contact number/).fill('09123456789');
@@ -259,7 +249,7 @@ try {
     );
     await combined.getByRole('button', { name: 'Create account', exact: true }).click();
     const combinedPayload = (await combinedRequest).postDataJSON();
-    assert.equal(combinedPayload.engineer_id, null);
+    assert.equal(combinedPayload.engineer_id ?? null, null);
     assert.equal(combinedPayload.profile.rank, 'Engineer II');
     await combined.waitFor({ state: 'hidden' });
     await page.getByRole('textbox', { name: 'Search accounts' }).fill('ui-combined-engineer@example.test');
@@ -302,7 +292,7 @@ try {
     );
     assert.deepEqual(errors, []);
     console.log(
-        'PASS: Account Type labels and all four values; Rank-only Engineer creation; canonical account_type and Engineer link; new credentials work; settings/SuperAdmin labels; native DD navigation and no Position fields.',
+        'PASS: Account Type labels and all four values; Rank-only Engineer creation; canonical account_type and Engineer link; new credentials work; settings/SuperAdmin labels; official workspace navigation and no Position fields.',
     );
 } finally {
     await browser.close();

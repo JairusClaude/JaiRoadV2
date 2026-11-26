@@ -285,7 +285,9 @@ export function ProjectDirectory({
                                     <span>Project</span>
                                 </div>
                             </th>
-                            <th>Municipality</th>
+                            <th className={isViewer ? '!text-left' : undefined}>
+                                Municipality
+                            </th>
                             {!isViewer && (
                                 <th className="text-right">Actions</th>
                             )}

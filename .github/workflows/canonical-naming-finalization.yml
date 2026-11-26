@@ -29,8 +29,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Apply repository-wide canonical naming
-        run: python3 scripts/refactor/finalize-canonical-names.py
       - name: Install locked dependencies
         run: |
           composer install --no-interaction --prefer-dist
@@ -44,6 +42,7 @@ jobs:
           composer lint
           npm run lint
           npm run format
+          npx prettier --write tests/Browser/account-terminology.mjs tests/Browser/lifecycle.mjs
       - name: Remove trailing spaces from browser regression source
         run: sed -i 's/[[:blank:]]*$//' tests/Browser/unified.mjs
       - name: Check formatting, static types and frontend production build
@@ -51,6 +50,7 @@ jobs:
           composer lint:check
           npm run lint:check -- --max-warnings=0
           npm run format:check
+          npx prettier --check tests/Browser/account-terminology.mjs tests/Browser/lifecycle.mjs
           npm run types:check
           composer types:check
           npm run build
@@ -60,6 +60,6 @@ jobs:
           git diff --check
           git add -A
           if ! git diff --cached --quiet; then
-            git -c user.name='JaiROADS CI' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Consolidate official workspace and canonical account identifiers'
+            git -c user.name='JaiROADS CI' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Format final source and browser regression files'
             git push origin HEAD:refs/heads/merged-system2
           fi
