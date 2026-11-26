@@ -711,7 +711,9 @@ class OperationsController extends Controller
             if ($id === null) {
                 $storage->upload($file, $path);
                 $uploaded = true;
-                DB::transaction($persist);
+                DB::transaction(static function () use ($persist): void {
+                    $persist();
+                });
             } else {
                 // The separately committed journal survives worker death, and its
                 // row lock excludes an operator retry until this transaction ends.

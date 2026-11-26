@@ -1,0 +1,41 @@
+name: Scoped branch quality repair (one-time)
+on:
+  push:
+    branches: [merged-system2]
+    paths: ['.github/workflows/branch-quality-repair.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  repair:
+    if: github.ref == 'refs/heads/merged-system2'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: merged-system2
+          fetch-depth: 1
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, pdo_sqlite, mbstring
+          tools: composer:v2
+          coverage: none
+      - name: Targeted dependency and PHP formatting correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          START="$(git rev-parse HEAD)"
+          composer update symfony/http-kernel symfony/mailer symfony/routing symfony/serializer --with-all-dependencies --no-interaction --prefer-dist
+          composer audit --locked --no-interaction
+          vendor/bin/pint
+          composer lint:check
+          composer types:check
+          git diff --check
+          git diff --stat
+          git add -- composer.lock app/Http/Controllers/AuditHistoryController.php app/Http/Controllers/OperationsController.php app/Services/Documents/PrivateSupabaseStorage.php app/Services/MonthlyUpdates/PrivateMonthlyMediaStorage.php app/Services/SecurityMonitoring/AuthenticationTelemetry.php app/Services/SecurityMonitoring/SessionCatalog.php tests/Quarterly/FullMaintenanceWorkflowTest.php
+          git diff --cached --quiet && exit 0
+          git commit -m "Apply verified scoped dependency patches and project PHP formatting"
+          git fetch origin merged-system2
+          test "$(git rev-parse FETCH_HEAD)" = "$START"
+          git push origin HEAD:refs/heads/merged-system2

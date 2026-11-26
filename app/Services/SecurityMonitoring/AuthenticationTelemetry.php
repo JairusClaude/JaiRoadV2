@@ -106,7 +106,7 @@ final class AuthenticationTelemetry
             $failed = $authRoute && ($request->attributes->getBoolean('security.failed') || in_array($status, [401, 403, 422, 429], true)
                 || ($status === 302 && $request->session()->has('errors')));
             $user = $logout instanceof User ? $logout : $request->user();
-            if (! $failed && ! $user instanceof User) {
+            if (! $failed && ! ($user instanceof User)) {
                 return;
             }
             if (! $authRoute && ! $login && ! ($logout instanceof User) && $user instanceof User) {

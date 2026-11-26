@@ -7,7 +7,7 @@ return [
     'touch_seconds' => 30,
     'failure_limit_per_hour' => 100,
     'failure_limit_per_network_hour' => 20,
-    'cache_store' => env('SECURITY_MONITOR_CACHE_STORE', 'security_monitoring'),
+    'cache_store' => env('SECURITY_MONITOR_CACHE_STORE', env('CACHE_STORE', 'database')),
     // Fail closed for presence if a complete bounded verification is impossible.
     'max_recent_sessions' => 1000,
     'max_session_files' => 10000,
