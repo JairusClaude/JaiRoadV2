@@ -1,11 +1,12 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/react-starter-kit",
+    "name": "jairoads/jairoads",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "JaiROADS road coverage, maintenance project, and reporting management system.",
     "keywords": [
         "laravel",
-        "framework"
+        "road-maintenance",
+        "project-management"
     ],
     "license": "MIT",
     "require": {
@@ -40,7 +41,10 @@
     "autoload-dev": {
         "psr-4": {
             "Tests\\": "tests/"
-        }
+        },
+        "exclude-from-classmap": [
+            "/tests/Browser/prepare-*.php"
+        ]
     },
     "scripts": {
         "setup": [
