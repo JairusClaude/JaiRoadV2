@@ -260,6 +260,12 @@ jobs:
             if curl -fsS http://127.0.0.1:10000/up >/dev/null; then break; fi
             sleep 1
           done
+          # Wait for the actual image HEALTHCHECK, rather than only the curl probe.
+          for attempt in $(seq 1 50); do
+            if [ "$(docker inspect --format '{{.State.Health.Status}}' jairoads-system)" = healthy ]; then break; fi
+            sleep 2
+          done
+          test "$(docker inspect --format '{{.State.Health.Status}}' jairoads-system)" = healthy
           node tests/Browser/docker-smoke.mjs
       - name: Inspect logs and upload transport limits
         run: |

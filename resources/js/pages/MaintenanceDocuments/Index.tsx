@@ -32,6 +32,7 @@ import type {
 export default function Index({
     documents,
     projects,
+    projectFilterUrl,
     filters,
 }: DocumentDirectoryProps) {
     const page = usePage();
@@ -160,6 +161,7 @@ export default function Index({
                     <div className="jr-filter-row">
                         <MonthlyProjectFilter
                             projects={projects}
+                            choicesUrl={projectFilterUrl}
                             value={filters.project}
                             onChange={(project) =>
                                 visit({ ...filters, search, project })

@@ -46,5 +46,6 @@ export type DocumentDirectoryProps = {
         to: number | null;
     };
     projects: MonthlyParentProject[];
+    projectFilterUrl?: string;
     filters: DocumentFilters;
 };

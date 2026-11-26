@@ -11,7 +11,9 @@ use App\Services\Files\PermanentFileDeletion;
 use App\Services\ManagingEngineerEligibility;
 use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
 use App\Services\RoleAccess;
+use App\Support\LiteralDirectorySearch;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -163,6 +165,42 @@ class OperationsFrontendController extends Controller
     protected function projectChoices(array $actor): Builder
     {
         return $this->projects($actor, false)->select(['p.id', 'p.project_title', 'p.road_coverage_id', 'rc.road_name', 'rc.lgu_id', 'l.municipality_name']);
+    }
+
+    /**
+     * Directory filters only need the current selection at load time.
+     * Preview pages retain their isolated local choices.
+     *
+     * @param  Actor  $actor
+     * @return array<string,mixed>
+     */
+    protected function projectFilterProps(array $actor, string $selected): array
+    {
+        $project = ctype_digit($selected) ? $this->projectChoices($actor)->where('p.id', $selected)->first() : null;
+
+        return ['projects' => $project === null ? [] : [$this->projectChoiceData($project)],
+            'projectFilterUrl' => self::BASE.'/project-filter-choices'];
+    }
+
+    public function projectFilterChoices(Request $request): JsonResponse
+    {
+        abort_if(self::isPreview($request), 404);
+        $actor = $this->actor($request);
+        $input = $request->validate(['page' => ['nullable', 'integer', 'min:1']]);
+        $search = LiteralDirectorySearch::normalize($request->query('search'));
+        $query = $this->projectChoices($actor);
+        if ($search !== '') {
+            $pattern = LiteralDirectorySearch::pattern($search);
+            $query->where('p.project_title', 'ilike', $pattern);
+        }
+        $total = $query->count();
+        $last = max(1, (int) ceil($total / 30));
+        $page = min($last, (int) ($input['page'] ?? 1));
+        $data = $query->orderBy('p.project_title')->orderBy('p.id')->forPage($page, 30)->get()
+            ->map(static fn (\stdClass $project): array => ['id' => (int) $project->id, 'project_title' => $project->project_title]);
+
+        return response()->json(['data' => $data, 'page' => $page, 'last_page' => $last])
+            ->header('Cache-Control', 'private, no-store');
     }
 
     /** @return array<string,mixed> */

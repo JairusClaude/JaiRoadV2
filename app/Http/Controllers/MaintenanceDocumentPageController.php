@@ -37,7 +37,7 @@ final class MaintenanceDocumentPageController extends OperationsFrontendControll
 
         return $this->render('MaintenanceDocuments/Index', $request, [
             'documents' => $q->orderBy('d.id', $filters['sort'] === 'oldest' ? 'asc' : 'desc')->paginate(12)->withQueryString()->through(fn (\stdClass $d): array => $this->documentData($d, $actor)),
-            'projects' => $this->projectChoices($actor)->orderBy('p.project_title')->get()->map(fn (\stdClass $p): array => $this->projectChoiceData($p)),
+            ...$this->projectFilterProps($actor, $filters['project']),
             'filters' => $filters, 'canWrite' => $this->writable($actor),
         ]);
     }

@@ -1,5 +1,6 @@
 import { Check, ChevronDown, Search } from 'lucide-react';
-import { useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
     Popover,
@@ -9,10 +10,12 @@ import {
 
 export function MonthlyProjectFilter({
     projects,
+    choicesUrl,
     value,
     onChange,
 }: {
     projects: { id: number; project_title: string }[];
+    choicesUrl?: string;
     value: string;
     onChange: (value: string) => void;
 }) {
@@ -21,14 +24,80 @@ export function MonthlyProjectFilter({
     const input = useRef<HTMLInputElement>(null);
     const list = useRef<HTMLDivElement>(null);
     const id = useId();
+    const [page, setPage] = useState(1);
+    const [retry, setRetry] = useState(0);
+    const key = JSON.stringify([query.trim(), page, retry]);
+    const [response, setResponse] = useState<{
+        key: string;
+        data?: typeof projects;
+        page?: number;
+        last_page?: number;
+        error?: boolean;
+    } | null>(null);
+
+    useEffect(() => {
+        if (!open || !choicesUrl) {
+            return;
+        }
+
+        const controller = new AbortController();
+        const deadline = window.setTimeout(() => {
+            controller.abort();
+            setResponse({ key, error: true });
+        }, 12_000);
+        const timer = window.setTimeout(async () => {
+            const params = new URLSearchParams({
+                search: query.trim(),
+                page: String(page),
+            });
+
+            try {
+                const url = `${choicesUrl}?${params}`;
+                const result = await fetch(url, {
+                    credentials: 'same-origin',
+                    headers: { Accept: 'application/json' },
+                    cache: 'no-store',
+                    signal: controller.signal,
+                });
+
+                if (!result.ok) {
+                    throw new Error('Project choices unavailable');
+                }
+
+                const data = await result.json();
+
+                if (!controller.signal.aborted) {
+                    setResponse({ key, ...data });
+                }
+            } catch {
+                if (!controller.signal.aborted) {
+                    setResponse({ key, error: true });
+                }
+            } finally {
+                window.clearTimeout(deadline);
+            }
+        }, 200);
+
+        return () => {
+            window.clearTimeout(timer);
+            window.clearTimeout(deadline);
+            controller.abort();
+        };
+    }, [choicesUrl, key, open, page, query]);
+
+    const current = response?.key === key ? response : null;
+    const loading = Boolean(choicesUrl && !current);
     const options = [
         { value: '', label: 'All Projects' },
-        ...projects.map((project) => ({
+        ...(choicesUrl ? (current?.data ?? []) : projects).map((project) => ({
             value: String(project.id),
             label: project.project_title,
         })),
     ];
-    const selected = options.find((option) => option.value === value);
+    const selectedProject = projects.find((project) => String(project.id) === value);
+    const selected = selectedProject
+        ? { value, label: selectedProject.project_title }
+        : options.find((option) => option.value === value);
     const matches = options.filter((option) =>
         option.label
             .toLocaleLowerCase()
@@ -47,6 +116,8 @@ export function MonthlyProjectFilter({
 
                 if (next) {
                     setQuery('');
+                    setPage(1);
+                    setRetry((previous) => previous + 1);
                 }
             }}
         >
@@ -64,6 +135,8 @@ export function MonthlyProjectFilter({
                         ) {
                             event.preventDefault();
                             setQuery('');
+                            setPage(1);
+                            setRetry((previous) => previous + 1);
                             setOpen(true);
                         }
                     }}
@@ -139,7 +212,10 @@ export function MonthlyProjectFilter({
                         aria-label="Search maintenance projects"
                         aria-controls={id}
                         value={query}
-                        onChange={(event) => setQuery(event.target.value)}
+                        onChange={(event) => {
+                            setQuery(event.target.value);
+                            setPage(1);
+                        }}
                     />
                 </div>
                 <div
@@ -166,12 +242,36 @@ export function MonthlyProjectFilter({
                             )}
                         </button>
                     ))}
-                    {!matches.length && (
+                    {loading && (
+                        <p role="status" className="jr-field-hint p-3">
+                            Loading projects…
+                        </p>
+                    )}
+                    {current?.error && (
+                        <div role="alert" className="p-3">
+                            Unable to load projects.{' '}
+                            <Button type="button" variant="outline" onClick={() => setRetry((previous) => previous + 1)}>
+                                Retry
+                            </Button>
+                        </div>
+                    )}
+                    {!loading && !current?.error && !matches.length && (
                         <p role="status" className="jr-field-hint p-3">
                             No matching projects found
                         </p>
                     )}
                 </div>
+                {current?.last_page && current.last_page > 1 && (
+                    <div className="flex items-center justify-between gap-2 p-2">
+                        <Button type="button" variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
+                            Previous
+                        </Button>
+                        <span className="text-xs">Page {current.page} of {current.last_page}</span>
+                        <Button type="button" variant="outline" size="sm" disabled={page >= current.last_page} onClick={() => setPage(page + 1)}>
+                            Next
+                        </Button>
+                    </div>
+                )}
             </PopoverContent>
         </Popover>
     );

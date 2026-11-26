@@ -58,7 +58,7 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
             'totalReports' => (clone $authorized)->count(),
             'reportsThisMonth' => $thisMonthCount,
             'updates' => $q->paginate(12)->withQueryString()->appends($filters)->through(fn (\stdClass $u): array => $this->updateData($u, $actor)),
-            'projects' => $this->projectChoices($actor)->orderBy('p.project_title')->get()->map(fn (\stdClass $p): array => $this->projectChoiceData($p)),
+            ...$this->projectFilterProps($actor, $filters['project']),
             // Choice projection only; filtering above does not apply a function to the column.
             'years' => (clone $authorized)->select([])->selectRaw('substring(u.update_month, 1, 4)::integer as reporting_year')
                 ->distinct()->orderByDesc('reporting_year')->pluck('reporting_year'),

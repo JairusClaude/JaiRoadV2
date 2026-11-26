@@ -43,6 +43,7 @@ export type MonthlyDirectoryProps = {
     reportsThisMonth?: number;
     updates: MonthlyUpdatePage;
     projects: { id: number; project_title: string }[];
+    projectFilterUrl?: string;
     years: number[];
     filters: MonthlyUpdateFilters;
 };
@@ -52,6 +53,7 @@ export function MonthlyUpdateDirectory({
     reportsThisMonth,
     updates,
     projects,
+    projectFilterUrl,
     years,
     filters,
     busy,
@@ -197,6 +199,7 @@ export function MonthlyUpdateDirectory({
                     <div className="jr-filter-row">
                         <MonthlyProjectFilter
                             projects={projects}
+                            choicesUrl={projectFilterUrl}
                             value={filters.project}
                             onChange={(value) =>
                                 apply({

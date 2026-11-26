@@ -148,7 +148,7 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
             'completedRoads' => (clone $allRecords)->whereRaw('LOWER(m.status) = ?', ['completed'])->count(),
             'ongoingRoads' => (clone $allRecords)->whereRaw('LOWER(m.status) IN (?, ?)', ['ongoing', 'in progress'])->count(),
             'records' => $q->orderBy('m.id', $filters['sort'] === 'oldest' ? 'asc' : 'desc')->paginate(12)->withQueryString()->through(fn (\stdClass $r): array => $this->recordData($r, $actor)),
-            'projects' => $this->projectChoices($actor)->orderBy('p.project_title')->get()->map(fn (\stdClass $p): array => $this->projectChoiceData($p)),
+            'projects' => [], // The directory uses totalProjects, not the full project catalog.
             'municipalities' => $this->municipalities($actor)->map(fn (\stdClass $l): array => ['value' => (string) $l->id, 'label' => $l->municipality_name]),
             'years' => $this->records($actor)->reorder()->select('m.maintenance_year')->distinct()->orderByDesc('m.maintenance_year')->pluck('m.maintenance_year'),
             'historyUrl' => RoleAccess::managesBusinessData($actor['role']) && app(PreservedProjectDeletion::class)->available() ? '/workspace/history/records' : null,

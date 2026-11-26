@@ -8,6 +8,7 @@ use App\Http\Controllers\MaintenanceDocumentPageController;
 use App\Http\Controllers\MaintenanceProjectPageController;
 use App\Http\Controllers\MaintenanceRecordPageController;
 use App\Http\Controllers\MonthlyUpdatePageController;
+use App\Http\Controllers\OperationsFrontendController;
 use App\Http\Controllers\PreservedHistoryController;
 use App\Http\Controllers\RoadCoveragePageController;
 use Illuminate\Support\Facades\Route;
@@ -24,6 +25,7 @@ Route::middleware(['auth'])->prefix('workspace/ui')->name('jairoads.ui.')->group
     Route::put('/road-coverages/{id}', [RoadCoveragePageController::class, 'saveRoad'])->whereNumber('id')->name('roads.update');
     Route::delete('/road-coverages/bulk', [RoadCoveragePageController::class, 'bulkDeleteRoad'])->name('roads.bulk-destroy');
     Route::delete('/road-coverages/{id}', [RoadCoveragePageController::class, 'deleteRoad'])->whereNumber('id')->name('roads.destroy');
+    Route::get('/project-filter-choices', [OperationsFrontendController::class, 'projectFilterChoices'])->middleware('throttle:90,1,jr-project-filter-choices-')->name('projects.filter-choices');
     Route::get('/project-road-choices', [MaintenanceProjectPageController::class, 'coverageChoices'])->middleware('throttle:90,1,jr-project-road-choices-')->name('projects.road-choices');
     Route::get('/project-road-choices/{id}/geometry', [MaintenanceProjectPageController::class, 'coverageGeometry'])->whereNumber('id')->middleware('throttle:90,1,jr-project-road-geometry-')->name('projects.road-geometry');
     Route::get('/maintenance-projects', [MaintenanceProjectPageController::class, 'projectIndex'])->name('projects.index');
