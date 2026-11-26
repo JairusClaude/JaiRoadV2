@@ -323,7 +323,10 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
             DB::beginTransaction();
             DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->lockForUpdate()->first();
             for ($i = 0; $i < 2; $i++) {
-                $process = new Process([PHP_BINARY, __DIR__.'/concurrent-municipality-request.php', (string) $f['user']->id, (string) $f['road'], $token]);
+                $process = new Process(
+                    [PHP_BINARY, __DIR__.'/concurrent-municipality-request.php', (string) $f['user']->id, (string) $f['road'], $token],
+                    env: ['APP_KEY' => (string) config('app.key')],
+                );
                 $process->setTimeout(15);
                 $process->start();
                 $processes[] = $process;

@@ -80,6 +80,7 @@ SQL);
             $this->assertNotNull(DB::table('jairoads_next.maintenance_projects')
                 ->where('id', $f['project'])->lockForUpdate()->first());
 
+            // Use the same encryption key as the app that created the preview token.
             $worker = new Process([
                 PHP_BINARY,
                 __DIR__.'/preserved-history-worker.php',
@@ -87,7 +88,7 @@ SQL);
                 $url,
                 base64_encode(json_encode($this->deletionVerification('project') + ['confirmation_token' => $token], JSON_THROW_ON_ERROR)),
                 'DELETE',
-            ]);
+            ], env: ['APP_KEY' => (string) config('app.key')]);
             $worker->setTimeout(30);
             $worker->start();
 
