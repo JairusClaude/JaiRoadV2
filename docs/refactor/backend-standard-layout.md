@@ -1,5 +1,7 @@
 # JaiROADS backend structure cleanup — review only
 
+> **Later frontend relocation.** The frontend remained in place during the backend-only review recorded here. See the [structural relocation reference](canonical-workspace-layout.md) for the delivery branch’s current paths.
+
 **Status:** source refactor committed on `refactor/standard-backend-layout`, not merged, not deployed, and **not** runtime-validated against the operator's local Docker application. Official Supabase is unchanged.
 
 ## Why the nested folders existed

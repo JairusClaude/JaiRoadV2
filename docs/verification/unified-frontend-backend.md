@@ -2,6 +2,8 @@
 
 Working branch: `Oct10_Front&BackEnd_Merge_Integration`.
 
+> **Current source locations.** This report preserves the integration-branch paths. The delivery branch registers the Inertia UI in [operations-pages.php](../../routes/operations-pages.php) and uses [OperationsFrontendController](../../app/Http/Controllers/OperationsFrontendController.php) for shared mappings. The HTTP paths remain under `/dd-phase3/ui`. See the [structural relocation reference](../refactor/canonical-workspace-layout.md).
+
 ## Sources and conflict decisions
 
 The branch starts at frontend `05033c752a8c7182fac9364dbb03c536b7dc682c` and merges backend `c9ee10a145effa517b03c5d643266e194c123d4b`. Merge base: `2fc1fa6680627b04a0fe5dd4b615b1583181d854`. Both source histories are retained; PR #5 was closed without merging and was not used as evidence of integration.

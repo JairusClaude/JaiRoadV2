@@ -1,5 +1,7 @@
 # DD workflow completion — Task 2
 
+> **Historical checkpoint.** The file paths and policy status below describe Task 2. Use the [structural relocation reference](refactor/canonical-workspace-layout.md) for current source paths and the [file deletion handoff](permanent-individual-file-deletion.md) for the later deletion workflow.
+
 Continued on `integration/dd-system-completion` from verified local/remote Task 1 HEAD `bfa80dedb995a0afc25f225dceca21bae2f8c998`. The interruption left the implementation uncommitted; it was inspected and preserved. No restart, reset or replacement branch was used.
 
 ## Delivered modules

@@ -4,11 +4,13 @@ Reviewed 2026-11-03 against the [official Data Dictionary](https://docs.google.c
 
 Scope: `Oct10_Front&BackEnd_Merge_Integration`, after Repair 3 (`f06a36668a5f3569304caf22bb327d2e28fef470`). No database, migration, relationship, permission or authentication change is required. Physical names below are checked against canonical model/schema interfaces and the repository's read-only reconciliation snapshot; Repair 4 does not query or write the shared database.
 
+> **Current source locations.** The field matrices retain the reviewed contract and scope above. Controller names now point to [OperationsController](../../app/Http/Controllers/OperationsController.php) and [OperationsFrontendController](../../app/Http/Controllers/OperationsFrontendController.php), formerly `DdOperationsController` and `DdFrontendController`. See the [structural relocation reference](../refactor/canonical-workspace-layout.md) for route files and frontend paths.
+
 ## Boundaries and naming rules
 
 - `/dd-phase3/ui` is the authenticated Laravel/Inertia integration adapter. Its existing typed presentation aliases remain supported.
-- `/dd-phase3/ops` uses canonical request names. Prefer those names for new contracts. `DdOperationsController` and its eligibility/storage services retain validation and authorization authority.
-- `DdFrontendController` is the single server mapping location: `roadData`, `recordData`, `projectData`, `updateData`, `documentData`, `mediaData`, request adapters and `write` error projection. `inputAlias` explicitly maps the two historical form ID aliases.
+- `/dd-phase3/ops` uses canonical request names. Prefer those names for new contracts. `OperationsController` and its eligibility/storage services retain validation and authorization authority.
+- `OperationsFrontendController` supplies shared server mappings: `roadData`, `recordData`, `projectData`, `updateData`, `documentData`, `mediaData`, request adapters and `write` error projection. `inputAlias` explicitly maps the two historical form ID aliases.
 - If both an ID alias and its canonical field occur on a UI request, they must be the same integer/identical decimal string. Contradictory, null or structured duplicates fail under the visible form field before mutation. Canonical-only requests do not substitute for the UI's required alias. Existing equivalent duplicate payloads remain compatible; canonical operations have no alias adapter.
 - Read-projection names are not write permissions. Unknown creator/uploader/path/MIME fields are excluded by existing server write allowlists. Client identity never overrides the authenticated, verified account.
 - Logical Data Dictionary names such as `MaintenanceYear` map to the existing snake_case columns, e.g. `maintenance_year`. This is documentation, not a proposal to rename columns.
@@ -17,7 +19,7 @@ In the matrices, “UI API” means the submitted field at `/dd-phase3/ui`, foll
 
 ## RoadCoverage — `jairoads_next.road_coverages`
 
-Types: `resources/js/types/road-coverages.ts`. Form: `coverage-form.tsx`. Server: `saveRoad`, `roadData`, `DdOperationsController::saveRoad`, `RoadCoverageGeometry`, and the separate municipality-change workflow.
+Types: `resources/js/types/road-coverages.ts`. Form: `coverage-form.tsx`. Server: `saveRoad`, `roadData`, `OperationsController::saveRoad`, `RoadCoverageGeometry`, and the separate municipality-change workflow.
 
 | Frontend field                    | UI API → canonical operation                                | Database field                      | Business meaning                                                               |
 | --------------------------------- | ----------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------ |
@@ -37,7 +39,7 @@ Unchanged geometry is omitted by the form and retained by Laravel; identical sub
 
 ## MaintenanceProject — `jairoads_next.maintenance_projects`
 
-Types: `maintenance-projects.ts`. Forms: `project-form.tsx` and Create/Edit pages. Server: `saveProject`, `projectData`, `DdOperationsController::saveProject`.
+Types: `maintenance-projects.ts`. Forms: `project-form.tsx` and Create/Edit pages. Server: `saveProject`, `projectData`, `OperationsController::saveProject`.
 
 | Frontend field                                        | UI API → canonical operation | Database field                    | Business meaning                                                                |
 | ----------------------------------------------------- | ---------------------------- | --------------------------------- | ------------------------------------------------------------------------------- |
@@ -54,7 +56,7 @@ There is no project `lgu_id`, `assigned_engineer_id`, year, status or timeline c
 
 ## MaintenanceRecord — `jairoads_next.maintenance_records`
 
-Types: `maintenance-records.ts`, `maintenance-record-directory.ts`. Form: `record-editor.tsx` / `maintenance-record-form.tsx`. Typed payload helper: `resources/js/lib/maintenance-records.ts::recordPayload`. Server: `saveRecord`, `recordData`, `DdOperationsController::saveRecord`, `ManagingEngineerEligibility`, `TwiceYearlyMaintenance`.
+Types: `maintenance-records.ts`, `maintenance-record-directory.ts`. Form: `record-editor.tsx` / `maintenance-record-form.tsx`. Typed payload helper: `resources/js/lib/maintenance-records.ts::recordPayload`. Server: `saveRecord`, `recordData`, `OperationsController::saveRecord`, `ManagingEngineerEligibility`, `TwiceYearlyMaintenance`.
 
 | Frontend field                              | UI API → canonical operation                                                    | Database field                    | Business meaning                                                         |
 | ------------------------------------------- | ------------------------------------------------------------------------------- | --------------------------------- | ------------------------------------------------------------------------ |
@@ -76,7 +78,7 @@ Routine edits do not change manager, project, year or quarter. Explicit Admin/Su
 
 ## MonthlyUpdate — `jairoads_next.monthly_updates`
 
-Types: `monthly-updates.ts`. Form: `MonthlyUpdates/Create.tsx` / `monthly-update-form.tsx`. Server: `saveUpdate`, `updateData`, `updateIndex`, `DdOperationsController::saveUpdate`.
+Types: `monthly-updates.ts`. Form: `MonthlyUpdates/Create.tsx` / `monthly-update-form.tsx`. Server: `saveUpdate`, `updateData`, `updateIndex`, `OperationsController::saveUpdate`.
 
 | Frontend field                          | UI API → canonical operation | Database field                       | Business meaning                                                          |
 | --------------------------------------- | ---------------------------- | ------------------------------------ | ------------------------------------------------------------------------- |
@@ -115,7 +117,7 @@ Create accepts the UI `attachment` transport name; `/dd-phase3/ops/documents` us
 
 ## Media — `jairoads_next.media`
 
-Type: `MonthlyMedia` in `monthly-updates.ts`. Form: `MonthlyUpdates/Show.tsx` separate evidence upload. Server: `uploadMedia`, `mediaData`, `DdOperationsController::uploadMedia`, `PrivateMonthlyMediaStorage`.
+Type: `MonthlyMedia` in `monthly-updates.ts`. Form: `MonthlyUpdates/Show.tsx` separate evidence upload. Server: `uploadMedia`, `mediaData`, `OperationsController::uploadMedia`, `PrivateMonthlyMediaStorage`.
 
 | Frontend field               | UI API → canonical operation                 | Database field                     | Business meaning                                                                           |
 | ---------------------------- | -------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------ |
