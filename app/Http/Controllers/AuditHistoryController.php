@@ -61,7 +61,7 @@ final class AuditHistoryController extends Controller
         $events = $query->orderBy('audit.created_at', $direction)->orderBy('audit.id', $direction)
             ->paginate(25, ['audit.id', 'audit.user_id', 'audit.actor_identifier', 'audit.action', 'audit.entity_type', 'audit.entity_id', 'audit.description',
                 'audit.old_value', 'audit.new_value', 'audit.recipient_user_id', 'audit.notification_message', 'audit.created_at', 'account.account_type as current_account_type'])
-            ->withQueryString()->through(function (\stdClass $row): array {
+            ->withPath($request->getPathInfo())->withQueryString()->through(function (\stdClass $row): array {
                 $row->description = AuditActorIdentifier::description($row->description);
                 foreach (['old_value', 'new_value'] as $field) {
                     $payload = $row->$field === null ? null : json_decode($row->$field, true);
@@ -75,7 +75,7 @@ final class AuditHistoryController extends Controller
             });
         $available = app(AuthenticationTelemetry::class)->available();
         $collecting = $available && config('security-monitoring.enabled') && app(AuthenticationTelemetry::class)->available(true);
-        $authentication = new LengthAwarePaginator([], 0, 25, max(1, $request->integer('auth_page', 1)), ['path' => $request->url(), 'pageName' => 'auth_page']);
+        $authentication = new LengthAwarePaginator([], 0, 25, max(1, $request->integer('auth_page', 1)), ['path' => $request->getPathInfo(), 'pageName' => 'auth_page']);
         $success = $failures = 0;
         if ($available) {
             $auth = DB::table(AuthenticationTelemetry::EVENTS);
@@ -92,14 +92,14 @@ final class AuditHistoryController extends Controller
             }
             $authentication = $auth->orderByDesc('created_at')->orderByDesc('id')->paginate(25,
                 ['id', 'user_account_id', 'actor_identifier', 'account_type', 'attempted_identifier', 'event', 'outcome', 'method', 'client_description', 'created_at'], 'auth_page')
-                ->withQueryString()->through(static function (\stdClass $row): array {
+                ->withPath($request->getPathInfo())->withQueryString()->through(static function (\stdClass $row): array {
                     $row->actor_identifier = AuditActorIdentifier::display($row->actor_identifier);
                     $row->created_at = CarbonImmutable::parse($row->created_at, 'UTC')->utc()->toIso8601String();
 
                     return (array) $row;
                 });
         }
-        $presence = app(OnlinePresence::class)->read();
+        $presence = app(OnlinePresence::class)->readForRequest($request, $actor);
 
         $summary = ['system_activities' => DB::table('jairoads_next.audit_logs')->whereIn('action', ['CREATE', 'UPDATE', 'DELETE', 'ACTIVATE', 'DEACTIVATE', 'REASSIGN', 'RETIRE'])->count(), 'logins' => $available ? $success : null, 'failed_logins' => $available ? $failures : null, 'online_accounts' => $presence['available'] ? $presence['total'] : null];
         abort_unless($resolver->resolve($user) === $actor, 403);
