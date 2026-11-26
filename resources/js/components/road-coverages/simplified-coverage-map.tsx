@@ -137,6 +137,9 @@ export function SimplifiedCoverageMap({
             scrollWheelZoom: true,
             zoomControl: true,
             attributionControl: true,
+            // Prevent deferred Leaflet zoom/pan callbacks after SPA navigation.
+            zoomAnimation: false,
+            inertia: false,
         });
         mapRef.current = map;
 
@@ -149,29 +152,36 @@ export function SimplifiedCoverageMap({
         // Metric scale indicator in bottom-left
         L.control.scale({ imperial: false, maxWidth: 120 }).addTo(map);
 
-        map.fitBounds(PROVINCE_BOUNDS);
+        map.fitBounds(PROVINCE_BOUNDS, { animate: false });
         let resizeFrame = 0;
         const observer = new ResizeObserver(() => {
+            if (mapRef.current !== map) {
+                return;
+            }
+
             if (resizeFrame) {
                 cancelAnimationFrame(resizeFrame);
             }
 
             resizeFrame = requestAnimationFrame(() => {
                 resizeFrame = 0;
-                map.invalidateSize({ pan: false, debounceMoveend: true });
+                if (mapRef.current === map) {
+                    map.invalidateSize({ pan: false });
+                }
             });
         });
         observer.observe(containerRef.current);
 
         return () => {
+            mapRef.current = null;
             observer.disconnect();
 
             if (resizeFrame) {
                 cancelAnimationFrame(resizeFrame);
             }
 
+            map.stop();
             map.remove();
-            mapRef.current = null;
         };
     }, []);
 
@@ -279,16 +289,19 @@ export function SimplifiedCoverageMap({
             const bounds = roadGroup.getBounds();
 
             if (bounds.isValid()) {
-                map.fitBounds(bounds.pad(0.08), { maxZoom: 15 });
+                map.fitBounds(bounds.pad(0.08), { maxZoom: 15, animate: false });
             } else {
-                map.fitBounds(PROVINCE_BOUNDS);
+                map.fitBounds(PROVINCE_BOUNDS, { animate: false });
             }
         } else {
-            map.fitBounds(PROVINCE_BOUNDS);
+            map.fitBounds(PROVINCE_BOUNDS, { animate: false });
         }
 
         return () => {
-            roadGroup.removeFrom(map);
+            if (mapRef.current === map) {
+                roadGroup.removeFrom(map);
+            }
+
             roadLayers.current = [];
         };
     }, [visibleCoverages, engineerView, viewerView, dashboardView]);

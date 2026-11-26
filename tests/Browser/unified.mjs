@@ -82,7 +82,10 @@ async function signIn(email) {
     const page = await context.newPage();
     lastPage = page;
     page.setDefaultTimeout(15000);
-    page.on('pageerror', (e) => errors.push(e.message));
+    page.on('pageerror', (e) => {
+        errors.push(e.message);
+        console.error('Uncaught browser exception at', new URL(page.url()).pathname, e.stack ?? e.message);
+    });
     page.on('dialog', (dialog) => dialog.accept());
     await page.goto(`${base}/login`);
     await page.getByLabel('Email address').waitFor();
@@ -390,6 +393,15 @@ throw new Error('Wave transform is static');
     await relationship.selectOption('both');
     assert.equal(await dashboardMap.locator('.jr-dashboard-road-other, .jr-dashboard-road-created, .jr-dashboard-road-assigned').count(), 0);
     await relationship.selectOption('all');
+    // Exercise client-side map teardown directly after a user zoom and filter update.
+    await dashboardMap.locator('.leaflet-control-zoom-in').click();
+    await relationship.selectOption('created');
+    await engineer.locator('.jr-engineer-sidebar a[href="/workspace/ui/road-coverages"]').first().click();
+    await engineer.waitForURL(`${ui}/road-coverages`);
+    await dashboardMap.waitFor({ state: 'detached' });
+    await engineer.goto(base + '/workspace/dashboard');
+    await dashboardMap.locator('.jr-dashboard-road-mine').first().waitFor();
+    assert.deepEqual(errors, [], 'Map navigation must not leave uncaught browser exceptions');
     const viewerMapRequests = [];
     const recordViewerMapRequest = request => {
         if (new URL(request.url()).pathname === '/workspace/dashboard/map-roads') {

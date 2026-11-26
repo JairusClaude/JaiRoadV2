@@ -51,7 +51,11 @@ function SavedCoverageMap({ geojson }: { geojson: object }) {
             return;
         }
 
-        const map = L.map(node.current, { scrollWheelZoom: true });
+        const map = L.map(node.current, {
+            scrollWheelZoom: true,
+            zoomAnimation: false,
+            inertia: false,
+        });
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap contributors',
@@ -96,17 +100,22 @@ function SavedCoverageMap({ geojson }: { geojson: object }) {
                 animate: false,
             },
         );
-        const resize = new ResizeObserver(() =>
-            map.invalidateSize({ pan: false }),
-        );
+        let disposed = false;
+        const resize = new ResizeObserver(() => {
+            if (!disposed) {
+                map.invalidateSize({ pan: false });
+            }
+        });
         resize.observe(node.current);
         const fullscreen = () =>
             setFull(document.fullscreenElement === container.current);
         document.addEventListener('fullscreenchange', fullscreen);
 
         return () => {
+            disposed = true;
             resize.disconnect();
             document.removeEventListener('fullscreenchange', fullscreen);
+            map.stop();
             map.remove();
         };
     }, [geojson]);

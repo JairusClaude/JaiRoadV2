@@ -823,6 +823,8 @@ function EditableCoverageMapEditor({
             zoom: 13,
             scrollWheelZoom: true,
             doubleClickZoom: false,
+            zoomAnimation: false,
+            inertia: false,
         });
         map.current = instance;
         const tiles = L.tileLayer(
@@ -847,9 +849,11 @@ function EditableCoverageMapEditor({
             });
         }
 
-        const resize = new ResizeObserver(() =>
-            instance.invalidateSize({ pan: false }),
-        );
+        const resize = new ResizeObserver(() => {
+            if (map.current === instance) {
+                instance.invalidateSize({ pan: false });
+            }
+        });
         resize.observe(node.current);
         const fullscreen = () =>
             setFull(document.fullscreenElement === root.current);
@@ -858,9 +862,14 @@ function EditableCoverageMapEditor({
         const pendingControllers = controllers.current;
 
         return () => {
+            map.current = null;
+            active.current = null;
+            references.current = null;
+            operationLine.current = null;
             pendingControllers.forEach((c) => c?.abort());
             resize.disconnect();
             document.removeEventListener('fullscreenchange', fullscreen);
+            instance.stop();
             instance.remove();
         };
     }, []);
@@ -1006,6 +1015,10 @@ function EditableCoverageMapEditor({
         }
 
         const position = () => {
+            if (map.current !== instance) {
+                return;
+            }
+
             const pos = instance.latLngToContainerPoint(ll(anchor));
             const size = instance.getSize();
             const popup =
@@ -1118,6 +1131,10 @@ function EditableCoverageMapEditor({
         let controller = new AbortController();
         let timer: ReturnType<typeof setTimeout>;
         const refresh = () => {
+            if (map.current !== instance) {
+                return;
+            }
+
             controller.abort();
             clearTimeout(timer);
             controller = new AbortController();
@@ -1126,6 +1143,10 @@ function EditableCoverageMapEditor({
             setReferenceState('loading');
             setReferenceNotice('Loading reference roads for this view…');
             timer = setTimeout(async () => {
+                if (signal.aborted || map.current !== instance) {
+                    return;
+                }
+
                 const bounds = instance.getBounds();
                 const wraps = bounds.getWest() < -180 || bounds.getEast() > 180;
                 const params = new URLSearchParams({

@@ -352,8 +352,8 @@ export default function SuperAdminCommandCenter({
                                     Privileged Accounts Directory
                                 </h2>
                                 <p className="mt-1 text-sm text-slate-500">
-                                    Active and retained SuperAdmin / Admin
-                                    accounts
+                                    First 30 active and retained SuperAdmin / Admin
+                                    accounts. Open Manage accounts for the full directory.
                                 </p>
                             </div>
                             <Link
