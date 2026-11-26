@@ -289,7 +289,10 @@ export function SimplifiedCoverageMap({
             const bounds = roadGroup.getBounds();
 
             if (bounds.isValid()) {
-                map.fitBounds(bounds.pad(0.08), { maxZoom: 15, animate: false });
+                map.fitBounds(bounds.pad(0.08), {
+                    maxZoom: 15,
+                    animate: false,
+                });
             } else {
                 map.fitBounds(PROVINCE_BOUNDS, { animate: false });
             }
