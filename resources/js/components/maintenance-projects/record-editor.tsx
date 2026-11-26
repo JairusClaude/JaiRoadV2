@@ -1,11 +1,15 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { DuplicatePeriodWarning } from '@/components/maintenance-projects/duplicate-period-warning';
 import { MaintenanceRecordForm } from '@/components/maintenance-projects/maintenance-record-form';
 import { ProjectSelector } from '@/components/monthly-updates/project-selector';
 import { Label } from '@/components/ui/label';
 import { formReturn, returnLabel, editUrl } from '@/lib/form-navigation';
-import { recordPayload, validateRecord } from '@/lib/maintenance-records';
+import {
+    recordPayload,
+    validateMaintenanceYear,
+    validateRecord,
+} from '@/lib/maintenance-records';
 import { workspaceHref } from '@/lib/workspace-navigation';
 import type { ProjectChoice } from '@/types/maintenance-projects';
 import type {
@@ -25,8 +29,12 @@ export function RecordEditor({
     cancelUrl,
     projects = [],
     managerChoicesByProject,
+    projectChoiceUrl,
+    periodChoiceUrl,
 }: {
     managerChoicesByProject?: Record<string, EngineerOption[]>;
+    projectChoiceUrl?: string;
+    periodChoiceUrl?: string;
     project?: ProjectChoice;
     projects?: ProjectChoice[];
     engineers: EngineerOption[];
@@ -52,9 +60,14 @@ export function RecordEditor({
         setDismissedConflict(serverConflict);
     };
     const [projectId, setProjectId] = useState('');
+    const [remoteProject, setRemoteProject] = useState<ProjectChoice | null>(
+        null,
+    );
     const [projectError, setProjectError] = useState('');
     const selectedProject =
-        project ?? projects.find((item) => String(item.id) === projectId);
+        project ??
+        projects.find((item) => String(item.id) === projectId) ??
+        (String(remoteProject?.id) === projectId ? remoteProject : null);
     const fallback =
         record?.details_url ??
         (project
@@ -71,7 +84,7 @@ export function RecordEditor({
         (preview ||
             (page.props.canonicalFrontend === true &&
                 page.props.canWrite === true)) &&
-        Boolean(submitUrl || projects.length);
+        Boolean(submitUrl || projects.length || projectChoiceUrl);
     const form = useForm<MaintenanceRecordValues>({
         maintenance_year: record ? String(record.year).padStart(4, '0') : '',
         quarter: record?.quarter ?? '',
@@ -90,7 +103,72 @@ export function RecordEditor({
         : managerChoicesByProject
           ? (managerChoicesByProject[String(selectedProject.id)] ?? [])
           : engineers;
-    const projectRecords = records.filter(
+    const year = form.data.maintenance_year;
+    const periodKey =
+        selectedProject && !validateMaintenanceYear(year)
+            ? `${selectedProject.id}:${year}`
+            : '';
+    const [periodAttempt, setPeriodAttempt] = useState(0);
+    const [periodResult, setPeriodResult] = useState<{
+        key: string;
+        data?: MaintenancePeriodChoice[];
+        failed?: boolean;
+    } | null>(null);
+    useEffect(() => {
+        if (!periodChoiceUrl || !periodKey || !selectedProject) {
+            return;
+        }
+
+        const controller = new AbortController();
+        const deadline = window.setTimeout(() => {
+            controller.abort();
+            setPeriodResult({ key: periodKey, failed: true });
+        }, 12_000);
+        const params = new URLSearchParams({
+            project: String(selectedProject.id),
+            year,
+        });
+        fetch(`${periodChoiceUrl}?${params}`, {
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json' },
+            cache: 'no-store',
+            signal: controller.signal,
+        })
+            .then(async (response) => {
+                if (!response.ok) {
+                    throw new Error('Reporting periods unavailable');
+                }
+
+                const result = await response.json();
+
+                if (!Array.isArray(result.data)) {
+                    throw new Error('Invalid reporting periods');
+                }
+
+                if (!controller.signal.aborted) {
+                    setPeriodResult({ key: periodKey, data: result.data });
+                }
+            })
+            .catch(() => {
+                if (!controller.signal.aborted) {
+                    setPeriodResult({ key: periodKey, failed: true });
+                }
+            })
+            .finally(() => window.clearTimeout(deadline));
+
+        return () => {
+            window.clearTimeout(deadline);
+            controller.abort();
+        };
+    }, [periodChoiceUrl, periodKey, selectedProject, year, periodAttempt]);
+    const currentPeriods =
+        periodResult?.key === periodKey ? periodResult : null;
+    const periodPending = Boolean(
+        periodChoiceUrl && periodKey && !currentPeriods?.data,
+    );
+    const projectRecords = (
+        periodChoiceUrl ? (currentPeriods?.data ?? []) : records
+    ).filter(
         (item) =>
             !('project_id' in item) || item.project_id === selectedProject?.id,
     );
@@ -111,6 +189,12 @@ export function RecordEditor({
         if (!selectedProject) {
             setProjectError('Select an existing Maintenance Project.');
             document.getElementById('project_id')?.focus();
+
+            return;
+        }
+
+        if (periodPending) {
+            form.setError('quarter', 'Wait until the reporting periods are verified.');
 
             return;
         }
@@ -214,16 +298,19 @@ export function RecordEditor({
                             </Label>
                             <ProjectSelector
                                 projects={projects}
+                                choicesUrl={projectChoiceUrl}
                                 value={projectId}
                                 disabled={!enabled || form.processing}
                                 invalid={Boolean(projectError)}
-                                onChange={(value) => {
+                                onChange={(value, choice) => {
                                     if (value !== projectId) {
                                         form.setData('engineers_id', '');
                                         form.clearErrors('engineers_id');
                                     }
 
                                     setProjectId(value);
+                                    setRemoteProject(choice ?? null);
+                                    setPeriodResult(null);
                                     setProjectError('');
                                     form.clearErrors('quarter');
                                 }}
@@ -232,6 +319,26 @@ export function RecordEditor({
                                 <p className="jr-field-hint">
                                     Project ID: {selectedProject.id} ·{' '}
                                     {selectedProject.municipality}
+                                </p>
+                            )}
+                            {periodPending && (
+                                <p className="jr-field-hint" role="status">
+                                    {currentPeriods?.failed ? (
+                                        <button
+                                            type="button"
+                                            className="underline"
+                                            onClick={() => {
+                                                setPeriodResult(null);
+                                                setPeriodAttempt(
+                                                    (value) => value + 1,
+                                                );
+                                            }}
+                                        >
+                                            Could not verify periods. Retry.
+                                        </button>
+                                    ) : (
+                                        'Checking reporting periods…'
+                                    )}
                                 </p>
                             )}
                             {projectError && (

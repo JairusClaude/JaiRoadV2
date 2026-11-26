@@ -21,10 +21,13 @@ it('keeps all authorized choices without geometry or full record payloads', func
     DB::enableQueryLog();
     DB::flushQueryLog();
     $this->get('/workspace/ui/maintenance-records/create')->assertInertia(fn (Assert $page) => $page
-        ->has('projects', 110)->has('records', 110)->has('engineers')->missing('managerChoicesByProject')->missing('projects.0.geojson')->missing('projects.0.description')
-        ->missing('records.0.description')->missing('records.0.created_by'));
+        ->has('projects', 0)->has('records', 0)->has('engineers')->missing('managerChoicesByProject')
+        ->where('projectChoiceUrl', '/workspace/ui/project-filter-choices')->where('periodChoiceUrl', '/workspace/ui/record-period-choices'));
     expect(count(DB::getQueryLog()))->toBeLessThanOrEqual(12); // 110 LGUs must not cause 110 eligibility queries.
     DB::disableQueryLog();
+    $this->getJson('/workspace/ui/record-period-choices?project='.$f['project'].'&year=2026')->assertOk()
+        ->assertJsonCount(1, 'data')->assertJsonMissingPath('data.0.description')->assertHeader('Cache-Control', 'no-store, private');
+    $this->getJson('/workspace/ui/record-period-choices?project='.$f['project'].'&year=1999')->assertUnprocessable();
     foreach (['monthly-updates', 'maintenance-documents'] as $directory) {
         $this->get('/workspace/ui/'.$directory)->assertInertia(fn (Assert $page) => $page
             ->has('projects', 0)->where('projectFilterUrl', '/workspace/ui/project-filter-choices'));

@@ -202,13 +202,18 @@ class OperationsFrontendController extends Controller
         $query = $this->projectChoices($actor);
         if ($search !== '') {
             $pattern = LiteralDirectorySearch::pattern($search);
-            $query->where('p.project_title', 'ilike', $pattern);
+            $query->where(function (Builder $q) use ($pattern, $request): void {
+                $q->where('p.project_title', 'ilike', $pattern);
+                if ($request->boolean('include_municipality')) {
+                    $q->orWhere('l.municipality_name', 'ilike', $pattern);
+                }
+            });
         }
         $total = $query->count();
         $last = max(1, (int) ceil($total / 30));
         $page = min($last, (int) ($input['page'] ?? 1));
         $data = $query->orderBy('p.project_title')->orderBy('p.id')->forPage($page, 30)->get()
-            ->map(static fn (\stdClass $project): array => ['id' => (int) $project->id, 'project_title' => $project->project_title]);
+            ->map(fn (\stdClass $project): array => $this->projectChoiceData($project));
 
         return response()->json(['data' => $data, 'page' => $page, 'last_page' => $last])
             ->header('Cache-Control', 'private, no-store');

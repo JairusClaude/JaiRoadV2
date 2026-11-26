@@ -45,6 +45,7 @@ Route::middleware(['auth'])->prefix('workspace/ui')->name('jairoads.ui.')->group
     Route::put('/maintenance-projects/{project}/records/{id}', [MaintenanceRecordPageController::class, 'saveRecord'])->whereNumber('project')->whereNumber('id')->name('records.update');
     Route::post('/maintenance-projects/{project}/records/{id}/reassignment', [MaintenanceRecordPageController::class, 'reassign'])->whereNumber('project')->whereNumber('id')->middleware('throttle:10,1,jr-records-reassign-')->name('records.reassign');
     Route::get('/maintenance-records', [MaintenanceRecordPageController::class, 'recordIndex'])->name('records.index');
+    Route::get('/record-period-choices', [MaintenanceRecordPageController::class, 'periodChoices'])->middleware('throttle:90,1,jr-record-period-choices-')->name('records.period-choices');
     Route::get('/maintenance-records/create', [MaintenanceRecordPageController::class, 'recordCreate'])->name('records.directory-create');
     Route::delete('/maintenance-records/bulk', [MaintenanceRecordPageController::class, 'bulkDeleteRecord'])->name('records.bulk-destroy');
     Route::delete('/maintenance-records/{id}', [MaintenanceRecordPageController::class, 'deleteRecord'])->whereNumber('id')->name('records.destroy');

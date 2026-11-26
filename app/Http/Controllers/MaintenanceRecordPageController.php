@@ -12,6 +12,7 @@ use App\Services\PreviewDataService;
 use App\Services\RoleAccess;
 use App\Support\LiteralDirectorySearch;
 use Illuminate\Database\QueryException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -167,17 +168,31 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
 
         $actor = $this->actor($request);
         $this->writer($actor);
-        $projects = $this->projectChoices($actor)->orderBy('p.project_title')->get();
         $choices = $this->eligibility->eligibleChoices($actor)->get()->map(fn (\stdClass $e): array => ['id' => (int) $e->id, 'first_name' => $e->first_name, 'last_name' => $e->last_name])->all();
         // Eligibility does not vary by municipality: send the same Engineer list
         // only once, rather than repeating it for every project.
 
         return $this->render('MaintenanceProjects/Records/Create', $request, [
             'duplicatePeriod' => $this->duplicatePeriod($request, $actor),
-            'projects' => $projects->map(fn (\stdClass $p): array => $this->projectChoiceData($p)), 'engineers' => $choices,
-            'records' => $this->records($actor)->select(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter'])->get()->map(fn (\stdClass $r): array => $this->periodChoiceData($r)),
+            'projects' => [], 'engineers' => $choices, 'records' => [],
+            'projectChoiceUrl' => self::BASE.'/project-filter-choices',
+            'periodChoiceUrl' => self::BASE.'/record-period-choices',
             'canWrite' => true, 'cancelUrl' => self::BASE.'/maintenance-records',
         ]);
+    }
+
+    public function periodChoices(Request $request): JsonResponse
+    {
+        abort_if(self::isPreview($request), 404);
+        $actor = $this->actor($request);
+        $this->writer($actor);
+        $input = $request->validate(['project' => ['required', 'integer', 'min:1'], 'year' => ['required', 'integer', 'between:2000,2100']]);
+        abort_unless($this->projectChoices($actor)->where('p.id', $input['project'])->exists(), 404);
+        $periods = $this->records($actor)->where('m.project_id', $input['project'])->where('m.maintenance_year', $input['year'])
+            ->select(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter'])->orderBy('m.quarter')->get()
+            ->map(fn (\stdClass $record): array => $this->periodChoiceData($record));
+
+        return response()->json(['data' => $periods])->header('Cache-Control', 'private, no-store');
     }
 
     public function reassign(Request $request, int $project, int $id): RedirectResponse

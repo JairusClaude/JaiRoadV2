@@ -165,7 +165,8 @@ final class UnifiedFrontendTest extends PostgresTestCase
         $this->get(self::UI.'/maintenance-records/create')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('MaintenanceProjects/Records/Create')
             ->has('engineers', 1)->where('engineers.0.id', $f['engineer'])
-            ->missing('managerChoicesByProject')->has('projects', 2));
+            ->missing('managerChoicesByProject')->has('projects', 0)->where('projectChoiceUrl', '/workspace/ui/project-filter-choices'));
+        $this->getJson(self::UI.'/project-filter-choices')->assertOk()->assertJsonCount(2, 'data');
 
         $this->account('Engineer', $otherEngineer);
         DB::table('jairoads_next.engineer_lgus')->where('engineer_id', $otherEngineer)->update(['is_active' => false]);
