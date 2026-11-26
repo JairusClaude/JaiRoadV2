@@ -121,6 +121,6 @@ jobs:
       - name: All original password/DD regressions and integration hardening
         run: php vendor/bin/pest --configuration=phpunit-passwords.xml --display-warnings --fail-on-warning
       - name: Password code and regression formatting
-        run: vendor/bin/pint --test app/Auth app/Services/LinkedPasswordUpdater.php app/Actions/Fortify/ResetUserPassword.php app/Http/Controllers/Settings/SecurityController.php app/Providers/AppServiceProvider.php bootstrap/app.php config/auth.php tests/PasswordSync tests/PasswordSyncTestCase.php tests/DdOperationsTestCase.php
+        run: vendor/bin/pint --test app/Auth app/Services/LinkedPasswordUpdater.php app/Actions/Fortify/ResetUserPassword.php app/Http/Controllers/Settings/SecurityController.php app/Providers/AppServiceProvider.php bootstrap/app.php config/auth.php tests/PasswordSync tests/PasswordSyncTestCase.php tests/CanonicalOperationsTestCase.php
       - name: Password static analysis
         run: vendor/bin/phpstan analyse app/Auth app/Services/LinkedPasswordUpdater.php app/Actions/Fortify/ResetUserPassword.php app/Http/Controllers/Settings/SecurityController.php --no-progress

@@ -6,12 +6,12 @@ namespace Tests;
 
 use Illuminate\Support\Facades\DB;
 
-abstract class DdOperationsTestCase extends PasswordSyncTestCase
+abstract class CanonicalOperationsTestCase extends PasswordSyncTestCase
 {
     protected function setUp(): void
     {
         parent::setUp();
-        DB::unprepared(file_get_contents(base_path('tests/Fixtures/dd-operations.sql')));
+        DB::unprepared(file_get_contents(base_path('tests/Fixtures/canonical-operations.sql')));
     }
 
     protected function road(int $lguId = 17): int
