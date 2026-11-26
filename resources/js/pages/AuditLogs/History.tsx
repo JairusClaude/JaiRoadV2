@@ -1,7 +1,6 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     Activity,
-    Eye,
     RefreshCw,
     ShieldCheck,
     UsersRound,
@@ -11,16 +10,6 @@ import type { FormEvent, ReactNode } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { MetricCard } from '@/components/metric-card';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogTrigger,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-    DialogClose,
-    DialogFooter,
-} from '@/components/ui/dialog';
 import { manilaTimestamp } from '@/lib/manila-time';
 import '../../../css/maintenance-projects-exploration.css';
 import '../../../css/jairoads-audit-history.css';
@@ -130,17 +119,11 @@ function Table({
             aria-label={title}
             tabIndex={0}
         >
-            <table
-                className={`jr-audit-table text-left text-sm ${headers.length === 8 ? 'jr-audit-table-activity' : headers.length === 7 ? 'jr-audit-table-auth' : 'jr-audit-table-presence'}`}
-            >
+            <table className="w-full min-w-[760px] text-left text-sm">
                 <thead className="bg-slate-50 text-xs text-slate-600">
                     <tr>
                         {headers.map((h) => (
-                            <th
-                                key={h}
-                                scope="col"
-                                className="px-3 py-3 font-semibold"
-                            >
+                            <th key={h} scope="col" className="px-3 py-3 font-semibold">
                                 {h}
                             </th>
                         ))}
@@ -151,50 +134,6 @@ function Table({
                 </tbody>
             </table>
         </div>
-    );
-}
-function AuditDetail({
-    title,
-    description,
-    triggerLabel,
-    children,
-}: {
-    title: string;
-    description: string;
-    triggerLabel: string;
-    children: ReactNode;
-}) {
-    return (
-        <Dialog>
-            <DialogTrigger asChild>
-                <button
-                    type="button"
-                    className="jr-audit-detail-trigger"
-                    aria-label={triggerLabel}
-                >
-                    <Eye size={15} aria-hidden="true" /> View details
-                </button>
-            </DialogTrigger>
-            <DialogContent className="jr-audit-detail-dialog">
-                <DialogHeader className="jr-audit-detail-header">
-                    <DialogTitle>{title}</DialogTitle>
-                    <DialogDescription>{description}</DialogDescription>
-                </DialogHeader>
-                <div
-                    className="jr-audit-detail-body"
-                    tabIndex={0}
-                    role="region"
-                    aria-label="Recorded event details"
-                >
-                    {children}
-                </div>
-                <DialogFooter className="jr-audit-detail-footer">
-                    <DialogClose asChild>
-                        <Button variant="outline">Done</Button>
-                    </DialogClose>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
     );
 }
 function PaginationLinks({ page, label }: { page: Pagination; label: string }) {
@@ -535,12 +474,12 @@ export default function AuditHistory({
                         >
                             {events.data.map((e) => (
                                 <tr key={e.id}>
-                                    <td className="jr-audit-date">
+                                    <td className="whitespace-nowrap">
                                         <time dateTime={e.created_at}>
                                             {time(e.created_at)}
                                         </time>
                                     </td>
-                                    <td className="break-words">
+                                    <td className="max-w-64 min-w-40 break-words">
                                         {e.actor_identifier}
                                         <span className="mt-1 block text-xs text-slate-500">
                                             UserAccount{' '}
@@ -578,126 +517,99 @@ export default function AuditHistory({
                                             ? '—'
                                             : `#${e.entity_id}`}
                                     </td>
-                                    <td className="break-words">
+                                    <td className="max-w-80 min-w-48 break-words">
                                         {e.description}
                                     </td>
                                     <td>
-                                        <AuditDetail
-                                            title={`Activity #${e.id}`}
-                                            description="Safe before / after values"
-                                            triggerLabel="Safe before / after values"
-                                        >
-                                            <div className="jr-audit-detail-meta">
-                                                <div>
-                                                    <span>Performed by</span>
-                                                    <strong>
-                                                        {e.actor_identifier}
-                                                    </strong>
-                                                </div>
-                                                <div>
-                                                    <span>
-                                                        Date and time (Manila)
-                                                    </span>
-                                                    <strong>
-                                                        {time(e.created_at)}
-                                                    </strong>
-                                                </div>
-                                                <div>
-                                                    <span>Action</span>
-                                                    <Badge action={e.action} />
-                                                </div>
-                                                <div>
-                                                    <span>Affected record</span>
-                                                    <strong>
-                                                        {e.entity_type} #
-                                                        {e.entity_id ?? '—'}
-                                                    </strong>
-                                                </div>
-                                            </div>
-                                            <div className="jr-audit-detail-description">
-                                                <span>Description</span>
-                                                <p>{e.description}</p>
-                                            </div>
-                                            {e.notification_message && (
-                                                <div className="jr-audit-detail-description">
-                                                    <span>
-                                                        Historical notification
-                                                    </span>
+                                        <details className="min-w-52">
+                                            <summary className="cursor-pointer font-semibold text-[var(--jr-role-accent)]">
+                                                Safe before / after values
+                                            </summary>
+                                            <div className="mt-3 max-w-md space-y-2 text-xs">
+                                                <p>
+                                                    AuditLog #{e.id} ·{' '}
+                                                    {e.actor_identifier}
+                                                </p>
+                                                <p>
+                                                    {e.action} · {e.entity_type}{' '}
+                                                    #{e.entity_id ?? '—'}
+                                                </p>
+                                                <p>{time(e.created_at)}</p>
+                                                <p className="break-words">
+                                                    {e.description}
+                                                </p>
+                                                {e.notification_message && (
                                                     <p>
+                                                        Historical notification:{' '}
                                                         {e.notification_message}
                                                     </p>
-                                                </div>
-                                            )}
-                                            <h3 className="text-sm font-semibold">
-                                                Recorded field changes
-                                            </h3>
-                                            {Object.keys({
-                                                ...e.old_value,
-                                                ...e.new_value,
-                                            }).length === 0 ? (
-                                                <p className="text-sm text-muted-foreground">
-                                                    No safe change details were
-                                                    recorded for this event.
-                                                </p>
-                                            ) : (
-                                                <div className="jr-audit-changes">
-                                                    {[
-                                                        ...new Set([
-                                                            ...Object.keys(
-                                                                e.old_value ??
-                                                                    {},
-                                                            ),
-                                                            ...Object.keys(
-                                                                e.new_value ??
-                                                                    {},
-                                                            ),
-                                                        ]),
-                                                    ].map((k) => (
-                                                        <section
-                                                            key={k}
-                                                            className="jr-audit-change"
-                                                        >
-                                                            <h4>
-                                                                {k.replaceAll(
-                                                                    '_',
-                                                                    ' ',
-                                                                )}
-                                                            </h4>
-                                                            <div className="jr-audit-change-values">
-                                                                <div>
-                                                                    <span>
-                                                                        Previous
-                                                                        value
-                                                                    </span>
-                                                                    <p>
+                                                )}
+                                                {Object.keys({
+                                                    ...e.old_value,
+                                                    ...e.new_value,
+                                                }).length === 0 ? (
+                                                    <p>
+                                                        No safe change details
+                                                        were recorded for this
+                                                        event.
+                                                    </p>
+                                                ) : (
+                                                    <table className="w-full table-fixed text-left">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Field</th>
+                                                                <th>
+                                                                    Previous
+                                                                    value
+                                                                </th>
+                                                                <th>
+                                                                    New value
+                                                                </th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {[
+                                                                ...new Set([
+                                                                    ...Object.keys(
+                                                                        e.old_value ??
+                                                                            {},
+                                                                    ),
+                                                                    ...Object.keys(
+                                                                        e.new_value ??
+                                                                            {},
+                                                                    ),
+                                                                ]),
+                                                            ].map((k) => (
+                                                                <tr key={k}>
+                                                                    <th className="p-1 break-words">
+                                                                        {k.replaceAll(
+                                                                            '_',
+                                                                            ' ',
+                                                                        )}
+                                                                    </th>
+                                                                    <td className="p-1 break-all whitespace-pre-wrap">
                                                                         {value(
                                                                             e
                                                                                 .old_value?.[
                                                                                 k
                                                                             ],
                                                                         )}
-                                                                    </p>
-                                                                </div>
-                                                                <div>
-                                                                    <span>
-                                                                        New
-                                                                        value
-                                                                    </span>
-                                                                    <p>
+                                                                    </td>
+                                                                    <td className="p-1 break-all whitespace-pre-wrap">
                                                                         {value(
                                                                             e
                                                                                 .new_value?.[
                                                                                 k
                                                                             ],
                                                                         )}
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                        </section>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </AuditDetail>
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                )}
+                                            </div>
+                                        </details>
                                     </td>
                                 </tr>
                             ))}
@@ -762,10 +674,10 @@ export default function AuditHistory({
                         >
                             {authentication.data.map((e) => (
                                 <tr key={e.id}>
-                                    <td className="jr-audit-date">
+                                    <td className="whitespace-nowrap">
                                         {time(e.created_at)}
                                     </td>
-                                    <td className="break-words">
+                                    <td className="min-w-48 break-words">
                                         {e.actor_identifier ??
                                             e.attempted_identifier ??
                                             'Unavailable account'}
@@ -782,60 +694,20 @@ export default function AuditHistory({
                                     <td>{e.outcome}</td>
                                     <td>{e.client_description}</td>
                                     <td>
-                                        <AuditDetail
-                                            title={`Authentication event #${e.id}`}
-                                            description="Recorded sign-in or sign-out information"
-                                            triggerLabel="Authentication details"
-                                        >
-                                            <div className="jr-audit-detail-meta">
-                                                <div>
-                                                    <span>
-                                                        Account / identifier
-                                                    </span>
-                                                    <strong>
-                                                        {e.actor_identifier ??
-                                                            e.attempted_identifier ??
-                                                            'Unavailable account'}
-                                                    </strong>
-                                                </div>
-                                                <div>
-                                                    <span>
-                                                        Date and time (Manila)
-                                                    </span>
-                                                    <strong>
-                                                        {time(e.created_at)}
-                                                    </strong>
-                                                </div>
-                                                <div>
-                                                    <span>Event</span>
-                                                    <Badge action={e.event} />
-                                                </div>
-                                                <div>
-                                                    <span>Outcome</span>
-                                                    <strong>{e.outcome}</strong>
-                                                </div>
-                                                <div>
-                                                    <span>Method</span>
-                                                    <strong>{e.method}</strong>
-                                                </div>
-                                                <div>
-                                                    <span>Account type</span>
-                                                    <strong>
-                                                        {e.account_type ??
-                                                            'Not verified'}
-                                                    </strong>
-                                                </div>
-                                            </div>
-                                            <div className="jr-audit-detail-description">
-                                                <span>Client information</span>
-                                                <p>{e.client_description}</p>
-                                            </div>
-                                            <p className="text-sm">
+                                        <details>
+                                            <summary className="cursor-pointer font-semibold text-[var(--jr-role-accent)]">
+                                                Authentication details
+                                            </summary>
+                                            <p className="mt-2 text-xs">
+                                                Event #{e.id} · {e.method} ·{' '}
+                                                {time(e.created_at)}
+                                            </p>
+                                            <p className="text-xs">
                                                 {e.user_account_id === null
                                                     ? 'No canonical identity attributed.'
                                                     : `Verified UserAccount #${e.user_account_id}`}
                                             </p>
-                                        </AuditDetail>
+                                        </details>
                                     </td>
                                 </tr>
                             ))}
@@ -888,10 +760,10 @@ export default function AuditHistory({
                                             {a.session_count === 1 ? '' : 's'}
                                         </span>
                                     </td>
-                                    <td className="jr-audit-date">
+                                    <td className="whitespace-nowrap">
                                         {time(a.login_at)}
                                     </td>
-                                    <td className="jr-audit-date">
+                                    <td className="whitespace-nowrap">
                                         {time(a.last_activity)}
                                     </td>
                                     <td>{a.client_description}</td>
