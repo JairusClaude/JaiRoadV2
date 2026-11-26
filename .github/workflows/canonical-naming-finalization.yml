@@ -44,6 +44,8 @@ jobs:
           composer lint
           npm run lint
           npm run format
+      - name: Remove trailing spaces from browser regression source
+        run: sed -i 's/[[:blank:]]*$//' tests/Browser/unified.mjs
       - name: Check formatting, static types and frontend production build
         run: |
           composer lint:check

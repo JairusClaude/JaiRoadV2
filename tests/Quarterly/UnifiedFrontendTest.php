@@ -419,7 +419,7 @@ final class UnifiedFrontendTest extends PostgresTestCase
     {
         $this->actingAs($this->account('SuperAdmin'));
         $before = DB::table('jairoads_next.engineers')->count();
-        DB::statement("CREATE FUNCTION jairoads_next.reject_combined_audit() RETURNS trigger LANGUAGE plpgsql AS $ BEGIN IF NEW.entity_type = 'UserAccount' THEN RAISE EXCEPTION 'Disposable audit failure'; END IF; RETURN NEW; END; $");
+        DB::statement("CREATE FUNCTION jairoads_next.reject_combined_audit() RETURNS trigger LANGUAGE plpgsql AS \$\$ BEGIN IF NEW.entity_type = 'UserAccount' THEN RAISE EXCEPTION 'Disposable audit failure'; END IF; RETURN NEW; END; \$\$");
         DB::statement('CREATE TRIGGER reject_combined_audit BEFORE INSERT ON jairoads_next.audit_logs FOR EACH ROW EXECUTE FUNCTION jairoads_next.reject_combined_audit()');
         $this->postJson('/dd-phase3/accounts', [
             'username' => 'combined-rollback', 'email' => 'combined-rollback@example.test',

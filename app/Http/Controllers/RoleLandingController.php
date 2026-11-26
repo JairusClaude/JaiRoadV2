@@ -20,13 +20,13 @@ use Inertia\Response;
  */
 final class RoleLandingController extends Controller
 {
-    /** Read-only, on-demand summary for the Engineer dashboard map. */
+    /** Read-only, on-demand road summary for Engineer and Viewer. */
     public function roadDetails(Request $request, AccountIdentityResolver $resolver, int $road): JsonResponse
     {
         $user = $request->user();
         abort_unless($user instanceof User && $user->getAttribute('dd_user_account_id') !== null, 403);
         $actor = $resolver->resolve($user);
-        abort_unless($actor !== null && $actor['role'] === 'Engineer' && $actor['engineer_id'] !== null, 403);
+        abort_unless($actor !== null && ($actor['role'] === 'Viewer' || ($actor['role'] === 'Engineer' && $actor['engineer_id'] !== null)), 403);
 
         // Same cross-municipality read access as the canonical road/project pages.
         $coverage = DB::table('jairoads_next.road_coverages as rc')
@@ -51,8 +51,8 @@ final class RoleLandingController extends Controller
                 ->first(['u.id', 'u.update_month', 'u.progress_percentage']);
             $latestDocument = (clone $documents)->orderByDesc('d.uploaded_at')->orderByDesc('d.id')
                 ->first(['d.id', 'd.document_title', 'd.uploaded_at']);
-            $createdByMe = (int) $coverage->project_creator === $actor['account_id'];
-            $myRecordCount = (clone $records)->where('m.managing_engineer_id', $actor['engineer_id'])->count();
+            $createdByMe = $actor['role'] === 'Engineer' && (int) $coverage->project_creator === $actor['account_id'];
+            $myRecordCount = $actor['role'] === 'Engineer' ? (clone $records)->where('m.managing_engineer_id', $actor['engineer_id'])->count() : 0;
             $project = [
                 'id' => $projectId,
                 'title' => $coverage->project_title,
