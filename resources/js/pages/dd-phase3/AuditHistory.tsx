@@ -193,7 +193,7 @@ function Table({
             onLostPointerCapture={endDrag}
             onKeyDown={scrollWithKeyboard}
         >
-            <table className="w-full min-w-[760px] text-left text-sm">
+            <table className="jr-audit-grid w-full text-left text-sm" data-columns={headers.length}>
                 <thead className="bg-slate-50 text-xs text-slate-600">
                     <tr>
                         {headers.map((h) => (
@@ -499,7 +499,7 @@ export default function AuditHistory({
                             }
                             subtitle={
                                 monitoring.available
-                                    ? `${summary.logins ?? 0} successful · ${summary.failed_logins ?? 0} rejected`
+                                    ? `${summary.logins ?? 0} successful (includes restored sessions) · ${summary.failed_logins ?? 0} rejected`
                                     : 'Recorded events in the authentication date range; failed attempts are rate-bounded.'
                             }
                         />
@@ -756,6 +756,9 @@ export default function AuditHistory({
                                     <td>{e.account_type ?? 'Not verified'}</td>
                                     <td>
                                         <Badge action={e.event} />
+                                        {e.event === 'LOGIN' && e.method === 'remember' && (
+                                            <span className="mt-1 block text-xs text-slate-500">Session restored</span>
+                                        )}
                                     </td>
                                     <td>{e.outcome}</td>
                                     <td>{e.client_description}</td>
@@ -765,7 +768,7 @@ export default function AuditHistory({
                                                 Authentication details
                                             </summary>
                                             <p className="mt-2 text-xs">
-                                                Event #{e.id} · {e.method} ·{' '}
+                                                Event #{e.id} · {e.method === 'remember' ? 'Remembered session restored' : e.method === 'password' ? 'Password sign-in' : e.method} ·{' '}
                                                 {time(e.created_at)}
                                             </p>
                                             <p className="text-xs">
