@@ -36,6 +36,11 @@ class OperationsFrontendController extends Controller
     /** @var array<int,bool> */
     private array $writeAccess = [];
 
+    /** @var Actor|null Presentation-only result of the last successful authorization. */
+    private ?array $presentationActor = null;
+
+    private ?Request $presentationRequest = null;
+
     public function __construct(
         protected AccountIdentityResolver $identities,
         protected OperationsController $operations,
@@ -70,6 +75,8 @@ class OperationsFrontendController extends Controller
         abort_unless($login instanceof User && $login->getAttribute('canonical_user_account_id') !== null, 403);
         $actor = $this->identities->resolve($login);
         abort_unless($actor !== null, 403, 'Your account is unavailable. Contact your administrator.');
+        $this->presentationActor = $actor;
+        $this->presentationRequest = $request;
 
         return $actor;
     }
@@ -106,9 +113,13 @@ class OperationsFrontendController extends Controller
     /** @param array<string,mixed> $props */
     protected function render(string $component, Request $request, array $props): Response
     {
+        // Reuse only for presentation; all authorization calls still re-resolve the account.
+        $actor = $this->presentationRequest === $request && $this->presentationActor !== null
+            ? $this->presentationActor : $this->actor($request);
+
         return Inertia::render($component, $props + [
             'canonicalFrontend' => true,
-            'jairoadsIdentity' => ['role' => strtolower($this->actor($request)['role'])],
+            'jairoadsIdentity' => ['role' => strtolower($actor['role'])],
             'status' => $request->session()->pull('jairoads_operations_status', $request->session()->pull('dd_operations_status')),
         ]);
     }

@@ -95,6 +95,7 @@ export async function verifyPreservedRelationships({
         422,
     );
     await admin.goto(`${ui}${projectPath}`);
+    await admin.getByRole('button', { name: 'Delete Project', exact: true }).waitFor({ state: 'visible' });
     assert.equal(
         await admin.getByRole('button', { name: 'Delete Project', exact: true }).count(),
         1,

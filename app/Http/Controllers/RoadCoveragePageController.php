@@ -56,20 +56,18 @@ final class RoadCoveragePageController extends OperationsFrontendController
             in_array($filters['sort'], ['oldest', 'name-asc'], true) ? 'asc' : 'desc')
             ->orderBy('rc.id', in_array($filters['sort'], ['oldest', 'name-asc'], true) ? 'asc' : 'desc');
 
-        $totalCoverages = (int) DB::table('jairoads_next.road_coverages')->count();
+        $statistics = DB::table('jairoads_next.road_coverages')->selectRaw('count(*) as total, coalesce(sum(kilometers), 0) as kilometers')->first();
+        $totalCoverages = (int) ($statistics->total ?? 0);
         $linkedProjects = (int) DB::table('jairoads_next.maintenance_projects')->whereNotNull('road_coverage_id')->distinct()->count('id');
-        $totalLengthKm = (float) DB::table('jairoads_next.road_coverages')->sum('kilometers');
+        $totalLengthKm = (float) ($statistics->kilometers ?? 0);
 
-        // Keep initial Inertia payload bounded. The user can progressively load
-        // further map geometries through the read-only, cursor-based endpoint.
-        $mapPage = $this->roadMapData($actor);
+        // The map loads separately so slow geometry does not delay the directory.
 
         return $this->render('RoadCoverages/Index', $request, [
             'totalCoverages' => $totalCoverages,
             'linkedProjects' => $linkedProjects,
             'totalLengthKm' => $totalLengthKm,
-            'mapCoverages' => $mapPage['data'],
-            'mapNextCursor' => $mapPage['next_cursor'],
+            'mapDeferred' => true,
             'coverages' => $query->paginate(12)->withQueryString()->through(fn (\stdClass $r): array => $this->roadData($r)),
             'municipalities' => $this->municipalities($actor), 'filters' => $filters, 'canEdit' => $this->writable($actor),
             'canDelete' => RoleAccess::canDeleteOperations($actor['role']),
@@ -85,9 +83,9 @@ final class RoadCoveragePageController extends OperationsFrontendController
         }
 
         $actor = $this->actor($request);
-        $v = $request->validate(['before' => ['required', 'integer', 'min:1']]);
+        $v = $request->validate(['before' => ['sometimes', 'integer', 'min:1']]);
 
-        return response()->json($this->roadMapData($actor, (int) $v['before']))
+        return response()->json($this->roadMapData($actor, isset($v['before']) ? (int) $v['before'] : null))
             ->header('Cache-Control', 'private, no-store');
     }
 

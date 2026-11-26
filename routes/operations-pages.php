@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Route;
 // These URLs are canonical DD projections. Legacy public.* route quarantine stays intact.
 Route::middleware(['auth'])->prefix('workspace/ui')->name('jairoads.ui.')->group(function (): void {
     Route::get('/map/roads', [RoadCoveragePageController::class, 'roadReferences'])->name('roads.references');
-    Route::get('/map/road-index', [RoadCoveragePageController::class, 'roadMapPage'])->name('roads.map-page');
+    Route::get('/map/road-index', [RoadCoveragePageController::class, 'roadMapPage'])->middleware('throttle:90,1,jr-road-index-map-')->name('roads.map-page');
     Route::get('/road-coverages', [RoadCoveragePageController::class, 'roadIndex'])->name('roads.index');
     Route::get('/road-coverages/create', [RoadCoveragePageController::class, 'roadForm'])->name('roads.create');
     Route::get('/road-coverages/{id}', [RoadCoveragePageController::class, 'roadShow'])->whereNumber('id')->name('roads.show');

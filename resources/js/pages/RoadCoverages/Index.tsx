@@ -9,7 +9,7 @@ import {
     Search,
     Trash2,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import {
     DirectoryFilter,
     DirectoryPagination,
@@ -18,7 +18,6 @@ import {
 import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialog';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { MetricCard } from '@/components/metric-card';
-import { SimplifiedCoverageMap } from '@/components/road-coverages/simplified-coverage-map';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -37,6 +36,10 @@ import type {
 } from '@/types/road-coverages';
 import '../../../css/road-coverage-directory.css';
 
+const SimplifiedCoverageMap = lazy(
+    () => import('@/components/road-coverages/simplified-coverage-map'),
+);
+
 const length = (value: string | number | null) =>
     value !== null && Number.isFinite(Number(value))
         ? `${new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value))} km`
@@ -53,6 +56,7 @@ export default function Index({
     totalLengthKm,
     mapCoverages,
     mapNextCursor,
+    mapDeferred,
 }: RoadCoverageDirectoryProps) {
     const page = usePage();
     const isViewer =
@@ -86,24 +90,90 @@ export default function Index({
     const [mapCursor, setMapCursor] = useState<number | null>(
         mapNextCursor ?? null,
     );
-    const [mapLoading, setMapLoading] = useState(false);
+    const [mapLoading, setMapLoading] = useState(Boolean(mapDeferred));
+    const [mapReady, setMapReady] = useState(!mapDeferred);
+    const [mapAttempt, setMapAttempt] = useState(0);
+    const mapRequest = useRef<AbortController | null>(null);
     const [mapError, setMapError] = useState('');
     const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     const request = useRef<{ cancel: () => void } | null>(null);
 
     // Reset pagination immediately when Inertia delivers a different map page.
     // React permits guarded prop-derived updates during rendering.
-    const [mapSource, setMapSource] = useState({ mapCoverages, mapNextCursor });
+    const [mapSource, setMapSource] = useState({
+        mapCoverages,
+        mapNextCursor,
+        coverages,
+    });
 
     if (
         mapSource.mapCoverages !== mapCoverages ||
-        mapSource.mapNextCursor !== mapNextCursor
+        mapSource.mapNextCursor !== mapNextCursor ||
+        mapSource.coverages !== coverages
     ) {
-        setMapSource({ mapCoverages, mapNextCursor });
+        setMapSource({ mapCoverages, mapNextCursor, coverages });
+        setMapReady(!mapDeferred);
+        setMapLoading(Boolean(mapDeferred));
         setLoadedMap(mapCoverages ?? []);
         setMapCursor(mapNextCursor ?? null);
         setMapError('');
     }
+
+    useEffect(() => {
+        if (!mapDeferred) {
+            return;
+        }
+
+        const controller = new AbortController();
+        const deadline = window.setTimeout(() => {
+            controller.abort();
+            setMapError('Road map request timed out. Try again.');
+            setMapLoading(false);
+        }, 12_000);
+
+        fetch('/workspace/ui/map/road-index', {
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json' },
+            cache: 'no-store',
+            signal: controller.signal,
+        })
+            .then(async (response) => {
+                if (!response.ok) {
+                    throw new Error('Road map unavailable');
+                }
+
+                const result = await response.json();
+
+                if (!Array.isArray(result.data)) {
+                    throw new Error('Unexpected map response');
+                }
+
+                if (!controller.signal.aborted) {
+                    setLoadedMap(result.data);
+                    setMapCursor(result.next_cursor);
+                    setMapReady(true);
+                }
+            })
+            .catch(() => {
+                if (!controller.signal.aborted) {
+                    setMapError('Could not load map roads. Try again.');
+                }
+            })
+            .finally(() => {
+                window.clearTimeout(deadline);
+
+                if (!controller.signal.aborted) {
+                    setMapLoading(false);
+                }
+            });
+
+        return () => {
+            window.clearTimeout(deadline);
+            controller.abort();
+            mapRequest.current?.abort();
+            mapRequest.current = null;
+        };
+    }, [coverages, mapAttempt, mapDeferred]);
 
     const loadMoreMap = async () => {
         if (mapCursor === null || mapLoading) {
@@ -112,6 +182,9 @@ export default function Index({
 
         setMapLoading(true);
         setMapError('');
+        const controller = new AbortController();
+        mapRequest.current = controller;
+        const deadline = window.setTimeout(() => controller.abort(), 12_000);
 
         try {
             const response = await fetch(
@@ -119,6 +192,8 @@ export default function Index({
                 {
                     credentials: 'same-origin',
                     headers: { Accept: 'application/json' },
+                    cache: 'no-store',
+                    signal: controller.signal,
                 },
             );
 
@@ -135,6 +210,10 @@ export default function Index({
                 throw new Error('Unexpected map response.');
             }
 
+            if (controller.signal.aborted) {
+                return;
+            }
+
             setLoadedMap((previous) => {
                 const seen = new Set(previous.map((road) => road.id));
 
@@ -145,9 +224,16 @@ export default function Index({
             });
             setMapCursor(result.next_cursor);
         } catch {
-            setMapError('Could not load more map roads. Try again.');
+            if (mapRequest.current === controller) {
+                setMapError('Could not load more map roads. Try again.');
+            }
         } finally {
-            setMapLoading(false);
+            window.clearTimeout(deadline);
+
+            if (mapRequest.current === controller) {
+                mapRequest.current = null;
+                setMapLoading(false);
+            }
         }
     };
 
@@ -342,7 +428,33 @@ export default function Index({
                         aria-label="Road coverage map"
                         className="jr-map-card-container mb-6 overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white p-4 shadow-sm sm:p-5"
                     >
-                        <SimplifiedCoverageMap coverages={loadedMap} />
+                        {mapReady ? (
+                            <Suspense
+                                fallback={
+                                    <p role="status">Opening road map…</p>
+                                }
+                            >
+                                <SimplifiedCoverageMap coverages={loadedMap} />
+                            </Suspense>
+                        ) : (
+                            <div className="grid min-h-[450px] place-items-center">
+                                {mapLoading ? (
+                                    <p role="status">Loading road map…</p>
+                                ) : (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => {
+                                            setMapLoading(true);
+                                            setMapError('');
+                                            setMapAttempt((value) => value + 1);
+                                        }}
+                                    >
+                                        Retry map
+                                    </Button>
+                                )}
+                            </div>
+                        )}
                         {mapCursor !== null && (
                             <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
                                 <p>

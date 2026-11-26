@@ -140,13 +140,15 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
             }
         }
 
-        $allRecords = $this->records($actor);
+        $statistics = $this->records($actor)->select([])
+            ->selectRaw("count(*) as total, count(*) filter (where lower(m.status) = 'completed') as completed, count(*) filter (where lower(m.status) in ('ongoing', 'in progress')) as ongoing")
+            ->first();
 
         return $this->render('MaintenanceRecords/Index', $request, [
             'totalProjects' => $this->projectChoices($actor)->count(),
-            'totalRecords' => (clone $allRecords)->count(),
-            'completedRoads' => (clone $allRecords)->whereRaw('LOWER(m.status) = ?', ['completed'])->count(),
-            'ongoingRoads' => (clone $allRecords)->whereRaw('LOWER(m.status) IN (?, ?)', ['ongoing', 'in progress'])->count(),
+            'totalRecords' => (int) ($statistics->total ?? 0),
+            'completedRoads' => (int) ($statistics->completed ?? 0),
+            'ongoingRoads' => (int) ($statistics->ongoing ?? 0),
             'records' => $q->orderBy('m.id', $filters['sort'] === 'oldest' ? 'asc' : 'desc')->paginate(12)->withQueryString()->through(fn (\stdClass $r): array => $this->recordData($r, $actor)),
             'projects' => [], // The directory uses totalProjects, not the full project catalog.
             'municipalities' => $this->municipalities($actor)->map(fn (\stdClass $l): array => ['value' => (string) $l->id, 'label' => $l->municipality_name]),

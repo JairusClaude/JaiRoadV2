@@ -28,10 +28,10 @@ it('bounds the initial road directory map and pages older road geometry for View
     $this->actingAs($this->account('Viewer'));
     $this->get('/workspace/ui/road-coverages')->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->has('mapCoverages', 100)->where('mapNextCursor', fn ($cursor) => is_int($cursor) && $cursor > 0));
-    $index = $this->get('/workspace/ui/road-coverages');
-    $page = $index->viewData('page');
-    $cursor = $page['props']['mapNextCursor'] ?? null;
+            ->where('mapDeferred', true)->missing('mapCoverages')->missing('mapNextCursor'));
+    $index = $this->getJson('/workspace/ui/map/road-index')->assertOk()
+        ->assertHeader('Cache-Control', 'no-store, private')->assertJsonCount(100, 'data');
+    $cursor = $index->json('next_cursor');
     $this->assertIsInt($cursor);
 
     $response = $this->getJson('/workspace/ui/map/road-index?before='.$cursor)
