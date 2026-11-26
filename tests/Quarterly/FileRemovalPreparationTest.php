@@ -71,12 +71,12 @@ final class FileRemovalPreparationTest extends PostgresTestCase
         $mock = Mockery::mock(PrivateSupabaseStorage::class);
         $mock->shouldReceive('fetch')->once()->with('private/fixture.pdf')->andReturn(new Response(new \GuzzleHttp\Psr7\Response(200, [], 'Disposable private bytes')));
         $this->app->instance(PrivateSupabaseStorage::class, $mock);
-        $this->get('/workspace/files/document/'.$document)->assertOk()->assertContent('Disposable private bytes')->assertHeader('Cache-Control', 'no-store, private');
+        $this->get('/workspace/files/document/'.$document)->assertOk()->assertStreamedContent('Disposable private bytes')->assertHeader('Cache-Control', 'no-store, private');
         $failed = Mockery::mock(PrivateMonthlyMediaStorage::class);
         $failed->shouldReceive('fetch')->once()->andThrow(new \RuntimeException('Disposable storage unavailable'));
         $failed->shouldNotReceive('removeAfterFailure');
         $this->app->instance(PrivateMonthlyMediaStorage::class, $failed);
-        $this->getJson('/workspace/files/media/'.$media)->assertServerError();
+        $this->getJson('/workspace/files/media/'.$media)->assertStatus(503)->assertJsonPath('message', 'The private file is temporarily unavailable. Try again later.');
         $this->assertSame(1, DB::table('jairoads_next.media')->count());
     }
 
