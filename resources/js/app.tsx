@@ -19,7 +19,7 @@ createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         switch (true) {
-            case name.startsWith('dd-superadmin-command-center/'):
+            case name === 'SuperAdminDashboard/CommandCenter':
             case name === 'AuditLogs/History':
             case name === 'Workspace/Operations':
             case name === 'Workspace/Directory':

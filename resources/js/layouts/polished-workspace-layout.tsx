@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { DdNotificationBell } from '@/components/dd-notification-bell';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 type Identity = { role: string; username: string; name: string } | null;
@@ -58,7 +58,7 @@ const adminLinks: NavItem[] = [
 
 // Explicit DD-only destinations for newly provisioned accounts. Never allow a
 // DD-linked account to use legacy public-schema business routes via navigation.
-const ddCommonLinks: NavItem[] = [
+const canonicalCommonLinks: NavItem[] = [
     { label: 'Dashboard', href: '/dd-phase3/dashboard', icon: LayoutDashboard },
     {
         label: 'Maintenance Projects',
@@ -80,11 +80,11 @@ const ddCommonLinks: NavItem[] = [
     { label: 'Settings', href: '/dd-phase3/settings', icon: Settings },
 ];
 
-const ddAdminLinks: NavItem[] = [
-    ...ddCommonLinks.slice(0, 2),
+const canonicalAdminLinks: NavItem[] = [
+    ...canonicalCommonLinks.slice(0, 2),
     { label: 'User Management', href: '/dd-phase3/users', icon: Users },
     { label: 'Audit Log', href: '/dd-phase3/audit-logs', icon: ScrollText },
-    ...ddCommonLinks.slice(2),
+    ...canonicalCommonLinks.slice(2),
 ];
 
 function belongsToPath(path: string, href: string): boolean {
@@ -138,7 +138,7 @@ export default function PolishedWorkspaceLayout({
     const page = usePage<{ jairoadsIdentity?: Identity }>();
     const identity = page.props.jairoadsIdentity ?? null;
     const role = identity?.role;
-    const isDdWorkspace = page.url.split('?')[0].startsWith('/dd-phase3/');
+    const isCanonicalWorkspace = page.url.split('?')[0].startsWith('/dd-phase3/');
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
     const isMobile = useIsMobile();
     // Read the persisted icon rail preference once; subsequent writes use its event handler.
@@ -184,10 +184,10 @@ export default function PolishedWorkspaceLayout({
     }
 
     const activeRole: WorkspaceRole = role;
-    const nav = isDdWorkspace
+    const nav = isCanonicalWorkspace
         ? activeRole === 'admin'
-            ? ddAdminLinks
-            : ddCommonLinks
+            ? canonicalAdminLinks
+            : canonicalCommonLinks
         : activeRole === 'admin'
           ? adminLinks
           : commonLinks;
@@ -226,7 +226,7 @@ export default function PolishedWorkspaceLayout({
                 >
                     <Link
                         href={
-                            isDdWorkspace
+                            isCanonicalWorkspace
                                 ? '/dd-phase3/dashboard'
                                 : '/dashboard'
                         }
@@ -386,7 +386,7 @@ export default function PolishedWorkspaceLayout({
                         </div>
                         <div className="flex items-center gap-2 sm:gap-3">
                             <span className="jr-navigation-status-slot" data-jr-navigation-status />
-                            <DdNotificationBell />
+                            <NotificationBell />
                             <div
                                 className="h-7 w-px bg-slate-200 dark:bg-slate-700"
                                 aria-hidden="true"
@@ -416,7 +416,7 @@ export default function PolishedWorkspaceLayout({
                                         </div>
                                         <Link
                                             href={
-                                                isDdWorkspace
+                                                isCanonicalWorkspace
                                                     ? '/dd-phase3/settings'
                                                     : '/settings-preview'
                                             }

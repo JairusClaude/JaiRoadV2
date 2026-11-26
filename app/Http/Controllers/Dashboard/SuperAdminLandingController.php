@@ -108,7 +108,7 @@ final class SuperAdminLandingController extends Controller
                 'progress' => max(0, min(100, (float) ($row->progress_percentage ?? 0))),
             ])->all();
 
-        return Inertia::render('dd-superadmin-command-center/Index', [
+        return Inertia::render('SuperAdminDashboard/CommandCenter', [
             'username' => (string) $account->username,
             'counts' => $counts,
             'analytics' => app(DashboardAnalytics::class)->summary($identity),

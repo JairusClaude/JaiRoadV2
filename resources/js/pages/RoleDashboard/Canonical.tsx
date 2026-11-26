@@ -13,8 +13,8 @@ import {
 } from 'lucide-react';
 import { Component, lazy, Suspense, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { DdDashboardAnalytics } from '@/components/dd-dashboard-analytics';
-import type { DdDashboardSummary } from '@/components/dd-dashboard-analytics';
+import { DashboardAnalytics } from '@/components/dashboard/dashboard-analytics';
+import type { DashboardSummary } from '@/components/dashboard/dashboard-analytics';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import type { SimplifiedCoverageItem } from '@/components/road-coverages/simplified-coverage-map';
 import '../../../css/maintenance-projects-exploration.css';
@@ -29,7 +29,7 @@ type StatKey =
     | 'lgus';
 type Props = {
     role: Role;
-    analytics: DdDashboardSummary;
+    analytics: DashboardSummary;
     name: string;
     username: string;
     engineer: { id: number; name: string; rank: string; status: string } | null;
@@ -336,7 +336,7 @@ export default function RoleDashboard({
                         <DashboardRoadMap key={role + ':' + (engineer?.id ?? username)} isEngineer={isEngineer} total={stats.roadCoverages} />
                     )}
 
-                    <DdDashboardAnalytics
+                    <DashboardAnalytics
                         data={analytics}
                         compact={isEngineer}
                         omitInventoryMetrics

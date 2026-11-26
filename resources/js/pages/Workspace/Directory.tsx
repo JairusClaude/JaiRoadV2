@@ -11,8 +11,8 @@ import {
     RefreshCw,
 } from 'lucide-react';
 import { useState } from 'react';
-import { DdDashboardAnalytics } from '@/components/dd-dashboard-analytics';
-import type { DdDashboardSummary } from '@/components/dd-dashboard-analytics';
+import { DashboardAnalytics } from '@/components/dashboard/dashboard-analytics';
+import type { DashboardSummary } from '@/components/dashboard/dashboard-analytics';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import CanonicalUserManagement from '@/components/user-management/canonical-user-management';
 import WorkspaceLguDirectory from '@/components/lgus/workspace-directory';
@@ -83,7 +83,7 @@ type Props = {
     canManage: boolean;
     canCreateRoles: Role[];
     status: string | null;
-    analytics: DdDashboardSummary | null;
+    analytics: DashboardSummary | null;
 };
 const panel =
     'rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_12px_40px_rgba(15,23,42,.04)]';
@@ -301,7 +301,7 @@ export default function WorkspaceDirectory({
                                 />
                             </section>
                             {analytics && (
-                                <DdDashboardAnalytics
+                                <DashboardAnalytics
                                     data={analytics}
                                     compact
                                 />

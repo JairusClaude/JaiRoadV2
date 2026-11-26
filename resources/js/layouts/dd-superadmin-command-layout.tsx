@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { DdNotificationBell } from '@/components/dd-notification-bell';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 import { useIsMobile } from '@/hooks/use-mobile';
 import '../../css/jairoads-responsive-workspace.css';
 
@@ -235,7 +235,7 @@ export default function DdSuperAdminCommandLayout({
                         </span>
                     </div>
                     <div className="flex items-center gap-3">
-                        <DdNotificationBell variant="dark" />
+                        <NotificationBell variant="dark" />
                         <div className="relative">
                             <button
                                 type="button"

@@ -56,7 +56,7 @@ export function JaiRoadsQuickActions() {
     const role = page.props.jairoadsIdentity?.role;
     const isDd =
         path.startsWith('/dd-phase3/') || path.startsWith('/dd-superadmin-');
-    const ddPaths = [
+    const canonicalPaths = [
         '/dd-phase3/dashboard',
         '/dd-phase3/projects',
         '/dd-phase3/users',
@@ -81,7 +81,7 @@ export function JaiRoadsQuickActions() {
                 href: isDd
                     ? index === 0 && role === 'superadmin'
                         ? '/dd-superadmin-landing'
-                        : ddPaths[index]
+                        : canonicalPaths[index]
                     : entry.href,
             },
         ];

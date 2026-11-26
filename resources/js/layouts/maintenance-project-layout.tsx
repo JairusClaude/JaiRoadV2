@@ -17,7 +17,7 @@ import {
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { toast } from 'sonner';
-import { DdNotificationBell } from '@/components/dd-notification-bell';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 import {
     AlternativeNavigation,
     isAlternativeNavigation,
@@ -419,7 +419,7 @@ export function MaintenanceProjectShell({
                     <div className="jr-top-actions">
                         <span className="jr-navigation-status-slot" data-jr-navigation-status />
                         {viewerTheme ? null : canonical ? (
-                            <DdNotificationBell />
+                            <NotificationBell />
                         ) : (
                             <button
                                 type="button"

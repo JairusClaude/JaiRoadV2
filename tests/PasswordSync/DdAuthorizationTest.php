@@ -14,7 +14,7 @@ it('renders each active DD role dashboard using its explicit identity', function
     $this->get($destination)->assertOk()->assertInertia(fn (Assert $page) => $page
         ->component($component)->missing('auth.user.password')->missing('auth.user.two_factor_secret'));
 })->with([
-    ['SuperAdmin', 'dd-superadmin-command-center/Index'],
+    ['SuperAdmin', 'SuperAdminDashboard/CommandCenter'],
     ['Admin', 'Workspace/Directory'],
     ['Engineer', 'RoleDashboard/Canonical'],
     ['Viewer', 'RoleDashboard/Canonical'],
