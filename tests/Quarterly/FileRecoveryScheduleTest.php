@@ -1,0 +1,58 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Quarterly;
+
+use App\Services\Files\FileRecoverySchedule;
+use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Http;
+
+final class FileRecoveryScheduleTest extends PostgresTestCase
+{
+    public function test_scheduler_fails_closed_without_both_flags_and_a_shared_cache(): void
+    {
+        Http::fake();
+        foreach ([
+            [false, false, 'database'],
+            [true, false, 'database'],
+            [false, true, 'database'],
+            [true, true, 'file'],
+            [true, true, 'array'],
+            [true, true, 'failover'],
+        ] as [$deletion, $scheduled, $store]) {
+            config([
+                'jairoads_file_deletion.operationally_enabled' => $deletion,
+                'jairoads_file_deletion.scheduled_reconciliation' => $scheduled,
+                'cache.default' => $store,
+            ]);
+            $schedule = new Schedule;
+            FileRecoverySchedule::register($schedule);
+            $this->assertCount(0, $schedule->events());
+            $this->assertFalse(FileRecoverySchedule::readiness()['registration_allowed']);
+        }
+        $this->artisan('jairoads:file-recovery-readiness')->assertFailed();
+        Http::assertNothingSent();
+    }
+
+    public function test_scheduler_registers_only_the_approved_bounded_command_with_locks(): void
+    {
+        Http::fake();
+        config([
+            'jairoads_file_deletion.operationally_enabled' => true,
+            'jairoads_file_deletion.scheduled_reconciliation' => true,
+            'cache.default' => 'database',
+        ]);
+        $schedule = new Schedule;
+        FileRecoverySchedule::register($schedule);
+        $this->assertCount(1, $schedule->events());
+        $event = $schedule->events()[0];
+        $this->assertStringContainsString(FileRecoverySchedule::COMMAND, $event->command);
+        $this->assertSame('*/5 * * * *', $event->expression);
+        $this->assertTrue($event->withoutOverlapping);
+        $this->assertTrue($event->onOneServer);
+        $this->assertSame(10, $event->expiresAt);
+        $this->artisan('jairoads:file-recovery-readiness')->assertSuccessful();
+        Http::assertNothingSent();
+    }
+}
