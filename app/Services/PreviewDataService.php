@@ -80,7 +80,7 @@ final class PreviewDataService
                 'username' => 'UserTest',
                 'name' => 'UserTest',
             ],
-            'status' => $request->session()->pull('dd_operations_status'),
+            'status' => $request->session()->pull('jairoads_operations_status', $request->session()->pull('dd_operations_status')),
         ]);
     }
 
@@ -327,7 +327,7 @@ final class PreviewDataService
         $detail = $directory.'/'.$targetId;
 
         return redirect($id === null ? $directory : self::previewReturn($request, $detail, [$directory, $detail]))
-            ->with('dd_operations_status', 'Road coverage saved successfully (Preview Mode).');
+            ->with('jairoads_operations_status', 'Road coverage saved successfully (Preview Mode).');
     }
 
     public static function deleteRoad(Request $request, int $id): RedirectResponse
@@ -338,7 +338,7 @@ final class PreviewDataService
         self::saveStore($store);
 
         return redirect('/workspace/ui/road-coverages')
-            ->with('dd_operations_status', 'Road coverage deleted successfully (Preview Mode).');
+            ->with('jairoads_operations_status', 'Road coverage deleted successfully (Preview Mode).');
     }
 
     public static function bulkDeleteRoad(Request $request): RedirectResponse
@@ -351,7 +351,7 @@ final class PreviewDataService
         self::saveStore($store);
 
         return redirect('/workspace/ui/road-coverages')
-            ->with('dd_operations_status', 'Selected road coverages deleted successfully (Preview Mode).');
+            ->with('jairoads_operations_status', 'Selected road coverages deleted successfully (Preview Mode).');
     }
 
     public static function roadReferences(Request $request): JsonResponse
@@ -612,7 +612,7 @@ final class PreviewDataService
         $directory = '/workspace/ui/lgus';
         $detail = $directory.'/'.$id;
 
-        return redirect($id === null ? $directory : self::previewReturn($request, $detail, [$directory, $detail]))->with('dd_operations_status', 'LGU saved successfully (Preview Mode).');
+        return redirect($id === null ? $directory : self::previewReturn($request, $detail, [$directory, $detail]))->with('jairoads_operations_status', 'LGU saved successfully (Preview Mode).');
     }
 
     public static function deleteLgu(Request $request, int $id): RedirectResponse
@@ -621,7 +621,7 @@ final class PreviewDataService
         $store = self::deletePreviewLgus($store, [$id]);
         self::saveStore($store);
 
-        return redirect('/workspace/ui/lgus')->with('dd_operations_status', 'LGU deleted successfully (Preview Mode).');
+        return redirect('/workspace/ui/lgus')->with('jairoads_operations_status', 'LGU deleted successfully (Preview Mode).');
     }
 
     public static function bulkDestroyLgu(Request $request): RedirectResponse
@@ -632,7 +632,7 @@ final class PreviewDataService
         $store = self::deletePreviewLgus($store, array_values(array_unique($intIds)));
         self::saveStore($store);
 
-        return redirect('/workspace/ui/lgus')->with('dd_operations_status', 'Selected LGUs deleted successfully (Preview Mode).');
+        return redirect('/workspace/ui/lgus')->with('jairoads_operations_status', 'Selected LGUs deleted successfully (Preview Mode).');
     }
 
     /**
@@ -825,7 +825,7 @@ final class PreviewDataService
         $directory = '/workspace/ui/maintenance-projects';
         $detail = $directory.'/'.$targetId;
 
-        return redirect($id === null ? $detail : self::previewReturn($request, $detail, [$directory, $detail]))->with('dd_operations_status', 'Maintenance Project saved successfully (Preview Mode).');
+        return redirect($id === null ? $detail : self::previewReturn($request, $detail, [$directory, $detail]))->with('jairoads_operations_status', 'Maintenance Project saved successfully (Preview Mode).');
     }
 
     /**
@@ -1106,7 +1106,7 @@ final class PreviewDataService
         $detail = $parent.'/records/'.$targetId;
 
         return redirect(self::previewReturn($request, $id === null ? $parent : $detail, [$parent, $detail, '/workspace/ui/maintenance-records']))
-            ->with('dd_operations_status', 'Maintenance record saved successfully (Preview Mode).');
+            ->with('jairoads_operations_status', 'Maintenance record saved successfully (Preview Mode).');
     }
 
     public static function deleteRecord(Request $request, int $id): RedirectResponse
@@ -1122,7 +1122,7 @@ final class PreviewDataService
         $parent = '/workspace/ui/maintenance-projects/'.$record['project_id'];
 
         return redirect(self::previewReturn($request, $directory, [$directory, $parent]))
-            ->with('dd_operations_status', 'Maintenance record deleted successfully (Preview Mode).');
+            ->with('jairoads_operations_status', 'Maintenance record deleted successfully (Preview Mode).');
     }
 
     public static function bulkDeleteRecord(Request $request): RedirectResponse
@@ -1135,7 +1135,7 @@ final class PreviewDataService
         self::saveStore($store);
 
         return redirect('/workspace/ui/maintenance-records')
-            ->with('dd_operations_status', 'Selected maintenance records deleted successfully (Preview Mode).');
+            ->with('jairoads_operations_status', 'Selected maintenance records deleted successfully (Preview Mode).');
     }
 
     /**

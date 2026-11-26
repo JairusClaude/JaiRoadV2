@@ -76,7 +76,7 @@ final class MaintenanceProjectPageController extends OperationsFrontendControlle
         $fallback = $id === null ? $directory : $directory.'/'.$id;
         $return = $this->editReturn($request, $fallback, [$directory, $fallback]);
 
-        return redirect($return)->with('dd_operations_status', 'Maintenance Project saved to the database.');
+        return redirect($return)->with('jairoads_operations_status', 'Maintenance Project saved to the database.');
     }
 
     public function projectShow(Request $request, int $id): Response

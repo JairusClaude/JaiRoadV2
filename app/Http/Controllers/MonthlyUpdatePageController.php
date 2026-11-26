@@ -134,7 +134,7 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
             $destination = $this->relatedEditReturn($request, 'monthly-updates', $id, (int) $update->project_id, (int) $update->maintenance_id);
         }
 
-        return redirect($destination)->with('dd_operations_status', 'Monthly update saved.');
+        return redirect($destination)->with('jairoads_operations_status', 'Monthly update saved.');
     }
 
     public function updateShow(Request $request, int $id): Response
@@ -163,7 +163,7 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
         $request->merge(['monthly_update_id' => $id]);
         $this->operations->uploadMedia($request, $this->identities, $this->media);
 
-        return redirect($this->relatedEditReturn($request, 'monthly-updates', $id, (int) $u->project_id, (int) $u->maintenance_id))->with('dd_operations_status', 'Private media uploaded.');
+        return redirect($this->relatedEditReturn($request, 'monthly-updates', $id, (int) $u->project_id, (int) $u->maintenance_id))->with('jairoads_operations_status', 'Private media uploaded.');
     }
 
     public function deleteUpdate(Request $request, int $id): RedirectResponse
@@ -173,7 +173,7 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
 
         $this->deleteUpdates($request, $actor, [$id]);
 
-        return redirect($this->relatedReturn($request, $actor, self::BASE.'/monthly-updates'))->with('dd_operations_status', 'Monthly update deleted successfully.');
+        return redirect($this->relatedReturn($request, $actor, self::BASE.'/monthly-updates'))->with('jairoads_operations_status', 'Monthly update deleted successfully.');
     }
 
     public function bulkDelete(Request $request): RedirectResponse
@@ -184,7 +184,7 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
         $v = $request->validate(['update_ids' => ['required', 'array', 'min:1', 'max:100'], 'update_ids.*' => ['required', 'integer', 'min:1', 'distinct']]);
         $this->deleteUpdates($request, $actor, array_values(array_map('intval', $v['update_ids'])));
 
-        return redirect($this->relatedReturn($request, $actor, self::BASE.'/monthly-updates'))->with('dd_operations_status', 'Selected monthly updates deleted successfully.');
+        return redirect($this->relatedReturn($request, $actor, self::BASE.'/monthly-updates'))->with('jairoads_operations_status', 'Selected monthly updates deleted successfully.');
     }
 
     /**

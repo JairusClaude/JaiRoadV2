@@ -74,7 +74,7 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
                 $this->operations->saveRecord($request, $this->identities, $id);
             } catch (DuplicateMaintenancePeriod $error) {
                 if (! $request->expectsJson()) {
-                    $request->session()->flash('dd_duplicate_period', $request->only(['project_id', 'maintenance_year', 'quarter']));
+                    $request->session()->flash('jairoads_duplicate_period', $request->only(['project_id', 'maintenance_year', 'quarter']));
                 }
                 throw $error;
             }
@@ -83,7 +83,7 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
         $parent = self::BASE.'/maintenance-projects/'.$project;
         $detail = $id === null ? $parent : $parent.'/records/'.$id;
 
-        return redirect($this->editReturn($request, $id === null ? $parent : $detail, [$parent, $detail, self::BASE.'/maintenance-records']))->with('dd_operations_status', 'MaintenanceRecord saved to the database.');
+        return redirect($this->editReturn($request, $id === null ? $parent : $detail, [$parent, $detail, self::BASE.'/maintenance-records']))->with('jairoads_operations_status', 'MaintenanceRecord saved to the database.');
     }
 
     public function recordShow(Request $request, int $project, int $id): Response
@@ -185,7 +185,7 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
         abort_unless($this->records($actor)->where('m.project_id', $project)->where('m.id', $id)->exists(), 404);
         $this->operations->reassignRecord($request, $this->identities, $id);
 
-        return redirect(self::BASE.'/maintenance-projects/'.$project.'/records/'.$id)->with('dd_operations_status', 'ManagingEngineer reassigned.');
+        return redirect(self::BASE.'/maintenance-projects/'.$project.'/records/'.$id)->with('jairoads_operations_status', 'ManagingEngineer reassigned.');
     }
 
     public function deleteRecord(Request $request, int $id): RedirectResponse
@@ -207,7 +207,7 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
             $allowed[] = self::BASE.'/maintenance-projects/'.$record->project_id;
         }
 
-        return redirect($this->editReturn($request, $directory, $allowed))->with('dd_operations_status', 'Maintenance record deleted successfully.');
+        return redirect($this->editReturn($request, $directory, $allowed))->with('jairoads_operations_status', 'Maintenance record deleted successfully.');
     }
 
     public function bulkDeleteRecord(Request $request): RedirectResponse
@@ -227,7 +227,7 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
         $ids = array_values(array_map('intval', $validated['record_ids']));
         $this->deleteEmptyRecords($actor, $ids);
 
-        return redirect(self::BASE.'/maintenance-records')->with('dd_operations_status', 'Selected maintenance records deleted successfully.');
+        return redirect(self::BASE.'/maintenance-records')->with('jairoads_operations_status', 'Selected maintenance records deleted successfully.');
     }
 
     /** Delete only empty, attached records; never cascade over private files or preserved history.

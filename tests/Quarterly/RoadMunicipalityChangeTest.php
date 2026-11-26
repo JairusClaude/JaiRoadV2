@@ -37,7 +37,7 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
         $this->assertSame($before, $this->history()); // Review, followed by Cancel, has no write at all.
         $this->assertSame(1, DB::table('jairoads_next.audit_logs')->count());
         $this->confirm($f, $preview['confirmation_token'])->assertRedirect('/workspace/roads')
-            ->assertSessionHas('dd_operations_status', 'Municipality changed from Test municipality to Destination town. Road geometry and maintenance history were preserved.');
+            ->assertSessionHas('jairoads_operations_status', 'Municipality changed from Test municipality to Destination town. Road geometry and maintenance history were preserved.');
         $after = DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->first();
         foreach (['geojson', 'kilometers', 'road_name', 'pavement_type', 'state_category', 'created_by', 'created_at'] as $field) {
             $this->assertSame($road->$field, $after->$field, $field);

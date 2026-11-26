@@ -107,7 +107,7 @@ class OperationsFrontendController extends Controller
         return Inertia::render($component, $props + [
             'canonicalFrontend' => true,
             'jairoadsIdentity' => ['role' => strtolower($this->actor($request)['role'])],
-            'status' => $request->session()->pull('dd_operations_status'),
+            'status' => $request->session()->pull('jairoads_operations_status', $request->session()->pull('dd_operations_status')),
         ]);
     }
 
@@ -234,7 +234,7 @@ class OperationsFrontendController extends Controller
      */
     protected function duplicatePeriod(Request $request, array $actor): ?array
     {
-        $period = $request->session()->get('dd_duplicate_period');
+        $period = $request->session()->get('jairoads_duplicate_period', $request->session()->get('dd_duplicate_period'));
         if (! is_array($period)) {
             return null;
         }

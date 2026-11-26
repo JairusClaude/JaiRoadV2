@@ -58,7 +58,7 @@ final class PreservedHistoryController extends Controller
             return response()->json(['state' => 'completed', 'message' => 'Maintenance project and reviewed dependent data deleted successfully.']);
         }
 
-        return redirect('/workspace/ui/maintenance-projects')->with('dd_operations_status', 'Maintenance project and reviewed dependent data deleted successfully.');
+        return redirect('/workspace/ui/maintenance-projects')->with('jairoads_operations_status', 'Maintenance project and reviewed dependent data deleted successfully.');
     }
 
     public function bulkDelete(Request $request): JsonResponse|RedirectResponse
@@ -96,7 +96,7 @@ final class PreservedHistoryController extends Controller
             return response()->json(['state' => $failedProjects === [] ? 'completed' : 'partial', 'message' => $message]);
         }
 
-        return redirect('/workspace/ui/maintenance-projects')->with('dd_operations_status', $message);
+        return redirect('/workspace/ui/maintenance-projects')->with('jairoads_operations_status', $message);
     }
 
     private function records(): Builder

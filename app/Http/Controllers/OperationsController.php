@@ -39,7 +39,7 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 /**
- * Final DD module endpoints. public.users is authentication infrastructure only.
+ * Canonical module endpoints. public.users is authentication infrastructure only.
  * All business SQL is explicitly jairoads_next qualified and audited.
  */
 class OperationsController extends Controller
@@ -157,7 +157,7 @@ class OperationsController extends Controller
 
     protected function done(string $section, string $message): RedirectResponse
     {
-        return redirect()->route('jairoads.workspace.show', ['section' => $section])->with('dd_operations_status', $message);
+        return redirect()->route('jairoads.workspace.show', ['section' => $section])->with('jairoads_operations_status', $message);
     }
 
     public function show(string $section, Request $request, AccountIdentityResolver $resolver): Response
@@ -178,7 +178,7 @@ class OperationsController extends Controller
                 'records' => [], 'updates' => [], 'documents' => [], 'media' => [],
                 'maintenanceHistory' => [], 'maintenanceSchedule' => null, 'managerChoices' => [], 'canUnassign' => false,
                 'documentsReady' => false, 'mediaReady' => false,
-                'status' => $request->session()->get('dd_operations_status'),
+                'status' => $request->session()->get('jairoads_operations_status', $request->session()->get('dd_operations_status')),
                 'canonicalFrontend' => true, 'jairoadsIdentity' => ['role' => strtolower($actor['role'])],
                 'navigationSection' => $section,
             ]);
@@ -275,7 +275,7 @@ class OperationsController extends Controller
             'engineerId' => $actor['engineer_id'], 'hasAssignment' => count($activeLgus) > 0,
             'capabilities' => RoleAccess::capabilities($actor['role'], count($activeLgus) > 0, $actor['engineer_id'] !== null),
             'identity' => ['username' => (string) $account->username, 'email' => (string) $account->email, 'role' => $actor['role']],
-            'lgus' => $this->t('lgus')->when($restricted, fn ($q) => $q->whereIn('id', $activeLgus))->orderBy('id')->when(! $projectForm, fn ($q) => $q->limit(300))->get(['id', 'municipality_name']),
+            'lgus' => $this->t('lgus')->when($restricted, fn ($q) => $q->whereIn('id', $activeLgus))->orderBy('id')->when($projectView === null, fn ($q) => $q->limit(300))->get(['id', 'municipality_name']),
             'engineers' => $this->t('engineers')->where('engineer_status', 'Active')->when($restricted, fn ($q) => $q->where('id', $actor['engineer_id']))->orderBy('id')->limit(300)->get(['id', 'first_name', 'last_name']),
             // For manager-initiated RoadCoverage creation, the actual Engineer
             // who prepared the mapped coverage must be chosen explicitly.
@@ -293,7 +293,7 @@ class OperationsController extends Controller
             'media' => $section === 'updates' ? $media->limit(300)->get(['m.id', 'm.monthly_update_id', 'm.file_name', 'm.file_type', 'mr.managing_engineer_id']) : [],
             'documentsReady' => app(PrivateSupabaseStorage::class)->configured(),
             'mediaReady' => app(PrivateMonthlyMediaStorage::class)->configured(),
-            'status' => $request->session()->get('dd_operations_status'),
+            'status' => $request->session()->get('jairoads_operations_status', $request->session()->get('dd_operations_status')),
             'canonicalFrontend' => true,
             'jairoadsIdentity' => ['role' => strtolower($actor['role'])],
             'navigationSection' => $section,
@@ -535,7 +535,7 @@ class OperationsController extends Controller
         }
 
         return redirect()->route('jairoads.workspace.show', ['section' => 'projects', 'view' => 'show', 'project' => $v['project_id']])
-            ->with('dd_operations_status', 'Maintenance record saved.');
+            ->with('jairoads_operations_status', 'Maintenance record saved.');
     }
 
     public function reassignRecord(Request $request, AccountIdentityResolver $resolver, int $id): RedirectResponse
@@ -581,7 +581,7 @@ class OperationsController extends Controller
         }, 3);
 
         return redirect()->route('jairoads.workspace.show', ['section' => 'projects', 'view' => 'show', 'project' => $projectId])
-            ->with('dd_operations_status', 'ManagingEngineer reassigned.');
+            ->with('jairoads_operations_status', 'ManagingEngineer reassigned.');
     }
 
     public function unassignRecord(Request $request, AccountIdentityResolver $resolver, int $id): RedirectResponse

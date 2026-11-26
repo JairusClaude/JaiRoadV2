@@ -22,7 +22,8 @@ final class DuplicatePeriodWarningTest extends PostgresTestCase
 
         $this->from($url.'/create')->post($url, array_replace($data, ['description' => 'Keep my work']))
             ->assertRedirect($url.'/create')->assertSessionHasErrors('quarter')
-            ->assertSessionHasInput('description', 'Keep my work');
+            ->assertSessionHasInput('description', 'Keep my work')
+            ->assertSessionHas('jairoads_duplicate_period');
         $this->get($url.'/create')->assertInertia(fn (Assert $page) => $page
             ->where('duplicatePeriod.project_id', $f['project'])->where('duplicatePeriod.project_title', 'Test project')
             ->where('duplicatePeriod.maintenance_year', 2026)->where('duplicatePeriod.quarter', 'Q1')

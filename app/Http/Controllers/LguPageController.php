@@ -223,14 +223,14 @@ final class LguPageController extends OperationsFrontendController
         if ($id === null) {
             DB::table('jairoads_next.lgus')->insert($v);
 
-            return redirect(self::BASE.'/lgus')->with('dd_operations_status', 'LGU created successfully.');
+            return redirect(self::BASE.'/lgus')->with('jairoads_operations_status', 'LGU created successfully.');
         }
 
         DB::table('jairoads_next.lgus')->where('id', $id)->update($v);
         $directory = self::BASE.'/lgus';
         $detail = $directory.'/'.$id;
 
-        return redirect($this->editReturn($request, $detail, [$directory, $detail]))->with('dd_operations_status', 'LGU updated successfully.');
+        return redirect($this->editReturn($request, $detail, [$directory, $detail]))->with('jairoads_operations_status', 'LGU updated successfully.');
     }
 
     public function deleteLgu(Request $request, int $id): RedirectResponse
@@ -244,7 +244,7 @@ final class LguPageController extends OperationsFrontendController
 
         $this->deleteCheckedLgus($actor, [$id]);
 
-        return redirect(self::BASE.'/lgus')->with('dd_operations_status', 'LGU deleted successfully.');
+        return redirect(self::BASE.'/lgus')->with('jairoads_operations_status', 'LGU deleted successfully.');
     }
 
     public function bulkDestroy(Request $request): RedirectResponse
@@ -262,7 +262,7 @@ final class LguPageController extends OperationsFrontendController
         ]);
         $this->deleteCheckedLgus($actor, array_values(array_map('intval', $validated['ids'])));
 
-        return redirect(self::BASE.'/lgus')->with('dd_operations_status', 'Selected LGUs deleted successfully.');
+        return redirect(self::BASE.'/lgus')->with('jairoads_operations_status', 'Selected LGUs deleted successfully.');
     }
 
     /**

@@ -112,7 +112,7 @@ final class MaintenanceDocumentPageController extends OperationsFrontendControll
             $destination = $this->relatedEditReturn($request, 'maintenance-documents', $id, (int) $document->project_id, (int) $document->maintenance_id);
         }
 
-        return redirect($destination)->with('dd_operations_status', 'MaintenanceDocument saved.');
+        return redirect($destination)->with('jairoads_operations_status', 'MaintenanceDocument saved.');
     }
 
     public function bulkDeleteDocument(Request $request): RedirectResponse
@@ -139,6 +139,6 @@ final class MaintenanceDocumentPageController extends OperationsFrontendControll
             }
         }
 
-        return redirect($this->relatedReturn($request, $actor, self::BASE.'/maintenance-documents'))->with('dd_operations_status', 'Selected documents permanently deleted.');
+        return redirect($this->relatedReturn($request, $actor, self::BASE.'/maintenance-documents'))->with('jairoads_operations_status', 'Selected documents permanently deleted.');
     }
 }
