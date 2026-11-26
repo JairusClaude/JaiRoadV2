@@ -135,6 +135,7 @@ try {
         assert.equal((await fetch(`${base}/up`)).status, 200);
         const login = await fetch(`${base}/login`);
         assert.equal(login.status, 200);
+        assert.doesNotMatch(login.headers.get('cache-control') || '', /public|immutable/i);
         const html = await login.text();
         const assets = [
             ...html.matchAll(/(?:href|src)="([^"]*\/build\/assets\/[^"]+)"/g),
@@ -163,12 +164,18 @@ try {
                 new URL(base).origin,
                 `Unexpected rendered asset origin: ${asset}`,
             );
-            const response = await fetch(asset, { redirect: 'manual' });
+            const response = await fetch(asset, {
+                redirect: 'manual',
+                headers: { 'Accept-Encoding': 'gzip' },
+            });
             assert.equal(
                 response.status,
                 200,
                 `Asset ${asset}: HTTP ${response.status}; Location=${response.headers.get('location')}`,
             );
+
+            assert.match(response.headers.get('cache-control') || '', /max-age=31536000/);
+            assert.match(response.headers.get('cache-control') || '', /immutable/);
 
             if (new URL(asset).pathname.endsWith('.css')) {
                 assert.match(
@@ -187,6 +194,14 @@ try {
                 `Empty asset: ${asset}`,
             );
         }
+
+        const missingAsset = await fetch(`${base}/build/assets/missing-asset-12345678.js`);
+        assert.equal(missingAsset.status, 404);
+        assert.doesNotMatch(missingAsset.headers.get('cache-control') || '', /immutable/);
+        const css = assetUrls.find((asset) => new URL(asset).pathname.endsWith('.css'));
+        const compressed = await fetch(css, { headers: { 'Accept-Encoding': 'gzip' } });
+        assert.equal(compressed.headers.get('content-encoding'), 'gzip');
+        console.log('PASS: hashed assets have immutable caching and compression; HTML and missing assets do not.');
 
         await assertLoginAssetOrigin(
             '/login',

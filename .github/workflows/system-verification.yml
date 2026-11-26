@@ -144,7 +144,9 @@ jobs:
                 exit 1
               fi ;;
             typescript) npm run types:check ;;
-            build) npm run build ;;
+            build)
+              npm run build
+              node tests/Browser/login-build-budget.mjs ;;
             laravel)
               npm run build
               export DB_CONNECTION=pgsql DB_HOST=127.0.0.1 DB_PORT=5432 DB_DATABASE=jairoads_scratch_repository DB_USERNAME=postgres DB_PASSWORD=disposable-ci-only

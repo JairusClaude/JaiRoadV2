@@ -1,17 +1,26 @@
 import { createInertiaApp } from '@inertiajs/react';
+import { lazy, Suspense } from 'react';
 import '../css/jairoads-role-components.css';
 import '../css/jairoads-dark-appearance.css';
 import { JaiRoadsNavigationFeedback } from '@/components/jairoads/navigation-feedback';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
-import AppLayout from '@/layouts/app-layout';
-import AuthLayout from '@/layouts/auth-layout';
-import MaintenanceProjectLayout from '@/layouts/maintenance-project-layout';
-import RoleAwareWorkspaceLayout from '@/layouts/role-aware-workspace-layout';
-import RoleWorkspaceLayout from '@/layouts/role-workspace-layout';
-import SettingsLayout from '@/layouts/settings/layout';
 import '../css/jairoads-motion.css';
+
+// Load workspace shells only after the corresponding page is requested.
+const AppLayout = lazy(() => import('@/layouts/app-layout'));
+const AuthLayout = lazy(() => import('@/layouts/auth-layout'));
+const MaintenanceProjectLayout = lazy(
+    () => import('@/layouts/maintenance-project-layout'),
+);
+const RoleAwareWorkspaceLayout = lazy(
+    () => import('@/layouts/role-aware-workspace-layout'),
+);
+const RoleWorkspaceLayout = lazy(
+    () => import('@/layouts/role-workspace-layout'),
+);
+const SettingsLayout = lazy(() => import('@/layouts/settings/layout'));
 
 const appName = import.meta.env.VITE_APP_NAME || 'JaiROADS';
 
@@ -65,7 +74,18 @@ createInertiaApp({
     withApp(app) {
         return (
             <TooltipProvider delayDuration={0}>
-                {app}
+                <Suspense
+                    fallback={
+                        <div
+                            role="status"
+                            className="grid min-h-screen place-items-center text-sm"
+                        >
+                            Loading JaiROADS workspace…
+                        </div>
+                    }
+                >
+                    {app}
+                </Suspense>
                 <JaiRoadsNavigationFeedback />
                 <Toaster />
             </TooltipProvider>

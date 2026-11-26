@@ -107,6 +107,11 @@ function DashboardRoadMap({
 
     useEffect(() => {
         const controller = new AbortController();
+        const deadline = window.setTimeout(() => {
+            controller.abort();
+            setError('Road map request timed out. You can retry.');
+            setLoading(false);
+        }, 12_000);
         const url =
             '/workspace/dashboard/map-roads' +
             (requestCursor === null
@@ -128,7 +133,14 @@ function DashboardRoadMap({
                     next_cursor: number | null;
                 };
 
-                if (!Array.isArray(result.data)) {
+                if (
+                    !Array.isArray(result.data) ||
+                    (result.next_cursor !== null &&
+                        (!Number.isSafeInteger(result.next_cursor) ||
+                            result.next_cursor <= 0 ||
+                            (requestCursor !== null &&
+                                result.next_cursor >= requestCursor)))
+                ) {
                     throw new Error('Invalid map data');
                 }
 
@@ -136,19 +148,18 @@ function DashboardRoadMap({
                     return;
                 }
 
-                setCoverages((prior) =>
-                    requestCursor === null
-                        ? result.data
-                        : [
-                              ...prior,
-                              ...result.data.filter(
-                                  (road) =>
-                                      !prior.some(
-                                          (existing) => existing.id === road.id,
-                                      ),
-                              ),
-                          ],
-                );
+                setCoverages((prior) => {
+                    if (requestCursor === null) {
+                        return result.data;
+                    }
+
+                    const seen = new Set(prior.map((road) => road.id));
+
+                    return [
+                        ...prior,
+                        ...result.data.filter((road) => !seen.has(road.id)),
+                    ];
+                });
                 setCursor(result.next_cursor);
                 setReady(true);
             })
@@ -160,12 +171,17 @@ function DashboardRoadMap({
                 }
             })
             .finally(() => {
+                window.clearTimeout(deadline);
+
                 if (!controller.signal.aborted) {
                     setLoading(false);
                 }
             });
 
-        return () => controller.abort();
+        return () => {
+            window.clearTimeout(deadline);
+            controller.abort();
+        };
     }, [requestCursor, attempt]);
 
     return (
