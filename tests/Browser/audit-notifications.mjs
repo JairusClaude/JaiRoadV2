@@ -173,10 +173,39 @@ export async function verifyAuditNotifications({
         next?.url,
         'Retained historical fixture entries exercise real pagination',
     );
-    await admin.goto(next.url);
-    const older = JSON.parse(
-        await admin.locator('script[data-page]').textContent(),
-    ).props.events.data;
+    // Exercise the actual Inertia pagination link, not a direct page.goto.
+    const activityNav = admin.getByRole('navigation', { name: 'Audit history pagination' });
+    const nextURL = new URL(next.url, base);
+    assert.equal(nextURL.origin, new URL(base).origin);
+    const nextResponse = admin.waitForResponse(response =>
+        new URL(response.url()).pathname === nextURL.pathname &&
+        new URL(response.url()).searchParams.get('page') === nextURL.searchParams.get('page') &&
+        response.request().headers()['x-inertia'] === 'true',
+    );
+    await activityNav.getByRole('link', { name: /Next/ }).click();
+    const nextResult = await nextResponse;
+    assert.equal(nextResult.status(), 200);
+    const older = (await nextResult.json()).props.events.data;
+    await activityNav.locator('[aria-current="page"]').getByText('2', { exact: true }).waitFor();
+    assert.ok(older.length > 0);
+    assert.ok(older.every(e => !props.events.data.some(first => first.id === e.id)));
+
+    const authNav = admin.getByRole('navigation', { name: 'Authentication history pagination' });
+    if (await authNav.getByRole('link', { name: /Next/ }).count()) {
+        const authNext = authNav.getByRole('link', { name: /Next/ });
+        const authURL = new URL(await authNext.getAttribute('href'), base);
+        assert.equal(authURL.origin, new URL(base).origin);
+        assert.equal(authURL.searchParams.get('page'), '2');
+        const authResponse = admin.waitForResponse(response =>
+            new URL(response.url()).pathname === authURL.pathname &&
+            new URL(response.url()).searchParams.get('auth_page') === '2' &&
+            response.request().headers()['x-inertia'] === 'true',
+        );
+        await authNext.click();
+        assert.equal((await authResponse).status(), 200);
+        await authNav.locator('[aria-current="page"]').getByText('2', { exact: true }).waitFor();
+        assert.equal(new URL(admin.url()).searchParams.get('page'), '2');
+    }
 
     for (const event of older.filter((e) => e.action === 'LOGIN')) {
         assert.ok(
@@ -197,6 +226,10 @@ export async function verifyAuditNotifications({
     await superadmin
         .getByRole('heading', { name: 'Audit Log', exact: true })
         .waitFor();
+    const online = superadmin.getByRole('region', { name: 'Currently Online Users', exact: true });
+    const ownRow = online.getByRole('row').filter({ has: superadmin.getByText('You', { exact: true }) });
+    await ownRow.getByText('SuperAdmin', { exact: true }).waitFor();
+    await ownRow.getByText('Active', { exact: true }).waitFor();
     console.log(
         'PASS: one real Engineer update appears in each eligible Admin/SuperAdmin/actor feed; Viewer receives none; safe unique feed IDs; privileged read-only audit snapshots/pagination; historical LOGIN preserved without new authentication events.',
     );
