@@ -40,3 +40,7 @@ configured())
 
 # Local-only synthetic PostgreSQL and Laravel staging secrets/fixtures.
 /.free-staging/
+
+# Python release/UAT validation bytecode
+__pycache__/
+*.py[cod]
