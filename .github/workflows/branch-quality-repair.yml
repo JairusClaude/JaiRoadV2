@@ -28,7 +28,7 @@ jobs:
           extensions: pdo_pgsql, pdo_sqlite, mbstring
           tools: composer:v2
           coverage: none
-      - name: Targeted dependency and PHP formatting correction
+      - name: Targeted dependency and PHP formatting correction (stream EOF fix)
         shell: bash
         run: |
           set -euo pipefail
@@ -41,6 +41,7 @@ jobs:
           composer types:check
           git diff --check
           git diff --stat
+          git status --short
           git add -- composer.lock app/Http/Controllers/AuditHistoryController.php app/Http/Controllers/OperationsController.php app/Services/Documents/PrivateSupabaseStorage.php app/Services/MonthlyUpdates/PrivateMonthlyMediaStorage.php app/Services/SecurityMonitoring/AuthenticationTelemetry.php app/Services/SecurityMonitoring/SessionCatalog.php tests/Quarterly/FullMaintenanceWorkflowTest.php tests/Quarterly/FileRemovalPreparationTest.php
           git diff --exit-code
           git diff --cached --quiet && exit 0

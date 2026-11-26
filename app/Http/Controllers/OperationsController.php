@@ -920,9 +920,13 @@ class OperationsController extends Controller
 
         return response()->stream(static function () use ($body): void {
             try {
-                while (! $body->eof()) {
+                while (true) {
                     $chunk = $body->read(65536);
-                    if ($chunk === '' && ! $body->eof()) {
+                    if ($chunk === '') {
+                        if ($body->eof()) {
+                            break;
+                        }
+
                         throw new \RuntimeException('Private file transfer interrupted.');
                     }
                     echo $chunk;
