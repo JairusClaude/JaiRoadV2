@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Documents;
 
+use GuzzleHttp\Psr7\Utils;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
@@ -65,7 +66,7 @@ class PrivateSupabaseStorage
         }
         try {
             $response = $this->request()->withHeaders(['x-upsert' => 'false'])
-                ->withBody(\GuzzleHttp\Psr7\Utils::streamFor($stream), $mime)->post($this->objectUrl($path));
+                ->withBody(Utils::streamFor($stream), $mime)->post($this->objectUrl($path));
         } finally {
             if (is_resource($stream)) {
                 fclose($stream);

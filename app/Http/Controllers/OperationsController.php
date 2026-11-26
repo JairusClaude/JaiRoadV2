@@ -25,6 +25,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -35,6 +36,7 @@ use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 /**
  * Final DD module endpoints. public.users is authentication infrastructure only.
@@ -701,7 +703,7 @@ class OperationsController extends Controller
     /**
      * @param  callable():void  $persist
      */
-    private function savePrivateUpload(string $kind, int $parent, string $path, PrivateSupabaseStorage|PrivateMonthlyMediaStorage $storage, \Illuminate\Http\UploadedFile $file, callable $persist): void
+    private function savePrivateUpload(string $kind, int $parent, string $path, PrivateSupabaseStorage|PrivateMonthlyMediaStorage $storage, UploadedFile $file, callable $persist): void
     {
         $journal = app(UploadJournal::class);
         $id = null;
@@ -737,7 +739,7 @@ class OperationsController extends Controller
                     Log::warning('Private upload compensation could not be confirmed.');
                 }
             }
-            if ($error instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface || $error instanceof ValidationException) {
+            if ($error instanceof HttpExceptionInterface || $error instanceof ValidationException) {
                 throw $error;
             }
             Log::warning('Private upload could not be confirmed.', ['kind' => $kind, 'stage' => $uploaded ? 'metadata' : 'storage']);
