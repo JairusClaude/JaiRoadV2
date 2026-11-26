@@ -70,6 +70,23 @@ period_index AS (
     AND pg_get_indexdef(i.indexrelid) ILIKE '%(project_id, maintenance_year, quarter)%'
  ) AS has_unique_constraint
 ),
+account_eligibility AS (
+ SELECT a.id, a.account_type, a.is_active,
+    (SELECT count(*) FROM public.users u WHERE u.canonical_user_account_id=a.id)=1
+    AND EXISTS (SELECT 1 FROM public.users u WHERE u.canonical_user_account_id=a.id
+        AND lower(u.email)=lower(a.email) AND u.password=a.password)
+    AND CASE WHEN a.account_type='SuperAdmin' THEN a.engineer_id IS NULL
+        ELSE a.account_type IN ('Admin','Engineer','Viewer')
+         AND (a.engineer_id IS NULL AND a.account_type IN ('Admin','Viewer')
+              OR a.engineer_id IS NOT NULL AND e.engineer_status='Active')
+         AND EXISTS (SELECT 1 FROM jairoads_security.account_provisioning p
+             WHERE p.user_account_id=a.id AND p.provisioned_role=a.account_type
+               AND p.engineer_id IS NOT DISTINCT FROM a.engineer_id
+               AND (a.account_type<>'Admin' OR a.engineer_id IS NOT NULL OR p.method='reviewed_transition'))
+        END AS eligible
+ FROM jairoads_next.user_accounts a
+ LEFT JOIN jairoads_next.engineers e ON e.id=a.engineer_id
+),
 new_tables AS (
  SELECT
   to_regclass('jairoads_security.account_provisioning') IS NOT NULL AS has_provenance,
@@ -91,13 +108,11 @@ SELECT jsonb_build_object(
     'no_maintenance_record_contexts', NOT new_tables.has_contexts,
     'quarterly_unique_constraint_present', period_index.has_unique_constraint,
     'restricted_runtime_login_present', runtime_role.has_restricted_login,
-    'active_superadmin_exists', EXISTS (
-        SELECT 1 FROM jairoads_next.user_accounts
-        WHERE account_type='SuperAdmin' AND is_active
+    'eligible_superadmin_exists', EXISTS (
+        SELECT 1 FROM account_eligibility WHERE account_type='SuperAdmin' AND is_active AND eligible IS TRUE
     ),
-    'no_active_admin_missing_engineer', NOT EXISTS (
-        SELECT 1 FROM jairoads_next.user_accounts
-        WHERE account_type='Admin' AND is_active AND engineer_id IS NULL
+    'active_ordinary_accounts_eligible', NOT EXISTS (
+        SELECT 1 FROM account_eligibility WHERE account_type IN ('Admin','Engineer','Viewer') AND is_active AND eligible IS NOT TRUE
     )
   ),
   'notes', jsonb_build_array(

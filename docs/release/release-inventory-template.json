@@ -12,8 +12,8 @@
     "no_maintenance_record_contexts": false,
     "quarterly_unique_constraint_present": false,
     "restricted_runtime_login_present": false,
-    "active_superadmin_exists": false,
-    "no_active_admin_missing_engineer": false
+    "eligible_superadmin_exists": false,
+    "active_ordinary_accounts_eligible": false
   },
   "notes": [
     "UNAPPROVED TEMPLATE. Do not enter live credentials, secrets, raw identity records or Storage paths."

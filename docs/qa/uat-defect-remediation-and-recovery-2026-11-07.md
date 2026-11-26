@@ -59,7 +59,7 @@ Do not push actual persons' identity checks, signed reviewer details, raw databa
 | Full PostgreSQL custom backup/independent restore + RLS/immutability | New GitHub staging script | CI verification required; real PITR/restore pending |
 | UAT test-case and owner-approval format enforcement | 25+13 blank template, unit tests, fail-closed gate | Human UAT **NOT RUN** |
 | Production-severity defect register | No standalone open GitHub defect reports observed | Not enough evidence to certify zero defects |
-| Private Storage, SMTP delivery, real device passkeys, real maps | Mocked/source checks only | Persistent staging/manual service verification pending |
+| Private Storage, real-device password login and retired endpoint denial, real maps | Mocked/source checks only | Persistent staging/manual service verification pending |
 | Data Dictionary, grants, real-account transitions and release approvals | Draft proposals/PRs only | **NOT APPROVED** |
 
 **Next release step is NOT automatic production deployment.** Task 13 can only be prepared for review; actual official Supabase changes need explicit authorization after every human, service, identity, backup/recovery and schema gate is met.

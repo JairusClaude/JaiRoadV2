@@ -122,6 +122,17 @@ class ReleaseGateTests(unittest.TestCase):
         db["checks"]["project_and_manager_nullable"] = True
         self.assertIn("database_maintenance_project_manager_not_null", inspect_release(m, db, uat, SHA))
 
+    def test_account_eligibility_requires_provenance_and_a_working_root(self):
+        m, db, uat = simulated_complete()
+        for key in ("eligible_superadmin_exists", "active_ordinary_accounts_eligible"):
+            db["checks"][key] = False
+            self.assertIn("database_" + key, inspect_release(m, db, uat, SHA))
+            db["checks"][key] = True
+        sql = (ROOT / "database/preflight/release_readonly.sql").read_text()
+        self.assertIn("p.method='reviewed_transition'", sql)
+        self.assertIn("p.engineer_id IS NOT DISTINCT FROM a.engineer_id", sql)
+        self.assertIn("eligible IS NOT TRUE", sql)
+
     def test_readonly_sql_has_catalog_only_transaction_boundary(self):
         sql = (ROOT / "database/preflight/release_readonly.sql").read_text()
         self.assertIn("BEGIN TRANSACTION READ ONLY;", sql)

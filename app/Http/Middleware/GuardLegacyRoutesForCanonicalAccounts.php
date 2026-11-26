@@ -14,8 +14,8 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Temporary fail-closed quarantine: canonical-linked login must not send business
  * requests to legacy public.* endpoints during the staged cutover.
- * Fortify login, logout, session, two-factor, passkeys and password recovery
- * are NOT blocked by this middleware.
+ * Current Fortify login, logout and session handling remain available.
+ * Retired public recovery, passkey and MFA endpoints are not registered.
  */
 final class GuardLegacyRoutesForCanonicalAccounts
 {

@@ -32,8 +32,8 @@ SCHEMA_CHECKS = frozenset({
     "no_maintenance_record_contexts",
     "quarterly_unique_constraint_present",
     "restricted_runtime_login_present",
-    "active_superadmin_exists",
-    "no_active_admin_missing_engineer",
+    "eligible_superadmin_exists",
+    "active_ordinary_accounts_eligible",
 })
 REQUIRED_OWNER_REFERENCES = frozenset({
     "schema_owner_approval_reference",
