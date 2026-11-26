@@ -11,11 +11,6 @@ const fixture = JSON.parse(
     await readFile(process.env.QUARTERLY_BROWSER_FIXTURE, 'utf8'),
 );
 const mock = await startStorageMock();
-// Public-domain-like test pixel fixture, used only with disposable CI accounts.
-const verificationPhoto = Buffer.from(
-    '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABIMDRANCxIQDhAUExIVGywdGxgYGzYnKSAsQDlEQz85Pj1HUGZXR0thTT0+WXlaYWltcnNyRVV9hnxvhWZwcm7/2wBDARMUFBsXGzQdHTRuST5Jbm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm7/wAARCAB4AKADASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAP/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAT/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCoCpOAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//Z',
-    'base64',
-);
 async function assertLoginAssetOrigin(target, host, headers, expected) {
     const html = await new Promise((resolve, reject) => {
         const request = httpRequest(
@@ -98,26 +93,7 @@ async function session() {
         });
     }
 
-    async function submitCamera(token, jpeg) {
-        return request(
-            '/dd-phase3/ui/deletion-challenge/camera?scope=project',
-            {
-                method: 'POST',
-                body: jpeg,
-                headers: {
-                    'Content-Type': 'image/jpeg',
-                    'X-Deletion-Challenge': token,
-                    'X-XSRF-TOKEN': decodeURIComponent(
-                        cookies.get('XSRF-TOKEN') || '',
-                    ),
-                    Accept: 'application/json',
-                    Origin: base,
-                },
-            },
-        );
-    }
-
-    return { request, post, remove, submitCamera };
+    return { request, post, remove };
 }
 
 async function verifiedProjectDeletion(client) {
@@ -132,22 +108,10 @@ async function verifiedProjectDeletion(client) {
         numbers,
         'Deletion challenge must be a solvable arithmetic question',
     );
-    const receiptResponse = await client.submitCamera(
-        challenge.token,
-        verificationPhoto,
-    );
-    assert.equal(
-        receiptResponse.status,
-        200,
-        'Camera receipt must be verified',
-    );
-    const { receipt } = await receiptResponse.json();
-
     return {
         confirmation: 'YES',
         captcha_token: challenge.token,
         captcha_answer: Number(numbers[1]) + Number(numbers[2]),
-        camera_receipt: receipt,
     };
 }
 

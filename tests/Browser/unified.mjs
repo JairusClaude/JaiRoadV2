@@ -929,12 +929,12 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         getComputedStyle(document.documentElement).getPropertyValue('--jr-motion-panel').trim(),
     );
     await superadmin.emulateMedia({ reducedMotion: 'no-preference' });
-    assert.equal(await motionToken(), '280ms');
+    assert.ok(['280ms', '.28s', '0.28s'].includes(await motionToken()));
     await superadmin.evaluate(() => document.documentElement.classList.add('jr-reduce-motion'));
-    assert.equal(await motionToken(), '0ms');
+    assert.ok(['0ms', '0s'].includes(await motionToken()));
     await superadmin.evaluate(() => document.documentElement.classList.remove('jr-reduce-motion'));
     await superadmin.emulateMedia({ reducedMotion: 'reduce' });
-    assert.equal(await motionToken(), '0ms');
+    assert.ok(['0ms', '0s'].includes(await motionToken()));
     const collapseSidebar = superadmin.getByRole('button', {
         name: 'Collapse sidebar',
         exact: true,

@@ -22,6 +22,7 @@ legacy_audit_readers = {
 extensions = {".php", ".tsx", ".ts", ".js", ".mjs", ".css", ".sql", ".py", ".sh", ".json", ".xml", ".yml", ".yaml", ".md", ".blade.php"}
 roots = {"app", "bootstrap", "config", "database", "resources", "routes", "tests", "scripts", "tools", "docker"}
 changed = []
+# Normalize the active source before checking it; historical records are preserved.
 for name in files:
     if not name:
         continue
