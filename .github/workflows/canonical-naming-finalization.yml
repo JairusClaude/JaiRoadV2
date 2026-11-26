@@ -1,0 +1,56 @@
+name: Canonical naming finalization
+on:
+  push:
+    branches: [merged-system2]
+    paths:
+      - scripts/refactor/finalize-canonical-names.py
+      - .github/workflows/canonical-naming-finalization.yml
+permissions:
+  contents: write
+jobs:
+  normalize:
+    if: github.ref_name == 'merged-system2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: merged-system2
+          fetch-depth: 0
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, mbstring
+          tools: composer:v2
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply repository-wide canonical naming
+        run: python3 scripts/refactor/finalize-canonical-names.py
+      - name: Install locked dependencies
+        run: |
+          composer install --no-interaction --prefer-dist
+          npm ci
+      - name: Apply repository formatters
+        run: |
+          composer lint
+          npm run lint
+          npm run format
+      - name: Check formatting, static types and frontend production build
+        run: |
+          composer lint:check
+          npm run lint:check -- --max-warnings=0
+          npm run format:check
+          npm run types:check
+          composer types:check
+          npm run build
+      - name: Publish checked normalization to requested branch only
+        run: |
+          test "$(git branch --show-current)" = merged-system2
+          git diff --check
+          git add -A
+          if ! git diff --cached --quiet; then
+            git -c user.name='JaiROADS CI' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Consolidate official workspace and canonical account identifiers'
+            git push origin HEAD:refs/heads/merged-system2
+          fi

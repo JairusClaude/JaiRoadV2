@@ -6,6 +6,7 @@ on:
       - main
       - merged-system
       - merged-system_refactor2
+      - merged-system2
   pull_request:
 
 permissions:
