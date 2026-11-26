@@ -1,7 +1,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Activity, RefreshCw, ShieldCheck, UsersRound } from 'lucide-react';
-import { useState } from 'react';
-import type { FormEvent, ReactNode } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import type { FormEvent, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { MetricCard } from '@/components/metric-card';
 import { Button } from '@/components/ui/button';
@@ -107,12 +107,79 @@ function Table({
     headers: string[];
     children: ReactNode;
 }) {
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const hintId = useId();
+    const [hasOverflow, setHasOverflow] = useState(false);
+    const drag = useRef<{ pointerId: number; x: number; left: number; moved: boolean } | null>(null);
+
+    useEffect(() => {
+        const region = scrollRef.current;
+        if (!region) return;
+        const measure = () => setHasOverflow(region.scrollWidth > region.clientWidth + 1);
+        measure();
+        const observer = new ResizeObserver(measure);
+        observer.observe(region);
+        const table = region.querySelector('table');
+        if (table) observer.observe(table);
+        return () => observer.disconnect();
+    }, []);
+
+    function startDrag(event: ReactPointerEvent<HTMLDivElement>) {
+        const region = event.currentTarget;
+        // Touch and trackpad retain native scrolling; Shift+drag can select text.
+        if (event.pointerType !== 'mouse' || !event.isPrimary || event.button !== 0 ||
+            event.shiftKey || event.ctrlKey || event.altKey || event.metaKey ||
+            region.scrollWidth <= region.clientWidth + 1 ||
+            !(event.target instanceof Element) || !event.target.closest('table') ||
+            event.target.closest('a, button, input, select, textarea, label, summary, [role="button"], [contenteditable]')) return;
+        event.preventDefault();
+        drag.current = { pointerId: event.pointerId, x: event.clientX, left: region.scrollLeft, moved: false };
+        region.setPointerCapture(event.pointerId);
+    }
+
+    function moveDrag(event: ReactPointerEvent<HTMLDivElement>) {
+        const active = drag.current;
+        if (!active || active.pointerId !== event.pointerId) return;
+        const distance = event.clientX - active.x;
+        if (!active.moved && Math.abs(distance) < 4) return;
+        active.moved = true;
+        const region = event.currentTarget;
+        region.dataset.dragging = 'true';
+        region.scrollLeft = active.left - distance;
+        event.preventDefault();
+    }
+
+    function endDrag(event: ReactPointerEvent<HTMLDivElement>) {
+        if (drag.current?.pointerId !== event.pointerId) return;
+        drag.current = null;
+        delete event.currentTarget.dataset.dragging;
+    }
+
+    function scrollWithKeyboard(event: ReactKeyboardEvent<HTMLDivElement>) {
+        if (event.target !== event.currentTarget || !hasOverflow ||
+            event.altKey || event.ctrlKey || event.metaKey || event.shiftKey ||
+            !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+        event.preventDefault();
+        event.currentTarget.scrollBy({ left: event.key === 'ArrowRight' ? 100 : -100, behavior: 'instant' });
+    }
+
     return (
+        <>
+        {hasOverflow && <p id={hintId} className="jr-audit-scroll-hint">Drag or swipe left and right to see all columns. <span className="sr-only">Keyboard: focus the table region and use the left and right arrow keys.</span></p>}
         <div
             className="jr-audit-table-scroll max-w-full overflow-x-auto rounded-xl border border-slate-200"
+            ref={scrollRef}
+            data-overflow={hasOverflow}
             role="region"
             aria-label={title}
+            aria-describedby={hasOverflow ? hintId : undefined}
             tabIndex={0}
+            onPointerDown={startDrag}
+            onPointerMove={moveDrag}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
+            onLostPointerCapture={endDrag}
+            onKeyDown={scrollWithKeyboard}
         >
             <table className="w-full min-w-[760px] text-left text-sm">
                 <thead className="bg-slate-50 text-xs text-slate-600">
@@ -133,6 +200,7 @@ function Table({
                 </tbody>
             </table>
         </div>
+        </>
     );
 }
 function PaginationLinks({ page, label }: { page: Pagination; label: string }) {
