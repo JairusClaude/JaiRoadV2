@@ -13,6 +13,7 @@ use App\Services\RoleAccess;
 use App\Services\SecurityMonitoring\AuthenticationTelemetry;
 use App\Services\SecurityMonitoring\OnlinePresence;
 use App\Services\SecurityMonitoring\SessionCatalog;
+use App\Support\LiteralDirectorySearch;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
@@ -46,8 +47,8 @@ final class AuditHistoryController extends Controller
         ]);
         $filters = array_map(static fn ($value) => $value ?? '', $v);
         $query = DB::table('jairoads_next.audit_logs as audit')->leftJoin('jairoads_next.user_accounts as account', 'account.id', '=', 'audit.user_id');
-        if (! empty($v['activity_search'])) {
-            $search = '%'.$v['activity_search'].'%';
+        if (($v['activity_search'] ?? '') !== '') {
+            $search = LiteralDirectorySearch::pattern($v['activity_search']);
             $query->where(static fn (Builder $q) => $q->where('audit.actor_identifier', 'ilike', $search)->orWhereRaw("regexp_replace(audit.actor_identifier, '^DD-UserAccount#', 'User Account #', 'i') ILIKE ?", [$search])->orWhere('account.username', 'ilike', $search)
                 ->orWhere('audit.description', 'ilike', $search)->orWhereRaw('CAST(audit.entity_id AS text) ILIKE ?', [$search]));
         }
@@ -87,8 +88,8 @@ final class AuditHistoryController extends Controller
                 if (! empty($v['auth_event'])) {
                     $auth->where('event', $v['auth_event']);
                 }
-                if (! empty($v['auth_search'])) {
-                    $search = '%'.$v['auth_search'].'%';
+                if (($v['auth_search'] ?? '') !== '') {
+                    $search = LiteralDirectorySearch::pattern($v['auth_search']);
                     $reference = SessionCatalog::reference(mb_strtolower(trim($v['auth_search'])), 'attempt');
                     $auth->where(static fn (Builder $q) => $q->where('actor_identifier', 'ilike', $search)->orWhereRaw("regexp_replace(actor_identifier, '^DD-UserAccount#', 'User Account #', 'i') ILIKE ?", [$search])->orWhere('attempted_identifier', 'ilike', $search)->orWhere('attempt_reference', $reference));
                 }
@@ -111,7 +112,7 @@ final class AuditHistoryController extends Controller
         abort_unless($resolver->resolve($user) === $actor, 403);
 
         return Inertia::render('AuditLogs/History', ['events' => $events, 'authentication' => $authentication,
-            'presence' => $presence, 'presencePolling' => true, 'filters' => $filters, 'actions' => $actions, 'entities' => array_keys(AuditValues::TABLES),
+            'presence' => $presence, 'presencePolling' => true, 'presenceCheckedAt' => now()->utc()->toIso8601String(), 'filters' => $filters, 'actions' => $actions, 'entities' => array_keys(AuditValues::TABLES),
             'monitoring' => ['available' => $available, 'collecting' => $collecting, 'recent_failure_at' => app(AuthenticationTelemetry::class)->recentFailure(), 'message' => $available
                 ? (! $collecting ? 'Collection is disabled or unavailable; retained authentication history remains read-only.' : 'Separate, best-effort security telemetry. Failed attempts are masked and rate-bounded; outages may leave gaps. No IP addresses are stored.')
                 : 'Authentication monitoring is unavailable until its auxiliary schema and runtime permissions are approved and activated. Business history remains available.'],

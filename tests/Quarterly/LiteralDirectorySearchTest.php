@@ -61,6 +61,9 @@ it('matches percent signs literally in every canonical operational directory', f
     ] as [$path, $search, $dataKey, $expectedId]) {
         $this->get('/workspace/ui/'.$path.'?'.http_build_query(['search' => $search]))->assertOk()->assertInertia(fn (Assert $page) => $page->has($dataKey, 1)->where($dataKey.'.0.id', $expectedId));
     }
+
+    $this->get('/workspace/audit-logs?'.http_build_query(['activity_search' => 'Audit%Alpha']))->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->has('events.data', 1)->where('events.data.0.id', $auditA));
 });
 
 it('normalizes malformed and unicode search inputs instead of interpolating patterns', function (): void {
@@ -95,6 +98,25 @@ it('normalizes structured directory filters to safe scalar options and preserves
     $this->get('/workspace/ui/monthly-updates?'.http_build_query(['project' => ['invalid'], 'year' => ['invalid']]))->assertInertia(fn (Assert $page) => $page->where('filters.project', 'all')->where('filters.year', 'all'));
     $this->get('/workspace/ui/audit-logs?'.http_build_query(['action' => ['invalid']]))->assertInertia(fn (Assert $page) => $page->where('filters.action', 'all'));
     $this->get('/workspace/ui/lgus?sort=DESC')->assertInertia(fn (Assert $page) => $page->where('filters.sort', 'desc'));
+});
+
+it('does not load operational directory payloads in settings', function (): void {
+    $this->fixture('Admin');
+    DB::enableQueryLog();
+    DB::flushQueryLog();
+    try {
+        $this->get('/workspace/settings')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->component('Workspace/Operations')->where('section', 'settings')->has('roads', 0)
+            ->has('projects', 0)->has('records', 0)->has('updates', 0)->has('documents', 0)->has('media', 0));
+        $queries = DB::getQueryLog();
+    } finally {
+        DB::disableQueryLog();
+        DB::flushQueryLog();
+    }
+    $operationalReads = collect($queries)->filter(static function (array $entry): bool {
+        return preg_match('/"jairoads_next"\."(?:road_coverages|maintenance_projects|maintenance_records|monthly_updates|maintenance_documents|media)"/', $entry['query']) === 1;
+    });
+    expect($operationalReads)->toHaveCount(0);
 });
 
 it('keeps LGU dependency counts correct without a per-row SQL query and paginates ties stably', function (): void {

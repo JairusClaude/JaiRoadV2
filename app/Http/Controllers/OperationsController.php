@@ -164,6 +164,25 @@ class OperationsController extends Controller
     {
         abort_unless(in_array($section, self::SECTIONS, true), 404);
         $actor = $this->actor($request, $resolver);
+        if ($section === 'settings') {
+            $account = $this->t('user_accounts')->where('id', $actor['account_id'])->first(['username', 'email']);
+            abort_unless($account !== null, 403);
+            $hasAssignment = $actor['engineer_id'] !== null && $this->t('lgus')->exists();
+
+            return Inertia::render('Workspace/Operations', [
+                'section' => $section, 'role' => $actor['role'], 'canManage' => $this->managers($actor),
+                'engineerId' => $actor['engineer_id'], 'hasAssignment' => $hasAssignment,
+                'capabilities' => RoleAccess::capabilities($actor['role'], $hasAssignment, $actor['engineer_id'] !== null),
+                'identity' => ['username' => (string) $account->username, 'email' => (string) $account->email, 'role' => $actor['role']],
+                'lgus' => [], 'engineers' => [], 'roadCreatorChoices' => [], 'roads' => [], 'projects' => [],
+                'records' => [], 'updates' => [], 'documents' => [], 'media' => [],
+                'maintenanceHistory' => [], 'maintenanceSchedule' => null, 'managerChoices' => [], 'canUnassign' => false,
+                'documentsReady' => false, 'mediaReady' => false,
+                'status' => $request->session()->get('dd_operations_status'),
+                'canonicalFrontend' => true, 'jairoadsIdentity' => ['role' => strtolower($actor['role'])],
+                'navigationSection' => $section,
+            ]);
+        }
         $activeLgus = $this->activeLguIds($actor);
         $restricted = $actor['role'] === 'Engineer';
         $roads = $this->t('road_coverages')->orderByDesc('id');
@@ -256,9 +275,9 @@ class OperationsController extends Controller
             'roads' => $roads->limit(300)->get(['id', 'road_name', 'lgu_id', 'kilometers', 'pavement_type', 'state_category', 'created_by', 'geojson']),
             'projects' => $projects->limit(300)->get(['p.id', 'p.project_title', 'p.road_coverage_id', 'p.description', 'p.created_by', 'r.lgu_id']),
             'records' => $records->limit(300)->get(['mr.id', 'mr.project_id', 'mr.managing_engineer_id', 'mr.maintenance_year', 'mr.quarter', 'mr.start_date', 'mr.estimated_duration_days', 'mr.complete_date', 'mr.status', 'mr.description', 'r.lgu_id']),
-            'updates' => $updates->limit(300)->get(['author.username as author_name', 'mu.id', 'mu.maintenance_id', 'mu.update_month', 'mu.progress_percentage', 'mu.summary_of_text_reports', 'mr.managing_engineer_id', 'r.lgu_id']),
-            'documents' => $docs->limit(300)->get(['uploader.username as uploader_name', 'd.description', 'd.id', 'd.maintenance_id', 'd.document_title', 'd.file_name', 'd.uploaded_at', 'mr.managing_engineer_id']),
-            'media' => $media->limit(300)->get(['m.id', 'm.monthly_update_id', 'm.file_name', 'm.file_type', 'mr.managing_engineer_id']),
+            'updates' => $section === 'updates' ? $updates->limit(300)->get(['author.username as author_name', 'mu.id', 'mu.maintenance_id', 'mu.update_month', 'mu.progress_percentage', 'mu.summary_of_text_reports', 'mr.managing_engineer_id', 'r.lgu_id']) : [],
+            'documents' => $section === 'documents' ? $docs->limit(300)->get(['uploader.username as uploader_name', 'd.description', 'd.id', 'd.maintenance_id', 'd.document_title', 'd.file_name', 'd.uploaded_at', 'mr.managing_engineer_id']) : [],
+            'media' => $section === 'updates' ? $media->limit(300)->get(['m.id', 'm.monthly_update_id', 'm.file_name', 'm.file_type', 'mr.managing_engineer_id']) : [],
             'documentsReady' => app(PrivateSupabaseStorage::class)->configured(),
             'mediaReady' => app(PrivateMonthlyMediaStorage::class)->configured(),
             'status' => $request->session()->get('dd_operations_status'),

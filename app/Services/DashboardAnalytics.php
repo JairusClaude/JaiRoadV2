@@ -16,7 +16,6 @@ final class DashboardAnalytics
     public function summary(array $actor): array
     {
         $role = (string) $actor['role'];
-        $accountId = (int) $actor['account_id'];
         $engineerId = $actor['engineer_id'];
         $manager = in_array($role, ['SuperAdmin', 'Admin'], true);
         $scope = null;
@@ -43,26 +42,29 @@ final class DashboardAnalytics
         if ($recordIds !== null) {
             $docs->whereIn('maintenance_id', $recordIds);
         }
-        $total = (int) (clone $records)->count();
-        $ongoing = (int) (clone $records)->where($scope ? 'mr.status' : 'status', 'Ongoing')->count();
-        $completed = (int) (clone $records)->where($scope ? 'mr.status' : 'status', 'Completed')->count();
+        $statusColumn = $scope ? 'mr.status' : 'status';
+        $counts = (clone $records)->selectRaw("COUNT(*) AS total, COUNT(*) FILTER (WHERE {$statusColumn} = ?) AS ongoing, COUNT(*) FILTER (WHERE {$statusColumn} = ?) AS completed", ['Ongoing', 'Completed'])->first();
+        $total = (int) ($counts->total ?? 0);
+        $ongoing = (int) ($counts->ongoing ?? 0);
+        $completed = (int) ($counts->completed ?? 0);
+        $reportingMonth = now('Asia/Manila')->startOfMonth();
         $ongoingIds = $scope
             ? (clone $scope)->where('mr.status', 'Ongoing')->select('mr.id')
             : DB::table('jairoads_next.maintenance_records')->where('status', 'Ongoing')->select('id');
         $reportedOngoing = $ongoing > 0
             ? (int) DB::table('jairoads_next.monthly_updates')
-                ->where('update_month', now()->format('Y-m'))
+                ->where('update_month', $reportingMonth->format('Y-m'))
                 ->whereIn('maintenance_id', $ongoingIds)->distinct()->count('maintenance_id')
             : 0;
         $months = [];
         for ($i = 5; $i >= 0; $i--) {
-            $m = now()->startOfMonth()->subMonths($i);
+            $m = $reportingMonth->copy()->subMonths($i);
             $months[$m->format('Y-m')] = 0;
         }
         $trend = (clone $updated)
-            ->selectRaw('SUBSTRING(update_month, 1, 7) AS month, COUNT(*) AS total')
-            ->whereIn(DB::raw('SUBSTRING(update_month, 1, 7)'), array_keys($months))
-            ->groupBy(DB::raw('SUBSTRING(update_month, 1, 7)'))
+            ->selectRaw('update_month AS month, COUNT(*) AS total')
+            ->whereIn('update_month', array_keys($months))
+            ->groupBy('update_month')
             ->pluck('total', 'month')->all();
         foreach ($trend as $month => $count) {
             if (array_key_exists($month, $months)) {
