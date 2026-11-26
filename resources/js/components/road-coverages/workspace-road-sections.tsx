@@ -10,13 +10,36 @@ import {
     ShieldAlert,
     X,
 } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
-import type { FormEvent, ReactNode } from 'react';
+import { lazy, Suspense, useCallback, useMemo, useState } from 'react';
+import type { ComponentProps, FormEvent, ReactNode } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
-import { RoadCoverageMap } from '@/components/maintenance-projects/road-coverage-map';
 import RoadMunicipalityChange from '@/components/road-coverages/road-municipality-change';
-import RoadTraceMap from '@/components/road-coverages/road-trace-map';
 import { requestOperation } from '@/lib/operation-request';
+const LazyRoadCoverageMap = lazy(() =>
+    import('@/components/maintenance-projects/road-coverage-map').then(
+        (module) => ({ default: module.RoadCoverageMap }),
+    ),
+);
+const LazyRoadTraceMap = lazy(
+    () => import('@/components/road-coverages/road-trace-map'),
+);
+
+function RoadCoverageMap(props: ComponentProps<typeof LazyRoadCoverageMap>) {
+    return (
+        <Suspense fallback={<p role="status">Loading road coverage map…</p>}>
+            <LazyRoadCoverageMap {...props} />
+        </Suspense>
+    );
+}
+
+function RoadTraceMap(props: ComponentProps<typeof LazyRoadTraceMap>) {
+    return (
+        <Suspense fallback={<p role="status">Loading road trace map…</p>}>
+            <LazyRoadTraceMap {...props} />
+        </Suspense>
+    );
+}
+
 /** UI name: Road Coverages; actual entity: a *whole* RoadCoverage. */
 type Pavement = 'Concrete' | 'Asphalt' | 'Gravel' | 'Earth';
 type Condition = 'Good' | 'Fair' | 'Bad';

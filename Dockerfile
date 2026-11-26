@@ -33,5 +33,7 @@ COPY docker/uploads.ini /usr/local/etc/php/conf.d/jairoads-uploads.ini
 COPY docker/entrypoint.sh /usr/local/bin/jairoads-entrypoint
 ENTRYPOINT ["sh", "/usr/local/bin/jairoads-entrypoint"]
 EXPOSE 10000
+# Check the actual PHP-FPM application via Nginx, not just whether the port is open.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 CMD php -r '$context = stream_context_create(["http" => ["timeout" => 3, "follow_location" => 0]]); $body = @file_get_contents("http://127.0.0.1:10000/up", false, $context); exit($body !== false && str_contains($http_response_header[0] ?? "", " 200 ") ? 0 : 1);'
 CMD ["sh", "-c", "php-fpm -D && exec nginx -g 'daemon off;'"]
 
