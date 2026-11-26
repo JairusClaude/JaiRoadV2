@@ -67,7 +67,9 @@ final class DuplicatePeriodWarningTest extends PostgresTestCase
         // cross-municipality read or ownership. The duplicate remains visible.
         $this->get('/workspace/ui/maintenance-records/create')->assertInertia(fn (Assert $page) => $page
             ->where('duplicatePeriod.project_id', $f['project'])
-            ->has('records', 1)->has('projects', 2));
+            ->has('records', 0)->has('projects', 0));
+        $this->getJson('/workspace/ui/project-filter-choices')->assertOk()->assertJsonCount(2, 'data');
+        $this->getJson('/workspace/ui/record-period-choices?project='.$f['project'].'&year=2026')->assertOk()->assertJsonCount(1, 'data');
         $existing = (int) DB::table('jairoads_next.maintenance_records')->value('id');
         $this->get($url.'/'.$existing)->assertOk();
         $this->flushSession();
