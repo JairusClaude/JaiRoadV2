@@ -1042,14 +1042,8 @@ await visitGate;
 
     // Both confirmations use the unchanged server-side impact service and its signed snapshot.
     const openRoadMunicipalityChange = async () => {
-        // The reviewed municipality change flow lives in the canonical DD
-        // road directory, not the legacy road detail view.
-        await engineer.goto(`${base}/workspace/roads`);
-        await engineer
-            .getByRole('button', {
-                name: new RegExp(`Unified browser road.*Coverage ID: ${road.id}`, 's'),
-            })
-            .click();
+        // Use the same reviewed change flow from the canonical road details.
+        await engineer.goto(`${base}/workspace/ui/road-coverages/${road.id}`);
         await engineer
             .getByRole('button', { name: 'Change municipality', exact: true })
             .click();

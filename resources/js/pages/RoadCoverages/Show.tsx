@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialog';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { CoverageMapPreview } from '@/components/road-coverages/coverage-map-preview';
+import RoadMunicipalityChange from '@/components/road-coverages/road-municipality-change';
 import { Button } from '@/components/ui/button';
 import { editUrl } from '@/lib/form-navigation';
 import { manilaTimestamp } from '@/lib/manila-time';
@@ -22,6 +23,7 @@ export default function Show({
     coverage,
     createdByName,
     associatedProject,
+    municipalities = [],
     canEdit,
     canDelete: canDeleteAllowed,
     backUrl,
@@ -30,6 +32,8 @@ export default function Show({
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState('');
+    const [changeMunicipality, setChangeMunicipality] = useState(false);
+    const [municipalityNotice, setMunicipalityNotice] = useState('');
 
     const hasProject = Boolean(associatedProject);
     // Use the server-authorized permission, not an omitted field on the road.
@@ -94,6 +98,14 @@ export default function Show({
                                 <Pencil /> Edit Road Coverage
                             </Button>
                         )}
+                        {canEdit && municipalities.length > 0 && (
+                            <Button
+                                variant="outline"
+                                onClick={() => setChangeMunicipality(true)}
+                            >
+                                Change municipality
+                            </Button>
+                        )}
                         {canDelete && (
                             <Button
                                 className="jr-danger"
@@ -107,6 +119,11 @@ export default function Show({
                         )}
                     </div>
                 </div>
+                {municipalityNotice && (
+                    <p className="mb-4 text-sm text-emerald-700" role="status">
+                        {municipalityNotice}
+                    </p>
+                )}
                 <section className="jr-detail-section">
                     <div className="jr-detail-grid">
                         <div>
@@ -206,6 +223,21 @@ export default function Show({
                     )}
                 </section>
             </ProjectWorkspace>
+            {changeMunicipality && canEdit && (
+                <RoadMunicipalityChange
+                    roadId={coverage.id}
+                    lgus={municipalities.map((lgu) => ({
+                        id: lgu.id,
+                        name: lgu.municipality_name,
+                    }))}
+                    returnUrl={`/workspace/ui/road-coverages/${coverage.id}`}
+                    onClose={() => setChangeMunicipality(false)}
+                    onSuccess={(message) => {
+                        setChangeMunicipality(false);
+                        setMunicipalityNotice(message);
+                    }}
+                />
+            )}
             {confirmDeleteOpen && (
                 <DeletionDialog
                     open={confirmDeleteOpen}

@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 use Inertia\Response;
 
 /**
- * Dispatches one approved DD section to its existing, individually authorized
+ * Dispatches one approved canonical section to its individually authorized
  * controller. Prevents duplicate wildcard GET routes from replacing each other.
  * Never reads public business entities and never grants authorization.
  */
@@ -47,9 +47,17 @@ final class SectionController extends Controller
         if (in_array($section, ['dashboard', 'users', 'lgus'], true)) {
             return $directory->show($section, $request, $resolver);
         }
-        if (in_array($section, ['settings', 'roads', 'projects', 'updates', 'documents'], true)) {
+        // Ordinary directory aliases use the same paginated controllers as the sidebar.
+        // Keep explicitly requested older project forms/details working during cutover.
+        if ($section === 'settings' || ($section === 'projects' && in_array($request->query('view'), ['create', 'show', 'edit'], true))) {
             return $operations->show($section, $request, $resolver);
         }
-        abort(404);
+        return match ($section) {
+            'roads' => app(RoadCoveragePageController::class)->roadIndex($request),
+            'projects' => app(MaintenanceProjectPageController::class)->projectIndex($request),
+            'updates' => app(MonthlyUpdatePageController::class)->updateIndex($request),
+            'documents' => app(MaintenanceDocumentPageController::class)->documentIndex($request),
+            default => abort(404),
+        };
     }
 }

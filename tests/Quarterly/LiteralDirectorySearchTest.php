@@ -100,6 +100,21 @@ it('normalizes structured directory filters to safe scalar options and preserves
     $this->get('/workspace/ui/lgus?sort=DESC')->assertInertia(fn (Assert $page) => $page->where('filters.sort', 'desc'));
 });
 
+it('uses server-paginated canonical modules from ordinary workspace aliases', function (): void {
+    $this->fixture('Admin');
+    foreach ([
+        'roads' => ['RoadCoverages/Index', 'coverages'],
+        'projects' => ['MaintenanceProjects/Index', 'projects'],
+        'updates' => ['MonthlyUpdates/Index', 'updates'],
+        'documents' => ['MaintenanceDocuments/Index', 'documents'],
+    ] as $section => [$component, $collection]) {
+        foreach (['/workspace/', '/workspace/ops/'] as $prefix) {
+            $this->get($prefix.$section)->assertOk()->assertInertia(fn (Assert $page) => $page
+                ->component($component)->has($collection.'.data')->has($collection.'.total'));
+        }
+    }
+});
+
 it('does not load operational directory payloads in settings', function (): void {
     $this->fixture('Admin');
     DB::enableQueryLog();

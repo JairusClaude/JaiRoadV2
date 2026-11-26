@@ -368,6 +368,34 @@ export async function verifyAuditNotifications({
         assert.ok(!('events' in live) && !('authentication' in live));
     }
 
+    // The real polling endpoint must refresh without an Inertia navigation.
+    const monitor = await superadmin.context().newPage();
+
+    try {
+        await monitor.clock.install();
+        await monitor.goto(base + '/workspace/audit-logs');
+        await monitor.bringToFront();
+        await monitor.getByText('Last check:', { exact: false }).waitFor();
+        const originalURL = monitor.url();
+        const refresh = monitor.waitForResponse(
+            (response) => response.url() === presencePath && response.status() === 200,
+        );
+        await monitor.clock.fastForward(30_000);
+        await refresh;
+        assert.equal(monitor.url(), originalURL);
+        await monitor.clock.fastForward(121_000);
+        await monitor.getByText('Live refresh paused.', { exact: false }).waitFor();
+        const resumed = monitor.waitForResponse(
+            (response) => response.url() === presencePath && response.status() === 200,
+        );
+        await monitor.getByRole('heading', { name: 'Currently Online Users', exact: true }).click();
+        await resumed;
+        await monitor.getByText('Refreshes every 30 seconds', { exact: false }).waitFor();
+        assert.equal(monitor.url(), originalURL);
+    } finally {
+        await monitor.close();
+    }
+
     console.log(
         'PASS: one real Engineer update appears in each eligible Admin/SuperAdmin/actor feed; Viewer receives none; safe unique feed IDs; privileged read-only audit snapshots/pagination; historical LOGIN preserved without new authentication events.',
     );
