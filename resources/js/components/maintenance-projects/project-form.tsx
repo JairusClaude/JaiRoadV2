@@ -1,5 +1,5 @@
 import { ArrowLeft, Map, Search } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     IntegrationNotice,
     ProjectWorkspace,
@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import '../../../css/maintenance-project-create.css';
 import type {
     CoverageChoice,
+    CoveragePagination,
     IntegrationStatus,
     ProjectFormValues,
 } from '@/types/maintenance-projects';
@@ -20,6 +21,10 @@ export type ProjectFormProps = {
     backLabel?: string;
     coverageLocked?: boolean;
     coverages: CoverageChoice[];
+    coveragePagination?: CoveragePagination;
+    coverageChoiceUrl?: string;
+    selectedCoverage?: CoverageChoice | null;
+    projectId?: number;
     integration: IntegrationStatus;
     values: ProjectFormValues;
     errors: Partial<Record<keyof ProjectFormValues, string>>;
@@ -34,6 +39,10 @@ export function ProjectForm({
     backLabel,
     coverageLocked = false,
     coverages,
+    coveragePagination,
+    coverageChoiceUrl,
+    selectedCoverage,
+    projectId,
     integration,
     values,
     errors,
@@ -51,28 +60,111 @@ export function ProjectForm({
     const [localErrors, setLocalErrors] = useState<ProjectFormProps['errors']>(
         {},
     );
-    const selected = coverages.find(
-        (coverage) => String(coverage.id) === values.road_coverage_id,
-    );
-    const query = search.trim().toLocaleLowerCase();
-    const matches = coverages.filter((coverage) =>
-        create
-            ? `${coverage.road_name} ${coverage.municipality ?? ''}`
+    const [page, setPage] = useState(1);
+    const [retry, setRetry] = useState(0);
+    const [remembered, setRemembered] = useState<CoverageChoice | null>(null);
+    const remote = Boolean(coverageChoiceUrl && coveragePagination);
+    const query = search.trim();
+    const key = JSON.stringify([query, showAssigned, page, retry]);
+    const initial = !query && !showAssigned && page === 1 && retry === 0;
+    const [result, setResult] = useState<{
+        key: string;
+        data?: CoverageChoice[];
+        pagination?: CoveragePagination;
+        error?: string;
+    } | null>(null);
+
+    useEffect(() => {
+        if (!coverageChoiceUrl || !coveragePagination || initial) {
+            return;
+        }
+
+        const controller = new AbortController();
+        const timer = window.setTimeout(async () => {
+            const params = new URLSearchParams({
+                search: query,
+                show_assigned: !create || showAssigned ? '1' : '0',
+                page: String(page),
+            });
+
+            if (projectId) {
+                params.set('project', String(projectId));
+            }
+
+            try {
+                const response = await fetch(
+                    `${coverageChoiceUrl}?${params}`,
+                    {
+                        credentials: 'same-origin',
+                        headers: { Accept: 'application/json' },
+                        cache: 'no-store',
+                        signal: controller.signal,
+                    },
+                );
+
+                if (!response.ok) {
+                    throw new Error('Road choices unavailable');
+                }
+
+                const data: CoveragePagination & { data: CoverageChoice[] } =
+                    await response.json();
+
+                if (!controller.signal.aborted) {
+                    setResult({ key, data: data.data, pagination: data });
+                }
+            } catch {
+                if (!controller.signal.aborted) {
+                    setResult({ key, error: 'Unable to load road choices.' });
+                }
+            }
+        }, 200);
+
+        return () => {
+            window.clearTimeout(timer);
+            controller.abort();
+        };
+    }, [
+        coverageChoiceUrl,
+        coveragePagination,
+        create,
+        initial,
+        key,
+        page,
+        projectId,
+        query,
+        showAssigned,
+    ]);
+
+    const current = result?.key === key ? result : null;
+    const pagination = remote
+        ? initial
+            ? coveragePagination
+            : current?.pagination
+        : undefined;
+    const rows = remote && !initial ? (current?.data ?? []) : coverages;
+    const selected =
+        rows.find((coverage) => String(coverage.id) === values.road_coverage_id) ??
+        [remembered, selectedCoverage, ...coverages].find(
+            (coverage) => String(coverage?.id) === values.road_coverage_id,
+        );
+    const matches = remote
+        ? rows
+        : coverages.filter((coverage) =>
+              `${coverage.road_name} ${coverage.municipality ?? ''}`
                   .toLocaleLowerCase()
-                  .includes(query)
-            : coverage.road_name
-                  .toLocaleLowerCase()
-                  .includes(search.toLocaleLowerCase()),
-    );
+                  .includes(query.toLocaleLowerCase()),
+          );
     const visible = create
         ? matches
               .filter((coverage) => showAssigned || !coverage.assigned)
               .sort((a, b) => Number(a.assigned) - Number(b.assigned))
         : matches;
-    const assignedCount = matches.filter(
-        (coverage) => coverage.assigned,
-    ).length;
-    const availableCount = matches.length - assignedCount;
+    const assignedCount =
+        pagination?.assigned ??
+        matches.filter((coverage) => coverage.assigned).length;
+    const availableCount =
+        pagination?.available ?? matches.length - assignedCount;
+    const loading = remote && !initial && current === null;
     const error = (field: keyof ProjectFormValues) =>
         localErrors[field] ??
         (create &&
@@ -87,6 +179,7 @@ export function ProjectForm({
         }
 
         setLocalErrors({});
+        setRemembered(coverage);
         onChange({
             ...values,
             road_coverage_id: String(coverage.id),
@@ -175,9 +268,10 @@ export function ProjectForm({
                                         : 'Search RoadCoverage by name'
                                 }
                                 value={search}
-                                onChange={(event) =>
-                                    setSearch(event.target.value)
-                                }
+                                onChange={(event) => {
+                                    setSearch(event.target.value);
+                                    setPage(1);
+                                }}
                                 disabled={!integration.ready}
                             />
                         </div>
@@ -185,18 +279,17 @@ export function ProjectForm({
                             <div className="jr-coverage-info">
                                 <p className="jr-field-hint" role="status">
                                     {availableCount} available · {assignedCount}{' '}
-                                    assigned · {matches.length} total coverages
+                                    assigned · {availableCount + assignedCount} total coverages
                                 </p>
                                 <label className="jr-show-assigned">
                                     <input
                                         type="checkbox"
                                         role="switch"
                                         checked={showAssigned}
-                                        onChange={(event) =>
-                                            setShowAssigned(
-                                                event.target.checked,
-                                            )
-                                        }
+                                        onChange={(event) => {
+                                            setShowAssigned(event.target.checked);
+                                            setPage(1);
+                                        }}
                                         disabled={
                                             !integration.ready || processing
                                         }
@@ -275,7 +368,16 @@ export function ProjectForm({
                                     )}
                                 </label>
                             ))}
-                            {visible.length === 0 && (
+                            {loading && <p role="status">Loading road choices…</p>}
+                            {current?.error && (
+                                <div role="alert" className="p-3">
+                                    {current.error}{' '}
+                                    <Button type="button" variant="outline" onClick={() => setRetry((value) => value + 1)}>
+                                        Retry
+                                    </Button>
+                                </div>
+                            )}
+                            {!loading && !current?.error && visible.length === 0 && (
                                 <div className="jr-empty">
                                     <p>
                                         {!integration.ready
@@ -293,6 +395,17 @@ export function ProjectForm({
                                 </div>
                             )}
                         </div>
+                        {pagination && pagination.last_page > 1 && (
+                            <div className="mt-3 flex items-center justify-between gap-2">
+                                <Button type="button" variant="outline" disabled={processing || pagination.page <= 1} onClick={() => setPage(pagination.page - 1)}>
+                                    Previous
+                                </Button>
+                                <span className="text-xs">Page {pagination.page} of {pagination.last_page}</span>
+                                <Button type="button" variant="outline" disabled={processing || pagination.page >= pagination.last_page} onClick={() => setPage(pagination.page + 1)}>
+                                    Next
+                                </Button>
+                            </div>
+                        )}
                         <p
                             className="jr-field-error"
                             id="coverage-error"
@@ -324,9 +437,10 @@ export function ProjectForm({
                                 )}
                             </div>
                             {selected ? (
-                                <CoverageMapPreview
+                                <ProjectCoveragePreview
                                     key={selected.id}
-                                    geojson={selected.geojson}
+                                    coverage={selected}
+                                    choiceUrl={coverageChoiceUrl}
                                 />
                             ) : (
                                 <div
@@ -368,9 +482,10 @@ export function ProjectForm({
                                 )}
                             </div>
                             {selected ? (
-                                <CoverageMapPreview
+                                <ProjectCoveragePreview
                                     key={selected.id}
-                                    geojson={selected.geojson}
+                                    coverage={selected}
+                                    choiceUrl={coverageChoiceUrl}
                                 />
                             ) : (
                                 <div
@@ -542,5 +657,76 @@ export function ProjectForm({
                 </footer>
             </form>
         </ProjectWorkspace>
+    );
+}
+
+function ProjectCoveragePreview({
+    coverage,
+    choiceUrl,
+}: {
+    coverage: CoverageChoice;
+    choiceUrl?: string;
+}) {
+    const [geometry, setGeometry] = useState<{
+        value?: unknown;
+        failed?: boolean;
+    } | null>(null);
+    const [retry, setRetry] = useState(0);
+
+    useEffect(() => {
+        if (!choiceUrl) {
+            return;
+        }
+
+        const controller = new AbortController();
+
+        fetch(`${choiceUrl}/${coverage.id}/geometry`, {
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json' },
+            cache: 'no-store',
+            signal: controller.signal,
+        })
+            .then(async (response) => {
+                if (!response.ok) {
+                    throw new Error('Geometry unavailable');
+                }
+
+                const data = await response.json();
+
+                if (!controller.signal.aborted) {
+                    setGeometry({ value: data.geojson });
+                }
+            })
+            .catch(() => {
+                if (!controller.signal.aborted) {
+                    setGeometry({ failed: true });
+                }
+            });
+
+        return () => controller.abort();
+    }, [choiceUrl, coverage.id, retry]);
+
+    if (choiceUrl && (!geometry || geometry.failed)) {
+        return (
+            <div className="jr-map-placeholder" role="status">
+                {geometry?.failed ? (
+                    <>
+                        <span>Map preview could not be loaded.</span>
+                        <Button type="button" variant="outline" onClick={() => {
+                            setGeometry(null);
+                            setRetry((value) => value + 1);
+                        }}>Retry map</Button>
+                    </>
+                ) : (
+                    'Loading map preview…'
+                )}
+            </div>
+        );
+    }
+
+    return (
+        <CoverageMapPreview
+            geojson={choiceUrl ? geometry?.value : coverage.geojson}
+        />
     );
 }

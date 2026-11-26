@@ -24,6 +24,8 @@ Route::middleware(['auth'])->prefix('workspace/ui')->name('jairoads.ui.')->group
     Route::put('/road-coverages/{id}', [RoadCoveragePageController::class, 'saveRoad'])->whereNumber('id')->name('roads.update');
     Route::delete('/road-coverages/bulk', [RoadCoveragePageController::class, 'bulkDeleteRoad'])->name('roads.bulk-destroy');
     Route::delete('/road-coverages/{id}', [RoadCoveragePageController::class, 'deleteRoad'])->whereNumber('id')->name('roads.destroy');
+    Route::get('/project-road-choices', [MaintenanceProjectPageController::class, 'coverageChoices'])->middleware('throttle:90,1,jr-project-road-choices-')->name('projects.road-choices');
+    Route::get('/project-road-choices/{id}/geometry', [MaintenanceProjectPageController::class, 'coverageGeometry'])->whereNumber('id')->middleware('throttle:90,1,jr-project-road-geometry-')->name('projects.road-geometry');
     Route::get('/maintenance-projects', [MaintenanceProjectPageController::class, 'projectIndex'])->name('projects.index');
     Route::get('/maintenance-projects/create', [MaintenanceProjectPageController::class, 'projectForm'])->name('projects.create');
     Route::get('/maintenance-projects/{id}', [MaintenanceProjectPageController::class, 'projectShow'])->whereNumber('id')->name('projects.show');

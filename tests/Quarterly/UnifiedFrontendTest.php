@@ -228,19 +228,41 @@ final class UnifiedFrontendTest extends PostgresTestCase
         ]);
 
         $this->get(self::UI.'/maintenance-projects/create')->assertOk()->assertInertia(fn (Assert $page) => $page
-            ->component('MaintenanceProjects/Create')->has('coverages', 3)
-            ->where('coverages.0.id', $f['road'])->where('coverages.0.assigned', true)
-            ->where('coverages.0.assigned_project_title', 'Test project')
-            ->where('coverages.1.id', $available)->where('coverages.1.assigned', false)
-            ->where('coverages.2.id', $other)->where('coverages.2.assigned', true));
+            ->component('MaintenanceProjects/Create')->has('coverages', 1)
+            ->where('coverages.0.id', $available)->where('coverages.0.assigned', false)
+            ->where('coverages.0.geojson', null)->where('coveragePagination.assigned', 2));
+        $this->getJson(self::UI.'/project-road-choices?show_assigned=1')->assertOk()
+            ->assertJsonCount(3, 'data')->assertJsonPath('data.0.id', $f['road'])
+            ->assertJsonPath('data.0.assigned', true)->assertJsonPath('data.0.assigned_project_title', 'Test project')
+            ->assertJsonPath('data.0.geojson', null);
+        $this->getJson(self::UI.'/project-road-choices/'.$available.'/geometry')->assertOk()
+            ->assertJsonPath('geojson.type', 'LineString')->assertHeader('Cache-Control', 'no-store, private');
         $this->get(self::UI.'/maintenance-projects/'.$f['project'].'/edit')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('MaintenanceProjects/Edit')->has('coverages', 3)
             ->where('coverages.0.id', $f['road'])->where('coverages.0.assigned', false)
-            ->where('coverages.2.assigned', true));
+            ->where('coverages.2.assigned', true)->where('selectedCoverage.id', $f['road']));
 
         $this->postJson(self::UI.'/maintenance-projects', ['road_coverage_id' => $f['road'], 'project_title' => 'Duplicate'])
             ->assertUnprocessable()->assertJsonValidationErrors('road_coverage_id');
         $this->assertSame(2, DB::table('jairoads_next.maintenance_projects')->count());
+    }
+
+    public function test_project_road_choices_are_paginated_searchable_and_private(): void
+    {
+        $f = $this->fixture('Engineer');
+        for ($i = 0; $i < 35; $i++) {
+            $road = $this->road($f['engineer']);
+            DB::table('jairoads_next.road_coverages')->where('id', $road)->update(['road_name' => sprintf('Choice %02d', $i)]);
+        }
+        $this->get(self::UI.'/maintenance-projects/create')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('coverages', 30)->where('coveragePagination.available', 35)->where('coveragePagination.last_page', 2)
+            ->where('coverages.0.geojson', null));
+        $this->getJson(self::UI.'/project-road-choices?page=2')->assertOk()->assertJsonCount(5, 'data')->assertJsonPath('page', 2);
+        $this->getJson(self::UI.'/project-road-choices?search=Choice%2034')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.road_name', 'Choice 34');
+        $this->getJson(self::UI.'/project-road-choices?search=%25')->assertOk()->assertJsonCount(0, 'data');
+        $this->withSession(['password_hash_web' => null])->actingAs($this->account('Viewer'));
+        $this->getJson(self::UI.'/project-road-choices')->assertForbidden();
+        $this->getJson(self::UI.'/project-road-choices/'.$f['road'].'/geometry')->assertForbidden();
     }
 
     public function test_new_frontend_payload_persists_road_geometry_and_canonical_project_creator(): void

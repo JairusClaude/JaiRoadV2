@@ -4,15 +4,22 @@ import { ProjectForm } from '@/components/maintenance-projects/project-form';
 import { workspaceHref } from '@/lib/workspace-navigation';
 import type {
     CoverageChoice,
+    CoveragePagination,
     IntegrationStatus,
     ProjectFormValues,
 } from '@/types/maintenance-projects';
 
 export default function Create({
     coverages,
+    coveragePagination,
+    coverageChoiceUrl,
+    selectedCoverage,
     integration,
 }: {
     coverages: CoverageChoice[];
+    coveragePagination?: CoveragePagination;
+    coverageChoiceUrl?: string;
+    selectedCoverage?: CoverageChoice | null;
     integration: IntegrationStatus;
 }) {
     const saving = useRef(false);
@@ -27,6 +34,9 @@ export default function Create({
             <Head title="Add Project" />
             <ProjectForm
                 coverages={coverages}
+                coveragePagination={coveragePagination}
+                coverageChoiceUrl={coverageChoiceUrl}
+                selectedCoverage={selectedCoverage}
                 integration={integration}
                 values={form.data}
                 errors={form.errors}

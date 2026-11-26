@@ -8,6 +8,7 @@ use App\Services\PreviewDataService;
 use App\Services\RoleAccess;
 use App\Support\LiteralDirectorySearch;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Response;
@@ -48,23 +49,87 @@ final class MaintenanceProjectPageController extends OperationsFrontendControlle
 
         $actor = $this->actor($request);
         $this->writer($actor);
-        $p = $id === null ? null : $this->projects($actor)->where('p.id', $id)->first();
+        $p = $id === null ? null : $this->projects($actor, false)->where('p.id', $id)->first();
         abort_if($id !== null && $p === null, 404);
+
+        $choices = $this->coverageChoicePage($actor, $id, '', $id !== null, 1);
+        $selected = $p === null ? null : $this->coverageChoiceQuery($actor)->where('rc.id', $p->road_coverage_id)->first();
 
         return $this->render('MaintenanceProjects/'.($id === null ? 'Create' : 'Edit'), $request, [
             'project' => $p === null ? null : $this->projectData($p, $actor),
-            // Include assigned roads for the reference-only toggle. In edit mode
-            // the current project's own road remains selectable.
-            'coverages' => $this->roads($actor)
-                ->orderBy('rc.road_name')->orderBy('rc.id')->get()->map(fn (\stdClass $r): array => [
-                    'id' => (int) $r->id, 'road_name' => $r->road_name,
-                    'municipality' => $r->municipality_name, 'kilometers' => $r->kilometers,
-                    'assigned' => $r->project_id !== null && ($id === null || (int) $r->project_id !== $id),
-                    'assigned_project_title' => $r->project_id !== null && ($id === null || (int) $r->project_id !== $id) ? $r->project_title : null,
-                    'geojson' => json_decode($r->geojson, true, 512, JSON_THROW_ON_ERROR),
-                ]),
+            'coverages' => $choices['data'],
+            'coveragePagination' => array_diff_key($choices, ['data' => true]),
+            'selectedCoverage' => $selected === null ? null : $this->coverageChoiceData($selected, $id),
+            'coverageChoiceUrl' => self::BASE.'/project-road-choices',
             'integration' => ['ready' => true, 'message' => null],
         ]);
+    }
+
+    public function coverageChoices(Request $request): JsonResponse
+    {
+        abort_if(self::isPreview($request), 404);
+        $actor = $this->actor($request);
+        $this->writer($actor);
+        $v = $request->validate(['project' => ['nullable', 'integer', 'min:1'], 'page' => ['nullable', 'integer', 'min:1']]);
+        $id = isset($v['project']) ? (int) $v['project'] : null;
+        abort_if($id !== null && ! $this->projects($actor, false)->where('p.id', $id)->exists(), 404);
+
+        return response()->json($this->coverageChoicePage($actor, $id, LiteralDirectorySearch::normalize($request->query('search')), $request->boolean('show_assigned'), (int) ($v['page'] ?? 1)))
+            ->header('Cache-Control', 'private, no-store');
+    }
+
+    public function coverageGeometry(Request $request, int $id): JsonResponse
+    {
+        abort_if(self::isPreview($request), 404);
+        $actor = $this->actor($request);
+        $this->writer($actor);
+        $road = $this->roads($actor)->where('rc.id', $id)->select(['rc.geojson'])->first();
+        abort_unless($road !== null, 404);
+
+        return response()->json(['geojson' => json_decode((string) $road->geojson, true, 512, JSON_THROW_ON_ERROR)])
+            ->header('Cache-Control', 'private, no-store');
+    }
+
+    /** @param array{account_id:int,role:string,engineer_id:?int} $actor */
+    private function coverageChoiceQuery(array $actor): Builder
+    {
+        return $this->roads($actor)->select(['rc.id', 'rc.road_name', 'rc.kilometers', 'l.municipality_name', 'p.id as project_id', 'p.project_title']);
+    }
+
+    /** @return array<string,mixed> */
+    private function coverageChoiceData(\stdClass $road, ?int $project): array
+    {
+        $assigned = $road->project_id !== null && ($project === null || (int) $road->project_id !== $project);
+
+        return ['id' => (int) $road->id, 'road_name' => $road->road_name, 'municipality' => $road->municipality_name,
+            'kilometers' => (string) $road->kilometers, 'assigned' => $assigned, 'assigned_project_title' => $assigned ? $road->project_title : null, 'geojson' => null];
+    }
+
+    /**
+     * @param array{account_id:int,role:string,engineer_id:?int} $actor
+     * @return array{data:array<int,array<string,mixed>>,available:int,assigned:int,page:int,last_page:int}
+     */
+    private function coverageChoicePage(array $actor, ?int $project, string $search, bool $showAssigned, int $page): array
+    {
+        $query = $this->coverageChoiceQuery($actor);
+        if ($search !== '') {
+            $pattern = LiteralDirectorySearch::pattern($search);
+            $query->where(fn (Builder $q) => $q->where('rc.road_name', 'ilike', $pattern)->orWhere('l.municipality_name', 'ilike', $pattern));
+        }
+        $total = (clone $query)->count();
+        $availableQuery = (clone $query)->where(function (Builder $q) use ($project): void {
+            $q->whereNull('p.id');
+            if ($project !== null) {
+                $q->orWhere('p.id', $project);
+            }
+        });
+        $available = $availableQuery->count();
+        $last = max(1, (int) ceil(($showAssigned ? $total : $available) / 30));
+        $page = min($page, $last);
+        $rows = ($showAssigned ? $query : $availableQuery)->orderBy('rc.road_name')->orderBy('rc.id')->forPage($page, 30)->get();
+
+        return ['data' => $rows->map(fn (\stdClass $road): array => $this->coverageChoiceData($road, $project))->all(),
+            'available' => $available, 'assigned' => $total - $available, 'page' => $page, 'last_page' => $last];
     }
 
     public function saveProject(Request $request, ?int $id = null): RedirectResponse

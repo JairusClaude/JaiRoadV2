@@ -45,6 +45,12 @@ export type CoverageChoice = {
     assigned_project_title?: string | null;
     geojson: unknown | null;
 };
+export type CoveragePagination = {
+    available: number;
+    assigned: number;
+    page: number;
+    last_page: number;
+};
 export type ProjectFormValues = {
     road_coverage_id: string;
     project_title: string;

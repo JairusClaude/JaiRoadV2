@@ -4,6 +4,7 @@ import { formReturn, returnLabel, editUrl } from '@/lib/form-navigation';
 import { workspaceHref } from '@/lib/workspace-navigation';
 import type {
     CoverageChoice,
+    CoveragePagination,
     IntegrationStatus,
     ProjectFormValues,
     ProjectSummary,
@@ -12,10 +13,16 @@ import type {
 export default function Edit({
     project,
     coverages,
+    coveragePagination,
+    coverageChoiceUrl,
+    selectedCoverage,
     integration,
 }: {
     project: ProjectSummary;
     coverages: CoverageChoice[];
+    coveragePagination?: CoveragePagination;
+    coverageChoiceUrl?: string;
+    selectedCoverage?: CoverageChoice | null;
     integration: IntegrationStatus;
 }) {
     const page = usePage();
@@ -38,6 +45,10 @@ export default function Edit({
                 backLabel={returnLabel(cancel, 'Project Details')}
                 coverageLocked={project.maintenance_records_count > 0}
                 coverages={coverages}
+                coveragePagination={coveragePagination}
+                coverageChoiceUrl={coverageChoiceUrl}
+                selectedCoverage={selectedCoverage}
+                projectId={project.id}
                 integration={integration}
                 values={form.data}
                 errors={form.errors}
