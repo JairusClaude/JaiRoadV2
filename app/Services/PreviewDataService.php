@@ -206,7 +206,7 @@ final class PreviewDataService
             ],
             'canEdit' => true,
             'canDelete' => true,
-            'backUrl' => '/dd-phase3/ui/road-coverages',
+            'backUrl' => '/workspace/ui/road-coverages',
             'municipalities' => $lgus->map(fn ($l) => ['id' => (int) $l['id'], 'municipality_name' => $l['municipality_name']])->values(),
         ]);
     }
@@ -235,13 +235,13 @@ final class PreviewDataService
             'roadCreatorChoices' => $engineers,
             'requiresCreator' => false,
             'referenceCoverages' => [],
-            'referenceUrl' => '/dd-phase3/ui/map/roads',
+            'referenceUrl' => '/workspace/ui/map/roads',
             'mapServices' => [
                 'routing' => config('jairoads_maps.routing') ?: 'https://router.project-osrm.org/route/v1/driving',
                 'geocoding' => config('jairoads_maps.geocoding') ?: 'https://photon.komoot.io/api',
             ],
             'canEdit' => true,
-            'cancelUrl' => '/dd-phase3/ui/road-coverages'.($id === null ? '' : '/'.$id),
+            'cancelUrl' => '/workspace/ui/road-coverages'.($id === null ? '' : '/'.$id),
         ]);
     }
 
@@ -323,7 +323,7 @@ final class PreviewDataService
         $store['road_coverages'] = $coverages;
         self::saveStore($store);
 
-        $directory = '/dd-phase3/ui/road-coverages';
+        $directory = '/workspace/ui/road-coverages';
         $detail = $directory.'/'.$targetId;
 
         return redirect($id === null ? $directory : self::previewReturn($request, $detail, [$directory, $detail]))
@@ -337,7 +337,7 @@ final class PreviewDataService
         $store['road_coverages'] = array_values(array_filter($coverages, fn ($r) => (int) $r['id'] !== $id));
         self::saveStore($store);
 
-        return redirect('/dd-phase3/ui/road-coverages')
+        return redirect('/workspace/ui/road-coverages')
             ->with('dd_operations_status', 'Road coverage deleted successfully (Preview Mode).');
     }
 
@@ -350,7 +350,7 @@ final class PreviewDataService
         $store['road_coverages'] = array_values(array_filter($coverages, fn ($r) => ! in_array((int) $r['id'], $intIds, true)));
         self::saveStore($store);
 
-        return redirect('/dd-phase3/ui/road-coverages')
+        return redirect('/workspace/ui/road-coverages')
             ->with('dd_operations_status', 'Selected road coverages deleted successfully (Preview Mode).');
     }
 
@@ -538,7 +538,7 @@ final class PreviewDataService
             'roadCoverages' => $roadCoverages,
             'assignedEngineers' => $assignedEngineers,
             'relationshipDataAvailable' => ['roadCoverages' => true, 'engineerAssignments' => true],
-            'directoryUrl' => '/dd-phase3/ui/lgus',
+            'directoryUrl' => '/workspace/ui/lgus',
             'lguPermissions' => [
                 'can_edit' => true,
                 'can_delete' => true,
@@ -555,7 +555,7 @@ final class PreviewDataService
         return self::render('LGUs/'.($id === null ? 'Create' : 'Edit'), $request, [
             'lgu' => $lgu,
             'canEdit' => true,
-            'backUrl' => '/dd-phase3/ui/lgus',
+            'backUrl' => '/workspace/ui/lgus',
         ]);
     }
 
@@ -564,7 +564,7 @@ final class PreviewDataService
     private static function previewReturn(Request $request, string $fallback, array $allowed): string
     {
         $return = $request->input('return_to');
-        if (! is_string($return) || ! str_starts_with($return, '/dd-phase3/ui/')) {
+        if (! is_string($return) || ! str_starts_with($return, '/workspace/ui/')) {
             return $fallback;
         }
         $path = parse_url($return, PHP_URL_PATH);
@@ -609,7 +609,7 @@ final class PreviewDataService
         $store['lgus'] = $lgus;
         self::saveStore($store);
 
-        $directory = '/dd-phase3/ui/lgus';
+        $directory = '/workspace/ui/lgus';
         $detail = $directory.'/'.$id;
 
         return redirect($id === null ? $directory : self::previewReturn($request, $detail, [$directory, $detail]))->with('dd_operations_status', 'LGU saved successfully (Preview Mode).');
@@ -621,7 +621,7 @@ final class PreviewDataService
         $store = self::deletePreviewLgus($store, [$id]);
         self::saveStore($store);
 
-        return redirect('/dd-phase3/ui/lgus')->with('dd_operations_status', 'LGU deleted successfully (Preview Mode).');
+        return redirect('/workspace/ui/lgus')->with('dd_operations_status', 'LGU deleted successfully (Preview Mode).');
     }
 
     public static function bulkDestroyLgu(Request $request): RedirectResponse
@@ -632,7 +632,7 @@ final class PreviewDataService
         $store = self::deletePreviewLgus($store, array_values(array_unique($intIds)));
         self::saveStore($store);
 
-        return redirect('/dd-phase3/ui/lgus')->with('dd_operations_status', 'Selected LGUs deleted successfully (Preview Mode).');
+        return redirect('/workspace/ui/lgus')->with('dd_operations_status', 'Selected LGUs deleted successfully (Preview Mode).');
     }
 
     /**
@@ -745,7 +745,7 @@ final class PreviewDataService
         return self::render('MaintenanceProjects/Show', $request, [
             'project' => self::formatProjectData($p),
             'records' => $records,
-            'recordCreateUrl' => '/dd-phase3/ui/maintenance-projects/'.$id.'/records/create',
+            'recordCreateUrl' => '/workspace/ui/maintenance-projects/'.$id.'/records/create',
             'expandedYear' => $request->integer('record_year', (int) ($records->max('year') ?? date('Y'))),
         ]);
     }
@@ -768,7 +768,7 @@ final class PreviewDataService
             'coverages' => $coverages,
             'integration' => ['ready' => true, 'message' => null],
             'canEdit' => true,
-            'backUrl' => '/dd-phase3/ui/maintenance-projects',
+            'backUrl' => '/workspace/ui/maintenance-projects',
         ]);
     }
 
@@ -822,7 +822,7 @@ final class PreviewDataService
         $store['maintenance_projects'] = $projects;
         self::saveStore($store);
 
-        $directory = '/dd-phase3/ui/maintenance-projects';
+        $directory = '/workspace/ui/maintenance-projects';
         $detail = $directory.'/'.$targetId;
 
         return redirect($id === null ? $detail : self::previewReturn($request, $detail, [$directory, $detail]))->with('dd_operations_status', 'Maintenance Project saved successfully (Preview Mode).');
@@ -981,7 +981,7 @@ final class PreviewDataService
                 'quarter' => $r['quarter'],
             ])->values(),
             'canWrite' => true,
-            'cancelUrl' => '/dd-phase3/ui/maintenance-records',
+            'cancelUrl' => '/workspace/ui/maintenance-records',
         ]);
     }
 
@@ -1006,7 +1006,7 @@ final class PreviewDataService
                 'municipality_name' => $p['municipality_name'] ?? 'Nabunturan',
             ],
             'record' => self::formatRecordData($r),
-            'monthlyUpdateCreateUrl' => '/dd-phase3/ui/monthly-updates/create?maintenance_id='.$id,
+            'monthlyUpdateCreateUrl' => '/workspace/ui/monthly-updates/create?maintenance_id='.$id,
             'documents' => $documents,
             'updates' => $updates,
             'canWrite' => true,
@@ -1041,8 +1041,8 @@ final class PreviewDataService
             'records' => collect($store['maintenance_records'])->where('project_id', $project)->values(),
             'record' => $r === null ? null : self::formatRecordData($r),
             'canWrite' => true,
-            'submitUrl' => '/dd-phase3/ui/maintenance-projects/'.$project.'/records'.($id === null ? '' : '/'.$id),
-            'cancelUrl' => '/dd-phase3/ui/maintenance-projects/'.$project.($id === null ? '' : '/records/'.$id),
+            'submitUrl' => '/workspace/ui/maintenance-projects/'.$project.'/records'.($id === null ? '' : '/'.$id),
+            'cancelUrl' => '/workspace/ui/maintenance-projects/'.$project.($id === null ? '' : '/records/'.$id),
         ]);
     }
 
@@ -1102,10 +1102,10 @@ final class PreviewDataService
         $store['maintenance_records'] = $records;
         self::saveStore($store);
 
-        $parent = '/dd-phase3/ui/maintenance-projects/'.$project;
+        $parent = '/workspace/ui/maintenance-projects/'.$project;
         $detail = $parent.'/records/'.$targetId;
 
-        return redirect(self::previewReturn($request, $id === null ? $parent : $detail, [$parent, $detail, '/dd-phase3/ui/maintenance-records']))
+        return redirect(self::previewReturn($request, $id === null ? $parent : $detail, [$parent, $detail, '/workspace/ui/maintenance-records']))
             ->with('dd_operations_status', 'Maintenance record saved successfully (Preview Mode).');
     }
 
@@ -1118,8 +1118,8 @@ final class PreviewDataService
         $store['maintenance_records'] = array_values(array_filter($records, fn ($r) => (int) $r['id'] !== $id));
         self::saveStore($store);
 
-        $directory = '/dd-phase3/ui/maintenance-records';
-        $parent = '/dd-phase3/ui/maintenance-projects/'.$record['project_id'];
+        $directory = '/workspace/ui/maintenance-records';
+        $parent = '/workspace/ui/maintenance-projects/'.$record['project_id'];
 
         return redirect(self::previewReturn($request, $directory, [$directory, $parent]))
             ->with('dd_operations_status', 'Maintenance record deleted successfully (Preview Mode).');
@@ -1134,7 +1134,7 @@ final class PreviewDataService
         $store['maintenance_records'] = array_values(array_filter($records, fn ($r) => ! in_array((int) $r['id'], $intIds, true)));
         self::saveStore($store);
 
-        return redirect('/dd-phase3/ui/maintenance-records')
+        return redirect('/workspace/ui/maintenance-records')
             ->with('dd_operations_status', 'Selected maintenance records deleted successfully (Preview Mode).');
     }
 
@@ -1146,7 +1146,7 @@ final class PreviewDataService
     {
         $id = (int) $row['id'];
         $projectId = (int) ($row['project_id'] ?? 1);
-        $url = '/dd-phase3/ui/maintenance-projects/'.$projectId.'/records/'.$id;
+        $url = '/workspace/ui/maintenance-projects/'.$projectId.'/records/'.$id;
 
         return [
             'id' => $id,
@@ -1169,7 +1169,7 @@ final class PreviewDataService
             'updated_at' => $row['updated_at'] ?? '2026-11-09T14:58:00Z',
             'details_url' => $url,
             'edit_url' => $url.'/edit',
-            'delete_url' => '/dd-phase3/ui/maintenance-records/'.$id,
+            'delete_url' => '/workspace/ui/maintenance-records/'.$id,
             'can_delete' => true,
             'project' => [
                 'id' => $projectId,
@@ -1295,9 +1295,9 @@ final class PreviewDataService
             'media' => [],
             'canWrite' => true,
             'canUploadMedia' => false,
-            'backUrl' => '/dd-phase3/ui/monthly-updates',
+            'backUrl' => '/workspace/ui/monthly-updates',
             'backLabel' => 'Monthly Updates',
-            'directoryUrl' => '/dd-phase3/ui/monthly-updates',
+            'directoryUrl' => '/workspace/ui/monthly-updates',
         ]);
     }
 
@@ -1319,8 +1319,8 @@ final class PreviewDataService
             'contextRecordId' => null,
             'project' => null,
             'record' => null,
-            'submitUrl' => '/dd-phase3/ui/monthly-updates'.($id === null ? '' : '/'.$id),
-            'cancelUrl' => '/dd-phase3/ui/monthly-updates'.($id === null ? '' : '/'.$id),
+            'submitUrl' => '/workspace/ui/monthly-updates'.($id === null ? '' : '/'.$id),
+            'cancelUrl' => '/workspace/ui/monthly-updates'.($id === null ? '' : '/'.$id),
         ]);
     }
 
@@ -1401,7 +1401,7 @@ final class PreviewDataService
             'uploaded_at' => $row['uploaded_at'] ?? '2026-07-15T09:00:00Z',
             'updated_at' => $row['updated_at'] ?? '2026-07-15T09:00:00Z',
             'available' => true,
-            'delete_url' => '/dd-phase3/files/document/'.$id,
+            'delete_url' => '/workspace/files/document/'.$id,
             'download_url' => '#',
             'can_edit' => true,
             'project' => [
@@ -1458,8 +1458,8 @@ final class PreviewDataService
             'contextRecordId' => null,
             'project' => null,
             'record' => null,
-            'submitUrl' => '/dd-phase3/ui/maintenance-documents'.($id === null ? '' : '/'.$id),
-            'cancelUrl' => '/dd-phase3/ui/maintenance-documents'.($id === null ? '' : '/'.$id),
+            'submitUrl' => '/workspace/ui/maintenance-documents'.($id === null ? '' : '/'.$id),
+            'cancelUrl' => '/workspace/ui/maintenance-documents'.($id === null ? '' : '/'.$id),
         ]);
     }
 

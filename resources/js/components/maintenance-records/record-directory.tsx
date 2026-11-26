@@ -79,7 +79,10 @@ export function RecordDirectory({
     onDelete: (records: RecordDirectoryRow[], bulk?: boolean) => void;
 }) {
     const page = usePage();
-    const isViewer = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role?.toLowerCase() === 'viewer';
+    const isViewer =
+        (
+            page.props.jairoadsIdentity as { role?: string } | undefined
+        )?.role?.toLowerCase() === 'viewer';
     const [search, setSearch] = useState(filters.search);
     const [selecting, setSelecting] = useState(false);
     const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -177,16 +180,16 @@ export function RecordDirectory({
                     </p>
                 </div>
                 {!isViewer && canCreate && (
-<Button
-                    className="jr-primary"
-                    disabled={!integration.ready || !canCreate || busy}
-                    ref={addButtonRef}
-                    onClick={onAdd}
-                >
-                    <Plus />
-                    Add Record
-                </Button>
-)}
+                    <Button
+                        className="jr-primary"
+                        disabled={!integration.ready || !canCreate || busy}
+                        ref={addButtonRef}
+                        onClick={onAdd}
+                    >
+                        <Plus />
+                        Add Record
+                    </Button>
+                )}
             </div>
             <IntegrationNotice integration={integration} />
             <form

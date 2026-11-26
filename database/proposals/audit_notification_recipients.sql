@@ -41,7 +41,7 @@ CREATE TRIGGER audit_notification_recipients_no_truncate
     BEFORE TRUNCATE ON jairoads_next.audit_notification_recipients
     FOR EACH STATEMENT EXECUTE FUNCTION jairoads_next.reject_audit_history_mutation();
 -- The official database already protects audit_logs with
--- jairoads_dd_auditlog_reject_changes / jairoads_dd_auditlog_reject_truncate.
+-- jairoads_auditlog_reject_changes / jairoads_auditlog_reject_truncate.
 -- Preserve them without installing duplicate audit_log triggers. The guarded
 -- fallback is needed for genuinely empty disposable PostgreSQL fixtures.
 -- Schema owner must inspect trigger functions and adapt for other deployments.
@@ -50,7 +50,7 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM pg_trigger
         WHERE tgrelid = 'jairoads_next.audit_logs'::regclass
-          AND tgname IN ('jairoads_dd_auditlog_reject_changes', 'canonical_audit_history_immutable')
+          AND tgname IN ('jairoads_auditlog_reject_changes', 'canonical_audit_history_immutable')
           AND tgenabled <> 'D'
           AND (tgtype::int & 1) <> 0   -- row trigger
           AND (tgtype::int & 2) <> 0   -- BEFORE
@@ -64,7 +64,7 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM pg_trigger
         WHERE tgrelid = 'jairoads_next.audit_logs'::regclass
-          AND tgname IN ('jairoads_dd_auditlog_reject_truncate', 'canonical_audit_history_no_truncate')
+          AND tgname IN ('jairoads_auditlog_reject_truncate', 'canonical_audit_history_no_truncate')
           AND tgenabled <> 'D'
           AND (tgtype::int & 32) <> 0  -- TRUNCATE
     ) THEN

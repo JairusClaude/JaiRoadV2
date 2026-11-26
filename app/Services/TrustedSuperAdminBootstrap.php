@@ -41,7 +41,7 @@ final class TrustedSuperAdminBootstrap
                 ]);
                 DB::table('public.users')->insert([
                     'name' => trim($name), 'email' => $email, 'password' => $hash,
-                    'dd_user_account_id' => $id, 'user_account_id' => null, 'email_verified_at' => null,
+                    'canonical_user_account_id' => $id, 'user_account_id' => null, 'email_verified_at' => null,
                     'created_at' => now(), 'updated_at' => now(),
                 ]);
 

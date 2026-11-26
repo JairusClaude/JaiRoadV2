@@ -24,7 +24,7 @@ BEGIN
  WHERE NOT tgisinternal AND tgenabled <> 'D'
    AND (
      (tgrelid='jairoads_next.audit_logs'::regclass
-       AND tgname IN ('jairoads_dd_auditlog_reject_changes', 'jairoads_dd_auditlog_reject_truncate'))
+       AND tgname IN ('jairoads_auditlog_reject_changes', 'jairoads_auditlog_reject_truncate'))
      OR (tgrelid='jairoads_next.audit_notification_recipients'::regclass
        AND tgname IN ('audit_notification_recipients_immutable', 'audit_notification_recipients_no_truncate'))
      OR (tgrelid='jairoads_security.account_provisioning'::regclass

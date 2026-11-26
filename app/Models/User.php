@@ -19,7 +19,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * may confirm email ownership optionally; MustVerifyEmail is intentionally not implemented.
  *
  * @property int $id
- * @property int|null $dd_user_account_id
+ * @property int|null $canonical_user_account_id
  * @property string $name
  * @property string $email
  * @property Carbon|null $email_verified_at
@@ -61,14 +61,14 @@ class User extends Authenticatable implements PasskeyUser
 
     /**
      * Separate, explicit bridge to the NEW Data Dictionary account.
-     * Only ddUserAccount() provides canonical business identity. The legacy
+     * Only canonicalUserAccount() provides canonical business identity. The legacy
      * userAccount() relation is retained for historical compatibility, not login authority.
      * Never map legacy numeric user_account_id to this relation.
      *
      * @return BelongsTo<StagingUserAccount, $this>
      */
-    public function ddUserAccount(): BelongsTo
+    public function canonicalUserAccount(): BelongsTo
     {
-        return $this->belongsTo(StagingUserAccount::class, 'dd_user_account_id');
+        return $this->belongsTo(StagingUserAccount::class, 'canonical_user_account_id');
     }
 }

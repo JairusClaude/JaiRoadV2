@@ -19,7 +19,7 @@ final class PreviewSecurityTest extends TestCase
         // a requester cannot select the synthetic SuperAdmin identity.
         config(['app.preview_mode' => true]);
 
-        $request = Request::create('http://localhost:8080/dd-phase3/ui/road-coverages', 'GET', [], [], [], [
+        $request = Request::create('http://localhost:8080/workspace/ui/road-coverages', 'GET', [], [], [], [
             'SERVER_PORT' => '8080',
             'HTTP_X_PREVIEW_MODE' => 'true',
             'HTTP_X_FORWARDED_PORT' => '8080',

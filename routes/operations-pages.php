@@ -13,7 +13,7 @@ use App\Http\Controllers\RoadCoveragePageController;
 use Illuminate\Support\Facades\Route;
 
 // These URLs are canonical DD projections. Legacy public.* route quarantine stays intact.
-Route::middleware(['auth'])->prefix('dd-phase3/ui')->name('jairoads.ui.')->group(function (): void {
+Route::middleware(['auth'])->prefix('workspace/ui')->name('jairoads.ui.')->group(function (): void {
     Route::get('/map/roads', [RoadCoveragePageController::class, 'roadReferences'])->name('roads.references');
     Route::get('/map/road-index', [RoadCoveragePageController::class, 'roadMapPage'])->name('roads.map-page');
     Route::get('/road-coverages', [RoadCoveragePageController::class, 'roadIndex'])->name('roads.index');

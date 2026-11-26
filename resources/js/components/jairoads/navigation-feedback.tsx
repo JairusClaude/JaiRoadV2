@@ -22,33 +22,71 @@ export function JaiRoadsNavigationFeedback() {
         let motionFrame = 0;
         let activeMotion: Animation[] = [];
         const cancelMotion = () => {
-            if (motionFrame) window.cancelAnimationFrame(motionFrame);
+            if (motionFrame) {
+                window.cancelAnimationFrame(motionFrame);
+            }
+
             motionFrame = 0;
-            activeMotion.forEach(animation => animation.cancel());
+            activeMotion.forEach((animation) => animation.cancel());
             activeMotion = [];
         };
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
         const animateDestination = () => {
             cancelMotion();
-            if (reduced.matches || document.documentElement.classList.contains('jr-reduce-motion')) return;
+
+            if (
+                reduced.matches ||
+                document.documentElement.classList.contains('jr-reduce-motion')
+            ) {
+                return;
+            }
+
             // Wait for the destination commit, not for an arbitrary animation delay.
             motionFrame = window.requestAnimationFrame(() => {
                 motionFrame = window.requestAnimationFrame(() => {
                     motionFrame = 0;
-                    if (reduced.matches || document.documentElement.classList.contains('jr-reduce-motion')) return;
-                    const content = document.querySelector<HTMLElement>('main.jr-content, main.jr-responsive-main');
-                    if (!content || typeof content.animate !== 'function') return;
+
+                    if (
+                        reduced.matches ||
+                        document.documentElement.classList.contains(
+                            'jr-reduce-motion',
+                        )
+                    ) {
+                        return;
+                    }
+
+                    const content = document.querySelector<HTMLElement>(
+                        'main.jr-content, main.jr-responsive-main',
+                    );
+
+                    if (!content || typeof content.animate !== 'function') {
+                        return;
+                    }
+
                     // Opacity only on the main container: preserve sticky/fixed geometry,
                     // map canvases, scroll position and the persistent navigation shell.
-                    activeMotion.push(content.animate(
-                        [{ opacity: .88 }, { opacity: 1 }],
-                        { duration: 180, easing: 'cubic-bezier(.2,.8,.2,1)' },
-                    ));
+                    activeMotion.push(
+                        content.animate([{ opacity: 0.88 }, { opacity: 1 }], {
+                            duration: 180,
+                            easing: 'cubic-bezier(.2,.8,.2,1)',
+                        }),
+                    );
                     const heading = content.querySelector<HTMLElement>('h1');
-                    if (heading) activeMotion.push(heading.animate(
-                        [{ transform: 'translateY(4px)' }, { transform: 'translateY(0)' }],
-                        { duration: 220, easing: 'cubic-bezier(.2,.8,.2,1)' },
-                    ));
+
+                    if (heading) {
+                        activeMotion.push(
+                            heading.animate(
+                                [
+                                    { transform: 'translateY(4px)' },
+                                    { transform: 'translateY(0)' },
+                                ],
+                                {
+                                    duration: 220,
+                                    easing: 'cubic-bezier(.2,.8,.2,1)',
+                                },
+                            ),
+                        );
+                    }
                 });
             });
         };
@@ -74,12 +112,16 @@ export function JaiRoadsNavigationFeedback() {
             clearTimers();
             pending = true;
             setMessage('hidden');
+
             // Avoid flicker on fast visits and redundant indicators on local form actions.
             if (pageNavigation) {
                 delayRef.current = setTimeout(() => {
-                    if (pending) setMessage('loading');
+                    if (pending) {
+                        setMessage('loading');
+                    }
                 }, 350);
             }
+
             slowRef.current = setTimeout(() => {
                 if (pending) {
                     setMessage('slow');
@@ -101,13 +143,22 @@ export function JaiRoadsNavigationFeedback() {
         const offStart = router.on('start', (event) => {
             cancelMotion();
             const path = window.location.pathname.replace(/\/$/, '');
-            const target = event.detail.visit.url.pathname.replace(/\/$/, '') || '/';
-            start(event.detail.visit.method.toLowerCase() === 'get' && target !== (path || '/'));
+            const target =
+                event.detail.visit.url.pathname.replace(/\/$/, '') || '/';
+            start(
+                event.detail.visit.method.toLowerCase() === 'get' &&
+                    target !== (path || '/'),
+            );
         });
         const offNavigate = router.on('navigate', (event) => {
-            const nextPath = new URL(event.detail.page.url, window.location.origin).pathname.replace(/\/$/, '') || '/';
+            const nextPath =
+                new URL(
+                    event.detail.page.url,
+                    window.location.origin,
+                ).pathname.replace(/\/$/, '') || '/';
             const changedPage = nextPath !== currentPath;
             currentPath = nextPath;
+
             if (changedPage) {
                 animateDestination();
             }
@@ -127,26 +178,42 @@ export function JaiRoadsNavigationFeedback() {
         };
     }, []);
 
-    if (message === 'hidden') return null;
+    if (message === 'hidden') {
+        return null;
+    }
 
     const slot = document.querySelector('[data-jr-navigation-status]');
-    const label = message === 'loading'
-        ? 'Opening page…'
-        : message === 'slow'
-          ? 'Still loading…'
-          : 'Waiting for server…';
-    const announcement = message === 'very-slow'
-        ? 'Still waiting for the server. You can continue navigating.'
-        : label;
+    const label =
+        message === 'loading'
+            ? 'Opening page…'
+            : message === 'slow'
+              ? 'Still loading…'
+              : 'Waiting for server…';
+    const announcement =
+        message === 'very-slow'
+            ? 'Still waiting for the server. You can continue navigating.'
+            : label;
     const indicator = (
-        <span className={`jr-navigation-status${slot ? '' : ' jr-navigation-status-fallback'}`} role="status" aria-live="polite" aria-atomic="true" title={announcement}>
+        <span
+            className={`jr-navigation-status${slot ? '' : 'jr-navigation-status-fallback'}`}
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            title={announcement}
+        >
             <span className="jr-navigation-status-dot" aria-hidden="true" />
-            <span className="jr-navigation-status-label" aria-hidden="true">{label}</span>
+            <span className="jr-navigation-status-label" aria-hidden="true">
+                {label}
+            </span>
             <span className="sr-only">{announcement}</span>
         </span>
     );
 
     // Keep feedback in the existing workspace header, never on the browser edge.
     // Outside a workspace, local form controls handle short waits.
-    return slot ? createPortal(indicator, slot) : message === 'loading' ? null : indicator;
+    return slot
+        ? createPortal(indicator, slot)
+        : message === 'loading'
+          ? null
+          : indicator;
 }

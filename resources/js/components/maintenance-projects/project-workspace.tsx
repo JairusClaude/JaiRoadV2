@@ -65,7 +65,13 @@ export function IntegrationNotice({
 }
 
 /** Shared three-dot directory action menu (including keyboard navigation). */
-export function DirectoryActions({ label, children }: { label: string; children: ReactNode }) {
+export function DirectoryActions({
+    label,
+    children,
+}: {
+    label: string;
+    children: ReactNode;
+}) {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -104,7 +110,11 @@ export function ProjectActions({
             <DropdownMenuItem disabled={!project.can_edit} onSelect={onEdit}>
                 <Pencil /> Edit Project
             </DropdownMenuItem>
-            <DropdownMenuItem variant="destructive" disabled={!project.can_delete} onSelect={onDelete}>
+            <DropdownMenuItem
+                variant="destructive"
+                disabled={!project.can_delete}
+                onSelect={onDelete}
+            >
                 <Trash2 /> Delete Project
             </DropdownMenuItem>
         </DirectoryActions>

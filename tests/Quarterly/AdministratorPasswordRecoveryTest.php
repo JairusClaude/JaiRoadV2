@@ -14,7 +14,7 @@ final class AdministratorPasswordRecoveryTest extends PostgresTestCase
     {
         $root = $this->account('SuperAdmin');
         $target = $this->account('SuperAdmin');
-        $this->actingAs($root)->postJson('/dd-phase3/accounts/'.$target->dd_user_account_id.'/password-reset', [
+        $this->actingAs($root)->postJson('/workspace/accounts/'.$target->canonical_user_account_id.'/password-reset', [
             'current_password' => 'Disposable-Test!123',
             'password' => 'New-Root-Disposable!456',
             'password_confirmation' => 'New-Root-Disposable!456',
@@ -22,8 +22,8 @@ final class AdministratorPasswordRecoveryTest extends PostgresTestCase
 
         $this->artisan('jairoads:recover-superadmin')
             ->expectsQuestion('Type TRUSTED DATABASE OPERATOR to proceed', 'TRUSTED DATABASE OPERATOR')
-            ->expectsQuestion('Working SuperAdmin canonical account ID', (string) $root->dd_user_account_id)
-            ->expectsQuestion('Reviewed target SuperAdmin canonical account ID', (string) $target->dd_user_account_id)
+            ->expectsQuestion('Working SuperAdmin canonical account ID', (string) $root->canonical_user_account_id)
+            ->expectsQuestion('Reviewed target SuperAdmin canonical account ID', (string) $target->canonical_user_account_id)
             ->expectsQuestion('Private approved recovery reference', 'synthetic-review-001')
             ->expectsConfirmation('I have independently verified the target SuperAdmin identity and authorization, and have a tested recovery plan.', 'yes')
             ->expectsQuestion('Working SuperAdmin password', 'Disposable-Test!123')
@@ -32,20 +32,20 @@ final class AdministratorPasswordRecoveryTest extends PostgresTestCase
             ->assertSuccessful();
         $this->assertTrue(Hash::check('New-Root-Disposable!456', $target->fresh()->password));
         $this->assertSame($root->password, $root->fresh()->password);
-        $this->assertSame($target->fresh()->password, DB::table('jairoads_next.user_accounts')->where('id', $target->dd_user_account_id)->value('password'));
+        $this->assertSame($target->fresh()->password, DB::table('jairoads_next.user_accounts')->where('id', $target->canonical_user_account_id)->value('password'));
     }
 
     public function test_superadmin_can_reset_eligible_account_without_email_and_preserve_identity(): void
     {
         $root = $this->account('SuperAdmin');
         $target = $this->account('Engineer');
-        $id = (int) $target->dd_user_account_id;
+        $id = (int) $target->canonical_user_account_id;
         $before = app(AccountIdentityResolver::class)->resolve($target);
         $target->forceFill(['remember_token' => 'old-remember-token'])->save();
         DB::table('public.password_reset_tokens')->insert(['email' => $target->email, 'token' => Hash::make('old-token'), 'created_at' => now()]);
         $this->actingAs($root);
-        $this->getJson('/dd-phase3/accounts/'.$id)->assertOk()->assertJsonPath('can_reset_password', true)->assertJsonPath('password_reset_blocker', null);
-        $this->postJson('/dd-phase3/accounts/'.$id.'/password-reset', [
+        $this->getJson('/workspace/accounts/'.$id)->assertOk()->assertJsonPath('can_reset_password', true)->assertJsonPath('password_reset_blocker', null);
+        $this->postJson('/workspace/accounts/'.$id.'/password-reset', [
             'current_password' => 'Disposable-Test!123',
             'password' => 'Replacement-Disposable!456',
             'password_confirmation' => 'Replacement-Disposable!456',
@@ -68,11 +68,11 @@ final class AdministratorPasswordRecoveryTest extends PostgresTestCase
         $root = $this->account('SuperAdmin');
         // An existing active Viewer without reviewed provenance is not a valid login.
         $target = $this->account('Viewer', null, true, false);
-        $id = (int) $target->dd_user_account_id;
-        $this->actingAs($root)->getJson('/dd-phase3/accounts/'.$id)
+        $id = (int) $target->canonical_user_account_id;
+        $this->actingAs($root)->getJson('/workspace/accounts/'.$id)
             ->assertOk()->assertJsonPath('can_reset_password', false)
             ->assertJsonPath('password_reset_blocker', 'This existing account lacks matching administrator provisioning approval. A database administrator must complete the approved account review before password recovery.');
-        $this->postJson('/dd-phase3/accounts/'.$id.'/password-reset', [
+        $this->postJson('/workspace/accounts/'.$id.'/password-reset', [
             'current_password' => 'Disposable-Test!123',
             'password' => 'Replacement-Disposable!456',
             'password_confirmation' => 'Replacement-Disposable!456',
@@ -87,10 +87,10 @@ final class AdministratorPasswordRecoveryTest extends PostgresTestCase
         $target = $this->account('Viewer');
         $otherRoot = $this->account('SuperAdmin');
         $inactive = $this->account('Engineer', null, false);
-        $id = (int) $target->dd_user_account_id;
-        $url = fn ($u) => '/dd-phase3/accounts/'.$u->dd_user_account_id.'/password-reset';
+        $id = (int) $target->canonical_user_account_id;
+        $url = fn ($u) => '/workspace/accounts/'.$u->canonical_user_account_id.'/password-reset';
         $data = ['current_password' => 'Disposable-Test!123', 'password' => 'Replacement-Disposable!456', 'password_confirmation' => 'Replacement-Disposable!456'];
-        $this->actingAs($admin)->getJson('/dd-phase3/accounts/'.$id)->assertOk()->assertJsonPath('can_reset_password', false);
+        $this->actingAs($admin)->getJson('/workspace/accounts/'.$id)->assertOk()->assertJsonPath('can_reset_password', false);
         $this->postJson($url($target), $data)->assertForbidden();
         $this->withSession(['password_hash_web' => null])->actingAs($root)
             ->postJson($url($target), array_replace($data, ['current_password' => 'wrong']))->assertUnprocessable()->assertJsonValidationErrors('current_password');

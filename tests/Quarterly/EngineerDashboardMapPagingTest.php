@@ -13,7 +13,7 @@ it('pages dashboard maps without dropping older assigned roads', function (): vo
     $original = DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->first();
     DB::table('jairoads_next.maintenance_records')->insert(
         $this->recordData($f['project'], $f['engineer'], 'Q1')
-        + ['created_by' => $f['user']->dd_user_account_id],
+        + ['created_by' => $f['user']->canonical_user_account_id],
     );
     $batch = [];
     for ($i = 0; $i < 104; $i++) {
@@ -28,25 +28,25 @@ it('pages dashboard maps without dropping older assigned roads', function (): vo
         ];
     }
     DB::table('jairoads_next.road_coverages')->insert($batch);
-    $this->get('/dd-phase3/dashboard')->assertOk()
+    $this->get('/workspace/dashboard')->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->missing('mapCoverages')->missing('mapNextCursor'));
 
-    $response = $this->getJson('/dd-phase3/dashboard/map-roads')
+    $response = $this->getJson('/workspace/dashboard/map-roads')
         ->assertOk()->assertJsonCount(100, 'data');
     $cursor = $response->json('next_cursor');
     expect($cursor)->toBeInt()->toBeGreaterThan(0);
-    $result = $this->getJson('/dd-phase3/dashboard/map-roads?before='.$cursor)
+    $result = $this->getJson('/workspace/dashboard/map-roads?before='.$cursor)
         ->assertOk()->assertHeader('Cache-Control', 'no-store, private')
         ->assertJsonCount(5, 'data')->assertJsonPath('next_cursor', null);
     $older = collect($result->json('data'))->firstWhere('id', $f['road']);
     expect($older)->not->toBeNull();
     expect($older['my_project'])->toBeTrue();
-    $this->getJson('/dd-phase3/dashboard/map-roads?before=not-a-number')
+    $this->getJson('/workspace/dashboard/map-roads?before=not-a-number')
         ->assertUnprocessable();
 });
 
 it('rejects non-engineers from the dashboard road map endpoint', function (): void {
     $this->fixture('Viewer');
-    $this->getJson('/dd-phase3/dashboard/map-roads?before=1')->assertForbidden();
+    $this->getJson('/workspace/dashboard/map-roads?before=1')->assertForbidden();
 });

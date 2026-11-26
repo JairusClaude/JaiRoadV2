@@ -1,4 +1,3 @@
-import { manilaDate } from '@/lib/manila-time';
 import {
     Check,
     ChevronLeft,
@@ -24,6 +23,7 @@ import {
 import { useMemo, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
+import { manilaDate } from '@/lib/manila-time';
 import { requestOperation } from '@/lib/operation-request';
 /**
  * UI label: Maintenance Documents. Data-dictionary entity: MaintenanceDocument.
@@ -309,7 +309,7 @@ export default function WorkspaceDocuments({
 
         try {
             await requestOperation(
-                '/dd-phase3/ops/documents',
+                '/workspace/ops/documents',
                 {
                     maintenance_id: recordId,
                     document_title: title.trim(),
@@ -605,14 +605,14 @@ export default function WorkspaceDocuments({
                                     </tr>
                                 ))}
                                 {visible.length === 0 && (
-                                    <tr className="jr-dd-empty-row">
+                                    <tr className="jr-workspace-empty-row">
                                         <td colSpan={5}>
                                             <div
-                                                className="jr-dd-empty-content"
+                                                className="jr-workspace-empty-content"
                                                 role="status"
                                             >
                                                 <span
-                                                    className="jr-dd-empty-icon"
+                                                    className="jr-workspace-empty-icon"
                                                     aria-hidden="true"
                                                 >
                                                     <FolderOpen className="h-6 w-6" />
@@ -945,7 +945,7 @@ export default function WorkspaceDocuments({
 
                                                 try {
                                                     await requestOperation(
-                                                        `/dd-phase3/ops/documents/${details.id}`,
+                                                        `/workspace/ops/documents/${details.id}`,
                                                         {
                                                             document_title:
                                                                 editDocument.title.trim(),
@@ -1038,7 +1038,7 @@ export default function WorkspaceDocuments({
                             )}
                         <a
                             className={primary}
-                            href={`/dd-phase3/files/document/${details.id}`}
+                            href={`/workspace/files/document/${details.id}`}
                         >
                             Download document
                         </a>

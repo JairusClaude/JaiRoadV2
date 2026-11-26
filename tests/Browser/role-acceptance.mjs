@@ -28,10 +28,10 @@ export async function verifyRoleAcceptanceMatrix({
 
     try {
         for (const path of [
-            '/dd-phase3/dashboard',
-            '/dd-phase3/users',
-            '/dd-phase3/audit-logs',
-            '/dd-phase3/ui/road-coverages',
+            '/workspace/dashboard',
+            '/workspace/users',
+            '/workspace/audit-logs',
+            '/workspace/ui/road-coverages',
             '/jairoads/notifications',
         ]) {
             const response = await guest.request.get(`${base}${path}`, {
@@ -46,27 +46,27 @@ export async function verifyRoleAcceptanceMatrix({
 
     const expectations = [
         {
-            path: '/dd-phase3/dashboard',
+            path: '/workspace/dashboard',
             statuses: [200, 200, 200, 200],
         },
         {
-            path: '/dd-phase3/users',
+            path: '/workspace/users',
             statuses: [200, 200, 403, 403],
         },
         {
-            path: '/dd-phase3/audit-logs',
+            path: '/workspace/audit-logs',
             statuses: [200, 200, 403, 403],
         },
         {
-            path: '/dd-phase3/ui/road-coverages',
+            path: '/workspace/ui/road-coverages',
             statuses: [200, 200, 200, 200],
         },
         {
-            path: '/dd-phase3/ui/road-coverages/create',
+            path: '/workspace/ui/road-coverages/create',
             statuses: [200, 200, 200, 403],
         },
         {
-            path: '/dd-phase3/ui/maintenance-projects/create',
+            path: '/workspace/ui/maintenance-projects/create',
             statuses: [200, 200, 200, 403],
         },
     ];
@@ -111,13 +111,13 @@ export async function verifyRoleAcceptanceMatrix({
 
     // These are genuine HTTP POST attempts, not simply hidden buttons.
     // Authorization must run before validation, and no business row is created.
-    await deniedWrite(viewer, '/dd-phase3/ops/roads');
-    await deniedWrite(viewer, '/dd-phase3/ops/projects');
-    await deniedWrite(viewer, '/dd-phase3/ops/updates');
-    await deniedWrite(viewer, '/dd-phase3/ops/documents');
-    await deniedWrite(viewer, '/dd-phase3/accounts');
-    await deniedWrite(engineer, '/dd-phase3/accounts');
-    await deniedWrite(engineer, '/dd-phase3/lgus');
+    await deniedWrite(viewer, '/workspace/ops/roads');
+    await deniedWrite(viewer, '/workspace/ops/projects');
+    await deniedWrite(viewer, '/workspace/ops/updates');
+    await deniedWrite(viewer, '/workspace/ops/documents');
+    await deniedWrite(viewer, '/workspace/accounts');
+    await deniedWrite(engineer, '/workspace/accounts');
+    await deniedWrite(engineer, '/workspace/lgus');
 
     console.log(
         'PASS: real-session SuperAdmin/Admin/Engineer/Viewer route matrix; guest JSON denial; privileged audit/account reads; Viewer write denial and Engineer account/LGU governance denial.',

@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\Route;
 
 it('preserves engineer creation and assignment route contracts after extraction', function (): void {
     $cases = [
-        ['jairoads.dd-phase3.engineers.store', 'dd-phase3/engineers', EngineerDirectoryController::class.'@createEngineer', 'throttle:10,1,jr-engineers-store-'],
-        ['jairoads.dd-phase3.assignments.store', 'dd-phase3/assignments', EngineerAssignmentController::class.'@setAssignment', 'throttle:10,1,jr-assignments-store-'],
+        ['jairoads.workspace.engineers.store', 'workspace/engineers', EngineerDirectoryController::class.'@createEngineer', 'throttle:10,1,jr-engineers-store-'],
+        ['jairoads.workspace.assignments.store', 'workspace/assignments', EngineerAssignmentController::class.'@setAssignment', 'throttle:10,1,jr-assignments-store-'],
     ];
 
     foreach ($cases as [$name, $uri, $action, $throttle]) {

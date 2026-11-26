@@ -57,7 +57,7 @@ BEGIN
        OR (target.account_type = 'Engineer' AND target.engineer_id IS NULL)
        OR (target.account_type = 'Admin' AND target.engineer_id IS NULL
            AND NEW.method <> 'reviewed_transition')
-       OR NOT EXISTS (SELECT 1 FROM public.users u WHERE u.dd_user_account_id = target.id
+       OR NOT EXISTS (SELECT 1 FROM public.users u WHERE u.canonical_user_account_id = target.id
                        AND lower(u.email) = lower(target.email) AND u.password = target.password) THEN
         RAISE EXCEPTION 'Invalid provisioned identity' USING ERRCODE = '23514';
     END IF;
@@ -67,7 +67,7 @@ BEGIN
     IF NOT FOUND OR NOT actor.is_active OR actor.account_type <> NEW.provisioner_role
        OR actor.account_type NOT IN ('Admin', 'SuperAdmin')
        OR (actor.engineer_id IS NOT NULL AND actor.engineer_status IS DISTINCT FROM 'Active')
-       OR NOT EXISTS (SELECT 1 FROM public.users u WHERE u.dd_user_account_id = actor.id
+       OR NOT EXISTS (SELECT 1 FROM public.users u WHERE u.canonical_user_account_id = actor.id
                        AND lower(u.email) = lower(actor.email) AND u.password = actor.password)
        OR (actor.account_type = 'Admin' AND NOT EXISTS (
            SELECT 1 FROM jairoads_security.account_provisioning p WHERE p.user_account_id = actor.id

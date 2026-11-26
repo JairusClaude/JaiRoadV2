@@ -18,16 +18,16 @@ final class ReviewedAccountTransitionTest extends PostgresTestCase
         // This only represents synthetic identity verification: it is NOT a
         // proposed automatic match between real people and Engineer records.
         $admin = $this->account('Admin', linked: false);
-        $root = User::where('dd_user_account_id', DB::table('jairoads_next.user_accounts')
+        $root = User::where('canonical_user_account_id', DB::table('jairoads_next.user_accounts')
             ->where('account_type', 'SuperAdmin')->value('id'))->firstOrFail();
         $resolver = app(AccountIdentityResolver::class);
-        $before = DB::table('jairoads_next.user_accounts')->where('id', $admin->dd_user_account_id)->first();
+        $before = DB::table('jairoads_next.user_accounts')->where('id', $admin->canonical_user_account_id)->first();
         $this->assertNull($resolver->resolve($admin));
 
         $profile = $this->engineer();
         $evidence = [
-            'user_account_id' => $admin->dd_user_account_id,
-            'provisioned_by' => $root->dd_user_account_id,
+            'user_account_id' => $admin->canonical_user_account_id,
+            'provisioned_by' => $root->canonical_user_account_id,
             'provisioner_role' => 'SuperAdmin',
             'provisioned_role' => 'Admin',
             'engineer_id' => $profile,
@@ -40,10 +40,10 @@ final class ReviewedAccountTransitionTest extends PostgresTestCase
         } catch (QueryException $error) {
             $this->assertSame('23514', $error->errorInfo[0]);
         }
-        $this->assertDatabaseMissing(AccountProvisioning::TABLE, ['user_account_id' => $admin->dd_user_account_id]);
+        $this->assertDatabaseMissing(AccountProvisioning::TABLE, ['user_account_id' => $admin->canonical_user_account_id]);
 
         // The profile association is accepted ONLY because this is synthetic.
-        DB::table('jairoads_next.user_accounts')->where('id', $admin->dd_user_account_id)
+        DB::table('jairoads_next.user_accounts')->where('id', $admin->canonical_user_account_id)
             ->update(['engineer_id' => $profile]);
         $this->assertNull($resolver->resolve($admin));
         DB::table(AccountProvisioning::TABLE)->insert($evidence);
@@ -60,7 +60,7 @@ final class ReviewedAccountTransitionTest extends PostgresTestCase
         $this->assertSame($before->password, $admin->fresh()->password);
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
         $this->assertDatabaseHas(AccountProvisioning::TABLE, [
-            'user_account_id' => $admin->dd_user_account_id,
+            'user_account_id' => $admin->canonical_user_account_id,
             'method' => 'reviewed_transition',
             'review_reference' => 'SYNTHETIC-OWNER-REVIEW-2026-11-07',
         ]);
@@ -69,15 +69,15 @@ final class ReviewedAccountTransitionTest extends PostgresTestCase
     public function test_review_record_cannot_be_short_or_forged_by_a_viewer_or_duplicated(): void
     {
         $viewer = $this->account('Viewer');
-        $root = User::where('dd_user_account_id', DB::table('jairoads_next.user_accounts')
+        $root = User::where('canonical_user_account_id', DB::table('jairoads_next.user_accounts')
             ->where('account_type', 'SuperAdmin')->value('id'))->firstOrFail();
         $target = $this->account('Engineer', linked: false);
         $profile = $this->engineer();
-        DB::table('jairoads_next.user_accounts')->where('id', $target->dd_user_account_id)
+        DB::table('jairoads_next.user_accounts')->where('id', $target->canonical_user_account_id)
             ->update(['engineer_id' => $profile]);
         $trusted = [
-            'user_account_id' => $target->dd_user_account_id,
-            'provisioned_by' => $root->dd_user_account_id,
+            'user_account_id' => $target->canonical_user_account_id,
+            'provisioned_by' => $root->canonical_user_account_id,
             'provisioner_role' => 'SuperAdmin',
             'provisioned_role' => 'Engineer',
             'engineer_id' => $profile,
@@ -86,7 +86,7 @@ final class ReviewedAccountTransitionTest extends PostgresTestCase
         ];
         foreach ([
             array_replace($trusted, ['review_reference' => 'short']),
-            array_replace($trusted, ['provisioned_by' => $viewer->dd_user_account_id, 'provisioner_role' => 'Admin']),
+            array_replace($trusted, ['provisioned_by' => $viewer->canonical_user_account_id, 'provisioner_role' => 'Admin']),
             array_replace($trusted, ['engineer_id' => $this->engineer()]),
         ] as $invalid) {
             try {
@@ -96,7 +96,7 @@ final class ReviewedAccountTransitionTest extends PostgresTestCase
                 $this->assertSame('23514', $error->errorInfo[0]);
             }
         }
-        $this->assertDatabaseMissing(AccountProvisioning::TABLE, ['user_account_id' => $target->dd_user_account_id]);
+        $this->assertDatabaseMissing(AccountProvisioning::TABLE, ['user_account_id' => $target->canonical_user_account_id]);
         DB::table(AccountProvisioning::TABLE)->insert($trusted);
         try {
             DB::transaction(fn () => DB::table(AccountProvisioning::TABLE)->insert($trusted));
@@ -105,7 +105,7 @@ final class ReviewedAccountTransitionTest extends PostgresTestCase
             $this->assertSame('23505', $error->errorInfo[0]);
         }
         $this->assertSame(1, DB::table(AccountProvisioning::TABLE)
-            ->where('user_account_id', $target->dd_user_account_id)->count());
+            ->where('user_account_id', $target->canonical_user_account_id)->count());
         $this->assertNotNull(app(AccountIdentityResolver::class)->resolve($target));
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
     }

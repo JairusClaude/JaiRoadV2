@@ -48,7 +48,7 @@ final class LinkedPasswordUpdater
             $credentials = $connection->transaction(function () use ($connection, $login, $password, $currentPassword, $recover, $rehash, $force): ?array {
                 // Always lock login first, then its explicit DD target. Never join by email/ID equality.
                 $fresh = User::on($connection->getName())->whereKey($login->getKey())->lockForUpdate()->first();
-                if (! $fresh || (string) $fresh->getAttribute('dd_user_account_id') !== (string) $login->getAttribute('dd_user_account_id')
+                if (! $fresh || (string) $fresh->getAttribute('canonical_user_account_id') !== (string) $login->getAttribute('canonical_user_account_id')
                     || strcasecmp($fresh->email, $login->email) !== 0) {
                     $this->unavailable();
                 }
@@ -57,7 +57,7 @@ final class LinkedPasswordUpdater
                     $this->unavailable();
                 }
 
-                $accountId = $fresh->getAttribute('dd_user_account_id');
+                $accountId = $fresh->getAttribute('canonical_user_account_id');
                 $account = null;
                 if ($accountId !== null) {
                     if ($connection->getDriverName() !== 'pgsql' || ! is_numeric($accountId) || (int) $accountId < 1) {
@@ -67,7 +67,7 @@ final class LinkedPasswordUpdater
                     if (! $account || ! in_array($account->is_active, [true, 1, '1', 't', 'true'], true)
                         || strcasecmp((string) $account->email, $fresh->email) !== 0
                         || ! AccountIdentityResolver::roleLinkValid((string) $account->account_type, $account->engineer_id === null ? null : (int) $account->engineer_id)
-                        || $connection->table('public.users')->where('dd_user_account_id', $accountId)->where('id', '!=', $fresh->getKey())->exists()) {
+                        || $connection->table('public.users')->where('canonical_user_account_id', $accountId)->where('id', '!=', $fresh->getKey())->exists()) {
                         $this->unavailable();
                     }
                     if ($account->engineer_id !== null) {

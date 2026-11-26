@@ -17,7 +17,7 @@ use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Canonical DD account provisioning; retains original atomic Fortify linkage,
+ * Canonical account provisioning; retains original atomic Fortify linkage,
  * authorization, locks, audit and validation, via the shared canonical directory helpers.
  */
 final class CanonicalAccountProvisioningController extends Controller
@@ -71,7 +71,7 @@ final class CanonicalAccountProvisioningController extends Controller
                     ]);
                 }
                 $hashed = Hash::make((string) $v['password']);
-                $ddId = (int) DB::table('jairoads_next.user_accounts')->insertGetId([
+                $canonicalId = (int) DB::table('jairoads_next.user_accounts')->insertGetId([
                     'username' => $username, 'email' => $email, 'password' => $hashed,
                     'account_type' => $role, 'engineer_id' => $engineerId,
                     'is_active' => true, 'created_at' => now(), 'updated_at' => now(),
@@ -80,11 +80,11 @@ final class CanonicalAccountProvisioningController extends Controller
                 DB::table('public.users')->insert([
                     'name' => trim((string) $v['name']), 'email' => $email,
                     'password' => $hashed, 'user_account_id' => null,
-                    'dd_user_account_id' => $ddId,
+                    'canonical_user_account_id' => $canonicalId,
                     'email_verified_at' => null, 'created_at' => now(), 'updated_at' => now(),
                 ]);
-                app(AccountProvisioning::class)->record($request->user(), $ddId);
-                $this->audit($actor, 'CREATE', 'UserAccount', $ddId, 'Administrator provisioned a user account with an explicit Fortify link.', [
+                app(AccountProvisioning::class)->record($request->user(), $canonicalId);
+                $this->audit($actor, 'CREATE', 'UserAccount', $canonicalId, 'Administrator provisioned a user account with an explicit Fortify link.', [
                     'account_type' => $role, 'engineer_id' => $engineerId, 'is_active' => true,
                 ]);
             }, 2);
@@ -92,6 +92,6 @@ final class CanonicalAccountProvisioningController extends Controller
             throw ValidationException::withMessages(['account_type' => 'The database rejected account provisioning. No account or new profile was saved. Confirm the active UserAccount constraints and submitted values.']);
         }
 
-        return redirect()->route('jairoads.dd-phase3.show', ['section' => 'users'])->with('dd_phase3_status', 'Account created.');
+        return redirect()->route('jairoads.workspace.show', ['section' => 'users'])->with('workspace_status', 'Account created.');
     }
 }

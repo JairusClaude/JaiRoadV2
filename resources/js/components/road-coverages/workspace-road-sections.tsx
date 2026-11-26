@@ -382,7 +382,7 @@ export default function WorkspaceRoadSections({
 
         try {
             await requestOperation(
-                `/dd-phase3/ops/roads${editingId === null ? '' : `/${editingId}`}`,
+                `/workspace/ops/roads${editingId === null ? '' : `/${editingId}`}`,
                 {
                     road_name: name.trim(),
                     lgu_id: lguId,
@@ -744,14 +744,14 @@ export default function WorkspaceRoadSections({
                             </tr>
                         ))}
                         {visible.length === 0 && (
-                            <tr className="jr-dd-empty-row">
+                            <tr className="jr-workspace-empty-row">
                                 <td colSpan={7}>
                                     <div
-                                        className="jr-dd-empty-content"
+                                        className="jr-workspace-empty-content"
                                         role="status"
                                     >
                                         <span
-                                            className="jr-dd-empty-icon"
+                                            className="jr-workspace-empty-icon"
                                             aria-hidden="true"
                                         >
                                             <Map className="h-6 w-6" />
@@ -948,7 +948,7 @@ export default function WorkspaceRoadSections({
 
                                     try {
                                         await requestOperation(
-                                            `/dd-phase3/ops/roads/${selected.id}`,
+                                            `/workspace/ops/roads/${selected.id}`,
                                             {},
                                             'delete',
                                         );

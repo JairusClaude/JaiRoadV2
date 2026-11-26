@@ -18,7 +18,7 @@ final class CanonicalWorkspaceNavigationTest extends TestCase
     private function requestFor(string $path, string $method = 'GET', bool $linked = true): Request
     {
         $user = new User;
-        $user->forceFill(['id' => 901, 'dd_user_account_id' => $linked ? 77 : null]);
+        $user->forceFill(['id' => 901, 'canonical_user_account_id' => $linked ? 77 : null]);
         $request = Request::create($path, $method);
         $request->setUserResolver(static fn () => $user);
 
@@ -42,13 +42,13 @@ final class CanonicalWorkspaceNavigationTest extends TestCase
     {
         $this->bindIdentity(['role' => 'Engineer', 'account_id' => 77]);
         foreach ([
-            '/maintenance-projects' => '/dd-phase3/ui/maintenance-projects',
-            '/monthly-updates-preview' => '/dd-phase3/updates',
-            '/project-documents-preview' => '/dd-phase3/documents',
-            '/road-sections-preview' => '/dd-phase3/roads',
-            '/lgus-preview' => '/dd-phase3/lgus',
-            '/settings-preview' => '/dd-phase3/settings',
-            '/admin-dashboard' => '/dd-phase3/dashboard',
+            '/maintenance-projects' => '/workspace/ui/maintenance-projects',
+            '/monthly-updates-preview' => '/workspace/updates',
+            '/project-documents-preview' => '/workspace/documents',
+            '/road-sections-preview' => '/workspace/roads',
+            '/lgus-preview' => '/workspace/lgus',
+            '/settings-preview' => '/workspace/settings',
+            '/admin-dashboard' => '/workspace/dashboard',
         ] as $old => $destination) {
             $response = (new GuardLegacyRoutesForCanonicalAccounts)->handle($this->requestFor($old), static fn () => new Response('unexpected'));
             $this->assertSame(302, $response->getStatusCode());
@@ -80,7 +80,7 @@ final class CanonicalWorkspaceNavigationTest extends TestCase
         $next = static fn () => new Response('passed');
         $middleware = new GuardLegacyRoutesForCanonicalAccounts;
         $this->assertSame('passed', $middleware->handle($this->requestFor('/maintenance-projects', 'GET', false), $next)->getContent());
-        $this->assertSame('passed', $middleware->handle($this->requestFor('/dd-phase3/ops/updates', 'POST'), $next)->getContent());
+        $this->assertSame('passed', $middleware->handle($this->requestFor('/workspace/ops/updates', 'POST'), $next)->getContent());
         // User Management implements its own canonical role checks.
         $this->assertSame('passed', $middleware->handle($this->requestFor('/user-management'), $next)->getContent());
     }

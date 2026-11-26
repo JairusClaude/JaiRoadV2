@@ -224,7 +224,7 @@ export function DashboardAnalytics({
                             {(data.scope === 'System-wide' ||
                                 data.scope === 'Operations overview') && (
                                 <Link
-                                    href="/dd-phase3/audit-logs"
+                                    href="/workspace/audit-logs"
                                     className="text-sm underline"
                                 >
                                     Full audit history

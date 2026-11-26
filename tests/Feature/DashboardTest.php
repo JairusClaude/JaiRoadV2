@@ -13,7 +13,7 @@ test('an authenticated login without an approved account receives no dashboard a
 
 test('a verified active viewer is routed to and can read their role dashboard', function () {
     $user = $this->canonicalUser(User::factory()->create(), 'Viewer');
-    $target = route('jairoads.dd-phase3.show', ['section' => 'dashboard']);
+    $target = route('jairoads.workspace.show', ['section' => 'dashboard']);
     $this->actingAs($user)->get(route('dashboard'))->assertRedirect($target);
     $this->get($target)->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->component('RoleDashboard/Canonical'));
 });

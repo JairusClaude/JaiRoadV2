@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Route;
 // Explicit Data Dictionary-only routes. Never share legacy controller/permission paths.
 // Laravel numeric throttles otherwise share one per-user counter across routes;
 // distinct third-argument prefixes keep each operation's existing limit independent.
-Route::middleware(['auth'])->prefix('dd-phase3')->name('jairoads.dd-phase3.')->group(function (): void {
+Route::middleware(['auth'])->prefix('workspace')->name('jairoads.workspace.')->group(function (): void {
     Route::get('/dashboard/roads/{road}', [RoleLandingController::class, 'roadDetails'])->whereNumber('road')->name('dashboard.road-details');
     Route::get('/dashboard/map-roads', [RoleLandingController::class, 'roadMapPage'])->name('dashboard.map-roads');
     Route::get('/audit-logs', AuditHistoryController::class)->name('audit.index');

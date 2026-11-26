@@ -41,7 +41,7 @@ SQL);
     public function test_quarter_unique_index_does_not_relax_required_parent(): void
     {
         $f = $this->fixture('Engineer');
-        $data = $this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->dd_user_account_id];
+        $data = $this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->canonical_user_account_id];
         DB::table('jairoads_next.maintenance_records')->insert($data);
         try {
             DB::transaction(fn () => DB::table('jairoads_next.maintenance_records')->insert($data));
@@ -58,8 +58,8 @@ SQL);
         $owner = $this->account('SuperAdmin');
         $base = [
             'kind' => 'document', 'entity_id' => 101,
-            'requested_by' => $owner->dd_user_account_id,
-            'initiated_by' => $owner->dd_user_account_id,
+            'requested_by' => $owner->canonical_user_account_id,
+            'initiated_by' => $owner->canonical_user_account_id,
             'actor_role' => 'SuperAdmin', 'actor_identifier' => 'Synthetic reviewer',
             'maintenance_id' => 11, 'file_name' => 'synthetic.pdf',
             'object_path' => 'maintenance-records/11/synthetic.pdf',

@@ -8,12 +8,12 @@ use Illuminate\Support\Facades\Route;
 
 it('preserves the canonical account provisioning route after extraction', function (): void {
     $matches = collect(Route::getRoutes()->getRoutes())
-        ->filter(static fn ($route): bool => $route->getName() === 'jairoads.dd-phase3.accounts.store')
+        ->filter(static fn ($route): bool => $route->getName() === 'jairoads.workspace.accounts.store')
         ->values();
 
     expect($matches)->toHaveCount(1);
     $route = $matches->first();
-    expect($route->uri())->toBe('dd-phase3/accounts');
+    expect($route->uri())->toBe('workspace/accounts');
     expect($route->methods())->toContain('POST');
     expect($route->getActionName())->toBe(CanonicalAccountProvisioningController::class.'@createAccount');
     expect($route->gatherMiddleware())->toContain('throttle:5,1,jr-accounts-store-');

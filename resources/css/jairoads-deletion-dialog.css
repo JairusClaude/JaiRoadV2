@@ -521,11 +521,15 @@ html.jr-reduce-motion .jr-delete-premium .animate-spin {
 .jr-delete-premium .jr-dialog-actions button:focus-visible {
     outline-color: var(--jr-display-accent, #dc2626);
 }
-.jr-delete-premium .jr-dialog-actions .jr-delete-confirm.jr-danger:not(:disabled) {
+.jr-delete-premium
+    .jr-dialog-actions
+    .jr-delete-confirm.jr-danger:not(:disabled) {
     background: var(--delete-button) !important;
     color: #fff !important;
 }
-.jr-delete-premium .jr-dialog-actions .jr-delete-confirm.jr-danger:hover:not(:disabled) {
+.jr-delete-premium
+    .jr-dialog-actions
+    .jr-delete-confirm.jr-danger:hover:not(:disabled) {
     background: var(--delete-hover) !important;
 }
 @media (max-width: 520px) {
@@ -539,12 +543,16 @@ html.jr-reduce-motion .jr-delete-premium .animate-spin {
 
 /* Keep a single permanent-action warning in the heading; the body is a task flow. */
 .jr-delete-premium .jr-delete-verification {
-    transition: border-color 160ms ease, background-color 160ms ease;
+    transition:
+        border-color 160ms ease,
+        background-color 160ms ease;
 }
 .jr-delete-premium .jr-delete-verification[data-complete='true'] {
     border-color: var(--jr-display-accent, #64748b);
 }
-.jr-delete-premium .jr-delete-verification[data-complete='true'] .jr-delete-step {
+.jr-delete-premium
+    .jr-delete-verification[data-complete='true']
+    .jr-delete-step {
     background: var(--jr-role-accent, #166534);
     color: white;
 }
@@ -563,10 +571,24 @@ html.jr-reduce-motion .jr-delete-premium .animate-spin {
     color: var(--jr-display-accent, #166534);
     font-weight: 600;
 }
-.jr-delete-premium .jr-delete-footer-hint svg { flex: none; }
-.jr-delete-premium .jr-delete-body { align-content: start; }
-.jr-delete-premium .jr-delete-confirm { transition: background-color 160ms ease, color 160ms ease; }
-@media (prefers-reduced-motion: reduce) {
-    .jr-delete-premium :is(.jr-delete-verification, .jr-delete-confirm) { transition: none; }
+.jr-delete-premium .jr-delete-footer-hint svg {
+    flex: none;
 }
-html.jr-reduce-motion .jr-delete-premium :is(.jr-delete-verification, .jr-delete-confirm) { transition: none; }
+.jr-delete-premium .jr-delete-body {
+    align-content: start;
+}
+.jr-delete-premium .jr-delete-confirm {
+    transition:
+        background-color 160ms ease,
+        color 160ms ease;
+}
+@media (prefers-reduced-motion: reduce) {
+    .jr-delete-premium :is(.jr-delete-verification, .jr-delete-confirm) {
+        transition: none;
+    }
+}
+html.jr-reduce-motion
+    .jr-delete-premium
+    :is(.jr-delete-verification, .jr-delete-confirm) {
+    transition: none;
+}

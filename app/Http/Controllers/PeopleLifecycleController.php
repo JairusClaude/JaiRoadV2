@@ -89,7 +89,7 @@ final class PeopleLifecycleController extends Controller
             }
         }, 3);
 
-        return back()->with('dd_phase3_status', 'Engineer profile saved.');
+        return back()->with('workspace_status', 'Engineer profile saved.');
     }
 
     public function retireEngineer(Request $request, AccountIdentityResolver $resolver, int $id): RedirectResponse
@@ -104,8 +104,8 @@ final class PeopleLifecycleController extends Controller
             }
             $accountId = DB::table('jairoads_next.user_accounts')->where('engineer_id', $id)->value('id');
             if ($accountId !== null) {
-                // Match LinkedPasswordUpdater's login -> DD account -> Engineer lock order.
-                DB::table('public.users')->where('dd_user_account_id', $accountId)->orderBy('id')->lockForUpdate()->get(['id']);
+                // Match LinkedPasswordUpdater's login -> account -> Engineer lock order.
+                DB::table('public.users')->where('canonical_user_account_id', $accountId)->orderBy('id')->lockForUpdate()->get(['id']);
             }
             $account = $accountId === null ? null : DB::table('jairoads_next.user_accounts')->where('id', $accountId)->lockForUpdate()->first();
             $profile = $this->engineer($id);
@@ -126,7 +126,7 @@ final class PeopleLifecycleController extends Controller
             }
         }, 3);
 
-        return back()->with('dd_phase3_status', 'Engineer retired; linked account and active assignments deactivated.');
+        return back()->with('workspace_status', 'Engineer retired; linked account and active assignments deactivated.');
     }
 
     private function protectLastSuperAdmin(stdClass $account): void
@@ -134,7 +134,7 @@ final class PeopleLifecycleController extends Controller
         if ($account->account_type !== 'SuperAdmin' || ! $this->active($account->is_active)) {
             return;
         }
-        $candidates = User::whereIn('dd_user_account_id', DB::table('jairoads_next.user_accounts')
+        $candidates = User::whereIn('canonical_user_account_id', DB::table('jairoads_next.user_accounts')
             ->where('account_type', 'SuperAdmin')->where('is_active', true)->where('id', '!=', $account->id)->select('id'))->get();
         $resolver = app(AccountIdentityResolver::class);
         if (! $candidates->contains(fn (User $login): bool => $resolver->resolve($login) !== null)) {
@@ -181,7 +181,7 @@ final class PeopleLifecycleController extends Controller
             || ($engineerId !== null && ($engineer === null || $engineer->engineer_status !== 'Active'))) {
             return 'The account needs a valid active Engineer profile before password recovery.';
         }
-        $logins = User::query()->where('dd_user_account_id', $account->id)->limit(2)->get();
+        $logins = User::query()->where('canonical_user_account_id', $account->id)->limit(2)->get();
         if ($logins->count() !== 1) {
             return 'The account has a missing or duplicate sign-in link. A database administrator must review the existing login link before recovery.';
         }
@@ -225,7 +225,7 @@ final class PeopleLifecycleController extends Controller
                 if (! Hash::check($v['current_password'], $administrator->getAuthPassword())) {
                     throw ValidationException::withMessages(['current_password' => 'Your SuperAdmin password is incorrect.']);
                 }
-                $target = User::query()->where('dd_user_account_id', $id)->lockForUpdate()->first();
+                $target = User::query()->where('canonical_user_account_id', $id)->lockForUpdate()->first();
                 $account = DB::table('jairoads_next.user_accounts')->where('id', $id)->lockForUpdate()->first();
                 abort_unless($account !== null, 404);
                 abort_unless(in_array($account->account_type, ['Admin', 'Engineer', 'Viewer'], true), 403);
@@ -254,11 +254,11 @@ final class PeopleLifecycleController extends Controller
         $actor = $this->admin($request, $resolver);
         $data = $request->validate(['is_active' => ['required', 'boolean'],
             'account_type' => ['prohibited'], 'engineer_id' => ['prohibited'], 'password' => ['prohibited'],
-            'username' => ['prohibited'], 'email' => ['prohibited'], 'dd_user_account_id' => ['prohibited']]);
+            'username' => ['prohibited'], 'email' => ['prohibited'], 'canonical_user_account_id' => ['prohibited']]);
         $active = $this->active($data['is_active']);
         DB::transaction(function () use ($request, $resolver, $actor, $id, $active): void {
             $this->currentActor($actor, $request, $resolver);
-            $logins = DB::table('public.users')->where('dd_user_account_id', $id)->orderBy('id')->lockForUpdate()->get(['id', 'email', 'password']);
+            $logins = DB::table('public.users')->where('canonical_user_account_id', $id)->orderBy('id')->lockForUpdate()->get(['id', 'email', 'password']);
             $account = DB::table('jairoads_next.user_accounts')->where('id', $id)->lockForUpdate()->first();
             abort_unless($account instanceof stdClass, 404);
             if (! $active && $actor['account_id'] === $id) {
@@ -291,6 +291,6 @@ final class PeopleLifecycleController extends Controller
             $this->audit($actor, 'UserAccount', $id, $active ? 'Administrator reactivated account.' : 'Administrator deactivated account.', ['is_active' => ! $active], ['is_active' => $active], $active ? 'ACTIVATE' : 'DEACTIVATE');
         }, 3);
 
-        return back()->with('dd_phase3_status', 'Account status saved.');
+        return back()->with('workspace_status', 'Account status saved.');
     }
 }

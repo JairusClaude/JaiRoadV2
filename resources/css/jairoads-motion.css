@@ -4,9 +4,9 @@
     --jr-motion-fast: 140ms;
     --jr-motion-normal: 200ms;
     --jr-motion-panel: 280ms;
-    --jr-motion-in: cubic-bezier(.2,.8,.2,1);
-    --jr-motion-out: cubic-bezier(.4,0,1,1);
-    --jr-motion-layout: cubic-bezier(.4,0,.2,1);
+    --jr-motion-in: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --jr-motion-out: cubic-bezier(0.4, 0, 1, 1);
+    --jr-motion-layout: cubic-bezier(0.4, 0, 0.2, 1);
 }
 @media (min-width: 768px) {
     .jr-app [data-slot='sidebar']:has(> .jr-sidebar-container) > :first-child,
@@ -15,76 +15,205 @@
         transition-duration: var(--jr-motion-panel);
         transition-timing-function: var(--jr-motion-layout);
     }
-    .jr-app [data-slot='sidebar'] .jr-sidebar-container :is(.jr-brand-header, .jr-brand, .jr-brand-control, .jr-brand-icon, .jr-nav-content, .jr-sidebar-footer) {
-        transition-property: height, min-height, width, flex-basis, top, left, padding;
+    .jr-app
+        [data-slot='sidebar']
+        .jr-sidebar-container
+        :is(
+            .jr-brand-header,
+            .jr-brand,
+            .jr-brand-control,
+            .jr-brand-icon,
+            .jr-nav-content,
+            .jr-sidebar-footer
+        ) {
+        transition-property:
+            height, min-height, width, flex-basis, top, left, padding;
         transition-duration: var(--jr-motion-panel);
         transition-timing-function: var(--jr-motion-layout);
     }
-    .jr-app [data-slot='sidebar'] .jr-sidebar-container :is(.jr-brand-copy, .jr-identity-copy, .jr-nav-link > span) {
+    .jr-app
+        [data-slot='sidebar']
+        .jr-sidebar-container
+        :is(.jr-brand-copy, .jr-identity-copy, .jr-nav-link > span) {
         transition: opacity var(--jr-motion-fast) ease 70ms;
     }
-    .jr-app [data-slot='sidebar'][data-state='collapsed'] .jr-sidebar-container :is(.jr-brand-copy, .jr-identity-copy, .jr-nav-link > span) {
+    .jr-app
+        [data-slot='sidebar'][data-state='collapsed']
+        .jr-sidebar-container
+        :is(.jr-brand-copy, .jr-identity-copy, .jr-nav-link > span) {
         transition-delay: 0ms;
     }
     .jr-app [data-slot='sidebar'] .jr-sidebar-container .jr-nav-link {
-        transition: padding var(--jr-motion-panel) var(--jr-motion-layout),
+        transition:
+            padding var(--jr-motion-panel) var(--jr-motion-layout),
             background-color var(--jr-motion-fast) ease,
-            color var(--jr-motion-fast) ease, border-color var(--jr-motion-fast) ease,
+            color var(--jr-motion-fast) ease,
+            border-color var(--jr-motion-fast) ease,
             box-shadow var(--jr-motion-fast) ease;
     }
 }
 .jr-app .jr-alternative-submenu-transition {
-    transition: grid-template-rows var(--jr-motion-normal) var(--jr-motion-layout), visibility 0s var(--jr-motion-normal);
+    transition:
+        grid-template-rows var(--jr-motion-normal) var(--jr-motion-layout),
+        visibility 0s var(--jr-motion-normal);
 }
-.jr-app .jr-alternative-submenu-transition[data-open='true'] { transition-delay: 0s; }
+.jr-app .jr-alternative-submenu-transition[data-open='true'] {
+    transition-delay: 0s;
+}
 .jr-app .jr-alternative-chevron svg {
     transition: transform var(--jr-motion-normal) var(--jr-motion-in);
 }
 /* Subtle tactile feedback only on controls; never animate entire data rows. */
-:is(.jr-app, .jr-responsive-shell, .jr-login, .um-dialog, .jr-delete-dialog) :is([data-slot='button'], .jr-primary, .um-primary, .um-secondary, .jr-action-trigger) {
-    transition-property: background-color, border-color, color, box-shadow, opacity, scale;
+:is(.jr-app, .jr-responsive-shell, .jr-login, .um-dialog, .jr-delete-dialog)
+    :is(
+        [data-slot='button'],
+        .jr-primary,
+        .um-primary,
+        .um-secondary,
+        .jr-action-trigger
+    ) {
+    transition-property:
+        background-color, border-color, color, box-shadow, opacity, scale;
     transition-duration: var(--jr-motion-fast);
     transition-timing-function: var(--jr-motion-in);
 }
 @media (hover: hover) and (pointer: fine) {
-    :is(.jr-app, .jr-responsive-shell, .jr-login, .um-dialog, .jr-delete-dialog) :is(button[data-slot='button'], button.jr-primary, button.um-primary, button.um-secondary):not(:disabled):not([aria-disabled='true']):active {
-        scale: .985;
+    :is(.jr-app, .jr-responsive-shell, .jr-login, .um-dialog, .jr-delete-dialog)
+        :is(
+            button[data-slot='button'],
+            button.jr-primary,
+            button.um-primary,
+            button.um-secondary
+        ):not(:disabled):not([aria-disabled='true']):active {
+        scale: 0.985;
     }
 }
-:is(.jr-app, .jr-responsive-shell, .jr-login, .um-dialog, .jr-delete-dialog) :is(input:not([type='checkbox']):not([type='radio']), textarea, [data-slot='select-trigger']) {
-    transition: border-color var(--jr-motion-fast) ease, box-shadow var(--jr-motion-fast) ease, background-color var(--jr-motion-fast) ease;
+:is(.jr-app, .jr-responsive-shell, .jr-login, .um-dialog, .jr-delete-dialog)
+    :is(
+        input:not([type='checkbox']):not([type='radio']),
+        textarea,
+        [data-slot='select-trigger']
+    ) {
+    transition:
+        border-color var(--jr-motion-fast) ease,
+        box-shadow var(--jr-motion-fast) ease,
+        background-color var(--jr-motion-fast) ease;
 }
 /* Radix retains its placement, focus management and close lifecycle. */
-:is([data-slot='dropdown-menu-content'], [data-slot='dropdown-menu-sub-content'], [data-slot='select-content'], [data-slot='popover-content'])[data-state='open'] {
+:is(
+    [data-slot='dropdown-menu-content'],
+    [data-slot='dropdown-menu-sub-content'],
+    [data-slot='select-content'],
+    [data-slot='popover-content']
+)[data-state='open'] {
     animation-duration: var(--jr-motion-fast);
     animation-timing-function: var(--jr-motion-in);
 }
-:is([data-slot='dropdown-menu-content'], [data-slot='dropdown-menu-sub-content'], [data-slot='select-content'], [data-slot='popover-content'])[data-state='closed'] {
+:is(
+    [data-slot='dropdown-menu-content'],
+    [data-slot='dropdown-menu-sub-content'],
+    [data-slot='select-content'],
+    [data-slot='popover-content']
+)[data-state='closed'] {
     animation-duration: 100ms;
     animation-timing-function: var(--jr-motion-out);
 }
-[data-slot='dialog-content'][data-state='open'] { animation-duration: var(--jr-motion-normal); animation-timing-function: var(--jr-motion-in); }
-[data-slot='dialog-content'][data-state='closed'] { animation-duration: 130ms; animation-timing-function: var(--jr-motion-out); }
-[data-slot='dialog-overlay'][data-state='open'], [data-slot='sheet-overlay'][data-state='open'] { animation-duration: 180ms; }
-[data-slot='dialog-overlay'][data-state='closed'], [data-slot='sheet-overlay'][data-state='closed'] { animation-duration: 130ms; }
-[data-slot='sheet-content'][data-state='open'] { animation-duration: var(--jr-motion-panel); animation-timing-function: var(--jr-motion-in); }
-[data-slot='sheet-content'][data-state='closed'] { animation-duration: 190ms; animation-timing-function: var(--jr-motion-out); }
-.jr-login .jr-login-photo { transition-duration: 720ms; transition-timing-function: ease-in-out; }
+[data-slot='dialog-content'][data-state='open'] {
+    animation-duration: var(--jr-motion-normal);
+    animation-timing-function: var(--jr-motion-in);
+}
+[data-slot='dialog-content'][data-state='closed'] {
+    animation-duration: 130ms;
+    animation-timing-function: var(--jr-motion-out);
+}
+[data-slot='dialog-overlay'][data-state='open'],
+[data-slot='sheet-overlay'][data-state='open'] {
+    animation-duration: 180ms;
+}
+[data-slot='dialog-overlay'][data-state='closed'],
+[data-slot='sheet-overlay'][data-state='closed'] {
+    animation-duration: 130ms;
+}
+[data-slot='sheet-content'][data-state='open'] {
+    animation-duration: var(--jr-motion-panel);
+    animation-timing-function: var(--jr-motion-in);
+}
+[data-slot='sheet-content'][data-state='closed'] {
+    animation-duration: 190ms;
+    animation-timing-function: var(--jr-motion-out);
+}
+.jr-login .jr-login-photo {
+    transition-duration: 720ms;
+    transition-timing-function: ease-in-out;
+}
 @media (max-width: 1023px) {
     .jr-login[data-mobile-intro='false'] .jr-login-panel,
     .jr-login[data-mobile-intro='true'] .jr-login-caption {
         animation: jr-mobile-auth-reveal 240ms var(--jr-motion-in) both;
     }
 }
-@keyframes jr-mobile-auth-reveal { from { opacity: .65; } to { opacity: 1; } }
+@keyframes jr-mobile-auth-reveal {
+    from {
+        opacity: 0.65;
+    }
+    to {
+        opacity: 1;
+    }
+}
 /* Respect both the operating-system and the in-app accessibility settings. */
 @media (prefers-reduced-motion: reduce) {
-    :root { --jr-motion-fast: 0ms; --jr-motion-normal: 0ms; --jr-motion-panel: 0ms; }
-    :is([data-slot='dialog-content'], [data-slot='dialog-overlay'], [data-slot='sheet-content'], [data-slot='sheet-overlay'], [data-slot='dropdown-menu-content'], [data-slot='dropdown-menu-sub-content'], [data-slot='select-content'], [data-slot='popover-content'], .jr-login-panel, .jr-login-caption) { animation: none !important; }
-    .jr-login .jr-login-photo { transition: none !important; }
-    :is(.jr-app, .jr-responsive-shell, .jr-login, .um-dialog, .jr-delete-dialog) button:active { scale: none !important; }
+    :root {
+        --jr-motion-fast: 0ms;
+        --jr-motion-normal: 0ms;
+        --jr-motion-panel: 0ms;
+    }
+    :is(
+        [data-slot='dialog-content'],
+        [data-slot='dialog-overlay'],
+        [data-slot='sheet-content'],
+        [data-slot='sheet-overlay'],
+        [data-slot='dropdown-menu-content'],
+        [data-slot='dropdown-menu-sub-content'],
+        [data-slot='select-content'],
+        [data-slot='popover-content'],
+        .jr-login-panel,
+        .jr-login-caption
+    ) {
+        animation: none !important;
+    }
+    .jr-login .jr-login-photo {
+        transition: none !important;
+    }
+    :is(.jr-app, .jr-responsive-shell, .jr-login, .um-dialog, .jr-delete-dialog)
+        button:active {
+        scale: none !important;
+    }
 }
-html.jr-reduce-motion { --jr-motion-fast: 0ms; --jr-motion-normal: 0ms; --jr-motion-panel: 0ms; }
-html.jr-reduce-motion :is([data-slot='dialog-content'], [data-slot='dialog-overlay'], [data-slot='sheet-content'], [data-slot='sheet-overlay'], [data-slot='dropdown-menu-content'], [data-slot='dropdown-menu-sub-content'], [data-slot='select-content'], [data-slot='popover-content'], .jr-login-panel, .jr-login-caption) { animation: none !important; }
-html.jr-reduce-motion .jr-login .jr-login-photo { transition: none !important; }
-html.jr-reduce-motion :is(.jr-app, .jr-responsive-shell, .jr-login, .um-dialog, .jr-delete-dialog) button:active { scale: none !important; }
+html.jr-reduce-motion {
+    --jr-motion-fast: 0ms;
+    --jr-motion-normal: 0ms;
+    --jr-motion-panel: 0ms;
+}
+html.jr-reduce-motion
+    :is(
+        [data-slot='dialog-content'],
+        [data-slot='dialog-overlay'],
+        [data-slot='sheet-content'],
+        [data-slot='sheet-overlay'],
+        [data-slot='dropdown-menu-content'],
+        [data-slot='dropdown-menu-sub-content'],
+        [data-slot='select-content'],
+        [data-slot='popover-content'],
+        .jr-login-panel,
+        .jr-login-caption
+    ) {
+    animation: none !important;
+}
+html.jr-reduce-motion .jr-login .jr-login-photo {
+    transition: none !important;
+}
+html.jr-reduce-motion
+    :is(.jr-app, .jr-responsive-shell, .jr-login, .um-dialog, .jr-delete-dialog)
+    button:active {
+    scale: none !important;
+}

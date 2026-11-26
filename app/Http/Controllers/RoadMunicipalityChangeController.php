@@ -38,12 +38,12 @@ final class RoadMunicipalityChangeController extends OperationsController
         $impact = $changes->confirm($login, $id, $data['confirmation_token'], function (array $actor, array $impact) use ($id): void {
             $affected = ['project_ids' => array_column($impact['projects'], 'id'), 'maintenance_record_ids' => $impact['maintenance_record_ids']];
             $this->audit($actor, 'UPDATE', 'RoadCoverage', $id,
-                'RoadCoverage #'.$id.' municipality changed from '.$impact['previous']['municipality'].' to '.$impact['proposed']['municipality'].' by authorized '.$actor['role'].' DD-UserAccount#'.$actor['account_id'].'.',
+                'RoadCoverage #'.$id.' municipality changed from '.$impact['previous']['municipality'].' to '.$impact['proposed']['municipality'].' by authorized '.$actor['role'].' User Account #'.$actor['account_id'].'.',
                 $impact['proposed'] + $affected, $impact['previous'] + $affected);
         });
 
         $message = 'Municipality changed from '.$impact['previous']['municipality'].' to '.$impact['proposed']['municipality'].'. Road geometry and maintenance history were preserved.';
-        $details = '/dd-phase3/ui/road-coverages/'.$id;
+        $details = '/workspace/ui/road-coverages/'.$id;
         if ($request->input('return_to') === $details) {
             return redirect($details)->with('dd_operations_status', $message);
         }

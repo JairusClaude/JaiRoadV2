@@ -57,7 +57,10 @@ export function ProjectDirectory({
     busy = false,
 }: DirectoryProps) {
     const page = usePage();
-    const isViewer = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role?.toLowerCase() === 'viewer';
+    const isViewer =
+        (
+            page.props.jairoadsIdentity as { role?: string } | undefined
+        )?.role?.toLowerCase() === 'viewer';
     const [search, setSearch] = useState(filters.search);
     const [selecting, setSelecting] = useState(false);
     const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -109,22 +112,26 @@ export function ProjectDirectory({
             <div className="jr-page-head">
                 <div>
                     <h1>Maintenance Projects</h1>
-                    <p>{isViewer ? 'Browse road maintenance projects and their progress.' : 'Browse and manage road maintenance projects.'}</p>
+                    <p>
+                        {isViewer
+                            ? 'Browse road maintenance projects and their progress.'
+                            : 'Browse and manage road maintenance projects.'}
+                    </p>
                 </div>
                 {!isViewer && canCreate && (
-<Button
-                    className="jr-primary"
-                    disabled={integration.ready && !canCreate}
-                    onClick={() =>
-                        onNavigate(
-                            workspaceHref('/maintenance-projects/create'),
-                        )
-                    }
-                >
-                    <Plus />
-                    Add Project
-                </Button>
-)}
+                    <Button
+                        className="jr-primary"
+                        disabled={integration.ready && !canCreate}
+                        onClick={() =>
+                            onNavigate(
+                                workspaceHref('/maintenance-projects/create'),
+                            )
+                        }
+                    >
+                        <Plus />
+                        Add Project
+                    </Button>
+                )}
             </div>
             <IntegrationNotice integration={integration} />
             <form
@@ -239,7 +246,9 @@ export function ProjectDirectory({
                 aria-label="Maintenance Projects table"
                 tabIndex={0}
             >
-                <table className={`jr-table${isViewer ? ' jr-project-table-readonly' : ''}`}>
+                <table
+                    className={`jr-table${isViewer ? 'jr-project-table-readonly' : ''}`}
+                >
                     <colgroup>
                         <col style={{ width: isViewer ? '65%' : '60%' }} />
                         <col style={{ width: isViewer ? '35%' : '30%' }} />
@@ -277,7 +286,9 @@ export function ProjectDirectory({
                                 </div>
                             </th>
                             <th>Municipality</th>
-                            {!isViewer && <th className="text-right">Actions</th>}
+                            {!isViewer && (
+                                <th className="text-right">Actions</th>
+                            )}
                         </tr>
                     </thead>
                     <tbody>
@@ -364,27 +375,34 @@ export function ProjectDirectory({
                                     )}
                                 </td>
                                 {!isViewer && (
-                                <td
-                                    className="text-right"
-                                    onClick={(event) => event.stopPropagation()}
-                                >
-                                    {!isViewer && !selecting && (project.can_edit || project.can_delete) && (
-                                        <ProjectActions
-                                            project={project}
-                                            onEdit={() =>
-                                                onNavigate(
-                                                    editUrl(
-                                                        workspaceHref(
-                                                            `/maintenance-projects/${project.id}/edit`,
-                                                        ),
-                                                        page.url,
-                                                    ),
-                                                )
-                                            }
-                                            onDelete={() => onDelete([project])}
-                                        />
-                                    )}
-                                </td>
+                                    <td
+                                        className="text-right"
+                                        onClick={(event) =>
+                                            event.stopPropagation()
+                                        }
+                                    >
+                                        {!isViewer &&
+                                            !selecting &&
+                                            (project.can_edit ||
+                                                project.can_delete) && (
+                                                <ProjectActions
+                                                    project={project}
+                                                    onEdit={() =>
+                                                        onNavigate(
+                                                            editUrl(
+                                                                workspaceHref(
+                                                                    `/maintenance-projects/${project.id}/edit`,
+                                                                ),
+                                                                page.url,
+                                                            ),
+                                                        )
+                                                    }
+                                                    onDelete={() =>
+                                                        onDelete([project])
+                                                    }
+                                                />
+                                            )}
+                                    </td>
                                 )}
                             </tr>
                         ))}
@@ -404,7 +422,9 @@ export function ProjectDirectory({
                                 ? 'The interface is ready for approved account and database integration.'
                                 : filters.search || filters.municipality
                                   ? 'Try another search or municipality.'
-                                  : isViewer ? 'Available maintenance projects will appear here.' : 'Add a project to link an existing road coverage.'}
+                                  : isViewer
+                                    ? 'Available maintenance projects will appear here.'
+                                    : 'Add a project to link an existing road coverage.'}
                         </p>
                         {integration.ready &&
                             (filters.search || filters.municipality) && (

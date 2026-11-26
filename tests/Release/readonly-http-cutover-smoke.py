@@ -49,10 +49,10 @@ assert status("/login", "text/html,application/xhtml+xml") == 200, (
 
 # A healthy app must still prevent unauthenticated access to canonical data.
 for protected in [
-    "/dd-phase3/dashboard",
-    "/dd-phase3/users",
-    "/dd-phase3/audit-logs",
-    "/dd-phase3/ui/road-coverages",
+    "/workspace/dashboard",
+    "/workspace/users",
+    "/workspace/audit-logs",
+    "/workspace/ui/road-coverages",
     "/jairoads/notifications",
 ]:
     response = status(protected)

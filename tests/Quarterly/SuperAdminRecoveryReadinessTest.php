@@ -27,11 +27,11 @@ final class SuperAdminRecoveryReadinessTest extends PostgresTestCase
         $id = app(TrustedSuperAdminBootstrap::class)->create(
             'synthetic-root', 'synthetic.root@example.test', 'Synthetic Root', 'Disposable-Root!123'
         );
-        $root = User::where('dd_user_account_id', $id)->firstOrFail();
+        $root = User::where('canonical_user_account_id', $id)->firstOrFail();
 
         $this->assertSame(0, DB::table('jairoads_next.engineers')->count());
         $this->postJson('/login', ['email' => $root->email, 'password' => 'Disposable-Root!123'])->assertOk();
-        $this->getJson('/dd-phase3/users')->assertOk();
+        $this->getJson('/workspace/users')->assertOk();
         $this->postJson('/logout')->assertNoContent();
 
         // Simulate canonical/Fortify credential drift; only a valid broker token
@@ -56,7 +56,7 @@ final class SuperAdminRecoveryReadinessTest extends PostgresTestCase
         );
         $this->postJson('/login', ['email' => $root->email, 'password' => 'Recovered-Synthetic!123'])->assertOk();
         $this->assertAuthenticatedAs($root);
-        $this->getJson('/dd-phase3/users')->assertOk();
+        $this->getJson('/workspace/users')->assertOk();
         $this->assertNull(app(AccountIdentityResolver::class)->resolve($root)['engineer_id']);
         $this->assertSame(1, DB::table('jairoads_next.user_accounts')->where('account_type', 'SuperAdmin')->count());
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
@@ -78,14 +78,14 @@ final class SuperAdminRecoveryReadinessTest extends PostgresTestCase
         $root = $this->account('SuperAdmin', $engineer);
         $token = Password::broker()->createToken($root);
         $oldHash = DB::table('jairoads_next.user_accounts')
-            ->where('id', $root->dd_user_account_id)->value('password');
+            ->where('id', $root->canonical_user_account_id)->value('password');
 
         match ($state) {
-            'inactive' => DB::table('jairoads_next.user_accounts')->where('id', $root->dd_user_account_id)
+            'inactive' => DB::table('jairoads_next.user_accounts')->where('id', $root->canonical_user_account_id)
                 ->update(['is_active' => false]),
             'bridge' => DB::table('public.users')->where('id', $root->id)
-                ->update(['dd_user_account_id' => null]),
-            'email' => DB::table('jairoads_next.user_accounts')->where('id', $root->dd_user_account_id)
+                ->update(['canonical_user_account_id' => null]),
+            'email' => DB::table('jairoads_next.user_accounts')->where('id', $root->canonical_user_account_id)
                 ->update(['email' => 'different.root@example.test']),
             'retired' => DB::table('jairoads_next.engineers')->where('id', $engineer)
                 ->update(['engineer_status' => 'Retired']),
@@ -102,7 +102,7 @@ final class SuperAdminRecoveryReadinessTest extends PostgresTestCase
         ])->assertUnprocessable();
         $this->assertGuest();
         $this->assertSame($oldHash, DB::table('jairoads_next.user_accounts')
-            ->where('id', $root->dd_user_account_id)->value('password'));
+            ->where('id', $root->canonical_user_account_id)->value('password'));
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
     }
 
@@ -111,24 +111,24 @@ final class SuperAdminRecoveryReadinessTest extends PostgresTestCase
         $root = $this->account('SuperAdmin');
         $second = $this->account('SuperAdmin');
         $admin = $this->account('Admin');
-        $id = (int) $root->dd_user_account_id;
+        $id = (int) $root->canonical_user_account_id;
         $password = $root->password;
 
-        DB::table('public.users')->where('id', $second->id)->update(['dd_user_account_id' => null]);
+        DB::table('public.users')->where('id', $second->id)->update(['canonical_user_account_id' => null]);
         $this->withSession(['password_hash_web' => null])->actingAs($admin);
-        $this->patchJson('/dd-phase3/accounts/'.$id.'/status', ['is_active' => false])
+        $this->patchJson('/workspace/accounts/'.$id.'/status', ['is_active' => false])
             ->assertUnprocessable()->assertJsonValidationErrors('is_active');
         $this->assertDatabaseHas('jairoads_next.user_accounts', ['id' => $id, 'is_active' => true]);
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
 
         // The second root must actually be eligible, not merely active in a row.
         DB::table('public.users')->where('id', $second->id)
-            ->update(['dd_user_account_id' => $second->dd_user_account_id]);
-        $this->patchJson('/dd-phase3/accounts/'.$id.'/status', ['is_active' => false])
+            ->update(['canonical_user_account_id' => $second->canonical_user_account_id]);
+        $this->patchJson('/workspace/accounts/'.$id.'/status', ['is_active' => false])
             ->assertRedirect();
         $this->assertDatabaseHas('jairoads_next.user_accounts', ['id' => $id, 'is_active' => false]);
         $this->assertNull(app(AccountIdentityResolver::class)->resolve($root));
-        $this->patchJson('/dd-phase3/accounts/'.$id.'/status', ['is_active' => true])
+        $this->patchJson('/workspace/accounts/'.$id.'/status', ['is_active' => true])
             ->assertRedirect();
         $this->assertDatabaseHas('jairoads_next.user_accounts', ['id' => $id, 'is_active' => true]);
         $this->assertSame($password, $root->fresh()->password);
@@ -138,7 +138,7 @@ final class SuperAdminRecoveryReadinessTest extends PostgresTestCase
 
         // Explicit self-lockout is still forbidden, even with a backup root.
         $this->withSession(['password_hash_web' => null])->actingAs($root);
-        $this->patchJson('/dd-phase3/accounts/'.$id.'/status', ['is_active' => false])
+        $this->patchJson('/workspace/accounts/'.$id.'/status', ['is_active' => false])
             ->assertUnprocessable()->assertJsonValidationErrors('is_active');
         $this->assertSame(2, DB::table('jairoads_next.audit_logs')->count());
     }
@@ -156,7 +156,7 @@ final class SuperAdminRecoveryReadinessTest extends PostgresTestCase
         $this->postJson('/login', ['email' => $root->email, 'password' => 'Disposable-Test!123'])
             ->assertOk()->assertJson(['two_factor' => true]);
         $this->assertGuest();
-        DB::table('jairoads_next.user_accounts')->where('id', $root->dd_user_account_id)
+        DB::table('jairoads_next.user_accounts')->where('id', $root->canonical_user_account_id)
             ->update(['is_active' => false]);
         $this->postJson('/two-factor-challenge', ['recovery_code' => 'recovery-only-in-disposable-test'])
             ->assertUnprocessable()->assertSessionMissing('login.id');
@@ -186,7 +186,7 @@ final class SuperAdminRecoveryReadinessTest extends PostgresTestCase
         $this->postJson('/two-factor-challenge', ['recovery_code' => 'valid-disposable-recovery'])
             ->assertNoContent();
         $this->assertAuthenticatedAs($root);
-        $this->getJson('/dd-phase3/users')->assertOk();
+        $this->getJson('/workspace/users')->assertOk();
         $this->assertSame('SuperAdmin', app(AccountIdentityResolver::class)->resolve($root)['role']);
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
     }

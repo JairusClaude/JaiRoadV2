@@ -76,7 +76,7 @@ export default function AccountLifecycle({
             }
 
             const response = await fetch(
-                `/dd-phase3/accounts/${detail.account.id}/password-reset`,
+                `/workspace/accounts/${detail.account.id}/password-reset`,
                 {
                     method: 'POST',
                     credentials: 'same-origin',
@@ -148,7 +148,7 @@ export default function AccountLifecycle({
         }
 
         try {
-            const response = await fetch(`/dd-phase3/accounts/${id}`, {
+            const response = await fetch(`/workspace/accounts/${id}`, {
                 headers: { Accept: 'application/json' },
                 credentials: 'same-origin',
                 cache: 'no-store',
@@ -283,7 +283,7 @@ export default function AccountLifecycle({
                                 onBusy?.(true);
                                 setErrors({});
                                 router.patch(
-                                    `/dd-phase3/accounts/${detail.account.id}/status`,
+                                    `/workspace/accounts/${detail.account.id}/status`,
                                     { is_active: active },
                                     {
                                         preserveScroll: true,
@@ -316,7 +316,9 @@ export default function AccountLifecycle({
                         </div>
                         <p className="text-sm text-slate-600">
                             Set a new password for this account without sending
-                            an email. Existing sign-in sessions and remember-me credentials are revoked according to the configured session storage.
+                            an email. Existing sign-in sessions and remember-me
+                            credentials are revoked according to the configured
+                            session storage.
                         </p>
                         {!detail.can_reset_password && (
                             <p role="status" className="um-form-note">

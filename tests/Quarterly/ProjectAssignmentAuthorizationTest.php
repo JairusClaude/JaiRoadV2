@@ -17,21 +17,21 @@ final class ProjectAssignmentAuthorizationTest extends PostgresTestCase
         $this->account('Viewer'); // Ensure canonical account and Engineer IDs differ.
         $user = $this->account('Engineer', $engineer);
         $road = $this->road($engineer);
-        $this->actingAs($user)->get('/dd-phase3/projects?view=create')->assertOk()
+        $this->actingAs($user)->get('/workspace/projects?view=create')->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page->component('Workspace/Operations')
                 ->where('capabilities.createProjects', true)->where('capabilities.deleteProjects', false)->has('roads', 1));
-        $this->postJson('/dd-phase3/ops/projects', [
+        $this->postJson('/workspace/ops/projects', [
             'project_title' => 'Engineer-created project', 'road_coverage_id' => $road,
             'created_by' => 999999, 'lgu_id' => 999999, 'assigned_engineer_id' => 999999,
         ])->assertRedirect();
         $project = DB::table('jairoads_next.maintenance_projects')->first();
-        $this->assertNotSame($engineer, (int) $user->dd_user_account_id);
-        $this->assertSame((int) $user->dd_user_account_id, (int) $project->created_by);
+        $this->assertNotSame($engineer, (int) $user->canonical_user_account_id);
+        $this->assertSame((int) $user->canonical_user_account_id, (int) $project->created_by);
         $this->assertSame($road, (int) $project->road_coverage_id);
         $this->assertSame(0, DB::table('jairoads_next.maintenance_records')->count());
-        $this->postJson('/dd-phase3/ops/projects', ['project_title' => 'Duplicate', 'road_coverage_id' => $road])->assertUnprocessable();
+        $this->postJson('/workspace/ops/projects', ['project_title' => 'Duplicate', 'road_coverage_id' => $road])->assertUnprocessable();
         $this->assertSame(1, DB::table('jairoads_next.maintenance_projects')->count());
-        $this->assertDatabaseHas('jairoads_next.audit_logs', ['entity_type' => 'MaintenanceProject', 'entity_id' => $project->id, 'user_id' => $user->dd_user_account_id]);
+        $this->assertDatabaseHas('jairoads_next.audit_logs', ['entity_type' => 'MaintenanceProject', 'entity_id' => $project->id, 'user_id' => $user->canonical_user_account_id]);
     }
 
     public static function ineligibleProjectActors(): iterable
@@ -50,7 +50,7 @@ final class ProjectAssignmentAuthorizationTest extends PostgresTestCase
         if ($case === 'inactive_assignment') {
             DB::table('jairoads_next.engineer_lgus')->update(['is_active' => false]);
         }
-        $this->actingAs($user)->postJson('/dd-phase3/ops/projects', ['project_title' => 'Denied', 'road_coverage_id' => $road])->assertForbidden();
+        $this->actingAs($user)->postJson('/workspace/ops/projects', ['project_title' => 'Denied', 'road_coverage_id' => $road])->assertForbidden();
         $this->assertSame(0, DB::table('jairoads_next.maintenance_projects')->count());
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
     }
@@ -62,10 +62,10 @@ final class ProjectAssignmentAuthorizationTest extends PostgresTestCase
         $ownRoad = $this->road($engineer);
         $otherRoad = $this->road();
         $ownLgu = DB::table('jairoads_next.road_coverages')->where('id', $ownRoad)->value('lgu_id');
-        $this->actingAs($user)->get('/dd-phase3/projects?view=create')->assertOk()
+        $this->actingAs($user)->get('/workspace/projects?view=create')->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page->has('roads', 2));
-        $this->postJson('/dd-phase3/ops/projects', ['project_title' => 'Other municipality', 'road_coverage_id' => $otherRoad, 'lgu_id' => $ownLgu])->assertRedirect();
-        $this->postJson('/dd-phase3/ops/projects', ['project_title' => 'Missing road', 'road_coverage_id' => 999999])->assertNotFound();
+        $this->postJson('/workspace/ops/projects', ['project_title' => 'Other municipality', 'road_coverage_id' => $otherRoad, 'lgu_id' => $ownLgu])->assertRedirect();
+        $this->postJson('/workspace/ops/projects', ['project_title' => 'Missing road', 'road_coverage_id' => 999999])->assertNotFound();
         $this->assertDatabaseHas('jairoads_next.maintenance_projects', ['road_coverage_id' => $otherRoad]);
         $this->assertSame(1, DB::table('jairoads_next.maintenance_projects')->count());
     }
@@ -83,12 +83,12 @@ final class ProjectAssignmentAuthorizationTest extends PostgresTestCase
         $engineer = $this->engineer();
         $this->account('Engineer', $engineer);
         $road = $this->road($engineer);
-        $this->actingAs($admin)->postJson('/dd-phase3/ops/projects', ['project_title' => 'Unassigned project', 'road_coverage_id' => $road])->assertRedirect();
+        $this->actingAs($admin)->postJson('/workspace/ops/projects', ['project_title' => 'Unassigned project', 'road_coverage_id' => $road])->assertRedirect();
         $project = DB::table('jairoads_next.maintenance_projects')->first();
-        $this->assertSame((int) $admin->dd_user_account_id, (int) $project->created_by);
+        $this->assertSame((int) $admin->canonical_user_account_id, (int) $project->created_by);
         $this->assertSame(0, DB::table('jairoads_next.maintenance_records')->count());
-        $this->postJson('/dd-phase3/ops/records', $this->recordData((int) $project->id, $engineer) + ['created_by' => 999999, 'lgu_id' => 999999])->assertRedirect();
-        $this->assertDatabaseHas('jairoads_next.maintenance_records', ['project_id' => $project->id, 'managing_engineer_id' => $engineer, 'created_by' => $admin->dd_user_account_id]);
+        $this->postJson('/workspace/ops/records', $this->recordData((int) $project->id, $engineer) + ['created_by' => 999999, 'lgu_id' => 999999])->assertRedirect();
+        $this->assertDatabaseHas('jairoads_next.maintenance_records', ['project_id' => $project->id, 'managing_engineer_id' => $engineer, 'created_by' => $admin->canonical_user_account_id]);
     }
 
     public static function ineligibleManagers(): iterable
@@ -110,9 +110,9 @@ final class ProjectAssignmentAuthorizationTest extends PostgresTestCase
         if ($case !== 'wrong_lgu') {
             DB::table('jairoads_next.engineer_lgus')->insert(['engineer_id' => $other, 'lgu_id' => $lgu, 'is_active' => $case !== 'inactive_assignment']);
         }
-        $this->get('/dd-phase3/projects?view=show&project='.$f['project'])->assertOk()
+        $this->get('/workspace/projects?view=show&project='.$f['project'])->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page->has('managerChoices', 2)->where('managerChoices.0.id', $f['engineer']));
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $case === 'missing' ? 999999 : $other))->assertUnprocessable();
+        $this->postJson('/workspace/ops/records', $this->recordData($f['project'], $case === 'missing' ? 999999 : $other))->assertUnprocessable();
         $this->assertSame(0, DB::table('jairoads_next.maintenance_records')->count());
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
     }
@@ -120,24 +120,24 @@ final class ProjectAssignmentAuthorizationTest extends PostgresTestCase
     public function test_admin_self_management_requires_real_active_profile_not_lgu_membership(): void
     {
         $f = $this->fixture('Admin', true);
-        $this->get('/dd-phase3/projects?view=show&project='.$f['project'])->assertOk()
+        $this->get('/workspace/projects?view=show&project='.$f['project'])->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page->has('managerChoices', 1)->where('managerChoices.0.id', $f['engineer']));
         $data = $this->recordData($f['project'], $f['engineer']);
-        $this->postJson('/dd-phase3/ops/records', $data)->assertRedirect();
+        $this->postJson('/workspace/ops/records', $data)->assertRedirect();
         $id = DB::table('jairoads_next.maintenance_records')->value('id');
-        $this->putJson('/dd-phase3/ops/records/'.$id, array_replace($data, ['description' => 'Admin own activity']))->assertRedirect();
-        $this->assertDatabaseHas('jairoads_next.maintenance_records', ['id' => $id, 'managing_engineer_id' => $f['engineer'], 'created_by' => $f['user']->dd_user_account_id, 'description' => 'Admin own activity']);
+        $this->putJson('/workspace/ops/records/'.$id, array_replace($data, ['description' => 'Admin own activity']))->assertRedirect();
+        $this->assertDatabaseHas('jairoads_next.maintenance_records', ['id' => $id, 'managing_engineer_id' => $f['engineer'], 'created_by' => $f['user']->canonical_user_account_id, 'description' => 'Admin own activity']);
         DB::table('jairoads_next.engineer_lgus')->update(['is_active' => false]);
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q3'))->assertRedirect();
+        $this->postJson('/workspace/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q3'))->assertRedirect();
     }
 
     public function test_unlinked_admin_is_denied_without_invented_self_identity(): void
     {
         $f = $this->fixture();
-        DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->update(['engineer_id' => null]);
+        DB::table('jairoads_next.user_accounts')->where('id', $f['user']->canonical_user_account_id)->update(['engineer_id' => null]);
         $this->assertNull(app(AccountIdentityResolver::class)->resolve($f['user']));
-        $this->get('/dd-phase3/projects?view=show&project='.$f['project'])->assertForbidden();
-        $this->assertNull(DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->value('engineer_id'));
+        $this->get('/workspace/projects?view=show&project='.$f['project'])->assertForbidden();
+        $this->assertNull(DB::table('jairoads_next.user_accounts')->where('id', $f['user']->canonical_user_account_id)->value('engineer_id'));
     }
 
     public function test_engineer_manages_only_own_records_and_never_assigns_or_deletes_for_others(): void
@@ -147,19 +147,19 @@ final class ProjectAssignmentAuthorizationTest extends PostgresTestCase
         $this->account('Engineer', $other);
         $lgu = DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->value('lgu_id');
         DB::table('jairoads_next.engineer_lgus')->insert(['engineer_id' => $other, 'lgu_id' => $lgu, 'is_active' => true]);
-        $this->get('/dd-phase3/projects?view=show&project='.$f['project'])->assertOk()
+        $this->get('/workspace/projects?view=show&project='.$f['project'])->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page->has('managerChoices', 1)->where('managerChoices.0.id', $f['engineer']));
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $other))->assertForbidden();
+        $this->postJson('/workspace/ops/records', $this->recordData($f['project'], $other))->assertForbidden();
         $data = $this->recordData($f['project'], $f['engineer']);
-        $this->postJson('/dd-phase3/ops/records', $data)->assertRedirect();
+        $this->postJson('/workspace/ops/records', $data)->assertRedirect();
         $id = (int) DB::table('jairoads_next.maintenance_records')->where('quarter', 'Q1')->value('id');
-        $this->putJson('/dd-phase3/ops/records/'.$id, array_replace($data, ['description' => 'Own work']))->assertRedirect();
-        $this->deleteJson('/dd-phase3/ops/records/'.$id)->assertForbidden();
-        $this->deleteJson('/dd-phase3/ops/projects/'.$f['project'])->assertForbidden();
+        $this->putJson('/workspace/ops/records/'.$id, array_replace($data, ['description' => 'Own work']))->assertRedirect();
+        $this->deleteJson('/workspace/ops/records/'.$id)->assertForbidden();
+        $this->deleteJson('/workspace/ops/projects/'.$f['project'])->assertForbidden();
         $this->withSession(['password_hash_web' => null])->actingAs($this->account('Admin'));
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $other, 'Q3'))->assertRedirect();
+        $this->postJson('/workspace/ops/records', $this->recordData($f['project'], $other, 'Q3'))->assertRedirect();
         $otherRecord = (int) DB::table('jairoads_next.maintenance_records')->where('quarter', 'Q3')->value('id');
-        $this->withSession(['password_hash_web' => null])->actingAs($f['user'])->putJson('/dd-phase3/ops/records/'.$otherRecord, $this->recordData($f['project'], $other, 'Q3'))->assertForbidden();
+        $this->withSession(['password_hash_web' => null])->actingAs($f['user'])->putJson('/workspace/ops/records/'.$otherRecord, $this->recordData($f['project'], $other, 'Q3'))->assertForbidden();
         $this->assertSame(2, DB::table('jairoads_next.maintenance_records')->count());
     }
 
@@ -167,11 +167,11 @@ final class ProjectAssignmentAuthorizationTest extends PostgresTestCase
     {
         $f = $this->fixture('Engineer');
         $data = $this->recordData($f['project'], $f['engineer']);
-        $this->postJson('/dd-phase3/ops/records', $data)->assertRedirect();
+        $this->postJson('/workspace/ops/records', $data)->assertRedirect();
         $id = DB::table('jairoads_next.maintenance_records')->value('id');
         DB::table('jairoads_next.engineer_lgus')->update(['is_active' => false]);
-        $this->putJson('/dd-phase3/ops/records/'.$id, array_replace($data, ['description' => 'No LGU membership required']))->assertRedirect();
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q3'))->assertRedirect();
+        $this->putJson('/workspace/ops/records/'.$id, array_replace($data, ['description' => 'No LGU membership required']))->assertRedirect();
+        $this->postJson('/workspace/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q3'))->assertRedirect();
         $this->assertDatabaseHas('jairoads_next.maintenance_records', ['id' => $id, 'description' => 'No LGU membership required']);
     }
 
@@ -180,14 +180,14 @@ final class ProjectAssignmentAuthorizationTest extends PostgresTestCase
     {
         $f = $this->fixture($type);
         $data = $this->recordData($f['project'], $f['engineer']);
-        $this->postJson('/dd-phase3/ops/records', $data)->assertRedirect();
+        $this->postJson('/workspace/ops/records', $data)->assertRedirect();
         $id = DB::table('jairoads_next.maintenance_records')->value('id');
         $other = $this->engineer();
         $this->account('Engineer', $other);
         $lgu = DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->value('lgu_id');
         DB::table('jairoads_next.engineer_lgus')->insert(['engineer_id' => $other, 'lgu_id' => $lgu, 'is_active' => true]);
         $before = DB::table('jairoads_next.audit_logs')->count();
-        $this->putJson('/dd-phase3/ops/records/'.$id, array_replace($data, ['managing_engineer_id' => $other]))->assertUnprocessable()->assertJsonValidationErrors('project_id');
+        $this->putJson('/workspace/ops/records/'.$id, array_replace($data, ['managing_engineer_id' => $other]))->assertUnprocessable()->assertJsonValidationErrors('project_id');
         $this->assertSame($f['engineer'], (int) DB::table('jairoads_next.maintenance_records')->where('id', $id)->value('managing_engineer_id'));
         $this->assertSame($before, DB::table('jairoads_next.audit_logs')->count());
     }
@@ -196,25 +196,25 @@ final class ProjectAssignmentAuthorizationTest extends PostgresTestCase
     {
         $f = $this->fixture();
         $data = $this->recordData($f['project'], $f['engineer']);
-        $this->postJson('/dd-phase3/ops/records', $data)->assertRedirect();
+        $this->postJson('/workspace/ops/records', $data)->assertRedirect();
         $id = DB::table('jairoads_next.maintenance_records')->value('id');
-        $this->withSession(['password_hash_web' => null])->actingAs($this->account('Viewer'))->get('/dd-phase3/projects?view=show&project='.$f['project'])->assertOk()
+        $this->withSession(['password_hash_web' => null])->actingAs($this->account('Viewer'))->get('/workspace/projects?view=show&project='.$f['project'])->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page->has('managerChoices', 0)->where('capabilities.createProjects', false)->where('capabilities.updateProjects', false));
-        $this->postJson('/dd-phase3/ops/projects', ['project_title' => 'Denied', 'road_coverage_id' => $f['road']])->assertForbidden();
-        $this->postJson('/dd-phase3/ops/records', $data)->assertForbidden();
-        $this->putJson('/dd-phase3/ops/records/'.$id, $data)->assertForbidden();
-        $this->deleteJson('/dd-phase3/ops/records/'.$id)->assertForbidden();
+        $this->postJson('/workspace/ops/projects', ['project_title' => 'Denied', 'road_coverage_id' => $f['road']])->assertForbidden();
+        $this->postJson('/workspace/ops/records', $data)->assertForbidden();
+        $this->putJson('/workspace/ops/records/'.$id, $data)->assertForbidden();
+        $this->deleteJson('/workspace/ops/records/'.$id)->assertForbidden();
     }
 
     public function test_inactive_or_retired_actor_cannot_continue_using_existing_session(): void
     {
         $f = $this->fixture('Engineer');
-        DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->update(['is_active' => false]);
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer']))->assertForbidden();
-        DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->update(['is_active' => true]);
+        DB::table('jairoads_next.user_accounts')->where('id', $f['user']->canonical_user_account_id)->update(['is_active' => false]);
+        $this->postJson('/workspace/ops/records', $this->recordData($f['project'], $f['engineer']))->assertForbidden();
+        DB::table('jairoads_next.user_accounts')->where('id', $f['user']->canonical_user_account_id)->update(['is_active' => true]);
         DB::table('jairoads_next.engineers')->where('id', $f['engineer'])->update(['engineer_status' => 'Retired']);
         $this->actingAs($f['user']);
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer']))->assertForbidden();
+        $this->postJson('/workspace/ops/records', $this->recordData($f['project'], $f['engineer']))->assertForbidden();
         $this->assertSame(0, DB::table('jairoads_next.maintenance_records')->count());
     }
 }

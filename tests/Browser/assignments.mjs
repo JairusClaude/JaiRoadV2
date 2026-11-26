@@ -27,12 +27,12 @@ async function signIn(email) {
         .getByLabel('Password', { exact: true })
         .fill('Disposable-Test!123');
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-    await page.waitForURL(/dd-phase3\/dashboard/);
+    await page.waitForURL(/workspace\/dashboard/);
 
     return page;
 }
 async function createProject(page, roadName, title) {
-    await page.goto(`${base}/dd-phase3/projects`);
+    await page.goto(`${base}/workspace/projects`);
     await page
         .getByRole('button', { name: 'Add Project', exact: true })
         .click();
@@ -47,7 +47,7 @@ async function createProject(page, roadName, title) {
     await page
         .getByRole('button', { name: /save project|create project/i })
         .click();
-    await page.waitForURL(`${base}/dd-phase3/projects`);
+    await page.waitForURL(`${base}/workspace/projects`);
     await page.getByText(title, { exact: true }).first().click();
     await page.waitForURL(/view=show/);
     await page

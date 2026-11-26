@@ -1,6 +1,6 @@
 # JaiROADS — Task 13 controlled release and post-deployment runbook
 
-> **Phase 11L Final DD correction (2026-11-09; NO GO remains):** `maintenance_records.project_id` and `managing_engineer_id` must remain NOT NULL, with RESTRICT foreign keys. Historical suggestions to activate `preserve_project_history.php`, detach records, or unassign a ManagingEngineer are superseded and must not be followed. This runbook is a review artifact, not deployment approval. See `docs/release/phase11l-strict-dd-integrity-2026-11-09.md`.
+> **Phase 11L Final DD correction (2026-11-09; NO GO remains):** `maintenance_records.project_id` and `managing_engineer_id` must remain NOT NULL, with RESTRICT foreign keys. Historical suggestions to activate `preserve_project_history.php`, detach records, or unassign a ManagingEngineer are superseded and must not be followed. This runbook is a review artifact, not deployment approval. See `docs/release/phase11l-strict-canonical-integrity-2026-11-09.md`.
 
 
 **State: NO GO — review-only release package. 2026-11-07 (Asia/Manila).**

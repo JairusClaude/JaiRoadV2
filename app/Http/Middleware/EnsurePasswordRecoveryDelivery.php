@@ -15,7 +15,7 @@ final class EnsurePasswordRecoveryDelivery
     {
         if ($request->routeIs('password.request', 'password.email', 'password.reset', 'password.update', 'passkey.*', 'passkeys.*', 'well-known.passkeys')
             || $request->is('forgot-password', 'reset-password', 'reset-password/*', 'passkeys', 'passkeys/*',
-                'two-factor-challenge', 'user/two-factor-*', 'user/confirmed-two-factor-authentication', 'user/two-factor-*/*', 'internal-recovery', 'internal-recovery/*', 'dd-phase3/password-recovery', 'dd-phase3/password-recovery/*', '.well-known/passkey-endpoints')) {
+                'two-factor-challenge', 'user/two-factor-*', 'user/confirmed-two-factor-authentication', 'user/two-factor-*/*', 'internal-recovery', 'internal-recovery/*', 'workspace/password-recovery', 'workspace/password-recovery/*', '.well-known/passkey-endpoints')) {
             abort(404);
         }
 

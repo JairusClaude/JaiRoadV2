@@ -365,7 +365,7 @@ export default function Operations({
     }
 
     return (
-        <div className="jr-directory-exploration jr-dd-settings">
+        <div className="jr-directory-exploration jr-workspace-settings">
             <Head title={`JaiROADS — ${names[section]}`} />
             <ProjectWorkspace>
                 <div className="jr-page-head">
@@ -495,7 +495,7 @@ export default function Operations({
                                             onSubmit={(e) => {
                                                 e.preventDefault();
                                                 submit(
-                                                    '/dd-phase3/ops/settings',
+                                                    '/workspace/ops/settings',
                                                     settings,
                                                     'put',
                                                     () =>

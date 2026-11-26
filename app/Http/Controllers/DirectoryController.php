@@ -18,7 +18,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * PHASE 3A: DD-only role access + essential identity/LGU administration.
+ * PHASE 3A: canonical-only role access + essential identity/LGU administration.
  * Never uses legacy public business tables; public.users is Fortify infrastructure.
  * All writes use existing, approved DD entities + a system-written AuditLog.
  */
@@ -60,7 +60,7 @@ class DirectoryController extends Controller
 
     public function show(string $section, Request $request, AccountIdentityResolver $resolver): Response|RedirectResponse
     {
-        // The single named DD GET route dispatches to one of the two DD-only
+        // The single named DD GET route dispatches to one of the two canonical-only
         // controllers. Keep these sections separate from legacy public CRUD.
         if (in_array($section, ['settings', 'roads', 'projects', 'updates', 'documents'], true)) {
             return app(OperationsController::class)->show($section, $request, $resolver);
@@ -69,10 +69,10 @@ class DirectoryController extends Controller
         $actor = $this->identity($request, $resolver);
         abort_unless(in_array($section, ['dashboard', 'users', 'lgus'], true), 404);
         if ($section === 'dashboard' && $actor['role'] === 'SuperAdmin') {
-            return redirect()->route('jairoads.dd-superadmin-landing');
+            return redirect()->route('jairoads.superadmin-home');
         }
         if ($section === 'lgus') {
-            return redirect('/dd-phase3/ui/lgus');
+            return redirect('/workspace/ui/lgus');
         }
         if ($section === 'users') {
             abort_unless(RoleAccess::canManageAccounts($actor['role']), 403);
@@ -129,7 +129,7 @@ class DirectoryController extends Controller
                         ->orWhereRaw('CAST(e.id AS text) ILIKE ?', [$needle])
                         ->orWhereExists(static fn (Builder $linked) => $linked->selectRaw('1')->from('jairoads_next.user_accounts as ua')
                             ->whereColumn('ua.engineer_id', 'e.id')->where(static fn (Builder $account) => $account->where('ua.username', 'ilike', $needle)
-                                ->orWhere('ua.email', 'ilike', $needle))));
+                            ->orWhere('ua.email', 'ilike', $needle))));
                 }
                 if ($state !== 'all') {
                     $query->where('e.engineer_status', $state === 'active' ? '=' : '!=', 'Active');
@@ -179,17 +179,17 @@ class DirectoryController extends Controller
             'section' => $section,
             'identity' => ['role' => $actor['role'], 'username' => (string) $userName, 'accountId' => $actor['account_id']],
             'counts' => $counts,
-            'historyUrl' => $allowedManager && app(PreservedProjectDeletion::class)->available() ? '/dd-phase3/history/records' : null,
+            'historyUrl' => $allowedManager && app(PreservedProjectDeletion::class)->available() ? '/workspace/history/records' : null,
             'analytics' => $section === 'dashboard' ? app(DashboardAnalytics::class)->summary($actor) : null,
             'lgus' => $lgus, 'accounts' => $accounts,
             'engineers' => $engineers,
             'initialEngineerId' => $initialEngineerId, 'directory' => $directory,
             'eligibleEngineers' => $eligibleEngineers, 'eligibleEngineerTotal' => $eligibleEngineerTotal, 'assignments' => [],
             'canManage' => $allowedManager,
-            // Both authorized administrative roles can create standard DD accounts.
+            // Both authorized administrative roles can create standard user accounts.
             // Initial SuperAdmin creation is a separate owner-verified bootstrap.
             'canCreateRoles' => $allowedManager ? ['Admin', 'Engineer', 'Viewer'] : [],
-            'status' => $request->session()->get('dd_phase3_status'),
+            'status' => $request->session()->get('workspace_status'),
             'canonicalFrontend' => true,
             'jairoadsIdentity' => ['role' => strtolower($actor['role'])],
             'navigationSection' => $section,

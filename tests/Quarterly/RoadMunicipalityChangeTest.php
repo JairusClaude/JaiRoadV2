@@ -36,7 +36,7 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
         $this->assertEquals($road, DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->first());
         $this->assertSame($before, $this->history()); // Review, followed by Cancel, has no write at all.
         $this->assertSame(1, DB::table('jairoads_next.audit_logs')->count());
-        $this->confirm($f, $preview['confirmation_token'])->assertRedirect('/dd-phase3/roads')
+        $this->confirm($f, $preview['confirmation_token'])->assertRedirect('/workspace/roads')
             ->assertSessionHas('dd_operations_status', 'Municipality changed from Test municipality to Destination town. Road geometry and maintenance history were preserved.');
         $after = DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->first();
         foreach (['geojson', 'kilometers', 'road_name', 'pavement_type', 'state_category', 'created_by', 'created_at'] as $field) {
@@ -47,8 +47,8 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
         $this->assertSame(1, DB::table('jairoads_next.road_coverages')->count());
         $this->assertSame(2, DB::table('jairoads_next.audit_logs')->count());
         $event = DB::table('jairoads_next.audit_logs')->orderByDesc('id')->first();
-        $this->assertSame((int) $f['user']->dd_user_account_id, (int) $event->user_id);
-        $this->assertSame($role === 'Engineer' ? 'Test Engineer' : 'DD-UserAccount#'.$f['user']->dd_user_account_id.' ('.DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->value('username').')', $event->actor_identifier);
+        $this->assertSame((int) $f['user']->canonical_user_account_id, (int) $event->user_id);
+        $this->assertSame($role === 'Engineer' ? 'Test Engineer' : 'User Account #'.$f['user']->canonical_user_account_id.' ('.DB::table('jairoads_next.user_accounts')->where('id', $f['user']->canonical_user_account_id)->value('username').')', $event->actor_identifier);
         $this->assertSame('UPDATE', $event->action);
         $this->assertSame('RoadCoverage', $event->entity_type);
         $this->assertSame($f['road'], (int) $event->entity_id);
@@ -82,7 +82,7 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
             'missing_destination' => DB::table('jairoads_next.engineer_lgus')->where('engineer_id', $f['engineer'])->where('lgu_id', $f['destination'])->delete(),
             'inactive_destination' => DB::table('jairoads_next.engineer_lgus')->where('engineer_id', $f['engineer'])->where('lgu_id', $f['destination'])->update(['is_active' => false]),
             'missing_source' => DB::table('jairoads_next.engineer_lgus')->where('engineer_id', $f['engineer'])->where('lgu_id', '!=', $f['destination'])->delete(),
-            'inactive_account' => DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->update(['is_active' => false]),
+            'inactive_account' => DB::table('jairoads_next.user_accounts')->where('id', $f['user']->canonical_user_account_id)->update(['is_active' => false]),
             'retired' => DB::table('jairoads_next.engineers')->where('id', $f['engineer'])->update(['engineer_status' => 'Retired']),
             'unlinked' => $this->withSession(['password_hash_web' => null])->actingAs($this->account('Engineer', linked: false)),
         };
@@ -156,27 +156,27 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
                 DB::table('jairoads_next.maintenance_projects')->where('id', $f['project'])->update(['road_coverage_id' => $this->road()]);
                 break;
             case 'record_inserted':
-                DB::table('jairoads_next.maintenance_records')->insert($this->recordData($f['project'], $f['engineer'], 'Q2') + ['created_by' => $f['user']->dd_user_account_id]);
+                DB::table('jairoads_next.maintenance_records')->insert($this->recordData($f['project'], $f['engineer'], 'Q2') + ['created_by' => $f['user']->canonical_user_account_id]);
                 break;
             case 'manager_reassigned':
                 DB::table('jairoads_next.maintenance_records')->where('id', $f['record'])->update(['managing_engineer_id' => $this->engineer()]);
                 break;
             case 'record_deleted':
-                DB::table('jairoads_next.maintenance_records')->insert($this->recordData($f['project'], $f['engineer'], 'Q2') + ['created_by' => $f['user']->dd_user_account_id]);
+                DB::table('jairoads_next.maintenance_records')->insert($this->recordData($f['project'], $f['engineer'], 'Q2') + ['created_by' => $f['user']->canonical_user_account_id]);
                 $token = $this->preview($f)->assertOk()->json('confirmation_token');
                 DB::table('jairoads_next.maintenance_records')->where('quarter', 'Q2')->delete();
                 break;
             case 'monthly_inserted':
-                DB::table('jairoads_next.monthly_updates')->insert(['maintenance_id' => $f['record'], 'update_month' => '2026-02', 'progress_percentage' => 30, 'created_by' => $f['user']->dd_user_account_id]);
+                DB::table('jairoads_next.monthly_updates')->insert(['maintenance_id' => $f['record'], 'update_month' => '2026-02', 'progress_percentage' => 30, 'created_by' => $f['user']->canonical_user_account_id]);
                 break;
             case 'monthly_updated':
                 DB::table('jairoads_next.monthly_updates')->where('id', $f['update'])->update(['updated_at' => '2020-01-01']);
                 break;
             case 'document_inserted':
-                DB::table('jairoads_next.maintenance_documents')->insert(['maintenance_id' => $f['record'], 'document_title' => 'New', 'file_name' => 'new.pdf', 'file_path' => 'private/new.pdf', 'uploaded_by' => $f['user']->dd_user_account_id]);
+                DB::table('jairoads_next.maintenance_documents')->insert(['maintenance_id' => $f['record'], 'document_title' => 'New', 'file_name' => 'new.pdf', 'file_path' => 'private/new.pdf', 'uploaded_by' => $f['user']->canonical_user_account_id]);
                 break;
             case 'media_inserted':
-                DB::table('jairoads_next.media')->insert(['monthly_update_id' => $f['update'], 'file_name' => 'new.png', 'file_path' => 'private/new.png', 'file_type' => 'image/png', 'uploaded_by' => $f['user']->dd_user_account_id]);
+                DB::table('jairoads_next.media')->insert(['monthly_update_id' => $f['update'], 'file_name' => 'new.png', 'file_path' => 'private/new.png', 'file_type' => 'image/png', 'uploaded_by' => $f['user']->canonical_user_account_id]);
                 break;
             case 'assignment_changed':
                 DB::table('jairoads_next.engineer_lgus')->where('engineer_id', $f['engineer'])->where('lgu_id', $f['destination'])->update(['is_active' => false]);
@@ -227,7 +227,7 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
         $this->confirm($f, 'tampered')->assertUnprocessable();
         $this->confirm($f, $token.'tampered')->assertUnprocessable();
         $otherRoad = $this->road();
-        $this->postJson('/dd-phase3/ops/roads/'.$otherRoad.'/municipality/confirm', ['confirmation_token' => $token])->assertUnprocessable();
+        $this->postJson('/workspace/ops/roads/'.$otherRoad.'/municipality/confirm', ['confirmation_token' => $token])->assertUnprocessable();
         $this->withSession(['password_hash_web' => null])->actingAs($this->account());
         $this->confirm($f, $token)->assertUnprocessable();
         $this->withSession(['password_hash_web' => null])->actingAs($f['user']);
@@ -259,7 +259,7 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
         $road = DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->first();
         $data = ['road_name' => 'Must not save', 'lgu_id' => $f['destination'], 'kilometers' => 55,
             'pavement_type' => 'Gravel', 'state_category' => 'Bad', 'geojson' => '{"type":"LineString","coordinates":[[122,12],[123,13]]}'];
-        $this->putJson('/dd-phase3/ops/roads/'.$f['road'], $data)->assertUnprocessable()->assertJsonValidationErrors('lgu_id');
+        $this->putJson('/workspace/ops/roads/'.$f['road'], $data)->assertUnprocessable()->assertJsonValidationErrors('lgu_id');
         $this->assertEquals($road, DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->first());
         $token = $this->preview($f)->assertOk()->json('confirmation_token');
         $this->postJson($this->url($f, 'confirm'), $data + ['confirmation_token' => $token])->assertRedirect();
@@ -274,7 +274,7 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
         $source = DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->value('lgu_id');
         $this->postJson($this->url($f, 'preview'), ['lgu_id' => $source])->assertUnprocessable();
         $this->postJson($this->url($f, 'preview'), ['lgu_id' => 999999])->assertUnprocessable();
-        $this->postJson('/dd-phase3/ops/roads/999999/municipality/preview', ['lgu_id' => $f['destination']])->assertNotFound();
+        $this->postJson('/workspace/ops/roads/999999/municipality/preview', ['lgu_id' => $f['destination']])->assertNotFound();
         $this->assertSame(1, DB::table('jairoads_next.audit_logs')->count());
     }
 
@@ -289,7 +289,7 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
         foreach ([$source, $f['destination']] as $lgu) {
             DB::table('jairoads_next.engineer_lgus')->insert(['engineer_id' => $replacement, 'lgu_id' => $lgu, 'is_active' => true]);
         }
-        $this->postJson('/dd-phase3/ops/records/'.$f['record'].'/reassignment', ['managing_engineer_id' => $replacement, 'expected_current_manager_id' => $f['engineer']])->assertRedirect();
+        $this->postJson('/workspace/ops/records/'.$f['record'].'/reassignment', ['managing_engineer_id' => $replacement, 'expected_current_manager_id' => $f['engineer']])->assertRedirect();
         $this->confirm($f, $token)->assertUnprocessable();
         $fresh = $this->preview($f)->assertOk()->assertJsonPath('can_confirm', true)->assertJsonPath('managers.0.engineer_id', $replacement)->json('confirmation_token');
         $before = $this->history();
@@ -303,7 +303,7 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
         $other = $this->engineer();
         $this->account('Engineer', $other, false);
         $second = (int) DB::table('jairoads_next.maintenance_records')->insertGetId(array_replace($this->recordData($f['project'], $other, 'Q2'), [
-            'status' => 'Completed', 'complete_date' => '2026-04-06', 'created_by' => $f['user']->dd_user_account_id,
+            'status' => 'Completed', 'complete_date' => '2026-04-06', 'created_by' => $f['user']->canonical_user_account_id,
         ]));
         $review = $this->preview($f)->assertOk()->assertJsonPath('counts.maintenance_records', 2)
             ->assertJsonPath('managers.0.eligible', true)->assertJsonPath('managers.1.eligible', false)->assertJsonPath('can_confirm', false)->json();
@@ -366,11 +366,11 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
         $f = $this->fixture($role === 'linked_admin' ? 'Admin' : $role, $role === 'linked_admin');
         $f['destination'] = $this->destination();
         DB::table('jairoads_next.engineer_lgus')->insert(['engineer_id' => $f['engineer'], 'lgu_id' => $f['destination'], 'is_active' => true]);
-        $f['record'] = (int) DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->dd_user_account_id]);
-        $f['update'] = (int) DB::table('jairoads_next.monthly_updates')->insertGetId(['maintenance_id' => $f['record'], 'update_month' => '2026-01', 'progress_percentage' => 20, 'created_by' => $f['user']->dd_user_account_id]);
-        DB::table('jairoads_next.maintenance_documents')->insert(['maintenance_id' => $f['record'], 'document_title' => 'Historic document', 'file_name' => 'retained.pdf', 'file_path' => 'private/retained.pdf', 'uploaded_by' => $f['user']->dd_user_account_id]);
-        DB::table('jairoads_next.media')->insert(['monthly_update_id' => $f['update'], 'file_name' => 'retained.png', 'file_path' => 'private/retained.png', 'file_type' => 'image/png', 'uploaded_by' => $f['user']->dd_user_account_id]);
-        $f['historic_audit'] = (int) DB::table('jairoads_next.audit_logs')->insertGetId(['user_id' => $f['user']->dd_user_account_id, 'actor_identifier' => 'Historical actor', 'action' => 'CREATE', 'entity_type' => 'RoadCoverage', 'entity_id' => $f['road'], 'description' => 'Historic administrative payload', 'old_value' => null, 'new_value' => '{"municipality":"Historical municipality"}']);
+        $f['record'] = (int) DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->canonical_user_account_id]);
+        $f['update'] = (int) DB::table('jairoads_next.monthly_updates')->insertGetId(['maintenance_id' => $f['record'], 'update_month' => '2026-01', 'progress_percentage' => 20, 'created_by' => $f['user']->canonical_user_account_id]);
+        DB::table('jairoads_next.maintenance_documents')->insert(['maintenance_id' => $f['record'], 'document_title' => 'Historic document', 'file_name' => 'retained.pdf', 'file_path' => 'private/retained.pdf', 'uploaded_by' => $f['user']->canonical_user_account_id]);
+        DB::table('jairoads_next.media')->insert(['monthly_update_id' => $f['update'], 'file_name' => 'retained.png', 'file_path' => 'private/retained.png', 'file_type' => 'image/png', 'uploaded_by' => $f['user']->canonical_user_account_id]);
+        $f['historic_audit'] = (int) DB::table('jairoads_next.audit_logs')->insertGetId(['user_id' => $f['user']->canonical_user_account_id, 'actor_identifier' => 'Historical actor', 'action' => 'CREATE', 'entity_type' => 'RoadCoverage', 'entity_id' => $f['road'], 'description' => 'Historic administrative payload', 'old_value' => null, 'new_value' => '{"municipality":"Historical municipality"}']);
 
         return $f;
     }
@@ -382,7 +382,7 @@ final class RoadMunicipalityChangeTest extends PostgresTestCase
 
     private function url(array $f, string $stage): string
     {
-        return '/dd-phase3/ops/roads/'.$f['road'].'/municipality/'.$stage;
+        return '/workspace/ops/roads/'.$f['road'].'/municipality/'.$stage;
     }
 
     private function preview(array $f): TestResponse

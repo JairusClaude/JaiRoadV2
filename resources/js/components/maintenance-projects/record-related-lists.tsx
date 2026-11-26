@@ -56,7 +56,9 @@ function RelatedActions({
         page.props.previewOnly === true ||
         ['admin', 'superadmin'].includes(identity?.role?.toLowerCase() ?? '');
 
-    if (!enabled || identity?.role?.toLowerCase() === 'viewer') return null;
+    if (!enabled || identity?.role?.toLowerCase() === 'viewer') {
+        return null;
+    }
 
     return (
         <div onClick={(e) => e.stopPropagation()}>
@@ -130,9 +132,15 @@ export function RecordRelatedLists({
     documents: DocumentSummary[];
 }) {
     const page = usePage();
-    const isViewer = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role?.toLowerCase() === 'viewer';
-    const enabled = !isViewer && (page.props.previewOnly === true ||
-        (page.props.canonicalFrontend === true && page.props.canWrite === true));
+    const isViewer =
+        (
+            page.props.jairoadsIdentity as { role?: string } | undefined
+        )?.role?.toLowerCase() === 'viewer';
+    const enabled =
+        !isViewer &&
+        (page.props.previewOnly === true ||
+            (page.props.canonicalFrontend === true &&
+                page.props.canWrite === true));
     const monthlyDeletion = useMonthlyDeletion(`record=${recordId}`);
     const documentDeletion = useDocumentDeletion(recordId);
     const orderedUpdates = [...updates].sort(
@@ -156,18 +164,18 @@ export function RecordRelatedLists({
                             </p>
                         </div>
                         {enabled && Boolean(monthlyUpdateCreateUrl) && (
-<Button
-                            className="jr-primary"
-                            disabled={!monthlyUpdateCreateUrl}
-                            onClick={() =>
-                                monthlyUpdateCreateUrl &&
-                                router.visit(monthlyUpdateCreateUrl)
-                            }
-                        >
-                            <Plus />
-                            Add Monthly Update
-                        </Button>
-)}
+                            <Button
+                                className="jr-primary"
+                                disabled={!monthlyUpdateCreateUrl}
+                                onClick={() =>
+                                    monthlyUpdateCreateUrl &&
+                                    router.visit(monthlyUpdateCreateUrl)
+                                }
+                            >
+                                <Plus />
+                                Add Monthly Update
+                            </Button>
+                        )}
                     </div>
                     {updates.length ? (
                         <RelatedList label="Monthly updates for this record">
@@ -254,21 +262,21 @@ export function RecordRelatedLists({
                             </p>
                         </div>
                         {enabled && (
-<Button
-                            className="jr-primary"
-                            disabled={!enabled}
-                            onClick={() =>
-                                router.visit(
-                                    workspaceHref(
-                                        `/maintenance-documents/create?maintenance_id=${recordId}`,
-                                    ),
-                                )
-                            }
-                        >
-                            <Upload />
-                            Upload Document
-                        </Button>
-)}
+                            <Button
+                                className="jr-primary"
+                                disabled={!enabled}
+                                onClick={() =>
+                                    router.visit(
+                                        workspaceHref(
+                                            `/maintenance-documents/create?maintenance_id=${recordId}`,
+                                        ),
+                                    )
+                                }
+                            >
+                                <Upload />
+                                Upload Document
+                            </Button>
+                        )}
                     </div>
                     {documents.length ? (
                         <RelatedList label="Maintenance documents for this record">

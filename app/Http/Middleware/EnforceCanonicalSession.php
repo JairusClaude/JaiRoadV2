@@ -24,7 +24,7 @@ final class EnforceCanonicalSession
                 $user->id = 1;
                 $user->name = 'UserTest';
                 $user->email = 'usertest@jairoads.ph';
-                $user->setAttribute('dd_user_account_id', 1);
+                $user->setAttribute('canonical_user_account_id', 1);
                 $user->exists = true;
                 Auth::setUser($user);
             }

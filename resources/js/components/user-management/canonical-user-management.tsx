@@ -12,7 +12,10 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { DirectoryFilter, DirectoryPagination } from '@/components/directory-controls';
+import {
+    DirectoryFilter,
+    DirectoryPagination,
+} from '@/components/directory-controls';
 import { DirectoryActions } from '@/components/maintenance-projects/project-workspace';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import AccountLifecycle from '@/components/user-management/account-lifecycle';
@@ -202,7 +205,7 @@ function CreateForm({
         onBusy(true);
         setErrors({});
         router.post(
-            isAccount ? '/dd-phase3/accounts' : '/dd-phase3/engineers',
+            isAccount ? '/workspace/accounts' : '/workspace/engineers',
             isAccount
                 ? needsProfile
                     ? { ...account, profile: engineer }
@@ -255,7 +258,9 @@ function CreateForm({
             {isAccount ? (
                 <>
                     <div className="um-form-note">
-                        {needsProfile ? 'A new Engineer profile will be created and linked automatically when the account is saved. Profile linkage does not grant Engineer permissions.' : 'Viewer accounts have read-only access and do not require an Engineer profile.'}
+                        {needsProfile
+                            ? 'A new Engineer profile will be created and linked automatically when the account is saved. Profile linkage does not grant Engineer permissions.'
+                            : 'Viewer accounts have read-only access and do not require an Engineer profile.'}
                     </div>
                     <div className="um-form-grid">
                         {af(
@@ -275,10 +280,20 @@ function CreateForm({
                                 value={account.account_type}
                                 onChange={(e) => {
                                     const nextRole = e.target.value as Role;
-                                    setAccount((old) => ({ ...old, account_type: nextRole }));
+                                    setAccount((old) => ({
+                                        ...old,
+                                        account_type: nextRole,
+                                    }));
                                     setErrors({});
+
                                     if (nextRole === 'Viewer') {
-                                        setEngineer({ first_name: '', middle_name: '', last_name: '', contact_no: '', rank: '' });
+                                        setEngineer({
+                                            first_name: '',
+                                            middle_name: '',
+                                            last_name: '',
+                                            contact_no: '',
+                                            rank: '',
+                                        });
                                     }
                                 }}
                             >
@@ -294,7 +309,9 @@ function CreateForm({
                         </label>
                         {needsProfile && (
                             <fieldset className="um-span min-w-0 space-y-3">
-                                <legend className="mb-2 text-sm font-semibold">Engineer profile</legend>
+                                <legend className="mb-2 text-sm font-semibold">
+                                    Engineer profile
+                                </legend>
                                 <div className="um-form-grid">
                                     {ef('first_name', 'First name')}
                                     {ef('middle_name', 'Middle name', true)}
@@ -334,7 +351,12 @@ function CreateForm({
                 </>
             )}
             {isAccount && (
-                <button type="button" className="um-secondary self-start" disabled={busy} onClick={onProfileOnly}>
+                <button
+                    type="button"
+                    className="um-secondary self-start"
+                    disabled={busy}
+                    onClick={onProfileOnly}
+                >
                     Register an Engineer profile without an account
                 </button>
             )}
@@ -355,10 +377,7 @@ function CreateForm({
                 <button
                     type="submit"
                     className="um-primary"
-                    disabled={
-                        busy ||
-                        (isAccount && !allowed.length)
-                    }
+                    disabled={busy || (isAccount && !allowed.length)}
                 >
                     {busy
                         ? 'Saving…'
@@ -412,7 +431,7 @@ export default function CanonicalUserManagement({
 
         const timer = setTimeout(() => {
             router.get(
-                '/dd-phase3/users',
+                '/workspace/users',
                 {
                     directory_tab: tab,
                     directory_search: normalizedSearch,
@@ -489,7 +508,7 @@ export default function CanonicalUserManagement({
         }
 
         router.get(
-            '/dd-phase3/users',
+            '/workspace/users',
             {
                 directory_tab: tab,
                 directory_search: normalizedSearch,
@@ -625,15 +644,20 @@ export default function CanonicalUserManagement({
                             >
                                 <HardHat size={17} /> Engineers
                                 <span>
-                                    {directory?.engineerTotal ?? engineers.length}
+                                    {directory?.engineerTotal ??
+                                        engineers.length}
                                 </span>
                             </button>
                         ) : (
                             <button
                                 key={accountRole}
                                 type="button"
-                                aria-pressed={tab === 'accounts' && role === accountRole}
-                                onClick={() => switchTab('accounts', accountRole)}
+                                aria-pressed={
+                                    tab === 'accounts' && role === accountRole
+                                }
+                                onClick={() =>
+                                    switchTab('accounts', accountRole)
+                                }
                             >
                                 {`${accountRole}s`}
                             </button>
@@ -673,7 +697,11 @@ export default function CanonicalUserManagement({
                         options={[
                             { value: 'all', label: 'All Statuses' },
                             { value: 'active', label: 'Active' },
-                            { value: 'inactive', label: tab === 'accounts' ? 'Inactive' : 'Retired' },
+                            {
+                                value: 'inactive',
+                                label:
+                                    tab === 'accounts' ? 'Inactive' : 'Retired',
+                            },
                         ]}
                     />
                     {(search || state !== 'all') && (
@@ -855,7 +883,9 @@ export default function CanonicalUserManagement({
                                                                     account.username
                                                                 }
                                                             </strong>
-                                                            <small>{account.email}</small>
+                                                            <small>
+                                                                {account.email}
+                                                            </small>
                                                             <div className="mt-1">
                                                                 <AccountTypeBadge
                                                                     role={
@@ -863,7 +893,16 @@ export default function CanonicalUserManagement({
                                                                     }
                                                                 />
                                                                 <span className="ml-2">
-                                                                    <Status active={account.is_active} label={account.is_active ? 'Active account' : 'Inactive account'} />
+                                                                    <Status
+                                                                        active={
+                                                                            account.is_active
+                                                                        }
+                                                                        label={
+                                                                            account.is_active
+                                                                                ? 'Active account'
+                                                                                : 'Inactive account'
+                                                                        }
+                                                                    />
                                                                 </span>
                                                             </div>
                                                         </>
@@ -892,20 +931,49 @@ export default function CanonicalUserManagement({
                                                 </td>
                                                 <td>
                                                     {account ? (
-                                                        <DirectoryActions label={'Actions for ' + nameOf(e)}>
-                                                            <DropdownMenuItem onSelect={() => open({ kind: 'engineer', id: e.id })}>
-                                                                <HardHat /> Manage Profile
+                                                        <DirectoryActions
+                                                            label={
+                                                                'Actions for ' +
+                                                                nameOf(e)
+                                                            }
+                                                        >
+                                                            <DropdownMenuItem
+                                                                onSelect={() =>
+                                                                    open({
+                                                                        kind: 'engineer',
+                                                                        id: e.id,
+                                                                    })
+                                                                }
+                                                            >
+                                                                <HardHat />{' '}
+                                                                Manage Profile
                                                             </DropdownMenuItem>
-                                                            <DropdownMenuItem onSelect={() => open({ kind: 'account', id: account.id })}>
-                                                                <UserRound /> Manage Account
+                                                            <DropdownMenuItem
+                                                                onSelect={() =>
+                                                                    open({
+                                                                        kind: 'account',
+                                                                        id: account.id,
+                                                                    })
+                                                                }
+                                                            >
+                                                                <UserRound />{' '}
+                                                                Manage Account
                                                             </DropdownMenuItem>
                                                         </DirectoryActions>
                                                     ) : (
                                                         <button
                                                             className="um-secondary um-row-action"
                                                             type="button"
-                                                            aria-label={'Manage engineer ' + nameOf(e)}
-                                                            onClick={() => open({ kind: 'engineer', id: e.id })}
+                                                            aria-label={
+                                                                'Manage engineer ' +
+                                                                nameOf(e)
+                                                            }
+                                                            onClick={() =>
+                                                                open({
+                                                                    kind: 'engineer',
+                                                                    id: e.id,
+                                                                })
+                                                            }
                                                         >
                                                             Manage Profile
                                                         </button>
@@ -1024,7 +1092,9 @@ export default function CanonicalUserManagement({
                                         clear();
                                     }}
                                     onBusy={setBusy}
-                                    onProfileOnly={() => open({ kind: 'add-engineer' })}
+                                    onProfileOnly={() =>
+                                        open({ kind: 'add-engineer' })
+                                    }
                                 />
                             ) : modal?.kind === 'account' ? (
                                 <AccountLifecycle

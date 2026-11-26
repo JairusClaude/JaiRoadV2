@@ -14,16 +14,16 @@ final class SuperAdminDashboardDesignTest extends PostgresTestCase
         $fixture = $this->fixture('SuperAdmin');
         $record = (int) DB::table('jairoads_next.maintenance_records')->insertGetId(
             $this->recordData($fixture['project'], $fixture['engineer'])
-                + ['created_by' => $fixture['user']->dd_user_account_id]
+                + ['created_by' => $fixture['user']->canonical_user_account_id]
         );
         $updateId = (int) DB::table('jairoads_next.monthly_updates')->insertGetId([
             'maintenance_id' => $record,
             'update_month' => '2026-11',
             'progress_percentage' => 22,
-            'created_by' => $fixture['user']->dd_user_account_id,
+            'created_by' => $fixture['user']->canonical_user_account_id,
         ]);
 
-        $this->get('/dd-superadmin-landing')->assertOk()->assertInertia(fn (Assert $page) => $page
+        $this->get('/superadmin-home')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('SuperAdminDashboard/CommandCenter')
             ->has('recentMonthlyUpdates', 1)
             ->where('recentMonthlyUpdates.0.id', $updateId)

@@ -36,15 +36,15 @@ Route::middleware(['auth'])->group(function () {
             return redirect()->route('jairoads.ui.roads.index');
         }
         $user = request()->user();
-        if ($user instanceof User && $user->getAttribute('dd_user_account_id') !== null) {
+        if ($user instanceof User && $user->getAttribute('canonical_user_account_id') !== null) {
             // DD-linked login is resolved exclusively through the approved DD identity.
             // Never fall back to legacy roles when a DD link is invalid.
             $identity = app(AccountIdentityResolver::class)->resolve($user);
             abort_unless($identity !== null, 403, 'An active linked Data Dictionary UserAccount is required.');
 
             return match ($identity['role']) {
-                'SuperAdmin' => redirect()->route('jairoads.dd-superadmin-landing'),
-                'Admin', 'Engineer', 'Viewer' => redirect()->route('jairoads.dd-phase3.show', ['section' => 'dashboard']),
+                'SuperAdmin' => redirect()->route('jairoads.superadmin-home'),
+                'Admin', 'Engineer', 'Viewer' => redirect()->route('jairoads.workspace.show', ['section' => 'dashboard']),
                 default => abort(403, 'This Data Dictionary role awaits the guarded module cutover.'),
             };
         }
@@ -143,7 +143,7 @@ Inertia::share('jairoadsIdentity', static function (): ?array {
     }
     try {
         // Never infer DD authority from an old user_account_id or legacy role.
-        if ($user->getAttribute('dd_user_account_id') !== null) {
+        if ($user->getAttribute('canonical_user_account_id') !== null) {
             $identity = app(AccountIdentityResolver::class)->resolve($user);
             if ($identity === null) {
                 return null;
@@ -181,8 +181,8 @@ Inertia::share('jairoadsIdentity', static function (): ?array {
 // Dedicated read-only landing for the first DD-linked SuperAdmin. This does NOT
 // grant legacy CRUD access or replace the existing command center.
 Route::middleware(['auth'])
-    ->get('/dd-superadmin-landing', SuperAdminLandingController::class)
-    ->name('jairoads.dd-superadmin-landing');
+    ->get('/superadmin-home', SuperAdminLandingController::class)
+    ->name('jairoads.superadmin-home');
 
 require __DIR__.'/role-dashboard.php';
 

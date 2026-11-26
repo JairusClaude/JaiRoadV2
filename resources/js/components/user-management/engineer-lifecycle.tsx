@@ -81,7 +81,7 @@ export default function EngineerLifecycle({
                         onBusy?.(true);
                         setErrors({});
                         router.put(
-                            `/dd-phase3/engineers/${selected.id}`,
+                            `/workspace/engineers/${selected.id}`,
                             {
                                 first_name: selected.first_name,
                                 middle_name: selected.middle_name,
@@ -153,7 +153,7 @@ export default function EngineerLifecycle({
                                     onBusy?.(true);
                                     setErrors({});
                                     router.post(
-                                        `/dd-phase3/engineers/${selected.id}/retirement`,
+                                        `/workspace/engineers/${selected.id}/retirement`,
                                         {},
                                         {
                                             ...options,

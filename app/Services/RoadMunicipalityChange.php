@@ -130,7 +130,7 @@ final class RoadMunicipalityChange
             ->orderBy('id')->sharedLock()->get(['id', 'engineer_id', 'account_type', 'is_active', 'updated_at']);
         // Freeze the explicit Fortify bridge, then re-resolve after account/profile
         // locks. Never infer canonical identity from matching email or numeric IDs.
-        $bridge = DB::table('public.users')->where('id', $login->getKey())->sharedLock()->first(['id', 'dd_user_account_id', 'updated_at']);
+        $bridge = DB::table('public.users')->where('id', $login->getKey())->sharedLock()->first(['id', 'canonical_user_account_id', 'updated_at']);
         abort_unless($this->actor($login) === $actor, 403);
         $managers = [];
         $conflicts = [];

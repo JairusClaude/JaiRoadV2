@@ -47,7 +47,7 @@ final class RoleAwareAccountCreationTest extends PostgresTestCase
             $payload['profile'] = $this->profile();
         }
 
-        $this->actingAs($actor)->post('/dd-phase3/accounts', $payload)
+        $this->actingAs($actor)->post('/workspace/accounts', $payload)
             ->assertSessionHasNoErrors()->assertRedirect();
         $row = DB::table('jairoads_next.user_accounts')->where('email', $payload['email'])->first();
         $this->assertNotNull($row);
@@ -72,13 +72,13 @@ final class RoleAwareAccountCreationTest extends PostgresTestCase
         $before = DB::table('jairoads_next.user_accounts')->count();
 
         foreach (['Admin', 'Engineer'] as $role) {
-            $this->postJson('/dd-phase3/accounts', $this->payload($role))->assertUnprocessable()->assertJsonValidationErrors('profile');
-            $this->postJson('/dd-phase3/accounts', $this->payload($role) + ['engineer_id' => $existing])
+            $this->postJson('/workspace/accounts', $this->payload($role))->assertUnprocessable()->assertJsonValidationErrors('profile');
+            $this->postJson('/workspace/accounts', $this->payload($role) + ['engineer_id' => $existing])
                 ->assertUnprocessable()->assertJsonValidationErrors('engineer_id');
         }
-        $this->postJson('/dd-phase3/accounts', $this->payload('Viewer') + ['profile' => $this->profile()])
+        $this->postJson('/workspace/accounts', $this->payload('Viewer') + ['profile' => $this->profile()])
             ->assertUnprocessable()->assertJsonValidationErrors('profile');
-        $this->postJson('/dd-phase3/accounts', $this->payload('Viewer') + ['engineer_id' => $existing])
+        $this->postJson('/workspace/accounts', $this->payload('Viewer') + ['engineer_id' => $existing])
             ->assertUnprocessable()->assertJsonValidationErrors('engineer_id');
 
         $this->assertEquals($before, DB::table('jairoads_next.user_accounts')->count());

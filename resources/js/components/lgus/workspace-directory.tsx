@@ -230,7 +230,7 @@ export default function WorkspaceLguDirectory({
         for (const item of deleteTargets) {
             try {
                 await requestOperation(
-                    `/dd-phase3/lgus/${item.id}`,
+                    `/workspace/lgus/${item.id}`,
                     {},
                     'delete',
                     false,
@@ -397,8 +397,8 @@ export default function WorkspaceLguDirectory({
         try {
             await requestOperation(
                 editor.kind === 'add'
-                    ? '/dd-phase3/lgus'
-                    : `/dd-phase3/lgus/${editor.id}`,
+                    ? '/workspace/lgus'
+                    : `/workspace/lgus/${editor.id}`,
                 {
                     municipality_name: normalized.municipalityName,
                     province: normalized.province,
@@ -775,32 +775,44 @@ export default function WorkspaceLguDirectory({
                                                 >
                                                     <Info /> View Details
                                                 </DropdownMenuItem>
-                                                {canCreate && (<>
-<DropdownMenuItem
-                                                    disabled={!canCreate}
-                                                    onSelect={() =>
-                                                        openEdit(item)
-                                                    }
-                                                >
-                                                    <FilePenLine /> Edit LGU
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem
-                                                    disabled={
-                                                        !canCreate ||
-                                                        deletionBlocked(item)
-                                                    }
-                                                    title={
-                                                        deletionBlocked(item)
-                                                            ? 'Linked road coverages or engineer assignments block deletion.'
-                                                            : undefined
-                                                    }
-                                                    onSelect={() =>
-                                                        openDelete([item])
-                                                    }
-                                                >
-                                                    <Trash2 /> Delete LGU
-                                                </DropdownMenuItem>
-</>)}
+                                                {canCreate && (
+                                                    <>
+                                                        <DropdownMenuItem
+                                                            disabled={
+                                                                !canCreate
+                                                            }
+                                                            onSelect={() =>
+                                                                openEdit(item)
+                                                            }
+                                                        >
+                                                            <FilePenLine /> Edit
+                                                            LGU
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            disabled={
+                                                                !canCreate ||
+                                                                deletionBlocked(
+                                                                    item,
+                                                                )
+                                                            }
+                                                            title={
+                                                                deletionBlocked(
+                                                                    item,
+                                                                )
+                                                                    ? 'Linked road coverages or engineer assignments block deletion.'
+                                                                    : undefined
+                                                            }
+                                                            onSelect={() =>
+                                                                openDelete([
+                                                                    item,
+                                                                ])
+                                                            }
+                                                        >
+                                                            <Trash2 /> Delete
+                                                            LGU
+                                                        </DropdownMenuItem>
+                                                    </>
+                                                )}
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     )}
@@ -808,14 +820,14 @@ export default function WorkspaceLguDirectory({
                             </tr>
                         ))}
                         {visible.length === 0 && (
-                            <tr className="jr-dd-empty-row">
+                            <tr className="jr-workspace-empty-row">
                                 <td colSpan={6}>
                                     <div
-                                        className="jr-dd-empty-content"
+                                        className="jr-workspace-empty-content"
                                         role="status"
                                     >
                                         <span
-                                            className="jr-dd-empty-icon"
+                                            className="jr-workspace-empty-icon"
                                             aria-hidden="true"
                                         >
                                             <Building2 className="h-6 w-6" />

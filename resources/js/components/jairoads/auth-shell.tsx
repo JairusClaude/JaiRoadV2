@@ -22,6 +22,7 @@ export default function AuthShell({
     showMobileIntro?: boolean;
 }) {
     const [intro, setIntro] = useState(false);
+
     return (
         <div className="jr-login" data-mobile-intro={showMobileIntro && intro}>
             <div className="jr-login-frame">
@@ -29,7 +30,11 @@ export default function AuthShell({
                     expandedMobile={showMobileIntro && intro}
                     onContinue={() => {
                         setIntro(false);
-                        requestAnimationFrame(() => document.getElementById('email')?.focus({ preventScroll: true }));
+                        requestAnimationFrame(() =>
+                            document
+                                .getElementById('email')
+                                ?.focus({ preventScroll: true }),
+                        );
                     }}
                 />
                 <main className="jr-login-panel">
@@ -57,11 +62,23 @@ export default function AuthShell({
                         </div>
                         {children}
                         {showMobileIntro && (
-                            <button type="button" className="jr-login-explore" onClick={() => {
-                                setIntro(true);
-                                requestAnimationFrame(() => document.getElementById('jr-login-continue')?.focus({ preventScroll: true }));
-                            }}>
-                                Explore JaiROADS <ArrowRight aria-hidden="true" className="size-4" />
+                            <button
+                                type="button"
+                                className="jr-login-explore"
+                                onClick={() => {
+                                    setIntro(true);
+                                    requestAnimationFrame(() =>
+                                        document
+                                            .getElementById('jr-login-continue')
+                                            ?.focus({ preventScroll: true }),
+                                    );
+                                }}
+                            >
+                                Explore JaiROADS{' '}
+                                <ArrowRight
+                                    aria-hidden="true"
+                                    className="size-4"
+                                />
                             </button>
                         )}
                     </div>

@@ -1,4 +1,3 @@
-import { manilaTimestamp } from '@/lib/manila-time';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     Activity,
@@ -12,7 +11,17 @@ import type { FormEvent, ReactNode } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { MetricCard } from '@/components/metric-card';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose, DialogFooter } from '@/components/ui/dialog';
+import {
+    Dialog,
+    DialogTrigger,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogClose,
+    DialogFooter,
+} from '@/components/ui/dialog';
+import { manilaTimestamp } from '@/lib/manila-time';
 import '../../../css/maintenance-projects-exploration.css';
 import '../../../css/jairoads-audit-history.css';
 
@@ -121,11 +130,17 @@ function Table({
             aria-label={title}
             tabIndex={0}
         >
-            <table className={`jr-audit-table text-left text-sm ${headers.length === 8 ? 'jr-audit-table-activity' : headers.length === 7 ? 'jr-audit-table-auth' : 'jr-audit-table-presence'}`}>
+            <table
+                className={`jr-audit-table text-left text-sm ${headers.length === 8 ? 'jr-audit-table-activity' : headers.length === 7 ? 'jr-audit-table-auth' : 'jr-audit-table-presence'}`}
+            >
                 <thead className="bg-slate-50 text-xs text-slate-600">
                     <tr>
                         {headers.map((h) => (
-                            <th key={h} scope="col" className="px-3 py-3 font-semibold">
+                            <th
+                                key={h}
+                                scope="col"
+                                className="px-3 py-3 font-semibold"
+                            >
                                 {h}
                             </th>
                         ))}
@@ -138,11 +153,25 @@ function Table({
         </div>
     );
 }
-function AuditDetail({ title, description, triggerLabel, children }: { title: string; description: string; triggerLabel: string; children: ReactNode }) {
+function AuditDetail({
+    title,
+    description,
+    triggerLabel,
+    children,
+}: {
+    title: string;
+    description: string;
+    triggerLabel: string;
+    children: ReactNode;
+}) {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <button type="button" className="jr-audit-detail-trigger" aria-label={triggerLabel}>
+                <button
+                    type="button"
+                    className="jr-audit-detail-trigger"
+                    aria-label={triggerLabel}
+                >
                     <Eye size={15} aria-hidden="true" /> View details
                 </button>
             </DialogTrigger>
@@ -151,11 +180,18 @@ function AuditDetail({ title, description, triggerLabel, children }: { title: st
                     <DialogTitle>{title}</DialogTitle>
                     <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
-                <div className="jr-audit-detail-body" tabIndex={0} role="region" aria-label="Recorded event details">
+                <div
+                    className="jr-audit-detail-body"
+                    tabIndex={0}
+                    role="region"
+                    aria-label="Recorded event details"
+                >
                     {children}
                 </div>
                 <DialogFooter className="jr-audit-detail-footer">
-                    <DialogClose asChild><Button variant="outline">Done</Button></DialogClose>
+                    <DialogClose asChild>
+                        <Button variant="outline">Done</Button>
+                    </DialogClose>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -163,7 +199,10 @@ function AuditDetail({ title, description, triggerLabel, children }: { title: st
 }
 function PaginationLinks({ page, label }: { page: Pagination; label: string }) {
     return (
-        <nav aria-label={label} className="jr-audit-pagination mt-4 flex flex-wrap gap-2 text-sm">
+        <nav
+            aria-label={label}
+            className="jr-audit-pagination mt-4 flex flex-wrap gap-2 text-sm"
+        >
             {page.links.map((link, i) =>
                 link.url ? (
                     <Link
@@ -356,7 +395,7 @@ function Filters({
             )}
             <div className="flex flex-wrap items-end gap-2 sm:col-span-2 xl:col-span-3">
                 <button
-                    className="rounded-xl bg-[var(--jr-role-accent)] hover:bg-[var(--jr-role-accent-hover)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                    className="rounded-xl bg-[var(--jr-role-accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--jr-role-accent-hover)] disabled:opacity-50"
                     disabled={busy}
                 >
                     {busy ? 'Loading…' : 'Apply filters'}
@@ -543,26 +582,116 @@ export default function AuditHistory({
                                         {e.description}
                                     </td>
                                     <td>
-                                        <AuditDetail title={`Activity #${e.id}`} description="Safe before / after values" triggerLabel="Safe before / after values">
+                                        <AuditDetail
+                                            title={`Activity #${e.id}`}
+                                            description="Safe before / after values"
+                                            triggerLabel="Safe before / after values"
+                                        >
                                             <div className="jr-audit-detail-meta">
-                                                <div><span>Performed by</span><strong>{e.actor_identifier}</strong></div>
-                                                <div><span>Date and time (Manila)</span><strong>{time(e.created_at)}</strong></div>
-                                                <div><span>Action</span><Badge action={e.action} /></div>
-                                                <div><span>Affected record</span><strong>{e.entity_type} #{e.entity_id ?? '—'}</strong></div>
+                                                <div>
+                                                    <span>Performed by</span>
+                                                    <strong>
+                                                        {e.actor_identifier}
+                                                    </strong>
+                                                </div>
+                                                <div>
+                                                    <span>
+                                                        Date and time (Manila)
+                                                    </span>
+                                                    <strong>
+                                                        {time(e.created_at)}
+                                                    </strong>
+                                                </div>
+                                                <div>
+                                                    <span>Action</span>
+                                                    <Badge action={e.action} />
+                                                </div>
+                                                <div>
+                                                    <span>Affected record</span>
+                                                    <strong>
+                                                        {e.entity_type} #
+                                                        {e.entity_id ?? '—'}
+                                                    </strong>
+                                                </div>
                                             </div>
-                                            <div className="jr-audit-detail-description"><span>Description</span><p>{e.description}</p></div>
-                                            {e.notification_message && <div className="jr-audit-detail-description"><span>Historical notification</span><p>{e.notification_message}</p></div>}
-                                            <h3 className="text-sm font-semibold">Recorded field changes</h3>
-                                            {Object.keys({ ...e.old_value, ...e.new_value }).length === 0 ? (
-                                                <p className="text-sm text-muted-foreground">No safe change details were recorded for this event.</p>
+                                            <div className="jr-audit-detail-description">
+                                                <span>Description</span>
+                                                <p>{e.description}</p>
+                                            </div>
+                                            {e.notification_message && (
+                                                <div className="jr-audit-detail-description">
+                                                    <span>
+                                                        Historical notification
+                                                    </span>
+                                                    <p>
+                                                        {e.notification_message}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            <h3 className="text-sm font-semibold">
+                                                Recorded field changes
+                                            </h3>
+                                            {Object.keys({
+                                                ...e.old_value,
+                                                ...e.new_value,
+                                            }).length === 0 ? (
+                                                <p className="text-sm text-muted-foreground">
+                                                    No safe change details were
+                                                    recorded for this event.
+                                                </p>
                                             ) : (
                                                 <div className="jr-audit-changes">
-                                                    {[...new Set([...Object.keys(e.old_value ?? {}), ...Object.keys(e.new_value ?? {})])].map(k => (
-                                                        <section key={k} className="jr-audit-change">
-                                                            <h4>{k.replaceAll('_', ' ')}</h4>
+                                                    {[
+                                                        ...new Set([
+                                                            ...Object.keys(
+                                                                e.old_value ??
+                                                                    {},
+                                                            ),
+                                                            ...Object.keys(
+                                                                e.new_value ??
+                                                                    {},
+                                                            ),
+                                                        ]),
+                                                    ].map((k) => (
+                                                        <section
+                                                            key={k}
+                                                            className="jr-audit-change"
+                                                        >
+                                                            <h4>
+                                                                {k.replaceAll(
+                                                                    '_',
+                                                                    ' ',
+                                                                )}
+                                                            </h4>
                                                             <div className="jr-audit-change-values">
-                                                                <div><span>Previous value</span><p>{value(e.old_value?.[k])}</p></div>
-                                                                <div><span>New value</span><p>{value(e.new_value?.[k])}</p></div>
+                                                                <div>
+                                                                    <span>
+                                                                        Previous
+                                                                        value
+                                                                    </span>
+                                                                    <p>
+                                                                        {value(
+                                                                            e
+                                                                                .old_value?.[
+                                                                                k
+                                                                            ],
+                                                                        )}
+                                                                    </p>
+                                                                </div>
+                                                                <div>
+                                                                    <span>
+                                                                        New
+                                                                        value
+                                                                    </span>
+                                                                    <p>
+                                                                        {value(
+                                                                            e
+                                                                                .new_value?.[
+                                                                                k
+                                                                            ],
+                                                                        )}
+                                                                    </p>
+                                                                </div>
                                                             </div>
                                                         </section>
                                                     ))}
@@ -653,17 +782,59 @@ export default function AuditHistory({
                                     <td>{e.outcome}</td>
                                     <td>{e.client_description}</td>
                                     <td>
-                                        <AuditDetail title={`Authentication event #${e.id}`} description="Recorded sign-in or sign-out information" triggerLabel="Authentication details">
+                                        <AuditDetail
+                                            title={`Authentication event #${e.id}`}
+                                            description="Recorded sign-in or sign-out information"
+                                            triggerLabel="Authentication details"
+                                        >
                                             <div className="jr-audit-detail-meta">
-                                                <div><span>Account / identifier</span><strong>{e.actor_identifier ?? e.attempted_identifier ?? 'Unavailable account'}</strong></div>
-                                                <div><span>Date and time (Manila)</span><strong>{time(e.created_at)}</strong></div>
-                                                <div><span>Event</span><Badge action={e.event} /></div>
-                                                <div><span>Outcome</span><strong>{e.outcome}</strong></div>
-                                                <div><span>Method</span><strong>{e.method}</strong></div>
-                                                <div><span>Account type</span><strong>{e.account_type ?? 'Not verified'}</strong></div>
+                                                <div>
+                                                    <span>
+                                                        Account / identifier
+                                                    </span>
+                                                    <strong>
+                                                        {e.actor_identifier ??
+                                                            e.attempted_identifier ??
+                                                            'Unavailable account'}
+                                                    </strong>
+                                                </div>
+                                                <div>
+                                                    <span>
+                                                        Date and time (Manila)
+                                                    </span>
+                                                    <strong>
+                                                        {time(e.created_at)}
+                                                    </strong>
+                                                </div>
+                                                <div>
+                                                    <span>Event</span>
+                                                    <Badge action={e.event} />
+                                                </div>
+                                                <div>
+                                                    <span>Outcome</span>
+                                                    <strong>{e.outcome}</strong>
+                                                </div>
+                                                <div>
+                                                    <span>Method</span>
+                                                    <strong>{e.method}</strong>
+                                                </div>
+                                                <div>
+                                                    <span>Account type</span>
+                                                    <strong>
+                                                        {e.account_type ??
+                                                            'Not verified'}
+                                                    </strong>
+                                                </div>
                                             </div>
-                                            <div className="jr-audit-detail-description"><span>Client information</span><p>{e.client_description}</p></div>
-                                            <p className="text-sm">{e.user_account_id === null ? 'No canonical identity attributed.' : `Verified UserAccount #${e.user_account_id}`}</p>
+                                            <div className="jr-audit-detail-description">
+                                                <span>Client information</span>
+                                                <p>{e.client_description}</p>
+                                            </div>
+                                            <p className="text-sm">
+                                                {e.user_account_id === null
+                                                    ? 'No canonical identity attributed.'
+                                                    : `Verified UserAccount #${e.user_account_id}`}
+                                            </p>
                                         </AuditDetail>
                                     </td>
                                 </tr>

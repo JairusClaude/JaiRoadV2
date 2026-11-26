@@ -1,9 +1,5 @@
 import { Form, Head, Link } from '@inertiajs/react';
-import {
-    ArrowLeft,
-    LockKeyhole,
-    ShieldCheck,
-} from 'lucide-react';
+import { ArrowLeft, LockKeyhole, ShieldCheck } from 'lucide-react';
 import { useRef } from 'react';
 import type { ReactNode } from 'react';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
@@ -64,7 +60,7 @@ export default function Security(props: Props) {
                         </p>
                     </div>
                     <Link
-                        href="/dd-phase3/settings"
+                        href="/workspace/settings"
                         className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
                     >
                         <ArrowLeft className="size-4" />
@@ -73,7 +69,7 @@ export default function Security(props: Props) {
                 </div>
                 <div>
                     <section aria-label="Change password" className="min-w-0">
-                        {(
+                        {
                             <Container>
                                 <PanelTitle
                                     icon={LockKeyhole}
@@ -191,14 +187,14 @@ export default function Security(props: Props) {
                                     )}
                                 </Form>
                             </Container>
-                        )}
+                        }
                     </section>
                 </div>
                 <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">
-                    Changing your password may require recent
-                    password confirmation. Your administrative permissions,
-                    Engineer assignment and operational account role are not
-                    changed here.
+                    Changing your password may require recent password
+                    confirmation. Your administrative permissions, Engineer
+                    assignment and operational account role are not changed
+                    here.
                 </p>
             </div>
         </ProjectWorkspace>

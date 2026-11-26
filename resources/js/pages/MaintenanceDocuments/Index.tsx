@@ -35,10 +35,15 @@ export default function Index({
     filters,
 }: DocumentDirectoryProps) {
     const page = usePage();
-    const isViewer = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role?.toLowerCase() === 'viewer';
-    const enabled = !isViewer && (
-        page.props.previewOnly === true ||
-        (page.props.canonicalFrontend === true && page.props.canWrite === true));
+    const isViewer =
+        (
+            page.props.jairoadsIdentity as { role?: string } | undefined
+        )?.role?.toLowerCase() === 'viewer';
+    const enabled =
+        !isViewer &&
+        (page.props.previewOnly === true ||
+            (page.props.canonicalFrontend === true &&
+                page.props.canWrite === true));
     const deletion = useDocumentDeletion();
     const [search, setSearch] = useState(filters.search);
     const [selecting, setSelecting] = useState(false);
@@ -107,23 +112,23 @@ export default function Index({
                         </p>
                     </div>
                     {enabled && (
-                    <Button
-                        className="jr-primary"
-                        disabled={!enabled}
-                        onClick={() =>
-                            router.visit(
-                                editUrl(
-                                    workspaceHref(
-                                        '/maintenance-documents/create',
+                        <Button
+                            className="jr-primary"
+                            disabled={!enabled}
+                            onClick={() =>
+                                router.visit(
+                                    editUrl(
+                                        workspaceHref(
+                                            '/maintenance-documents/create',
+                                        ),
+                                        page.url,
                                     ),
-                                    page.url,
-                                ),
-                            )
-                        }
-                    >
-                        <Upload />
-                        Upload Document
-                    </Button>
+                                )
+                            }
+                        >
+                            <Upload />
+                            Upload Document
+                        </Button>
                     )}
                 </div>
                 <form

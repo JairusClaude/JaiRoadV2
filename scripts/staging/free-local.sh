@@ -142,8 +142,8 @@ smoke() {
   curl --silent --show-error --fail --max-time 10 "$APP_URL/login" >/dev/null ||
     refuse 'Local Fortify login endpoint unavailable'
   local path code
-  for path in /dd-phase3/dashboard /dd-phase3/users /dd-phase3/audit-logs \
-    /dd-phase3/ui/road-coverages /jairoads/notifications; do
+  for path in /workspace/dashboard /workspace/users /workspace/audit-logs \
+    /workspace/ui/road-coverages /jairoads/notifications; do
     code="$(curl --silent --show-error --max-time 10 --output /dev/null \
       -H 'Accept: application/json' --write-out '%{http_code}' "$APP_URL$path")"
     [[ "$code" == "401" ]] ||

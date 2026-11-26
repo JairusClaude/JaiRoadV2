@@ -29,13 +29,13 @@ try {
         .getByLabel('Password', { exact: true })
         .fill('Disposable-Test!123');
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-    await page.waitForURL(/dd-phase3\/dashboard/);
+    await page.waitForURL(/workspace\/dashboard/);
     const results = [];
 
     for (let run = 0; run < 4; run++) {
         const start = performance.now();
         const response = await page.goto(
-            base + '/dd-phase3/ui/road-coverages/create',
+            base + '/workspace/ui/road-coverages/create',
         );
         await page.locator('.jr-leaflet-map').waitFor();
         await page.evaluate(

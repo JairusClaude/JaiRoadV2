@@ -20,12 +20,12 @@ final class LifecycleBrowserFixture extends PostgresTestCase
         DB::table('jairoads_next.engineer_lgus')->insert(['engineer_id' => $replacement, 'lgu_id' => $lgu, 'is_active' => true]);
         $admin = $this->account();
         $viewer = $this->account('Viewer');
-        $record = DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer'], 'Q4') + ['created_by' => $f['user']->dd_user_account_id]);
-        $update = DB::table('jairoads_next.monthly_updates')->insertGetId(['maintenance_id' => $record, 'update_month' => '2026-10', 'progress_percentage' => 20, 'created_by' => $f['user']->dd_user_account_id]);
-        DB::table('jairoads_next.maintenance_documents')->insert(['maintenance_id' => $record, 'document_title' => 'Browser fixture', 'file_name' => 'fixture.pdf', 'file_path' => 'private/nonexistent-fixture.pdf', 'uploaded_by' => $f['user']->dd_user_account_id]);
-        DB::table('jairoads_next.media')->insert(['monthly_update_id' => $update, 'file_name' => 'fixture.png', 'file_type' => 'image/png', 'file_path' => 'private/nonexistent-fixture.png', 'uploaded_by' => $f['user']->dd_user_account_id]);
+        $record = DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer'], 'Q4') + ['created_by' => $f['user']->canonical_user_account_id]);
+        $update = DB::table('jairoads_next.monthly_updates')->insertGetId(['maintenance_id' => $record, 'update_month' => '2026-10', 'progress_percentage' => 20, 'created_by' => $f['user']->canonical_user_account_id]);
+        DB::table('jairoads_next.maintenance_documents')->insert(['maintenance_id' => $record, 'document_title' => 'Browser fixture', 'file_name' => 'fixture.pdf', 'file_path' => 'private/nonexistent-fixture.pdf', 'uploaded_by' => $f['user']->canonical_user_account_id]);
+        DB::table('jairoads_next.media')->insert(['monthly_update_id' => $update, 'file_name' => 'fixture.png', 'file_type' => 'image/png', 'file_path' => 'private/nonexistent-fixture.png', 'uploaded_by' => $f['user']->canonical_user_account_id]);
         DB::commit();
-        echo json_encode(['admin_email' => $admin->email, 'viewer_email' => $viewer->email, 'viewer_id' => $viewer->dd_user_account_id,
+        echo json_encode(['admin_email' => $admin->email, 'viewer_email' => $viewer->email, 'viewer_id' => $viewer->canonical_user_account_id,
             'former_email' => $f['user']->email, 'former_id' => $f['engineer'], 'replacement_email' => $next->email,
             'replacement_id' => $replacement, 'project_id' => $f['project']], JSON_THROW_ON_ERROR);
     }

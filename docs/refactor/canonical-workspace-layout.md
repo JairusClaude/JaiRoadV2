@@ -49,12 +49,12 @@ The Engineer dashboard and RoadCoverages page use the [road-coverages map module
 
 ## Historical records
 
-- [Task 2 workflows](../dd-workflows-task2.md)
+- [Task 2 workflows](../canonical-workflows-task2.md)
 - [Audit and notification verification](../audit/verification.md)
 - [Relationship repair verification](../relationships/verification.md)
 - [Canonical account security verification](../security/canonical-only-verification.md)
 - [Permanent file-deletion verification](../verification/permanent-file-deletion/verification.md)
 - [Supabase auditing feasibility](../supabase-auditing-feasibility.md)
-- [Field contract](../contracts/dd-frontend-field-contract.md)
+- [Field contract](../contracts/canonical-frontend-field-contract.md)
 - [Frontend/backend integration](../verification/unified-frontend-backend.md)
 - [Backend structure review](backend-standard-layout.md)

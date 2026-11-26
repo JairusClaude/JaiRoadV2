@@ -35,10 +35,10 @@ final class SuperAdminLinkagePolicyTest extends PostgresTestCase
         $this->assertNotNull($resolver->resolve($validRoot));
         $this->assertNotNull($resolver->resolve($invalidRoot));
         // Simulate pre-existing malformed DD identity in disposable scratch DB only.
-        DB::table('jairoads_next.user_accounts')->where('id', $invalidRoot->dd_user_account_id)
+        DB::table('jairoads_next.user_accounts')->where('id', $invalidRoot->canonical_user_account_id)
             ->update(['engineer_id' => $engineerId]);
         $this->assertDatabaseHas('jairoads_next.user_accounts', [
-            'id' => $invalidRoot->dd_user_account_id,
+            'id' => $invalidRoot->canonical_user_account_id,
             'account_type' => 'SuperAdmin',
             'engineer_id' => $engineerId,
             'is_active' => true,
@@ -48,16 +48,16 @@ final class SuperAdminLinkagePolicyTest extends PostgresTestCase
         $this->assertNull($resolver->resolveForRecovery($invalidRoot));
         $this->assertFalse($resolver->canReactivate($invalidRoot));
         $this->assertFalse($resolver->notificationRecipients(null)
-            ->where('account.id', $invalidRoot->dd_user_account_id)->exists());
+            ->where('account.id', $invalidRoot->canonical_user_account_id)->exists());
 
         $this->assertNotNull($resolver->resolve($validRoot));
         $this->assertTrue($resolver->notificationRecipients(null)
-            ->where('account.id', $validRoot->dd_user_account_id)->exists());
+            ->where('account.id', $validRoot->canonical_user_account_id)->exists());
         $this->withSession(['password_hash_web' => null])->actingAs($invalidRoot)
-            ->getJson('/dd-phase3/users')->assertForbidden();
+            ->getJson('/workspace/users')->assertForbidden();
         $this->assertGuest();
         $this->withSession(['password_hash_web' => null])->actingAs($validRoot)
-            ->getJson('/dd-phase3/users')->assertOk();
+            ->getJson('/workspace/users')->assertOk();
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
     }
 

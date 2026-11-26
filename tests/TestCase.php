@@ -30,10 +30,10 @@ abstract class TestCase extends BaseTestCase
             'username' => 'fixture-'.$user->id, 'email' => $user->email, 'password' => $user->password,
             'account_type' => $role, 'is_active' => true, 'engineer_id' => $engineer,
         ]);
-        $user->forceFill(['dd_user_account_id' => $id])->save();
+        $user->forceFill(['canonical_user_account_id' => $id])->save();
         if ($root !== null) {
             $db->table('jairoads_security.account_provisioning')->insert([
-                'user_account_id' => $id, 'provisioned_by' => $root->dd_user_account_id,
+                'user_account_id' => $id, 'provisioned_by' => $root->canonical_user_account_id,
                 'provisioner_role' => 'SuperAdmin', 'provisioned_role' => $role, 'engineer_id' => $engineer, 'method' => 'administrator',
             ]);
         }

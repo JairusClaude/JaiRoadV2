@@ -195,7 +195,7 @@ export default function WorkspaceUpdates({
 
         try {
             await requestOperation(
-                `/dd-phase3/ops/updates/${deleteTarget.id}`,
+                `/workspace/ops/updates/${deleteTarget.id}`,
                 {},
                 'delete',
             );
@@ -331,7 +331,7 @@ export default function WorkspaceUpdates({
 
         try {
             await requestOperation(
-                `/dd-phase3/ops/updates${editingId === null ? '' : `/${editingId}`}`,
+                `/workspace/ops/updates${editingId === null ? '' : `/${editingId}`}`,
                 {
                     maintenance_id: recordId,
                     update_month: month,
@@ -606,14 +606,14 @@ export default function WorkspaceUpdates({
                                     </tr>
                                 ))}
                                 {visible.length === 0 && (
-                                    <tr className="jr-dd-empty-row">
+                                    <tr className="jr-workspace-empty-row">
                                         <td colSpan={6}>
                                             <div
-                                                className="jr-dd-empty-content"
+                                                className="jr-workspace-empty-content"
                                                 role="status"
                                             >
                                                 <span
-                                                    className="jr-dd-empty-icon"
+                                                    className="jr-workspace-empty-icon"
                                                     aria-hidden="true"
                                                 >
                                                     <ClipboardList className="h-6 w-6" />
@@ -977,7 +977,7 @@ export default function WorkspaceUpdates({
                                         <a
                                             key={f.id}
                                             className="block rounded-xl border border-[#E7ECF3] px-3 py-2 text-[#934B23] hover:bg-[#FFF8F2]"
-                                            href={`/dd-phase3/files/media/${f.id}`}
+                                            href={`/workspace/files/media/${f.id}`}
                                         >
                                             {f.name} · Download
                                         </a>
@@ -1031,7 +1031,7 @@ export default function WorkspaceUpdates({
 
                                             try {
                                                 await requestOperation(
-                                                    '/dd-phase3/ops/media',
+                                                    '/workspace/ops/media',
                                                     {
                                                         monthly_update_id:
                                                             String(

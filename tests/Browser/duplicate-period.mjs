@@ -13,7 +13,7 @@ export async function verifyDuplicatePeriod({
     props,
 }) {
     const create = `${ui}/maintenance-projects/${project.id}/records/create`;
-    const endpoint = `/dd-phase3/ui/maintenance-projects/${project.id}/records`;
+    const endpoint = `/workspace/ui/maintenance-projects/${project.id}/records`;
     const description = 'Preserve this unsaved description';
     const fill = async (quarter, date) => {
         await engineer.getByLabel(/^Maintenance Year/).fill('2026');

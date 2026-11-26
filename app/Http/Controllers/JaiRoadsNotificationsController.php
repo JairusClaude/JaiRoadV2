@@ -23,10 +23,10 @@ final class JaiRoadsNotificationsController extends Controller
         $user = $request->user();
         abort_unless($user instanceof User, 401);
 
-        // DD accounts never resolve through legacy UserAccount or public.audit_logs.
+        // user accounts never resolve through legacy UserAccount or public.audit_logs.
         // Notifications belong to the explicit recipient account ONLY, not a
         // global role-based query. An inactive or invalid bridge fails closed.
-        if ($user->getAttribute('dd_user_account_id') !== null) {
+        if ($user->getAttribute('canonical_user_account_id') !== null) {
             $identity = app(AccountIdentityResolver::class)->resolve($user);
             abort_unless($identity !== null, 403);
 

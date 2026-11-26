@@ -141,7 +141,7 @@ export function DeletionDialog({
         }
 
         const controller = new AbortController();
-        fetch(`/dd-phase3/ui/deletion-challenge?scope=${challengeScope}`, {
+        fetch(`/workspace/ui/deletion-challenge?scope=${challengeScope}`, {
             headers: { Accept: 'application/json' },
             cache: 'no-store',
             signal: controller.signal,
@@ -171,10 +171,12 @@ export function DeletionDialog({
     // The equation is already public. This is immediate form feedback only;
     // the server still validates the signed challenge, expiry and single use.
     const operands = challenge?.question.match(/^(\d+)\s*\+\s*(\d+)$/);
-    const answerReady = !needsChallenge || (
-        !!challenge && /^\d{1,3}$/.test(answer) &&
-        (!operands || Number(answer) === Number(operands[1]) + Number(operands[2]))
-    );
+    const answerReady =
+        !needsChallenge ||
+        (!!challenge &&
+            /^\d{1,3}$/.test(answer) &&
+            (!operands ||
+                Number(answer) === Number(operands[1]) + Number(operands[2])));
     const confirmed = yesReady && answerReady;
     const footerHint = processing
         ? 'Deleting… please keep this window open.'
@@ -187,9 +189,10 @@ export function DeletionDialog({
               : !yesReady
                 ? 'Type YES to continue.'
                 : !answerReady
-                  ? challenge ? 'Enter the correct answer to continue.' : 'Waiting for verification…'
+                  ? challenge
+                      ? 'Enter the correct answer to continue.'
+                      : 'Waiting for verification…'
                   : 'Ready to delete. Review the selected data.';
-
 
     return (
         <Dialog.Root
@@ -264,7 +267,12 @@ export function DeletionDialog({
                             <Dialog.Title>{title}</Dialog.Title>
                             <Dialog.Description>
                                 {description}
-                                {irreversible && !blocked && !/cannot be undone|irreversible|permanent/i.test(description) && ' This action cannot be undone.'}
+                                {irreversible &&
+                                    !blocked &&
+                                    !/cannot be undone|irreversible|permanent/i.test(
+                                        description,
+                                    ) &&
+                                    ' This action cannot be undone.'}
                             </Dialog.Description>
                         </div>
                     </div>
@@ -281,7 +289,10 @@ export function DeletionDialog({
                         {blocked && (
                             <div className="jr-delete-notice" role="status">
                                 <LockKeyhole size={17} aria-hidden="true" />
-                                <span>Deletion is unavailable until the blocking conditions are resolved.</span>
+                                <span>
+                                    Deletion is unavailable until the blocking
+                                    conditions are resolved.
+                                </span>
                             </div>
                         )}
                         {reviewing && (
@@ -290,12 +301,20 @@ export function DeletionDialog({
                             </p>
                         )}
                         {requireYes && !blocked && (
-                            <div className="jr-delete-verification" data-complete={yesReady}>
+                            <div
+                                className="jr-delete-verification"
+                                data-complete={yesReady}
+                            >
                                 <label
                                     htmlFor={confirmationId}
                                     className="jr-delete-verification-label"
                                 >
-                                    <span className="jr-delete-step" aria-hidden="true">{yesReady ? <Check size={14} /> : 1}</span>{' '}
+                                    <span
+                                        className="jr-delete-step"
+                                        aria-hidden="true"
+                                    >
+                                        {yesReady ? <Check size={14} /> : 1}
+                                    </span>{' '}
                                     Type YES to confirm permanent deletion{' '}
                                     <span className="jr-required">
                                         * Required
@@ -321,54 +340,75 @@ export function DeletionDialog({
                             </div>
                         )}
                         {needsChallenge && !blocked && (
-                            <div className="jr-delete-verification" data-complete={answerReady}>
+                            <div
+                                className="jr-delete-verification"
+                                data-complete={answerReady}
+                            >
                                 <label
                                     htmlFor={confirmationId + '-captcha'}
                                     className="jr-delete-verification-label"
                                 >
-                                    <span className="jr-delete-step" aria-hidden="true">{answerReady ? <Check size={14} /> : 2}</span>{' '}
+                                    <span
+                                        className="jr-delete-step"
+                                        aria-hidden="true"
+                                    >
+                                        {answerReady ? <Check size={14} /> : 2}
+                                    </span>{' '}
                                     Solve the verification challenge{' '}
                                     <span className="jr-required">*</span>
                                 </label>
                                 <div className="jr-delete-challenge-row">
-                                <div
-                                    className="jr-delete-equation"
-                                    aria-live="polite"
-                                >
-                                    {challenge
-                                        ? challenge.question + ' = ?'
-                                        : 'Loading verification…'}
+                                    <div
+                                        className="jr-delete-equation"
+                                        aria-live="polite"
+                                    >
+                                        {challenge
+                                            ? challenge.question + ' = ?'
+                                            : 'Loading verification…'}
+                                    </div>
+                                    <input
+                                        id={confirmationId + '-captcha'}
+                                        inputMode="numeric"
+                                        autoComplete="off"
+                                        value={answer}
+                                        onChange={(event) =>
+                                            setAnswer(
+                                                event.target.value
+                                                    .replace(/[^0-9]/g, '')
+                                                    .slice(0, 3),
+                                            )
+                                        }
+                                        placeholder="Enter answer"
+                                        maxLength={3}
+                                        aria-describedby={
+                                            confirmationId + '-answer-hint'
+                                        }
+                                        disabled={processing || !challenge}
+                                        className="jr-delete-input"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        disabled={processing}
+                                        onClick={() => {
+                                            setChallenge(null);
+                                            setAnswer('');
+                                            setChallengeError('');
+                                            setRevision((value) => value + 1);
+                                        }}
+                                    >
+                                        New challenge
+                                    </Button>
                                 </div>
-                                <input
-                                    id={confirmationId + '-captcha'}
-                                    inputMode="numeric"
-                                    autoComplete="off"
-                                    value={answer}
-                                    onChange={(event) =>
-                                        setAnswer(event.target.value.replace(/[^0-9]/g, '').slice(0, 3))
-                                    }
-                                    placeholder="Enter answer"
-                                    maxLength={3}
-                                    aria-describedby={confirmationId + '-answer-hint'}
-                                    disabled={processing || !challenge}
-                                    className="jr-delete-input"
-                                />
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    disabled={processing}
-                                    onClick={() => {
-                                        setChallenge(null);
-                                        setAnswer('');
-                                        setChallengeError('');
-                                        setRevision((value) => value + 1);
-                                    }}
+                                <p
+                                    id={confirmationId + '-answer-hint'}
+                                    className="jr-delete-field-hint"
                                 >
-                                    New challenge
-                                </Button>
-                                </div>
-                                <p id={confirmationId + '-answer-hint'} className="jr-delete-field-hint">
-                                    {answerReady ? 'Answer correct.' : answer ? 'Check your answer.' : 'Enter the sum shown above.'}
+                                    {answerReady
+                                        ? 'Answer correct.'
+                                        : answer
+                                          ? 'Check your answer.'
+                                          : 'Enter the sum shown above.'}
                                 </p>
                                 {challengeError && (
                                     <p role="alert" className="jr-field-error">
@@ -385,7 +425,18 @@ export function DeletionDialog({
                         )}
                     </div>
                     <div className="jr-dialog-actions">
-                        <span className="jr-delete-footer-hint" role="status" aria-live="polite" data-ready={confirmed && !processing && !blocked && !reviewing && !confirmDisabled}>
+                        <span
+                            className="jr-delete-footer-hint"
+                            role="status"
+                            aria-live="polite"
+                            data-ready={
+                                confirmed &&
+                                !processing &&
+                                !blocked &&
+                                !reviewing &&
+                                !confirmDisabled
+                            }
+                        >
                             {blocked ? (
                                 <LockKeyhole size={15} />
                             ) : (

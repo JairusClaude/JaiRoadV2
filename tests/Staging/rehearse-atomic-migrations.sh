@@ -50,7 +50,7 @@ BEGIN
  SELECT count(*) INTO intact_triggers FROM pg_trigger
  WHERE tgrelid='jairoads_next.audit_logs'::regclass
    AND NOT tgisinternal AND tgenabled <> 'D'
-   AND tgname IN ('jairoads_dd_auditlog_reject_changes','jairoads_dd_auditlog_reject_truncate');
+   AND tgname IN ('jairoads_auditlog_reject_changes','jairoads_auditlog_reject_truncate');
  IF intact_triggers <> 2
     OR (SELECT count(*) FROM jairoads_next.audit_logs) <> 1
     OR (SELECT count(*) FROM jairoads_next.user_accounts) <> 3 THEN

@@ -20,14 +20,14 @@ final class EngineerLifecycleTest extends PostgresTestCase
     {
         $f = $this->fixture('Engineer');
         $this->withSession(['password_hash_web' => null])->actingAs($this->account($role));
-        $this->putJson('/dd-phase3/engineers/'.$f['engineer'], $this->profile())->assertRedirect();
+        $this->putJson('/workspace/engineers/'.$f['engineer'], $this->profile())->assertRedirect();
         $this->assertDatabaseHas('jairoads_next.engineers', ['id' => $f['engineer'], 'first_name' => 'Updated', 'rank' => 'SuperAdmin', 'engineer_status' => 'Active']);
-        $this->assertDatabaseHas('jairoads_next.user_accounts', ['id' => $f['user']->dd_user_account_id, 'account_type' => 'Engineer', 'engineer_id' => $f['engineer']]);
+        $this->assertDatabaseHas('jairoads_next.user_accounts', ['id' => $f['user']->canonical_user_account_id, 'account_type' => 'Engineer', 'engineer_id' => $f['engineer']]);
         $event = DB::table('jairoads_next.audit_logs')->where('entity_type', 'Engineer')->whereNull('recipient_user_id')->first();
         $this->assertSame('Test', json_decode($event->old_value, true)['first_name']);
         $this->assertSame('Updated', json_decode($event->new_value, true)['first_name']);
         $this->assertSame(1, DB::table('jairoads_next.audit_logs')->where('entity_type', 'Engineer')->whereNull('recipient_user_id')->count());
-        $this->putJson('/dd-phase3/engineers/'.$f['engineer'], $this->profile())->assertRedirect();
+        $this->putJson('/workspace/engineers/'.$f['engineer'], $this->profile())->assertRedirect();
         $this->assertSame(1, DB::table('jairoads_next.audit_logs')->where('entity_type', 'Engineer')->whereNull('recipient_user_id')->count());
     }
 
@@ -35,22 +35,22 @@ final class EngineerLifecycleTest extends PostgresTestCase
     {
         $f = $this->fixture('Engineer');
         $this->road($f['engineer']);
-        $id = DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer'], 'Q4') + ['created_by' => $f['user']->dd_user_account_id]);
+        $id = DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer'], 'Q4') + ['created_by' => $f['user']->canonical_user_account_id]);
         $record = DB::table('jairoads_next.maintenance_records')->where('id', $id)->first();
         $hash = $f['user']->password;
         $admin = $this->account();
-        $this->withSession(['password_hash_web' => null])->actingAs($admin)->postJson('/dd-phase3/engineers/'.$f['engineer'].'/retirement')->assertRedirect();
+        $this->withSession(['password_hash_web' => null])->actingAs($admin)->postJson('/workspace/engineers/'.$f['engineer'].'/retirement')->assertRedirect();
         $this->assertDatabaseHas('jairoads_next.engineers', ['id' => $f['engineer'], 'engineer_status' => 'Retired']);
-        $this->assertDatabaseHas('jairoads_next.user_accounts', ['id' => $f['user']->dd_user_account_id, 'is_active' => false]);
+        $this->assertDatabaseHas('jairoads_next.user_accounts', ['id' => $f['user']->canonical_user_account_id, 'is_active' => false]);
         $this->assertSame(2, DB::table('jairoads_next.engineer_lgus')->where('engineer_id', $f['engineer'])->count());
         $this->assertSame(0, DB::table('jairoads_next.engineer_lgus')->where('engineer_id', $f['engineer'])->where('is_active', true)->count());
         $this->assertEquals($record, DB::table('jairoads_next.maintenance_records')->where('id', $id)->first());
         $this->assertTrue(hash_equals($hash, $f['user']->fresh()->password));
-        $this->assertTrue(hash_equals($hash, DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->value('password')));
+        $this->assertTrue(hash_equals($hash, DB::table('jairoads_next.user_accounts')->where('id', $f['user']->canonical_user_account_id)->value('password')));
         $count = DB::table('jairoads_next.audit_logs')->count();
         $this->assertSame(4, $count); // Account, two distinct memberships, Engineer profile.
         $this->assertSame('DEACTIVATE', DB::table('jairoads_next.audit_logs')
-            ->where('entity_type', 'UserAccount')->where('entity_id', $f['user']->dd_user_account_id)->sole()->action);
+            ->where('entity_type', 'UserAccount')->where('entity_id', $f['user']->canonical_user_account_id)->sole()->action);
         $retirementEvent = DB::table('jairoads_next.audit_logs')
             ->where('entity_type', 'Engineer')->where('entity_id', $f['engineer'])->sole();
         $this->assertSame('RETIRE', $retirementEvent->action);
@@ -70,19 +70,19 @@ final class EngineerLifecycleTest extends PostgresTestCase
             $lguIds[] = $old['lgu_id'];
         }
         $this->assertCount(2, array_unique($lguIds));
-        $this->assertSame(0, DB::table('jairoads_next.audit_notification_recipients')->where('recipient_user_id', $f['user']->dd_user_account_id)->count());
-        $this->assertSame(4, DB::table('jairoads_next.audit_notification_recipients')->where('recipient_user_id', $admin->dd_user_account_id)->count());
-        $this->postJson('/dd-phase3/engineers/'.$f['engineer'].'/retirement')->assertRedirect();
+        $this->assertSame(0, DB::table('jairoads_next.audit_notification_recipients')->where('recipient_user_id', $f['user']->canonical_user_account_id)->count());
+        $this->assertSame(4, DB::table('jairoads_next.audit_notification_recipients')->where('recipient_user_id', $admin->canonical_user_account_id)->count());
+        $this->postJson('/workspace/engineers/'.$f['engineer'].'/retirement')->assertRedirect();
         $this->assertSame($count, DB::table('jairoads_next.audit_logs')->count());
-        $this->withSession(['password_hash_web' => null])->actingAs($f['user'])->getJson('/dd-phase3/dashboard')->assertForbidden();
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q1'))->assertUnauthorized();
-        $this->putJson('/dd-phase3/ops/records/'.$id, $this->recordData($f['project'], $f['engineer'], 'Q4'))->assertUnauthorized();
+        $this->withSession(['password_hash_web' => null])->actingAs($f['user'])->getJson('/workspace/dashboard')->assertForbidden();
+        $this->postJson('/workspace/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q1'))->assertUnauthorized();
+        $this->putJson('/workspace/ops/records/'.$id, $this->recordData($f['project'], $f['engineer'], 'Q4'))->assertUnauthorized();
     }
 
     public function test_linked_admin_retirement_is_atomic_and_self_retirement_is_blocked(): void
     {
         $f = $this->fixture('Admin', true);
-        $this->postJson('/dd-phase3/engineers/'.$f['engineer'].'/retirement')->assertUnprocessable()->assertJsonValidationErrors('retirement');
+        $this->postJson('/workspace/engineers/'.$f['engineer'].'/retirement')->assertUnprocessable()->assertJsonValidationErrors('retirement');
         $other = $this->account();
         $this->withSession(['password_hash_web' => null])->actingAs($other);
         DB::connection()->beforeExecuting(static function (string $sql): void {
@@ -90,9 +90,9 @@ final class EngineerLifecycleTest extends PostgresTestCase
                 throw new \RuntimeException('Disposable audit failure');
             }
         });
-        $this->postJson('/dd-phase3/engineers/'.$f['engineer'].'/retirement')->assertServerError();
+        $this->postJson('/workspace/engineers/'.$f['engineer'].'/retirement')->assertServerError();
         $this->assertDatabaseHas('jairoads_next.engineers', ['id' => $f['engineer'], 'engineer_status' => 'Active']);
-        $this->assertDatabaseHas('jairoads_next.user_accounts', ['id' => $f['user']->dd_user_account_id, 'is_active' => true]);
+        $this->assertDatabaseHas('jairoads_next.user_accounts', ['id' => $f['user']->canonical_user_account_id, 'is_active' => true]);
         $this->assertSame(1, DB::table('jairoads_next.engineer_lgus')->where('engineer_id', $f['engineer'])->where('is_active', true)->count());
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
     }
@@ -102,11 +102,11 @@ final class EngineerLifecycleTest extends PostgresTestCase
         $f = $this->fixture('Admin', true);
         $hash = $f['user']->password;
         $this->withSession(['password_hash_web' => null])->actingAs($this->account());
-        $this->postJson('/dd-phase3/engineers/'.$f['engineer'].'/retirement')->assertRedirect();
+        $this->postJson('/workspace/engineers/'.$f['engineer'].'/retirement')->assertRedirect();
         $this->assertDatabaseHas('jairoads_next.engineers', ['id' => $f['engineer'], 'engineer_status' => 'Retired']);
-        $this->assertDatabaseHas('jairoads_next.user_accounts', ['id' => $f['user']->dd_user_account_id, 'account_type' => 'Admin', 'engineer_id' => $f['engineer'], 'is_active' => false, 'password' => $hash]);
-        $this->assertDatabaseHas('jairoads_next.maintenance_projects', ['id' => $f['project'], 'created_by' => $f['user']->dd_user_account_id]);
-        $this->withSession(['password_hash_web' => null])->actingAs($f['user'])->getJson('/dd-phase3/users')->assertForbidden();
+        $this->assertDatabaseHas('jairoads_next.user_accounts', ['id' => $f['user']->canonical_user_account_id, 'account_type' => 'Admin', 'engineer_id' => $f['engineer'], 'is_active' => false, 'password' => $hash]);
+        $this->assertDatabaseHas('jairoads_next.maintenance_projects', ['id' => $f['project'], 'created_by' => $f['user']->canonical_user_account_id]);
+        $this->withSession(['password_hash_web' => null])->actingAs($f['user'])->getJson('/workspace/users')->assertForbidden();
     }
 
     public function test_nonadministrators_and_invalid_profiles_cannot_mutate(): void
@@ -114,14 +114,14 @@ final class EngineerLifecycleTest extends PostgresTestCase
         $id = $this->engineer();
         foreach (['Engineer', 'Viewer'] as $role) {
             $this->withSession(['password_hash_web' => null])->actingAs($this->account($role, $role === 'Engineer' ? $this->engineer() : null));
-            $this->putJson('/dd-phase3/engineers/'.$id, $this->profile())->assertForbidden();
-            $this->postJson('/dd-phase3/engineers/'.$id.'/retirement')->assertForbidden();
+            $this->putJson('/workspace/engineers/'.$id, $this->profile())->assertForbidden();
+            $this->postJson('/workspace/engineers/'.$id.'/retirement')->assertForbidden();
         }
         $this->withSession(['password_hash_web' => null])->actingAs($this->account());
-        $this->putJson('/dd-phase3/engineers/999999', $this->profile())->assertNotFound();
-        $this->postJson('/dd-phase3/engineers/999999/retirement')->assertNotFound();
-        $this->putJson('/dd-phase3/engineers/'.$id, $this->profile() + ['position' => 'Engineer'])->assertUnprocessable();
-        $this->putJson('/dd-phase3/engineers/'.$id, $this->profile() + ['engineer_status' => 'Retired'])->assertUnprocessable();
+        $this->putJson('/workspace/engineers/999999', $this->profile())->assertNotFound();
+        $this->postJson('/workspace/engineers/999999/retirement')->assertNotFound();
+        $this->putJson('/workspace/engineers/'.$id, $this->profile() + ['position' => 'Engineer'])->assertUnprocessable();
+        $this->putJson('/workspace/engineers/'.$id, $this->profile() + ['engineer_status' => 'Retired'])->assertUnprocessable();
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
     }
 

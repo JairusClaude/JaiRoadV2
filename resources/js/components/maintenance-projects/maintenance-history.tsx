@@ -39,7 +39,10 @@ export function MaintenanceHistory({
     expandedYear?: number;
 }) {
     const page = usePage();
-    const isViewer = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role?.toLowerCase() === 'viewer';
+    const isViewer =
+        (
+            page.props.jairoadsIdentity as { role?: string } | undefined
+        )?.role?.toLowerCase() === 'viewer';
     const deletion = useRecordDeletion(page.url);
     const years = [...new Set(records.map((record) => record.year))].sort(
         (a, b) => b - a,
@@ -54,23 +57,23 @@ export function MaintenanceHistory({
                         <p>Records grouped by year and quarter</p>
                     </div>
                     {!isViewer && Boolean(recordCreateUrl) && (
-                    <Button
-                        type="button"
-                        className="jr-primary"
-                        disabled={!recordCreateUrl}
-                        title={
-                            recordCreateUrl
-                                ? undefined
-                                : 'Maintenance record creation is pending backend integration.'
-                        }
-                        onClick={() => {
-                            if (recordCreateUrl) {
-                                router.visit(recordCreateUrl);
+                        <Button
+                            type="button"
+                            className="jr-primary"
+                            disabled={!recordCreateUrl}
+                            title={
+                                recordCreateUrl
+                                    ? undefined
+                                    : 'Maintenance record creation is pending backend integration.'
                             }
-                        }}
-                    >
-                        <Plus /> Add Record
-                    </Button>
+                            onClick={() => {
+                                if (recordCreateUrl) {
+                                    router.visit(recordCreateUrl);
+                                }
+                            }}
+                        >
+                            <Plus /> Add Record
+                        </Button>
                     )}
                 </div>
                 {records.length === 0 ? (

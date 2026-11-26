@@ -10,7 +10,7 @@ export function requestOperation(
     upload = false,
     options: { preserveState?: boolean } = {},
 ): Promise<void> {
-    if (!url.startsWith('/dd-phase3/')) {
+    if (!url.startsWith('/workspace/')) {
         return Promise.reject(new Error('This action is unavailable.'));
     }
 

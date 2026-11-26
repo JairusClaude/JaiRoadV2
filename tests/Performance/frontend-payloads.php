@@ -28,19 +28,19 @@ $benchmark = new class('runMeasurements') extends PostgresTestCase
                 }
                 $road = DB::table('jairoads_next.road_coverages')->insertGetId(['road_name' => sprintf('Synthetic %04d', $i), 'lgu_id' => $lgu,
                     'kilometers' => 1, 'pavement_type' => 'Concrete', 'state_category' => 'Good', 'created_by' => $f['engineer'], 'geojson' => json_encode(['type' => 'LineString', 'coordinates' => $points])]);
-                $project = DB::table('jairoads_next.maintenance_projects')->insertGetId(['project_title' => sprintf('Synthetic %04d', $i), 'road_coverage_id' => $road, 'created_by' => $f['user']->dd_user_account_id]);
+                $project = DB::table('jairoads_next.maintenance_projects')->insertGetId(['project_title' => sprintf('Synthetic %04d', $i), 'road_coverage_id' => $road, 'created_by' => $f['user']->canonical_user_account_id]);
             } else {
                 $project = $f['project'];
             }
-            $record = DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData((int) $project, $f['engineer']) + ['created_by' => $f['user']->dd_user_account_id]);
-            DB::table('jairoads_next.monthly_updates')->insert(['maintenance_id' => $record, 'update_month' => '2026-01', 'progress_percentage' => 10, 'created_by' => $f['user']->dd_user_account_id]);
+            $record = DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData((int) $project, $f['engineer']) + ['created_by' => $f['user']->canonical_user_account_id]);
+            DB::table('jairoads_next.monthly_updates')->insert(['maintenance_id' => $record, 'update_month' => '2026-01', 'progress_percentage' => 10, 'created_by' => $f['user']->canonical_user_account_id]);
             if ($i > 1 && $i <= 400) {
                 $year = 2000 + intdiv($i - 1, 4);
                 $quarter = 'Q'.(($i - 1) % 4 + 1);
                 if (! ($year === 2026 && $quarter === 'Q1')) {
                     $history = $this->recordData($f['project'], $f['engineer'], $quarter, $year);
                     $history['description'] = str_repeat('Synthetic history. ', 120);
-                    DB::table('jairoads_next.maintenance_records')->insert($history + ['created_by' => $f['user']->dd_user_account_id]);
+                    DB::table('jairoads_next.maintenance_records')->insert($history + ['created_by' => $f['user']->canonical_user_account_id]);
                 }
             }
             if (! in_array($i, [1, 100, 500, 1000], true)) {
@@ -50,7 +50,7 @@ $benchmark = new class('runMeasurements') extends PostgresTestCase
                 'monthly' => '/monthly-updates/create', 'fixed-monthly' => '/monthly-updates/create?maintenance_id='.$record,
                 'project-history' => '/maintenance-projects/'.$f['project']] as $name => $path) {
                 // Warm once, then three observations. Response bytes are uncompressed JSON.
-                $warm = $this->get('/dd-phase3/ui'.$path, $headers);
+                $warm = $this->get('/workspace/ui'.$path, $headers);
                 if ($warm->getStatusCode() !== 200) {
                     throw new RuntimeException('Benchmark response: '.$warm->getStatusCode().' '.$warm->getContent());
                 }
@@ -61,7 +61,7 @@ $benchmark = new class('runMeasurements') extends PostgresTestCase
                     memory_reset_peak_usage();
                     $startMemory = memory_get_usage();
                     $start = hrtime(true);
-                    $response = $this->get('/dd-phase3/ui'.$path, $headers);
+                    $response = $this->get('/workspace/ui'.$path, $headers);
                     $samples[] = ['bytes' => strlen($response->getContent()), 'queries' => count(DB::getQueryLog()),
                         'milliseconds' => round((hrtime(true) - $start) / 1e6, 3), 'peak_delta_bytes' => max(0, memory_get_peak_usage() - $startMemory)];
                     DB::disableQueryLog();
@@ -82,7 +82,7 @@ $benchmark = new class('runMeasurements') extends PostgresTestCase
                         DB::flushQueryLog();
                         memory_reset_peak_usage();
                         $memory = memory_get_usage();
-                        $response = $this->getJson('/dd-phase3/ui/map/roads?'.http_build_query(['west' => 125.9, 'east' => 126, 'south' => 7.5, 'north' => 7.7, 'after' => $cursor]));
+                        $response = $this->getJson('/workspace/ui/map/roads?'.http_build_query(['west' => 125.9, 'east' => 126, 'south' => 7.5, 'north' => 7.7, 'after' => $cursor]));
                         if ($response->getStatusCode() !== 200) {
                             throw new RuntimeException('Reference benchmark response: '.$response->getStatusCode());
                         }

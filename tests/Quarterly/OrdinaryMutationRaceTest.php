@@ -102,7 +102,7 @@ final class OrdinaryMutationRaceTest extends PostgresTestCase
     {
         $f = $this->fixture('Admin');
         $revoker = $this->account('SuperAdmin');
-        $record = (int) DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->dd_user_account_id]);
+        $record = (int) DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->canonical_user_account_id]);
         $table = '';
         $key = null;
         $advisory = null;
@@ -122,13 +122,13 @@ final class OrdinaryMutationRaceTest extends PostgresTestCase
                 $key = $f['project'];
                 $lock = $table;
             }
-            $url = '/dd-phase3/ops/projects'.($method === 'PUT' ? '/'.$f['project'] : '');
+            $url = '/workspace/ops/projects'.($method === 'PUT' ? '/'.$f['project'] : '');
         } elseif (str_starts_with($case, 'record_')) {
             $table = 'maintenance_records';
             $data = $this->recordData($f['project'], $f['engineer'], $case === 'record_create' ? 'Q2' : 'Q1') + ['ignored_creator' => 99999];
             $data['description'] = 'Allowed record edit';
             $method = $case === 'record_create' ? 'POST' : 'PUT';
-            $url = '/dd-phase3/ops/records'.($method === 'PUT' ? '/'.$record : '');
+            $url = '/workspace/ops/records'.($method === 'PUT' ? '/'.$record : '');
             $lock = $method === 'POST' ? 'maintenance_projects' : $table;
             $key = $method === 'POST' ? $f['project'] : $record;
         } elseif (str_starts_with($case, 'delete_')) {
@@ -143,11 +143,11 @@ final class OrdinaryMutationRaceTest extends PostgresTestCase
                 $entity = 'records';
             } else {
                 $table = 'monthly_updates';
-                $key = (int) DB::table('jairoads_next.monthly_updates')->insertGetId(['maintenance_id' => $record, 'update_month' => '2026-01', 'progress_percentage' => 10, 'created_by' => $f['user']->dd_user_account_id]);
+                $key = (int) DB::table('jairoads_next.monthly_updates')->insertGetId(['maintenance_id' => $record, 'update_month' => '2026-01', 'progress_percentage' => 10, 'created_by' => $f['user']->canonical_user_account_id]);
                 $entity = 'updates';
             }
             $lock = $table;
-            $url = '/dd-phase3/ops/'.$entity.'/'.$key;
+            $url = '/workspace/ops/'.$entity.'/'.$key;
         } elseif (str_starts_with($case, 'lgu_')) {
             $table = $lock = 'lgus';
             $data = $this->lguData();
@@ -157,24 +157,24 @@ final class OrdinaryMutationRaceTest extends PostgresTestCase
             };
             $tableLock = $method === 'POST';
             $key = $tableLock ? null : $this->lgu();
-            $url = '/dd-phase3/lgus'.($key === null ? '' : '/'.$key);
+            $url = '/workspace/lgus'.($key === null ? '' : '/'.$key);
         } elseif ($case === 'engineer_create') {
             $table = $lock = 'engineers';
             $tableLock = true;
-            $url = '/dd-phase3/engineers';
+            $url = '/workspace/engineers';
             $data = ['first_name' => 'New', 'middle_name' => null, 'last_name' => 'Engineer', 'rank' => 'Engineer II', 'contact_no' => '09000000000'];
         } elseif ($case === 'assignment') {
             $table = 'engineer_lgus';
             $advisory = 1927710915;
             $lock = '1927710915';
-            $url = '/dd-phase3/assignments';
+            $url = '/workspace/assignments';
             $data = ['engineer_id' => $f['engineer'], 'lgu_id' => (int) DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->value('lgu_id'), 'is_active' => false];
         } else {
             $table = 'user_accounts';
             $lock = '1927710963';
             $advisory = 1927710963;
             $method = 'PUT';
-            $url = '/dd-phase3/ops/settings';
+            $url = '/workspace/ops/settings';
             $data = ['username' => 'allowed.changed', 'current_password' => 'Disposable-Test!123'];
         }
         DB::commit();
@@ -192,7 +192,7 @@ final class OrdinaryMutationRaceTest extends PostgresTestCase
             $wait = $this->waiting($worker, 'ordinary_victim', [$lock]);
             if ($change === 'deactivated') {
                 $this->withSession(['password_hash_web' => null])->actingAs($revoker)
-                    ->patchJson('/dd-phase3/accounts/'.$f['user']->dd_user_account_id.'/status', ['is_active' => false])->assertRedirect();
+                    ->patchJson('/workspace/accounts/'.$f['user']->canonical_user_account_id.'/status', ['is_active' => false])->assertRedirect();
             }
             $before = $this->snapshot($table);
             $audit = $this->snapshot('audit_logs');
@@ -226,12 +226,12 @@ final class OrdinaryMutationRaceTest extends PostgresTestCase
     {
         $f = $this->fixture($case === 'record_retired_manager' ? 'Admin' : 'Engineer');
         $revoker = $this->account('SuperAdmin');
-        $record = (int) DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->dd_user_account_id]);
+        $record = (int) DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->canonical_user_account_id]);
         $lgu = (int) DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->value('lgu_id');
         $table = in_array($case, ['record_update', 'record_retired_manager'], true) ? 'maintenance_records' : 'monthly_updates';
-        $id = $case === 'monthly_update' ? (int) DB::table('jairoads_next.monthly_updates')->insertGetId(['maintenance_id' => $record, 'update_month' => '2026-01', 'progress_percentage' => 10, 'created_by' => $f['user']->dd_user_account_id]) : null;
+        $id = $case === 'monthly_update' ? (int) DB::table('jairoads_next.monthly_updates')->insertGetId(['maintenance_id' => $record, 'update_month' => '2026-01', 'progress_percentage' => 10, 'created_by' => $f['user']->canonical_user_account_id]) : null;
         $method = $case === 'monthly_create' ? 'POST' : 'PUT';
-        $url = in_array($case, ['record_update', 'record_retired_manager'], true) ? '/dd-phase3/ops/records/'.$record : '/dd-phase3/ops/updates'.($id === null ? '' : '/'.$id);
+        $url = in_array($case, ['record_update', 'record_retired_manager'], true) ? '/workspace/ops/records/'.$record : '/workspace/ops/updates'.($id === null ? '' : '/'.$id);
         $data = in_array($case, ['record_update', 'record_retired_manager'], true) ? $this->recordData($f['project'], $f['engineer']) : ['maintenance_id' => $record, 'update_month' => '2026-01', 'progress_percentage' => 40, 'summary_of_text_reports' => 'Allowed report edit'];
         $data['description'] = 'Allowed record edit';
         DB::commit();
@@ -241,15 +241,15 @@ final class OrdinaryMutationRaceTest extends PostgresTestCase
             if (in_array($case, ['record_update', 'record_retired_manager'], true)) {
                 DB::table('jairoads_next.maintenance_records')->where('id', $record)->lockForUpdate()->first();
             } else {
-                DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->lockForUpdate()->first();
+                DB::table('jairoads_next.user_accounts')->where('id', $f['user']->canonical_user_account_id)->lockForUpdate()->first();
             }
             $worker = $this->worker($f['user'], $method, $url, $data);
             // Baseline monthly waits at its audit FK; repaired code may wait earlier on pinned account authority.
             $wait = $this->waiting($worker, 'ordinary_victim', in_array($case, ['record_update', 'record_retired_manager'], true) ? ['maintenance_records'] : ['monthly_updates', 'audit_logs', 'user_accounts']);
             if ($change === 'unassigned' && $case === 'record_retired_manager') {
-                $this->withSession(['password_hash_web' => null])->actingAs($revoker)->postJson('/dd-phase3/engineers/'.$f['engineer'].'/retirement')->assertRedirect();
+                $this->withSession(['password_hash_web' => null])->actingAs($revoker)->postJson('/workspace/engineers/'.$f['engineer'].'/retirement')->assertRedirect();
             } elseif ($change === 'unassigned') {
-                $this->withSession(['password_hash_web' => null])->actingAs($revoker)->postJson('/dd-phase3/assignments', ['engineer_id' => $f['engineer'], 'lgu_id' => $lgu, 'is_active' => false])->assertRedirect();
+                $this->withSession(['password_hash_web' => null])->actingAs($revoker)->postJson('/workspace/assignments', ['engineer_id' => $f['engineer'], 'lgu_id' => $lgu, 'is_active' => false])->assertRedirect();
             }
             $before = $this->snapshot($table);
             $audit = $this->snapshot('audit_logs');
@@ -287,13 +287,13 @@ final class OrdinaryMutationRaceTest extends PostgresTestCase
         try {
             DB::beginTransaction();
             DB::select('SELECT pg_advisory_xact_lock(1927710914)');
-            $worker = $this->worker($f['user'], 'POST', '/dd-phase3/accounts', ['username' => 'race.provisioned', 'name' => 'Disposable provision', 'email' => 'race-provisioned@example.test',
+            $worker = $this->worker($f['user'], 'POST', '/workspace/accounts', ['username' => 'race.provisioned', 'name' => 'Disposable provision', 'email' => 'race-provisioned@example.test',
                 'account_type' => 'Viewer', 'password' => 'New-Account!12345', 'password_confirmation' => 'New-Account!12345']);
             $wait = $this->waiting($worker, 'ordinary_victim', ['1927710914']);
             if ($revoke) {
-                $revocation = $this->worker($revoker, 'PATCH', '/dd-phase3/accounts/'.$f['user']->dd_user_account_id.'/status', ['is_active' => false], 'ordinary_revoker');
+                $revocation = $this->worker($revoker, 'PATCH', '/workspace/accounts/'.$f['user']->canonical_user_account_id.'/status', ['is_active' => false], 'ordinary_revoker');
                 $wait['revocation_wait'] = $this->waiting($revocation, 'ordinary_revoker', ['1927710916'], (int) $wait['pid']);
-                $this->assertTrue(DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->value('is_active'));
+                $this->assertTrue(DB::table('jairoads_next.user_accounts')->where('id', $f['user']->canonical_user_account_id)->value('is_active'));
             }
             DB::commit();
             $status = $this->workerStatus($worker);
@@ -303,7 +303,7 @@ final class OrdinaryMutationRaceTest extends PostgresTestCase
             }
             $this->assertDatabaseHas('jairoads_next.user_accounts', ['username' => 'race.provisioned', 'account_type' => 'Viewer', 'engineer_id' => null]);
             $this->assertDatabaseHas('public.users', ['email' => 'race-provisioned@example.test']);
-            $this->assertSame(! $revoke, DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->value('is_active'));
+            $this->assertSame(! $revoke, DB::table('jairoads_next.user_accounts')->where('id', $f['user']->canonical_user_account_id)->value('is_active'));
             $this->evidence('account_provisioning', $revoke ? 'revocation_serialized_after_commit' : 'unchanged', $wait, $status, true, true, true);
         } finally {
             $this->cleanupWorkers([$worker, $revocation]);
@@ -324,10 +324,10 @@ final class OrdinaryMutationRaceTest extends PostgresTestCase
         $revoker = $this->account('SuperAdmin');
         $road = $case === 'project' ? $this->road($f['engineer']) : $f['road'];
         $lgu = (int) DB::table('jairoads_next.road_coverages')->where('id', $road)->value('lgu_id');
-        $record = (int) DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->dd_user_account_id]);
+        $record = (int) DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->canonical_user_account_id]);
         $method = $case === 'record' ? 'PUT' : 'POST';
         $url = match ($case) {
-            'project' => '/dd-phase3/ops/projects', 'record' => '/dd-phase3/ops/records/'.$record, default => '/dd-phase3/ops/updates'
+            'project' => '/workspace/ops/projects', 'record' => '/workspace/ops/records/'.$record, default => '/workspace/ops/updates'
         };
         $data = match ($case) {
             'project' => ['project_title' => 'Commit-safe project', 'road_coverage_id' => $road],
@@ -339,10 +339,10 @@ final class OrdinaryMutationRaceTest extends PostgresTestCase
         try {
             DB::beginTransaction();
             // Hold a recipient FK, after the victim has finalized business authority.
-            DB::table('jairoads_next.user_accounts')->where('id', $revoker->dd_user_account_id)->lockForUpdate()->first();
+            DB::table('jairoads_next.user_accounts')->where('id', $revoker->canonical_user_account_id)->lockForUpdate()->first();
             $worker = $this->worker($f['user'], $method, $url, $data);
             $wait = $this->waiting($worker, 'ordinary_victim', ['audit_notification_recipients']);
-            $revocation = $this->worker($revoker, 'POST', '/dd-phase3/assignments', ['engineer_id' => $f['engineer'], 'lgu_id' => $lgu, 'is_active' => false], 'ordinary_revoker');
+            $revocation = $this->worker($revoker, 'POST', '/workspace/assignments', ['engineer_id' => $f['engineer'], 'lgu_id' => $lgu, 'is_active' => false], 'ordinary_revoker');
             $wait['revocation_wait'] = $this->waiting($revocation, 'ordinary_revoker', ['engineers'], (int) $wait['pid']);
             $this->assertTrue(DB::table('jairoads_next.engineer_lgus')->where('engineer_id', $f['engineer'])->where('lgu_id', $lgu)->value('is_active'));
             DB::commit();
@@ -377,9 +377,9 @@ final class OrdinaryMutationRaceTest extends PostgresTestCase
     public function test_busy_lifecycle_does_not_create_an_inverse_parent_lock_wait(string $case): void
     {
         $f = $this->fixture('Engineer');
-        $record = (int) DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->dd_user_account_id]);
+        $record = (int) DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->canonical_user_account_id]);
         $method = $case === 'record' ? 'PUT' : 'POST';
-        $url = $case === 'record' ? '/dd-phase3/ops/records/'.$record : '/dd-phase3/ops/updates';
+        $url = $case === 'record' ? '/workspace/ops/records/'.$record : '/workspace/ops/updates';
         $data = $case === 'record' ? array_replace($this->recordData($f['project'], $f['engineer']), ['description' => 'Allowed after retry']) : ['maintenance_id' => $record, 'update_month' => '2026-01', 'progress_percentage' => 40];
         DB::commit();
         $worker = null;
@@ -406,10 +406,10 @@ final class OrdinaryMutationRaceTest extends PostgresTestCase
     {
         $f = $this->fixture('Engineer');
         $revoker = $this->account('SuperAdmin');
-        $record = (int) DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->dd_user_account_id]);
+        $record = (int) DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->canonical_user_account_id]);
         $lgu = (int) DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->value('lgu_id');
         $method = $case === 'record' ? 'PUT' : 'POST';
-        $url = $case === 'record' ? '/dd-phase3/ops/records/'.$record : '/dd-phase3/ops/updates';
+        $url = $case === 'record' ? '/workspace/ops/records/'.$record : '/workspace/ops/updates';
         $data = $case === 'record' ? array_replace($this->recordData($f['project'], $f['engineer']), ['description' => 'Must roll back']) : ['maintenance_id' => $record, 'update_month' => '2026-01', 'progress_percentage' => 40];
         $before = $this->snapshot($case === 'record' ? 'maintenance_records' : 'monthly_updates');
         DB::commit();
@@ -420,7 +420,7 @@ final class OrdinaryMutationRaceTest extends PostgresTestCase
             $this->assertSame($before, $this->snapshot($case === 'record' ? 'maintenance_records' : 'monthly_updates'));
             $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
             $this->assertSame(0, DB::table('jairoads_next.audit_notification_recipients')->count());
-            $worker = $this->worker($revoker, 'POST', '/dd-phase3/assignments', ['engineer_id' => $f['engineer'], 'lgu_id' => $lgu, 'is_active' => false], 'ordinary_revoker');
+            $worker = $this->worker($revoker, 'POST', '/workspace/assignments', ['engineer_id' => $f['engineer'], 'lgu_id' => $lgu, 'is_active' => false], 'ordinary_revoker');
             $worker->setTimeout(5); // A leaked lifecycle/profile/membership lock would time out.
             $this->assertSame(302, $this->workerStatus($worker));
             $this->assertSame('EngineerLGU', DB::table('jairoads_next.audit_logs')->sole()->entity_type);

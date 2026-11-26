@@ -39,10 +39,10 @@ final class ProvisioningEvidenceTest extends PostgresTestCase
     public function test_later_provisioner_deactivation_does_not_rewrite_or_revoke_the_childs_provenance(): void
     {
         $child = $this->account('Engineer');
-        $evidence = DB::table(AccountProvisioning::TABLE)->where('user_account_id', $child->dd_user_account_id)->first();
+        $evidence = DB::table(AccountProvisioning::TABLE)->where('user_account_id', $child->canonical_user_account_id)->first();
         DB::table('jairoads_next.user_accounts')->where('id', $evidence->provisioned_by)->update(['is_active' => false]);
         $this->assertNotNull(app(AccountIdentityResolver::class)->resolve($child));
-        $this->assertEquals($evidence, DB::table(AccountProvisioning::TABLE)->where('user_account_id', $child->dd_user_account_id)->first());
+        $this->assertEquals($evidence, DB::table(AccountProvisioning::TABLE)->where('user_account_id', $child->canonical_user_account_id)->first());
     }
 
     public function test_forged_provenance_provisioner_cannot_create_evidence(): void
@@ -51,9 +51,9 @@ final class ProvisioningEvidenceTest extends PostgresTestCase
         $target = $this->account('Engineer', $this->engineer(), linked: false);
         try {
             DB::transaction(fn () => DB::table(AccountProvisioning::TABLE)->insert([
-                'user_account_id' => $target->dd_user_account_id, 'provisioned_by' => $actor->dd_user_account_id,
+                'user_account_id' => $target->canonical_user_account_id, 'provisioned_by' => $actor->canonical_user_account_id,
                 'provisioner_role' => 'Admin', 'provisioned_role' => 'Engineer',
-                'engineer_id' => DB::table('jairoads_next.user_accounts')->where('id', $target->dd_user_account_id)->value('engineer_id'), 'method' => 'administrator',
+                'engineer_id' => DB::table('jairoads_next.user_accounts')->where('id', $target->canonical_user_account_id)->value('engineer_id'), 'method' => 'administrator',
             ]));
             $this->fail('An invented administrator cannot attest an account.');
         } catch (QueryException $e) {

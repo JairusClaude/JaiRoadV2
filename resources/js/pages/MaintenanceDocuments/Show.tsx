@@ -54,38 +54,38 @@ export default function Show({ document: doc }: { document: DocumentSummary }) {
                         </div>
                         <div className="jr-header-actions">
                             {enabled && (
-<Button
-                                variant="outline"
-                                disabled={!enabled}
-                                onClick={() =>
-                                    router.visit(
-                                        editUrl(
-                                            workspaceHref(
-                                                `/maintenance-documents/${doc.id}/edit`,
+                                <Button
+                                    variant="outline"
+                                    disabled={!enabled}
+                                    onClick={() =>
+                                        router.visit(
+                                            editUrl(
+                                                workspaceHref(
+                                                    `/maintenance-documents/${doc.id}/edit`,
+                                                ),
+                                                page.url,
                                             ),
-                                            page.url,
-                                        ),
-                                    )
-                                }
-                            >
-                                <Pencil />
-                                Edit Document
-                            </Button>
-)}
+                                        )
+                                    }
+                                >
+                                    <Pencil />
+                                    Edit Document
+                                </Button>
+                            )}
                             {(enabled || Boolean(doc.delete_url)) && (
-<Button
-                                className="jr-danger"
-                                disabled={
-                                    page.props.canonicalFrontend === true
-                                        ? !doc.delete_url
-                                        : !enabled
-                                }
-                                onClick={() => deletion.open([doc])}
-                            >
-                                <Trash2 />
-                                Delete Document
-                            </Button>
-)}
+                                <Button
+                                    className="jr-danger"
+                                    disabled={
+                                        page.props.canonicalFrontend === true
+                                            ? !doc.delete_url
+                                            : !enabled
+                                    }
+                                    onClick={() => deletion.open([doc])}
+                                >
+                                    <Trash2 />
+                                    Delete Document
+                                </Button>
+                            )}
                         </div>
                     </div>
                     <section className="jr-report-context">

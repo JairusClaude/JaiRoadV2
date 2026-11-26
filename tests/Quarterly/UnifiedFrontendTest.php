@@ -12,7 +12,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 
 final class UnifiedFrontendTest extends PostgresTestCase
 {
-    private const UI = '/dd-phase3/ui';
+    private const UI = '/workspace/ui';
 
     public static function roles(): iterable
     {
@@ -54,16 +54,16 @@ final class UnifiedFrontendTest extends PostgresTestCase
         $road = $this->road($f['engineer']);
         $project = (int) DB::table('jairoads_next.maintenance_projects')->insertGetId([
             'project_title' => 'Other project', 'road_coverage_id' => $road,
-            'created_by' => $f['user']->dd_user_account_id,
+            'created_by' => $f['user']->canonical_user_account_id,
         ]);
         $unassigned = $this->road($f['engineer']);
         DB::table('jairoads_next.maintenance_records')->insert([
-            $this->recordData($f['project'], $f['engineer'], 'Q2') + ['created_by' => $f['user']->dd_user_account_id],
-            $this->recordData($project, $other) + ['created_by' => $f['user']->dd_user_account_id],
+            $this->recordData($f['project'], $f['engineer'], 'Q2') + ['created_by' => $f['user']->canonical_user_account_id],
+            $this->recordData($project, $other) + ['created_by' => $f['user']->canonical_user_account_id],
         ]);
-        $this->get('/dd-phase3/dashboard')->assertOk()->assertInertia(fn (Assert $page) => $page
+        $this->get('/workspace/dashboard')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('RoleDashboard/Canonical')->where('role', 'engineer')->missing('mapCoverages'));
-        $url = '/dd-phase3/dashboard/map-roads';
+        $url = '/workspace/dashboard/map-roads';
         $this->getJson($url.'?engineer_id='.$other)->assertOk()->assertJsonCount(3, 'data')
             ->assertJsonPath('data.0.id', $unassigned)->assertJsonPath('data.0.my_project', false)
             ->assertJsonPath('data.0.project_id', null)
@@ -78,7 +78,7 @@ final class UnifiedFrontendTest extends PostgresTestCase
             ->assertJsonPath('data.1.created_by_me', false)->assertJsonPath('data.1.assigned_to_me', true)
             ->assertJsonPath('data.2.my_project', false);
         $this->flushSession();
-        $this->actingAs($this->account('Viewer'))->get('/dd-phase3/dashboard')->assertOk()
+        $this->actingAs($this->account('Viewer'))->get('/workspace/dashboard')->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('RoleDashboard/Canonical')->where('role', 'viewer')->missing('mapCoverages'));
         $this->getJson($url)->assertOk()->assertJsonCount(3, 'data')
             ->assertJsonPath('data.1.created_by_me', false)->assertJsonPath('data.1.assigned_to_me', false)
@@ -95,7 +95,7 @@ final class UnifiedFrontendTest extends PostgresTestCase
         $update = $this->monthly($f, $record);
         $document = $this->document($f, $record);
         $unassigned = $this->road();
-        $url = '/dd-phase3/dashboard/roads/';
+        $url = '/workspace/dashboard/roads/';
         $this->getJson($url.$f['road'])->assertOk()
             ->assertJsonPath('id', $f['road'])
             ->assertJsonPath('project.id', $f['project'])
@@ -141,7 +141,7 @@ final class UnifiedFrontendTest extends PostgresTestCase
         $f = $this->fixture('Engineer');
         $other = $this->road();
         $project = DB::table('jairoads_next.maintenance_projects')->insertGetId(['project_title' => 'Outside scope',
-            'road_coverage_id' => $other, 'created_by' => $f['user']->dd_user_account_id]);
+            'road_coverage_id' => $other, 'created_by' => $f['user']->canonical_user_account_id]);
         $this->get(self::UI.'/road-coverages')->assertInertia(fn (Assert $page) => $page->has('coverages.data', 2));
         $this->get(self::UI.'/maintenance-projects')->assertInertia(fn (Assert $page) => $page->has('projects.data', 2));
         $this->get(self::UI.'/road-coverages/'.$other)->assertOk();
@@ -162,7 +162,7 @@ final class UnifiedFrontendTest extends PostgresTestCase
         $otherProject = (int) DB::table('jairoads_next.maintenance_projects')->insertGetId([
             'project_title' => 'Project without an eligible account',
             'road_coverage_id' => $otherRoad,
-            'created_by' => $f['user']->dd_user_account_id,
+            'created_by' => $f['user']->canonical_user_account_id,
         ]);
 
         $this->get(self::UI.'/maintenance-records/create')->assertOk()->assertInertia(fn (Assert $page) => $page
@@ -181,7 +181,7 @@ final class UnifiedFrontendTest extends PostgresTestCase
         $f = $this->fixture('SuperAdmin');
         $record = $this->record($f);
         $sibling = (int) DB::table('jairoads_next.maintenance_records')->insertGetId(
-            $this->recordData($f['project'], $f['engineer'], 'Q2') + ['created_by' => $f['user']->dd_user_account_id]
+            $this->recordData($f['project'], $f['engineer'], 'Q2') + ['created_by' => $f['user']->canonical_user_account_id]
         );
 
         $this->delete(self::UI.'/maintenance-records/'.$record, $this->deletionVerification('record'))->assertSessionHasNoErrors()
@@ -199,7 +199,7 @@ final class UnifiedFrontendTest extends PostgresTestCase
         $update = $this->monthly($f, $record);
         $document = $this->document($f, $record);
         $empty = (int) DB::table('jairoads_next.maintenance_records')->insertGetId(
-            $this->recordData($f['project'], $f['engineer'], 'Q2') + ['created_by' => $f['user']->dd_user_account_id]
+            $this->recordData($f['project'], $f['engineer'], 'Q2') + ['created_by' => $f['user']->canonical_user_account_id]
         );
         Http::preventStrayRequests();
 
@@ -227,7 +227,7 @@ final class UnifiedFrontendTest extends PostgresTestCase
         DB::table('jairoads_next.road_coverages')->where('id', $other)->update(['road_name' => 'C assigned road']);
         DB::table('jairoads_next.maintenance_projects')->insert([
             'project_title' => 'Other project', 'road_coverage_id' => $other,
-            'created_by' => $f['user']->dd_user_account_id,
+            'created_by' => $f['user']->canonical_user_account_id,
         ]);
 
         $this->get(self::UI.'/maintenance-projects/create')->assertOk()->assertInertia(fn (Assert $page) => $page
@@ -261,7 +261,7 @@ final class UnifiedFrontendTest extends PostgresTestCase
         $this->post(self::UI.'/maintenance-projects', ['road_coverage_id' => $road->id, 'project_title' => 'Integrated project', 'created_by' => 99999])
             ->assertSessionHasNoErrors()->assertRedirect(self::UI.'/maintenance-projects');
         $project = DB::table('jairoads_next.maintenance_projects')->where('road_coverage_id', $road->id)->first();
-        $this->assertSame((int) $f['user']->dd_user_account_id, (int) $project->created_by);
+        $this->assertSame((int) $f['user']->canonical_user_account_id, (int) $project->created_by);
         $this->get(self::UI.'/road-coverages/'.$road->id)->assertInertia(fn (Assert $page) => $page
             ->where('coverage.geojson.geometry.coordinates', $geometry['geometry']['coordinates'])
             ->where('associatedProject.id', (int) $project->id));
@@ -321,7 +321,7 @@ final class UnifiedFrontendTest extends PostgresTestCase
         DB::table('jairoads_next.engineers')->where('id', $f['engineer'])->update(['engineer_status' => 'Retired']);
         $this->get(self::UI.'/maintenance-projects')->assertForbidden();
         DB::table('jairoads_next.engineers')->where('id', $f['engineer'])->update(['engineer_status' => 'Active']);
-        DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->update(['is_active' => false]);
+        DB::table('jairoads_next.user_accounts')->where('id', $f['user']->canonical_user_account_id)->update(['is_active' => false]);
         $this->actingAs($f['user'])->get(self::UI.'/road-coverages')->assertForbidden();
     }
 
@@ -342,13 +342,13 @@ final class UnifiedFrontendTest extends PostgresTestCase
         $this->post(self::UI.'/maintenance-documents', ['maintenance_id' => $record, 'document_title' => 'Mismatched extension',
             'attachment' => UploadedFile::fake()->createWithContent('inspection.txt', "%PDF-1.4\nDisposable\n%%EOF")])->assertSessionHasErrors(['attachment']);
         $this->get(self::UI.'/maintenance-documents/'.$doc->id)->assertInertia(fn (Assert $page) => $page
-            ->where('document.download_url', '/dd-phase3/files/document/'.$doc->id)->missing('document.file_path')->missing('document.password'));
+            ->where('document.download_url', '/workspace/files/document/'.$doc->id)->missing('document.file_path')->missing('document.password'));
         Http::assertSentCount(1);
         $this->withSession(['password_hash_web' => null])->actingAs($this->account('Engineer', $this->engineer()));
         // Verified Engineer reads remain cross-municipality, without write or
         // file-path disclosure privileges.
         $this->get(self::UI.'/maintenance-documents/'.$doc->id)->assertOk();
-        $this->get('/dd-phase3/files/document/'.$doc->id)->assertOk();
+        $this->get('/workspace/files/document/'.$doc->id)->assertOk();
         Http::assertSentCount(2);
     }
 
@@ -364,7 +364,7 @@ final class UnifiedFrontendTest extends PostgresTestCase
         $this->postJson($url.'/reassignment', ['managing_engineer_id' => $replacement])->assertForbidden();
         $this->withSession(['password_hash_web' => null])->actingAs($this->account());
         $this->post($url.'/reassignment', ['managing_engineer_id' => $replacement, 'expected_current_manager_id' => $f['engineer']])->assertSessionHasNoErrors()->assertRedirect($url);
-        $this->assertSame((int) $f['user']->dd_user_account_id, (int) DB::table('jairoads_next.maintenance_records')->value('created_by'));
+        $this->assertSame((int) $f['user']->canonical_user_account_id, (int) DB::table('jairoads_next.maintenance_records')->value('created_by'));
         $this->withSession(['password_hash_web' => null])->actingAs($f['user'])->get($url.'/edit')->assertForbidden();
         $this->withSession(['password_hash_web' => null])->actingAs($newUser)->get($url.'/edit')->assertOk();
     }
@@ -391,24 +391,24 @@ final class UnifiedFrontendTest extends PostgresTestCase
             'profile' => ['first_name' => 'Combined', 'last_name' => 'Fixture',
                 'contact_no' => '09123456789', 'rank' => 'Engineer II'],
         ];
-        $this->post('/dd-phase3/accounts', $payload)->assertSessionHasNoErrors()->assertRedirect();
+        $this->post('/workspace/accounts', $payload)->assertSessionHasNoErrors()->assertRedirect();
         $account = DB::table('jairoads_next.user_accounts')->where('username', 'combined-fixture')->first();
         $this->assertNotNull($account);
         $this->assertSame('Engineer', $account->account_type);
         $this->assertDatabaseHas('jairoads_next.engineers', ['id' => $account->engineer_id,
             'first_name' => 'Combined', 'last_name' => 'Fixture', 'engineer_status' => 'Active']);
-        $this->assertDatabaseHas('public.users', ['dd_user_account_id' => $account->id, 'email' => $payload['email']]);
+        $this->assertDatabaseHas('public.users', ['canonical_user_account_id' => $account->id, 'email' => $payload['email']]);
         $this->assertDatabaseHas('jairoads_security.account_provisioning', ['user_account_id' => $account->id,
             'engineer_id' => $account->engineer_id, 'provisioned_role' => 'Engineer']);
         $this->assertDatabaseHas('jairoads_next.audit_logs', ['entity_type' => 'Engineer', 'entity_id' => $account->engineer_id, 'action' => 'CREATE']);
         $this->assertDatabaseHas('jairoads_next.audit_logs', ['entity_type' => 'UserAccount', 'entity_id' => $account->id, 'action' => 'CREATE']);
 
         $before = DB::table('jairoads_next.engineers')->count();
-        $this->postJson('/dd-phase3/accounts', array_replace($payload, [
+        $this->postJson('/workspace/accounts', array_replace($payload, [
             'username' => 'combined-invalid', 'email' => 'combined-invalid@example.test',
             'account_type' => 'SuperAdmin',
         ]))->assertUnprocessable()->assertJsonValidationErrors('account_type');
-        $this->postJson('/dd-phase3/accounts', array_replace($payload, [
+        $this->postJson('/workspace/accounts', array_replace($payload, [
             'username' => 'combined-conflict', 'email' => 'combined-conflict@example.test',
             'engineer_id' => $account->engineer_id,
         ]))->assertUnprocessable()->assertJsonValidationErrors('engineer_id');
@@ -421,7 +421,7 @@ final class UnifiedFrontendTest extends PostgresTestCase
         $before = DB::table('jairoads_next.engineers')->count();
         DB::statement("CREATE FUNCTION jairoads_next.reject_combined_audit() RETURNS trigger LANGUAGE plpgsql AS \$\$ BEGIN IF NEW.entity_type = 'UserAccount' THEN RAISE EXCEPTION 'Disposable audit failure'; END IF; RETURN NEW; END; \$\$");
         DB::statement('CREATE TRIGGER reject_combined_audit BEFORE INSERT ON jairoads_next.audit_logs FOR EACH ROW EXECUTE FUNCTION jairoads_next.reject_combined_audit()');
-        $this->postJson('/dd-phase3/accounts', [
+        $this->postJson('/workspace/accounts', [
             'username' => 'combined-rollback', 'email' => 'combined-rollback@example.test',
             'name' => 'Rollback Fixture', 'account_type' => 'Viewer',
             'password' => 'Disposable-Test!123', 'password_confirmation' => 'Disposable-Test!123',
@@ -435,16 +435,16 @@ final class UnifiedFrontendTest extends PostgresTestCase
 
     private function record(array $f): int
     {
-        return (int) DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer'], 'Q4') + ['created_by' => $f['user']->dd_user_account_id]);
+        return (int) DB::table('jairoads_next.maintenance_records')->insertGetId($this->recordData($f['project'], $f['engineer'], 'Q4') + ['created_by' => $f['user']->canonical_user_account_id]);
     }
 
     private function monthly(array $f, int $record): int
     {
-        return (int) DB::table('jairoads_next.monthly_updates')->insertGetId(['maintenance_id' => $record, 'update_month' => '2026-10', 'progress_percentage' => 20, 'created_by' => $f['user']->dd_user_account_id]);
+        return (int) DB::table('jairoads_next.monthly_updates')->insertGetId(['maintenance_id' => $record, 'update_month' => '2026-10', 'progress_percentage' => 20, 'created_by' => $f['user']->canonical_user_account_id]);
     }
 
     private function document(array $f, int $record): int
     {
-        return (int) DB::table('jairoads_next.maintenance_documents')->insertGetId(['maintenance_id' => $record, 'document_title' => 'Private fixture', 'file_name' => 'seed.pdf', 'file_path' => 'maintenance-records/'.$record.'/00000000-0000-4000-8000-000000000001.pdf', 'uploaded_by' => $f['user']->dd_user_account_id]);
+        return (int) DB::table('jairoads_next.maintenance_documents')->insertGetId(['maintenance_id' => $record, 'document_title' => 'Private fixture', 'file_name' => 'seed.pdf', 'file_path' => 'maintenance-records/'.$record.'/00000000-0000-4000-8000-000000000001.pdf', 'uploaded_by' => $f['user']->canonical_user_account_id]);
     }
 }

@@ -134,7 +134,7 @@ export default function WorkspaceRecords({
 
         setBusy(true);
         setErrors({});
-        router.visit(`/dd-phase3/ops/records${editing ? `/${editing}` : ''}`, {
+        router.visit(`/workspace/ops/records${editing ? `/${editing}` : ''}`, {
             method: editing ? 'put' : 'post',
             data: form,
             preserveScroll: true,
@@ -503,7 +503,7 @@ export default function WorkspaceRecords({
                                                         )
                                                     ) {
                                                         router.delete(
-                                                            `/dd-phase3/ops/records/${record.id}`,
+                                                            `/workspace/ops/records/${record.id}`,
                                                             {
                                                                 preserveScroll: true,
                                                                 onError:

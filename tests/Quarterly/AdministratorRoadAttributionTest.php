@@ -19,16 +19,16 @@ it('requires explicit active Engineer attribution for administrator-created road
         'state_category' => 'Good',
         'geojson' => json_decode($road->geojson, true),
     ];
-    $this->get('/dd-phase3/ui/road-coverages/create')->assertOk()
+    $this->get('/workspace/ui/road-coverages/create')->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('requiresCreator', true)->has('roadCreatorChoices'));
 
     $before = DB::table('jairoads_next.road_coverages')->count();
-    $this->postJson('/dd-phase3/ui/road-coverages', $payload)->assertUnprocessable()
+    $this->postJson('/workspace/ui/road-coverages', $payload)->assertUnprocessable()
         ->assertJsonValidationErrors('created_by_engineer_id');
     $this->assertSame($before, DB::table('jairoads_next.road_coverages')->count());
 
-    $this->postJson('/dd-phase3/ui/road-coverages', $payload + [
+    $this->postJson('/workspace/ui/road-coverages', $payload + [
         'created_by_engineer_id' => $fixture['engineer'],
     ])->assertRedirect();
     $created = DB::table('jairoads_next.road_coverages')
@@ -37,6 +37,6 @@ it('requires explicit active Engineer attribution for administrator-created road
     $this->assertDatabaseHas('jairoads_next.audit_logs', [
         'entity_type' => 'RoadCoverage',
         'entity_id' => $created->id,
-        'user_id' => $fixture['user']->dd_user_account_id,
+        'user_id' => $fixture['user']->canonical_user_account_id,
     ]);
 })->with(['Admin', 'SuperAdmin']);

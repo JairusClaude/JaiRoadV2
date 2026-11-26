@@ -12,7 +12,12 @@ const PROVINCE_BOUNDS: L.LatLngBoundsExpression = [
     [7.95, 126.35],
 ];
 
-const ROAD_COLORS = { created: '#1d5db5', assigned: '#a94b0c', both: '#6d28d9', other: '#64748b' } as const;
+const ROAD_COLORS = {
+    created: '#1d5db5',
+    assigned: '#a94b0c',
+    both: '#6d28d9',
+    other: '#64748b',
+} as const;
 
 export type SimplifiedCoverageItem = {
     id: number;
@@ -48,7 +53,9 @@ export function SimplifiedCoverageMap({
     const containerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<L.Map | null>(null);
     const [mineOnly, setMineOnly] = useState(false);
-    const [relationship, setRelationship] = useState<'all' | 'created' | 'assigned' | 'both'>('all');
+    const [relationship, setRelationship] = useState<
+        'all' | 'created' | 'assigned' | 'both'
+    >('all');
     const dashboardView = engineerView || viewerView;
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const roadLayers = useRef<{ id: number; line: L.Polyline }[]>([]);
@@ -74,9 +81,15 @@ export function SimplifiedCoverageMap({
                 assigned,
                 projectId: coverage.project_id,
                 projectTitle: coverage.project_title,
-                mine: coverage.created_by_me === true || coverage.assigned_to_me === true || coverage.my_project === true,
+                mine:
+                    coverage.created_by_me === true ||
+                    coverage.assigned_to_me === true ||
+                    coverage.my_project === true,
                 created: coverage.created_by_me === true,
-                managed: coverage.assigned_to_me === true || (coverage.assigned_to_me === undefined && (coverage.my_record_count ?? 0) > 0),
+                managed:
+                    coverage.assigned_to_me === true ||
+                    (coverage.assigned_to_me === undefined &&
+                        (coverage.my_record_count ?? 0) > 0),
                 recordCount: coverage.my_record_count ?? 0,
                 lines: latLngLines,
             };
@@ -92,10 +105,21 @@ export function SimplifiedCoverageMap({
     const myProjectCount = mappedCoverages.filter((c) => c.mine).length;
     const createdCount = mappedCoverages.filter((c) => c.created).length;
     const assignedCount = mappedCoverages.filter((c) => c.managed).length;
-    const bothCount = mappedCoverages.filter((c) => c.created && c.managed).length;
+    const bothCount = mappedCoverages.filter(
+        (c) => c.created && c.managed,
+    ).length;
     const myOnly = engineerView && mineOnly;
     const visibleCoverages = useMemo(
-        () => mappedCoverages.filter((c) => (!myOnly || c.mine) && (!engineerView || relationship === 'all' || (relationship === 'created' && c.created) || (relationship === 'assigned' && c.managed) || (relationship === 'both' && c.created && c.managed))),
+        () =>
+            mappedCoverages.filter(
+                (c) =>
+                    (!myOnly || c.mine) &&
+                    (!engineerView ||
+                        relationship === 'all' ||
+                        (relationship === 'created' && c.created) ||
+                        (relationship === 'assigned' && c.managed) ||
+                        (relationship === 'both' && c.created && c.managed)),
+            ),
         [mappedCoverages, myOnly, engineerView, relationship],
     );
 
@@ -128,7 +152,10 @@ export function SimplifiedCoverageMap({
         map.fitBounds(PROVINCE_BOUNDS);
         let resizeFrame = 0;
         const observer = new ResizeObserver(() => {
-            if (resizeFrame) cancelAnimationFrame(resizeFrame);
+            if (resizeFrame) {
+                cancelAnimationFrame(resizeFrame);
+            }
+
             resizeFrame = requestAnimationFrame(() => {
                 resizeFrame = 0;
                 map.invalidateSize({ pan: false, debounceMoveend: true });
@@ -138,7 +165,11 @@ export function SimplifiedCoverageMap({
 
         return () => {
             observer.disconnect();
-            if (resizeFrame) cancelAnimationFrame(resizeFrame);
+
+            if (resizeFrame) {
+                cancelAnimationFrame(resizeFrame);
+            }
+
             map.remove();
             mapRef.current = null;
         };
@@ -169,8 +200,19 @@ export function SimplifiedCoverageMap({
             // Use the canonical road brown (#843b12) from the Add Road Coverage editor and Details view
             const highlighted = engineerView && item.mine;
             const muted = engineerView && !item.mine;
-            const category = item.created && item.managed ? 'both' : item.created ? 'created' : item.managed ? 'assigned' : 'other';
-            const lineColor = engineerView ? ROAD_COLORS[category] : viewerView ? '#1d5db5' : '#843b12';
+            const category =
+                item.created && item.managed
+                    ? 'both'
+                    : item.created
+                      ? 'created'
+                      : item.managed
+                        ? 'assigned'
+                        : 'other';
+            const lineColor = engineerView
+                ? ROAD_COLORS[category]
+                : viewerView
+                  ? '#1d5db5'
+                  : '#843b12';
 
             for (const segment of item.lines) {
                 // White halo background line for contrast and legibility
@@ -189,10 +231,16 @@ export function SimplifiedCoverageMap({
                     opacity: muted ? 0.75 : 0.95,
                     className: engineerView
                         ? item.mine
-                            ? 'jr-dashboard-road-mine jr-dashboard-road-' + category
+                            ? 'jr-dashboard-road-mine jr-dashboard-road-' +
+                              category
                             : 'jr-dashboard-road-other'
                         : 'jr-directory-road-line',
-                    dashArray: engineerView && category === 'created' ? '12 5' : engineerView && category === 'both' ? '4 3' : undefined,
+                    dashArray:
+                        engineerView && category === 'created'
+                            ? '12 5'
+                            : engineerView && category === 'both'
+                              ? '4 3'
+                              : undefined,
                     smoothFactor: 0,
                     interactive: true,
                 });
@@ -265,8 +313,13 @@ export function SimplifiedCoverageMap({
                     <MapPin size={17} />
                     <strong>Davao de Oro · Road Coverage Map</strong>
                     <span className="jr-road-map-count">
-                        {visibleCoverages.filter(c => c.lines.length > 0).length} mapped road line
-                        {visibleCoverages.filter(c => c.lines.length > 0).length === 1
+                        {
+                            visibleCoverages.filter((c) => c.lines.length > 0)
+                                .length
+                        }{' '}
+                        mapped road line
+                        {visibleCoverages.filter((c) => c.lines.length > 0)
+                            .length === 1
                             ? ''
                             : 's'}
                     </span>
@@ -296,10 +349,22 @@ export function SimplifiedCoverageMap({
             {dashboardView && (
                 <div className="jr-road-map-toolbar">
                     <span role="status">
-                        {engineerView ? `${createdCount} created · ${assignedCount} assigned · ${bothCount} both (loaded roads)` : `${mappedCount} mapped roads · Read-only access`}
+                        {engineerView
+                            ? `${createdCount} created · ${assignedCount} assigned · ${bothCount} both (loaded roads)`
+                            : `${mappedCount} mapped roads · Read-only access`}
                     </span>
                     {engineerView && (
-                        <select className="jr-road-inspect-select" aria-label="Filter project relationship" value={relationship} onChange={event => { setRelationship(event.target.value as typeof relationship); setSelectedId(null); }}>
+                        <select
+                            className="jr-road-inspect-select"
+                            aria-label="Filter project relationship"
+                            value={relationship}
+                            onChange={(event) => {
+                                setRelationship(
+                                    event.target.value as typeof relationship,
+                                );
+                                setSelectedId(null);
+                            }}
+                        >
                             <option value="all">All relationships</option>
                             <option value="created">Created by me</option>
                             <option value="assigned">Assigned to me</option>
@@ -371,13 +436,44 @@ export function SimplifiedCoverageMap({
                 <div className="jr-road-map-legend">
                     {engineerView ? (
                         <>
-                            <span><i style={{ background: ROAD_COLORS.created }} /> Created by me (dashed)</span>
-                            <span><i style={{ background: ROAD_COLORS.assigned }} /> Assigned to me (solid)</span>
-                            <span><i style={{ background: ROAD_COLORS.both }} /> Created and assigned (dotted)</span>
-                            {!myOnly && <span><i style={{ background: ROAD_COLORS.other }} /> Other roads</span>}
+                            <span>
+                                <i
+                                    style={{ background: ROAD_COLORS.created }}
+                                />{' '}
+                                Created by me (dashed)
+                            </span>
+                            <span>
+                                <i
+                                    style={{ background: ROAD_COLORS.assigned }}
+                                />{' '}
+                                Assigned to me (solid)
+                            </span>
+                            <span>
+                                <i style={{ background: ROAD_COLORS.both }} />{' '}
+                                Created and assigned (dotted)
+                            </span>
+                            {!myOnly && (
+                                <span>
+                                    <i
+                                        style={{
+                                            background: ROAD_COLORS.other,
+                                        }}
+                                    />{' '}
+                                    Other roads
+                                </span>
+                            )}
                         </>
                     ) : (
-                        <span><i style={{ background: viewerView ? '#1d5db5' : '#843b12' }} /> Road coverage</span>
+                        <span>
+                            <i
+                                style={{
+                                    background: viewerView
+                                        ? '#1d5db5'
+                                        : '#843b12',
+                                }}
+                            />{' '}
+                            Road coverage
+                        </span>
                     )}
                 </div>
                 <small>

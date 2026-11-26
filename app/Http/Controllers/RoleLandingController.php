@@ -24,7 +24,7 @@ final class RoleLandingController extends Controller
     public function roadDetails(Request $request, AccountIdentityResolver $resolver, int $road): JsonResponse
     {
         $user = $request->user();
-        abort_unless($user instanceof User && $user->getAttribute('dd_user_account_id') !== null, 403);
+        abort_unless($user instanceof User && $user->getAttribute('canonical_user_account_id') !== null, 403);
         $actor = $resolver->resolve($user);
         abort_unless($actor !== null && ($actor['role'] === 'Viewer' || ($actor['role'] === 'Engineer' && $actor['engineer_id'] !== null)), 403);
 
@@ -97,7 +97,7 @@ final class RoleLandingController extends Controller
     public function roadMapPage(Request $request, AccountIdentityResolver $resolver): JsonResponse
     {
         $user = $request->user();
-        abort_unless($user instanceof User && $user->getAttribute('dd_user_account_id') !== null, 403);
+        abort_unless($user instanceof User && $user->getAttribute('canonical_user_account_id') !== null, 403);
         $actor = $resolver->resolve($user);
         abort_unless($actor !== null && $actor['role'] === 'Engineer' && $actor['engineer_id'] !== null, 403);
         $validated = $request->validate(['before' => ['sometimes', 'integer', 'min:1']]);
@@ -106,7 +106,10 @@ final class RoleLandingController extends Controller
             ->header('Cache-Control', 'private, no-store');
     }
 
-    /** @return array{data:list<array<string,mixed>>,next_cursor:?int} */
+    /**
+     * @param  array{account_id:int,role:string,engineer_id:?int}  $actor
+     * @return array{data:list<array<string,mixed>>,next_cursor:?int}
+     */
     private function roadMapBatch(array $actor, ?int $before = null): array
     {
         $engineerId = $actor['role'] === 'Engineer' ? $actor['engineer_id'] : null;
@@ -145,7 +148,7 @@ final class RoleLandingController extends Controller
     public function show(Request $request, AccountIdentityResolver $resolver): Response
     {
         $user = $request->user();
-        abort_unless($user instanceof User && $user->getAttribute('dd_user_account_id') !== null, 403);
+        abort_unless($user instanceof User && $user->getAttribute('canonical_user_account_id') !== null, 403);
         $actor = $resolver->resolve($user);
         abort_unless($actor !== null && in_array($actor['role'], ['Engineer', 'Viewer'], true), 403);
 

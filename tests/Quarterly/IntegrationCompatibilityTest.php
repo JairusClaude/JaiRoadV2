@@ -18,12 +18,12 @@ final class IntegrationCompatibilityTest extends PostgresTestCase
     {
         $f = $this->fixture();
         $password = 'Integrated-Disposable!456';
-        $this->putJson('/dd-phase3/ops/settings', [
+        $this->putJson('/workspace/ops/settings', [
             'username' => 'integration_admin', 'current_password' => 'Disposable-Test!123',
             'password' => $password, 'password_confirmation' => $password,
         ])->assertRedirect();
         $this->assertSynchronizedIdentity($f['user']->fresh(), $password);
-        $this->assertDatabaseHas('jairoads_next.user_accounts', ['id' => $f['user']->dd_user_account_id, 'username' => 'integration_admin', 'account_type' => 'Admin']);
+        $this->assertDatabaseHas('jairoads_next.user_accounts', ['id' => $f['user']->canonical_user_account_id, 'username' => 'integration_admin', 'account_type' => 'Admin']);
         $this->assertStringNotContainsString($password, DB::table('jairoads_next.audit_logs')->get()->toJson());
     }
 
@@ -44,7 +44,7 @@ final class IntegrationCompatibilityTest extends PostgresTestCase
         $this->assertSynchronizedIdentity($user->fresh(), $password);
         $this->post(route('login'), ['email' => $user->email, 'password' => $password])->assertSessionHasNoErrors();
         $this->assertAuthenticatedAs($user);
-        $this->get('/dd-phase3/projects')->assertOk();
+        $this->get('/workspace/projects')->assertOk();
     }
 
     /** @return iterable<string,array{string}> */
@@ -61,7 +61,7 @@ final class IntegrationCompatibilityTest extends PostgresTestCase
         $f = $this->fixture();
         $data = $this->recordData($f['project'], $f['engineer']);
         if ($operation === 'record update') {
-            $this->postJson('/dd-phase3/ops/records', $data)->assertRedirect();
+            $this->postJson('/workspace/ops/records', $data)->assertRedirect();
         }
         $road = $this->road($f['engineer']);
         $projects = DB::table('jairoads_next.maintenance_projects')->orderBy('id')->get()->toJson();
@@ -75,12 +75,12 @@ final class IntegrationCompatibilityTest extends PostgresTestCase
             }
         });
         if ($operation === 'project create') {
-            $response = $this->postJson('/dd-phase3/ops/projects', ['project_title' => 'Must roll back', 'road_coverage_id' => $road]);
+            $response = $this->postJson('/workspace/ops/projects', ['project_title' => 'Must roll back', 'road_coverage_id' => $road]);
         } elseif ($operation === 'record create') {
-            $response = $this->postJson('/dd-phase3/ops/records', $data);
+            $response = $this->postJson('/workspace/ops/records', $data);
         } else {
             $id = DB::table('jairoads_next.maintenance_records')->value('id');
-            $response = $this->putJson('/dd-phase3/ops/records/'.$id, array_replace($data, ['description' => 'Must roll back']));
+            $response = $this->putJson('/workspace/ops/records/'.$id, array_replace($data, ['description' => 'Must roll back']));
         }
         $response->assertServerError();
         $this->assertSame(1, $attempts);
@@ -93,19 +93,19 @@ final class IntegrationCompatibilityTest extends PostgresTestCase
     {
         $f = $this->fixture('Admin', true);
         $data = $this->recordData($f['project'], $f['engineer']);
-        $this->postJson('/dd-phase3/ops/records', $data)->assertRedirect();
+        $this->postJson('/workspace/ops/records', $data)->assertRedirect();
         $id = (int) DB::table('jairoads_next.maintenance_records')->value('id');
         $update = DB::table('jairoads_next.monthly_updates')->insertGetId([
             'maintenance_id' => $id, 'update_month' => '2026-01', 'progress_percentage' => 15,
-            'created_by' => $f['user']->dd_user_account_id,
+            'created_by' => $f['user']->canonical_user_account_id,
         ]);
         DB::table('jairoads_next.maintenance_documents')->insert([
             'maintenance_id' => $id, 'document_title' => 'Historical document', 'file_name' => 'fixture.pdf',
-            'file_path' => 'private/disposable-fixture.pdf', 'uploaded_by' => $f['user']->dd_user_account_id,
+            'file_path' => 'private/disposable-fixture.pdf', 'uploaded_by' => $f['user']->canonical_user_account_id,
         ]);
         DB::table('jairoads_next.media')->insert([
             'monthly_update_id' => $update, 'file_name' => 'fixture.png', 'file_path' => 'private/disposable-fixture.png',
-            'file_type' => 'image/png', 'uploaded_by' => $f['user']->dd_user_account_id,
+            'file_type' => 'image/png', 'uploaded_by' => $f['user']->canonical_user_account_id,
         ]);
         $tables = ['road_coverages', 'monthly_updates', 'maintenance_documents', 'media'];
         $snapshots = [];
@@ -113,11 +113,11 @@ final class IntegrationCompatibilityTest extends PostgresTestCase
             $snapshots[$table] = DB::table('jairoads_next.'.$table)->orderBy('id')->get()->toJson();
         }
         $history = DB::table('jairoads_next.audit_logs')->orderBy('id')->get();
-        $this->putJson('/dd-phase3/ops/records/'.$id, array_replace($data, [
+        $this->putJson('/workspace/ops/records/'.$id, array_replace($data, [
             'start_date' => '2026-02-03', 'estimated_duration_days' => 12,
             'status' => 'Completed', 'complete_date' => '2026-02-14',
         ]))->assertRedirect();
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q3'))->assertRedirect();
+        $this->postJson('/workspace/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q3'))->assertRedirect();
         foreach ($snapshots as $table => $snapshot) {
             $this->assertSame($snapshot, DB::table('jairoads_next.'.$table)->orderBy('id')->get()->toJson());
         }
@@ -125,33 +125,33 @@ final class IntegrationCompatibilityTest extends PostgresTestCase
         $events = DB::table('jairoads_next.audit_logs')->where('entity_type', 'MaintenanceRecord')->whereNull('recipient_user_id')->orderBy('id')->get();
         $this->assertSame(['CREATE', 'UPDATE', 'CREATE'], $events->pluck('action')->all());
         foreach ($events as $event) {
-            $this->assertSame((int) $f['user']->dd_user_account_id, (int) $event->user_id);
-            $this->assertSame('DD-UserAccount#'.$f['user']->dd_user_account_id.' ('.DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->value('username').')', $event->actor_identifier);
+            $this->assertSame((int) $f['user']->canonical_user_account_id, (int) $event->user_id);
+            $this->assertSame('User Account #'.$f['user']->canonical_user_account_id.' ('.DB::table('jairoads_next.user_accounts')->where('id', $f['user']->canonical_user_account_id)->value('username').')', $event->actor_identifier);
         }
     }
 
     public function test_monthly_updates_keep_their_own_monthly_uniqueness_and_parent_when_another_quarter_is_added(): void
     {
         $f = $this->fixture('Engineer');
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q4'))->assertRedirect();
+        $this->postJson('/workspace/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q4'))->assertRedirect();
         $id = (int) DB::table('jairoads_next.maintenance_records')->value('id');
         $data = ['maintenance_id' => $id, 'update_month' => '2026-10', 'progress_percentage' => 10, 'summary_of_text_reports' => 'Disposable progress'];
-        $this->postJson('/dd-phase3/ops/updates', $data)->assertRedirect();
+        $this->postJson('/workspace/ops/updates', $data)->assertRedirect();
         $before = DB::table('jairoads_next.audit_logs')->count();
-        $this->postJson('/dd-phase3/ops/updates', $data)->assertUnprocessable()->assertJsonValidationErrors('update_month');
+        $this->postJson('/workspace/ops/updates', $data)->assertUnprocessable()->assertJsonValidationErrors('update_month');
         $this->assertSame($before, DB::table('jairoads_next.audit_logs')->count());
-        $this->postJson('/dd-phase3/ops/updates', array_replace($data, ['update_month' => '2026-11']))->assertRedirect();
+        $this->postJson('/workspace/ops/updates', array_replace($data, ['update_month' => '2026-11']))->assertRedirect();
         $history = DB::table('jairoads_next.monthly_updates')->orderBy('id')->get()->toJson();
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q2'))->assertRedirect();
+        $this->postJson('/workspace/ops/records', $this->recordData($f['project'], $f['engineer'], 'Q2'))->assertRedirect();
         $this->assertSame($history, DB::table('jairoads_next.monthly_updates')->orderBy('id')->get()->toJson());
         $this->assertSame(2, DB::table('jairoads_next.monthly_updates')->where('maintenance_id', $id)->count());
     }
 
     private function assertSynchronizedIdentity(User $user, string $password): void
     {
-        $canonical = DB::table('jairoads_next.user_accounts')->where('id', $user->dd_user_account_id)->first();
+        $canonical = DB::table('jairoads_next.user_accounts')->where('id', $user->canonical_user_account_id)->first();
         $this->assertTrue(Hash::check($password, $user->password));
         $this->assertTrue(hash_equals($canonical->password, $user->password));
-        $this->assertSame((int) $user->dd_user_account_id, app(AccountIdentityResolver::class)->resolve($user)['account_id']);
+        $this->assertSame((int) $user->canonical_user_account_id, app(AccountIdentityResolver::class)->resolve($user)['account_id']);
     }
 }

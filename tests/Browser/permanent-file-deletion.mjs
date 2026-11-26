@@ -29,7 +29,7 @@ export async function verifyPermanentFileDeletion({
 
             return response.status;
         }, url);
-    const documentUrl = `/dd-phase3/files/document/${doc.id}`;
+    const documentUrl = `/workspace/files/document/${doc.id}`;
 
     for (const page of [engineer, viewer, rogue]) {
         assert.equal(await csrfDelete(page, documentUrl), 403);

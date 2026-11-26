@@ -594,13 +594,37 @@
 }
 
 /* Dashboard relationship markers are semantic colors, not account permissions. */
-.jr-road-details-assignment[data-relationship='created'] { background: #e6efff; color: #174b91; }
-.jr-road-details-assignment[data-relationship='assigned'] { background: #fff0e3; color: #843b12; }
-.jr-road-details-assignment[data-relationship='both'] { background: #f0e8ff; color: #5b21b6; }
-.dark .jr-road-details-assignment[data-relationship='created'] { background: #203b65; color: #bfdbfe; }
-.dark .jr-road-details-assignment[data-relationship='assigned'] { background: #4a2c1b; color: #fdba74; }
-.dark .jr-road-details-assignment[data-relationship='both'] { background: #382255; color: #ddd6fe; }
+.jr-road-details-assignment[data-relationship='created'] {
+    background: #e6efff;
+    color: #174b91;
+}
+.jr-road-details-assignment[data-relationship='assigned'] {
+    background: #fff0e3;
+    color: #843b12;
+}
+.jr-road-details-assignment[data-relationship='both'] {
+    background: #f0e8ff;
+    color: #5b21b6;
+}
+.dark .jr-road-details-assignment[data-relationship='created'] {
+    background: #203b65;
+    color: #bfdbfe;
+}
+.dark .jr-road-details-assignment[data-relationship='assigned'] {
+    background: #4a2c1b;
+    color: #fdba74;
+}
+.dark .jr-road-details-assignment[data-relationship='both'] {
+    background: #382255;
+    color: #ddd6fe;
+}
 .jr-viewer-workspace .jr-road-map-heading svg,
-.jr-viewer-workspace .jr-road-details-footer a { color: var(--jr-display-accent, #1d5db5); }
-.jr-road-map-legend span { white-space: normal; }
-.jr-road-map-legend i { flex: none; }
+.jr-viewer-workspace .jr-road-details-footer a {
+    color: var(--jr-display-accent, #1d5db5);
+}
+.jr-road-map-legend span {
+    white-space: normal;
+}
+.jr-road-map-legend i {
+    flex: none;
+}

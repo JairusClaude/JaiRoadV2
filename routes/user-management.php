@@ -59,11 +59,11 @@ Route::middleware(['web'])->group(function (): void {
         }
 
         abort_unless(request()->user() !== null, 401);
-        if (request()->user()->getAttribute('dd_user_account_id') !== null) {
+        if (request()->user()->getAttribute('canonical_user_account_id') !== null) {
             $identity = app(AccountIdentityResolver::class)->resolve(request()->user());
             abort_unless($identity !== null && RoleAccess::canManageAccounts($identity['role']), 403);
 
-            return redirect()->route('jairoads.dd-phase3.show', ['section' => 'users']);
+            return redirect()->route('jairoads.workspace.show', ['section' => 'users']);
         }
         $role = app(VerifiedProjectAccount::class)->role(request()->user());
         if ($role === null) {

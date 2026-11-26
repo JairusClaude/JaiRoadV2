@@ -22,7 +22,7 @@ dataset('saved road formats', [
 beforeEach(function (): void {
     $this->f = $this->fixture('Engineer');
     $this->roadQuery = fn () => DB::table('jairoads_next.road_coverages')->where('id', $this->f['road']);
-    $this->roadUrl = '/dd-phase3/ui/road-coverages/'.$this->f['road'];
+    $this->roadUrl = '/workspace/ui/road-coverages/'.$this->f['road'];
     $this->metadata = function (): array {
         $road = ($this->roadQuery)()->first();
 
@@ -36,11 +36,11 @@ it('creates and reloads valid two-point and three-point manual roads', function 
     $geometry = ['type' => 'Feature', 'properties' => ['jairoads_mapping' => [
         'version' => 1, 'method' => 'manual', 'control_points' => $points, 'control_point_indices' => range(0, $count - 1),
     ]], 'geometry' => ['type' => 'LineString', 'coordinates' => $points]];
-    $this->post('/dd-phase3/ui/road-coverages', array_replace(($this->metadata)(), ['road_name' => 'New manual road', 'geojson' => $geometry]))
+    $this->post('/workspace/ui/road-coverages', array_replace(($this->metadata)(), ['road_name' => 'New manual road', 'geojson' => $geometry]))
         ->assertSessionHasNoErrors()->assertRedirect();
     $created = DB::table('jairoads_next.road_coverages')->where('road_name', 'New manual road')->first();
     expect(json_decode($created->geojson, true))->toEqual($geometry);
-    $this->get('/dd-phase3/ui/road-coverages/'.$created->id.'/edit')->assertOk()->assertInertia(fn (Assert $page) => $page
+    $this->get('/workspace/ui/road-coverages/'.$created->id.'/edit')->assertOk()->assertInertia(fn (Assert $page) => $page
         ->where('coverage.geojson', json_decode($created->geojson, true)));
     expect(DB::table('jairoads_next.maintenance_projects')->count())->toBe(1)
         ->and(DB::table('jairoads_next.maintenance_records')->count())->toBe(0);
@@ -90,10 +90,10 @@ it('keeps complex geometry and historical audit entries through cancelled and co
     ($this->roadQuery)()->update(['geojson' => $json]);
     $destination = DB::table('jairoads_next.lgus')->insertGetId(['municipality_name' => 'Destination', 'province' => 'Test', 'region' => 'Test', 'mayor_first_name' => 'Test', 'mayor_last_name' => 'Mayor']);
     DB::table('jairoads_next.engineer_lgus')->insert(['engineer_id' => $this->f['engineer'], 'lgu_id' => $destination, 'is_active' => true]);
-    $historicId = DB::table('jairoads_next.audit_logs')->insertGetId(['user_id' => $this->f['user']->dd_user_account_id, 'actor_identifier' => 'Historic actor', 'action' => 'CREATE', 'entity_type' => 'RoadCoverage', 'entity_id' => $this->f['road'], 'description' => 'Preserved history']);
+    $historicId = DB::table('jairoads_next.audit_logs')->insertGetId(['user_id' => $this->f['user']->canonical_user_account_id, 'actor_identifier' => 'Historic actor', 'action' => 'CREATE', 'entity_type' => 'RoadCoverage', 'entity_id' => $this->f['road'], 'description' => 'Preserved history']);
     $historic = DB::table('jairoads_next.audit_logs')->where('id', $historicId)->first();
     $before = ($this->roadQuery)()->first();
-    $base = '/dd-phase3/ops/roads/'.$this->f['road'].'/municipality/';
+    $base = '/workspace/ops/roads/'.$this->f['road'].'/municipality/';
     $preview = $this->postJson($base.'preview', ['lgu_id' => $destination])->assertOk()->json();
     expect(($this->roadQuery)()->first())->toEqual($before); // Cancel is no confirmation request.
     $this->postJson($base.'confirm', ['confirmation_token' => $preview['confirmation_token']])->assertRedirect();

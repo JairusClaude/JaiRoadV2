@@ -47,23 +47,56 @@ type Props = {
     notifications: { id: number; message: string; createdAt: string }[];
 };
 
-const SimplifiedCoverageMap = lazy(() => import('@/components/road-coverages/simplified-coverage-map'));
+const SimplifiedCoverageMap = lazy(
+    () => import('@/components/road-coverages/simplified-coverage-map'),
+);
 
 function MapPlaceholder({ children }: { children: ReactNode }) {
-    return <div className="grid min-h-[450px] place-items-center rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-600">{children}</div>;
+    return (
+        <div className="grid min-h-[450px] place-items-center rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-600">
+            {children}
+        </div>
+    );
 }
 
-class MapBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+class MapBoundary extends Component<
+    { children: ReactNode },
+    { failed: boolean }
+> {
     state = { failed: false };
-    static getDerivedStateFromError() { return { failed: true }; }
+    static getDerivedStateFromError() {
+        return { failed: true };
+    }
     render() {
-        return this.state.failed
-            ? <MapPlaceholder><div><p role="alert">The map could not initialize. The rest of the dashboard is available.</p><button type="button" className="mt-3 underline" onClick={() => this.setState({ failed: false })}>Retry map</button></div></MapPlaceholder>
-            : this.props.children;
+        return this.state.failed ? (
+            <MapPlaceholder>
+                <div>
+                    <p role="alert">
+                        The map could not initialize. The rest of the dashboard
+                        is available.
+                    </p>
+                    <button
+                        type="button"
+                        className="mt-3 underline"
+                        onClick={() => this.setState({ failed: false })}
+                    >
+                        Retry map
+                    </button>
+                </div>
+            </MapPlaceholder>
+        ) : (
+            this.props.children
+        );
     }
 }
 
-function DashboardRoadMap({ isEngineer, total }: { isEngineer: boolean; total: number | null }) {
+function DashboardRoadMap({
+    isEngineer,
+    total,
+}: {
+    isEngineer: boolean;
+    total: number | null;
+}) {
     const [coverages, setCoverages] = useState<SimplifiedCoverageItem[]>([]);
     const [cursor, setCursor] = useState<number | null>(null);
     const [ready, setReady] = useState(false);
@@ -74,42 +107,139 @@ function DashboardRoadMap({ isEngineer, total }: { isEngineer: boolean; total: n
 
     useEffect(() => {
         const controller = new AbortController();
-        const url = '/dd-phase3/dashboard/map-roads' + (requestCursor === null ? '' : '?before=' + encodeURIComponent(requestCursor));
-        fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' }, cache: 'no-store', signal: controller.signal })
-            .then(async response => {
-                if (!response.ok) throw new Error('Road map unavailable');
-                const result = await response.json() as { data: SimplifiedCoverageItem[]; next_cursor: number | null };
-                if (!Array.isArray(result.data)) throw new Error('Invalid map data');
-                if (controller.signal.aborted) return;
-                setCoverages(prior => requestCursor === null ? result.data : [...prior, ...result.data.filter(road => !prior.some(existing => existing.id === road.id))]);
+        const url =
+            '/workspace/dashboard/map-roads' +
+            (requestCursor === null
+                ? ''
+                : '?before=' + encodeURIComponent(requestCursor));
+        fetch(url, {
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json' },
+            cache: 'no-store',
+            signal: controller.signal,
+        })
+            .then(async (response) => {
+                if (!response.ok) {
+                    throw new Error('Road map unavailable');
+                }
+
+                const result = (await response.json()) as {
+                    data: SimplifiedCoverageItem[];
+                    next_cursor: number | null;
+                };
+
+                if (!Array.isArray(result.data)) {
+                    throw new Error('Invalid map data');
+                }
+
+                if (controller.signal.aborted) {
+                    return;
+                }
+
+                setCoverages((prior) =>
+                    requestCursor === null
+                        ? result.data
+                        : [
+                              ...prior,
+                              ...result.data.filter(
+                                  (road) =>
+                                      !prior.some(
+                                          (existing) => existing.id === road.id,
+                                      ),
+                              ),
+                          ],
+                );
                 setCursor(result.next_cursor);
                 setReady(true);
             })
-            .catch(() => { if (!controller.signal.aborted) setError('Unable to load road coverages. You can continue using the dashboard.'); })
-            .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+            .catch(() => {
+                if (!controller.signal.aborted) {
+                    setError(
+                        'Unable to load road coverages. You can continue using the dashboard.',
+                    );
+                }
+            })
+            .finally(() => {
+                if (!controller.signal.aborted) {
+                    setLoading(false);
+                }
+            });
+
         return () => controller.abort();
     }, [requestCursor, attempt]);
 
     return (
-        <section aria-label={isEngineer ? 'My projects road map' : 'Viewer road coverage map'} className="min-w-0">
+        <section
+            aria-label={
+                isEngineer ? 'My projects road map' : 'Viewer road coverage map'
+            }
+            className="min-w-0"
+        >
             {ready ? (
                 <MapBoundary>
-                    <Suspense fallback={<MapPlaceholder><span role="status">Opening road coverage map…</span></MapPlaceholder>}>
-                        <SimplifiedCoverageMap coverages={coverages} engineerView={isEngineer} viewerView={!isEngineer} height={450} />
+                    <Suspense
+                        fallback={
+                            <MapPlaceholder>
+                                <span role="status">
+                                    Opening road coverage map…
+                                </span>
+                            </MapPlaceholder>
+                        }
+                    >
+                        <SimplifiedCoverageMap
+                            coverages={coverages}
+                            engineerView={isEngineer}
+                            viewerView={!isEngineer}
+                            height={450}
+                        />
                     </Suspense>
                 </MapBoundary>
             ) : (
-                <MapPlaceholder><span role="status">{error ? 'Road map temporarily unavailable' : 'Loading road coverage map…'}</span></MapPlaceholder>
+                <MapPlaceholder>
+                    <span role="status">
+                        {error
+                            ? 'Road map temporarily unavailable'
+                            : 'Loading road coverage map…'}
+                    </span>
+                </MapPlaceholder>
             )}
             {cursor !== null && !error && (
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
-                    <span>Showing {coverages.length} of {total ?? 'available'} road coverages on the map.</span>
-                    <button type="button" disabled={loading} onClick={() => { setLoading(true); setError(''); setRequestCursor(cursor); }} className="rounded-lg border border-slate-300 px-4 py-2 font-semibold text-[var(--jr-display-accent)] hover:bg-[var(--jr-display-soft)] disabled:opacity-50">
+                    <span>
+                        Showing {coverages.length} of {total ?? 'available'}{' '}
+                        road coverages on the map.
+                    </span>
+                    <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => {
+                            setLoading(true);
+                            setError('');
+                            setRequestCursor(cursor);
+                        }}
+                        className="rounded-lg border border-slate-300 px-4 py-2 font-semibold text-[var(--jr-display-accent)] hover:bg-[var(--jr-display-soft)] disabled:opacity-50"
+                    >
                         {loading ? 'Loading roads…' : 'Load more map roads'}
                     </button>
                 </div>
             )}
-            {error && <div role="alert" className="mt-2 text-sm text-red-700">{error} <button type="button" className="underline" disabled={loading} onClick={() => { setLoading(true); setError(''); setAttempt(n => n + 1); }}>Retry</button></div>}
+            {error && (
+                <div role="alert" className="mt-2 text-sm text-red-700">
+                    {error}{' '}
+                    <button
+                        type="button"
+                        className="underline"
+                        disabled={loading}
+                        onClick={() => {
+                            setLoading(true);
+                            setError('');
+                            setAttempt((n) => n + 1);
+                        }}
+                    >
+                        Retry
+                    </button>
+                </div>
+            )}
         </section>
     );
 }
@@ -159,7 +289,8 @@ export default function RoleDashboard({
             id="notifications"
         >
             <h2 className="flex items-center gap-2 text-lg font-bold text-slate-950">
-                <Bell className="h-5 w-5 text-[var(--jr-role-accent)]" /> My notifications
+                <Bell className="h-5 w-5 text-[var(--jr-role-accent)]" /> My
+                notifications
             </h2>
             <p className="mt-1 text-sm text-slate-500">
                 Updates and messages for your account.
@@ -217,27 +348,27 @@ export default function RoleDashboard({
                         </p>
                     </div>
                     {isEngineer && (
-                    <button
-                        type="button"
-                        className={
-                            isEngineer
-                                ? 'jr-engineer-refresh'
-                                : 'jr-viewer-refresh'
-                        }
-                        disabled={refreshing}
-                        onClick={() =>
-                            router.reload({
-                                onStart: () => setRefreshing(true),
-                                onFinish: () => setRefreshing(false),
-                            })
-                        }
-                    >
-                        <RefreshCw
-                            className={`size-4${refreshing ? 'animate-spin' : ''}`}
-                            aria-hidden="true"
-                        />
-                        {refreshing ? 'Refreshing…' : 'Refresh dashboard'}
-                    </button>
+                        <button
+                            type="button"
+                            className={
+                                isEngineer
+                                    ? 'jr-engineer-refresh'
+                                    : 'jr-viewer-refresh'
+                            }
+                            disabled={refreshing}
+                            onClick={() =>
+                                router.reload({
+                                    onStart: () => setRefreshing(true),
+                                    onFinish: () => setRefreshing(false),
+                                })
+                            }
+                        >
+                            <RefreshCw
+                                className={`size-4${refreshing ? 'animate-spin' : ''}`}
+                                aria-hidden="true"
+                            />
+                            {refreshing ? 'Refreshing…' : 'Refresh dashboard'}
+                        </button>
                     )}
                 </div>
 
@@ -331,7 +462,11 @@ export default function RoleDashboard({
                     </section>
 
                     {isEngineer && (
-                        <DashboardRoadMap key={role + ':' + (engineer?.id ?? username)} isEngineer={isEngineer} total={stats.roadCoverages} />
+                        <DashboardRoadMap
+                            key={role + ':' + (engineer?.id ?? username)}
+                            isEngineer={isEngineer}
+                            total={stats.roadCoverages}
+                        />
                     )}
 
                     <DashboardAnalytics
@@ -340,7 +475,9 @@ export default function RoleDashboard({
                         omitInventoryMetrics
                         omitOngoingMetric={isEngineer}
                         showActivity={false}
-                        activityReplacement={isEngineer ? notificationPanel : undefined}
+                        activityReplacement={
+                            isEngineer ? notificationPanel : undefined
+                        }
                     />
 
                     <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
@@ -371,33 +508,33 @@ export default function RoleDashboard({
                             {[
                                 [
                                     'Maintenance Projects',
-                                    '/dd-phase3/projects',
+                                    '/workspace/projects',
                                     isEngineer
                                         ? 'Project and maintenance history'
                                         : 'Browse projects',
                                 ],
                                 [
                                     'Monthly Updates',
-                                    '/dd-phase3/updates',
+                                    '/workspace/updates',
                                     isEngineer
                                         ? 'My monthly progress reporting'
                                         : 'Browse monthly reports',
                                 ],
                                 [
                                     'Maintenance Documents',
-                                    '/dd-phase3/documents',
+                                    '/workspace/documents',
                                     isEngineer
                                         ? 'Assigned documentation'
                                         : 'Browse formal documents',
                                 ],
                                 [
                                     'Road Coverages',
-                                    '/dd-phase3/roads',
+                                    '/workspace/roads',
                                     'Road coverage inventory',
                                 ],
                                 [
                                     'LGU',
-                                    '/dd-phase3/lgus',
+                                    '/workspace/lgus',
                                     'Municipality information',
                                 ],
                             ].map(([label, href, summary]) => (
@@ -452,8 +589,8 @@ export default function RoleDashboard({
                                         <Link
                                             href={
                                                 record.projectId
-                                                    ? `/dd-phase3/ui/maintenance-projects/${record.projectId}${isEngineer ? `/records/${record.id}` : ''}`
-                                                    : '/dd-phase3/projects'
+                                                    ? `/workspace/ui/maintenance-projects/${record.projectId}${isEngineer ? `/records/${record.id}` : ''}`
+                                                    : '/workspace/projects'
                                             }
                                             className={cardLink}
                                         >
@@ -470,7 +607,7 @@ export default function RoleDashboard({
                                 )}
                             </div>
                             <Link
-                                href="/dd-phase3/projects"
+                                href="/workspace/projects"
                                 className={`${cardLink} mt-4`}
                             >
                                 Browse maintenance projects

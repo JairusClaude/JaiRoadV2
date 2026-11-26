@@ -25,7 +25,7 @@ async function signIn(email, password = 'Disposable-Test!123') {
     await page.getByLabel('Email address').fill(email);
     await page.getByLabel('Password', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-    await page.waitForURL(/dd-phase3\/dashboard|dd-superadmin-landing/);
+    await page.waitForURL(/workspace\/dashboard|superadmin-home/);
 
     return page;
 }
@@ -35,9 +35,9 @@ try {
     const nav = page
         .getByRole('link', { name: 'User Management', exact: true })
         .first();
-    assert.equal(await nav.getAttribute('href'), '/dd-phase3/users');
+    assert.equal(await nav.getAttribute('href'), '/workspace/users');
     await nav.click();
-    await page.waitForURL(`${base}/dd-phase3/users`);
+    await page.waitForURL(`${base}/workspace/users`);
     await page
         .getByRole('columnheader', { name: 'Account Type', exact: true })
         .waitFor();
@@ -141,7 +141,7 @@ try {
     const engineerRequest = page.waitForRequest(
         (request) =>
             request.method() === 'POST' &&
-            new URL(request.url()).pathname === '/dd-phase3/engineers',
+            new URL(request.url()).pathname === '/workspace/engineers',
     );
     await engineerForm
         .getByRole('button', { name: 'Create engineer', exact: true })
@@ -194,7 +194,7 @@ try {
     const accountRequest = page.waitForRequest(
         (request) =>
             request.method() === 'POST' &&
-            new URL(request.url()).pathname === '/dd-phase3/accounts',
+            new URL(request.url()).pathname === '/workspace/accounts',
     );
     await accountForm
         .getByRole('button', { name: 'Create account', exact: true })
@@ -225,7 +225,7 @@ try {
 
         if (
             request.method() === 'GET' &&
-            url.pathname === '/dd-phase3/users' &&
+            url.pathname === '/workspace/users' &&
             url.searchParams.has('directory_search')
         ) {
             redundantSearches.push(url.searchParams.get('directory_search'));
@@ -255,7 +255,7 @@ try {
     await combined.getByLabel(/^Password/).fill('Typed-Disposable!123');
     await combined.getByLabel(/^Confirm password/).fill('Typed-Disposable!123');
     const combinedRequest = page.waitForRequest((request) =>
-        request.method() === 'POST' && new URL(request.url()).pathname === '/dd-phase3/accounts',
+        request.method() === 'POST' && new URL(request.url()).pathname === '/workspace/accounts',
     );
     await combined.getByRole('button', { name: 'Create account', exact: true }).click();
     const combinedPayload = (await combinedRequest).postDataJSON();
@@ -267,11 +267,11 @@ try {
     await combinedRow.waitFor();
     assert.match(await combinedRow.innerText(), /Combined Fixture/);
 
-    await page.goto(`${base}/dd-phase3/settings`);
+    await page.goto(`${base}/workspace/settings`);
     await page.getByText('Account Type', { exact: true }).waitFor();
     assert.equal(await page.getByText('Role', { exact: true }).count(), 0);
     await page.goto(`${base}/user-management`);
-    await page.waitForURL(`${base}/dd-phase3/users`);
+    await page.waitForURL(`${base}/workspace/users`);
     assert.equal(await page.getByLabel(/Position/i).count(), 0);
     assert.doesNotMatch(
         await page.locator('body').innerText(),
@@ -281,7 +281,7 @@ try {
         'ui-type-engineer@example.test',
         'Typed-Disposable!123',
     );
-    const denied = await created.request.get(`${base}/dd-phase3/users`);
+    const denied = await created.request.get(`${base}/workspace/users`);
     assert.equal(denied.status(), 403);
     const superAdmin = await signIn(fixture.superadmin_email);
     await superAdmin
@@ -298,7 +298,7 @@ try {
             .getByRole('link', { name: 'User Management', exact: true })
             .first()
             .getAttribute('href'),
-        '/dd-phase3/users',
+        '/workspace/users',
     );
     assert.deepEqual(errors, []);
     console.log(

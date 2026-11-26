@@ -18,11 +18,11 @@ final class AccountTypeRankTest extends PostgresTestCase
         $admin = $this->account();
         $this->actingAs($admin);
         $input = ['first_name' => 'Rank', 'middle_name' => null, 'last_name' => 'Fixture', 'contact_no' => '09123456789'];
-        $this->postJson('/dd-phase3/engineers', $input)->assertUnprocessable()->assertJsonValidationErrors('rank');
+        $this->postJson('/workspace/engineers', $input)->assertUnprocessable()->assertJsonValidationErrors('rank');
         $this->assertSame(1, DB::table('jairoads_next.engineers')->count());
-        $this->postJson('/dd-phase3/engineers', $input + ['rank' => 'Engineer III'])->assertRedirect('/dd-phase3/users');
+        $this->postJson('/workspace/engineers', $input + ['rank' => 'Engineer III'])->assertRedirect('/workspace/users');
         $this->assertDatabaseHas('jairoads_next.engineers', ['first_name' => 'Rank', 'rank' => 'Engineer III', 'engineer_status' => 'Active']);
-        $this->assertSame('Admin', DB::table('jairoads_next.user_accounts')->where('id', $admin->dd_user_account_id)->value('account_type'));
+        $this->assertSame('Admin', DB::table('jairoads_next.user_accounts')->where('id', $admin->canonical_user_account_id)->value('account_type'));
     }
 
     public static function provisionedTypes(): iterable
@@ -39,12 +39,12 @@ final class AccountTypeRankTest extends PostgresTestCase
         $engineer = $this->engineer();
         $data = ['username' => 'typed-account', 'email' => 'typed@example.test', 'name' => 'Typed account',
             'account_type' => $type, 'engineer_id' => $engineer, 'password' => 'Typed-Disposable!123', 'password_confirmation' => 'Typed-Disposable!123'];
-        $this->postJson('/dd-phase3/accounts', $data)->assertRedirect('/dd-phase3/users');
+        $this->postJson('/workspace/accounts', $data)->assertRedirect('/workspace/users');
         $account = DB::table('jairoads_next.user_accounts')->where('username', 'typed-account')->first();
         $login = DB::table('public.users')->where('email', 'typed@example.test')->first();
         $this->assertSame($type, $account->account_type);
         $this->assertSame($engineer, $account->engineer_id);
-        $this->assertSame($account->id, $login->dd_user_account_id);
+        $this->assertSame($account->id, $login->canonical_user_account_id);
         $this->assertTrue(hash_equals($account->password, $login->password));
         $this->assertTrue(Hash::check('Typed-Disposable!123', $account->password));
         if ($engineer !== null) {
@@ -57,8 +57,8 @@ final class AccountTypeRankTest extends PostgresTestCase
         $this->actingAs($this->account('SuperAdmin'));
         $data = ['username' => 'invalid-type', 'email' => 'invalid-type@example.test', 'name' => 'Invalid type',
             'password' => 'Typed-Disposable!123', 'password_confirmation' => 'Typed-Disposable!123', 'position' => 'Admin', 'rank' => 'Admin'];
-        $this->postJson('/dd-phase3/accounts', $data)->assertUnprocessable()->assertJsonValidationErrors('account_type');
-        $this->postJson('/dd-phase3/accounts', $data + ['account_type' => 'SuperAdmin'])->assertUnprocessable()->assertJsonValidationErrors('account_type');
+        $this->postJson('/workspace/accounts', $data)->assertUnprocessable()->assertJsonValidationErrors('account_type');
+        $this->postJson('/workspace/accounts', $data + ['account_type' => 'SuperAdmin'])->assertUnprocessable()->assertJsonValidationErrors('account_type');
         $this->assertSame(1, DB::table('jairoads_next.user_accounts')->count());
     }
 
@@ -67,12 +67,12 @@ final class AccountTypeRankTest extends PostgresTestCase
         $f = $this->fixture('Engineer');
         $resolver = app(AccountIdentityResolver::class);
         $beforeIdentity = $resolver->resolve($f['user']);
-        $before = DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->first();
+        $before = DB::table('jairoads_next.user_accounts')->where('id', $f['user']->canonical_user_account_id)->first();
         $beforeCapabilities = RoleAccess::capabilities($beforeIdentity['role'], true, true);
         // There is no DD profile-update endpoint. Simulate an independent professional-rank
         // change only in this guarded disposable fixture; no application route is added.
         DB::table('jairoads_next.engineers')->where('id', $f['engineer'])->update(['rank' => 'SuperAdmin']);
-        $after = DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->first();
+        $after = DB::table('jairoads_next.user_accounts')->where('id', $f['user']->canonical_user_account_id)->first();
         $afterIdentity = $resolver->resolve($f['user']->fresh());
         $this->assertSame($beforeIdentity, $afterIdentity);
         $this->assertSame($beforeCapabilities, RoleAccess::capabilities($afterIdentity['role'], true, true));
@@ -82,9 +82,9 @@ final class AccountTypeRankTest extends PostgresTestCase
         $this->assertTrue(hash_equals($before->password, $after->password));
         $this->assertTrue(hash_equals($after->password, $f['user']->fresh()->password));
         $this->assertFalse($beforeCapabilities['manageAccounts']);
-        $this->get('/dd-phase3/dashboard')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+        $this->get('/workspace/dashboard')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
             ->component('RoleDashboard/Canonical')->where('role', 'engineer')->where('engineer.rank', 'SuperAdmin'));
-        $this->get('/dd-phase3/users')->assertForbidden();
+        $this->get('/workspace/users')->assertForbidden();
     }
 
     public function test_user_directory_exposes_canonical_types_and_rank_without_legacy_position(): void
@@ -94,7 +94,7 @@ final class AccountTypeRankTest extends PostgresTestCase
         $this->account('Viewer');
         $engineer = $this->engineer();
         $this->account('Engineer', $engineer);
-        $this->actingAs($admin)->get('/dd-phase3/users')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+        $this->actingAs($admin)->get('/workspace/users')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
             ->component('Workspace/Directory')->where('accounts.0.account_type', 'Engineer')
             ->where('accounts.1.account_type', 'Viewer')->where('accounts.2.account_type', 'SuperAdmin')->where('accounts.3.account_type', 'Admin')
             ->where('accounts.4.account_type', 'SuperAdmin')->where('accounts.0.engineer_id', $engineer)
@@ -104,7 +104,7 @@ final class AccountTypeRankTest extends PostgresTestCase
 
     public function test_dd_navigation_redirects_legacy_directory_and_blocks_legacy_position_mutations(): void
     {
-        $this->actingAs($this->account('Admin'))->get('/user-management')->assertRedirect('/dd-phase3/users');
+        $this->actingAs($this->account('Admin'))->get('/user-management')->assertRedirect('/workspace/users');
         $this->postJson('/user-management/engineers', ['first_name' => 'Legacy', 'position' => 'Engineer'])->assertForbidden();
         $this->patchJson('/user-management/engineers/999', ['position' => 'Changed'])->assertForbidden();
         $this->get('/engineers')->assertForbidden();

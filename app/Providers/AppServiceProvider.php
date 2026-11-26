@@ -39,7 +39,7 @@ class AppServiceProvider extends ServiceProvider
                 $request->attributes->set('security.logout_reference', SessionCatalog::reference($request->session()->getId()));
             }
         });
-        Auth::provider('dd-linked-eloquent', function ($app, array $config): LinkedPasswordUserProvider {
+        Auth::provider('workspace-linked-eloquent', function ($app, array $config): LinkedPasswordUserProvider {
             return new LinkedPasswordUserProvider($app['hash'], $config['model']);
         });
         $this->configureDefaults();

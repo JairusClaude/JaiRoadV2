@@ -20,7 +20,7 @@ final class RestrictiveProjectDeletionSafetyTest extends PostgresTestCase
     public function test_audit_insert_failure_rolls_back_empty_project_deletion(): void
     {
         $f = $this->fixture();
-        $url = '/dd-phase3/ui/maintenance-projects/'.$f['project'];
+        $url = '/workspace/ui/maintenance-projects/'.$f['project'];
         $token = $this->getJson($url.'/deletion-preview')->assertOk()->json('confirmation_token');
 
         DB::unprepared(<<<'SQL'
@@ -46,7 +46,7 @@ SQL);
     public function test_database_delete_failure_keeps_empty_project_and_audit_unchanged(): void
     {
         $f = $this->fixture();
-        $url = '/dd-phase3/ui/maintenance-projects/'.$f['project'];
+        $url = '/workspace/ui/maintenance-projects/'.$f['project'];
         $token = $this->getJson($url.'/deletion-preview')->assertOk()->json('confirmation_token');
 
         DB::unprepared(<<<'SQL'
@@ -68,7 +68,7 @@ SQL);
     public function test_concurrent_record_insert_prevents_empty_project_deletion(): void
     {
         $f = $this->fixture();
-        $url = '/dd-phase3/ui/maintenance-projects/'.$f['project'];
+        $url = '/workspace/ui/maintenance-projects/'.$f['project'];
         $token = $this->getJson($url.'/deletion-preview')->assertOk()->json('confirmation_token');
 
         // The existing worker uses an independent DB connection. The test database
@@ -106,7 +106,7 @@ SQL);
             $this->assertStringContainsString('maintenance_projects', $waiting->query);
 
             $record = (int) DB::table('jairoads_next.maintenance_records')->insertGetId(
-                $this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->dd_user_account_id]
+                $this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->canonical_user_account_id]
             );
             DB::commit();
             $worker->wait();

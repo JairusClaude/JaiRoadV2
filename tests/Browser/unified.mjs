@@ -20,7 +20,7 @@ assert.equal(process.env.JAIROADS_SCRATCH_APPROVAL, 'DISPOSABLE_LOCAL_ONLY');
 const f = JSON.parse(
     await readFile(process.env.QUARTERLY_BROWSER_FIXTURE, 'utf8'),
 );
-const ui = `${base}/dd-phase3/ui`;
+const ui = `${base}/workspace/ui`;
 const storage = await startStorageMock();
 const browser = await chromium.launch({
     executablePath: process.env.CHROME_EXECUTABLE,
@@ -99,6 +99,7 @@ async function signIn(email) {
         (await page.locator('img').count()) > 0,
         'Photographic login remains visible',
     );
+
     // Exercise the mobile welcome screen and successful document navigation
     // with the disposable SuperAdmin fixture; all other roles retain the
     // reduced-motion test setup.
@@ -112,15 +113,19 @@ async function signIn(email) {
         await page.emulateMedia({ reducedMotion: 'no-preference' });
 
     }
+
     await page.getByLabel('Email address').fill(email);
     await page
         .getByLabel('Password', { exact: true })
         .fill('Disposable-Test!123');
-    await page.evaluate(() => { document.documentElement.dataset.testLoginDocument = 'old'; });
+    await page.evaluate(() => {
+ document.documentElement.dataset.testLoginDocument = 'old';
+});
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-    await page.waitForURL(/dd-phase3\/dashboard|dd-superadmin-landing/);
+    await page.waitForURL(/workspace\/dashboard|superadmin-home/);
     await page.waitForFunction(() => document.documentElement.dataset.testLoginDocument !== 'old');
     assert.equal(await page.locator('.jr-auth-handoff').count(), 0);
+
     if (email === f.superadmin_email) {
         await page.locator('.jr-auth-handoff').waitFor({ state: 'detached' });
         await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -184,11 +189,16 @@ try {
             await icons.first().waitFor();
             const colors = await icons.evaluateAll(elements => elements.map(el => {
                 const style = getComputedStyle(el);
+
                 return [style.color, style.backgroundColor];
             }));
-            for (const pair of colors) assert.deepEqual(pair, [foreground, background], path);
+
+            for (const pair of colors) {
+assert.deepEqual(pair, [foreground, background], path);
+}
         }
-        await page.goto(base + '/dd-phase3/dashboard');
+
+        await page.goto(base + '/workspace/dashboard');
     }
 
     // Viewer palette is selected from the signed-in canonical role, not URL or preference.
@@ -215,12 +225,14 @@ try {
     await viewer.getByRole('heading', { name: 'Road Maintenance Overview' }).waitFor();
     await viewer.getByText('Read-Only Access', { exact: true }).waitFor();
     assert.equal(await viewer.getByRole('button', { name: 'Refresh dashboard', includeHidden: true }).count(), 0);
+
     for (const route of ['/maintenance-projects', '/maintenance-records', '/monthly-updates', '/maintenance-documents', '/road-coverages', '/lgus']) {
         await viewer.goto(ui + route);
         await viewer.locator('.jr-viewer-workspace').waitFor();
         assert.equal(await viewer.getByRole('button', { name: /^(Add|Create|Upload)\b/i, includeHidden: true }).count(), 0, route);
         assert.equal(await viewer.getByRole('button', { name: /^Select (projects|records|updates|documents|road coverages|LGUs)$/i, includeHidden: true }).count(), 0, route);
     }
+
     await viewer.goto(ui + '/maintenance-projects');
     await viewer.getByText('Browse road maintenance projects and their progress.', { exact: true }).waitFor();
     assert.equal(await viewer.getByRole('columnheader', { name: 'Actions', exact: true, includeHidden: true }).count(), 0);
@@ -230,6 +242,7 @@ try {
         const headers = [...table.querySelectorAll('thead th')];
         const row = table.querySelector('tbody tr');
         const last = headers[headers.length - 1];
+
         return {
             columns: table.querySelectorAll('colgroup col').length,
             headers: headers.length,
@@ -250,7 +263,7 @@ try {
     await readOnlyRecord.click();
     await viewer.getByRole('heading', { name: 'Maintenance Record Details' }).waitFor();
     assert.equal(await viewer.getByRole('button', { name: /^(Edit Record|Delete Record|Add Monthly Update|Upload Document)$/i, includeHidden: true }).count(), 0);
-    await viewer.goto(base + '/dd-phase3/dashboard');
+    await viewer.goto(base + '/workspace/dashboard');
     assert.equal(await viewer.locator('.jr-viewer-sidebar .jr-nav-link.jr-active').first().evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(29, 93, 181)');
 
     for (const other of [engineer, admin, superadmin]) {
@@ -379,11 +392,14 @@ throw new Error('Wave transform is static');
     await relationship.selectOption('all');
     const viewerMapRequests = [];
     const recordViewerMapRequest = request => {
-        if (new URL(request.url()).pathname === '/dd-phase3/dashboard/map-roads') viewerMapRequests.push(request.url());
+        if (new URL(request.url()).pathname === '/workspace/dashboard/map-roads') {
+viewerMapRequests.push(request.url());
+}
     };
     viewer.on('request', recordViewerMapRequest);
+
     try {
-        await viewer.goto(base + '/dd-phase3/dashboard');
+        await viewer.goto(base + '/workspace/dashboard');
         await viewer.getByRole('heading', { name: 'Road Maintenance Overview' }).waitFor();
         assert.equal(await viewer.getByRole('region', { name: /Viewer road coverage map|My projects road map/ }).count(), 0);
         assert.equal(await viewer.locator('.jr-road-map-panel').count(), 0);
@@ -520,7 +536,7 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         const savedResponse = engineer.waitForResponse(
             (r) =>
                 r.request().method() === 'PUT' &&
-                new URL(r.url()).pathname === `/dd-phase3/ui${path}`,
+                new URL(r.url()).pathname === `/workspace/ui${path}`,
         );
         await engineer
             .getByRole('button', { name: 'Save Changes', exact: true })
@@ -590,7 +606,7 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     const saved = engineer.waitForResponse(
         (r) =>
             r.request().method() === 'POST' &&
-            new URL(r.url()).pathname === '/dd-phase3/ui/road-coverages',
+            new URL(r.url()).pathname === '/workspace/ui/road-coverages',
     );
     await engineer
         .getByRole('button', { name: 'Save Road Coverage', exact: true })
@@ -690,7 +706,7 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         (
             await csrfPost(
                 engineer,
-                `/dd-phase3/ui/maintenance-projects/${project.id}/records`,
+                `/workspace/ui/maintenance-projects/${project.id}/records`,
                 period,
             )
         ).status,
@@ -721,7 +737,7 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     await engineer
         .getByRole('button', { name: /Save Monthly Update|Save Update/ })
         .click();
-    await engineer.waitForURL(/dd-phase3\/ui\/monthly-updates\/\d+$/);
+    await engineer.waitForURL(/workspace\/ui\/monthly-updates\/\d+$/);
     const report = (
         await props(
             engineer,
@@ -792,7 +808,7 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     for (const month of ['2027-12', '2026-01']) {
         const savedReport = await csrfPost(
             engineer,
-            '/dd-phase3/ui/monthly-updates',
+            '/workspace/ui/monthly-updates',
             {
                 maintenance_id: record.id,
                 update_month: month,
@@ -813,13 +829,13 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         .click();
     await engineer.waitForURL(`${ui}/monthly-updates/${january.id}`);
     // Both modules must return to all three explicit edit origins and keep filters.
-    const parentOrigin = `/dd-phase3/ui/maintenance-projects/${project.id}/records/${record.id}`;
+    const parentOrigin = `/workspace/ui/maintenance-projects/${project.id}/records/${record.id}`;
 
     for (const [module, entity, directoryQuery] of [
         ['monthly-updates', january, `?project=${project.id}&year=2026&sort=oldest&page=1`],
         ['maintenance-documents', doc, `?project=${project.id}&sort=oldest&page=1`],
     ]) {
-        const directory = `/dd-phase3/ui/${module}`;
+        const directory = `/workspace/ui/${module}`;
         const detail = `${directory}/${entity.id}`;
 
         for (const origin of [directory + directoryQuery, detail, parentOrigin]) {
@@ -904,14 +920,20 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     assert.ok(targetHref);
     const targetURL = new URL(targetHref, base).href;
     let releaseVisit;
-    const visitGate = new Promise(resolve => { releaseVisit = resolve; });
+    const visitGate = new Promise(resolve => {
+ releaseVisit = resolve;
+});
     const holdVisit = async route => {
-        if (route.request().headers()['x-inertia']) await visitGate;
+        if (route.request().headers()['x-inertia']) {
+await visitGate;
+}
+
         await route.continue();
     };
     await superadmin.route(targetURL, holdVisit);
     const navClick = navTarget.click();
     const navigationStatus = superadmin.locator('[data-jr-navigation-status] .jr-navigation-status');
+
     try {
         await navigationStatus.waitFor({ state: 'visible' });
         assert.equal(await superadmin.locator('.jr-loading-layer, .jr-loading-track').count(), 0);
@@ -922,6 +944,7 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         await navClick;
         await superadmin.unroute(targetURL, holdVisit);
     }
+
     await superadmin.waitForURL(targetURL);
     await navigationStatus.waitFor({ state: 'detached' });
     await superadmin.goto(`${ui}/monthly-updates`);
@@ -943,21 +966,26 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         name: 'Expand sidebar',
         exact: true,
     });
+
     if (await expandSidebar.isVisible()) {
         await expandSidebar.click();
     }
+
     await superadmin.waitForFunction(() => {
         const sidebar = document.querySelector('.jr-superadmin-sidebar');
+
         return sidebar && sidebar.getBoundingClientRect().width >= 240;
     });
     await collapseSidebar.click();
     await superadmin.waitForFunction(() => {
         const sidebar = document.querySelector('.jr-superadmin-sidebar');
+
         return sidebar && sidebar.getBoundingClientRect().width <= 80;
     });
     await expandSidebar.click();
     await superadmin.waitForFunction(() => {
         const sidebar = document.querySelector('.jr-superadmin-sidebar');
+
         return sidebar && sidebar.getBoundingClientRect().width >= 240;
     });
     const monthlyMetrics = superadmin.locator(
@@ -980,7 +1008,7 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         ),
         /rgb\(81, 38, 155\)/,
     );
-    await superadmin.goto(`${base}/dd-phase3/users`);
+    await superadmin.goto(`${base}/workspace/users`);
     await superadmin.getByRole('heading', {
         name: 'User Management',
         exact: true,
@@ -1004,7 +1032,7 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     const openRoadMunicipalityChange = async () => {
         // The reviewed municipality change flow lives in the canonical DD
         // road directory, not the legacy road detail view.
-        await engineer.goto(`${base}/dd-phase3/roads`);
+        await engineer.goto(`${base}/workspace/roads`);
         await engineer
             .getByRole('button', {
                 name: new RegExp(`Unified browser road.*Coverage ID: ${road.id}`, 's'),
@@ -1072,7 +1100,7 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     );
     assert.equal(
         (
-            await csrfPost(viewer, '/dd-phase3/ui/maintenance-projects', {
+            await csrfPost(viewer, '/workspace/ui/maintenance-projects', {
                 road_coverage_id: road.id,
                 project_title: 'Forbidden',
             })
@@ -1144,7 +1172,7 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         await engineer
             .getByRole('menuitem', { name: 'Settings', exact: true })
             .getAttribute('href'),
-        '/dd-phase3/settings',
+        '/workspace/settings',
     );
     await verifyAuthenticatedHistory(
         engineer,

@@ -46,6 +46,6 @@ Http::fake(function ($request) use ($argv) {
     return Http::response(['message' => 'Successfully deleted']);
 });
 Auth::guard()->setUser(User::findOrFail((int) $argv[1]));
-$request = Request::create('/dd-phase3/files/document/'.$argv[2], 'DELETE', server: ['HTTP_ACCEPT' => 'application/json']);
+$request = Request::create('/workspace/files/document/'.$argv[2], 'DELETE', server: ['HTTP_ACCEPT' => 'application/json']);
 $response = $app->make(Illuminate\Contracts\Http\Kernel::class)->handle($request);
 echo json_encode(['status' => $response->getStatusCode()], JSON_THROW_ON_ERROR);

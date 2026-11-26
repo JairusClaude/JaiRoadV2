@@ -32,7 +32,7 @@ type Details = {
     };
 };
 
-const base = '/dd-phase3/ui';
+const base = '/workspace/ui';
 const monthLabel = (month: string) => {
     const match = /^(\d{4})-(\d{2})/.exec(month);
 
@@ -68,7 +68,7 @@ export function RoadDetailsPanel({
 
     useEffect(() => {
         const controller = new AbortController();
-        fetch('/dd-phase3/dashboard/roads/' + roadId, {
+        fetch('/workspace/dashboard/roads/' + roadId, {
             headers: { Accept: 'application/json' },
             credentials: 'same-origin',
             cache: 'no-store',
@@ -180,10 +180,35 @@ export function RoadDetailsPanel({
                                     </p>
                                     {engineerView && (
                                         <>
-                                            <span className="jr-road-details-assignment" data-relationship={project.created_by_me && project.assigned_to_me ? 'both' : project.created_by_me ? 'created' : project.assigned_to_me ? 'assigned' : 'other'}>
-                                                {project.created_by_me && project.assigned_to_me ? 'Created and assigned to you' : project.created_by_me ? 'Created by you' : project.assigned_to_me ? 'Assigned to you' : 'Other project'}
+                                            <span
+                                                className="jr-road-details-assignment"
+                                                data-relationship={
+                                                    project.created_by_me &&
+                                                    project.assigned_to_me
+                                                        ? 'both'
+                                                        : project.created_by_me
+                                                          ? 'created'
+                                                          : project.assigned_to_me
+                                                            ? 'assigned'
+                                                            : 'other'
+                                                }
+                                            >
+                                                {project.created_by_me &&
+                                                project.assigned_to_me
+                                                    ? 'Created and assigned to you'
+                                                    : project.created_by_me
+                                                      ? 'Created by you'
+                                                      : project.assigned_to_me
+                                                        ? 'Assigned to you'
+                                                        : 'Other project'}
                                             </span>
-                                            {project.my_record_count > 0 && <p className="jr-road-details-muted">{project.my_record_count} maintenance record(s) assigned to you</p>}
+                                            {project.my_record_count > 0 && (
+                                                <p className="jr-road-details-muted">
+                                                    {project.my_record_count}{' '}
+                                                    maintenance record(s)
+                                                    assigned to you
+                                                </p>
+                                            )}
                                         </>
                                     )}
                                 </>

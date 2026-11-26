@@ -37,7 +37,7 @@ final class LguDirectoryController extends Controller
             $this->audit($actor, 'CREATE', 'LGU', $id, 'Authorized administrator created an LGU.', ['lgu_id' => $id]);
         });
 
-        return redirect()->route('jairoads.dd-phase3.show', ['section' => 'lgus'])->with('dd_phase3_status', 'Municipality created.');
+        return redirect()->route('jairoads.workspace.show', ['section' => 'lgus'])->with('workspace_status', 'Municipality created.');
     }
 
     /**
@@ -65,7 +65,7 @@ final class LguDirectoryController extends Controller
             $this->audit($actor, 'UPDATE', 'LGU', $id, 'Authorized administrator updated an LGU.', app(AuditValues::class)->persisted('LGU', $id), (array) $row);
         });
 
-        return redirect()->route('jairoads.dd-phase3.show', ['section' => 'lgus'])->with('dd_phase3_status', 'Municipality updated.');
+        return redirect()->route('jairoads.workspace.show', ['section' => 'lgus'])->with('workspace_status', 'Municipality updated.');
     }
 
     public function deleteLgu(Request $request, AccountIdentityResolver $resolver, int $id): RedirectResponse
@@ -87,6 +87,6 @@ final class LguDirectoryController extends Controller
             $this->audit($actor, 'DELETE', 'LGU', $id, 'Authorized administrator deleted an unreferenced LGU.', [], (array) $row);
         });
 
-        return redirect()->route('jairoads.dd-phase3.show', ['section' => 'lgus'])->with('dd_phase3_status', 'Municipality deleted.');
+        return redirect()->route('jairoads.workspace.show', ['section' => 'lgus'])->with('workspace_status', 'Municipality deleted.');
     }
 }

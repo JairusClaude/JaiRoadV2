@@ -30,9 +30,9 @@ test('HTTPS public origin preserves client-side login and canonical workspace re
         ])->assertRedirect('https://jairoads.example.test/dashboard');
         $this->assertAuthenticatedAs($user);
 
-        $this->get('/dashboard')->assertRedirect('https://jairoads.example.test/dd-superadmin-landing');
-        $this->get('/maintenance-projects')->assertRedirect('https://jairoads.example.test/dd-phase3/ui/maintenance-projects');
-        $this->get('/user-management')->assertRedirect('https://jairoads.example.test/dd-phase3/users');
+        $this->get('/dashboard')->assertRedirect('https://jairoads.example.test/superadmin-home');
+        $this->get('/maintenance-projects')->assertRedirect('https://jairoads.example.test/workspace/ui/maintenance-projects');
+        $this->get('/user-management')->assertRedirect('https://jairoads.example.test/workspace/users');
     } finally {
         // In-process test requests share configuration and the URL generator.
         // Restore both before unrelated tests and password-recovery flows.

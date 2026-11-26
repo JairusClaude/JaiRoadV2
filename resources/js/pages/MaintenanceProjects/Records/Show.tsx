@@ -1,4 +1,3 @@
-import { manilaTimestamp } from '@/lib/manila-time';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
@@ -11,6 +10,7 @@ import type { RelatedMonthlyUpdate } from '@/components/maintenance-projects/rec
 import { Button } from '@/components/ui/button';
 import { editUrl } from '@/lib/form-navigation';
 import { engineerName, validRecordDate } from '@/lib/maintenance-records';
+import { manilaTimestamp } from '@/lib/manila-time';
 import { workspaceHref } from '@/lib/workspace-navigation';
 import type { DocumentSummary } from '@/types/maintenance-documents';
 import type { ProjectSummary } from '@/types/maintenance-projects';
@@ -42,7 +42,10 @@ export default function ShowRecord({
     managerChoices?: { id: number; first_name: string; last_name: string }[];
 }) {
     const page = usePage();
-    const isViewer = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role?.toLowerCase() === 'viewer';
+    const isViewer =
+        (
+            page.props.jairoadsIdentity as { role?: string } | undefined
+        )?.role?.toLowerCase() === 'viewer';
     const deletion = useRecordDeletion();
 
     return (
@@ -67,32 +70,37 @@ export default function ShowRecord({
                             ID: {record.id}
                         </p>
                     </div>
-                    {!isViewer && (record.edit_url || record.delete_url) && <div className="jr-header-actions">
-                        {!isViewer && Boolean(record.edit_url) && (
-<Button
-                            variant="outline"
-                            disabled={!record.edit_url}
-                            onClick={() => {
-                                if (record.edit_url) {
-                                    router.visit(
-                                        editUrl(record.edit_url, page.url),
-                                    );
-                                }
-                            }}
-                        >
-                            <Pencil /> Edit Record
-                        </Button>
-)}
-                        {!isViewer && Boolean(record.delete_url) && (
-<Button
-                            className="jr-danger"
-                            disabled={!record.delete_url}
-                            onClick={() => deletion.open(record)}
-                        >
-                            <Trash2 /> Delete Record
-                        </Button>
-)}
-                    </div>}
+                    {!isViewer && (record.edit_url || record.delete_url) && (
+                        <div className="jr-header-actions">
+                            {!isViewer && Boolean(record.edit_url) && (
+                                <Button
+                                    variant="outline"
+                                    disabled={!record.edit_url}
+                                    onClick={() => {
+                                        if (record.edit_url) {
+                                            router.visit(
+                                                editUrl(
+                                                    record.edit_url,
+                                                    page.url,
+                                                ),
+                                            );
+                                        }
+                                    }}
+                                >
+                                    <Pencil /> Edit Record
+                                </Button>
+                            )}
+                            {!isViewer && Boolean(record.delete_url) && (
+                                <Button
+                                    className="jr-danger"
+                                    disabled={!record.delete_url}
+                                    onClick={() => deletion.open(record)}
+                                >
+                                    <Trash2 /> Delete Record
+                                </Button>
+                            )}
+                        </div>
+                    )}
                 </div>
                 <div className="jr-record-context">
                     <span className="jr-record-context-label">

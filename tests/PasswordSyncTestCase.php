@@ -51,7 +51,7 @@ abstract class PasswordSyncTestCase extends TestCase
             CREATE TABLE public.users (
                 id bigserial PRIMARY KEY, name varchar(255) NOT NULL, email varchar(255) UNIQUE NOT NULL,
                 password varchar(255) NOT NULL, remember_token varchar(100), email_verified_at timestamp,
-                user_account_id bigint, dd_user_account_id bigint, two_factor_secret text,
+                user_account_id bigint, canonical_user_account_id bigint, two_factor_secret text,
                 two_factor_recovery_codes text, two_factor_confirmed_at timestamp,
                 created_at timestamp, updated_at timestamp
             );
@@ -99,7 +99,7 @@ abstract class PasswordSyncTestCase extends TestCase
         $engineerId = $role === 'SuperAdmin' ? null : 88;
         if ($role !== 'SuperAdmin') {
             DB::table('jairoads_next.user_accounts')->insert(['id' => 76, 'username' => 'fixture-root', 'email' => 'fixture-root@example.test', 'password' => $hash, 'account_type' => 'SuperAdmin', 'is_active' => true]);
-            User::forceCreate(['id' => 900, 'name' => 'Fixture root', 'email' => 'fixture-root@example.test', 'password' => $hash, 'dd_user_account_id' => 76]);
+            User::forceCreate(['id' => 900, 'name' => 'Fixture root', 'email' => 'fixture-root@example.test', 'password' => $hash, 'canonical_user_account_id' => 76]);
         }
         if ($engineerId !== null) {
             DB::table('jairoads_next.engineers')->insert(['id' => 88, 'engineer_status' => 'Active']);
@@ -114,7 +114,7 @@ abstract class PasswordSyncTestCase extends TestCase
 
         $login = User::forceCreate([
             'id' => 901, 'name' => 'Linked fixture', 'email' => 'linked@example.test', 'password' => $hash,
-            'dd_user_account_id' => 77, 'user_account_id' => null,
+            'canonical_user_account_id' => 77, 'user_account_id' => null,
             'remember_token' => str_repeat('r', 60), 'email_verified_at' => now(),
         ]);
         if ($role !== 'SuperAdmin') {
@@ -130,10 +130,10 @@ abstract class PasswordSyncTestCase extends TestCase
     protected function assertSynchronized(User $login, string $newPassword): void
     {
         $login->refresh();
-        $ddHash = DB::table('jairoads_next.user_accounts')->where('id', $login->getAttribute('dd_user_account_id'))->value('password');
-        $this->assertTrue(is_string($ddHash) && hash_equals($login->password, $ddHash));
+        $canonicalHash = DB::table('jairoads_next.user_accounts')->where('id', $login->getAttribute('canonical_user_account_id'))->value('password');
+        $this->assertTrue(is_string($canonicalHash) && hash_equals($login->password, $canonicalHash));
         $this->assertTrue(Hash::check($newPassword, $login->password));
-        $this->assertTrue(Hash::check($newPassword, $ddHash));
+        $this->assertTrue(Hash::check($newPassword, $canonicalHash));
         $this->assertFalse(Hash::check('old-password', $login->password));
     }
 }

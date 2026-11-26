@@ -99,7 +99,7 @@ final class PermanentFileDeletion
             'maintenance_id' => (int) $row->maintenance_id, 'monthly_update_id' => $row->monthly_update_id ?? null,
             'pending' => $pending, 'can_delete' => $enabled, 'policy_status' => $enabled ? 'permanent_individual_deletion' : 'pending_schema_owner',
             'message' => $enabled ? 'Only this selected file and its private Storage object will be permanently removed.' : 'Permanent file deletion is temporarily unavailable.',
-            'delete_url' => $enabled ? '/dd-phase3/files/'.$kind.'/'.$id : null];
+            'delete_url' => $enabled ? '/workspace/files/'.$kind.'/'.$id : null];
     }
 
     /** Verify the approved target without making a Storage deletion. */
@@ -139,7 +139,7 @@ final class PermanentFileDeletion
                     abort_unless($locked->object_path === $expectedPath, 409, 'A reviewed file changed. Refresh the preview.');
                 }
                 if ($locked !== null && $locked->state === 'pending') {
-                    DB::table(self::TABLE)->where('id', $existing->id)->update(['requested_by' => $actor['account_id'], 'actor_role' => $actor['role'], 'actor_identifier' => 'DD-UserAccount#'.$actor['account_id']]);
+                    DB::table(self::TABLE)->where('id', $existing->id)->update(['requested_by' => $actor['account_id'], 'actor_role' => $actor['role'], 'actor_identifier' => 'User Account #'.$actor['account_id']]);
                 }
 
                 return (int) $existing->id;
@@ -169,7 +169,7 @@ final class PermanentFileDeletion
             }
 
             return (int) DB::table(self::TABLE)->insertGetId(['kind' => $kind, 'entity_id' => $id,
-                'initiated_by' => $actor['account_id'], 'requested_by' => $actor['account_id'], 'actor_role' => $actor['role'], 'actor_identifier' => 'DD-UserAccount#'.$actor['account_id'],
+                'initiated_by' => $actor['account_id'], 'requested_by' => $actor['account_id'], 'actor_role' => $actor['role'], 'actor_identifier' => 'User Account #'.$actor['account_id'],
                 'maintenance_id' => (int) $row->maintenance_id, 'monthly_update_id' => $row->monthly_update_id ?? null,
                 'file_name' => $row->file_name, 'object_path' => $row->file_path, 'storage_origin' => $location['origin'], 'bucket' => $location['bucket']]);
         });
@@ -220,7 +220,7 @@ final class PermanentFileDeletion
                 if ($account->engineer_id !== null) {
                     DB::table('jairoads_next.engineers')->where('id', $account->engineer_id)->sharedLock()->first(['id']);
                 }
-                $login = User::where('dd_user_account_id', $intent->requested_by)->first();
+                $login = User::where('canonical_user_account_id', $intent->requested_by)->first();
                 abort_unless($login instanceof User, 403);
                 $actor = $this->actor($login);
                 abort_unless($actor['role'] === $intent->actor_role, 403);

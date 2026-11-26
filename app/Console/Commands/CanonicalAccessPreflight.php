@@ -31,7 +31,7 @@ final class CanonicalAccessPreflight extends Command
             foreach (DB::table('jairoads_next.user_accounts as a')->leftJoin('jairoads_next.engineers as e', 'a.engineer_id', '=', 'e.id')
                 ->orderBy('a.id')->get(['a.id', 'a.account_type', 'a.engineer_id', 'a.is_active', 'e.engineer_status']) as $a) {
                 $issues = [];
-                $logins = User::where('dd_user_account_id', $a->id)->get();
+                $logins = User::where('canonical_user_account_id', $a->id)->get();
                 if (! $a->is_active) {
                     $issues[] = 'inactive';
                 }
@@ -49,7 +49,7 @@ final class CanonicalAccessPreflight extends Command
                 }
                 if ($logins->count() !== 1) {
                     $issues[] = 'missing_or_ambiguous_fortify_bridge';
-                } elseif (! DB::table('public.users as u')->join('jairoads_next.user_accounts as a', 'u.dd_user_account_id', '=', 'a.id')
+                } elseif (! DB::table('public.users as u')->join('jairoads_next.user_accounts as a', 'u.canonical_user_account_id', '=', 'a.id')
                     ->where('a.id', $a->id)->whereRaw('lower(u.email) = lower(a.email) AND u.password = a.password')->exists()) {
                     $issues[] = 'email_or_credential_mismatch';
                 }
@@ -62,8 +62,8 @@ final class CanonicalAccessPreflight extends Command
             }
 
             return ['provenance_available' => $provisioning->available(), 'accounts' => $rows,
-                'legacy_only_login_ids' => User::whereNull('dd_user_account_id')->orderBy('id')->pluck('id')->all(),
-                'orphaned_bridge_login_ids' => User::whereNotNull('dd_user_account_id')->whereNotIn('dd_user_account_id', DB::table('jairoads_next.user_accounts')->select('id'))->orderBy('id')->pluck('id')->all()];
+                'legacy_only_login_ids' => User::whereNull('canonical_user_account_id')->orderBy('id')->pluck('id')->all(),
+                'orphaned_bridge_login_ids' => User::whereNotNull('canonical_user_account_id')->whereNotIn('canonical_user_account_id', DB::table('jairoads_next.user_accounts')->select('id'))->orderBy('id')->pluck('id')->all()];
         });
         if ($this->option('summary')) {
             // Safe to share with reviewers: role-level counts only. No IDs,

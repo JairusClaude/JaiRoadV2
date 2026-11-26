@@ -26,7 +26,7 @@ async function signIn(email) {
         .getByLabel('Password', { exact: true })
         .fill('Disposable-Test!123');
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-    await page.waitForURL(/dd-phase3\/dashboard/);
+    await page.waitForURL(/workspace\/dashboard/);
 
     return page;
 }
@@ -35,16 +35,18 @@ try {
     const former = await signIn(f.former_email);
     const viewer = await signIn(f.viewer_email);
     const admin = await signIn(f.admin_email);
-    await admin.goto(`${base}/dd-phase3/users`);
+    await admin.goto(`${base}/workspace/users`);
     await admin.getByRole('button', { name: 'Add Account', exact: true }).click();
     const addAccount = admin.getByRole('dialog');
     await addAccount.getByLabel('Account Type').selectOption('Viewer');
     assert.equal(await addAccount.getByRole('group', { name: 'Engineer profile' }).count(), 0);
     assert.equal(await addAccount.getByRole('button', { name: /Create new profile|Link existing profile/ }).count(), 0);
+
     for (const role of ['Admin', 'Engineer']) {
         await addAccount.getByLabel('Account Type').selectOption(role);
         await addAccount.getByRole('group', { name: 'Engineer profile' }).waitFor();
     }
+
     await addAccount.getByRole('button', { name: 'Cancel', exact: true }).click();
     const directoryViews = admin.getByRole('navigation', { name: 'Directory views' });
     assert.equal(await directoryViews.getByRole('button', { name: 'Engineers', exact: true }).count(), 1);
@@ -83,7 +85,7 @@ try {
         .getByRole('button', { name: 'Reactivate account', exact: true })
         .waitFor();
     assert.equal(
-        (await viewer.request.get(`${base}/dd-phase3/dashboard`)).status(),
+        (await viewer.request.get(`${base}/workspace/dashboard`)).status(),
         403,
     );
     await accounts
@@ -93,7 +95,7 @@ try {
         .getByRole('button', { name: 'Deactivate account', exact: true })
         .waitFor();
     await admin.goto(
-        `${base}/dd-phase3/projects?view=show&project=${f.project_id}`,
+        `${base}/workspace/projects?view=show&project=${f.project_id}`,
     );
     await admin
         .getByRole('button', { name: 'Reassign manager', exact: true })
@@ -110,7 +112,7 @@ try {
         .click();
     await reassign.waitFor({ state: 'detached' });
     await former.goto(
-        `${base}/dd-phase3/projects?view=show&project=${f.project_id}`,
+        `${base}/workspace/projects?view=show&project=${f.project_id}`,
     );
     assert.equal(
         await former
@@ -120,7 +122,7 @@ try {
     );
     const replacement = await signIn(f.replacement_email);
     await replacement.goto(
-        `${base}/dd-phase3/projects?view=show&project=${f.project_id}`,
+        `${base}/workspace/projects?view=show&project=${f.project_id}`,
     );
     await replacement
         .getByRole('button', { name: 'Edit details', exact: true })
@@ -130,7 +132,7 @@ try {
         ['documents', 'document', 'fixture.pdf'],
         ['updates', 'media', 'fixture.png'],
     ]) {
-        await admin.goto(`${base}/dd-phase3/${section}`);
+        await admin.goto(`${base}/workspace/${section}`);
         const review = admin.getByRole('region', {
             name: `${kind} removal preparation`,
         });
@@ -148,7 +150,7 @@ try {
         await review.getByRole('status').waitFor();
     }
 
-    await admin.goto(`${base}/dd-phase3/users`);
+    await admin.goto(`${base}/workspace/users`);
     await admin.getByRole('button', { name: /^Engineers/ }).click();
     await admin.locator(`[data-engineer-id="${f.former_id}"]`).getByRole('button', { name: /^Actions for/ }).click();
     await admin.getByRole('menuitem', { name: 'Manage Account', exact: true }).waitFor();
@@ -161,7 +163,7 @@ try {
         .filter({ hasText: 'Engineer retired.' })
         .waitFor();
     assert.equal(
-        (await former.request.get(`${base}/dd-phase3/dashboard`)).status(),
+        (await former.request.get(`${base}/workspace/dashboard`)).status(),
         403,
     );
     assert.deepEqual(errors, []);

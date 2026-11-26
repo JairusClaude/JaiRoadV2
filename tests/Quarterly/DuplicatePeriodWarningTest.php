@@ -15,7 +15,7 @@ final class DuplicatePeriodWarningTest extends PostgresTestCase
     {
         $f = $this->fixture('Engineer');
         $data = $this->formData($f['project'], $f['engineer']);
-        $url = '/dd-phase3/ui/maintenance-projects/'.$f['project'].'/records';
+        $url = '/workspace/ui/maintenance-projects/'.$f['project'].'/records';
         $this->postJson($url, $data)->assertRedirect();
         $existing = (int) DB::table('jairoads_next.maintenance_records')->value('id');
         $history = DB::table('jairoads_next.audit_logs')->orderBy('id')->get()->toJson();
@@ -35,7 +35,7 @@ final class DuplicatePeriodWarningTest extends PostgresTestCase
     public function test_another_engineer_cannot_bypass_the_project_period_rule(): void
     {
         $f = $this->fixture('Engineer');
-        $url = '/dd-phase3/ui/maintenance-projects/'.$f['project'].'/records';
+        $url = '/workspace/ui/maintenance-projects/'.$f['project'].'/records';
         $this->postJson($url, $this->formData($f['project'], $f['engineer']))->assertRedirect();
         $other = $this->engineer();
         $otherUser = $this->account('Engineer', $other);
@@ -54,17 +54,17 @@ final class DuplicatePeriodWarningTest extends PostgresTestCase
     public function test_duplicate_period_warning_survives_historical_lgu_unassignment_without_leaking_to_viewers(): void
     {
         $f = $this->fixture('Engineer');
-        $url = '/dd-phase3/ui/maintenance-projects/'.$f['project'].'/records';
+        $url = '/workspace/ui/maintenance-projects/'.$f['project'].'/records';
         $data = $this->formData($f['project'], $f['engineer']);
         $this->postJson($url, $data)->assertRedirect();
         $this->from($url.'/create')->post($url, $data)->assertSessionHasErrors('quarter');
         $oldLgu = DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->value('lgu_id');
         DB::table('jairoads_next.engineer_lgus')->where('engineer_id', $f['engineer'])->where('lgu_id', $oldLgu)->update(['is_active' => false]);
         $road = $this->road($f['engineer']);
-        $otherProject = (int) DB::table('jairoads_next.maintenance_projects')->insertGetId(['project_title' => 'Other authorized project', 'road_coverage_id' => $road, 'created_by' => $f['user']->dd_user_account_id]);
+        $otherProject = (int) DB::table('jairoads_next.maintenance_projects')->insertGetId(['project_title' => 'Other authorized project', 'road_coverage_id' => $road, 'created_by' => $f['user']->canonical_user_account_id]);
         // Historical LGU membership no longer revokes an active Engineer's
         // cross-municipality read or ownership. The duplicate remains visible.
-        $this->get('/dd-phase3/ui/maintenance-records/create')->assertInertia(fn (Assert $page) => $page
+        $this->get('/workspace/ui/maintenance-records/create')->assertInertia(fn (Assert $page) => $page
             ->where('duplicatePeriod.project_id', $f['project'])
             ->has('records', 1)->has('projects', 2));
         $existing = (int) DB::table('jairoads_next.maintenance_records')->value('id');
@@ -77,7 +77,7 @@ final class DuplicatePeriodWarningTest extends PostgresTestCase
     {
         $f = $this->fixture();
         $this->withSession(['dd_duplicate_period' => ['project_id' => $f['project'], 'maintenance_year' => 2026, 'quarter' => 'Q1']])
-            ->get('/dd-phase3/ui/maintenance-records/create')->assertInertia(fn (Assert $page) => $page
+            ->get('/workspace/ui/maintenance-records/create')->assertInertia(fn (Assert $page) => $page
             ->where('duplicatePeriod.details_url', null));
     }
 
@@ -126,7 +126,7 @@ final class DuplicatePeriodWarningTest extends PostgresTestCase
         });
         $this->withoutExceptionHandling();
         try {
-            $this->postJson('/dd-phase3/ui/maintenance-projects/'.$f['project'].'/records', $this->formData($f['project'], $f['engineer']));
+            $this->postJson('/workspace/ui/maintenance-projects/'.$f['project'].'/records', $this->formData($f['project'], $f['engineer']));
             $this->fail('Unrelated database failures must propagate.');
         } catch (QueryException $error) {
             $this->assertStringContainsString('audit_logs', $error->getSql());

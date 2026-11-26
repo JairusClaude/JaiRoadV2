@@ -56,14 +56,14 @@ final class AccountIdentityResolver
     /** @return array{account_id: int, role: string, engineer_id: ?int}|null */
     private function identity(User $login, bool $recovery, bool $reactivation = false): ?array
     {
-        if (! $login->exists || ! $login->getKey() || $login->getAttribute('dd_user_account_id') === null
+        if (! $login->exists || ! $login->getKey() || $login->getAttribute('canonical_user_account_id') === null
             || $login->getConnection()->getDriverName() !== 'pgsql') {
             return null;
         }
 
         $row = $this->eligibleLinks($recovery, $reactivation)
             ->where('login.id', $login->getKey())
-            ->where('login.dd_user_account_id', $login->getAttribute('dd_user_account_id'))
+            ->where('login.canonical_user_account_id', $login->getAttribute('canonical_user_account_id'))
             ->first(['account.id', 'account.account_type', 'account.engineer_id']);
 
         return $row === null ? null : ['account_id' => (int) $row->id,
@@ -94,11 +94,11 @@ final class AccountIdentityResolver
     private function eligibleLinks(bool $recovery, bool $reactivation = false): Builder
     {
         $query = DB::table('public.users as login')
-            ->join('jairoads_next.user_accounts as account', 'login.dd_user_account_id', '=', 'account.id')
+            ->join('jairoads_next.user_accounts as account', 'login.canonical_user_account_id', '=', 'account.id')
             ->leftJoin('jairoads_next.engineers as engineer', 'account.engineer_id', '=', 'engineer.id')
             ->whereIn('account.account_type', ['SuperAdmin', 'Admin', 'Engineer', 'Viewer'])
             ->whereRaw('LOWER(account.email) = LOWER(login.email)')
-            ->whereRaw('(SELECT count(*) FROM public.users AS bridge WHERE bridge.dd_user_account_id = account.id) = 1')
+            ->whereRaw('(SELECT count(*) FROM public.users AS bridge WHERE bridge.canonical_user_account_id = account.id) = 1')
             ->where(function (Builder $q): void {
                 $q->where(function (Builder $root): void {
                     $root->where('account.account_type', 'SuperAdmin')->whereNull('account.engineer_id');

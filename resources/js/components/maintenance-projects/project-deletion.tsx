@@ -57,7 +57,7 @@ export function useProjectDeletion(onDeleted?: () => void) {
             const reviewed = await Promise.all(
                 selected.map(async (project) => {
                     const response = await fetch(
-                        `/dd-phase3/ui/maintenance-projects/${project.id}/deletion-preview`,
+                        `/workspace/ui/maintenance-projects/${project.id}/deletion-preview`,
                         {
                             headers: { Accept: 'application/json' },
                             cache: 'no-store',
@@ -154,8 +154,8 @@ export function useProjectDeletion(onDeleted?: () => void) {
             const single = impacts.length === 1;
             const response = await fetch(
                 single
-                    ? `/dd-phase3/ui/maintenance-projects/${impacts[0].project.id}`
-                    : '/dd-phase3/ui/maintenance-projects/bulk',
+                    ? `/workspace/ui/maintenance-projects/${impacts[0].project.id}`
+                    : '/workspace/ui/maintenance-projects/bulk',
                 {
                     method: 'DELETE',
                     headers: {

@@ -97,7 +97,7 @@ export function WorkspaceProjectDirectory({
             page: String(page),
         });
         clearSelection();
-        onNavigate(`/dd-phase3/projects?${query.toString()}`);
+        onNavigate(`/workspace/projects?${query.toString()}`);
     };
 
     return (
@@ -112,7 +112,7 @@ export function WorkspaceProjectDirectory({
                         className="jr-primary"
                         disabled={!integration.ready || busy}
                         onClick={() =>
-                            onNavigate('/dd-phase3/projects?view=create')
+                            onNavigate('/workspace/projects?view=create')
                         }
                     >
                         <Plus />
@@ -298,7 +298,7 @@ export function WorkspaceProjectDirectory({
                                     selecting
                                         ? toggle(project.id)
                                         : onNavigate(
-                                              `/dd-phase3/projects?view=show&project=${project.id}`,
+                                              `/workspace/projects?view=show&project=${project.id}`,
                                           )
                                 }
                             >
@@ -332,7 +332,7 @@ export function WorkspaceProjectDirectory({
                                             ) : (
                                                 <a
                                                     className="jr-project-title"
-                                                    href={`/dd-phase3/projects?view=show&project=${project.id}`}
+                                                    href={`/workspace/projects?view=show&project=${project.id}`}
                                                     onClick={(event) => {
                                                         if (
                                                             !event.ctrlKey &&
@@ -343,7 +343,7 @@ export function WorkspaceProjectDirectory({
                                                             event.preventDefault();
                                                             event.stopPropagation();
                                                             onNavigate(
-                                                                `/dd-phase3/projects?view=show&project=${project.id}`,
+                                                                `/workspace/projects?view=show&project=${project.id}`,
                                                             );
                                                         } else {
                                                             event.stopPropagation();
@@ -375,7 +375,7 @@ export function WorkspaceProjectDirectory({
                                             project={project}
                                             onEdit={() =>
                                                 onNavigate(
-                                                    `/dd-phase3/projects?view=edit&project=${project.id}`,
+                                                    `/workspace/projects?view=edit&project=${project.id}`,
                                                 )
                                             }
                                             onDelete={() => onDelete([project])}
@@ -385,14 +385,14 @@ export function WorkspaceProjectDirectory({
                             </tr>
                         ))}
                         {projects.data.length === 0 && (
-                            <tr className="jr-dd-empty-row">
+                            <tr className="jr-workspace-empty-row">
                                 <td colSpan={3}>
                                     <div
-                                        className="jr-dd-empty-content"
+                                        className="jr-workspace-empty-content"
                                         role="status"
                                     >
                                         <span
-                                            className="jr-dd-empty-icon"
+                                            className="jr-workspace-empty-icon"
                                             aria-hidden="true"
                                         >
                                             <FolderOpen className="h-6 w-6" />

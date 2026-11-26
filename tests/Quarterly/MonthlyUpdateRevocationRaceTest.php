@@ -25,14 +25,14 @@ final class MonthlyUpdateRevocationRaceTest extends PostgresTestCase
     {
         $f = $this->fixture('Engineer');
         $record = (int) DB::table('jairoads_next.maintenance_records')->insertGetId(
-            $this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->dd_user_account_id]);
+            $this->recordData($f['project'], $f['engineer']) + ['created_by' => $f['user']->canonical_user_account_id]);
         $lgu = DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->value('lgu_id');
         $replacement = $this->engineer();
         $this->account('Engineer', $replacement);
         DB::table('jairoads_next.engineer_lgus')->insert(['engineer_id' => $replacement, 'lgu_id' => $lgu, 'is_active' => true]);
         $id = $method === 'PUT' ? (int) DB::table('jairoads_next.monthly_updates')->insertGetId([
             'maintenance_id' => $record, 'update_month' => '2026-01', 'progress_percentage' => 10,
-            'summary_of_text_reports' => 'Preserved report', 'created_by' => $f['user']->dd_user_account_id]) : null;
+            'summary_of_text_reports' => 'Preserved report', 'created_by' => $f['user']->canonical_user_account_id]) : null;
         $before = DB::table('jairoads_next.monthly_updates')->orderBy('id')->get()->toJson();
         $audit = DB::table('jairoads_next.audit_logs')->orderBy('id')->get()->toJson();
         DB::commit(); // Guarded disposable fixture, visible to a second connection.
@@ -43,7 +43,7 @@ final class MonthlyUpdateRevocationRaceTest extends PostgresTestCase
             // Same parent -> record order as the explicit reassignment workflow.
             DB::table('jairoads_next.maintenance_records')->where('id', $record)->lockForUpdate()->first();
             $worker = new Process([PHP_BINARY, __DIR__.'/monthly-concurrency-request.php', (string) $f['user']->id,
-                $method, '/dd-phase3/ops/updates'.($id === null ? '' : '/'.$id),
+                $method, '/workspace/ops/updates'.($id === null ? '' : '/'.$id),
                 json_encode(['maintenance_id' => $record, 'update_month' => '2026-01',
                     'progress_percentage' => 40, 'summary_of_text_reports' => 'Authorized revision'], JSON_THROW_ON_ERROR)]);
             $worker->setTimeout(20);
@@ -60,7 +60,7 @@ final class MonthlyUpdateRevocationRaceTest extends PostgresTestCase
             } while (microtime(true) < $deadline);
             $this->assertNotNull($waiting, 'The request must actually block: '.$worker->getOutput().$worker->getErrorOutput());
             if ($change === 'deactivated') {
-                DB::table('jairoads_next.user_accounts')->where('id', $f['user']->dd_user_account_id)->update(['is_active' => false]);
+                DB::table('jairoads_next.user_accounts')->where('id', $f['user']->canonical_user_account_id)->update(['is_active' => false]);
             } elseif ($change === 'unassigned') {
                 DB::table('jairoads_next.engineer_lgus')->where('engineer_id', $f['engineer'])->where('lgu_id', $lgu)->update(['is_active' => false]);
             } elseif ($change === 'reassigned') {

@@ -5,8 +5,8 @@
 -- Run the read-only inventory first. No credentials or hashes are returned.
 SELECT a.id, a.username, a.account_type, a.engineer_id, a.is_active,
        e.engineer_status,
-       (SELECT count(*) FROM public.users u WHERE u.dd_user_account_id = a.id) AS login_links,
-       EXISTS (SELECT 1 FROM public.users u WHERE u.dd_user_account_id = a.id
+       (SELECT count(*) FROM public.users u WHERE u.canonical_user_account_id = a.id) AS login_links,
+       EXISTS (SELECT 1 FROM public.users u WHERE u.canonical_user_account_id = a.id
                  AND lower(u.email) = lower(a.email) AND u.password = a.password) AS matching_login,
        p.method AS existing_approval, p.provisioned_role, p.engineer_id AS approved_engineer_id
 FROM jairoads_next.user_accounts a
@@ -34,22 +34,22 @@ BEGIN
     -- Coordinate with account lifecycle/provisioning and identity changes.
     PERFORM pg_advisory_xact_lock_shared(1927710916);
     PERFORM pg_advisory_xact_lock(1927710914);
-    PERFORM id FROM public.users WHERE dd_user_account_id IN (target_id, approving_id)
+    PERFORM id FROM public.users WHERE canonical_user_account_id IN (target_id, approving_id)
         ORDER BY id FOR UPDATE;
     PERFORM id FROM jairoads_next.user_accounts WHERE id IN (target_id, approving_id)
         ORDER BY id FOR UPDATE;
     SELECT * INTO STRICT target FROM jairoads_next.user_accounts WHERE id = target_id;
     SELECT * INTO STRICT approver FROM jairoads_next.user_accounts WHERE id = approving_id;
     IF NOT approver.is_active OR approver.account_type <> 'SuperAdmin' OR approver.engineer_id IS NOT NULL
-       OR (SELECT count(*) FROM public.users WHERE dd_user_account_id = approving_id) <> 1
-       OR NOT EXISTS (SELECT 1 FROM public.users u WHERE u.dd_user_account_id = approving_id
+       OR (SELECT count(*) FROM public.users WHERE canonical_user_account_id = approving_id) <> 1
+       OR NOT EXISTS (SELECT 1 FROM public.users u WHERE u.canonical_user_account_id = approving_id
                         AND lower(u.email) = lower(approver.email) AND u.password = approver.password) THEN
         RAISE EXCEPTION 'Approving SuperAdmin is not eligible.';
     END IF;
     IF NOT target.is_active OR target.account_type NOT IN ('Admin', 'Engineer', 'Viewer')
        OR (target.account_type = 'Engineer' AND target.engineer_id IS NULL)
-       OR (SELECT count(*) FROM public.users WHERE dd_user_account_id = target_id) <> 1
-       OR NOT EXISTS (SELECT 1 FROM public.users u WHERE u.dd_user_account_id = target_id
+       OR (SELECT count(*) FROM public.users WHERE canonical_user_account_id = target_id) <> 1
+       OR NOT EXISTS (SELECT 1 FROM public.users u WHERE u.canonical_user_account_id = target_id
                         AND lower(u.email) = lower(target.email) AND u.password = target.password) THEN
         RAISE EXCEPTION 'Target has an inactive, invalid or mismatched identity. Review privately.';
     END IF;

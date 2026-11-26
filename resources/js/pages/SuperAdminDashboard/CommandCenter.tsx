@@ -181,11 +181,12 @@ export default function SuperAdminCommandCenter({
                                             Recent Activity
                                         </h2>
                                         <p className="mt-1 text-sm text-slate-500">
-                                            Latest recorded system operations (Asia/Manila)
+                                            Latest recorded system operations
+                                            (Asia/Manila)
                                         </p>
                                     </div>
                                     <Link
-                                        href="/dd-phase3/audit-logs"
+                                        href="/workspace/audit-logs"
                                         className="shrink-0 text-xs font-semibold text-[#51269B] hover:underline"
                                     >
                                         View audit log
@@ -210,11 +211,16 @@ export default function SuperAdminCommandCenter({
                                                 dateTime={event.createdAt}
                                                 className="mt-1 block text-xs text-slate-400"
                                             >
-                                                {new Intl.DateTimeFormat('en-PH', {
-                                                    timeZone: 'Asia/Manila',
-                                                    dateStyle: 'medium',
-                                                    timeStyle: 'medium',
-                                                }).format(new Date(event.createdAt))}
+                                                {new Intl.DateTimeFormat(
+                                                    'en-PH',
+                                                    {
+                                                        timeZone: 'Asia/Manila',
+                                                        dateStyle: 'medium',
+                                                        timeStyle: 'medium',
+                                                    },
+                                                ).format(
+                                                    new Date(event.createdAt),
+                                                )}
                                             </time>
                                         </li>
                                     ))}
@@ -238,7 +244,7 @@ export default function SuperAdminCommandCenter({
                                         </p>
                                     </div>
                                     <Link
-                                        href="/dd-phase3/ui/monthly-updates"
+                                        href="/workspace/ui/monthly-updates"
                                         className="shrink-0 text-xs font-semibold text-[#51269B] hover:underline"
                                     >
                                         View all
@@ -248,7 +254,7 @@ export default function SuperAdminCommandCenter({
                                     {recentMonthlyUpdates.map((update) => (
                                         <Link
                                             key={update.id}
-                                            href={`/dd-phase3/ui/monthly-updates/${update.id}`}
+                                            href={`/workspace/ui/monthly-updates/${update.id}`}
                                             className="jr-command-update block rounded-xl border border-[#F0E9FB] p-3 transition hover:bg-[#F8F3FF]"
                                         >
                                             <div className="flex min-w-0 items-start gap-3">
@@ -304,24 +310,24 @@ export default function SuperAdminCommandCenter({
                             {[
                                 [
                                     'Maintenance Projects',
-                                    '/dd-phase3/ui/maintenance-projects',
+                                    '/workspace/ui/maintenance-projects',
                                 ],
                                 [
                                     'Road Coverages',
-                                    '/dd-phase3/ui/road-coverages',
+                                    '/workspace/ui/road-coverages',
                                 ],
                                 [
                                     'Monthly Updates',
-                                    '/dd-phase3/ui/monthly-updates',
+                                    '/workspace/ui/monthly-updates',
                                 ],
                                 [
                                     'Maintenance Documents',
-                                    '/dd-phase3/ui/maintenance-documents',
+                                    '/workspace/ui/maintenance-documents',
                                 ],
-                                ['LGU Directory', '/dd-phase3/ui/lgus'],
-                                ['User Management', '/dd-phase3/users'],
-                                ['Audit Log', '/dd-phase3/audit-logs'],
-                                ['Settings', '/dd-phase3/settings'],
+                                ['LGU Directory', '/workspace/ui/lgus'],
+                                ['User Management', '/workspace/users'],
+                                ['Audit Log', '/workspace/audit-logs'],
+                                ['Settings', '/workspace/settings'],
                             ].map(([name, url]) => (
                                 <Link
                                     key={name}

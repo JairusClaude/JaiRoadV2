@@ -13,11 +13,11 @@ final class RoadMunicipalityChangeRoutingTest extends TestCase
     public function test_municipality_change_routes_preserve_the_canonical_contract(): void
     {
         $expected = [
-            'jairoads.dd-phase3.operations.roads.municipality.preview' => [
-                'POST', 'dd-phase3/ops/roads/{id}/municipality/preview', 'previewRoadMunicipality',
+            'jairoads.workspace.operations.roads.municipality.preview' => [
+                'POST', 'workspace/ops/roads/{id}/municipality/preview', 'previewRoadMunicipality',
             ],
-            'jairoads.dd-phase3.operations.roads.municipality.confirm' => [
-                'POST', 'dd-phase3/ops/roads/{id}/municipality/confirm', 'confirmRoadMunicipality',
+            'jairoads.workspace.operations.roads.municipality.confirm' => [
+                'POST', 'workspace/ops/roads/{id}/municipality/confirm', 'confirmRoadMunicipality',
             ],
         ];
         foreach ($expected as $name => [$verb, $uri, $method]) {

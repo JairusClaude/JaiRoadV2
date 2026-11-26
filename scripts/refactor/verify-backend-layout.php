@@ -14,24 +14,24 @@ $checked = 0;
 $linted = 0;
 
 $oldIdentifiers = [
-    'DdAuditHistoryController',
-    'DdFrontendController',
-    'DdOperationsController',
-    'DdPeopleLifecycleController',
-    'DdPhase3Controller',
-    'DdPreservedHistoryController',
-    'DdRoleDashboardController',
-    'DdSectionController',
-    'DdSuperAdminLandingController',
+    'CanonicalAuditHistoryController',
+    'CanonicalFrontendController',
+    'CanonicalOperationsController',
+    'CanonicalPeopleLifecycleController',
+    'CanonicalPhase3Controller',
+    'CanonicalPreservedHistoryController',
+    'CanonicalRoleDashboardController',
+    'CanonicalSectionController',
+    'CanonicalSuperAdminLandingController',
     'DataDictionaryIdentityResolver',
-    'DdActivityNotifications',
-    'DdAuditValues',
-    'DdDashboardAnalytics',
-    'DdOperationAudit',
-    'DdRoleAccess',
+    'CanonicalActivityNotifications',
+    'CanonicalAuditValues',
+    'CanonicalDashboardAnalytics',
+    'CanonicalOperationAudit',
+    'CanonicalRoleAccess',
     'ReadOnlyDdModel',
     'DenyLegacyBusinessRoutesForDd',
-    'DdWorkspaceNavigationTest',
+    'CanonicalWorkspaceNavigationTest',
 ];
 $oldNamespaces = [
     'App\\Http\\Controllers\\DataDictionary\\',
@@ -111,8 +111,8 @@ foreach (['app', 'routes', 'tests', 'bootstrap', 'config', 'database'] as $direc
 $web = file_get_contents($root.'/routes/web.php');
 if ($web === false || ! str_contains($web, "require __DIR__.'/operations.php';")
     || ! str_contains($web, "require __DIR__.'/operations-pages.php';")
-    || str_contains($web, "require __DIR__.'/dd-phase3.php';")
-    || str_contains($web, "require __DIR__.'/dd-frontend.php';")) {
+    || str_contains($web, "require __DIR__.'/workspace.php';")
+    || str_contains($web, "require __DIR__.'/workspace-frontend.php';")) {
     $errors[] = 'Route include mapping was not fully updated';
 }
 foreach (['routes/operations.php', 'routes/operations-pages.php'] as $route) {

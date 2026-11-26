@@ -18,16 +18,16 @@ export async function verifyMobileWorkspaces({
     lguId,
 }) {
     assert.match(base, /^http:\/\/127\.0\.0\.1:\d+$/);
-    const ui = '/dd-phase3/ui';
+    const ui = '/workspace/ui';
     const common = [
-        '/dd-phase3/dashboard',
+        '/workspace/dashboard',
         ui + '/maintenance-projects',
         ui + '/maintenance-records',
         ui + '/monthly-updates',
         ui + '/maintenance-documents',
         ui + '/road-coverages',
         ui + '/lgus',
-        '/dd-phase3/settings',
+        '/workspace/settings',
         ui + '/maintenance-projects/' + projectId,
         ui + '/maintenance-projects/' + projectId + '/records/' + recordId,
         ui + '/monthly-updates/' + monthlyId,
@@ -68,8 +68,8 @@ export async function verifyMobileWorkspaces({
                     ...common,
                     ...(privileged
                         ? [
-                              '/dd-phase3/users',
-                              '/dd-phase3/audit-logs',
+                              '/workspace/users',
+                              '/workspace/audit-logs',
                               ui + '/lgus/create',
                           ]
                         : []),
@@ -84,7 +84,7 @@ export async function verifyMobileWorkspaces({
                     );
                     await page.locator('.jr-stage').waitFor();
 
-                    if (role === 'admin' && path === '/dd-phase3/dashboard') {
+                    if (role === 'admin' && path === '/workspace/dashboard') {
                         assert.equal(
                             await page
                                 .locator(
@@ -214,8 +214,8 @@ export async function verifyMobileWorkspaces({
                         [
                             ui + '/maintenance-projects',
                             ui + '/maintenance-documents',
-                            '/dd-phase3/users',
-                            '/dd-phase3/dashboard',
+                            '/workspace/users',
+                            '/workspace/dashboard',
                         ].includes(path)
                     ) {
                         await page.screenshot({
@@ -230,7 +230,7 @@ export async function verifyMobileWorkspaces({
                         });
                     }
 
-                    if (width < 1024 && path === '/dd-phase3/dashboard') {
+                    if (width < 1024 && path === '/workspace/dashboard') {
                         const trigger = page.getByRole('button', {
                             name: 'Open navigation',
                             exact: true,

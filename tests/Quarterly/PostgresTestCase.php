@@ -30,7 +30,7 @@ abstract class PostgresTestCase extends TestCase
 
     protected function deletionVerification(string $scope): array
     {
-        $account = (int) auth()->user()->dd_user_account_id;
+        $account = (int) auth()->user()->canonical_user_account_id;
         $challenge = app(DeletionChallenge::class)->issue($account, $scope);
         preg_match('/^(\d+) \+ (\d+)$/', $challenge['question'], $parts);
 
@@ -50,7 +50,7 @@ abstract class PostgresTestCase extends TestCase
         if ($type !== 'SuperAdmin') {
             $provisioner = DB::table('jairoads_next.user_accounts')->where('account_type', 'SuperAdmin')->value('id');
             if ($provisioner === null) {
-                $provisioner = $this->account('SuperAdmin')->getAttribute('dd_user_account_id');
+                $provisioner = $this->account('SuperAdmin')->getAttribute('canonical_user_account_id');
             }
             if ($linked) {
                 $engineerId ??= $this->engineer();
@@ -64,7 +64,7 @@ abstract class PostgresTestCase extends TestCase
         ]);
 
         $login = User::forceCreate(['name' => 'Test account', 'email' => $email, 'email_verified_at' => now(),
-            'password' => $hash, 'dd_user_account_id' => $id]);
+            'password' => $hash, 'canonical_user_account_id' => $id]);
         if ($type !== 'SuperAdmin' && $linked && $engineerId !== null) {
             // Evidence was acquired while eligible; retirement/deactivation comes later.
             $profileStatus = DB::table('jairoads_next.engineers')->where('id', $engineerId)->value('engineer_status');
@@ -102,7 +102,7 @@ abstract class PostgresTestCase extends TestCase
         }
         $road = $this->road($engineer);
         $project = (int) DB::table('jairoads_next.maintenance_projects')->insertGetId(['project_title' => 'Test project',
-            'road_coverage_id' => $road, 'created_by' => $user->getAttribute('dd_user_account_id')]);
+            'road_coverage_id' => $road, 'created_by' => $user->getAttribute('canonical_user_account_id')]);
         $this->actingAs($user);
 
         return compact('user', 'engineer', 'project', 'road');

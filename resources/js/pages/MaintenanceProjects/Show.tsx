@@ -1,4 +1,3 @@
-import { manilaTimestamp } from '@/lib/manila-time';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 import { MaintenanceHistory } from '@/components/maintenance-projects/maintenance-history';
@@ -10,6 +9,7 @@ import { ProjectWorkspace } from '@/components/maintenance-projects/project-work
 import { CoverageMapPreview } from '@/components/road-coverages/coverage-map-preview';
 import { Button } from '@/components/ui/button';
 import { editUrl } from '@/lib/form-navigation';
+import { manilaTimestamp } from '@/lib/manila-time';
 import { workspaceHref } from '@/lib/workspace-navigation';
 import type { ProjectSummary } from '@/types/maintenance-projects';
 import type { MaintenanceRecordSummary } from '@/types/maintenance-records';

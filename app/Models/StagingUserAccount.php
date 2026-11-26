@@ -39,11 +39,11 @@ final class StagingUserAccount extends Model
 
     public function save(array $options = []): bool
     {
-        throw new LogicException('Staging DD account model is read-only until coordinated cutover.');
+        throw new LogicException('Staging account model is read-only until coordinated cutover.');
     }
 
     public function delete(): ?bool
     {
-        throw new LogicException('Staging DD account model is read-only until coordinated cutover.');
+        throw new LogicException('Staging account model is read-only until coordinated cutover.');
     }
 }

@@ -72,7 +72,10 @@ export default function Index({
     lguReviewNotice?: string;
 }) {
     const page = usePage();
-    const isViewer = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role?.toLowerCase() === 'viewer';
+    const isViewer =
+        (
+            page.props.jairoadsIdentity as { role?: string } | undefined
+        )?.role?.toLowerCase() === 'viewer';
     const enabled = true;
     const deletion = useLguDeletion(lgus.data, lguPermissions.can_delete);
     const [search, setSearch] = useState(filters.search);
@@ -211,21 +214,21 @@ export default function Index({
                         </p>
                     </div>
                     {!isViewer && lguPermissions.can_edit && (
-<Button
-                        className="jr-primary"
-                        disabled={!enabled || !lguPermissions.can_edit}
-                        onClick={() =>
-                            router.visit(
-                                workspaceHref(
-                                    editUrl('/lgus/create', page.url),
-                                ),
-                            )
-                        }
-                    >
-                        <Plus />
-                        Add LGU
-                    </Button>
-)}
+                        <Button
+                            className="jr-primary"
+                            disabled={!enabled || !lguPermissions.can_edit}
+                            onClick={() =>
+                                router.visit(
+                                    workspaceHref(
+                                        editUrl('/lgus/create', page.url),
+                                    ),
+                                )
+                            }
+                        >
+                            <Plus />
+                            Add LGU
+                        </Button>
+                    )}
                 </div>
                 {lguReviewNotice && (
                     <p role="note" className="jr-field-hint mb-4">
@@ -476,54 +479,60 @@ export default function Index({
                                             event.stopPropagation()
                                         }
                                     >
-                                        {!isViewer && (lguPermissions.can_edit || lguPermissions.can_delete) && (
-<DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="jr-action-trigger"
-                                                    aria-label={`Actions for ${lgu.municipality_name}`}
-                                                >
-                                                    <MoreHorizontal />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent
-                                                align="end"
-                                                className="jr-theme jr-menu"
-                                            >
-                                                <DropdownMenuItem
-                                                    disabled={
-                                                        !lguPermissions.can_edit
-                                                    }
-                                                    onSelect={() =>
-                                                        router.visit(
-                                                            workspaceHref(
-                                                                editUrl(
-                                                                    `/lgus/${lgu.id}/edit`,
-                                                                    page.url,
-                                                                ),
-                                                            ),
-                                                        )
-                                                    }
-                                                >
-                                                    <Pencil />
-                                                    Edit LGU
-                                                </DropdownMenuItem>
-                                                {lguPermissions.can_delete && (
-                                                    <DropdownMenuItem
-                                                        className="text-red-600 focus:bg-red-50 focus:text-red-700"
-                                                        onSelect={() =>
-                                                            deletion.open(lgu)
-                                                        }
+                                        {!isViewer &&
+                                            (lguPermissions.can_edit ||
+                                                lguPermissions.can_delete) && (
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger
+                                                        asChild
                                                     >
-                                                        <Trash2 className="size-4" />
-                                                        Delete LGU
-                                                    </DropdownMenuItem>
-                                                )}
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-)}
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="jr-action-trigger"
+                                                            aria-label={`Actions for ${lgu.municipality_name}`}
+                                                        >
+                                                            <MoreHorizontal />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent
+                                                        align="end"
+                                                        className="jr-theme jr-menu"
+                                                    >
+                                                        <DropdownMenuItem
+                                                            disabled={
+                                                                !lguPermissions.can_edit
+                                                            }
+                                                            onSelect={() =>
+                                                                router.visit(
+                                                                    workspaceHref(
+                                                                        editUrl(
+                                                                            `/lgus/${lgu.id}/edit`,
+                                                                            page.url,
+                                                                        ),
+                                                                    ),
+                                                                )
+                                                            }
+                                                        >
+                                                            <Pencil />
+                                                            Edit LGU
+                                                        </DropdownMenuItem>
+                                                        {lguPermissions.can_delete && (
+                                                            <DropdownMenuItem
+                                                                className="text-red-600 focus:bg-red-50 focus:text-red-700"
+                                                                onSelect={() =>
+                                                                    deletion.open(
+                                                                        lgu,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <Trash2 className="size-4" />
+                                                                Delete LGU
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            )}
                                     </td>
                                 </tr>
                             ))}

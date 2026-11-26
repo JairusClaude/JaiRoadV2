@@ -48,24 +48,24 @@ export default function Show({
                     <div className="jr-lgu-detail-actions">
                         <div className="jr-header-actions">
                             {enabled && canEdit && (
-<Button
-                                variant="outline"
-                                disabled={!enabled || !canEdit}
-                                onClick={() =>
-                                    router.visit(
-                                        workspaceHref(
-                                            editUrl(
-                                                `/lgus/${lgu.id}/edit`,
-                                                page.url,
+                                <Button
+                                    variant="outline"
+                                    disabled={!enabled || !canEdit}
+                                    onClick={() =>
+                                        router.visit(
+                                            workspaceHref(
+                                                editUrl(
+                                                    `/lgus/${lgu.id}/edit`,
+                                                    page.url,
+                                                ),
                                             ),
-                                        ),
-                                    )
-                                }
-                            >
-                                <Pencil />
-                                Edit LGU
-                            </Button>
-)}
+                                        )
+                                    }
+                                >
+                                    <Pencil />
+                                    Edit LGU
+                                </Button>
+                            )}
                             {enabled && canDelete && (
                                 <Button
                                     className="jr-danger"
@@ -197,7 +197,7 @@ export default function Show({
                                             {engineerDetailsAvailable ? (
                                                 <Link
                                                     className="jr-project-title underline underline-offset-2"
-                                                    href={`/dd-phase3/users?engineer_id=${assignment.engineer_id}`}
+                                                    href={`/workspace/users?engineer_id=${assignment.engineer_id}`}
                                                 >
                                                     {assignment.full_name}
                                                 </Link>

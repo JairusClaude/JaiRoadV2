@@ -58,7 +58,7 @@ final class PreservedHistoryController extends Controller
             return response()->json(['state' => 'completed', 'message' => 'Maintenance project and reviewed dependent data deleted successfully.']);
         }
 
-        return redirect('/dd-phase3/ui/maintenance-projects')->with('dd_operations_status', 'Maintenance project and reviewed dependent data deleted successfully.');
+        return redirect('/workspace/ui/maintenance-projects')->with('dd_operations_status', 'Maintenance project and reviewed dependent data deleted successfully.');
     }
 
     public function bulkDelete(Request $request): JsonResponse|RedirectResponse
@@ -96,7 +96,7 @@ final class PreservedHistoryController extends Controller
             return response()->json(['state' => $failedProjects === [] ? 'completed' : 'partial', 'message' => $message]);
         }
 
-        return redirect('/dd-phase3/ui/maintenance-projects')->with('dd_operations_status', $message);
+        return redirect('/workspace/ui/maintenance-projects')->with('dd_operations_status', $message);
     }
 
     private function records(): Builder
@@ -132,7 +132,7 @@ final class PreservedHistoryController extends Controller
             'start_date' => $row->start_date, 'estimated_duration_days' => $row->estimated_duration_days, 'complete_date' => $row->complete_date,
             'description' => $row->description, 'created_by' => (int) $row->created_by,
             'previous_project_id' => (int) $row->previous_project_id, 'historical_context' => json_decode($row->snapshot, true, 512, JSON_THROW_ON_ERROR),
-            'detached_at' => $row->detached_at, 'details_url' => '/dd-phase3/history/records/'.$row->id];
+            'detached_at' => $row->detached_at, 'details_url' => '/workspace/history/records/'.$row->id];
     }
 
     public function show(Request $request, int $id): Response

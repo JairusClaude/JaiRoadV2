@@ -10,8 +10,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
-use Laravel\Fortify\Fortify;
 use Laravel\Fortify\Contracts\LoginResponse;
+use Laravel\Fortify\Fortify;
 use Symfony\Component\HttpFoundation\Response;
 
 class FortifyServiceProvider extends ServiceProvider
@@ -32,6 +32,7 @@ class FortifyServiceProvider extends ServiceProvider
                 }
 
                 $redirect = redirect()->intended(Fortify::redirects('login'));
+
                 return $request->header('X-Inertia') ? Inertia::location($redirect) : $redirect;
             }
         });

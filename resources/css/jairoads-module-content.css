@@ -156,18 +156,18 @@
     background: #eef2f7;
     border-bottom: 1px solid #dfe5ed;
 }
-.jr-module-content .jr-dd-empty-row {
+.jr-module-content .jr-workspace-empty-row {
     cursor: default;
 }
-.jr-module-content .jr-dd-empty-row:hover {
+.jr-module-content .jr-workspace-empty-row:hover {
     background: transparent;
 }
-.jr-module-content .jr-dd-empty-row td {
+.jr-module-content .jr-workspace-empty-row td {
     height: auto;
     padding: 0;
     border: 0;
 }
-.jr-module-content .jr-dd-empty-content {
+.jr-module-content .jr-workspace-empty-content {
     min-height: 248px;
     padding: 40px 18px;
     display: flex;
@@ -177,7 +177,7 @@
     gap: 10px;
     text-align: center;
 }
-.jr-module-content .jr-dd-empty-icon {
+.jr-module-content .jr-workspace-empty-icon {
     display: grid;
     place-items: center;
     width: 52px;
@@ -186,12 +186,12 @@
     background: #fff0e5;
     color: #9b4e26;
 }
-.jr-module-content .jr-dd-empty-content strong {
+.jr-module-content .jr-workspace-empty-content strong {
     color: #192b44;
     font-size: 15px;
     font-weight: 700;
 }
-.jr-module-content .jr-dd-empty-content p {
+.jr-module-content .jr-workspace-empty-content p {
     max-width: 550px;
     color: #687f9c;
     font-size: 13px;
@@ -201,6 +201,6 @@
     background: #182538;
     border-color: #344860;
 }
-.dark .jr-module-content .jr-dd-empty-content strong {
+.dark .jr-module-content .jr-workspace-empty-content strong {
     color: #f1f5f9;
 }

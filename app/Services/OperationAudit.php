@@ -46,7 +46,7 @@ final class OperationAudit
      */
     public function recordAdministratorPasswordReset(array $actor, int $id, bool $operatorRoot = false): void
     {
-        $login = User::where('dd_user_account_id', $actor['account_id'])->first();
+        $login = User::where('canonical_user_account_id', $actor['account_id'])->first();
         abort_unless(DB::transactionLevel() > 0 && $actor['role'] === 'SuperAdmin'
             && $actor['account_id'] !== $id && $login instanceof User
             && app(AccountIdentityResolver::class)->resolve($login) === $actor, 403);
@@ -83,7 +83,7 @@ final class OperationAudit
             || (($lifecycle || $reassignment || $retirement) && ($id === null || $id < 1))) {
             throw new \LogicException('Business events require an enclosing mutation transaction and supported action.');
         }
-        $login = User::where('dd_user_account_id', $actor['account_id'])->first();
+        $login = User::where('canonical_user_account_id', $actor['account_id'])->first();
         abort_unless($login instanceof User && app(AccountIdentityResolver::class)->resolve($login) === $actor && $actor['role'] !== 'Viewer', 403);
         $values = app(AuditValues::class);
         $old = $action === 'CREATE' ? [] : $values->safe($entity, $oldMeta);

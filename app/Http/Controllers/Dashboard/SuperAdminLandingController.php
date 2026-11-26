@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Services\AuditActorIdentifier;
 use App\Models\StagingUserAccount;
 use App\Models\User;
 use App\Services\AccountIdentityResolver;
+use App\Services\AuditActorIdentifier;
 use App\Services\DashboardAnalytics;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;

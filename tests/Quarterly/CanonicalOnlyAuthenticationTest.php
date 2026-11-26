@@ -24,20 +24,20 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
     public function test_privileged_bootstrap_is_atomic_and_works_without_engineers_or_lgus(): void
     {
         $id = app(TrustedSuperAdminBootstrap::class)->create('trusted-root', 'root@example.test', 'Trusted operator', 'Disposable-Root!123');
-        $login = User::where('dd_user_account_id', $id)->firstOrFail();
+        $login = User::where('canonical_user_account_id', $id)->firstOrFail();
         $this->assertSame(0, DB::table('jairoads_next.engineers')->count());
         $this->assertSame(0, DB::table('jairoads_next.lgus')->count());
         $this->assertSame(0, DB::table(AccountProvisioning::TABLE)->count());
         $this->assertNull($login->email_verified_at);
         $this->postJson('/login', ['email' => $login->email, 'password' => 'Disposable-Root!123'])->assertOk();
-        $this->get('/dd-phase3/users')->assertOk();
-        $this->postJson('/dd-phase3/engineers', ['first_name' => 'New', 'last_name' => 'Profile', 'contact_no' => '09000000000', 'rank' => 'Engineer I'])->assertRedirect();
+        $this->get('/workspace/users')->assertOk();
+        $this->postJson('/workspace/engineers', ['first_name' => 'New', 'last_name' => 'Profile', 'contact_no' => '09000000000', 'rank' => 'Engineer I'])->assertRedirect();
         $engineer = DB::table('jairoads_next.engineers')->value('id');
-        $this->postJson('/dd-phase3/accounts', $this->provision('Viewer', (int) $engineer))->assertRedirect();
+        $this->postJson('/workspace/accounts', $this->provision('Viewer', (int) $engineer))->assertRedirect();
         $account = DB::table('jairoads_next.user_accounts')->where('username', 'ordinary')->first();
         $this->assertDatabaseHas(AccountProvisioning::TABLE, ['user_account_id' => $account->id, 'provisioned_by' => $id, 'method' => 'administrator']);
         $this->assertSame('Viewer', $account->account_type);
-        $this->postJson('/dd-phase3/accounts', array_replace($this->provision('SuperAdmin', (int) $engineer), ['username' => 'fake-root']))->assertUnprocessable();
+        $this->postJson('/workspace/accounts', array_replace($this->provision('SuperAdmin', (int) $engineer), ['username' => 'fake-root']))->assertUnprocessable();
         try {
             app(TrustedSuperAdminBootstrap::class)->create('second-root', 'second@example.test', 'Second', 'Disposable-Root!123');
             $this->fail('Bootstrap may not create additional SuperAdmins.');
@@ -68,7 +68,7 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
             'password' => 'Replacement-Test!123', 'password_confirmation' => 'Replacement-Test!123'])->assertOk();
         $this->postJson('/login', ['email' => $login->email, 'password' => 'Replacement-Test!123'])->assertOk();
         $this->assertAuthenticatedAs($login);
-        $this->assertSame($login->fresh()->password, DB::table('jairoads_next.user_accounts')->where('id', $login->dd_user_account_id)->value('password'));
+        $this->assertSame($login->fresh()->password, DB::table('jairoads_next.user_accounts')->where('id', $login->canonical_user_account_id)->value('password'));
         $this->assertNull($login->fresh()->email_verified_at);
     }
 
@@ -92,18 +92,18 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
         } else {
             $login = $this->account('Engineer');
             match ($case) {
-                'missing_link' => DB::table('public.users')->where('id', $login->id)->update(['dd_user_account_id' => null]),
-                'inactive' => DB::table('jairoads_next.user_accounts')->where('id', $login->dd_user_account_id)->update(['is_active' => false]),
+                'missing_link' => DB::table('public.users')->where('id', $login->id)->update(['canonical_user_account_id' => null]),
+                'inactive' => DB::table('jairoads_next.user_accounts')->where('id', $login->canonical_user_account_id)->update(['is_active' => false]),
                 'retired' => DB::table('jairoads_next.engineers')->where('id', $this->identity($login)['engineer_id'])->update(['engineer_status' => 'Retired']),
-                'email' => DB::table('jairoads_next.user_accounts')->where('id', $login->dd_user_account_id)->update(['email' => 'wrong@example.test']),
-                'hash' => DB::table('jairoads_next.user_accounts')->where('id', $login->dd_user_account_id)->update(['password' => Hash::make('wrong-password')]),
-                'wrong_link' => DB::table('public.users')->where('id', $login->id)->update(['dd_user_account_id' => null]),
-                'forged_role' => DB::table('jairoads_next.user_accounts')->where('id', $login->dd_user_account_id)->update(['account_type' => 'Admin']),
+                'email' => DB::table('jairoads_next.user_accounts')->where('id', $login->canonical_user_account_id)->update(['email' => 'wrong@example.test']),
+                'hash' => DB::table('jairoads_next.user_accounts')->where('id', $login->canonical_user_account_id)->update(['password' => Hash::make('wrong-password')]),
+                'wrong_link' => DB::table('public.users')->where('id', $login->id)->update(['canonical_user_account_id' => null]),
+                'forged_role' => DB::table('jairoads_next.user_accounts')->where('id', $login->canonical_user_account_id)->update(['account_type' => 'Admin']),
             };
             $login->refresh();
         }
         $before = DB::table('jairoads_next.user_accounts')->orderBy('id')->get()->toJson();
-        $this->postJson('/login', ['email' => $login->email, 'password' => 'Disposable-Test!123', 'account_type' => 'SuperAdmin', 'dd_user_account_id' => 1])->assertUnprocessable();
+        $this->postJson('/login', ['email' => $login->email, 'password' => 'Disposable-Test!123', 'account_type' => 'SuperAdmin', 'canonical_user_account_id' => 1])->assertUnprocessable();
         $this->assertGuest();
         $passkey = new Passkey(['credential' => []]);
         $passkey->user_id = $login->id;
@@ -123,7 +123,7 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
     {
         $login = $this->account($role);
         $this->actingAs($login)->withSession(['sentinel' => 'must disappear', 'auth.password_confirmed_at' => time()])->getJson('/settings/security')->assertOk();
-        DB::table('jairoads_next.user_accounts')->where('id', $login->dd_user_account_id)->update(['is_active' => false]);
+        DB::table('jairoads_next.user_accounts')->where('id', $login->canonical_user_account_id)->update(['is_active' => false]);
         $this->getJson('/settings/security')->assertForbidden()->assertSessionMissing('sentinel');
         $this->assertGuest();
         $this->getJson('/settings/security')->assertUnauthorized();
@@ -138,7 +138,7 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
         $this->assertNotNull($provider->retrieveByToken($login->id, 'synthetic-remember'));
         $this->postJson('/login', ['email' => $login->email, 'password' => 'Disposable-Test!123'])->assertOk()->assertJson(['two_factor' => true]);
         $secret = $login->two_factor_recovery_codes;
-        DB::table('jairoads_next.user_accounts')->where('id', $login->dd_user_account_id)->update(['is_active' => false]);
+        DB::table('jairoads_next.user_accounts')->where('id', $login->canonical_user_account_id)->update(['is_active' => false]);
         $this->assertNull($provider->retrieveByToken($login->id, 'synthetic-remember'));
         $this->postJson('/two-factor-challenge', ['recovery_code' => 'fixture-recovery'])->assertUnprocessable()->assertSessionMissing('login.id');
         $this->assertGuest();
@@ -154,7 +154,7 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
                 throw new \RuntimeException('Isolated provenance failure');
             }
         });
-        $this->postJson('/dd-phase3/accounts', $this->provision('Viewer', $this->engineer()))->assertServerError();
+        $this->postJson('/workspace/accounts', $this->provision('Viewer', $this->engineer()))->assertServerError();
         $this->assertSame($before, DB::table('public.users')->count());
         $this->assertSame($before, DB::table('jairoads_next.user_accounts')->count());
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
@@ -163,29 +163,29 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
     public function test_no_schema_evidence_fails_closed_but_bootstrap_superadmin_survives(): void
     {
         $login = $this->account('Viewer');
-        $root = User::where('dd_user_account_id', DB::table('jairoads_next.user_accounts')->where('account_type', 'SuperAdmin')->value('id'))->firstOrFail();
+        $root = User::where('canonical_user_account_id', DB::table('jairoads_next.user_accounts')->where('account_type', 'SuperAdmin')->value('id'))->firstOrFail();
         DB::statement('ALTER TABLE jairoads_security.account_provisioning RENAME TO offline_evidence');
         $this->assertNull(app(AccountIdentityResolver::class)->resolve($login));
         $this->assertNotNull(app(AccountIdentityResolver::class)->resolve($root));
-        $this->actingAs($root)->postJson('/dd-phase3/accounts', $this->provision('Viewer', $this->engineer()))->assertStatus(503);
+        $this->actingAs($root)->postJson('/workspace/accounts', $this->provision('Viewer', $this->engineer()))->assertStatus(503);
     }
 
     public function test_last_eligible_superadmin_is_protected_when_another_active_root_has_no_bridge(): void
     {
         $root = $this->account('SuperAdmin');
         $broken = $this->account('SuperAdmin');
-        DB::table('public.users')->where('id', $broken->id)->update(['dd_user_account_id' => null]);
+        DB::table('public.users')->where('id', $broken->id)->update(['canonical_user_account_id' => null]);
         $admin = $this->account('Admin');
-        $this->actingAs($admin)->patchJson('/dd-phase3/accounts/'.$root->dd_user_account_id.'/status', ['is_active' => false])
+        $this->actingAs($admin)->patchJson('/workspace/accounts/'.$root->canonical_user_account_id.'/status', ['is_active' => false])
             ->assertUnprocessable()->assertJsonValidationErrors('is_active');
-        $this->assertDatabaseHas('jairoads_next.user_accounts', ['id' => $root->dd_user_account_id, 'is_active' => true]);
+        $this->assertDatabaseHas('jairoads_next.user_accounts', ['id' => $root->canonical_user_account_id, 'is_active' => true]);
     }
 
     public function test_ineligible_principal_can_explicitly_logout_before_any_other_protected_request(): void
     {
         $login = $this->account('Engineer');
         $this->actingAs($login);
-        DB::table('jairoads_next.user_accounts')->where('id', $login->dd_user_account_id)->update(['is_active' => false]);
+        DB::table('jairoads_next.user_accounts')->where('id', $login->canonical_user_account_id)->update(['is_active' => false]);
         $this->postJson('/logout')->assertNoContent();
         $this->assertGuest();
     }
@@ -212,12 +212,12 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
 
         // Legacy module entry points redirect to canonical pages.
         $this->get('/monthly-updates-preview')
-            ->assertRedirect(route('jairoads.dd-phase3.show', [
+            ->assertRedirect(route('jairoads.workspace.show', [
                 'section' => 'updates',
             ]));
 
         $this->get('/project-documents-preview')
-            ->assertRedirect(route('jairoads.dd-phase3.show', [
+            ->assertRedirect(route('jairoads.workspace.show', [
                 'section' => 'documents',
             ]));
 
@@ -248,7 +248,7 @@ final class CanonicalOnlyAuthenticationTest extends PostgresTestCase
         $this->postJson('/two-factor-challenge', ['code' => (new Google2FA)->getCurrentOtp($secret)])->assertNoContent();
         $this->assertAuthenticatedAs($login);
         $this->assertSame('Viewer', $this->identity($login)['role']);
-        $this->postJson('/dd-phase3/ops/projects', [])->assertForbidden();
+        $this->postJson('/workspace/ops/projects', [])->assertForbidden();
     }
 
     private function identity(User $user): array

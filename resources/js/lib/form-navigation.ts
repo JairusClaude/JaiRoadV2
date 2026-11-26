@@ -35,7 +35,7 @@ export function formReturn(
 }
 
 export function returnLabel(url: string, fallback: string) {
-    const path = url.split('?')[0].replace(/^\/dd-phase3\/ui/, '');
+    const path = url.split('?')[0].replace(/^\/workspace\/ui/, '');
 
     return (
         (

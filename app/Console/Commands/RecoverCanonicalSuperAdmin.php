@@ -55,12 +55,12 @@ final class RecoverCanonicalSuperAdmin extends Command
             DB::transaction(function () use ($identities, $passwords, $approverId, $targetId, $current, $new): void {
                 DB::select('SELECT pg_advisory_xact_lock_shared(1927710916)');
                 DB::select('SELECT pg_advisory_xact_lock(1927710914)');
-                $logins = User::query()->whereIn('dd_user_account_id', [(int) $approverId, (int) $targetId])
+                $logins = User::query()->whereIn('canonical_user_account_id', [(int) $approverId, (int) $targetId])
                     ->orderBy('id')->lockForUpdate()->get();
                 DB::table('jairoads_next.user_accounts')->whereIn('id', [(int) $approverId, (int) $targetId])
                     ->orderBy('id')->lockForUpdate()->get(['id']);
-                $approver = $logins->first(fn (User $u): bool => (int) $u->dd_user_account_id === (int) $approverId);
-                $target = $logins->first(fn (User $u): bool => (int) $u->dd_user_account_id === (int) $targetId);
+                $approver = $logins->first(fn (User $u): bool => (int) $u->canonical_user_account_id === (int) $approverId);
+                $target = $logins->first(fn (User $u): bool => (int) $u->canonical_user_account_id === (int) $targetId);
                 $actor = $approver ? $identities->resolve($approver) : null;
                 $identity = $target ? $identities->resolveForRecovery($target) : null;
                 abort_unless($logins->count() === 2 && $actor !== null && $actor['role'] === 'SuperAdmin'

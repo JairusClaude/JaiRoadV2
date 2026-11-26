@@ -53,7 +53,7 @@ final class PostgresTestSchema
 CREATE TABLE public.users (
  id bigserial PRIMARY KEY, name varchar(255) NOT NULL, email varchar(255) UNIQUE NOT NULL,
  email_verified_at timestamp, password varchar(255) NOT NULL, remember_token varchar(100),
- dd_user_account_id bigint UNIQUE REFERENCES jairoads_next.user_accounts(id), user_account_id bigint,
+ canonical_user_account_id bigint UNIQUE REFERENCES jairoads_next.user_accounts(id), user_account_id bigint,
  two_factor_secret text, two_factor_recovery_codes text, two_factor_confirmed_at timestamp,
  created_at timestamp, updated_at timestamp
 );

@@ -1,4 +1,3 @@
-import { manilaDate } from '@/lib/manila-time';
 import { usePage } from '@inertiajs/react';
 import {
     CalendarDays,
@@ -28,6 +27,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { manilaDate } from '@/lib/manila-time';
 import { updateMonth } from '@/lib/monthly-updates';
 import type {
     MonthlyUpdateFilters,
@@ -72,7 +72,10 @@ export function MonthlyUpdateDirectory({
     ) => void;
 }) {
     const page = usePage();
-    const isViewer = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role?.toLowerCase() === 'viewer';
+    const isViewer =
+        (
+            page.props.jairoadsIdentity as { role?: string } | undefined
+        )?.role?.toLowerCase() === 'viewer';
     const canonical = page.props.canonicalFrontend === true;
     const canWrite = !isViewer && (!canonical || page.props.canWrite === true);
     const [search, setSearch] = useState(filters.search);
@@ -140,14 +143,14 @@ export function MonthlyUpdateDirectory({
                         </p>
                     </div>
                     {canWrite && (
-                    <Button
-                        className="jr-primary"
-                        disabled={!canWrite}
-                        onClick={() => onAction('Add')}
-                    >
-                        <Plus />
-                        Add Monthly Update
-                    </Button>
+                        <Button
+                            className="jr-primary"
+                            disabled={!canWrite}
+                            onClick={() => onAction('Add')}
+                        >
+                            <Plus />
+                            Add Monthly Update
+                        </Button>
                     )}
                 </div>
                 <form

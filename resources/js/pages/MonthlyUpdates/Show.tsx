@@ -59,32 +59,32 @@ export default function Show({
                         </div>
                         <div className="jr-header-actions">
                             {canEdit && (
-<Button
-                                variant="outline"
-                                disabled={!canEdit}
-                                onClick={() =>
-                                    router.visit(
-                                        editUrl(
-                                            workspaceHref(
-                                                `/monthly-updates/${update.id}/edit`,
+                                <Button
+                                    variant="outline"
+                                    disabled={!canEdit}
+                                    onClick={() =>
+                                        router.visit(
+                                            editUrl(
+                                                workspaceHref(
+                                                    `/monthly-updates/${update.id}/edit`,
+                                                ),
+                                                page.url,
                                             ),
-                                            page.url,
-                                        ),
-                                    )
-                                }
-                            >
-                                <Pencil /> Edit Update
-                            </Button>
-)}
+                                        )
+                                    }
+                                >
+                                    <Pencil /> Edit Update
+                                </Button>
+                            )}
                             {preview && (
-<Button
-                                className="jr-danger"
-                                disabled={!preview}
-                                onClick={() => deletion.open([update])}
-                            >
-                                <Trash2 /> Delete Update
-                            </Button>
-)}
+                                <Button
+                                    className="jr-danger"
+                                    disabled={!preview}
+                                    onClick={() => deletion.open([update])}
+                                >
+                                    <Trash2 /> Delete Update
+                                </Button>
+                            )}
                         </div>
                     </div>
                     <section

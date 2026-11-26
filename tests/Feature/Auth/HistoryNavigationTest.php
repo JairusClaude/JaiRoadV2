@@ -4,7 +4,7 @@ use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('unauthenticated Inertia page navigation leaves the protected URL through the location protocol', function () {
-    $url = '/dd-phase3/ui/monthly-updates?year=2026';
+    $url = '/workspace/ui/monthly-updates?year=2026';
     $this->withHeaders(['X-Inertia' => 'true', 'Accept' => 'text/html'])->get($url)
         ->assertStatus(409)->assertHeader('X-Inertia-Location', route('login'))
         ->assertSessionHas('url.intended', url($url));
@@ -14,14 +14,14 @@ test('unauthenticated Inertia page navigation leaves the protected URL through t
 });
 
 test('ordinary guest navigation and JSON authentication failures keep their response contracts', function () {
-    $this->get('/dd-phase3/ui/monthly-updates')->assertRedirect(route('login'));
-    $this->withHeaders(['X-Inertia' => 'true'])->getJson('/dd-phase3/ui/monthly-updates')
+    $this->get('/workspace/ui/monthly-updates')->assertRedirect(route('login'));
+    $this->withHeaders(['X-Inertia' => 'true'])->getJson('/workspace/ui/monthly-updates')
         ->assertUnauthorized()->assertHeaderMissing('X-Inertia-Location');
 });
 
 test('the navigation response does not change unauthenticated mutation handling', function () {
     $this->withHeaders(['X-Inertia' => 'true', 'Accept' => 'text/html'])
-        ->post('/dd-phase3/ui/monthly-updates', [])->assertRedirect(route('login'));
+        ->post('/workspace/ui/monthly-updates', [])->assertRedirect(route('login'));
 });
 
 test('real Fortify logout invalidates the session before subsequent history requests', function () {
@@ -33,5 +33,5 @@ test('real Fortify logout invalidates the session before subsequent history requ
     $this->assertGuest();
     expect(session()->getId())->not->toBe($session);
     $this->withHeaders(['X-Inertia' => 'true', 'Accept' => 'text/html'])
-        ->get('/dd-phase3/ui/monthly-updates')->assertStatus(409)->assertHeader('X-Inertia-Location', route('login'));
+        ->get('/workspace/ui/monthly-updates')->assertStatus(409)->assertHeader('X-Inertia-Location', route('login'));
 });

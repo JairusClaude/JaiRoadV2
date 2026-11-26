@@ -26,19 +26,19 @@ it('bounds the initial road directory map and pages older road geometry for View
     DB::table('jairoads_next.road_coverages')->insert($batch);
 
     $this->actingAs($this->account('Viewer'));
-    $this->get('/dd-phase3/ui/road-coverages')->assertOk()
+    $this->get('/workspace/ui/road-coverages')->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->has('mapCoverages', 100)->where('mapNextCursor', fn ($cursor) => is_int($cursor) && $cursor > 0));
-    $index = $this->get('/dd-phase3/ui/road-coverages');
+    $index = $this->get('/workspace/ui/road-coverages');
     $page = $index->viewData('page');
     $cursor = $page['props']['mapNextCursor'] ?? null;
     $this->assertIsInt($cursor);
 
-    $response = $this->getJson('/dd-phase3/ui/map/road-index?before='.$cursor)
+    $response = $this->getJson('/workspace/ui/map/road-index?before='.$cursor)
         ->assertOk()->assertHeader('Cache-Control', 'no-store, private')
         ->assertJsonCount(5, 'data')->assertJsonPath('next_cursor', null);
     $this->assertContains($fixture['road'], array_column($response->json('data'), 'id'));
-    $this->getJson('/dd-phase3/ui/map/road-index?before=invalid')->assertUnprocessable();
+    $this->getJson('/workspace/ui/map/road-index?before=invalid')->assertUnprocessable();
     auth()->logout();
-    $this->getJson('/dd-phase3/ui/map/road-index?before='.$cursor)->assertUnauthorized();
+    $this->getJson('/workspace/ui/map/road-index?before='.$cursor)->assertUnauthorized();
 });

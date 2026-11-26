@@ -50,7 +50,10 @@ function serverCompactSnapshot() {
     return false;
 }
 
-export default function AuthShowcase({ expandedMobile = false, onContinue }: { expandedMobile?: boolean; onContinue?: () => void } = {}) {
+export default function AuthShowcase({
+    expandedMobile = false,
+    onContinue,
+}: { expandedMobile?: boolean; onContinue?: () => void } = {}) {
     const compact = useSyncExternalStore(
         subscribeCompact,
         compactSnapshot,
@@ -105,43 +108,50 @@ export default function AuthShowcase({ expandedMobile = false, onContinue }: { e
             data-active-slide={visibleSlide}
             data-playing={playing && (!compact || expandedMobile)}
         >
-            {(compact && !expandedMobile ? slides.slice(0, 1) : slides).map((item, index) => (
-                <div
-                    key={item.image}
-                    className={`jr-login-photo absolute inset-0 transition-opacity duration-1000 motion-reduce:transition-none ${index === visibleSlide ? 'opacity-100' : 'opacity-0'}`}
-                    data-current={index === visibleSlide}
-                >
-                    {'fallback' in item && (
-                        <img
-                            src={item.fallback}
-                            alt=""
-                            aria-hidden="true"
-                            className="absolute inset-0 h-full w-full object-cover object-center"
-                        />
-                    )}
-                    {(index === visibleSlide || loadedImages.includes(index)) && <img
-                        src={item.image}
-                        alt=""
-                        aria-hidden="true"
-                        loading="eager"
-                        decoding="async"
-                        referrerPolicy="no-referrer"
-                        onLoad={() =>
-                            setLoadedImages((previous) =>
-                                previous.includes(index)
-                                    ? previous
-                                    : [...previous, index],
-                            )
-                        }
-                        onError={() =>
-                            setLoadedImages((previous) =>
-                                previous.filter((value) => value !== index),
-                            )
-                        }
-                        className={`absolute inset-0 h-full w-full object-cover object-center ${'fallback' in item && !loadedImages.includes(index) ? 'opacity-0' : 'opacity-100'}`}
-                    />}
-                </div>
-            ))}
+            {(compact && !expandedMobile ? slides.slice(0, 1) : slides).map(
+                (item, index) => (
+                    <div
+                        key={item.image}
+                        className={`jr-login-photo absolute inset-0 transition-opacity duration-1000 motion-reduce:transition-none ${index === visibleSlide ? 'opacity-100' : 'opacity-0'}`}
+                        data-current={index === visibleSlide}
+                    >
+                        {'fallback' in item && (
+                            <img
+                                src={item.fallback}
+                                alt=""
+                                aria-hidden="true"
+                                className="absolute inset-0 h-full w-full object-cover object-center"
+                            />
+                        )}
+                        {(index === visibleSlide ||
+                            loadedImages.includes(index)) && (
+                            <img
+                                src={item.image}
+                                alt=""
+                                aria-hidden="true"
+                                loading="eager"
+                                decoding="async"
+                                referrerPolicy="no-referrer"
+                                onLoad={() =>
+                                    setLoadedImages((previous) =>
+                                        previous.includes(index)
+                                            ? previous
+                                            : [...previous, index],
+                                    )
+                                }
+                                onError={() =>
+                                    setLoadedImages((previous) =>
+                                        previous.filter(
+                                            (value) => value !== index,
+                                        ),
+                                    )
+                                }
+                                className={`absolute inset-0 h-full w-full object-cover object-center ${'fallback' in item && !loadedImages.includes(index) ? 'opacity-0' : 'opacity-100'}`}
+                            />
+                        )}
+                    </div>
+                ),
+            )}
             <div
                 aria-hidden="true"
                 className="jr-login-shade absolute inset-0"
@@ -270,7 +280,12 @@ export default function AuthShowcase({ expandedMobile = false, onContinue }: { e
                     </div>
                 </div>
                 {expandedMobile && (
-                    <button type="button" id="jr-login-continue" className="jr-login-continue" onClick={onContinue}>
+                    <button
+                        type="button"
+                        id="jr-login-continue"
+                        className="jr-login-continue"
+                        onClick={onContinue}
+                    >
                         Continue to sign in
                     </button>
                 )}

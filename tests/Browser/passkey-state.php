@@ -50,14 +50,14 @@ DB::transaction(function () use ($user, $action): void {
     };
     if ($action === 'invalid-link') {
         $accountId = DB::table('jairoads_next.user_accounts')->where('id', '!=', $user['account_id'])->value('id');
-        DB::table('public.users')->where('dd_user_account_id', $accountId)->where('id', '!=', $user['id'])->update(['dd_user_account_id' => null]);
+        DB::table('public.users')->where('canonical_user_account_id', $accountId)->where('id', '!=', $user['id'])->update(['canonical_user_account_id' => null]);
     }
-    DB::table('public.users')->where('id', $user['id'])->update(['dd_user_account_id' => $accountId]);
+    DB::table('public.users')->where('id', $user['id'])->update(['canonical_user_account_id' => $accountId]);
     if ($action === 'reset') {
         $fixture = json_decode(file_get_contents(getenv('PASSKEY_BROWSER_FIXTURE')), true, flags: JSON_THROW_ON_ERROR);
         foreach ($fixture['users'] as $other) {
             if ($other['account_id'] !== null) {
-                DB::table('public.users')->where('id', $other['id'])->whereNull('dd_user_account_id')->update(['dd_user_account_id' => $other['account_id']]);
+                DB::table('public.users')->where('id', $other['id'])->whereNull('canonical_user_account_id')->update(['canonical_user_account_id' => $other['account_id']]);
             }
         }
     }

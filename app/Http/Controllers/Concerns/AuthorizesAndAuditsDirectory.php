@@ -22,7 +22,7 @@ trait AuthorizesAndAuditsDirectory
     private function identity(Request $request, AccountIdentityResolver $resolver): array
     {
         $user = $request->user();
-        abort_unless($user instanceof User && $user->getAttribute('dd_user_account_id') !== null, 403);
+        abort_unless($user instanceof User && $user->getAttribute('canonical_user_account_id') !== null, 403);
         $identity = $resolver->resolve($user);
         abort_unless($identity !== null, 403, 'Your account is unavailable. Please contact your administrator.');
 

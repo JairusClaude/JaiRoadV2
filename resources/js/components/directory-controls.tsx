@@ -73,7 +73,11 @@ export function DirectorySelectionToolbar({
     onDelete: () => void;
 }) {
     const page = usePage();
-    const isViewer = (page.props.jairoadsIdentity as { role?: string } | undefined)?.role?.toLowerCase() === 'viewer';
+    const isViewer =
+        (
+            page.props.jairoadsIdentity as { role?: string } | undefined
+        )?.role?.toLowerCase() === 'viewer';
+
     return (
         <div className="jr-table-toolbar">
             <span role="status">

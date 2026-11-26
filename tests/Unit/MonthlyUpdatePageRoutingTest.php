@@ -13,13 +13,13 @@ final class MonthlyUpdatePageRoutingTest extends TestCase
     public function test_monthly_update_page_routes_keep_their_existing_contract(): void
     {
         $expected = [
-            'jairoads.ui.updates.index' => ['GET', 'dd-phase3/ui/monthly-updates', 'updateIndex'],
-            'jairoads.ui.updates.create' => ['GET', 'dd-phase3/ui/monthly-updates/create', 'updateForm'],
-            'jairoads.ui.updates.show' => ['GET', 'dd-phase3/ui/monthly-updates/{id}', 'updateShow'],
-            'jairoads.ui.updates.edit' => ['GET', 'dd-phase3/ui/monthly-updates/{id}/edit', 'updateForm'],
-            'jairoads.ui.updates.store' => ['POST', 'dd-phase3/ui/monthly-updates', 'saveUpdate'],
-            'jairoads.ui.updates.update' => ['PUT', 'dd-phase3/ui/monthly-updates/{id}', 'saveUpdate'],
-            'jairoads.ui.updates.media' => ['POST', 'dd-phase3/ui/monthly-updates/{id}/media', 'uploadMedia'],
+            'jairoads.ui.updates.index' => ['GET', 'workspace/ui/monthly-updates', 'updateIndex'],
+            'jairoads.ui.updates.create' => ['GET', 'workspace/ui/monthly-updates/create', 'updateForm'],
+            'jairoads.ui.updates.show' => ['GET', 'workspace/ui/monthly-updates/{id}', 'updateShow'],
+            'jairoads.ui.updates.edit' => ['GET', 'workspace/ui/monthly-updates/{id}/edit', 'updateForm'],
+            'jairoads.ui.updates.store' => ['POST', 'workspace/ui/monthly-updates', 'saveUpdate'],
+            'jairoads.ui.updates.update' => ['PUT', 'workspace/ui/monthly-updates/{id}', 'saveUpdate'],
+            'jairoads.ui.updates.media' => ['POST', 'workspace/ui/monthly-updates/{id}/media', 'uploadMedia'],
         ];
 
         foreach ($expected as $name => [$verb, $uri, $method]) {

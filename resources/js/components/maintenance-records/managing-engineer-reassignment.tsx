@@ -57,7 +57,7 @@ export default function ManagingEngineerReassignment({
                             setErrors({});
                             router.post(
                                 submitUrl ??
-                                    `/dd-phase3/ops/records/${record.id}/reassignment`,
+                                    `/workspace/ops/records/${record.id}/reassignment`,
                                 {
                                     managing_engineer_id: choice,
                                     expected_current_manager_id:

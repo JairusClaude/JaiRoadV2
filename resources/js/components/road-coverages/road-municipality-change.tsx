@@ -70,7 +70,7 @@ export default function RoadMunicipalityChange({
             }
 
             const response = await fetch(
-                `/dd-phase3/ops/roads/${roadId}/municipality/preview`,
+                `/workspace/ops/roads/${roadId}/municipality/preview`,
                 {
                     method: 'POST',
                     credentials: 'same-origin',
@@ -122,7 +122,7 @@ export default function RoadMunicipalityChange({
 
         try {
             await requestOperation(
-                `/dd-phase3/ops/roads/${roadId}/municipality/confirm`,
+                `/workspace/ops/roads/${roadId}/municipality/confirm`,
                 {
                     confirmation_token: review.confirmation_token,
                     ...(returnUrl ? { return_to: returnUrl } : {}),

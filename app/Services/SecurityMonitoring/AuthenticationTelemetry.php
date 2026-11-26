@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Services\SecurityMonitoring;
 
 use App\Models\User;
-use App\Services\AuditActorIdentifier;
 use App\Services\AccountIdentityResolver;
+use App\Services\AuditActorIdentifier;
 use App\Services\PostgresBoolean;
 use Illuminate\Cache\RateLimiter;
 use Illuminate\Database\Connection;

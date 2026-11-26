@@ -63,7 +63,7 @@ return [
 
     'providers' => [
         'users' => [
-            'driver' => 'dd-linked-eloquent',
+            'driver' => 'workspace-linked-eloquent',
             'model' => env('AUTH_MODEL', User::class),
         ],
 

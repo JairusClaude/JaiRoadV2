@@ -86,7 +86,7 @@ export default function PreservedHistory({
 }) {
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        router.get('/dd-phase3/history/records', {
+        router.get('/workspace/history/records', {
             search: new FormData(event.currentTarget).get('search') as string,
         });
     };
@@ -96,7 +96,7 @@ export default function PreservedHistory({
             <Head title="Preserved project history" />
             <ProjectWorkspace>
                 <Link
-                    href="/dd-phase3/ui/maintenance-records"
+                    href="/workspace/ui/maintenance-records"
                     className="underline"
                 >
                     Maintenance Records
@@ -262,7 +262,7 @@ export default function PreservedHistory({
                                     <p key={d.id}>
                                         <a
                                             className="underline"
-                                            href={`/dd-phase3/files/document/${d.id}`}
+                                            href={`/workspace/files/document/${d.id}`}
                                         >
                                             {d.document_title} · {d.file_name}
                                         </a>{' '}
@@ -282,7 +282,7 @@ export default function PreservedHistory({
                                     <p key={m.id}>
                                         <a
                                             className="underline"
-                                            href={`/dd-phase3/files/media/${m.id}`}
+                                            href={`/workspace/files/media/${m.id}`}
                                         >
                                             {m.file_name}
                                         </a>{' '}

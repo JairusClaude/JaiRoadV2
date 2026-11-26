@@ -17,7 +17,7 @@ export async function verifyAuditNotifications({
                 .split('; ')
                 .find((c) => c.startsWith('XSRF-TOKEN='));
             const response = await fetch(
-                `${base}/dd-phase3/ops/updates/${report.id}`,
+                `${base}/workspace/ops/updates/${report.id}`,
                 {
                     method: 'PUT',
                     headers: {
@@ -79,7 +79,7 @@ export async function verifyAuditNotifications({
         ).json(),
         { notifications: [] },
     );
-    await admin.goto(`${base}/dd-phase3/dashboard`);
+    await admin.goto(`${base}/workspace/dashboard`);
     await admin
         .getByRole('link', { name: 'Full audit history', exact: true })
         .click();
@@ -87,7 +87,7 @@ export async function verifyAuditNotifications({
         .getByRole('heading', { name: 'Audit Log', exact: true })
         .waitFor();
     const historyResponse = await admin.request.get(
-        `${base}/dd-phase3/audit-logs`,
+        `${base}/workspace/audit-logs`,
         {
             headers: {
                 'X-Inertia': 'true',
@@ -120,6 +120,7 @@ export async function verifyAuditNotifications({
     assert.equal(await detailButton.evaluate(el => el.closest('tr').getBoundingClientRect().height), rowHeight);
     assert.ok(await detailDialog.evaluate(el => {
         const r = el.getBoundingClientRect();
+
         return r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight;
     }));
     await detailDialog.getByRole('button', { name: 'Done', exact: true }).click();
@@ -154,14 +155,14 @@ export async function verifyAuditNotifications({
     }
 
     assert.equal(
-        (await engineer.request.get(`${base}/dd-phase3/audit-logs`)).status(),
+        (await engineer.request.get(`${base}/workspace/audit-logs`)).status(),
         403,
     );
     assert.equal(
-        (await viewer.request.get(`${base}/dd-phase3/audit-logs`)).status(),
+        (await viewer.request.get(`${base}/workspace/audit-logs`)).status(),
         403,
     );
-    await superadmin.goto(`${base}/dd-phase3/audit-logs`);
+    await superadmin.goto(`${base}/workspace/audit-logs`);
     await superadmin
         .getByRole('heading', { name: 'Audit Log', exact: true })
         .waitFor();

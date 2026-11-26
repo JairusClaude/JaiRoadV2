@@ -27,13 +27,13 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
     {
         $this->actingAs($this->account($actor));
         $data = $this->input($type);
-        $this->postJson('/dd-phase3/accounts', $data)->assertUnprocessable()->assertJsonValidationErrors('engineer_id');
+        $this->postJson('/workspace/accounts', $data)->assertUnprocessable()->assertJsonValidationErrors('engineer_id');
         $this->assertSame($actor === 'Admin' ? 2 : 1, DB::table('public.users')->count());
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
         $engineer = $this->engineer();
-        $this->postJson('/dd-phase3/accounts', $data + ['engineer_id' => $engineer])->assertRedirect();
+        $this->postJson('/workspace/accounts', $data + ['engineer_id' => $engineer])->assertRedirect();
         $account = DB::table('jairoads_next.user_accounts')->where('username', 'linked-new')->first();
-        $login = DB::table('public.users')->where('dd_user_account_id', $account->id)->first();
+        $login = DB::table('public.users')->where('canonical_user_account_id', $account->id)->first();
         $this->assertSame($type, $account->account_type);
         $this->assertSame($engineer, (int) $account->engineer_id);
         $this->assertTrue(hash_equals($account->password, $login->password));
@@ -58,7 +58,7 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
         }
         $before = DB::table('public.users')->count();
         foreach (['Admin', 'Engineer', 'Viewer'] as $type) {
-            $this->postJson('/dd-phase3/accounts', $this->input($type) + ['engineer_id' => $case === 'missing' ? 999999 : $engineer])
+            $this->postJson('/workspace/accounts', $this->input($type) + ['engineer_id' => $case === 'missing' ? 999999 : $engineer])
                 ->assertUnprocessable()->assertJsonValidationErrors('engineer_id');
         }
         $this->assertSame($before, DB::table('public.users')->count());
@@ -69,10 +69,10 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
     public function test_viewer_requires_a_profile_and_ordinary_creation_cannot_escalate_to_superadmin(): void
     {
         $this->actingAs($this->account('SuperAdmin'));
-        $this->postJson('/dd-phase3/accounts', $this->input('Viewer'))->assertUnprocessable()->assertJsonValidationErrors('engineer_id');
-        $this->postJson('/dd-phase3/accounts', $this->input('SuperAdmin'))->assertUnprocessable()->assertJsonValidationErrors('account_type');
+        $this->postJson('/workspace/accounts', $this->input('Viewer'))->assertUnprocessable()->assertJsonValidationErrors('engineer_id');
+        $this->postJson('/workspace/accounts', $this->input('SuperAdmin'))->assertUnprocessable()->assertJsonValidationErrors('account_type');
         $engineer = $this->engineer();
-        $this->postJson('/dd-phase3/accounts', $this->input('Viewer') + ['engineer_id' => $engineer])->assertRedirect();
+        $this->postJson('/workspace/accounts', $this->input('Viewer') + ['engineer_id' => $engineer])->assertRedirect();
         $this->assertDatabaseHas('jairoads_next.user_accounts', ['username' => 'linked-new', 'account_type' => 'Viewer', 'engineer_id' => $engineer]);
     }
 
@@ -90,20 +90,20 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
         $this->engineer('Retired');
         $available = $this->engineer();
         $totalAccounts = (int) DB::table('jairoads_next.user_accounts')->count();
-        $this->actingAs($admin)->get('/dd-phase3/users')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+        $this->actingAs($admin)->get('/workspace/users')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
             ->has('accounts', 15)->where('directory.total', $totalAccounts)
             ->has('eligibleEngineers', 1)->where('eligibleEngineerTotal', 1)
             ->where('eligibleEngineers.0.id', $available));
         // Search an early account that is outside the newest 15 displayed rows.
-        $this->get('/dd-phase3/users?directory_search=filler-0')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+        $this->get('/workspace/users?directory_search=filler-0')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
             ->has('accounts', 1)->where('accounts.0.username', 'filler-0')->where('directory.total', 1));
-        $this->get('/dd-phase3/users?directory_page=2')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+        $this->get('/workspace/users?directory_page=2')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
             ->has('accounts', 15)->where('directory.page', 2));
         $lastPage = (int) ceil($totalAccounts / 15);
         $lastCount = $totalAccounts - (($lastPage - 1) * 15);
-        $this->get('/dd-phase3/users?directory_page=9999')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+        $this->get('/workspace/users?directory_page=9999')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
             ->has('accounts', $lastCount)->where('directory.page', $lastPage)->where('directory.pages', $lastPage));
-        $this->get('/dd-phase3/users?directory_search=no-such-account&directory_page=9999')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+        $this->get('/workspace/users?directory_search=no-such-account&directory_page=9999')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
             ->has('accounts', 0)->where('directory.page', 1)->where('directory.pages', 1));
     }
 
@@ -116,20 +116,20 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
             ['username' => 'specificXneedle', 'email' => 'specificXneedle@example.test', 'password' => $hash, 'account_type' => 'Viewer', 'is_active' => true],
         ]);
         $this->actingAs($admin);
-        $this->get('/dd-phase3/users?'.http_build_query(['directory_search' => '  specific_needle  ']))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+        $this->get('/workspace/users?'.http_build_query(['directory_search' => '  specific_needle  ']))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
             ->has('accounts', 1)->where('accounts.0.username', 'specific_needle')
             ->where('directory.search', 'specific_needle'));
-        $this->get('/dd-phase3/users?'.http_build_query(['directory_search' => 'specific%needle']))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+        $this->get('/workspace/users?'.http_build_query(['directory_search' => 'specific%needle']))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
             ->has('accounts', 0)->where('directory.total', 0));
-        $this->get('/dd-phase3/users?'.http_build_query(['directory_search' => str_repeat('é', 151)]))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+        $this->get('/workspace/users?'.http_build_query(['directory_search' => str_repeat('é', 151)]))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
             ->where('directory.search', str_repeat('é', 150)));
         $matchingEngineer = $this->engineer();
         $otherEngineer = $this->engineer();
         DB::table('jairoads_next.engineers')->where('id', $matchingEngineer)->update(['rank' => 'Grade_Alpha']);
         DB::table('jairoads_next.engineers')->where('id', $otherEngineer)->update(['rank' => 'GradeXAlpha']);
-        $this->get('/dd-phase3/users?'.http_build_query(['directory_tab' => 'engineers', 'directory_search' => 'Grade_Alpha']))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+        $this->get('/workspace/users?'.http_build_query(['directory_tab' => 'engineers', 'directory_search' => 'Grade_Alpha']))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
             ->has('engineers', 1)->where('engineers.0.id', $matchingEngineer)->where('directory.total', 1));
-        $this->get('/dd-phase3/users?'.http_build_query(['directory_tab' => 'engineers', 'directory_page' => 9999]))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+        $this->get('/workspace/users?'.http_build_query(['directory_tab' => 'engineers', 'directory_page' => 9999]))->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
             ->where('directory.page', 1)->where('directory.pages', 1));
     }
 
@@ -159,25 +159,25 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
         $this->account('Engineer', $linked);
         $expected = 64;
 
-        $this->actingAs($admin)->get('/dd-phase3/users')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+        $this->actingAs($admin)->get('/workspace/users')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
             ->has('eligibleEngineers', 50)->where('eligibleEngineerTotal', $expected)
             ->missing('eligibleEngineers.50.id'));
-        $this->getJson('/dd-phase3/eligible-engineers')->assertOk()
+        $this->getJson('/workspace/eligible-engineers')->assertOk()
             ->assertJsonCount(50, 'engineers')->assertJsonPath('total', $expected);
-        $this->getJson('/dd-phase3/eligible-engineers?'.http_build_query(['search' => ' Hidden_Unique ']))
+        $this->getJson('/workspace/eligible-engineers?'.http_build_query(['search' => ' Hidden_Unique ']))
             ->assertOk()->assertJsonCount(1, 'engineers')->assertJsonPath('total', 1)
             ->assertJsonPath('engineers.0.id', $target);
-        $this->getJson('/dd-phase3/eligible-engineers?'.http_build_query(['search' => 'Hidden%Unique']))
+        $this->getJson('/workspace/eligible-engineers?'.http_build_query(['search' => 'Hidden%Unique']))
             ->assertOk()->assertJsonCount(0, 'engineers')->assertJsonPath('total', 0);
-        $this->getJson('/dd-phase3/eligible-engineers?'.http_build_query(['search' => (string) $retired]))
+        $this->getJson('/workspace/eligible-engineers?'.http_build_query(['search' => (string) $retired]))
             ->assertOk()->assertJsonMissing(['id' => $retired]);
-        $this->getJson('/dd-phase3/eligible-engineers?'.http_build_query(['search' => (string) $linked]))
+        $this->getJson('/workspace/eligible-engineers?'.http_build_query(['search' => (string) $linked]))
             ->assertOk()->assertJsonMissing(['id' => $linked]);
 
         $engineerLogin = $this->account('Engineer');
         // The canonical eligibility middleware rejects this JSON request before the administrator guard.
-        $this->actingAs($engineerLogin)->getJson('/dd-phase3/eligible-engineers')->assertUnauthorized();
-        $this->actingAs($admin)->getJson('/dd-phase3/eligible-engineers')->assertOk();
+        $this->actingAs($engineerLogin)->getJson('/workspace/eligible-engineers')->assertUnauthorized();
+        $this->actingAs($admin)->getJson('/workspace/eligible-engineers')->assertOk();
     }
 
     public function test_dashboard_and_users_do_not_load_unneeded_lgu_rows(): void
@@ -190,20 +190,20 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
         ]);
         $expected = (int) DB::table('jairoads_next.lgus')->count();
 
-        $this->actingAs($admin)->get('/dd-phase3/dashboard')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+        $this->actingAs($admin)->get('/workspace/dashboard')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
             ->has('lgus', 0)->where('counts.lgus', $expected));
-        $this->get('/dd-phase3/users')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
+        $this->get('/workspace/users')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page
             ->has('lgus', 0)->where('counts.lgus', $expected));
     }
 
     public function test_existing_unlinked_admin_is_denied_without_mutating_or_grandfathering_it(): void
     {
         $admin = $this->account(linked: false);
-        $before = DB::table('jairoads_next.user_accounts')->where('id', $admin->dd_user_account_id)->first();
+        $before = DB::table('jairoads_next.user_accounts')->where('id', $admin->canonical_user_account_id)->first();
         $this->post(route('login'), ['email' => $admin->email, 'password' => 'Disposable-Test!123'])->assertSessionHasErrors('email');
         $this->assertGuest();
         $this->assertNull(app(AccountIdentityResolver::class)->resolve($admin));
-        $this->assertEquals($before, DB::table('jairoads_next.user_accounts')->where('id', $admin->dd_user_account_id)->first());
+        $this->assertEquals($before, DB::table('jairoads_next.user_accounts')->where('id', $admin->canonical_user_account_id)->first());
     }
 
     public function test_provisioning_and_fortify_identity_roll_back_when_audit_insert_fails(): void
@@ -215,7 +215,7 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
                 throw new \RuntimeException('Deliberate disposable account audit failure.');
             }
         });
-        $this->postJson('/dd-phase3/accounts', $this->input('Admin') + ['engineer_id' => $engineer])->assertServerError();
+        $this->postJson('/workspace/accounts', $this->input('Admin') + ['engineer_id' => $engineer])->assertServerError();
         $this->assertSame(2, DB::table('public.users')->count());
         $this->assertSame(2, DB::table('jairoads_next.user_accounts')->count());
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->count());
@@ -226,7 +226,7 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
     {
         $this->actingAs($this->account());
         $engineer = $this->engineer();
-        $this->postJson('/dd-phase3/accounts', $this->input('Admin') + ['engineer_id' => $engineer])->assertRedirect();
+        $this->postJson('/workspace/accounts', $this->input('Admin') + ['engineer_id' => $engineer])->assertRedirect();
         $this->post(route('logout'))->assertRedirect();
         $this->post(route('login'), ['email' => 'linked-new@example.test', 'password' => 'Linked-Disposable!123'])->assertSessionHasNoErrors();
         $login = User::where('email', 'linked-new@example.test')->firstOrFail();
@@ -234,9 +234,9 @@ final class AccountLinkagePolicyTest extends PostgresTestCase
         $this->assertSame('Admin', $identity['role']);
         $this->assertSame($engineer, $identity['engineer_id']);
         $road = $this->road($engineer);
-        $this->postJson('/dd-phase3/ops/projects', ['project_title' => 'New linked Admin own work', 'road_coverage_id' => $road])->assertRedirect();
+        $this->postJson('/workspace/ops/projects', ['project_title' => 'New linked Admin own work', 'road_coverage_id' => $road])->assertRedirect();
         $project = (int) DB::table('jairoads_next.maintenance_projects')->value('id');
-        $this->postJson('/dd-phase3/ops/records', $this->recordData($project, $engineer, 'Q4'))->assertRedirect();
+        $this->postJson('/workspace/ops/records', $this->recordData($project, $engineer, 'Q4'))->assertRedirect();
         $this->assertDatabaseHas('jairoads_next.maintenance_records', ['project_id' => $project, 'managing_engineer_id' => $engineer, 'created_by' => $identity['account_id']]);
     }
 
