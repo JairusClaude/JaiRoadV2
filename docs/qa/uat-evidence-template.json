@@ -200,13 +200,13 @@
       "review_reference": null
     },
     {
-      "gate": "password_reset_mail",
+      "gate": "authorized_password_recovery",
       "decision": "NOT_APPROVED",
       "approver_reference": null,
       "review_reference": null
     },
     {
-      "gate": "real_device_passkeys_mfa",
+      "gate": "retired_auth_endpoints_and_session_denial",
       "decision": "NOT_APPROVED",
       "approver_reference": null,
       "review_reference": null

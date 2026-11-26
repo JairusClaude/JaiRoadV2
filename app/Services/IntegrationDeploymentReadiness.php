@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Services;
 
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Routing\Route as RegisteredRoute;
+use Laravel\Fortify\Features;
 
 /**
  * Configuration-only integration preflight. Never probes network services,
@@ -30,11 +33,22 @@ final class IntegrationDeploymentReadiness
         }
 
         $mediaBucket = (string) Config::get('jairoads_monthly_updates.bucket', '');
-        $origins = Config::get('fortify.passkeys.allowed_origins', []);
-        $relyingParty = Config::get('fortify.passkeys.relying_party_id');
-        $host = parse_url($appUrl, PHP_URL_HOST);
-        $mailTransport = (string) Config::get('mail.default', '');
-        $from = (string) Config::get('mail.from.address', '');
+        $retiredFeatures = [Features::registration(), Features::resetPasswords(), Features::twoFactorAuthentication(), 'passkeys'];
+        $retiredRoutes = collect(Route::getRoutes()->getRoutes())->contains(
+            static function (RegisteredRoute $route): bool {
+                $uri = trim($route->uri(), '/');
+
+                return $uri === 'register'
+                    || $uri === 'forgot-password'
+                    || $uri === 'reset-password'
+                    || str_starts_with($uri, 'reset-password/')
+                    || str_starts_with($uri, 'passkeys')
+                    || str_starts_with($uri, 'user/passkeys')
+                    || str_starts_with($uri, 'two-factor-challenge')
+                    || str_starts_with($uri, 'user/two-factor')
+                    || str_starts_with($uri, 'user/confirmed-two-factor');
+            },
+        );
 
         $checks = [
             'application_origin_https' => self::httpsUrl($appUrl),
@@ -45,19 +59,9 @@ final class IntegrationDeploymentReadiness
             'monthly_media_server_secret' => self::serverOnlyToken($mediaKey),
             'monthly_media_bucket_name_valid' => self::bucketName($mediaBucket),
             'document_and_media_buckets_distinct' => $documentBucket !== $mediaBucket,
-            'password_reset_mail_transport' => $mailTransport !== ''
-                && ! in_array($mailTransport, ['array', 'log'], true)
-                && Config::has('mail.mailers.'.$mailTransport),
-            'password_reset_sender' => filter_var($from, FILTER_VALIDATE_EMAIL) !== false
-                && ! str_ends_with(strtolower($from), '@example.com')
-                && ! str_ends_with(strtolower($from), '@example.test'),
-            'passkey_origin_matches_app_url' => self::httpsUrl($appUrl)
-                && is_array($origins)
-                && count($origins) > 0
-                && in_array($appUrl, $origins, true)
-                && count(array_filter($origins, fn (mixed $origin): bool => is_string($origin) && self::httpsUrl($origin))) === count($origins),
-            'passkey_relying_party_matches_host' => is_string($host) && $host !== ''
-                && is_string($relyingParty) && strtolower($host) === strtolower($relyingParty),
+            'password_sign_in_and_authorized_recovery_routes' => Route::has(['login', 'login.store', 'logout', 'jairoads.workspace.accounts.password-reset']),
+            'retired_authentication_features_disabled' => array_intersect($retiredFeatures, (array) Config::get('fortify.features', [])) === [],
+            'retired_authentication_routes_absent' => ! $retiredRoutes,
             'map_routing_https' => self::httpsUrl((string) Config::get('jairoads_maps.routing', '')),
             'map_geocoding_https' => self::httpsUrl((string) Config::get('jairoads_maps.geocoding', '')),
         ];
@@ -69,8 +73,8 @@ final class IntegrationDeploymentReadiness
             'manual_gates' => [
                 'verify_both_storage_buckets_private_and_unversioned',
                 'verify_real_private_upload_download_exact_delete_and_reconciliation',
-                'verify_password_reset_mail_delivery_and_token_expiry',
-                'verify_https_passkey_registration_login_wrong_origin_and_recovery',
+                'verify_authorized_superadmin_password_reset_and_session_revocation',
+                'verify_https_password_sign_in_all_roles_retired_endpoint_denial_and_operator_root_recovery',
                 'verify_map_provider_cors_terms_rate_limits_and_actual_routes',
                 'verify_real_staging_runtime_role_and_backup_restore',
             ],

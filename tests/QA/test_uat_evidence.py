@@ -41,6 +41,17 @@ class UatEvidenceGateTests(unittest.TestCase):
         fake = fake_complete()
         self.assertEqual(inspect(fake, "a" * 40), [])
 
+    def test_retired_auth_evidence_cannot_substitute_for_current_security_gates(self):
+        fake = fake_complete()
+        for row in fake["approvals"]:
+            if row["gate"] == "authorized_password_recovery":
+                row["gate"] = "password_reset_mail"
+            elif row["gate"] == "retired_auth_endpoints_and_session_denial":
+                row["gate"] = "real_device_passkeys_mfa"
+        issues = inspect(fake)
+        self.assertIn("invalid_approval", issues)
+        self.assertIn("missing_or_extra_approvals", issues)
+
     def test_wrong_sha_or_missing_a_single_case_blocks(self):
         fake = fake_complete()
         self.assertIn("candidate_sha_mismatch", inspect(fake, "b" * 40))

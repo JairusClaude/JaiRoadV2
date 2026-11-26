@@ -44,7 +44,7 @@ maintenance_required AS (
 ),
 maintenance_restrict_fks AS (
  SELECT count(*)=2 AND count(DISTINCT source_column.attname)=2
-    AND COALESCE(bool_and(fk.confdeltype = 'r'),false) AS are_restrict
+    AND COALESCE(bool_and(fk.confdeltype = 'r' AND fk.convalidated),false) AS are_restrict
  FROM pg_constraint fk
  JOIN pg_attribute source_column
    ON source_column.attrelid=fk.conrelid
@@ -64,7 +64,7 @@ period_index AS (
   SELECT 1 FROM pg_index i
   JOIN pg_class ix ON ix.oid=i.indexrelid
   WHERE i.indrelid=to_regclass('jairoads_next.maintenance_records')
-    AND i.indisunique AND i.indpred IS NULL AND i.indexprs IS NULL
+    AND i.indisunique AND i.indisvalid AND i.indisready AND i.indpred IS NULL AND i.indexprs IS NULL
     AND i.indnkeyatts=3
     AND ix.relname='maintenance_records_project_year_quarter_unique'
     AND pg_get_indexdef(i.indexrelid) ILIKE '%(project_id, maintenance_year, quarter)%'

@@ -107,6 +107,21 @@ class ReleaseGateTests(unittest.TestCase):
         self.assertIn("invalid_release_manifest", inspect_release([], {}, {}, SHA))
         self.assertIn("invalid_inventory", inspect_release({}, [], {}, SHA))
 
+    def test_required_relationships_and_current_inventory_keys_are_enforced(self):
+        template = load("docs/release/release-inventory-template.json")
+        self.assertEqual(set(template["checks"]), SCHEMA_CHECKS)
+        sql = (ROOT / "database/preflight/release_readonly.sql").read_text()
+        for key in SCHEMA_CHECKS:
+            self.assertIn("'" + key + "'", sql)
+        m, db, uat = simulated_complete()
+        for key in ("maintenance_project_manager_not_null", "maintenance_project_manager_restrict_fk", "no_maintenance_record_contexts"):
+            db["checks"][key] = False
+            self.assertIn("database_" + key, inspect_release(m, db, uat, SHA))
+            db["checks"][key] = True
+        db["checks"].pop("maintenance_project_manager_not_null")
+        db["checks"]["project_and_manager_nullable"] = True
+        self.assertIn("database_maintenance_project_manager_not_null", inspect_release(m, db, uat, SHA))
+
     def test_readonly_sql_has_catalog_only_transaction_boundary(self):
         sql = (ROOT / "database/preflight/release_readonly.sql").read_text()
         self.assertIn("BEGIN TRANSACTION READ ONLY;", sql)

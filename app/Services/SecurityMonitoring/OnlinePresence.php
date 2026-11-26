@@ -4,23 +4,33 @@ declare(strict_types=1);
 
 namespace App\Services\SecurityMonitoring;
 
+use App\Models\User;
 use App\Services\AccountIdentityResolver;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
+use Throwable;
 
 /** Recent activity is an estimate, verified against live server sessions and eligibility. */
 final class OnlinePresence
 {
-    /** The request itself proves its authenticated session is active, even before
-     * the outer telemetry middleware has persisted this request's activity. */
-    public function readForRequest(\Illuminate\Http\Request $request, array $actor): array
+    /**
+     * The request itself proves its authenticated session is active, even before
+     * the outer telemetry middleware has persisted this request's activity.
+     *
+     * @param  array{account_id:int,role:string,engineer_id:?int}  $actor
+     * @return array{available:bool,message:string,window_seconds:int,accounts:list<array<string,mixed>>,total:int}
+     */
+    public function readForRequest(Request $request, array $actor): array
     {
         if (! config('security-monitoring.enabled')) {
             return $this->read();
         }
         $user = $request->user();
-        if (! $user instanceof \App\Models\User || ! $request->hasSession()
-            || (string) $request->session()->get(\Illuminate\Support\Facades\Auth::guard('web')->getName()) !== (string) $user->getKey()
+        if (! $user instanceof User || ! $request->hasSession()
+            || (string) $request->session()->get(Auth::guard('web')->getName()) !== (string) $user->getKey()
             || app(AccountIdentityResolver::class)->resolve($user) !== $actor) {
             return $this->read();
         }
@@ -44,7 +54,10 @@ final class OnlinePresence
         return $result;
     }
 
-    /** @return array{available:bool,message:string,window_seconds:int,accounts:list<array<string,mixed>>,total:int} */
+    /**
+     * @param  array{account_id:int,username:string,account_type:string,session_count:int,last_activity:string,login_at:?string,client_description:string,status:string,is_current:bool}|null  $current
+     * @return array{available:bool,message:string,window_seconds:int,accounts:list<array<string,mixed>>,total:int}
+     */
     public function read(?array $current = null, ?string $currentReference = null): array
     {
         $window = max(30, min(900, (int) config('security-monitoring.online_seconds', 300)));
@@ -66,7 +79,7 @@ final class OnlinePresence
                 ->limit((int) config('security-monitoring.max_recent_sessions') + 1)
                 ->get(['presence.*', 'eligible.login_id', 'eligible.password', 'eligible.username', 'eligible.account_type']);
             if ($rows->count() > (int) config('security-monitoring.max_recent_sessions')) {
-                throw new \RuntimeException('Presence capacity exceeded.');
+                throw new RuntimeException('Presence capacity exceeded.');
             }
             $wanted = [];
             foreach ($rows as $row) {
@@ -107,7 +120,7 @@ final class OnlinePresence
 
             return ['available' => true, 'message' => 'Estimated online presence from recent, currently valid sessions. Latest session shown for multiple devices.',
                 'window_seconds' => $window, 'accounts' => $accounts, 'total' => count($accounts)];
-        } catch (\Throwable) {
+        } catch (Throwable) {
             $result['message'] = 'Presence could not be fully verified: session driver, storage availability or capacity limit. No unverified accounts are shown.';
 
             return $result;

@@ -1,4 +1,4 @@
-name: Canonical naming finalization
+name: Final quality formatting and verification
 on:
   push:
     branches: [merged-system2]
@@ -42,6 +42,7 @@ jobs:
           composer lint
           npm run lint
           npm run format
+          npx prettier --write tests/Browser/audit-notifications.mjs
           npx prettier --write tests/Browser/account-terminology.mjs tests/Browser/lifecycle.mjs
       - name: Remove trailing spaces from browser regression source
         run: sed -i 's/[[:blank:]]*$//' tests/Browser/unified.mjs
@@ -54,12 +55,15 @@ jobs:
           npm run types:check
           composer types:check
           npm run build
+          python3 -m unittest discover -s tests/QA -p 'test_*.py'
+          python3 -m unittest discover -s tests/Release -p 'test_*.py'
       - name: Publish checked normalization to requested branch only
         run: |
           test "$(git branch --show-current)" = merged-system2
           git diff --check
+          git diff --stat
           git add -A
           if ! git diff --cached --quiet; then
-            git -c user.name='JaiROADS CI' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Format final source and browser regression files'
+            git -c user.name='JaiROADS CI' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Apply checked final quality formatting'
             git push origin HEAD:refs/heads/merged-system2
           fi

@@ -55,9 +55,10 @@ Do **not** mistake an automation success badge for an operator signature.
 | SQL, real runtime role/RLS, backup/recovery | Pending | NOT APPROVED |
 | Actual SuperAdmin authentication/recovery | Pending | NOT APPROVED |
 | Existing Admin/Engineer private profile verification | Pending | NOT APPROVED |
+| Persistent isolated staging | Pending | NOT APPROVED |
 | Real private Storage and file recovery | Pending | NOT APPROVED |
-| SMTP password-reset delivery | Pending | NOT APPROVED |
-| HTTPS signed WebAuthn and MFA recovery on real devices | Pending | NOT APPROVED |
+| SuperAdmin-assisted ordinary account password reset and trusted operator root recovery | Pending | NOT APPROVED |
+| HTTPS password sign-in and denial of retired public reset, passkey and MFA endpoints | Pending | NOT APPROVED |
 | Map provider connectivity / terms and fallback | Pending | NOT APPROVED |
 | All Blocker/Critical/High defects resolved and retested | Pending | NOT APPROVED |
 | Authorized user acceptance on exact signed build | Pending | NOT APPROVED |

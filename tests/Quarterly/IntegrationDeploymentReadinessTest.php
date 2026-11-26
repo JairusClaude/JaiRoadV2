@@ -9,6 +9,7 @@ use App\Services\IntegrationDeploymentReadiness;
 use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
+use Laravel\Fortify\Features;
 use RuntimeException;
 
 final class IntegrationDeploymentReadinessTest extends PostgresTestCase
@@ -23,7 +24,7 @@ final class IntegrationDeploymentReadinessTest extends PostgresTestCase
             'jairoads_monthly_updates.supabase_url' => 'https://synthetic-storage.invalid',
             'jairoads_monthly_updates.service_role_key' => '',
             'jairoads_monthly_updates.bucket' => 'private-media',
-            'mail.default' => 'smtp',
+            'mail.default' => 'log',
             'mail.from.address' => 'noreply@jairoads.invalid',
             'fortify.passkeys.relying_party_id' => 'staging.jairoads.invalid',
             'fortify.passkeys.allowed_origins' => ['https://staging.jairoads.invalid'],
@@ -76,14 +77,25 @@ final class IntegrationDeploymentReadinessTest extends PostgresTestCase
             'application_origin_https', 'document_storage_https',
             'document_storage_server_secret', 'document_bucket_name_valid',
             'monthly_media_server_secret', 'monthly_media_bucket_name_valid',
-            'document_and_media_buckets_distinct', 'password_reset_mail_transport',
-            'password_reset_sender', 'passkey_origin_matches_app_url',
-            'passkey_relying_party_matches_host', 'map_routing_https',
+            'document_and_media_buckets_distinct', 'map_routing_https',
             'map_geocoding_https',
         ] as $field) {
             $this->assertFalse($checks['checks'][$field], $field);
         }
         Http::assertNothingSent();
+    }
+
+    public function test_retired_authentication_features_or_routes_block_readiness(): void
+    {
+        $report = app(IntegrationDeploymentReadiness::class)->report();
+        $this->assertTrue($report['checks']['password_sign_in_and_authorized_recovery_routes']);
+        $this->assertTrue($report['checks']['retired_authentication_features_disabled']);
+        $this->assertTrue($report['checks']['retired_authentication_routes_absent']);
+
+        config(['fortify.features' => [Features::resetPasswords(), Features::twoFactorAuthentication(), 'passkeys']]);
+        $report = app(IntegrationDeploymentReadiness::class)->report();
+        $this->assertFalse($report['checks']['retired_authentication_features_disabled']);
+        $this->assertFalse($report['ready_for_live_probes']);
     }
 
     public function test_private_document_and_media_downloads_keep_server_secret_out_of_bearer_and_browser_urls(): void
