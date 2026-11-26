@@ -430,6 +430,28 @@ throw new Error('Wave transform is static');
         await mapTimeoutPage.close();
     }
 
+    const manifest = JSON.parse(
+        await readFile(new URL('../../public/build/manifest.json', import.meta.url), 'utf8'),
+    );
+    const mapModule = manifest['resources/js/components/road-coverages/simplified-coverage-map.tsx'];
+    assert.ok(mapModule?.file, 'The dashboard map module must have a build entry');
+    const mapModuleUrl = `${base}/build/${mapModule.file}`;
+    const mapModulePage = await engineer.context().newPage();
+
+    try {
+        await mapModulePage.route(mapModuleUrl, (route) => route.abort());
+        await mapModulePage.goto(`${base}/workspace/dashboard`);
+        const retry = mapModulePage.getByRole('button', { name: 'Reload page to retry map' });
+        await retry.waitFor();
+        await mapModulePage.getByRole('button', { name: 'Refresh dashboard' }).waitFor();
+        await mapModulePage.unroute(mapModuleUrl);
+        await retry.click();
+        await mapModulePage.locator('.jr-dashboard-road-mine').first().waitFor();
+        console.log('PASS: a failed dashboard map module can recover once its asset is available.');
+    } finally {
+        await mapModulePage.close();
+    }
+
     const viewerMapRequests = [];
     const recordViewerMapRequest = request => {
         if (new URL(request.url()).pathname === '/workspace/dashboard/map-roads') {
@@ -456,6 +478,37 @@ viewerMapRequests.push(request.url());
         engineer,
         viewer,
     });
+
+    const projectPickers = await engineer.context().newPage();
+
+    try {
+        await projectPickers.route('**/workspace/ui/project-filter-choices?*', (route) => {
+            const page = Number(new URL(route.request().url()).searchParams.get('page'));
+
+            return route.fulfill({
+                json: { page, last_page: 2, data: [{ id: page, project_title: `Project on page ${page}` }] },
+            });
+        });
+
+        for (const [path, label] of [
+            ['/maintenance-records/create', 'Maintenance Project'],
+            ['/monthly-updates', 'Project filter'],
+        ]) {
+            await projectPickers.goto(ui + path);
+            await projectPickers.getByLabel(new RegExp('^' + label)).press('Enter');
+            await projectPickers.getByText('Page 1 of 2', { exact: true }).waitFor();
+            const search = projectPickers.getByRole('textbox', { name: 'Search maintenance projects' });
+            await projectPickers.getByRole('button', { name: 'Next', exact: true }).press('Enter');
+            await projectPickers.getByText('Page 2 of 2', { exact: true }).waitFor();
+            assert.equal(await search.evaluate((element) => element === document.activeElement), true);
+            await projectPickers.keyboard.press('ArrowDown');
+            assert.equal(await projectPickers.locator('[role="option"]:focus').count(), 1);
+        }
+
+        console.log('PASS: project picker pagination retains keyboard access to the loaded options.');
+    } finally {
+        await projectPickers.close();
+    }
 
     for (const page of [engineer, admin, viewer, superadmin]) {
         await page.goto(`${ui}/road-coverages`);

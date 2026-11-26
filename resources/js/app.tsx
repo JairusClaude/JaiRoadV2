@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react';
 import '../css/jairoads-role-components.css';
 import '../css/jairoads-dark-appearance.css';
 import { JaiRoadsNavigationFeedback } from '@/components/jairoads/navigation-feedback';
+import { RenderErrorBoundary } from '@/components/jairoads/render-error-boundary';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
@@ -74,18 +75,37 @@ createInertiaApp({
     withApp(app) {
         return (
             <TooltipProvider delayDuration={0}>
-                <Suspense
+                <RenderErrorBoundary
                     fallback={
-                        <div
-                            role="status"
-                            className="grid min-h-screen place-items-center text-sm"
-                        >
-                            Loading JaiROADS workspace…
+                        <div className="grid min-h-screen place-items-center text-sm">
+                            <div className="text-center">
+                                <p role="alert">
+                                    JaiROADS could not open this page.
+                                </p>
+                                <button
+                                    type="button"
+                                    className="mt-3 underline"
+                                    onClick={() => window.location.reload()}
+                                >
+                                    Reload page
+                                </button>
+                            </div>
                         </div>
                     }
                 >
-                    {app}
-                </Suspense>
+                    <Suspense
+                        fallback={
+                            <div
+                                role="status"
+                                className="grid min-h-screen place-items-center text-sm"
+                            >
+                                Loading JaiROADS workspace…
+                            </div>
+                        }
+                    >
+                        {app}
+                    </Suspense>
+                </RenderErrorBoundary>
                 <JaiRoadsNavigationFeedback />
                 <Toaster />
             </TooltipProvider>

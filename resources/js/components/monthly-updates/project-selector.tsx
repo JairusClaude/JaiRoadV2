@@ -1,5 +1,6 @@
 import { Check, ChevronsUpDown, Search } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
+import type { MouseEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { MonthlyParentProject } from '@/types/monthly-updates';
@@ -68,10 +69,19 @@ export function ProjectSelector<T extends MonthlyParentProject>({
                     throw new Error('Project choices unavailable');
                 }
 
-                const data = await response.json();
+                const result = await response.json();
+
+                if (!Array.isArray(result.data)) {
+                    throw new Error('Invalid project choices');
+                }
 
                 if (!controller.signal.aborted) {
-                    setResult({ key, ...data });
+                    setResult({
+                        key,
+                        data: result.data,
+                        page: result.page,
+                        last_page: result.last_page,
+                    });
                 }
             } catch {
                 if (!controller.signal.aborted) {
@@ -119,6 +129,11 @@ export function ProjectSelector<T extends MonthlyParentProject>({
     const close = () => {
         setOpen(false);
         trigger.current?.focus();
+    };
+    const returnKeyboardFocus = (event: MouseEvent<HTMLButtonElement>) => {
+        if (event.detail === 0) {
+            search.current?.focus({ preventScroll: true });
+        }
     };
 
     return (
@@ -281,9 +296,10 @@ export function ProjectSelector<T extends MonthlyParentProject>({
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    onClick={() =>
-                                        setAttempt((value) => value + 1)
-                                    }
+                                    onClick={(event) => {
+                                        returnKeyboardFocus(event);
+                                        setAttempt((value) => value + 1);
+                                    }}
                                 >
                                     Retry
                                 </Button>
@@ -302,9 +318,10 @@ export function ProjectSelector<T extends MonthlyParentProject>({
                                 variant="outline"
                                 size="sm"
                                 disabled={(current?.page ?? 1) <= 1}
-                                onClick={() =>
-                                    setPage((current?.page ?? 1) - 1)
-                                }
+                                onClick={(event) => {
+                                    returnKeyboardFocus(event);
+                                    setPage((current?.page ?? 1) - 1);
+                                }}
                             >
                                 Previous
                             </Button>
@@ -319,9 +336,10 @@ export function ProjectSelector<T extends MonthlyParentProject>({
                                     (current?.page ?? 1) >=
                                     (current?.last_page ?? 1)
                                 }
-                                onClick={() =>
-                                    setPage((current?.page ?? 1) + 1)
-                                }
+                                onClick={(event) => {
+                                    returnKeyboardFocus(event);
+                                    setPage((current?.page ?? 1) + 1);
+                                }}
                             >
                                 Next
                             </Button>

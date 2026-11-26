@@ -51,7 +51,7 @@ final class FileRecoveryScheduleTest extends PostgresTestCase
         $this->assertSame('*/5 * * * *', $event->expression);
         $this->assertTrue($event->withoutOverlapping);
         $this->assertTrue($event->onOneServer);
-        $this->assertSame(10, $event->expiresAt);
+        $this->assertSame(30, $event->expiresAt);
         $this->artisan('jairoads:file-recovery-readiness')->assertSuccessful();
         Http::assertNothingSent();
     }

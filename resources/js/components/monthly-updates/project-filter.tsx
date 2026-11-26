@@ -1,5 +1,6 @@
 import { Check, ChevronDown, Search } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
+import type { MouseEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -64,10 +65,19 @@ export function MonthlyProjectFilter({
                     throw new Error('Project choices unavailable');
                 }
 
-                const data = await result.json();
+                const payload = await result.json();
+
+                if (!Array.isArray(payload.data)) {
+                    throw new Error('Invalid project choices');
+                }
 
                 if (!controller.signal.aborted) {
-                    setResponse({ key, ...data });
+                    setResponse({
+                        key,
+                        data: payload.data,
+                        page: payload.page,
+                        last_page: payload.last_page,
+                    });
                 }
             } catch {
                 if (!controller.signal.aborted) {
@@ -110,6 +120,11 @@ export function MonthlyProjectFilter({
     const select = (next: string) => {
         setOpen(false);
         onChange(next);
+    };
+    const returnKeyboardFocus = (event: MouseEvent<HTMLButtonElement>) => {
+        if (event.detail === 0) {
+            input.current?.focus({ preventScroll: true });
+        }
     };
 
     return (
@@ -164,7 +179,7 @@ export function MonthlyProjectFilter({
                     if (fromSearch && event.key === 'Enter') {
                         event.preventDefault();
 
-                        if (matches[0]) {
+                        if (!loading && !current?.error && matches[0]) {
                             select(matches[0].value);
                         }
 
@@ -191,7 +206,7 @@ export function MonthlyProjectFilter({
                     }
 
                     event.preventDefault();
-                    const current = buttons.indexOf(
+                    const focusedIndex = buttons.indexOf(
                         document.activeElement as HTMLButtonElement,
                     );
                     const next =
@@ -200,10 +215,10 @@ export function MonthlyProjectFilter({
                             : event.key === 'End'
                               ? buttons.length - 1
                               : event.key === 'ArrowDown'
-                                ? (current + 1) % buttons.length
-                                : current < 0
+                                ? (focusedIndex + 1) % buttons.length
+                                : focusedIndex < 0
                                   ? buttons.length - 1
-                                  : (current - 1 + buttons.length) %
+                                  : (focusedIndex - 1 + buttons.length) %
                                     buttons.length;
                     buttons[next]?.focus();
                 }}
@@ -257,9 +272,10 @@ export function MonthlyProjectFilter({
                             <Button
                                 type="button"
                                 variant="outline"
-                                onClick={() =>
-                                    setRetry((previous) => previous + 1)
-                                }
+                                onClick={(event) => {
+                                    returnKeyboardFocus(event);
+                                    setRetry((previous) => previous + 1);
+                                }}
                             >
                                 Retry
                             </Button>
@@ -278,7 +294,10 @@ export function MonthlyProjectFilter({
                             variant="outline"
                             size="sm"
                             disabled={currentPage <= 1}
-                            onClick={() => setPage(currentPage - 1)}
+                            onClick={(event) => {
+                                returnKeyboardFocus(event);
+                                setPage(currentPage - 1);
+                            }}
                         >
                             Previous
                         </Button>
@@ -290,7 +309,10 @@ export function MonthlyProjectFilter({
                             variant="outline"
                             size="sm"
                             disabled={currentPage >= lastPage}
-                            onClick={() => setPage(currentPage + 1)}
+                            onClick={(event) => {
+                                returnKeyboardFocus(event);
+                                setPage(currentPage + 1);
+                            }}
                         >
                             Next
                         </Button>

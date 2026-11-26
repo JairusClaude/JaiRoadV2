@@ -8,7 +8,7 @@ use Illuminate\Console\Scheduling\Schedule;
 
 final class FileRecoverySchedule
 {
-    public const COMMAND = 'jairoads:resume-file-deletions --limit=20';
+    public const COMMAND = 'jairoads:resume-file-deletions --limit=20 --budget=240';
 
     /** @return array{deletion_enabled:bool,schedule_enabled:bool,shared_cache_configured:bool,registration_allowed:bool} */
     public static function readiness(): array
@@ -33,6 +33,6 @@ final class FileRecoverySchedule
             return;
         }
 
-        $schedule->command(self::COMMAND)->everyFiveMinutes()->withoutOverlapping(10)->onOneServer();
+        $schedule->command(self::COMMAND)->everyFiveMinutes()->withoutOverlapping(30)->onOneServer();
     }
 }

@@ -11,10 +11,11 @@ import {
     Route,
     Users,
 } from 'lucide-react';
-import { Component, lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { DashboardAnalytics } from '@/components/dashboard/dashboard-analytics';
 import type { DashboardSummary } from '@/components/dashboard/dashboard-analytics';
+import { RenderErrorBoundary } from '@/components/jairoads/render-error-boundary';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import type { SimplifiedCoverageItem } from '@/components/road-coverages/simplified-coverage-map';
 import '../../../css/maintenance-projects-exploration.css';
@@ -57,37 +58,6 @@ function MapPlaceholder({ children }: { children: ReactNode }) {
             {children}
         </div>
     );
-}
-
-class MapBoundary extends Component<
-    { children: ReactNode },
-    { failed: boolean }
-> {
-    state = { failed: false };
-    static getDerivedStateFromError() {
-        return { failed: true };
-    }
-    render() {
-        return this.state.failed ? (
-            <MapPlaceholder>
-                <div>
-                    <p role="alert">
-                        The map could not initialize. The rest of the dashboard
-                        is available.
-                    </p>
-                    <button
-                        type="button"
-                        className="mt-3 underline"
-                        onClick={() => this.setState({ failed: false })}
-                    >
-                        Retry map
-                    </button>
-                </div>
-            </MapPlaceholder>
-        ) : (
-            this.props.children
-        );
-    }
 }
 
 function DashboardRoadMap({
@@ -192,7 +162,25 @@ function DashboardRoadMap({
             className="min-w-0"
         >
             {ready ? (
-                <MapBoundary>
+                <RenderErrorBoundary
+                    fallback={
+                        <MapPlaceholder>
+                            <div>
+                                <p role="alert">
+                                    The map could not initialize. The rest of
+                                    the dashboard is available.
+                                </p>
+                                <button
+                                    type="button"
+                                    className="mt-3 underline"
+                                    onClick={() => window.location.reload()}
+                                >
+                                    Reload page to retry map
+                                </button>
+                            </div>
+                        </MapPlaceholder>
+                    }
+                >
                     <Suspense
                         fallback={
                             <MapPlaceholder>
@@ -209,7 +197,7 @@ function DashboardRoadMap({
                             height={450}
                         />
                     </Suspense>
-                </MapBoundary>
+                </RenderErrorBoundary>
             ) : (
                 <MapPlaceholder>
                     <span role="status">
