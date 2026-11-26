@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - merged-system
+      - merged-system_refactor2
   pull_request:
 
 permissions:

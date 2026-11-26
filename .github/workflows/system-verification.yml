@@ -1,15 +1,14 @@
 name: JaiROADS full system verification
 on:
   push:
-    branches: ['integration/dd-system-completion', 'Oct10_Front&BackEnd_Merge_Integration', 'fix/security-auth-revocation-passkey-dependencies', 'fix/canonical-only-provisioned-auth', 'fix/audit-multirecipient-consistency', 'fix/ordinary-mutation-authorization-races', 'integration/combined-review-candidate-2026-11-07', 'fix/full-system-role-acceptance', 'fix/uat-defect-and-recovery-gates', 'fix/controlled-release-readiness', 'merged-system']
+    branches: ['integration/dd-system-completion', 'Oct10_Front&BackEnd_Merge_Integration', 'fix/security-auth-revocation-passkey-dependencies', 'fix/canonical-only-provisioned-auth', 'fix/audit-multirecipient-consistency', 'fix/ordinary-mutation-authorization-races', 'integration/combined-review-candidate-2026-11-07', 'fix/full-system-role-acceptance', 'fix/uat-defect-and-recovery-gates', 'fix/controlled-release-readiness', 'merged-system', 'merged-system_refactor2']
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   reviewed-lineage:
-    # This immutable lineage gate is for the stacked combined-review candidate.
-    # merged-system is a separate delivery branch with a different Git ancestry.
-    if: ${{ github.ref_name != 'merged-system' }}
+    # Delivery branches verify the merged-system contracts below.
+    if: ${{ github.ref_name != 'merged-system' && github.ref_name != 'merged-system_refactor2' }}
     name: integration / canonical and teammate ancestry
     runs-on: ubuntu-latest
     permissions:
@@ -23,14 +22,19 @@ jobs:
         run: bash tests/Integration/assert-reviewed-history.sh
 
   merged-contracts:
-    if: ${{ github.ref_name == 'merged-system' }}
+    if: ${{ github.ref_name == 'merged-system' || github.ref_name == 'merged-system_refactor2' }}
     name: integration / merged-system canonical contracts
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with: { persist-credentials: false }
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify finalization descends from the audited delivery baseline
+        if: ${{ github.ref_name == 'merged-system_refactor2' }}
+        run: git merge-base --is-ancestor 733a942c3fb18233c831121ee6dcda9cca042ac5 HEAD
       - name: Verify current canonical identity, audit and file contracts
         run: bash tests/Integration/assert-merged-system-contracts.sh
 
