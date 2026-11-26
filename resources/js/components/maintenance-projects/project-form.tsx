@@ -289,7 +289,8 @@ export function ProjectForm({
                             <div className="jr-coverage-info">
                                 <p className="jr-field-hint" role="status">
                                     {availableCount} available · {assignedCount}{' '}
-                                    assigned · {availableCount + assignedCount} total coverages
+                                    assigned · {availableCount + assignedCount}{' '}
+                                    total coverages
                                 </p>
                                 <label className="jr-show-assigned">
                                     <input
@@ -297,7 +298,9 @@ export function ProjectForm({
                                         role="switch"
                                         checked={showAssigned}
                                         onChange={(event) => {
-                                            setShowAssigned(event.target.checked);
+                                            setShowAssigned(
+                                                event.target.checked,
+                                            );
                                             setPage(1);
                                         }}
                                         disabled={
@@ -423,7 +426,9 @@ export function ProjectForm({
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    disabled={processing || pagination.page <= 1}
+                                    disabled={
+                                        processing || pagination.page <= 1
+                                    }
                                     onClick={() => setPage(pagination.page - 1)}
                                 >
                                     Previous

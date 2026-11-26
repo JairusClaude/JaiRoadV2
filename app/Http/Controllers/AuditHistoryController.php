@@ -27,6 +27,8 @@ use Inertia\Response;
 /** Admin/SuperAdmin-only read endpoint. Never changes or consolidates history. */
 final class AuditHistoryController extends Controller
 {
+    public const ACTIVITY_ACTIONS = ['CREATE', 'UPDATE', 'DELETE', 'ACTIVATE', 'DEACTIVATE', 'REASSIGN', 'RETIRE', 'LOGIN', 'LOGOUT', 'UPLOAD'];
+
     public function __invoke(Request $request, AccountIdentityResolver $resolver): Response
     {
         if (OperationsFrontendController::isPreview($request)) {
@@ -36,7 +38,7 @@ final class AuditHistoryController extends Controller
         $user = $request->user();
         $actor = $user instanceof User ? $resolver->resolve($user) : null;
         abort_unless($actor !== null && RoleAccess::managesBusinessData($actor['role']), 403);
-        $actions = ['CREATE', 'UPDATE', 'DELETE', 'ACTIVATE', 'DEACTIVATE', 'REASSIGN', 'RETIRE', 'LOGIN', 'LOGOUT'];
+        $actions = self::ACTIVITY_ACTIONS;
         $v = $request->validate([
             'activity_search' => ['nullable', 'string', 'max:150'], 'activity_action' => ['nullable', Rule::in($actions)],
             'activity_entity' => ['nullable', Rule::in(array_keys(AuditValues::TABLES))],
@@ -50,7 +52,7 @@ final class AuditHistoryController extends Controller
         if (($v['activity_search'] ?? '') !== '') {
             $search = LiteralDirectorySearch::pattern($v['activity_search']);
             $query->where(static fn (Builder $q) => $q->where('audit.actor_identifier', 'ilike', $search)->orWhereRaw("regexp_replace(audit.actor_identifier, '^DD-UserAccount#', 'User Account #', 'i') ILIKE ?", [$search])->orWhere('account.username', 'ilike', $search)
-                ->orWhere('audit.description', 'ilike', $search)->orWhereRaw('CAST(audit.entity_id AS text) ILIKE ?', [$search]));
+                ->orWhere('audit.description', 'ilike', $search)->orWhere('audit.entity_type', 'ilike', $search)->orWhereRaw('CAST(audit.entity_id AS text) ILIKE ?', [$search]));
         }
         if (! empty($v['activity_action'])) {
             $query->where('audit.action', $v['activity_action']);

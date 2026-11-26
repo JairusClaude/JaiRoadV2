@@ -57,11 +57,12 @@ it('matches percent signs literally in every canonical operational directory', f
         ['maintenance-records', 'Project%Alpha', 'records.data', $recordA],
         ['monthly-updates', 'Project%Alpha', 'updates.data', $updateA],
         ['maintenance-documents', 'Document%Alpha', 'documents.data', $documentA],
-        ['audit-logs', 'Audit%Alpha', 'events.data', $auditA],
     ] as [$path, $search, $dataKey, $expectedId]) {
         $this->get('/workspace/ui/'.$path.'?'.http_build_query(['search' => $search]))->assertOk()->assertInertia(fn (Assert $page) => $page->has($dataKey, 1)->where($dataKey.'.0.id', $expectedId));
     }
 
+    $this->get('/workspace/ui/audit-logs?'.http_build_query(['search' => 'Audit%Alpha']))
+        ->assertRedirect(route('jairoads.workspace.audit.index', ['activity_search' => 'Audit%Alpha']));
     $this->get('/workspace/audit-logs?'.http_build_query(['activity_search' => 'Audit%Alpha']))->assertOk()
         ->assertInertia(fn (Assert $page) => $page->has('events.data', 1)->where('events.data.0.id', $auditA));
 });
@@ -70,9 +71,11 @@ it('normalizes malformed and unicode search inputs instead of interpolating patt
     $this->fixture('Admin');
 
     foreach (['lgus', 'road-coverages', 'maintenance-projects', 'maintenance-records',
-        'monthly-updates', 'maintenance-documents', 'audit-logs'] as $path) {
+        'monthly-updates', 'maintenance-documents'] as $path) {
         $this->get('/workspace/ui/'.$path.'?'.http_build_query(['search' => ['unexpected']]))->assertOk()->assertInertia(fn (Assert $page) => $page->where('filters.search', ''));
     }
+
+    $this->get('/workspace/ui/audit-logs?'.http_build_query(['search' => ['unexpected']]))->assertRedirect(route('jairoads.workspace.audit.index'));
 
     $this->get('/workspace/ui/lgus?'.http_build_query([
         'province' => ['untrusted'], 'region' => ['untrusted'], 'sort' => ['desc'],
@@ -96,7 +99,8 @@ it('normalizes structured directory filters to safe scalar options and preserves
     $this->get('/workspace/ui/maintenance-projects?'.http_build_query(['municipality' => ['invalid']]))->assertInertia(fn (Assert $page) => $page->where('filters.municipality', 'all'));
     $this->get('/workspace/ui/maintenance-documents?'.http_build_query(['project' => ['invalid']]))->assertInertia(fn (Assert $page) => $page->where('filters.project', 'all'));
     $this->get('/workspace/ui/monthly-updates?'.http_build_query(['project' => ['invalid'], 'year' => ['invalid']]))->assertInertia(fn (Assert $page) => $page->where('filters.project', 'all')->where('filters.year', 'all'));
-    $this->get('/workspace/ui/audit-logs?'.http_build_query(['action' => ['invalid']]))->assertInertia(fn (Assert $page) => $page->where('filters.action', 'all'));
+    $this->get('/workspace/ui/audit-logs?'.http_build_query(['action' => ['invalid']]))->assertRedirect(route('jairoads.workspace.audit.index'));
+    $this->get('/workspace/ui/audit-logs?action=UPDATE&sort=oldest')->assertRedirect(route('jairoads.workspace.audit.index', ['activity_action' => 'UPDATE', 'activity_order' => 'oldest']));
     $this->get('/workspace/ui/lgus?sort=DESC')->assertInertia(fn (Assert $page) => $page->where('filters.sort', 'desc'));
 });
 
