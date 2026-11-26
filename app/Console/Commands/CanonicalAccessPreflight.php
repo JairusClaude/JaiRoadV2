@@ -38,13 +38,14 @@ final class CanonicalAccessPreflight extends Command
                 if (! AccountIdentityResolver::roleLinkValid($a->account_type, $a->engineer_id)) {
                     $issues[] = 'role_profile_conflict';
                 }
-                if ($a->account_type !== 'SuperAdmin' && $a->engineer_id === null) {
+                $verified = $a->account_type === 'SuperAdmin' || $provisioning->verified((int) $a->id, $a->account_type, $a->engineer_id);
+                if ($a->engineer_id === null && ($a->account_type === 'Engineer' || ($a->account_type === 'Admin' && ! $verified))) {
                     $issues[] = 'needs_engineer_link';
                 }
                 if ($a->engineer_id !== null && $a->engineer_status !== 'Active') {
                     $issues[] = 'missing_or_retired_profile';
                 }
-                if ($a->account_type !== 'SuperAdmin' && ! $provisioning->verified((int) $a->id, $a->account_type, $a->engineer_id)) {
+                if (! $verified) {
                     $issues[] = 'needs_reviewed_provisioning_evidence';
                 }
                 if ($logins->count() !== 1) {

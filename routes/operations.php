@@ -75,5 +75,5 @@ Route::middleware(['auth'])->prefix('workspace')->name('jairoads.workspace.')->g
     Route::delete('/files/{kind}/{id}', [OperationsController::class, 'deleteFile'])
         ->whereIn('kind', ['document', 'media'])->whereNumber('id')->middleware('throttle:10,1,jr-operations-files-destroy-')->name('operations.files.destroy');
     Route::get('/files/{kind}/{id}', [OperationsController::class, 'download'])
-        ->whereIn('kind', ['document', 'media'])->whereNumber('id')->name('operations.files.download');
+        ->whereIn('kind', ['document', 'media'])->whereNumber('id')->middleware('throttle:60,1,jr-operations-files-download-')->name('operations.files.download');
 });

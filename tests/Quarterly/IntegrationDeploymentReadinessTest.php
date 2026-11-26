@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Quarterly;
 
+use App\Http\Middleware\EnsurePasswordRecoveryDelivery;
 use App\Services\Documents\PrivateSupabaseStorage;
 use App\Services\IntegrationDeploymentReadiness;
 use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
@@ -26,8 +27,6 @@ final class IntegrationDeploymentReadinessTest extends PostgresTestCase
             'jairoads_monthly_updates.bucket' => 'private-media',
             'mail.default' => 'log',
             'mail.from.address' => 'noreply@jairoads.invalid',
-            'fortify.passkeys.relying_party_id' => 'staging.jairoads.invalid',
-            'fortify.passkeys.allowed_origins' => ['https://staging.jairoads.invalid'],
             'jairoads_maps.routing' => 'https://synthetic-routing.invalid/route/v1/driving',
             'jairoads_maps.geocoding' => 'https://synthetic-geocoding.invalid/api',
         ]);
@@ -65,8 +64,6 @@ final class IntegrationDeploymentReadinessTest extends PostgresTestCase
             'jairoads_monthly_updates.bucket' => 'private/docs',
             'mail.default' => 'log',
             'mail.from.address' => 'hello@example.com',
-            'fortify.passkeys.relying_party_id' => 'other.invalid',
-            'fortify.passkeys.allowed_origins' => ['http://staging.jairoads.invalid'],
             'jairoads_maps.routing' => 'http://insecure-routing.invalid',
             'jairoads_maps.geocoding' => 'https://synthetic.invalid/api?api_key=secret',
         ]);
@@ -96,6 +93,14 @@ final class IntegrationDeploymentReadinessTest extends PostgresTestCase
         $report = app(IntegrationDeploymentReadiness::class)->report();
         $this->assertFalse($report['checks']['retired_authentication_features_disabled']);
         $this->assertFalse($report['ready_for_live_probes']);
+    }
+
+    public function test_retired_route_predicate_covers_legacy_recovery_and_passkey_paths(): void
+    {
+        foreach (['register', 'internal-recovery/123', 'workspace/password-recovery', '.well-known/passkey-endpoints', 'user/passkeys/123', 'user/two-factor-recovery-codes'] as $uri) {
+            $this->assertTrue(EnsurePasswordRecoveryDelivery::retired($uri), $uri);
+        }
+        $this->assertFalse(EnsurePasswordRecoveryDelivery::retired('workspace/accounts/123/password-reset', 'jairoads.workspace.accounts.password-reset'));
     }
 
     public function test_private_document_and_media_downloads_keep_server_secret_out_of_bearer_and_browser_urls(): void

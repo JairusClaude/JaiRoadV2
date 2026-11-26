@@ -8,4 +8,5 @@ return [
     // operator and deletion/reconciliation UAT signoff for THIS environment.
     // Default is false, including on production Render services.
     'operationally_enabled' => env('JAIROADS_PERMANENT_FILE_DELETION_ENABLED', false),
+    'scheduled_reconciliation' => env('JAIROADS_FILE_DELETION_SCHEDULE_ENABLED', false),
 ];

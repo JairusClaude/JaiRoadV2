@@ -78,7 +78,8 @@ final class AuditHistoryController extends Controller
         $authentication = new LengthAwarePaginator([], 0, 25, max(1, $request->integer('auth_page', 1)), ['path' => $request->getPathInfo(), 'pageName' => 'auth_page']);
         $success = $failures = 0;
         if ($available) {
-            $auth = DB::table(AuthenticationTelemetry::EVENTS);
+            try {
+                $auth = DB::table(AuthenticationTelemetry::EVENTS);
             $this->dates($auth, $v, 'auth', 'created_at');
             $success = (clone $auth)->where('event', 'LOGIN')->count();
             $failures = (clone $auth)->where('event', 'FAILED_LOGIN')->count();
@@ -98,6 +99,10 @@ final class AuditHistoryController extends Controller
 
                     return (array) $row;
                 });
+            } catch (\Throwable) {
+                $available = $collecting = false;
+                $authentication = new LengthAwarePaginator([], 0, 25, max(1, $request->integer('auth_page', 1)), ['path' => $request->getPathInfo(), 'pageName' => 'auth_page']);
+            }
         }
         $presence = app(OnlinePresence::class)->readForRequest($request, $actor);
 

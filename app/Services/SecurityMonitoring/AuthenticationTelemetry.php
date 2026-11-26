@@ -97,7 +97,7 @@ final class AuthenticationTelemetry
     public function record(Request $request, int $status): void
     {
         try {
-            if (! config('security-monitoring.enabled') || ! $request->hasSession() || ! $this->available(true)) {
+            if (! config('security-monitoring.enabled') || ! $request->hasSession()) {
                 return;
             }
             $logout = $request->attributes->get('security.logout');
@@ -106,6 +106,9 @@ final class AuthenticationTelemetry
             $failed = $authRoute && ($request->attributes->getBoolean('security.failed') || in_array($status, [401, 403, 422, 429], true)
                 || ($status === 302 && $request->session()->has('errors')));
             $user = $logout instanceof User ? $logout : $request->user();
+            if ((! $failed && ! $user instanceof User) || ! $this->available(true)) {
+                return;
+            }
             $fresh = $user instanceof User ? User::query()->find($user->getKey()) : null;
             $actor = $fresh instanceof User ? app(AccountIdentityResolver::class)->resolve($fresh) : null;
             $event = $failed ? 'FAILED_LOGIN' : (($logout instanceof User && $status < 400) ? 'LOGOUT' : (($login && $actor !== null && $status < 400) ? 'LOGIN' : null));

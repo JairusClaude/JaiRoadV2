@@ -31,6 +31,9 @@ final class SessionCatalog
      */
     public function liveReferences(array $wanted): array
     {
+        if ($wanted === []) {
+            return [];
+        }
         $driver = config('session.driver');
         if (! in_array($driver, ['file', 'database'], true)) {
             throw new \RuntimeException('Presence supports file and database sessions only.');
@@ -45,7 +48,8 @@ final class SessionCatalog
         } else {
             $directory = new \FilesystemIterator((string) config('session.files'), \FilesystemIterator::SKIP_DOTS);
             foreach ($directory as $file) {
-                if ($file instanceof \SplFileInfo && $file->isFile() && ! $file->isLink()) {
+                if ($file instanceof \SplFileInfo && $file->isFile() && ! $file->isLink()
+                    && $file->getMTime() >= now()->subSeconds(min(max(30, min(900, (int) config('security-monitoring.online_seconds'))), (int) config('session.lifetime') * 60))->timestamp) {
                     $ids[] = $file->getFilename();
                     if (count($ids) > (int) config('security-monitoring.max_session_files')) {
                         break;

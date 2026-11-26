@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Http\Middleware\EnsurePasswordRecoveryDelivery;
 use Illuminate\Routing\Route as RegisteredRoute;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route;
@@ -35,19 +36,7 @@ final class IntegrationDeploymentReadiness
         $mediaBucket = (string) Config::get('jairoads_monthly_updates.bucket', '');
         $retiredFeatures = [Features::registration(), Features::resetPasswords(), Features::twoFactorAuthentication(), 'passkeys'];
         $retiredRoutes = collect(Route::getRoutes()->getRoutes())->contains(
-            static function (RegisteredRoute $route): bool {
-                $uri = trim($route->uri(), '/');
-
-                return $uri === 'register'
-                    || $uri === 'forgot-password'
-                    || $uri === 'reset-password'
-                    || str_starts_with($uri, 'reset-password/')
-                    || str_starts_with($uri, 'passkeys')
-                    || str_starts_with($uri, 'user/passkeys')
-                    || str_starts_with($uri, 'two-factor-challenge')
-                    || str_starts_with($uri, 'user/two-factor')
-                    || str_starts_with($uri, 'user/confirmed-two-factor');
-            },
+            static fn (RegisteredRoute $route): bool => EnsurePasswordRecoveryDelivery::retired($route->uri(), $route->getName()),
         );
 
         $checks = [

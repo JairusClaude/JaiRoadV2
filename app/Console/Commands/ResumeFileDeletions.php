@@ -13,7 +13,7 @@ final class ResumeFileDeletions extends Command
 
     public function handle(PermanentFileDeletion $deletions): int
     {
-        if (! $deletions->available()) {
+        if (! $deletions->operationallyEnabled()) {
             $this->error('File deletion recovery is unavailable; schema-owner setup is required.');
 
             return self::FAILURE;

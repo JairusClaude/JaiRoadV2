@@ -39,7 +39,7 @@ class MaintenanceDocumentUploadController extends Controller
             'maintenance_id' => ['required', 'integer', 'exists:maintenance_records,id'],
             'document_title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:5000'],
-            'file' => ['required', 'file', 'mimes:pdf,docx,xlsx,pptx', 'max:10240'],
+            'file' => ['required', 'file', 'mimes:pdf,docx,xlsx,pptx', 'max:20480'],
         ]);
 
         $record = MaintenanceRecord::query()->findOrFail((int) $validated['maintenance_id']);

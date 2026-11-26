@@ -23,7 +23,8 @@ final class AccountProvisioning
     public function verified(int $accountId, string $role, ?int $engineerId): bool
     {
         return $this->available() && DB::table(self::TABLE)->where('user_account_id', $accountId)
-            ->where('provisioned_role', $role)->where('engineer_id', $engineerId)->exists();
+            ->where('provisioned_role', $role)->where('engineer_id', $engineerId)
+            ->when($role === 'Admin' && $engineerId === null, fn ($query) => $query->where('method', 'reviewed_transition'))->exists();
     }
 
     public function record(User $login, int $accountId): void

@@ -28,6 +28,19 @@ final class OnlinePresence
         if (! config('security-monitoring.enabled')) {
             return $this->read();
         }
+        try {
+            return $this->readCurrentRequest($request, $actor);
+        } catch (Throwable) {
+            return $this->read();
+        }
+    }
+
+    /**
+     * @param  array{account_id:int,role:string,engineer_id:?int}  $actor
+     * @return array{available:bool,message:string,window_seconds:int,accounts:list<array<string,mixed>>,total:int}
+     */
+    private function readCurrentRequest(Request $request, array $actor): array
+    {
         $user = $request->user();
         if (! $user instanceof User || ! $request->hasSession()
             || (string) $request->session()->get(Auth::guard('web')->getName()) !== (string) $user->getKey()
@@ -102,7 +115,7 @@ final class OnlinePresence
                         'client_description' => $row->client_description, 'status' => $last->greaterThanOrEqualTo(now()->subMinute()) ? 'Active' : 'Recently Active'];
                 }
                 $accounts[$id]['session_count']++;
-                if ($last->greaterThan($accounts[$id]['last_activity'])) {
+                if ($last->greaterThan(CarbonImmutable::parse($accounts[$id]['last_activity']))) {
                     $accounts[$id]['last_activity'] = $last->toIso8601String();
                     $accounts[$id]['status'] = $last->greaterThanOrEqualTo(now()->subMinute()) ? 'Active' : 'Recently Active';
                     $accounts[$id]['client_description'] = $row->client_description;
