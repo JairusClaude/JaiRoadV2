@@ -52,6 +52,7 @@ final class SectionController extends Controller
         if ($section === 'settings' || ($section === 'projects' && in_array($request->query('view'), ['create', 'show', 'edit'], true))) {
             return $operations->show($section, $request, $resolver);
         }
+
         return match ($section) {
             'roads' => app(RoadCoveragePageController::class)->roadIndex($request),
             'projects' => app(MaintenanceProjectPageController::class)->projectIndex($request),
