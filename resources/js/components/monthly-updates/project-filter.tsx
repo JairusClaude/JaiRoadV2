@@ -257,7 +257,9 @@ export function MonthlyProjectFilter({
                             <Button
                                 type="button"
                                 variant="outline"
-                                onClick={() => setRetry((previous) => previous + 1)}
+                                onClick={() =>
+                                    setRetry((previous) => previous + 1)
+                                }
                             >
                                 Retry
                             </Button>
