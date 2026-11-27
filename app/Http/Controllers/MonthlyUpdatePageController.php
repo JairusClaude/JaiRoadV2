@@ -87,6 +87,7 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
             'existingUpdates' => $this->updateQuery($actor)
                 ->whereIn('u.maintenance_id', $parents['records']->pluck('id'))
                 ->select(['u.id', 'u.maintenance_id', 'u.update_month'])->get(),
+            'reconnectAccountId' => $id === null ? $actor['account_id'] : null,
             'submitUrl' => self::BASE.'/monthly-updates'.($id === null ? '' : '/'.$id),
             'cancelUrl' => self::BASE.'/monthly-updates'.($id === null ? '' : '/'.$id),
         ]);
@@ -99,6 +100,10 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
         $validated = $request->validate(['attachments' => ['prohibited'], 'removed_media_ids' => ['sometimes', 'array', 'max:100'], 'removed_media_ids.*' => ['integer', 'min:1', 'distinct']]);
         $removals = array_map('intval', $validated['removed_media_ids'] ?? []);
         $editing = $id !== null;
+        if ($request->exists('reconnect_account_id')) {
+            $request->validate(['reconnect_account_id' => ['required', 'integer', 'min:1']]);
+            abort_unless(! $editing && $removals === [] && $request->integer('reconnect_account_id') === $actor['account_id'], 403);
+        }
         if ($removals !== []) {
             $this->requirePrivateDeletion($request, $actor);
             if ($id === null) {

@@ -147,6 +147,15 @@ class OperationsFrontendController extends Controller
                 $results[] = ['kind' => $kind, 'label' => (string) $match->label, 'href' => self::BASE.'/'.$directory.'/'.(int) $match->id];
             }
         }
+        $records = $this->records($actor)->select(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter', 'p.project_title'])
+            ->where(static function (Builder $query) use ($pattern): void {
+                $query->where('p.project_title', 'ilike', $pattern)
+                    ->orWhereRaw('CAST(m.id AS text) ilike ?', [$pattern])
+                    ->orWhereRaw('CAST(m.maintenance_year AS text) ilike ?', [$pattern]);
+            })->orderByDesc('m.maintenance_year')->orderByDesc('m.id')->limit(5)->get();
+        foreach ($records as $record) {
+            $results[] = ['kind' => 'Maintenance record', 'label' => (string) $record->project_title.' — '.$record->quarter.' '.$record->maintenance_year, 'href' => self::BASE.'/maintenance-projects/'.(int) $record->project_id.'/records/'.(int) $record->id];
+        }
         $updates = $this->updateQuery($actor)->select(['u.id', 'u.update_month', 'p.project_title'])
             ->where(static function (Builder $query) use ($pattern): void {
                 $query->where('p.project_title', 'ilike', $pattern)->orWhere('u.update_month', 'ilike', $pattern);

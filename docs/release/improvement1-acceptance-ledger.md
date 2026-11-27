@@ -24,3 +24,7 @@ This branch contains review candidates only. Keep production deployment and perm
 - Real production role acceptance and human UAT/signoff remain open. Do not mark these green from synthetic automation.
 
 See docs/release/main-enhancement-gates.md and GitHub issue #25.
+
+## Follow-up: reconnect submission and search coverage
+
+The six-category search now includes maintenance records. The create-report form can explicitly queue a valid text-only report for one reconnect attempt within 15 minutes, only while the current page remains open. The server checks the expected canonical account in addition to normal authorization and uniqueness validation. The queue is memory-only and never automatically retries ambiguous requests or attachments. Full browser verification, encrypted durable offline storage, custom persistent milestones and all production gates remain pending.

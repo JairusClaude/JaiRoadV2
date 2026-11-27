@@ -915,9 +915,12 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     await engineer.getByLabel(/^Progress Summary/).fill('');
     await engineer.getByLabel('Import field report draft file').setInputFiles(await fieldDraftFile.path());
     await engineer.waitForFunction(() => document.getElementById('summary_of_text_reports')?.value === 'Canonical browser report');
-    await engineer
-        .getByRole('button', { name: /Save Monthly Update|Save Update/ })
-        .click();
+    await engineer.context().setOffline(true);
+    await engineer.getByRole('button', { name: 'Submit once when connected' }).click();
+    await engineer.getByRole('button', { name: 'Cancel queued submission' }).click();
+    await engineer.getByText('Queued submission cancelled.', { exact: true }).waitFor();
+    await engineer.getByRole('button', { name: 'Submit once when connected' }).click();
+    await engineer.context().setOffline(false);
     await engineer.waitForURL(/workspace\/ui\/monthly-updates\/\d+$/);
     const report = (
         await props(
@@ -930,6 +933,7 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     assert.equal(recordSearchResponse.status(), 200);
     const recordSearchResults = (await recordSearchResponse.json()).results;
     assert.ok(recordSearchResults.some(item => item.href === `/workspace/ui/monthly-updates/${report.id}`));
+    assert.ok(recordSearchResults.some(item => item.href === `/workspace/ui/maintenance-projects/${project.id}/records/${record.id}`));
     assert.ok(recordSearchResults.every(item => Object.keys(item).sort().join(',') === 'href,kind,label'));
     // File upload is part of the editable Monthly Update form, not its
     // read-only report page. Saving the form uploads the selected media.

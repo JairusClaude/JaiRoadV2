@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialog';
 import { FieldReportDraft } from '@/components/monthly-updates/field-report-draft';
 import { MonthlyUpdateForm } from '@/components/monthly-updates/monthly-update-form';
+import { ReconnectSubmission } from '@/components/monthly-updates/reconnect-submission';
 import { editUrl, formReturn, returnLabel } from '@/lib/form-navigation';
 import { validateMonthlyUpdate } from '@/lib/monthly-updates';
 import { workspaceHref } from '@/lib/workspace-navigation';
@@ -43,12 +44,28 @@ export default function Create(parents: MonthlyCreateProps) {
     });
     const submitting = useRef(false);
     const [confirmRemoval, setConfirmRemoval] = useState(false);
-    const save = (confirmed = false) => {
+    const save = (confirmed = false, reconnect = false) => {
         if (
             !preview ||
             !parents.submitUrl ||
             submitting.current ||
             form.processing
+        ) {
+            return;
+        }
+
+        if (!navigator.onLine) {
+            toast.error('No connection. Save a draft or use reconnect submission.');
+
+            return;
+        }
+
+        if (
+            reconnect &&
+            (!canUseDrafts ||
+                !parents.reconnectAccountId ||
+                form.data.attachments.length ||
+                form.data.removed_media_ids.length)
         ) {
             return;
         }
@@ -81,6 +98,9 @@ export default function Create(parents: MonthlyCreateProps) {
             form.transform((data) => ({
                 ...data,
                 attachments: undefined,
+                ...(reconnect
+                    ? { reconnect_account_id: parents.reconnectAccountId }
+                    : {}),
             }));
         }
 
@@ -159,19 +179,29 @@ export default function Create(parents: MonthlyCreateProps) {
                 parents={parents}
                 draftTools={
                     canUseDrafts && (
-                        <FieldReportDraft
-                            parents={parents}
-                            values={form.data}
-                            disabled={form.processing}
-                            onImport={(values) => {
-                                form.clearErrors();
-                                form.setData({
-                                    ...values,
-                                    attachments: [],
-                                    removed_media_ids: [],
-                                });
-                            }}
-                        />
+                        <>
+                            <FieldReportDraft
+                                parents={parents}
+                                values={form.data}
+                                disabled={form.processing}
+                                onImport={(values) => {
+                                    form.clearErrors();
+                                    form.setData({
+                                        ...values,
+                                        attachments: [],
+                                        removed_media_ids: [],
+                                    });
+                                }}
+                            />
+                            {parents.reconnectAccountId && (
+                                <ReconnectSubmission
+                                    parents={parents}
+                                    values={form.data}
+                                    disabled={form.processing}
+                                    onSubmit={() => save(false, true)}
+                                />
+                            )}
+                        </>
                     )
                 }
                 backLabel={

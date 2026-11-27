@@ -67,6 +67,7 @@ export type MonthlyCreateProps = {
     update?: MonthlyUpdateSummary;
     media?: MonthlyMedia[];
     submitUrl?: string;
+    reconnectAccountId?: number | null;
     cancelUrl: string;
 };
 
