@@ -192,14 +192,20 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
         abort_unless($u !== null, 404);
 
         $comparisonQuery = $this->updateQuery($actor)->where('m.project_id', $u->project_id)->where('u.id', '!=', $id);
-        $comparisonPeriods = (clone $comparisonQuery)->select(['u.id', 'u.update_month'])->orderByDesc('u.update_month')->orderByDesc('u.id')->limit(60)->get()
-            ->map(static fn (\stdClass $row): array => ['id' => (int) $row->id, 'month' => (string) $row->update_month])->all();
+        $page = max(1, $request->integer('comparison_page', 1));
+        $periods = (clone $comparisonQuery)->orderByDesc('u.update_month')->orderByDesc('u.id')->simplePaginate(60, ['u.id', 'u.update_month'], 'comparison_page', $page);
+        $comparisonPeriods = $periods->getCollection()->map(static fn (\stdClass $row): array => ['id' => (int) $row->id, 'month' => (string) $row->update_month])->all();
         $comparisonId = $request->integer('compare');
         $comparison = $comparisonId > 0 ? (clone $comparisonQuery)->where('u.id', $comparisonId)->first() : null;
         abort_if($comparisonId > 0 && $comparison === null, 404);
+        if ($comparison !== null && ! in_array($comparisonId, array_column($comparisonPeriods, 'id'), true)) {
+            array_unshift($comparisonPeriods, ['id' => (int) $comparison->id, 'month' => (string) $comparison->update_month]);
+        }
 
         return $this->render('MonthlyUpdates/Show', $request, [
             'comparisonPeriods' => $comparisonPeriods,
+            'comparisonPage' => $page,
+            'comparisonHasMore' => $periods->hasMorePages(),
             'comparisonMedia' => $comparison === null ? [] : array_values(array_filter($this->mediaData((int) $comparison->id, $actor), static fn (array $file): bool => str_starts_with((string) $file['mime_type'], 'image/'))),
             'comparisonPeriod' => $comparison === null ? null : ['id' => (int) $comparison->id, 'month' => (string) $comparison->update_month],
             'update' => $this->updateData($u, $actor), 'media' => $this->mediaData($id, $actor), 'canWrite' => $this->canWriteRecord($u, $actor),

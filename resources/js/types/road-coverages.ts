@@ -37,6 +37,7 @@ export type RoadCoverageDirectoryProps = {
         road_name: string;
         municipality?: string | null;
         assigned?: boolean;
+        state_category?: 'Good' | 'Fair' | 'Bad';
         geojson: unknown;
     }>;
     mapNextCursor?: number | null;

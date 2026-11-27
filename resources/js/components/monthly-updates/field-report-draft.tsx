@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     decryptDraft,
@@ -21,14 +21,18 @@ type DraftValues = Pick<
 export function FieldReportDraft({
     values,
     onImport,
+    onImportBusy,
     disabled,
 }: {
     values: MonthlyUpdateValues;
-    onImport: (value: DraftValues) => void | Promise<void>;
+    onImport: (value: DraftValues, signal: AbortSignal) => Promise<void>;
+    onImportBusy: (busy: boolean) => void;
     disabled: boolean;
 }) {
     const input = useRef<HTMLInputElement>(null);
     const password = useRef<HTMLInputElement>(null);
+    const activeImport = useRef<AbortController | null>(null);
+    useEffect(() => () => activeImport.current?.abort(), []);
     const [busy, setBusy] = useState(false);
     const [message, setMessage] = useState('');
     const [confirmed, setConfirmed] = useState(false);
@@ -80,6 +84,14 @@ export function FieldReportDraft({
         }
     };
     const restore = async (file: File) => {
+        if (activeImport.current) {
+            return;
+        }
+
+        const controller = new AbortController();
+        activeImport.current = controller;
+        const passphrase = password.current?.value ?? '';
+        onImportBusy(true);
         setBusy(true);
 
         try {
@@ -89,7 +101,7 @@ export function FieldReportDraft({
 
             const envelope: unknown = JSON.parse(await file.text());
             const data = isEncryptedDraft(envelope)
-                ? await decryptDraft(envelope, password.current?.value ?? '')
+                ? await decryptDraft(envelope, passphrase)
                 : envelope;
 
             if (!data || typeof data !== 'object' || Array.isArray(data)) {
@@ -117,7 +129,9 @@ export function FieldReportDraft({
             ) as DraftValues;
             validateDraftSummary(restored.summary_of_text_reports);
 
-            await onImport(restored);
+            controller.signal.throwIfAborted();
+            await onImport(restored, controller.signal);
+            controller.signal.throwIfAborted();
             setMessage(
                 'Draft loaded. Review all values, attach evidence, and submit when connected.',
             );
@@ -126,8 +140,13 @@ export function FieldReportDraft({
                 error instanceof Error
                     ? error.message
                     : 'Unable to import draft.';
-            setMessage(message);
+            if (!controller.signal.aborted) {
+                setMessage(message);
+            }
         } finally {
+            activeImport.current = null;
+            onImportBusy(false);
+
             if (password.current) {
                 password.current.value = '';
             }
@@ -158,7 +177,7 @@ export function FieldReportDraft({
                 <input
                     type="checkbox"
                     checked={confirmed}
-                    disabled={disabled}
+                    disabled={disabled || busy}
                     onChange={(event) => setConfirmed(event.target.checked)}
                 />
                 I understand that the draft contains report text and record
@@ -225,6 +244,7 @@ export function FieldReportDraft({
                     Remove selected attachments before importing a draft.
                 </p>
             )}
+            {busy && <p role="status">Processing draft…</p>}
             {message && (
                 <p className="mt-2 text-sm" role="status">
                     {message}

@@ -91,6 +91,8 @@ export type MonthlyDetailProps = {
     directoryUrl: string;
     canUploadMedia?: boolean;
     comparisonPeriods?: { id: number; month: string }[];
+    comparisonPage?: number;
+    comparisonHasMore?: boolean;
     comparisonMedia?: MonthlyMedia[];
     comparisonPeriod?: { id: number; month: string } | null;
 };

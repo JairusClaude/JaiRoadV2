@@ -22,6 +22,8 @@ export default function Show({
     backLabel,
     directoryUrl,
     comparisonPeriods = [],
+    comparisonPage = 1,
+    comparisonHasMore = false,
     comparisonMedia = [],
     comparisonPeriod,
 }: MonthlyDetailProps) {
@@ -209,7 +211,10 @@ export default function Show({
                                             workspaceHref(
                                                 `/monthly-updates/${update.id}`,
                                             ),
-                                            id ? { compare: id } : {},
+                                            {
+                                                comparison_page: comparisonPage,
+                                                ...(id ? { compare: id } : {}),
+                                            },
                                             { preserveScroll: true },
                                         );
                                     }}
@@ -228,6 +233,25 @@ export default function Show({
                                     ))}
                                 </select>
                             </label>
+                        )}
+                        {(comparisonPage > 1 || comparisonHasMore) && (
+                            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+                                <button
+                                    type="button"
+                                    disabled={comparisonPage <= 1}
+                                    onClick={() => router.get(workspaceHref(`/monthly-updates/${update.id}`), { comparison_page: comparisonPage - 1, ...(comparisonPeriod ? { compare: comparisonPeriod.id } : {}) }, { preserveScroll: true })}
+                                >
+                                    Newer reporting periods
+                                </button>
+                                <span>Page {comparisonPage}</span>
+                                <button
+                                    type="button"
+                                    disabled={!comparisonHasMore}
+                                    onClick={() => router.get(workspaceHref(`/monthly-updates/${update.id}`), { comparison_page: comparisonPage + 1, ...(comparisonPeriod ? { compare: comparisonPeriod.id } : {}) }, { preserveScroll: true })}
+                                >
+                                    Older reporting periods
+                                </button>
+                            </div>
                         )}
                         <PhotoComparison
                             key={`${update.id}:${comparisonPeriod?.id ?? ''}`}

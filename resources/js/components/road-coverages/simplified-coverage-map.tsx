@@ -19,12 +19,20 @@ const ROAD_COLORS = {
     other: '#64748b',
 } as const;
 
+const CONDITION_COLORS = {
+    Good: '#15803d',
+    Fair: '#a16207',
+    Bad: '#b91c1c',
+    Unknown: '#64748b',
+} as const;
+
 export type SimplifiedCoverageItem = {
     id: number;
     road_name: string;
     municipality?: string | null;
     lgu?: { id?: number; municipality_name?: string };
     assigned?: boolean;
+    state_category?: 'Good' | 'Fair' | 'Bad';
     has_projects?: boolean;
     geojson: unknown;
     project_id?: number | null;
@@ -52,6 +60,9 @@ export function SimplifiedCoverageMap({
 }: SimplifiedCoverageMapProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<L.Map | null>(null);
+    const tilesRef = useRef<L.TileLayer | null>(null);
+    const [tilesUnavailable, setTilesUnavailable] = useState(false);
+    const [conditionMode, setConditionMode] = useState(false);
     const [mineOnly, setMineOnly] = useState(false);
     const [relationship, setRelationship] = useState<
         'all' | 'created' | 'assigned' | 'both'
@@ -79,6 +90,7 @@ export function SimplifiedCoverageMap({
                 name: coverage.road_name,
                 municipality,
                 assigned,
+                condition: coverage.state_category ?? 'Unknown',
                 projectId: coverage.project_id,
                 projectTitle: coverage.project_title,
                 mine:
@@ -96,6 +108,8 @@ export function SimplifiedCoverageMap({
         });
     }, [coverages]);
 
+    const hasConditions = mappedCoverages.some((item) => item.condition !== 'Unknown');
+    const showConditions = conditionMode && hasConditions;
     const mappedCount = mappedCoverages.filter(
         (c) => c.lines.length > 0,
     ).length;
@@ -144,10 +158,13 @@ export function SimplifiedCoverageMap({
         mapRef.current = map;
 
         // Standard OpenStreetMap tile layer (identical to Road Coverage Details and Add pages)
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap contributors',
-        }).addTo(map);
+        });
+        tilesRef.current = tiles;
+        tiles.on('tileerror', () => setTilesUnavailable(true));
+        tiles.addTo(map);
 
         // Metric scale indicator in bottom-left
         L.control.scale({ imperial: false, maxWidth: 120 }).addTo(map);
@@ -175,6 +192,8 @@ export function SimplifiedCoverageMap({
 
         return () => {
             mapRef.current = null;
+            tilesRef.current = null;
+            tiles.off('tileerror');
             observer.disconnect();
 
             if (resizeFrame) {
@@ -219,11 +238,13 @@ export function SimplifiedCoverageMap({
                       : item.managed
                         ? 'assigned'
                         : 'other';
-            const lineColor = engineerView
-                ? ROAD_COLORS[category]
-                : viewerView
-                  ? '#1d5db5'
-                  : '#843b12';
+            const lineColor = showConditions
+                ? CONDITION_COLORS[item.condition]
+                : engineerView
+                  ? ROAD_COLORS[category]
+                  : viewerView
+                    ? '#1d5db5'
+                    : '#843b12';
 
             for (const segment of item.lines) {
                 // White halo background line for contrast and legibility
@@ -269,6 +290,9 @@ export function SimplifiedCoverageMap({
                     const detail = document.createElement('p');
                     detail.textContent = item.municipality;
                     popup.append(detail);
+                    const condition = document.createElement('p');
+                    condition.textContent = 'Road condition: ' + item.condition;
+                    popup.append(condition);
 
                     if (item.assigned) {
                         const status = document.createElement('p');
@@ -308,7 +332,7 @@ export function SimplifiedCoverageMap({
 
             roadLayers.current = [];
         };
-    }, [visibleCoverages, engineerView, viewerView, dashboardView]);
+    }, [visibleCoverages, engineerView, viewerView, dashboardView, showConditions]);
 
     useEffect(() => {
         for (const { id, line } of roadLayers.current) {
@@ -363,6 +387,32 @@ export function SimplifiedCoverageMap({
                     </label>
                 )}
             </div>
+            {hasConditions && (
+                <label className="jr-engineer-map-toggle">
+                    <input
+                        type="checkbox"
+                        checked={showConditions}
+                        onChange={(event) => setConditionMode(event.target.checked)}
+                    />
+                    Show road conditions
+                </label>
+            )}
+            {tilesUnavailable && (
+                <div className="jr-road-map-toolbar">
+                    <span role="status">
+                        Some background tiles failed. Saved road lines remain available.
+                    </span>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setTilesUnavailable(false);
+                            tilesRef.current?.redraw();
+                        }}
+                    >
+                        Retry map tiles
+                    </button>
+                </div>
+            )}
             {dashboardView && (
                 <div className="jr-road-map-toolbar">
                     <span role="status">
@@ -451,7 +501,13 @@ export function SimplifiedCoverageMap({
 
             <div className="jr-road-map-footer">
                 <div className="jr-road-map-legend">
-                    {engineerView ? (
+                    {showConditions ? (
+                        Object.entries(CONDITION_COLORS).map(([condition, color]) => (
+                            <span key={condition}>
+                                <i style={{ background: color }} /> {condition}
+                            </span>
+                        ))
+                    ) : engineerView ? (
                         <>
                             <span>
                                 <i

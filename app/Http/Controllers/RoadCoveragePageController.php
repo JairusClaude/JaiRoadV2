@@ -114,7 +114,7 @@ final class RoadCoveragePageController extends OperationsFrontendController
             $query->where('rc.id', '<', $before);
         }
         $rows = $query->orderByDesc('rc.id')->limit(101)
-            ->get(['rc.id', 'rc.road_name', 'rc.geojson', 'l.municipality_name', 'p.id as project_id']);
+            ->get(['rc.id', 'rc.road_name', 'rc.geojson', 'rc.state_category', 'l.municipality_name', 'p.id as project_id']);
         $page = $rows->take(100);
 
         return [
@@ -123,6 +123,7 @@ final class RoadCoveragePageController extends OperationsFrontendController
                 'road_name' => (string) $road->road_name,
                 'municipality' => (string) $road->municipality_name,
                 'assigned' => $road->project_id !== null,
+                'state_category' => (string) $road->state_category,
                 'geojson' => json_decode((string) $road->geojson, true, 512, JSON_THROW_ON_ERROR),
             ])->values()->all(),
             'next_cursor' => $rows->count() > 100 ? (int) $page->last()->id : null,

@@ -48,7 +48,7 @@ const matchesRoute = (path: string, href: string) =>
 export function JaiRoadsQuickActions() {
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState('');
-    const [selected, setSelected] = useState(0);
+    const [selectedHref, setSelectedHref] = useState<string | null>(null);
     const [refreshing, setRefreshing] = useState(false);
     const inputRef = useRef<HTMLInputElement | null>(null);
     const [recordMatches, setRecordMatches] = useState<{
@@ -131,6 +131,13 @@ export function JaiRoadsQuickActions() {
             : []),
     ];
 
+    const selected = selectedHref ?? results[0]?.href;
+    const moveSelection = (direction: number) => {
+        const index = results.findIndex((item) => item.href === selected);
+        const next = Math.max(0, Math.min(index + direction, results.length - 1));
+        setSelectedHref(results[next]?.href ?? null);
+    };
+
     useEffect(() => {
         if (!open || !isCanonicalWorkspace || !role || term.length < 2) {
             return;
@@ -142,7 +149,10 @@ export function JaiRoadsQuickActions() {
                 const response = await fetch(
                     '/workspace/ui/record-search?q=' + encodeURIComponent(term),
                     {
-                        signal: controller.signal,
+                        signal: AbortSignal.any([
+                            controller.signal,
+                            AbortSignal.timeout(12_000),
+                        ]),
                         headers: { Accept: 'application/json' },
                         cache: 'no-store',
                     },
@@ -181,7 +191,7 @@ export function JaiRoadsQuickActions() {
                 event.key.toLowerCase() === 'k'
             ) {
                 event.preventDefault();
-                setSelected(0);
+                setSelectedHref(null);
                 setOpen((previous) => !previous);
 
                 return;
@@ -220,7 +230,7 @@ export function JaiRoadsQuickActions() {
     const close = () => {
         setOpen(false);
         setQuery('');
-        setSelected(0);
+        setSelectedHref(null);
     };
 
     const navigate = (href: string) => {
@@ -246,7 +256,7 @@ export function JaiRoadsQuickActions() {
                 type="button"
                 className="jr-quick-search"
                 onClick={() => {
-                    setSelected(0);
+                    setSelectedHref(null);
                     setOpen(true);
                 }}
                 aria-label="Search JaiROADS pages (Control K)"
@@ -323,29 +333,23 @@ export function JaiRoadsQuickActions() {
                                 placeholder="Find a section or record…"
                                 onChange={(e) => {
                                     setQuery(e.target.value);
-                                    setSelected(0);
+                                    setSelectedHref(null);
                                 }}
                                 onKeyDown={(e) => {
                                     if (e.key === 'ArrowDown') {
                                         e.preventDefault();
-                                        setSelected((i) =>
-                                            Math.max(
-                                                0,
-                                                Math.min(
-                                                    i + 1,
-                                                    results.length - 1,
-                                                ),
-                                            ),
-                                        );
+                                        moveSelection(1);
                                     } else if (e.key === 'ArrowUp') {
                                         e.preventDefault();
-                                        setSelected((i) => Math.max(0, i - 1));
+                                        moveSelection(-1);
                                     } else if (
                                         e.key === 'Enter' &&
-                                        results[selected]
+                                        results.some((item) => item.href === selected)
                                     ) {
                                         e.preventDefault();
-                                        navigate(results[selected].href);
+                                        if (selected) {
+                                            navigate(selected);
+                                        }
                                     }
                                 }}
                             />
@@ -372,17 +376,17 @@ export function JaiRoadsQuickActions() {
                             )}
                         <div className="jr-command-items">
                             {results.length ? (
-                                results.map(({ label, href, Icon }, index) => (
+                                results.map(({ label, href, Icon }) => (
                                     <button
                                         key={href}
                                         type="button"
-                                        className={`jr-command-item ${selected === index ? 'jr-command-selected' : ''}`}
+                                        className={`jr-command-item ${selected === href ? 'jr-command-selected' : ''}`}
                                         aria-current={
                                             matchesRoute(path, href)
                                                 ? 'page'
                                                 : undefined
                                         }
-                                        onMouseEnter={() => setSelected(index)}
+                                        onMouseEnter={() => setSelectedHref(href)}
                                         onClick={() => navigate(href)}
                                     >
                                         <Icon size={18} aria-hidden="true" />

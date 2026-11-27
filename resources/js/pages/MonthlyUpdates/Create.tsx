@@ -121,12 +121,15 @@ export default function Create(parents: MonthlyCreateProps) {
     }, [choiceAttempt, formChoicesUrl, projectId, selectedChoices]);
 
     const submitting = useRef(false);
+    const importing = useRef(false);
+    const [importBusy, setImportBusy] = useState(false);
     const [confirmRemoval, setConfirmRemoval] = useState(false);
     const save = (confirmed = false, reconnect = false) => {
         if (
             !preview ||
             !parents.submitUrl ||
             submitting.current ||
+            importing.current ||
             form.processing
         ) {
             return;
@@ -270,7 +273,11 @@ export default function Create(parents: MonthlyCreateProps) {
                             <FieldReportDraft
                                 values={form.data}
                                 disabled={form.processing}
-                                onImport={async (values) => {
+                                onImportBusy={(busy) => {
+                                    importing.current = busy;
+                                    setImportBusy(busy);
+                                }}
+                                onImport={async (values, signal) => {
                                     const remote =
                                         formChoicesUrl &&
                                         !formParents.projects.some(
@@ -281,9 +288,13 @@ export default function Create(parents: MonthlyCreateProps) {
                                             ? await loadProjectChoices(
                                                   formChoicesUrl,
                                                   values.project_id,
-                                                  AbortSignal.timeout(12_000),
+                                                  AbortSignal.any([
+                                                      signal,
+                                                      AbortSignal.timeout(12_000),
+                                                  ]),
                                               )
                                             : null;
+                                    signal.throwIfAborted();
                                     const choices = remote ?? formParents;
                                     const record = choices.records.find(
                                         (item) =>
@@ -321,7 +332,7 @@ export default function Create(parents: MonthlyCreateProps) {
                                 <ReconnectSubmission
                                     parents={formParents}
                                     values={form.data}
-                                    disabled={form.processing}
+                                    disabled={form.processing || importBusy}
                                     onSubmit={() => save(false, true)}
                                 />
                             )}
@@ -353,8 +364,12 @@ export default function Create(parents: MonthlyCreateProps) {
                 values={form.data}
                 errors={form.errors}
                 enabled={preview && Boolean(parents.submitUrl)}
-                processing={form.processing}
+                processing={form.processing || importBusy}
                 onChange={(key, value) => {
+                    if (importing.current) {
+                        return;
+                    }
+
                     form.clearErrors(key);
 
                     if (key === 'project_id') {
@@ -374,6 +389,10 @@ export default function Create(parents: MonthlyCreateProps) {
                     }
                 }}
                 onFiles={(files) => {
+                    if (importing.current) {
+                        return;
+                    }
+
                     form.clearErrors('attachments');
                     form.setData('attachments', files);
                 }}
