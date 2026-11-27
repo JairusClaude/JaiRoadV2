@@ -33,11 +33,12 @@ final class MaintenanceIntelligence
             ->count();
         $calendar = (clone $ongoing)
             ->join('jairoads_next.maintenance_projects as p', 'p.id', '=', 'm.project_id')
-            ->select(['m.id', 'm.start_date', 'p.project_title'])
+            ->select(['m.id', 'm.project_id', 'm.start_date', 'p.project_title'])
             ->selectRaw('m.start_date + m.estimated_duration_days as estimated_finish')
             ->orderBy('estimated_finish')->orderBy('m.id')->limit(12)->get()
             ->map(static fn (\stdClass $row): array => [
                 'id' => (int) $row->id,
+                'projectId' => (int) $row->project_id,
                 'projectTitle' => (string) $row->project_title,
                 'startDate' => (string) $row->start_date,
                 'estimatedFinish' => (string) $row->estimated_finish,

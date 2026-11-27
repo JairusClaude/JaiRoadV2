@@ -1,3 +1,7 @@
+export const maxDraftFileBytes: number;
+export const maxReportSummaryCharacters: number;
+export function validateDraftSummary(summary: string): void;
+
 export function encryptDraft(
     data: unknown,
     passphrase: string,

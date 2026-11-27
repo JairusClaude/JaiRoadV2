@@ -64,6 +64,7 @@ export type MonthlyCreateProps = {
         update_month: string;
     }[];
     contextRecordId?: number;
+    formChoicesUrl?: string | null;
     update?: MonthlyUpdateSummary;
     media?: MonthlyMedia[];
     submitUrl?: string;

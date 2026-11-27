@@ -1,3 +1,4 @@
+import { maxReportSummaryCharacters } from '@/lib/encrypted-field-draft.mjs';
 import { manilaTimestamp } from '@/lib/manila-time';
 import type {
     MonthlyCreateProps,
@@ -65,6 +66,12 @@ export function validateMonthlyUpdate(
     ) {
         errors.progress_percentage =
             'Enter progress from 0 to 100 with up to two decimal places.';
+    }
+
+    if (
+        [...values.summary_of_text_reports].length > maxReportSummaryCharacters
+    ) {
+        errors.summary_of_text_reports = 'Enter up to 20,000 characters.';
     }
 
     if (

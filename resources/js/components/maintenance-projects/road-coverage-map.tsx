@@ -236,6 +236,7 @@ export function RoadCoverageMap({
     const [mapReady, setMapReady] = useState(false);
     const [mapError, setMapError] = useState('');
     const basemapState = useRef<'loading' | 'ready' | 'fallback'>('loading');
+    const basemapDeadline = useRef<number | undefined>(undefined);
     const [roadsVisible, setRoadsVisible] = useState(true);
     const roadsVisibleRef = useRef(true);
     const selectedRef = useRef<number | null>(selectedId);
@@ -340,6 +341,27 @@ export function RoadCoverageMap({
         [fitProvince],
     );
 
+    const showSavedRoads = useCallback((map: MapLibreMap) => {
+        if (basemapState.current !== 'loading') {
+            return;
+        }
+
+        window.clearTimeout(basemapDeadline.current);
+        basemapState.current = 'fallback';
+        map.setStyle({ version: 8, sources: {}, layers: [] }, { diff: false });
+    }, []);
+
+    const startBasemapDeadline = useCallback(
+        (map: MapLibreMap) => {
+            window.clearTimeout(basemapDeadline.current);
+            basemapDeadline.current = window.setTimeout(
+                () => showSavedRoads(map),
+                8_000,
+            );
+        },
+        [showSavedRoads],
+    );
+
     useEffect(() => {
         if (!containerRef.current) {
             return;
@@ -356,6 +378,7 @@ export function RoadCoverageMap({
             cooperativeGestures: true,
         });
         mapRef.current = map;
+        startBasemapDeadline(map);
         map.addControl(
             new NavigationControl({ visualizePitch: false }),
             'top-right',
@@ -366,6 +389,8 @@ export function RoadCoverageMap({
         );
 
         const installRoadLayers = () => {
+            window.clearTimeout(basemapDeadline.current);
+
             // Styles are replaced when switching Streets/Light; reinstall road layers.
             // The province remains geographically locked with maxBounds + center checks,
             // but NO provincial shading or highlighted outline is drawn.
@@ -452,15 +477,7 @@ export function RoadCoverageMap({
         });
         map.on('error', () => {
             if (basemapState.current === 'loading') {
-                basemapState.current = 'fallback';
-                map.setStyle(
-                    {
-                        version: 8,
-                        sources: {},
-                        layers: [],
-                    },
-                    { diff: false },
-                );
+                showSavedRoads(map);
             } else if (basemapState.current === 'ready') {
                 setMapError(
                     'Some basemap tiles were unavailable. Saved road lines remain visible.',
@@ -509,12 +526,13 @@ export function RoadCoverageMap({
         });
 
         return () => {
+            window.clearTimeout(basemapDeadline.current);
             selectedMarkerRef.current?.remove();
             selectedMarkerRef.current = null;
             mapRef.current = null;
             map.remove();
         };
-    }, [fitProvince, fitRoads]);
+    }, [fitProvince, fitRoads, startBasemapDeadline, showSavedRoads]);
 
     useEffect(() => {
         const map = mapRef.current;
@@ -558,20 +576,28 @@ export function RoadCoverageMap({
         }
     }, [features, selectedId, fitRoads]);
 
+    const loadBasemap = useCallback(
+        (nextStyle: MapStyle) => {
+            const map = mapRef.current;
+
+            if (map) {
+                basemapState.current = 'loading';
+                setMapReady(false);
+                setMapError('');
+                startBasemapDeadline(map);
+                map.setStyle(STYLE_URLS[nextStyle], { diff: false });
+            }
+        },
+        [startBasemapDeadline],
+    );
+
     const activeStyleRef = useRef<MapStyle>('street');
     useEffect(() => {
-        const map = mapRef.current;
-
-        if (!map || activeStyleRef.current === style) {
-            return;
+        if (activeStyleRef.current !== style) {
+            activeStyleRef.current = style;
+            loadBasemap(style);
         }
-
-        activeStyleRef.current = style;
-        basemapState.current = 'loading';
-        setMapReady(false);
-        setMapError('');
-        map.setStyle(STYLE_URLS[style], { diff: false });
-    }, [style]);
+    }, [loadBasemap, style]);
 
     useEffect(() => {
         const map = mapRef.current;
@@ -739,7 +765,14 @@ export function RoadCoverageMap({
                 )}
                 {mapError && (
                     <div className="jr-road-map-warning" role="alert">
-                        {mapError}
+                        <span>{mapError}</span>
+                        <button
+                            type="button"
+                            className="ml-2 font-semibold underline"
+                            onClick={() => loadBasemap(style)}
+                        >
+                            Retry basemap
+                        </button>
                     </div>
                 )}
                 <div className="jr-road-map-footer">

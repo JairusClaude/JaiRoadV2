@@ -1,6 +1,6 @@
 import '../../../css/maintenance-projects.css';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialog';
 import { FieldReportDraft } from '@/components/monthly-updates/field-report-draft';
@@ -11,8 +11,35 @@ import { validateMonthlyUpdate } from '@/lib/monthly-updates';
 import { workspaceHref } from '@/lib/workspace-navigation';
 import type {
     MonthlyCreateProps,
+    MonthlyParentProject,
     MonthlyUpdateValues,
 } from '@/types/monthly-updates';
+
+type ProjectChoices = Pick<
+    MonthlyCreateProps,
+    'records' | 'existingUpdates'
+> & {
+    project: MonthlyParentProject;
+};
+
+async function loadProjectChoices(
+    url: string,
+    id: string,
+    signal: AbortSignal,
+): Promise<ProjectChoices> {
+    const query = new URLSearchParams({ project: id });
+    const response = await fetch(`${url}?${query}`, {
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+        signal,
+    });
+
+    if (!response.ok) {
+        throw new Error('Could not verify the maintenance project.');
+    }
+
+    return response.json();
+}
 
 export default function Create(parents: MonthlyCreateProps) {
     const page = usePage();
@@ -42,6 +69,57 @@ export default function Create(parents: MonthlyCreateProps) {
         attachments: [],
         removed_media_ids: [],
     });
+    const { formChoicesUrl } = parents;
+    const { project_id: projectId } = form.data;
+    const [projectChoices, setProjectChoices] = useState<ProjectChoices | null>(
+        null,
+    );
+    const [choiceAttempt, retryChoices] = useState(0);
+    const [choiceFailure, setChoiceFailure] = useState<string | null>(null);
+    const selectedChoices =
+        String(projectChoices?.project.id) === projectId
+            ? projectChoices
+            : null;
+    const choicesLoading = Boolean(
+        formChoicesUrl &&
+        projectId &&
+        !selectedChoices &&
+        choiceFailure !== projectId,
+    );
+    const formParents = selectedChoices
+        ? {
+              ...parents,
+              ...selectedChoices,
+              projects: [selectedChoices.project],
+          }
+        : parents;
+
+    useEffect(() => {
+        if (!formChoicesUrl || !projectId || selectedChoices) {
+            return;
+        }
+
+        const controller = new AbortController();
+        const signal = AbortSignal.any([
+            controller.signal,
+            AbortSignal.timeout(12_000),
+        ]);
+        void loadProjectChoices(formChoicesUrl, projectId, signal)
+            .then((choices) => {
+                if (!controller.signal.aborted) {
+                    setProjectChoices(choices);
+                    setChoiceFailure(null);
+                }
+            })
+            .catch(() => {
+                if (!controller.signal.aborted) {
+                    setChoiceFailure(projectId);
+                }
+            });
+
+        return () => controller.abort();
+    }, [choiceAttempt, formChoicesUrl, projectId, selectedChoices]);
+
     const submitting = useRef(false);
     const [confirmRemoval, setConfirmRemoval] = useState(false);
     const save = (confirmed = false, reconnect = false) => {
@@ -71,7 +149,7 @@ export default function Create(parents: MonthlyCreateProps) {
         }
 
         form.clearErrors();
-        const errors = validateMonthlyUpdate(form.data, parents);
+        const errors = validateMonthlyUpdate(form.data, formParents);
 
         if (Object.keys(errors).length) {
             form.setError(errors);
@@ -176,15 +254,61 @@ export default function Create(parents: MonthlyCreateProps) {
                 title={update ? 'Edit Monthly Update' : 'Add Monthly Update'}
             />
             <MonthlyUpdateForm
-                parents={parents}
+                parents={formParents}
+                recordChoicesLoading={choicesLoading}
+                retryRecordChoices={
+                    choiceFailure === projectId && !selectedChoices
+                        ? () => {
+                              setChoiceFailure(null);
+                              retryChoices((attempt) => attempt + 1);
+                          }
+                        : undefined
+                }
                 draftTools={
                     canUseDrafts && (
                         <>
                             <FieldReportDraft
-                                parents={parents}
                                 values={form.data}
                                 disabled={form.processing}
-                                onImport={(values) => {
+                                onImport={async (values) => {
+                                    const remote =
+                                        formChoicesUrl &&
+                                        !formParents.projects.some(
+                                            (item) =>
+                                                String(item.id) ===
+                                                values.project_id,
+                                        )
+                                            ? await loadProjectChoices(
+                                                  formChoicesUrl,
+                                                  values.project_id,
+                                                  AbortSignal.timeout(12_000),
+                                              )
+                                            : null;
+                                    const choices = remote ?? formParents;
+                                    const record = choices.records.find(
+                                        (item) =>
+                                            String(item.id) ===
+                                                values.maintenance_id &&
+                                            String(item.project_id) ===
+                                                values.project_id,
+                                    );
+
+                                    if (
+                                        !record ||
+                                        (parents.contextRecordId &&
+                                            record.id !==
+                                                parents.contextRecordId)
+                                    ) {
+                                        throw new Error(
+                                            'This draft does not match a currently available maintenance record.',
+                                        );
+                                    }
+
+                                    if (remote) {
+                                        setProjectChoices(remote);
+                                        setChoiceFailure(null);
+                                    }
+
                                     form.clearErrors();
                                     form.setData({
                                         ...values,
@@ -195,7 +319,7 @@ export default function Create(parents: MonthlyCreateProps) {
                             />
                             {parents.reconnectAccountId && (
                                 <ReconnectSubmission
-                                    parents={parents}
+                                    parents={formParents}
                                     values={form.data}
                                     disabled={form.processing}
                                     onSubmit={() => save(false, true)}
@@ -234,6 +358,7 @@ export default function Create(parents: MonthlyCreateProps) {
                     form.clearErrors(key);
 
                     if (key === 'project_id') {
+                        setChoiceFailure(null);
                         form.clearErrors('maintenance_id', 'update_month');
                         form.setData({
                             ...form.data,

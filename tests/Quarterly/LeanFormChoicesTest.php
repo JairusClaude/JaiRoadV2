@@ -44,8 +44,20 @@ it('keeps all authorized choices without geometry or full record payloads', func
         ->assertJsonPath('data.0.project_title', 'Choice 109')->assertJsonMissingPath('data.0.geojson');
     $this->getJson('/workspace/ui/project-filter-choices?search=%25')->assertOk()->assertJsonCount(0, 'data');
     $this->get('/workspace/ui/monthly-updates/create')->assertInertia(fn (Assert $page) => $page
-        ->has('projects', 110)->has('records', 110)->missing('projects.0.geojson')->missing('records.0.created_by'));
+        ->has('projects', 0)->has('records', 0)->has('existingUpdates', 0));
+    $choices = '/workspace/ui/monthly-updates/form-choices';
+    $seen = [];
+    for ($page = 1; $page <= 6; $page++) {
+        $rows = $this->getJson($choices.'?page='.$page)->assertOk()->assertJsonPath('last_page', 6)
+            ->assertJsonMissingPath('data.0.geojson')->json('data');
+        array_push($seen, ...array_column($rows, 'id'));
+    }
+    $this->assertCount(110, array_unique($seen));
+    $lastProject = $this->getJson($choices.'?search=Choice%20109')->assertOk()->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.project_title', 'Choice 109')->json('data.0.id');
     $last = end($records);
+    $this->getJson($choices.'?project='.$lastProject)->assertOk()->assertJsonCount(1, 'records')
+        ->assertJsonPath('records.0.id', (int) $last)->assertJsonMissingPath('records.0.created_by');
     $this->get('/workspace/ui/monthly-updates/create?maintenance_id='.$last)->assertInertia(fn (Assert $page) => $page
         ->has('projects', 1)->has('records', 1)->where('records.0.id', (int) $last)->where('contextRecordId', (int) $last));
 });
@@ -63,9 +75,11 @@ it('preserves fixed context authorization and only relevant report uniqueness da
     DB::table('jairoads_next.maintenance_records')->where('id', $second)->update(['managing_engineer_id' => $this->engineer()]);
     $this->get('/workspace/ui/monthly-updates/create?maintenance_id='.$second)->assertForbidden();
     $this->get('/workspace/ui/maintenance-documents/create?maintenance_id='.$second)->assertForbidden();
-    $this->get('/workspace/ui/monthly-updates/create')->assertInertia(fn (Assert $page) => $page
-        ->has('records', 1)->has('existingUpdates', 1)->where('existingUpdates.0.maintenance_id', (int) $first)
-        ->missing('existingUpdates.0.summary_of_text_reports')->missing('existingUpdates.0.created_by')->missing('existingUpdates.0.media_count'));
+    $this->getJson('/workspace/ui/monthly-updates/form-choices?project='.$f['project'])->assertOk()
+        ->assertJsonCount(1, 'records')->assertJsonCount(1, 'existingUpdates')
+        ->assertJsonPath('existingUpdates.0.maintenance_id', (int) $first)
+        ->assertJsonMissingPath('existingUpdates.0.summary_of_text_reports')
+        ->assertJsonMissingPath('existingUpdates.0.created_by')->assertJsonMissingPath('existingUpdates.0.media_count');
 });
 
 it('batches manager choices with exactly the same eligibility as individual LGU lookups', function (string $role): void {

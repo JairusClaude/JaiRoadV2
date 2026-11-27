@@ -25,6 +25,8 @@ import { ProjectSelector } from './project-selector';
 export function MonthlyUpdateForm({
     parents,
     draftTools,
+    recordChoicesLoading,
+    retryRecordChoices,
     backLabel,
     savedMedia,
     onRemoveSaved,
@@ -39,6 +41,8 @@ export function MonthlyUpdateForm({
 }: {
     parents: MonthlyCreateProps;
     draftTools?: ReactNode;
+    recordChoicesLoading?: boolean;
+    retryRecordChoices?: () => void;
     backLabel?: string;
     savedMedia?: MonthlyMedia[];
     onRemoveSaved?: (id: number) => void;
@@ -189,6 +193,9 @@ export function MonthlyUpdateForm({
                                     'Maintenance Project',
                                     <ProjectSelector
                                         projects={parents.projects}
+                                        choicesUrl={
+                                            parents.formChoicesUrl ?? undefined
+                                        }
                                         value={values.project_id}
                                         disabled={disabled}
                                         invalid={Boolean(errors.project_id)}
@@ -207,9 +214,16 @@ export function MonthlyUpdateForm({
                                             !project ||
                                             !options.length
                                         }
-                                        onValueChange={(value) =>
-                                            onChange('maintenance_id', value)
-                                        }
+                                        onValueChange={(value) => {
+                                            // A draft can select a record while its options mount.
+                                            // The menu has no empty option, and changing projects clears the record.
+                                            if (value) {
+                                                onChange(
+                                                    'maintenance_id',
+                                                    value,
+                                                );
+                                            }
+                                        }}
                                     >
                                         <SelectTrigger
                                             {...attrs('maintenance_id')}
@@ -217,11 +231,13 @@ export function MonthlyUpdateForm({
                                         >
                                             <SelectValue
                                                 placeholder={
-                                                    !project
-                                                        ? 'Select a project first'
-                                                        : options.length
-                                                          ? 'Select record'
-                                                          : 'No maintenance records'
+                                                    recordChoicesLoading
+                                                        ? 'Loading records…'
+                                                        : !project
+                                                          ? 'Select a project first'
+                                                          : options.length
+                                                            ? 'Select record'
+                                                            : 'No maintenance records'
                                                 }
                                             />
                                         </SelectTrigger>
@@ -244,6 +260,21 @@ export function MonthlyUpdateForm({
                                     project && !options.length
                                         ? 'This project has no Maintenance Records. Add a record from Project Details first.'
                                         : undefined,
+                                )}
+                                {retryRecordChoices && (
+                                    <div
+                                        className="jr-field-hint"
+                                        role="status"
+                                    >
+                                        Could not load maintenance records.{' '}
+                                        <button
+                                            type="button"
+                                            className="font-semibold underline"
+                                            onClick={retryRecordChoices}
+                                        >
+                                            Try again
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                         )}

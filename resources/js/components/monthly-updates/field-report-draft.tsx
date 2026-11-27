@@ -4,11 +4,10 @@ import {
     decryptDraft,
     encryptDraft,
     isEncryptedDraft,
+    maxDraftFileBytes,
+    validateDraftSummary,
 } from '@/lib/encrypted-field-draft.mjs';
-import type {
-    MonthlyCreateProps,
-    MonthlyUpdateValues,
-} from '@/types/monthly-updates';
+import type { MonthlyUpdateValues } from '@/types/monthly-updates';
 
 type DraftValues = Pick<
     MonthlyUpdateValues,
@@ -20,14 +19,12 @@ type DraftValues = Pick<
 >;
 
 export function FieldReportDraft({
-    parents,
     values,
     onImport,
     disabled,
 }: {
-    parents: MonthlyCreateProps;
     values: MonthlyUpdateValues;
-    onImport: (value: DraftValues) => void;
+    onImport: (value: DraftValues) => void | Promise<void>;
     disabled: boolean;
 }) {
     const input = useRef<HTMLInputElement>(null);
@@ -49,6 +46,7 @@ export function FieldReportDraft({
         setBusy(true);
 
         try {
+            validateDraftSummary(data.summary_of_text_reports);
             const contents = encrypted
                 ? await encryptDraft(data, password.current?.value ?? '')
                 : data;
@@ -85,8 +83,8 @@ export function FieldReportDraft({
         setBusy(true);
 
         try {
-            if (file.size > 128 * 1024) {
-                throw new Error('Draft exceeds the 128 KB size limit.');
+            if (file.size > maxDraftFileBytes) {
+                throw new Error('Draft exceeds the 192 KiB size limit.');
             }
 
             const envelope: unknown = JSON.parse(await file.text());
@@ -117,30 +115,9 @@ export function FieldReportDraft({
             const restored = Object.fromEntries(
                 fields.map((key) => [key, item[key]]),
             ) as DraftValues;
-            const record = parents.records.find(
-                (entry) =>
-                    String(entry.id) === restored.maintenance_id &&
-                    String(entry.project_id) === restored.project_id,
-            );
+            validateDraftSummary(restored.summary_of_text_reports);
 
-            if (
-                !record ||
-                (parents.contextRecordId &&
-                    record.id !== parents.contextRecordId) ||
-                !parents.projects.some(
-                    (entry) => String(entry.id) === restored.project_id,
-                )
-            ) {
-                throw new Error(
-                    'This draft does not match a currently available maintenance record.',
-                );
-            }
-
-            if (restored.summary_of_text_reports.length > 10000) {
-                throw new Error('Draft summary exceeds the supported limit.');
-            }
-
-            onImport(restored);
+            await onImport(restored);
             setMessage(
                 'Draft loaded. Review all values, attach evidence, and submit when connected.',
             );

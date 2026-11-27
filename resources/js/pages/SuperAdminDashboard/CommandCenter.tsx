@@ -138,7 +138,6 @@ export default function SuperAdminCommandCenter({
                 </div>
 
                 <main className="relative mx-0 -mt-3.5 min-w-0 space-y-6 rounded-t-[20px] bg-white px-4 pt-7 pb-10 shadow-sm sm:px-6 lg:-mx-7 lg:px-7">
-                    {health && <SystemHealthPanel health={health} />}
                     {/* Top System Metrics */}
                     <section
                         aria-label="System metrics"
@@ -302,6 +301,8 @@ export default function SuperAdminCommandCenter({
                             </section>
                         </aside>
                     </div>
+
+                    {health && <SystemHealthPanel health={health} />}
 
                     <section className="jr-command-panel rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
                         <div className="flex flex-wrap items-center justify-between gap-2">

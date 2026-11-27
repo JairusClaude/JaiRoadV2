@@ -27,7 +27,8 @@
         <label>Maintenance record ID<input name="maintenance_id" inputmode="numeric" pattern="[1-9][0-9]*" maxlength="18" required></label>
         <label>Reporting month<input name="update_month" type="month" required></label>
         <label>Progress percentage<input name="progress_percentage" type="number" min="0" max="100" step="0.01" required></label>
-        <label>Progress summary<textarea name="summary_of_text_reports" rows="6" maxlength="10000"></textarea></label>
+        <label>Progress summary<textarea name="summary_of_text_reports" rows="6" aria-describedby="summary-limit"></textarea></label>
+        <p id="summary-limit">Up to 20,000 characters.</p>
         <label>Draft passphrase (12–256 characters)<input id="passphrase" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></label>
         <p>Use a separate passphrase and keep it apart from the draft. Photos and attachments stay on your device.</p>
         <button id="save" type="submit" disabled>Download encrypted draft</button>
@@ -92,6 +93,7 @@ form.addEventListener('submit', async (event) => {
     }
 
     await withPassphrase(async (passphrase) => {
+        validateDraftSummary(draft.summary_of_text_reports);
         const data = await encryptDraft(draft, passphrase);
         const url = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' }));
         const link = document.createElement('a');
@@ -114,8 +116,8 @@ restore.addEventListener('change', async () => {
     }
 
     await withPassphrase(async (passphrase) => {
-        if (file.size > 128 * 1024) {
-            throw new Error('Draft exceeds the 128 KB size limit.');
+        if (file.size > maxDraftFileBytes) {
+            throw new Error('Draft exceeds the 192 KiB size limit.');
         }
 
         const draft = await decryptDraft(JSON.parse(await file.text()), passphrase);
@@ -123,6 +125,8 @@ restore.addEventListener('change', async () => {
         if (draft?.version !== 1 || fields.some((field) => typeof draft[field] !== 'string')) {
             throw new Error('Invalid report draft.');
         }
+
+        validateDraftSummary(draft.summary_of_text_reports);
 
         for (const field of fields) {
             form.elements.namedItem(field).value = draft[field];

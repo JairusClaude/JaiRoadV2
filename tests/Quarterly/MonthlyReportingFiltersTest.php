@@ -99,3 +99,25 @@ it('handles supported zero-padded reporting years without casting the stored mon
     $this->get('/workspace/ui/monthly-updates?year=1')->assertInertia(fn (Assert $page) => $page
         ->where('years', [2027, 2026, 1])->where('filters.year', '1')->has('updates.data', 1)->where('updates.data.0.id', $id));
 });
+
+it('loads scoped monthly form choices on demand', function (): void {
+    $other = $this->fixture('Engineer');
+    $otherRecord = (int) DB::table('jairoads_next.maintenance_records')->insertGetId(
+        $this->recordData($other['project'], $other['engineer']) + ['created_by' => $other['user']->canonical_user_account_id]
+    );
+    ($this->report)('2026-03', '2028-01-02 00:00:00', $otherRecord);
+    $this->actingAs($this->f['user']);
+
+    $this->get('/workspace/ui/monthly-updates/create')->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('formChoicesUrl', '/workspace/ui/monthly-updates/form-choices')
+            ->has('projects', 0)->has('records', 0)->has('existingUpdates', 0));
+    $url = '/workspace/ui/monthly-updates/form-choices';
+    $this->getJson($url)->assertOk()->assertHeader('Cache-Control', 'no-store, private')->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $this->f['project']);
+    $this->getJson($url.'?project='.$this->f['project'])->assertOk()->assertJsonPath('project.id', $this->f['project'])
+        ->assertJsonCount(1, 'records')->assertJsonPath('records.0.id', $this->recordId)
+        ->assertJsonCount(2, 'existingUpdates');
+    $this->getJson($url.'?project='.$other['project'])->assertNotFound();
+    $this->withSession(['password_hash_web' => null])->actingAs($this->account('Viewer'));
+    $this->getJson($url)->assertForbidden();
+});

@@ -119,6 +119,13 @@ export default function Index({
         setMapError('');
     }
 
+    const mapQuery = new URLSearchParams({
+        search: filters.search,
+        municipality: filters.municipality,
+        condition: filters.condition,
+        pavement: filters.pavement,
+    }).toString();
+
     useEffect(() => {
         if (!mapDeferred) {
             return;
@@ -131,7 +138,7 @@ export default function Index({
             setMapLoading(false);
         }, 12_000);
 
-        fetch('/workspace/ui/map/road-index', {
+        fetch(`/workspace/ui/map/road-index?${mapQuery}`, {
             credentials: 'same-origin',
             headers: { Accept: 'application/json' },
             cache: 'no-store',
@@ -173,7 +180,7 @@ export default function Index({
             mapRequest.current?.abort();
             mapRequest.current = null;
         };
-    }, [coverages, mapAttempt, mapDeferred]);
+    }, [coverages, mapAttempt, mapDeferred, mapQuery]);
 
     const loadMoreMap = async () => {
         if (mapCursor === null || mapLoading) {
@@ -188,7 +195,7 @@ export default function Index({
 
         try {
             const response = await fetch(
-                `/workspace/ui/map/road-index?before=${encodeURIComponent(mapCursor)}`,
+                `/workspace/ui/map/road-index?${mapQuery}&before=${encodeURIComponent(mapCursor)}`,
                 {
                     credentials: 'same-origin',
                     headers: { Accept: 'application/json' },
@@ -459,7 +466,7 @@ export default function Index({
                             <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
                                 <p>
                                     Showing {loadedMap.length} of{' '}
-                                    {displayedTotalCoverages} road coverages on
+                                    {coverages.total} matching road coverages on
                                     the map.
                                 </p>
                                 <Button

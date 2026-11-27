@@ -41,6 +41,29 @@ export function ReconnectSubmission({
         Object.keys(validateMonthlyUpdate(values, parents)).length === 0;
 
     useEffect(() => {
+        const report = pending.current;
+
+        if (!queued || !report) {
+            return;
+        }
+
+        const timer = window.setTimeout(
+            () => {
+                if (pending.current === report) {
+                    pending.current = null;
+                    setQueued(false);
+                    setMessage(
+                        'Queue expired. Review and queue the report again.',
+                    );
+                }
+            },
+            Math.max(0, report.expiresAt - Date.now()),
+        );
+
+        return () => window.clearTimeout(timer);
+    }, [queued]);
+
+    useEffect(() => {
         const disconnect = () => setOnline(false);
         const reconnect = () => {
             setOnline(true);

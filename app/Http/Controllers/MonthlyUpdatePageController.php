@@ -10,6 +10,7 @@ use App\Services\RoleAccess;
 use App\Support\LiteralDirectorySearch;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -80,17 +81,55 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
         abort_if($id !== null && $u === null, 404);
         abort_if($u !== null && ! $this->canWriteRecord($u, $actor), 403);
 
-        $parents = $this->parents($actor, $request, $u === null ? null : (int) $u->maintenance_id);
+        $context = $u === null ? ($request->integer('maintenance_id', $request->integer('record')) ?: null) : (int) $u->maintenance_id;
+        $parents = $context === null
+            ? ['projects' => [], 'records' => [], 'contextRecordId' => null, 'canWrite' => true]
+            : $this->parents($actor, $request, $context);
 
         return $this->render('MonthlyUpdates/Create', $request, $parents + [
             'update' => $u === null ? null : $this->updateData($u, $actor), 'media' => $id === null ? [] : $this->mediaData($id, $actor),
-            'existingUpdates' => $this->updateQuery($actor)
-                ->whereIn('u.maintenance_id', $parents['records']->pluck('id'))
+            'formChoicesUrl' => $context === null ? self::BASE.'/monthly-updates/form-choices' : null,
+            'existingUpdates' => $context === null ? [] : $this->updateQuery($actor)->where('u.maintenance_id', $context)
                 ->select(['u.id', 'u.maintenance_id', 'u.update_month'])->get(),
             'reconnectAccountId' => $id === null ? $actor['account_id'] : null,
             'submitUrl' => self::BASE.'/monthly-updates'.($id === null ? '' : '/'.$id),
             'cancelUrl' => self::BASE.'/monthly-updates'.($id === null ? '' : '/'.$id),
         ]);
+    }
+
+    public function formChoices(Request $request): JsonResponse
+    {
+        abort_if(self::isPreview($request), 404);
+        $actor = $this->actor($request);
+        $this->writer($actor);
+        $input = $request->validate(['page' => ['sometimes', 'integer', 'min:1'], 'project' => ['sometimes', 'integer', 'min:1']]);
+        $records = $this->records($actor)
+            ->when($actor['role'] === 'Engineer', fn (Builder $q) => $q->where('m.managing_engineer_id', $actor['engineer_id']));
+        $projects = $this->projectChoices($actor)->whereIn('p.id', (clone $records)->select('m.project_id'));
+        if (isset($input['project'])) {
+            $project = $projects->where('p.id', $input['project'])->first();
+            abort_unless($project !== null, 404);
+            $records->where('m.project_id', $project->id);
+
+            return response()->json([
+                'project' => $this->projectChoiceData($project),
+                'records' => (clone $records)->select(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter'])
+                    ->orderByDesc('m.maintenance_year')->orderByDesc('m.quarter')->get()->map(fn (\stdClass $record): array => $this->periodChoiceData($record)),
+                'existingUpdates' => $this->updateQuery($actor)->whereIn('u.maintenance_id', $records->select('m.id'))
+                    ->select(['u.id', 'u.maintenance_id', 'u.update_month'])->get(),
+            ])->header('Cache-Control', 'private, no-store');
+        }
+
+        $search = LiteralDirectorySearch::normalize($request->query('search'));
+        if ($search !== '') {
+            $pattern = LiteralDirectorySearch::pattern($search);
+            $projects->where(fn (Builder $q) => $q->where('p.project_title', 'ilike', $pattern)->orWhere('l.municipality_name', 'ilike', $pattern));
+        }
+        $page = $projects->orderBy('p.project_title')->orderBy('p.id')->paginate(20);
+        $page->through(fn (\stdClass $project): array => $this->projectChoiceData($project));
+
+        return response()->json(['data' => $page->items(), 'page' => $page->currentPage(), 'last_page' => $page->lastPage()])
+            ->header('Cache-Control', 'private, no-store');
     }
 
     public function saveUpdate(Request $request, ?int $id = null): RedirectResponse

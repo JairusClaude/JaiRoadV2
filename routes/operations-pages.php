@@ -54,6 +54,7 @@ Route::middleware(['auth'])->prefix('workspace/ui')->name('jairoads.ui.')->group
     Route::delete('/maintenance-records/{id}', [MaintenanceRecordPageController::class, 'deleteRecord'])->whereNumber('id')->name('records.destroy');
     Route::get('/monthly-updates', [MonthlyUpdatePageController::class, 'updateIndex'])->name('updates.index');
     Route::get('/monthly-updates/create', [MonthlyUpdatePageController::class, 'updateForm'])->name('updates.create');
+    Route::get('/monthly-updates/form-choices', [MonthlyUpdatePageController::class, 'formChoices'])->middleware('throttle:90,1,jr-monthly-form-choices-')->name('updates.form-choices');
     Route::get('/monthly-updates/{id}', [MonthlyUpdatePageController::class, 'updateShow'])->whereNumber('id')->name('updates.show');
     Route::get('/monthly-updates/{id}/edit', [MonthlyUpdatePageController::class, 'updateForm'])->whereNumber('id')->name('updates.edit');
     Route::post('/monthly-updates', [MonthlyUpdatePageController::class, 'saveUpdate'])->name('updates.store');

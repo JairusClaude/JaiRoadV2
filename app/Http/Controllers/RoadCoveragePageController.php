@@ -33,25 +33,10 @@ final class RoadCoveragePageController extends OperationsFrontendController
         }
 
         $actor = $this->actor($request);
-        $filters = $request->only(['search', 'municipality', 'condition', 'pavement', 'sort'])
-            + ['search' => '', 'municipality' => 'all', 'condition' => 'all', 'pavement' => 'all', 'sort' => 'newest'];
-        $filters['search'] = LiteralDirectorySearch::normalize($filters['search']);
-        foreach (['municipality', 'condition', 'pavement'] as $key) {
-            $filters[$key] = LiteralDirectorySearch::option($filters[$key]);
-        }
-        $sort = LiteralDirectorySearch::option($filters['sort'], 'newest');
-        $filters['sort'] = in_array($sort, ['newest', 'oldest', 'name-asc', 'name-desc'], true) ? $sort : 'newest';
         $query = $this->roads($actor);
-        if ($filters['search'] !== '') {
-            $query->where('rc.road_name', 'ilike', LiteralDirectorySearch::pattern($filters['search']));
-        }
-        foreach (['municipality' => 'rc.lgu_id', 'condition' => 'rc.state_category', 'pavement' => 'rc.pavement_type'] as $key => $column) {
-            if (is_string($filters[$key]) && $filters[$key] !== '' && $filters[$key] !== 'all') {
-                if ($key !== 'municipality' || ctype_digit($filters[$key])) {
-                    $query->where($column, $filters[$key]);
-                }
-            }
-        }
+        $filters = $this->applyRoadFilters($query, $request);
+        $sort = LiteralDirectorySearch::option($request->input('sort'), 'newest');
+        $filters['sort'] = in_array($sort, ['newest', 'oldest', 'name-asc', 'name-desc'], true) ? $sort : 'newest';
         $query->orderBy(in_array($filters['sort'], ['name-asc', 'name-desc'], true) ? 'rc.road_name' : 'rc.id',
             in_array($filters['sort'], ['oldest', 'name-asc'], true) ? 'asc' : 'desc')
             ->orderBy('rc.id', in_array($filters['sort'], ['oldest', 'name-asc'], true) ? 'asc' : 'desc');
@@ -74,6 +59,28 @@ final class RoadCoveragePageController extends OperationsFrontendController
         ]);
     }
 
+    /** @return array{search:string,municipality:string,condition:string,pavement:string} */
+    private function applyRoadFilters(Builder $query, Request $request): array
+    {
+        $filters = [
+            'search' => LiteralDirectorySearch::normalize($request->input('search')),
+            'municipality' => LiteralDirectorySearch::option($request->input('municipality')),
+            'condition' => LiteralDirectorySearch::option($request->input('condition')),
+            'pavement' => LiteralDirectorySearch::option($request->input('pavement')),
+        ];
+        if ($filters['search'] !== '') {
+            $query->where('rc.road_name', 'ilike', LiteralDirectorySearch::pattern($filters['search']));
+        }
+        foreach (['municipality' => 'rc.lgu_id', 'condition' => 'rc.state_category', 'pavement' => 'rc.pavement_type'] as $key => $column) {
+            $value = $filters[$key];
+            if ($value !== '' && $value !== 'all' && ($key !== 'municipality' || ctype_digit($value))) {
+                $query->where($column, $value);
+            }
+        }
+
+        return $filters;
+    }
+
     /** Read-only map geometry batches for all eligible canonical roles. */
     public function roadMapPage(Request $request): JsonResponse
     {
@@ -85,7 +92,7 @@ final class RoadCoveragePageController extends OperationsFrontendController
         $actor = $this->actor($request);
         $v = $request->validate(['before' => ['sometimes', 'integer', 'min:1']]);
 
-        return response()->json($this->roadMapData($actor, isset($v['before']) ? (int) $v['before'] : null))
+        return response()->json($this->roadMapData($actor, $request, isset($v['before']) ? (int) $v['before'] : null))
             ->header('Cache-Control', 'private, no-store');
     }
 
@@ -97,11 +104,12 @@ final class RoadCoveragePageController extends OperationsFrontendController
      * @param  array{account_id:int,role:string,engineer_id:?int}  $actor
      * @return array{data:array<int,array<string,mixed>>,next_cursor:?int}
      */
-    private function roadMapData(array $actor, ?int $before = null): array
+    private function roadMapData(array $actor, Request $request, ?int $before = null): array
     {
         $query = $this->scope(DB::table('jairoads_next.road_coverages as rc')
             ->join('jairoads_next.lgus as l', 'l.id', '=', 'rc.lgu_id')
             ->leftJoin('jairoads_next.maintenance_projects as p', 'p.road_coverage_id', '=', 'rc.id'), $actor);
+        $this->applyRoadFilters($query, $request);
         if ($before !== null) {
             $query->where('rc.id', '<', $before);
         }

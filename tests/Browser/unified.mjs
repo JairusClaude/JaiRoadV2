@@ -633,6 +633,23 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     assert.match(await fallbackMap.locator('.jr-road-map-count').textContent(), /^1 of 1 road lines$/);
     await fallbackMap.getByRole('button', { name: 'Locate selected road' }).click();
     await admin.unroute(unavailableBasemap);
+    let releaseBasemap;
+    const stalledBasemap = new Promise(resolve => {
+        releaseBasemap = resolve;
+    });
+    await admin.route(unavailableBasemap, async (route) => {
+        await stalledBasemap;
+        await route.abort('failed').catch(() => {});
+    });
+
+    try {
+        await admin.goto(base + '/workspace/projects?view=show&project=' + f.project_id);
+        await fallbackMap.getByText('Basemap unavailable. Showing saved road lines.', { exact: true }).waitFor();
+        await fallbackMap.getByRole('button', { name: 'Locate selected road' }).click();
+    } finally {
+        releaseBasemap();
+        await admin.unroute(unavailableBasemap);
+    }
 
     for (const saved of f.geometry_roads) {
         const path = `/road-coverages/${saved.id}`;
@@ -927,12 +944,20 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     await engineer.waitForFunction(() => document.getElementById('summary_of_text_reports')?.value === 'Canonical browser report');
 
     const passphrase = 'synthetic-browser-draft-passphrase';
-    const encryptedDraft = await verifyOfflineFieldReport({ browser, engineer, draft: fieldDraft, passphrase });
-    await engineer.getByLabel(/^Progress Summary/).fill('');
+    const longSummary = 'Field evidence '.repeat(900);
+    const encryptedDraft = await verifyOfflineFieldReport({
+        browser, engineer,
+        draft: { ...fieldDraft, summary_of_text_reports: longSummary },
+        passphrase,
+    });
+    // Import without preloading any project records into the form.
+    await engineer.goto(`${ui}/monthly-updates/create`);
+    await engineer.getByLabel(/I understand that the draft/).check();
     await engineer.getByLabel(/^Draft passphrase/).fill(passphrase);
     await engineer.getByLabel('Import field report draft file').setInputFiles({ name: 'draft.json', mimeType: 'application/json', buffer: encryptedDraft });
-    await engineer.waitForFunction(() => document.getElementById('summary_of_text_reports')?.value === 'Canonical browser report');
-    console.log('PASS: offline editor exports and restores encrypted drafts after reload, and the signed-in form imports them.');
+    await engineer.waitForFunction((expected) => document.getElementById('summary_of_text_reports')?.value === expected, longSummary);
+    await engineer.getByLabel(/^Progress Summary/).fill(fieldDraft.summary_of_text_reports);
+    console.log('PASS: long encrypted drafts survive offline reopening and signed-in import.');
     await engineer.context().setOffline(true);
     await engineer.getByRole('button', { name: 'Submit once when connected' }).click();
     await engineer.getByRole('button', { name: 'Cancel queued submission' }).click();

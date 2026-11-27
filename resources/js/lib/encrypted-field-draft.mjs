@@ -1,5 +1,15 @@
 const format = 'jairoads-encrypted-draft-v1';
 const iterations = 310000;
+const maxPlaintextBytes = 128 * 1024;
+const maxCiphertextCharacters = Math.ceil((maxPlaintextBytes + 16) / 3) * 4;
+export const maxDraftFileBytes = 192 * 1024;
+export const maxReportSummaryCharacters = 20000;
+
+export function validateDraftSummary(summary) {
+    if ([...summary].length > maxReportSummaryCharacters) {
+        throw new Error('Draft summary exceeds the 20,000 character limit.');
+    }
+}
 const encoder = new TextEncoder();
 const decoder = new TextDecoder('utf-8', { fatal: true });
 
@@ -33,7 +43,7 @@ async function keyFor(passphrase, salt, usage) {
 export async function encryptDraft(data, passphrase) {
     const plaintext = encoder.encode(JSON.stringify(data));
 
-    if (plaintext.length > 90000) {
+    if (plaintext.length > maxPlaintextBytes) {
         throw new Error('Draft exceeds the supported encryption size.');
     }
 
@@ -74,7 +84,7 @@ export async function decryptDraft(data, passphrase) {
         typeof data.ciphertext !== 'string' ||
         data.salt.length !== 24 ||
         data.iv.length !== 16 ||
-        data.ciphertext.length > 120024
+        data.ciphertext.length > maxCiphertextCharacters
     ) {
         throw new Error('Invalid encrypted draft format.');
     }
