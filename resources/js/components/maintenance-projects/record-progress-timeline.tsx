@@ -11,7 +11,10 @@ export function RecordProgressTimeline({
     pagination,
 }: {
     record: MaintenanceRecordDetail;
-    updates: MonthlyUpdateSummary[];
+    updates: Pick<
+        MonthlyUpdateSummary,
+        'id' | 'update_month' | 'progress_percentage'
+    >[];
     checkpointMonths?: (string | null)[];
     pagination?: RelatedPagination;
 }) {

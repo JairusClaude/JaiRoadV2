@@ -114,6 +114,8 @@ it('loads scoped monthly form choices on demand', function (): void {
     $url = '/workspace/ui/monthly-updates/form-choices';
     $this->getJson($url)->assertOk()->assertHeader('Cache-Control', 'no-store, private')->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.id', $this->f['project']);
+    $this->getJson($url.'?page=999999999')->assertOk()
+        ->assertJsonPath('page', 1)->assertJsonCount(1, 'data');
     $this->getJson($url.'?project='.$this->f['project'])->assertOk()->assertJsonPath('project.id', $this->f['project'])
         ->assertJsonCount(1, 'records')->assertJsonPath('records.0.id', $this->recordId)
         ->assertJsonCount(0, 'existingUpdates')->assertJsonPath('recordHasMore', false);

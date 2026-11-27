@@ -24,6 +24,8 @@ The next candidate adds stored road-condition visualization to the Engineer dash
 
 Commit `b2ddbed0220ee9269da652fd24685ffc9525d6f4` passed both focused regressions (45952720970, 45952727109), both disposable rehearsals (45952720902, 45952727075), and PR standard CI (45952727133). The branch full-system repository checks completed successfully at inspection; unified browser and Docker were still running. The next candidate clamps comparison pages, projects only ID/month, filters comparison photos in SQL, omits long detail text from record history, and adds synthetic history measurements and cross-project comparison tests. Fresh exact-head verification remains required.
 
+Commit `59dcbf22359f5c9391e2cd1bde4c3ddcc6340673` passed the quarterly PostgreSQL job including the new history benchmark (45953193585 / 140353560327); measured 2,942 / 12,377 / 12,427 JSON bytes and 11 queries at 1 / 100 / 1,000 reports and documents each. Frontend TypeScript failed on the history timeline prop; the unified browser job failed before running the application because an unrelated Microsoft Ubuntu apt repository returned HTTP 403. Follow-up narrows the prop contract, isolates the unrelated feed during Chromium installation on disposable runners, and preserves all verification requirements. Hosted performance and new exact-head browser evidence remain outstanding.
+
 ## Outstanding
 
 - Benchmark representative large data and verify the new record-history and monthly-choice pagination; exceptionally large single-record reporting-month collections remain unbounded.

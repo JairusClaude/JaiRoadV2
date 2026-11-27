@@ -366,7 +366,7 @@ jobs:
           node --experimental-strip-types tests/Browser/field-contracts.mjs
           php tests/Browser/prepare-unified.php > "$QUARTERLY_BROWSER_FIXTURE"
           npm install --prefix "$RUNNER_TEMP/jairoads-browser" playwright@1.62.1
-          "$RUNNER_TEMP/jairoads-browser/node_modules/.bin/playwright" install --with-deps chromium
+          bash scripts/ci/install-browser.sh "$RUNNER_TEMP/jairoads-browser/node_modules/.bin/playwright"
       - name: Real Fortify and canonical frontend browser acceptance
         run: |
           php artisan serve --host=127.0.0.1 --port=8011 --no-reload > /tmp/jairoads-unified-server.log 2>&1 &
@@ -425,7 +425,7 @@ jobs:
           npm run build
           php tests/Browser/prepare-passkey-lifecycle.php > "$PASSKEY_BROWSER_FIXTURE"
           npm install --prefix "$RUNNER_TEMP/jairoads-browser" playwright@1.62.1
-          "$RUNNER_TEMP/jairoads-browser/node_modules/.bin/playwright" install --with-deps chromium
+          bash scripts/ci/install-browser.sh "$RUNNER_TEMP/jairoads-browser/node_modules/.bin/playwright"
       - name: Real WebAuthn signatures and canonical account lifecycle
         run: |
           php artisan serve --host=127.0.0.1 --port=8013 --no-reload > /tmp/jairoads-passkey-server.log 2>&1 &
