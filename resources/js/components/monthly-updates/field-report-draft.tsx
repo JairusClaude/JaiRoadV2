@@ -150,7 +150,11 @@ export function FieldReportDraft({
                 <Button
                     type="button"
                     variant="outline"
-                    disabled={disabled || !confirmed || values.attachments.length > 0}
+                    disabled={
+                        disabled ||
+                        !confirmed ||
+                        values.attachments.length > 0
+                    }
                     onClick={() => input.current?.click()}
                 >
                     Import draft
@@ -165,7 +169,12 @@ export function FieldReportDraft({
                         const file = event.target.files?.[0];
                         event.target.value = '';
 
-                        if (file && confirmed && !disabled && !values.attachments.length) {
+                        if (
+                            file &&
+                            confirmed &&
+                            !disabled &&
+                            !values.attachments.length
+                        ) {
                             void restore(file);
                         }
                     }}

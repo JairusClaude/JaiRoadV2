@@ -219,7 +219,8 @@ export function MaintenanceIntelligencePanel({
                         </strong>
                         <p className="text-sm text-slate-600">
                             {road.condition}: {road.conditionScore} · Overdue:{' '}
-                            {road.overdueScore} · Missing report: {road.reportScore}
+                            {road.overdueScore} · Missing report:{' '}
+                            {road.reportScore}
                         </p>
                     </li>
                 ))}

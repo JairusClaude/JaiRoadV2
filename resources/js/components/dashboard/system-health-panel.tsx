@@ -8,7 +8,11 @@ export type SystemHealth = {
         shared_cache_configured: boolean;
         registration_allowed: boolean;
     };
-    recoveryCounts?: { pending: number; retried: number; completed: number } | null;
+    recoveryCounts?: {
+        pending: number;
+        retried: number;
+        completed: number;
+    } | null;
     checkedAt: string;
 };
 

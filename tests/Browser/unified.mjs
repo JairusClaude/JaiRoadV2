@@ -323,6 +323,12 @@ assert.deepEqual(pair, [foreground, background], path);
     await superadmin.getByText('Highest Authority · SuperAdmin', { exact: true }).waitFor();
     await superadmin.getByRole('region', { name: 'System health and readiness' }).waitFor();
     await superadmin.getByRole('region', { name: 'Maintenance intelligence' }).waitFor();
+    await superadmin.getByText('File recovery queue', { exact: true }).waitFor();
+    await superadmin.getByRole('heading', { name: 'Road review priority' }).waitFor();
+    const intelligence = JSON.parse(await superadmin.locator('script[data-page]').textContent()).props.maintenanceIntelligence;
+    assert.ok(intelligence.priority.length <= 12);
+    assert.ok(intelligence.priority.every(road => road.score === road.conditionScore + road.overdueScore + road.reportScore && road.score > 0 && road.score <= 100));
+    assert.ok(intelligence.priority.every((road, index, roads) => index === 0 || roads[index - 1].score >= road.score));
 
     for (const other of [viewer, engineer, admin]) {
         assert.equal(await other.getByRole('region', { name: 'System health and readiness' }).count(), 0);

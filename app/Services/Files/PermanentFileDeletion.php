@@ -12,6 +12,7 @@ use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
 use App\Services\OperationAudit;
 use App\Services\RoleAccess;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -37,11 +38,15 @@ final class PermanentFileDeletion
     /** @return array{pending:int,retried:int,completed:int}|null */
     public function recoveryCounts(): ?array
     {
-        if (! $this->available()) {
+        try {
+            if (! $this->available()) {
+                return null;
+            }
+            $row = DB::table(self::TABLE)->selectRaw("count(*) filter (where state = 'pending') as pending, count(*) filter (where state = 'pending' and attempts > 0) as retried, count(*) filter (where state = 'completed') as completed")->first();
+        } catch (QueryException) {
+            // A missing or inaccessible optional recovery table must not take down the dashboard.
             return null;
         }
-
-        $row = DB::table(self::TABLE)->selectRaw("count(*) filter (where state = 'pending') as pending, count(*) filter (where state = 'pending' and attempts > 0) as retried, count(*) filter (where state = 'completed') as completed")->first();
 
         return $row === null ? null : ['pending' => (int) $row->pending, 'retried' => (int) $row->retried, 'completed' => (int) $row->completed];
     }

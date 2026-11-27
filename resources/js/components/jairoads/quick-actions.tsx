@@ -297,10 +297,16 @@ export function JaiRoadsQuickActions() {
                             const first = controls[0];
                             const last = controls[controls.length - 1];
 
-                            if (event.shiftKey && document.activeElement === first) {
+                            if (
+                                event.shiftKey &&
+                                document.activeElement === first
+                            ) {
                                 event.preventDefault();
                                 last?.focus();
-                            } else if (!event.shiftKey && document.activeElement === last) {
+                            } else if (
+                                !event.shiftKey &&
+                                document.activeElement === last
+                            ) {
                                 event.preventDefault();
                                 first?.focus();
                             }
