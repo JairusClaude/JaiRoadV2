@@ -124,6 +124,40 @@ class OperationsFrontendController extends Controller
         ]);
     }
 
+    public function recordSearch(Request $request): JsonResponse
+    {
+        abort_if(self::isPreview($request), 404);
+        $actor = $this->actor($request);
+        $term = LiteralDirectorySearch::normalize($request->query('q'));
+        if (mb_strlen($term) < 2) {
+            return response()->json(['results' => []])->header('Cache-Control', 'private, no-store');
+        }
+        $pattern = LiteralDirectorySearch::pattern($term);
+        $sources = [
+            ['Project', 'maintenance-projects', $this->projects($actor, false), 'p.id', 'p.project_title'],
+            ['Road', 'road-coverages', $this->roads($actor), 'rc.id', 'rc.road_name'],
+            ['Document', 'maintenance-documents', $this->documentQuery($actor), 'd.id', 'd.document_title'],
+            ['LGU', 'lgus', $this->scope(DB::table('jairoads_next.lgus as l'), $actor), 'l.id', 'l.municipality_name'],
+        ];
+        $results = [];
+        foreach ($sources as [$kind, $directory, $query, $id, $label]) {
+            $matches = $query->select([$id.' as id', $label.' as label'])
+                ->where($label, 'ilike', $pattern)->distinct()->orderBy('label')->orderBy('id')->limit(5)->get();
+            foreach ($matches as $match) {
+                $results[] = ['kind' => $kind, 'label' => (string) $match->label, 'href' => self::BASE.'/'.$directory.'/'.(int) $match->id];
+            }
+        }
+        $updates = $this->updateQuery($actor)->select(['u.id', 'u.update_month', 'p.project_title'])
+            ->where(static function (Builder $query) use ($pattern): void {
+                $query->where('p.project_title', 'ilike', $pattern)->orWhere('u.update_month', 'ilike', $pattern);
+            })->orderByDesc('u.update_month')->orderByDesc('u.id')->limit(5)->get();
+        foreach ($updates as $update) {
+            $results[] = ['kind' => 'Monthly update', 'label' => (string) $update->project_title.' — '.(string) $update->update_month, 'href' => self::BASE.'/monthly-updates/'.(int) $update->id];
+        }
+
+        return response()->json(['results' => $results])->header('Cache-Control', 'private, no-store');
+    }
+
     /** @param Actor $actor */
     protected function roads(array $actor): Builder
     {

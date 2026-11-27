@@ -909,6 +909,11 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         )
     ).update;
     assert.equal(Number(report.progress_percentage), 43.5);
+    const recordSearchResponse = await viewer.request.get(`${base}${ui}/record-search?q=${encodeURIComponent(project.project_title)}`, { headers: { Accept: 'application/json' } });
+    assert.equal(recordSearchResponse.status(), 200);
+    const recordSearchResults = (await recordSearchResponse.json()).results;
+    assert.ok(recordSearchResults.some(item => item.href === `${ui}/monthly-updates/${report.id}`));
+    assert.ok(recordSearchResults.every(item => Object.keys(item).sort().join(',') === 'href,kind,label'));
     // File upload is part of the editable Monthly Update form, not its
     // read-only report page. Saving the form uploads the selected media.
     await engineer.goto(`${ui}/monthly-updates/${report.id}/edit`);
@@ -986,6 +991,10 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     const reports = (await props(engineer, '/monthly-updates')).updates.data;
     const january = reports.find((item) => item.update_month === '2026-01');
     assert.ok(january);
+    const comparedReport = await props(viewer, `/monthly-updates/${report.id}?compare=${january.id}`);
+    assert.equal(comparedReport.comparisonPeriod.id, january.id);
+    assert.equal(comparedReport.comparisonPeriod.month, '2026-01');
+    assert.ok(comparedReport.comparisonPeriods.some(item => item.id === january.id));
     await engineer.goto(`${ui}/monthly-updates/${january.id}/edit`);
     await engineer.getByLabel(/^Progress Percentage/).fill('16');
     await engineer

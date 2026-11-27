@@ -51,6 +51,11 @@ export function JaiRoadsQuickActions() {
     const [selected, setSelected] = useState(0);
     const [refreshing, setRefreshing] = useState(false);
     const inputRef = useRef<HTMLInputElement | null>(null);
+    const [recordMatches, setRecordMatches] = useState<{
+        term: string;
+        items: { label: string; kind: string; href: string }[];
+        failed: boolean;
+    }>({ term: '', items: [], failed: false });
     const page = usePage<{ jairoadsIdentity?: { role: string } | null }>();
     const path = page.url.split('?')[0];
     const role = page.props.jairoadsIdentity?.role;
@@ -110,6 +115,13 @@ export function JaiRoadsQuickActions() {
     ];
     const results = [
         ...sectionResults,
+        ...(open && recordMatches.term === term && isCanonicalWorkspace
+            ? recordMatches.items.map((item) => ({
+                  label: item.kind + ': ' + item.label,
+                  href: item.href,
+                  Icon: FileText,
+              }))
+            : []),
         ...(isCanonicalWorkspace && role && term
             ? recordDirectories.map(({ label, path, Icon }) => ({
                   label: `Search ${label} for "${term}"`,
@@ -118,6 +130,49 @@ export function JaiRoadsQuickActions() {
               }))
             : []),
     ];
+
+    useEffect(() => {
+        if (!open || !isCanonicalWorkspace || !role || term.length < 2) {
+            return;
+        }
+
+        const controller = new AbortController();
+        const timeout = window.setTimeout(async () => {
+            try {
+                const response = await fetch(
+                    '/workspace/ui/record-search?q=' + encodeURIComponent(term),
+                    {
+                        signal: controller.signal,
+                        headers: { Accept: 'application/json' },
+                        cache: 'no-store',
+                    },
+                );
+
+                if (!response.ok) {
+                    throw new Error('Search unavailable');
+                }
+
+                const data = await response.json();
+
+                if (!controller.signal.aborted) {
+                    setRecordMatches({
+                        term,
+                        items: data.results,
+                        failed: false,
+                    });
+                }
+            } catch {
+                if (!controller.signal.aborted) {
+                    setRecordMatches({ term, items: [], failed: true });
+                }
+            }
+        }, 300);
+
+        return () => {
+            window.clearTimeout(timeout);
+            controller.abort();
+        };
+    }, [open, isCanonicalWorkspace, role, term]);
 
     useEffect(() => {
         const handleKeys = (event: KeyboardEvent) => {
@@ -272,6 +327,15 @@ export function JaiRoadsQuickActions() {
                         <div className="jr-command-heading">
                             JaiROADS workspace
                         </div>
+                        {isCanonicalWorkspace &&
+                            term.length >= 2 &&
+                            recordMatches.term === term &&
+                            recordMatches.failed && (
+                                <p className="jr-command-empty" role="status">
+                                    Record search unavailable. Directory search
+                                    is still available.
+                                </p>
+                            )}
                         <div className="jr-command-items">
                             {results.length ? (
                                 results.map(({ label, href, Icon }, index) => (
