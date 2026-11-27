@@ -46,8 +46,18 @@ export function PhotoComparison({
             </p>
             <div className="mt-3 grid gap-4 sm:grid-cols-2">
                 {[
-                    { title: 'First photo', value: left, set: setLeft, options: photos },
-                    { title: 'Second photo', value: right, set: setRight, options: otherPhotos },
+                    {
+                        title: 'First photo',
+                        value: left,
+                        set: setLeft,
+                        options: photos,
+                    },
+                    {
+                        title: 'Second photo',
+                        value: right,
+                        set: setRight,
+                        options: otherPhotos,
+                    },
                 ].map(({ title, value, set, options }) => (
                     <label key={title} className="grid min-w-0 gap-2 text-sm">
                         {title}
@@ -77,7 +87,8 @@ export function PhotoComparison({
                                 className="aspect-video w-full rounded-lg object-contain"
                             />
                             <figcaption className="mt-1 text-sm break-words">
-                                {photo.parent_label && `${photo.parent_label} · `}
+                                {photo.parent_label &&
+                                    `${photo.parent_label} · `}
                                 {photo.file_name}
                             </figcaption>
                         </figure>

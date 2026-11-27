@@ -898,6 +898,17 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     await engineer
         .getByLabel(/^Progress Summary/)
         .fill('Canonical browser report');
+    await engineer.getByLabel(/I understand that the draft/).check();
+    const fieldDraftDownload = engineer.waitForEvent('download');
+    await engineer.getByRole('button', { name: 'Download draft' }).click();
+    const fieldDraftFile = await fieldDraftDownload;
+    const fieldDraft = JSON.parse(await readFile(await fieldDraftFile.path(), 'utf8'));
+    assert.equal(fieldDraft.summary_of_text_reports, 'Canonical browser report');
+    assert.equal(fieldDraft.progress_percentage, '43.5');
+    assert.equal(fieldDraft.attachments, undefined);
+    await engineer.getByLabel(/^Progress Summary/).fill('');
+    await engineer.getByLabel('Import field report draft file').setInputFiles(await fieldDraftFile.path());
+    await engineer.waitForFunction(() => document.getElementById('summary_of_text_reports')?.value === 'Canonical browser report');
     await engineer
         .getByRole('button', { name: /Save Monthly Update|Save Update/ })
         .click();
@@ -909,10 +920,10 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         )
     ).update;
     assert.equal(Number(report.progress_percentage), 43.5);
-    const recordSearchResponse = await viewer.request.get(`${base}${ui}/record-search?q=${encodeURIComponent(project.project_title)}`, { headers: { Accept: 'application/json' } });
+    const recordSearchResponse = await viewer.request.get(`${ui}/record-search?q=${encodeURIComponent(project.project_title)}`, { headers: { Accept: 'application/json' } });
     assert.equal(recordSearchResponse.status(), 200);
     const recordSearchResults = (await recordSearchResponse.json()).results;
-    assert.ok(recordSearchResults.some(item => item.href === `${ui}/monthly-updates/${report.id}`));
+    assert.ok(recordSearchResults.some(item => item.href === `/workspace/ui/monthly-updates/${report.id}`));
     assert.ok(recordSearchResults.every(item => Object.keys(item).sort().join(',') === 'href,kind,label'));
     // File upload is part of the editable Monthly Update form, not its
     // read-only report page. Saving the form uploads the selected media.

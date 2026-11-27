@@ -163,7 +163,11 @@ export default function Create(parents: MonthlyCreateProps) {
                             disabled={form.processing}
                             onImport={(values) => {
                                 form.clearErrors();
-                                form.setData({ ...values, attachments: [], removed_media_ids: [] });
+                                form.setData({
+                                    ...values,
+                                    attachments: [],
+                                    removed_media_ids: [],
+                                });
                             }}
                         />
                     )

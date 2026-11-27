@@ -24,9 +24,16 @@ const factors = [
 ];
 
 function downloadCalendar(items: MaintenanceIntelligenceSummary['calendar']) {
-    const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    const timestamp = new Date()
+        .toISOString()
+        .replace(/[-:]/g, '')
+        .replace(/\.\d{3}/, '');
     const escape = (value: string) =>
-        value.replace(/\\/g, '\\\\').replace(/\r?\n|\r/g, '\\n').replace(/;/g, '\\;').replace(/,/g, '\\,');
+        value
+            .replace(/\\/g, '\\\\')
+            .replace(/\r?\n|\r/g, '\\n')
+            .replace(/;/g, '\\;')
+            .replace(/,/g, '\\,');
     const events = items.flatMap((item) => [
         'BEGIN:VEVENT',
         'UID:jairoads-estimate-' + item.id + '@jairoads',
@@ -36,9 +43,21 @@ function downloadCalendar(items: MaintenanceIntelligenceSummary['calendar']) {
         'DESCRIPTION:Estimated date only. Confirm the official schedule before acting.',
         'END:VEVENT',
     ]);
-    const url = URL.createObjectURL(new Blob([
-        ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//JaiROADS//Maintenance estimates//EN', ...events, 'END:VCALENDAR', ''].join('\r\n'),
-    ], { type: 'text/calendar;charset=utf-8' }));
+    const url = URL.createObjectURL(
+        new Blob(
+            [
+                [
+                    'BEGIN:VCALENDAR',
+                    'VERSION:2.0',
+                    'PRODID:-//JaiROADS//Maintenance estimates//EN',
+                    ...events,
+                    'END:VCALENDAR',
+                    '',
+                ].join('\r\n'),
+            ],
+            { type: 'text/calendar;charset=utf-8' },
+        ),
+    );
     const link = document.createElement('a');
     link.href = url;
     link.download = 'jairoads-maintenance-estimates.ics';

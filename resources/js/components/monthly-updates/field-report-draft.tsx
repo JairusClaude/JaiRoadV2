@@ -1,10 +1,17 @@
 import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import type { MonthlyCreateProps, MonthlyUpdateValues } from '@/types/monthly-updates';
+import type {
+    MonthlyCreateProps,
+    MonthlyUpdateValues,
+} from '@/types/monthly-updates';
 
 type DraftValues = Pick<
     MonthlyUpdateValues,
-    'project_id' | 'maintenance_id' | 'update_month' | 'progress_percentage' | 'summary_of_text_reports'
+    | 'project_id'
+    | 'maintenance_id'
+    | 'update_month'
+    | 'progress_percentage'
+    | 'summary_of_text_reports'
 >;
 
 export function FieldReportDraft({
@@ -31,7 +38,9 @@ export function FieldReportDraft({
             summary_of_text_reports: values.summary_of_text_reports,
         };
         const url = URL.createObjectURL(
-            new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
+            new Blob([JSON.stringify(data, null, 2)], {
+                type: 'application/json',
+            }),
         );
         const link = document.createElement('a');
         link.href = url;
@@ -55,24 +64,41 @@ export function FieldReportDraft({
             }
 
             const item = data as Record<string, unknown>;
-            const fields = ['project_id', 'maintenance_id', 'update_month', 'progress_percentage', 'summary_of_text_reports'] as const;
+            const fields = [
+                'project_id',
+                'maintenance_id',
+                'update_month',
+                'progress_percentage',
+                'summary_of_text_reports',
+            ] as const;
 
-            if (item.version !== 1 || fields.some((key) => typeof item[key] !== 'string')) {
+            if (
+                item.version !== 1 ||
+                fields.some((key) => typeof item[key] !== 'string')
+            ) {
                 throw new Error('Invalid draft format.');
             }
 
-            const restored = Object.fromEntries(fields.map((key) => [key, item[key]])) as DraftValues;
-            const record = parents.records.find((entry) =>
-                String(entry.id) === restored.maintenance_id &&
-                String(entry.project_id) === restored.project_id,
+            const restored = Object.fromEntries(
+                fields.map((key) => [key, item[key]]),
+            ) as DraftValues;
+            const record = parents.records.find(
+                (entry) =>
+                    String(entry.id) === restored.maintenance_id &&
+                    String(entry.project_id) === restored.project_id,
             );
 
             if (
                 !record ||
-                (parents.contextRecordId && record.id !== parents.contextRecordId) ||
-                !parents.projects.some((entry) => String(entry.id) === restored.project_id)
+                (parents.contextRecordId &&
+                    record.id !== parents.contextRecordId) ||
+                !parents.projects.some(
+                    (entry) => String(entry.id) === restored.project_id,
+                )
             ) {
-                throw new Error('This draft does not match a currently available maintenance record.');
+                throw new Error(
+                    'This draft does not match a currently available maintenance record.',
+                );
             }
 
             if (restored.summary_of_text_reports.length > 10000) {
@@ -80,14 +106,21 @@ export function FieldReportDraft({
             }
 
             onImport(restored);
-            setMessage('Draft loaded. Review all values, attach evidence, and submit when connected.');
+            setMessage(
+                'Draft loaded. Review all values, attach evidence, and submit when connected.',
+            );
         } catch (error) {
-            setMessage(error instanceof Error ? error.message : 'Unable to import draft.');
+            setMessage(
+                error instanceof Error ? error.message : 'Unable to import draft.',
+            );
         }
     };
 
     return (
-        <section className="jr-record-schedule" aria-label="Offline field report draft">
+        <section
+            className="jr-record-schedule"
+            aria-label="Offline field report draft"
+        >
             <h2>Offline field report draft</h2>
             <p className="jr-field-hint">
                 Save an explicit local copy of this report while the form is open.
@@ -102,31 +135,52 @@ export function FieldReportDraft({
                     disabled={disabled}
                     onChange={(event) => setConfirmed(event.target.checked)}
                 />
-                I understand that the draft contains report text and record identifiers.
+                I understand that the draft contains report text and record
+                identifiers, and importing replaces the form.
             </label>
             <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="outline" disabled={disabled || !confirmed} onClick={download}>
+                <Button
+                    type="button"
+                    variant="outline"
+                    disabled={disabled || !confirmed}
+                    onClick={download}
+                >
                     Download draft
                 </Button>
-                <Button type="button" variant="outline" disabled={disabled || !confirmed} onClick={() => input.current?.click()}>
+                <Button
+                    type="button"
+                    variant="outline"
+                    disabled={disabled || !confirmed || values.attachments.length > 0}
+                    onClick={() => input.current?.click()}
+                >
                     Import draft
                 </Button>
                 <input
                     ref={input}
                     type="file"
+                    aria-label="Import field report draft file"
                     accept=".json,application/json"
                     className="hidden"
                     onChange={(event) => {
                         const file = event.target.files?.[0];
                         event.target.value = '';
 
-                        if (file && confirmed && !disabled) {
+                        if (file && confirmed && !disabled && !values.attachments.length) {
                             void restore(file);
                         }
                     }}
                 />
             </div>
-            {message && <p className="mt-2 text-sm" role="status">{message}</p>}
+            {values.attachments.length > 0 && (
+                <p className="jr-field-hint">
+                    Remove selected attachments before importing a draft.
+                </p>
+            )}
+            {message && (
+                <p className="mt-2 text-sm" role="status">
+                    {message}
+                </p>
+            )}
         </section>
     );
 }

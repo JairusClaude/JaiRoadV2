@@ -217,7 +217,8 @@ export default function Show({
                                     <option value="">Current update only</option>
                                     {comparisonPeriods.map((period) => (
                                         <option key={period.id} value={period.id}>
-                                            {updateMonth(period.month)} (#{period.id})
+                                            {updateMonth(period.month)} (#
+                                            {period.id})
                                         </option>
                                     ))}
                                 </select>
@@ -229,10 +230,16 @@ export default function Show({
                                 ...file,
                                 parent_label: updateMonth(update.update_month),
                             }))}
-                            comparisonMedia={comparisonPeriod ? comparisonMedia.map((file) => ({
-                                ...file,
-                                parent_label: updateMonth(comparisonPeriod.month),
-                            })) : undefined}
+                            comparisonMedia={
+                                comparisonPeriod
+                                    ? comparisonMedia.map((file) => ({
+                                          ...file,
+                                          parent_label: updateMonth(
+                                              comparisonPeriod.month,
+                                          ),
+                                      }))
+                                    : undefined
+                            }
                         />
                     </section>
                     <footer className="jr-report-footer">
