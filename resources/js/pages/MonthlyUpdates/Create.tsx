@@ -320,21 +320,18 @@ export default function Create(parents: MonthlyCreateProps) {
                                     setImportBusy(busy);
                                 }}
                                 onImport={async (values, signal) => {
-                                    const remote =
-                                        formChoicesUrl
-                                            ? await loadProjectChoices(
-                                                  formChoicesUrl,
-                                                  values.project_id,
-                                                  AbortSignal.any([
-                                                      signal,
-                                                      AbortSignal.timeout(
-                                                          12_000,
-                                                      ),
-                                                  ]),
-                                                  1,
-                                                  values.maintenance_id,
-                                              )
-                                            : null;
+                                    const remote = formChoicesUrl
+                                        ? await loadProjectChoices(
+                                              formChoicesUrl,
+                                              values.project_id,
+                                              AbortSignal.any([
+                                                  signal,
+                                                  AbortSignal.timeout(12_000),
+                                              ]),
+                                              1,
+                                              values.maintenance_id,
+                                          )
+                                        : null;
                                     signal.throwIfAborted();
                                     const choices = remote ?? formParents;
                                     const record = choices.records.find(

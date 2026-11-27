@@ -75,8 +75,14 @@ it('preserves fixed context authorization and only relevant report uniqueness da
     DB::table('jairoads_next.maintenance_records')->where('id', $second)->update(['managing_engineer_id' => $this->engineer()]);
     $this->get('/workspace/ui/monthly-updates/create?maintenance_id='.$second)->assertForbidden();
     $this->get('/workspace/ui/maintenance-documents/create?maintenance_id='.$second)->assertForbidden();
-    $this->getJson('/workspace/ui/monthly-updates/form-choices?project='.$f['project'])->assertOk()
+    $choices = '/workspace/ui/monthly-updates/form-choices?project='.$f['project'];
+    $this->getJson($choices)->assertOk()
+        ->assertJsonCount(1, 'records')->assertJsonPath('records.0.id', (int) $first)
+        ->assertJsonCount(0, 'existingUpdates');
+    $this->getJson($choices.'&record='.$second)->assertNotFound();
+    $this->getJson($choices.'&record='.$first)->assertOk()
         ->assertJsonCount(1, 'records')->assertJsonCount(1, 'existingUpdates')
+        ->assertJsonPath('selectedRecordId', (int) $first)
         ->assertJsonPath('existingUpdates.0.maintenance_id', (int) $first)
         ->assertJsonMissingPath('existingUpdates.0.summary_of_text_reports')
         ->assertJsonMissingPath('existingUpdates.0.created_by')->assertJsonMissingPath('existingUpdates.0.media_count');

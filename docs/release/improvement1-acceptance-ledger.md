@@ -10,12 +10,16 @@ Six-category authenticated record search (projects, roads, documents, LGUs, main
 
 ## Candidate corrections after verified baseline
 
-Lock the monthly form during asynchronous import (including save and attachment controls); abort import on unmount, retain current values on failure. Track quick-navigation destination by URL, not result index, and time out requests. Add simplified Leaflet tile-error feedback and retry; add stored condition mode to canonical road directory map payload without changing ownership display. Paginate photo comparison periods and retain the selected period across pages. Added browser coverage for locked import. Candidate verification is pending; see GitHub Actions for exact-head results.
+Lock the monthly form during asynchronous import (including save and attachment controls); abort import on unmount, retain current values on failure. Track quick-navigation destination by URL, not result index, and time out requests. Add simplified Leaflet tile-error feedback and retry; add stored condition mode to canonical road directory map payload without changing ownership display. Paginate photo comparison periods and retain the selected period across pages. Added browser coverage for locked import. Subsequent changes paginate related record histories (12 per page), preserve database totals and global progress checkpoints, restore quick navigation in the canonical workspace, retain unchanged simplified map layers and preserve the viewport, and paginate monthly form record choices (25 per page plus a selected historical record when necessary). Reporting-month data is retrieved for the selected record rather than the entire project. Direct selected-record lookup remains role-scoped and supports encrypted draft import.
+
+## Verification after the baseline
+
+Commit `12a01ae0b157c4f49e9327cc6008d7831468abb9`: branch full verification (45950928820) passed 16 jobs, failed Prettier and skipped the conditional ancestry job. The unified browser, TypeScript, ESLint, PHPStan, production build, Docker, Laravel and release-blocking checks passed. Branch and PR disposable staging rehearsals passed (45950928863, 45950934388). Focused regressions (45950928823) failed the legacy lean-form response assertion: project-only lookup now intentionally returns no reporting months. Standard CI (45950928864) failed as well. The subsequent correction updates the test to check project-only, selected-record and revoked-record requests separately, retains the privacy assertions, and applies the exact reported formatting changes. These corrections require fresh exact-head checks; no new all-green result is claimed.
 
 ## Outstanding
 
-- Benchmark representative large data; paginate related maintenance record documents and updates and project period/month choices without compromising history, timeline or duplicate checks.
-- Incremental map layer updates and broader condition visualization beyond road directory; validate map services in hosted staging.
+- Benchmark representative large data and verify the new record-history and monthly-choice pagination; exceptionally large single-record reporting-month collections remain unbounded.
+- Verify incremental simplified map layer updates, extend condition visualization and failure recovery where missing, and validate map services in hosted staging.
 - Approve and rehearse milestone retention and runtime grants in isolated hosted staging; no production schema changes.
 - Durable background reporting synchronization requires reviewed session, revocation, idempotency, outcome lookup and encryption/attachment strategy; no silent replay.
 - Formal server reminder and road priority policy approval.
