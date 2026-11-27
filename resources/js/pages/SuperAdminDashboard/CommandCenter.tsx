@@ -11,6 +11,8 @@ import {
     UsersRound,
 } from 'lucide-react';
 import { useState } from 'react';
+import { SystemHealthPanel } from '@/components/dashboard/system-health-panel';
+import type { SystemHealth } from '@/components/dashboard/system-health-panel';
 import { DashboardAnalytics } from '@/components/dashboard/dashboard-analytics';
 import type { DashboardSummary } from '@/components/dashboard/dashboard-analytics';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
@@ -69,6 +71,7 @@ type MonthlyPreview = {
 type Props = {
     username: string;
     analytics: DashboardSummary;
+    health?: SystemHealth;
     counts: Counts;
     privilegedAccounts: PrivilegedAccount[];
     recentEvents: AuditEvent[];
@@ -88,6 +91,7 @@ export default function SuperAdminCommandCenter({
     username,
     counts,
     analytics,
+    health,
     privilegedAccounts,
     recentEvents,
     recentMonthlyUpdates,
@@ -130,6 +134,7 @@ export default function SuperAdminCommandCenter({
                 </div>
 
                 <main className="relative mx-0 -mt-3.5 min-w-0 space-y-6 rounded-t-[20px] bg-white px-4 pt-7 pb-10 shadow-sm sm:px-6 lg:-mx-7 lg:px-7">
+                    {health && <SystemHealthPanel health={health} />}
                     {/* Top System Metrics */}
                     <section
                         aria-label="System metrics"

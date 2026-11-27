@@ -10,6 +10,9 @@ use App\Models\User;
 use App\Services\AccountIdentityResolver;
 use App\Services\AuditActorIdentifier;
 use App\Services\DashboardAnalytics;
+use App\Services\Documents\PrivateSupabaseStorage;
+use App\Services\Files\FileRecoverySchedule;
+use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -112,6 +115,13 @@ final class SuperAdminLandingController extends Controller
         return Inertia::render('SuperAdminDashboard/CommandCenter', [
             'username' => (string) $account->username,
             'counts' => $counts,
+            'health' => [
+                'databaseReadSucceeded' => true,
+                'documentStorageConfigured' => app(PrivateSupabaseStorage::class)->configured(),
+                'mediaStorageConfigured' => app(PrivateMonthlyMediaStorage::class)->configured(),
+                'recovery' => FileRecoverySchedule::readiness(),
+                'checkedAt' => now()->utc()->toIso8601String(),
+            ],
             'analytics' => app(DashboardAnalytics::class)->summary($identity),
             'privilegedAccounts' => $privilegedAccounts,
             'recentEvents' => $recentEvents,
