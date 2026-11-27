@@ -27,6 +27,7 @@ import {
     useRef,
     useState,
 } from 'react';
+import { savedRoadLines } from '@/lib/road-coverages/saved-lines';
 import type { CoverageChoice } from '@/types/maintenance-projects';
 import {
     DAVAO_DE_ORO_BOUNDS,
@@ -70,73 +71,21 @@ type RoadCollection = {
     features: RoadFeature[];
 };
 
-function validPair(value: unknown): value is [number, number] {
-    return (
-        Array.isArray(value) &&
-        value.length >= 2 &&
-        typeof value[0] === 'number' &&
-        typeof value[1] === 'number' &&
-        Number.isFinite(value[0]) &&
-        Number.isFinite(value[1]) &&
-        Math.abs(value[0]) <= 180 &&
-        Math.abs(value[1]) <= 90
-    );
-}
-
 function extractLines(geometry: unknown): LineGeometry[] {
+    let parsed = geometry;
+
     if (typeof geometry === 'string') {
         try {
-            return extractLines(JSON.parse(geometry));
+            parsed = JSON.parse(geometry);
         } catch {
             return [];
         }
     }
 
-    if (!geometry || typeof geometry !== 'object') {
-        return [];
-    }
-
-    const value = geometry as Record<string, unknown>;
-
-    if (value.type === 'Feature') {
-        return extractLines(value.geometry);
-    }
-
-    if (value.type === 'FeatureCollection' && Array.isArray(value.features)) {
-        return value.features.flatMap(extractLines);
-    }
-
-    if (
-        value.type === 'GeometryCollection' &&
-        Array.isArray(value.geometries)
-    ) {
-        return value.geometries.flatMap(extractLines);
-    }
-
-    if (value.type === 'LineString' && Array.isArray(value.coordinates)) {
-        const pairs = value.coordinates
-            .filter(validPair)
-            .map((point) => [point[0], point[1]]);
-
-        return pairs.length >= 2
-            ? [{ type: 'LineString', coordinates: pairs }]
-            : [];
-    }
-
-    if (value.type === 'MultiLineString' && Array.isArray(value.coordinates)) {
-        const parts = value.coordinates
-            .filter(Array.isArray)
-            .map((segment: unknown[]) =>
-                segment.filter(validPair).map((point) => [point[0], point[1]]),
-            )
-            .filter((segment: number[][]) => segment.length >= 2);
-
-        return parts.length
-            ? [{ type: 'MultiLineString', coordinates: parts }]
-            : [];
-    }
-
-    return [];
+    return savedRoadLines(parsed).map((coordinates) => ({
+        type: 'LineString',
+        coordinates,
+    }));
 }
 
 function featuresFor(

@@ -162,7 +162,19 @@ jobs:
             routes)
               php scripts/refactor/verify-backend-layout.php &&
               php artisan route:list --except-vendor ;;
-            composer-audit) composer audit --locked --no-interaction ;;
+            composer-audit)
+              # Retry only transport failures; actual advisory findings still fail.
+              for attempt in 1 2 3; do
+                if composer audit --locked --no-interaction; then
+                  exit 0
+                else
+                  status=$?
+                fi
+                if [ "$status" -ne 100 ] || [ "$attempt" -eq 3 ]; then
+                  exit "$status"
+                fi
+                sleep "$((attempt * 5))"
+              done ;;
             npm-audit) npm audit --audit-level=high ;;
           esac
   feature-postgres:

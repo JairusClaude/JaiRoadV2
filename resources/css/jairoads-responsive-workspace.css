@@ -770,3 +770,22 @@ html.jr-reduce-motion .jr-responsive-shell > aside {
     animation: none !important;
     transition: none !important;
 }
+
+/* Keep enhancement controls usable in every shared workspace at phone widths. */
+@media (max-width: 639px) {
+    .jr-stage :is(.jr-record-schedule, .jr-detail-section, .jr-command-panel) {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+    .jr-stage .jr-record-schedule :is(button, input:not([type='checkbox'])) {
+        min-height: 44px;
+        max-width: 100%;
+    }
+    .jr-stage .jr-detail-section :is(input[type='date'], select) {
+        min-width: 0;
+        max-width: 100%;
+    }
+    .jr-stage .jr-command-panel dd {
+        overflow-wrap: anywhere;
+    }
+}

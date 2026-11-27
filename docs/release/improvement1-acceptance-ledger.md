@@ -38,3 +38,7 @@ A review-only milestone table proposal is in database/proposals/maintenance_mile
 ## Milestone pilot implementation
 
 Disabled by default (JAIROADS_MILESTONES_ENABLED). Candidate canonical record detail view and create/edit/cancel endpoints use existing authentication, record ownership and locked mutation authority, optimistic version checks, existing audit and notification delivery. No hard deletion of milestones; max 100 retained entries per record. Project deletion preflight rejects retained milestones before file work. Pilot writes are prohibited when permanent deletion is enabled; owner must keep all instances consistently configured and approve retention and restricted grants before activation. No schema applied to hosted data. Added disposable PostgreSQL tests for flag, creation, validation, stale edit, role denial, audit and retention. Exact-head tests pending.
+
+## Consolidated stabilization pass
+
+Applied exact CI formatting diff, reset only test session hashes when switching synthetic actors (retained forbidden assertions), unified map geometry validation to reject malformed lines, added invalid-geometry regression fixtures, small-screen control rules, oldest pending recovery evidence and bounded retry of Composer transport failures. Added reviewed-only milestone runtime grants and a release handoff matrix. None of these artifacts establish actual hosted recovery, background sync or human signoff. See docs/release/improvement1-consolidated-handoff.md.

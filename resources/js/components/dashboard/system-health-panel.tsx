@@ -12,6 +12,7 @@ export type SystemHealth = {
         pending: number;
         retried: number;
         completed: number;
+        oldest_pending_at?: string | null;
     } | null;
     checkedAt: string;
 };
@@ -53,6 +54,12 @@ export function SystemHealthPanel({ health }: { health: SystemHealth }) {
             detail: health.recoveryCounts
                 ? `${health.recoveryCounts.pending} pending · ${health.recoveryCounts.retried} previously attempted · ${health.recoveryCounts.completed} completed`
                 : 'Recovery intent table unavailable',
+        },
+        {
+            label: 'Oldest pending recovery',
+            detail: health.recoveryCounts
+                ? health.recoveryCounts.oldest_pending_at ?? 'None recorded'
+                : 'Recovery queue unavailable',
         },
         {
             label: 'Backup and restore',

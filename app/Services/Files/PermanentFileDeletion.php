@@ -35,20 +35,20 @@ final class PermanentFileDeletion
         return $this->available ??= Schema::hasTable(self::TABLE);
     }
 
-    /** @return array{pending:int,retried:int,completed:int}|null */
+    /** @return array{pending:int,retried:int,completed:int,oldest_pending_at:?string}|null */
     public function recoveryCounts(): ?array
     {
         try {
             if (! $this->available()) {
                 return null;
             }
-            $row = DB::table(self::TABLE)->selectRaw("count(*) filter (where state = 'pending') as pending, count(*) filter (where state = 'pending' and attempts > 0) as retried, count(*) filter (where state = 'completed') as completed")->first();
+            $row = DB::table(self::TABLE)->selectRaw("count(*) filter (where state = 'pending') as pending, count(*) filter (where state = 'pending' and attempts > 0) as retried, count(*) filter (where state = 'completed') as completed, min(created_at) filter (where state = 'pending') as oldest_pending_at")->first();
         } catch (QueryException) {
             // A missing or inaccessible optional recovery table must not take down the dashboard.
             return null;
         }
 
-        return $row === null ? null : ['pending' => (int) $row->pending, 'retried' => (int) $row->retried, 'completed' => (int) $row->completed];
+        return $row === null ? null : ['pending' => (int) $row->pending, 'retried' => (int) $row->retried, 'completed' => (int) $row->completed, 'oldest_pending_at' => $row->oldest_pending_at === null ? null : (string) $row->oldest_pending_at];
     }
 
     public function operationallyEnabled(): bool

@@ -10,13 +10,7 @@ export type Milestone = {
     version: number;
 };
 
-function MilestoneForm({
-    item,
-    url,
-}: {
-    item?: Milestone;
-    url: string;
-}) {
+function MilestoneForm({ item, url }: { item?: Milestone; url: string }) {
     const form = useForm({
         title: item?.title ?? '',
         planned_date: item?.planned_date ?? '',
@@ -48,7 +42,9 @@ function MilestoneForm({
                     maxLength={160}
                     className="rounded-lg border p-2"
                     value={form.data.title}
-                    onChange={(event) => form.setData('title', event.target.value)}
+                    onChange={(event) =>
+                        form.setData('title', event.target.value)
+                    }
                 />
             </label>
             <div className="grid gap-2 sm:grid-cols-2">
@@ -72,10 +68,12 @@ function MilestoneForm({
                         onChange={(event) =>
                             form.setData({
                                 ...form.data,
-                                status: event.target.value as Milestone['status'],
-                                completed_date: event.target.value === 'completed'
-                                    ? form.data.completed_date
-                                    : '',
+                                status: event.target
+                                    .value as Milestone['status'],
+                                completed_date:
+                                    event.target.value === 'completed'
+                                        ? form.data.completed_date
+                                        : '',
                             })
                         }
                     >

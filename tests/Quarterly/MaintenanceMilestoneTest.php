@@ -30,11 +30,11 @@ final class MaintenanceMilestoneTest extends PostgresTestCase
         $this->putJson($url.'/'.$milestone->id, $values + ['version' => 1])->assertUnprocessable()->assertJsonValidationErrors('version');
         $this->assertDatabaseHas('jairoads_next.maintenance_milestones', ['id' => $milestone->id, 'status' => 'completed', 'version' => 2]);
         $this->assertSame(2, DB::table('jairoads_next.audit_logs')->where('entity_type', 'MaintenanceMilestone')->count());
-        $this->actingAs($this->account('Viewer'));
+        $this->withSession(['password_hash_web' => null])->actingAs($this->account('Viewer'));
         $this->postJson($url, $values)->assertForbidden();
-        $this->actingAs($this->account('Engineer'));
+        $this->withSession(['password_hash_web' => null])->actingAs($this->account('Engineer'));
         $this->postJson($url, $values)->assertForbidden();
-        $this->actingAs($this->account('Admin'));
+        $this->withSession(['password_hash_web' => null])->actingAs($this->account('Admin'));
         $this->getJson('/workspace/ui/maintenance-projects/'.$f['project'].'/deletion-preview')->assertUnprocessable();
         config(['jairoads_file_deletion.operationally_enabled' => true]);
         $this->postJson($url, $values)->assertStatus(409);
