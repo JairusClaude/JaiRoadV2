@@ -108,7 +108,9 @@ export function SimplifiedCoverageMap({
         });
     }, [coverages]);
 
-    const hasConditions = mappedCoverages.some((item) => item.condition !== 'Unknown');
+    const hasConditions = mappedCoverages.some(
+        (item) => item.condition !== 'Unknown',
+    );
     const showConditions = conditionMode && hasConditions;
     const mappedCount = mappedCoverages.filter(
         (c) => c.lines.length > 0,
@@ -158,10 +160,13 @@ export function SimplifiedCoverageMap({
         mapRef.current = map;
 
         // Standard OpenStreetMap tile layer (identical to Road Coverage Details and Add pages)
-        const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '© OpenStreetMap contributors',
-        });
+        const tiles = L.tileLayer(
+            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap contributors',
+            },
+        );
         tilesRef.current = tiles;
         tiles.on('tileerror', () => setTilesUnavailable(true));
         tiles.addTo(map);
@@ -239,7 +244,13 @@ export function SimplifiedCoverageMap({
                         ? 'assigned'
                         : 'other';
             const lineColor = showConditions
-                ? CONDITION_COLORS[item.condition]
+                ? CONDITION_COLORS[
+                      item.condition === 'Good' ||
+                      item.condition === 'Fair' ||
+                      item.condition === 'Bad'
+                          ? item.condition
+                          : 'Unknown'
+                  ]
                 : engineerView
                   ? ROAD_COLORS[category]
                   : viewerView
@@ -332,7 +343,13 @@ export function SimplifiedCoverageMap({
 
             roadLayers.current = [];
         };
-    }, [visibleCoverages, engineerView, viewerView, dashboardView, showConditions]);
+    }, [
+        visibleCoverages,
+        engineerView,
+        viewerView,
+        dashboardView,
+        showConditions,
+    ]);
 
     useEffect(() => {
         for (const { id, line } of roadLayers.current) {
@@ -392,7 +409,9 @@ export function SimplifiedCoverageMap({
                     <input
                         type="checkbox"
                         checked={showConditions}
-                        onChange={(event) => setConditionMode(event.target.checked)}
+                        onChange={(event) =>
+                            setConditionMode(event.target.checked)
+                        }
                     />
                     Show road conditions
                 </label>
@@ -400,7 +419,8 @@ export function SimplifiedCoverageMap({
             {tilesUnavailable && (
                 <div className="jr-road-map-toolbar">
                     <span role="status">
-                        Some background tiles failed. Saved road lines remain available.
+                        Some background tiles failed. Saved road lines remain
+                        available.
                     </span>
                     <button
                         type="button"
@@ -502,11 +522,14 @@ export function SimplifiedCoverageMap({
             <div className="jr-road-map-footer">
                 <div className="jr-road-map-legend">
                     {showConditions ? (
-                        Object.entries(CONDITION_COLORS).map(([condition, color]) => (
-                            <span key={condition}>
-                                <i style={{ background: color }} /> {condition}
-                            </span>
-                        ))
+                        Object.entries(CONDITION_COLORS).map(
+                            ([condition, color]) => (
+                                <span key={condition}>
+                                    <i style={{ background: color }} />{' '}
+                                    {condition}
+                                </span>
+                            ),
+                        )
                     ) : engineerView ? (
                         <>
                             <span>

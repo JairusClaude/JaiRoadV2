@@ -140,6 +140,7 @@ export function FieldReportDraft({
                 error instanceof Error
                     ? error.message
                     : 'Unable to import draft.';
+
             if (!controller.signal.aborted) {
                 setMessage(message);
             }

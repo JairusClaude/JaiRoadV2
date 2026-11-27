@@ -290,7 +290,9 @@ export default function Create(parents: MonthlyCreateProps) {
                                                   values.project_id,
                                                   AbortSignal.any([
                                                       signal,
-                                                      AbortSignal.timeout(12_000),
+                                                      AbortSignal.timeout(
+                                                          12_000,
+                                                      ),
                                                   ]),
                                               )
                                             : null;

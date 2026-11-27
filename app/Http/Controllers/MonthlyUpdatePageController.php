@@ -194,7 +194,7 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
         $comparisonQuery = $this->updateQuery($actor)->where('m.project_id', $u->project_id)->where('u.id', '!=', $id);
         $page = max(1, $request->integer('comparison_page', 1));
         $periods = (clone $comparisonQuery)->orderByDesc('u.update_month')->orderByDesc('u.id')->simplePaginate(60, ['u.id', 'u.update_month'], 'comparison_page', $page);
-        $comparisonPeriods = $periods->getCollection()->map(static fn (\stdClass $row): array => ['id' => (int) $row->id, 'month' => (string) $row->update_month])->all();
+        $comparisonPeriods = collect($periods->items())->map(static fn (\stdClass $row): array => ['id' => (int) $row->id, 'month' => (string) $row->update_month])->all();
         $comparisonId = $request->integer('compare');
         $comparison = $comparisonId > 0 ? (clone $comparisonQuery)->where('u.id', $comparisonId)->first() : null;
         abort_if($comparisonId > 0 && $comparison === null, 404);

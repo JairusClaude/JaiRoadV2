@@ -134,7 +134,10 @@ export function JaiRoadsQuickActions() {
     const selected = selectedHref ?? results[0]?.href;
     const moveSelection = (direction: number) => {
         const index = results.findIndex((item) => item.href === selected);
-        const next = Math.max(0, Math.min(index + direction, results.length - 1));
+        const next = Math.max(
+            0,
+            Math.min(index + direction, results.length - 1),
+        );
         setSelectedHref(results[next]?.href ?? null);
     };
 
@@ -344,9 +347,12 @@ export function JaiRoadsQuickActions() {
                                         moveSelection(-1);
                                     } else if (
                                         e.key === 'Enter' &&
-                                        results.some((item) => item.href === selected)
+                                        results.some(
+                                            (item) => item.href === selected,
+                                        )
                                     ) {
                                         e.preventDefault();
+
                                         if (selected) {
                                             navigate(selected);
                                         }
@@ -386,7 +392,9 @@ export function JaiRoadsQuickActions() {
                                                 ? 'page'
                                                 : undefined
                                         }
-                                        onMouseEnter={() => setSelectedHref(href)}
+                                        onMouseEnter={() =>
+                                            setSelectedHref(href)
+                                        }
                                         onClick={() => navigate(href)}
                                     >
                                         <Icon size={18} aria-hidden="true" />

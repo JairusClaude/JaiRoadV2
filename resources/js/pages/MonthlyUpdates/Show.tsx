@@ -239,7 +239,24 @@ export default function Show({
                                 <button
                                     type="button"
                                     disabled={comparisonPage <= 1}
-                                    onClick={() => router.get(workspaceHref(`/monthly-updates/${update.id}`), { comparison_page: comparisonPage - 1, ...(comparisonPeriod ? { compare: comparisonPeriod.id } : {}) }, { preserveScroll: true })}
+                                    onClick={() =>
+                                        router.get(
+                                            workspaceHref(
+                                                `/monthly-updates/${update.id}`,
+                                            ),
+                                            {
+                                                comparison_page:
+                                                    comparisonPage - 1,
+                                                ...(comparisonPeriod
+                                                    ? {
+                                                          compare:
+                                                              comparisonPeriod.id,
+                                                      }
+                                                    : {}),
+                                            },
+                                            { preserveScroll: true },
+                                        )
+                                    }
                                 >
                                     Newer reporting periods
                                 </button>
@@ -247,7 +264,24 @@ export default function Show({
                                 <button
                                     type="button"
                                     disabled={!comparisonHasMore}
-                                    onClick={() => router.get(workspaceHref(`/monthly-updates/${update.id}`), { comparison_page: comparisonPage + 1, ...(comparisonPeriod ? { compare: comparisonPeriod.id } : {}) }, { preserveScroll: true })}
+                                    onClick={() =>
+                                        router.get(
+                                            workspaceHref(
+                                                `/monthly-updates/${update.id}`,
+                                            ),
+                                            {
+                                                comparison_page:
+                                                    comparisonPage + 1,
+                                                ...(comparisonPeriod
+                                                    ? {
+                                                          compare:
+                                                              comparisonPeriod.id,
+                                                      }
+                                                    : {}),
+                                            },
+                                            { preserveScroll: true },
+                                        )
+                                    }
                                 >
                                     Older reporting periods
                                 </button>

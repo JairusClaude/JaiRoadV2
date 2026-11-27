@@ -955,8 +955,13 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     await engineer.getByLabel(/I understand that the draft/).check();
     await engineer.getByLabel(/^Draft passphrase/).fill(passphrase);
     let releaseImportChoices;
-    const importChoicesGate = new Promise(resolve => { releaseImportChoices = resolve; });
-    const delayedImportChoices = async route => { await importChoicesGate; await route.continue(); };
+    const importChoicesGate = new Promise(resolve => {
+        releaseImportChoices = resolve;
+    });
+    const delayedImportChoices = async route => {
+        await importChoicesGate;
+        await route.continue();
+    };
     await engineer.route('**/monthly-updates/form-choices?project=*', delayedImportChoices);
     await engineer.getByLabel('Import field report draft file').setInputFiles({ name: 'draft.json', mimeType: 'application/json', buffer: encryptedDraft });
     await engineer.getByText('Processing draft…', { exact: true }).waitFor();
