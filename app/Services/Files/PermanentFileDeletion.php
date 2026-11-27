@@ -34,6 +34,18 @@ final class PermanentFileDeletion
         return $this->available ??= Schema::hasTable(self::TABLE);
     }
 
+    /** @return array{pending:int,retried:int,completed:int}|null */
+    public function recoveryCounts(): ?array
+    {
+        if (! $this->available()) {
+            return null;
+        }
+
+        $row = DB::table(self::TABLE)->selectRaw("count(*) filter (where state = 'pending') as pending, count(*) filter (where state = 'pending' and attempts > 0) as retried, count(*) filter (where state = 'completed') as completed")->first();
+
+        return $row === null ? null : ['pending' => (int) $row->pending, 'retried' => (int) $row->retried, 'completed' => (int) $row->completed];
+    }
+
     public function operationallyEnabled(): bool
     {
         return $this->available() && config('jairoads_file_deletion.operationally_enabled') === true;

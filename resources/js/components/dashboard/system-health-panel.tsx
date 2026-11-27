@@ -8,6 +8,7 @@ export type SystemHealth = {
         shared_cache_configured: boolean;
         registration_allowed: boolean;
     };
+    recoveryCounts?: { pending: number; retried: number; completed: number } | null;
     checkedAt: string;
 };
 
@@ -42,6 +43,12 @@ export function SystemHealthPanel({ health }: { health: SystemHealth }) {
             detail: health.recovery.shared_cache_configured
                 ? 'Compatible driver configured · lock unverified'
                 : 'Shared lock driver not configured',
+        },
+        {
+            label: 'File recovery queue',
+            detail: health.recoveryCounts
+                ? `${health.recoveryCounts.pending} pending · ${health.recoveryCounts.retried} previously attempted · ${health.recoveryCounts.completed} completed`
+                : 'Recovery intent table unavailable',
         },
         {
             label: 'Backup and restore',

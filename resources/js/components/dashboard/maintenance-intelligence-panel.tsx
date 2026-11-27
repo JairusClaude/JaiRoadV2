@@ -7,6 +7,15 @@ export type MaintenanceIntelligenceSummary = {
     noCurrentReport: number;
     pastEstimate: number;
     ongoingCount: number;
+    priority: {
+        id: number;
+        roadName: string;
+        condition: string;
+        conditionScore: number;
+        overdueScore: number;
+        reportScore: number;
+        score: number;
+    }[];
     calendar: {
         id: number;
         projectTitle: string;
@@ -41,6 +50,11 @@ function downloadCalendar(items: MaintenanceIntelligenceSummary['calendar']) {
         'DTSTART;VALUE=DATE:' + item.estimatedFinish.replaceAll('-', ''),
         'SUMMARY:' + escape('Estimated finish: ' + item.projectTitle),
         'DESCRIPTION:Estimated date only. Confirm the official schedule before acting.',
+        'BEGIN:VALARM',
+        'TRIGGER:-P1D',
+        'ACTION:DISPLAY',
+        'DESCRIPTION:Review estimated maintenance finish date',
+        'END:VALARM',
         'END:VEVENT',
     ]);
     const url = URL.createObjectURL(
@@ -186,6 +200,34 @@ export function MaintenanceIntelligencePanel({
             </ul>
             {data.calendar.length === 0 && (
                 <p className="mt-2 text-sm">No ongoing maintenance records.</p>
+            )}
+            <h3 className="mt-5 font-semibold">Road review priority</h3>
+            <p className="text-sm text-slate-500">
+                Provisional review index: bad condition 60, fair 30, overdue
+                estimate 25, missing current report 15. No safety risk or
+                maintenance authorization is inferred. Showing up to 12 roads
+                with positive scores.
+            </p>
+            <ul className="mt-3 space-y-2">
+                {data.priority.map((road) => (
+                    <li
+                        key={road.id}
+                        className="rounded-lg border border-slate-200 p-3"
+                    >
+                        <strong className="break-words">
+                            {road.roadName} · {road.score}/100
+                        </strong>
+                        <p className="text-sm text-slate-600">
+                            {road.condition}: {road.conditionScore} · Overdue:{' '}
+                            {road.overdueScore} · Missing report: {road.reportScore}
+                        </p>
+                    </li>
+                ))}
+            </ul>
+            {data.priority.length === 0 && (
+                <p className="mt-2 text-sm">
+                    No roads match the current review indicators.
+                </p>
             )}
             <PriorityScenario />
         </section>

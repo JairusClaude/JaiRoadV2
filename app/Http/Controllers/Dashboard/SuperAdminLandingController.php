@@ -12,6 +12,7 @@ use App\Services\AuditActorIdentifier;
 use App\Services\DashboardAnalytics;
 use App\Services\Documents\PrivateSupabaseStorage;
 use App\Services\Files\FileRecoverySchedule;
+use App\Services\Files\PermanentFileDeletion;
 use App\Services\MaintenanceIntelligence;
 use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
 use Carbon\CarbonImmutable;
@@ -121,6 +122,7 @@ final class SuperAdminLandingController extends Controller
                 'documentStorageConfigured' => app(PrivateSupabaseStorage::class)->configured(),
                 'mediaStorageConfigured' => app(PrivateMonthlyMediaStorage::class)->configured(),
                 'recovery' => FileRecoverySchedule::readiness(),
+                'recoveryCounts' => app(PermanentFileDeletion::class)->recoveryCounts(),
                 'checkedAt' => now()->utc()->toIso8601String(),
             ],
             'analytics' => app(DashboardAnalytics::class)->summary($identity),

@@ -201,7 +201,14 @@ export function JaiRoadsQuickActions() {
             return;
         }
 
+        const previous = document.activeElement;
         inputRef.current?.focus();
+
+        return () => {
+            if (previous instanceof HTMLElement && previous.isConnected) {
+                previous.focus();
+            }
+        };
     }, [open]);
 
     useEffect(() => {
@@ -277,6 +284,27 @@ export function JaiRoadsQuickActions() {
                         role="dialog"
                         aria-modal="true"
                         aria-label="Quick navigation"
+                        onKeyDown={(event) => {
+                            if (event.key !== 'Tab') {
+                                return;
+                            }
+
+                            const controls = Array.from(
+                                event.currentTarget.querySelectorAll<HTMLElement>(
+                                    'button:not(:disabled), input:not(:disabled)',
+                                ),
+                            );
+                            const first = controls[0];
+                            const last = controls[controls.length - 1];
+
+                            if (event.shiftKey && document.activeElement === first) {
+                                event.preventDefault();
+                                last?.focus();
+                            } else if (!event.shiftKey && document.activeElement === last) {
+                                event.preventDefault();
+                                first?.focus();
+                            }
+                        }}
                     >
                         <div className="jr-command-search-row">
                             <Search size={19} aria-hidden="true" />
