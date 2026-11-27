@@ -152,3 +152,24 @@ it('checks an uncertain report period without writing or exposing report content
     $this->getJson($url.'&update_month=2026-01')->assertNotFound();
     expect(DB::table('jairoads_next.monthly_updates')->count())->toBe(2);
 });
+
+it('keeps older comparison periods reachable and clamps excessive page numbers', function (): void {
+    $older = ($this->report)('2000-01', '2028-01-01 00:00:00');
+    for ($i = 0; $i < 64; $i++) {
+        ($this->report)(sprintf('%04d-%02d', 2001 + intdiv($i, 12), $i % 12 + 1), '2028-01-01 00:00:00');
+    }
+    $url = '/workspace/ui/monthly-updates/'.$this->december;
+    $this->get($url.'?compare='.$older)->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('comparisonPage', 1)->where('comparisonHasMore', true)
+        ->has('comparisonPeriods', 61)->where('comparisonPeriods.0.id', $older)
+        ->where('comparisonPeriod.id', $older)->missing('comparisonPeriods.0.summary_of_text_reports'));
+    $this->get($url.'?comparison_page=999999999&compare='.$older)->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('comparisonPage', 2)->where('comparisonHasMore', false)
+        ->has('comparisonPeriods', 6)->where('comparisonPeriod.id', $older));
+    $other = $this->fixture('Engineer');
+    $otherRecord = (int) DB::table('jairoads_next.maintenance_records')->insertGetId(
+        $this->recordData($other['project'], $other['engineer']) + ['created_by' => $other['user']->canonical_user_account_id]
+    );
+    $foreign = ($this->report)('2000-01', '2028-01-01 00:00:00', $otherRecord);
+    $this->withSession(['password_hash_web' => null])->actingAs($this->f['user'])->get($url.'?compare='.$foreign)->assertNotFound();
+});

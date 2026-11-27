@@ -348,14 +348,15 @@ class OperationsFrontendController extends Controller
     }
 
     /** @param Actor $actor */
-    protected function updateQuery(array $actor): Builder
+    protected function updateQuery(array $actor, bool $includeSummary = true): Builder
     {
         return $this->scope(DB::table('jairoads_next.monthly_updates as u')
             ->join('jairoads_next.maintenance_records as m', 'm.id', '=', 'u.maintenance_id')
             ->join('jairoads_next.maintenance_projects as p', 'p.id', '=', 'm.project_id')
             ->join('jairoads_next.road_coverages as rc', 'rc.id', '=', 'p.road_coverage_id')
             ->join('jairoads_next.user_accounts as a', 'a.id', '=', 'u.created_by'), $actor)
-            ->select(['u.*', 'm.project_id', 'm.maintenance_year', 'm.quarter', 'm.managing_engineer_id', 'p.project_title', 'a.username as creator_name'])
+            ->select($includeSummary ? ['u.*'] : ['u.id', 'u.maintenance_id', 'u.update_month', 'u.progress_percentage', 'u.created_at', 'u.updated_at'])
+            ->addSelect(['m.project_id', 'm.maintenance_year', 'm.quarter', 'm.managing_engineer_id', 'p.project_title', 'a.username as creator_name'])
             ->selectSub(DB::table('jairoads_next.media as c')->selectRaw('count(*)')->whereColumn('c.monthly_update_id', 'u.id'), 'media_count')
             ->selectSub(DB::table('jairoads_next.media as c')->selectRaw('count(*)')->whereColumn('c.monthly_update_id', 'u.id')->where('c.file_type', 'like', 'image/%'), 'photo_count')
             ->selectSub(DB::table('jairoads_next.media as c')->selectRaw('count(*)')->whereColumn('c.monthly_update_id', 'u.id')->where('c.file_type', 'like', 'video/%'), 'video_count');
@@ -364,10 +365,11 @@ class OperationsFrontendController extends Controller
     /** @param Actor $actor
      * @return array<string,mixed>
      */
-    protected function updateData(\stdClass $u, array $actor): array
+    protected function updateData(\stdClass $u, array $actor, bool $includeSummary = true): array
     {
         return ['id' => (int) $u->id, 'maintenance_id' => (int) $u->maintenance_id, 'update_month' => $u->update_month,
-            'progress_percentage' => (float) $u->progress_percentage, 'summary_of_text_reports' => $u->summary_of_text_reports,
+            'progress_percentage' => (float) $u->progress_percentage,
+            ...($includeSummary ? ['summary_of_text_reports' => $u->summary_of_text_reports] : []),
             'created_by' => $u->creator_name, 'created_at' => $u->created_at, 'updated_at' => $u->updated_at,
             'project' => ['id' => (int) $u->project_id, 'project_title' => $u->project_title],
             'record' => ['id' => (int) $u->maintenance_id, 'year' => (int) $u->maintenance_year, 'quarter' => $u->quarter],
@@ -397,9 +399,10 @@ class OperationsFrontendController extends Controller
     /** @param Actor $actor
      * @return array<int,array<string,mixed>>
      */
-    protected function mediaData(int $update, array $actor): array
+    protected function mediaData(int $update, array $actor, bool $photosOnly = false): array
     {
-        return DB::table('jairoads_next.media')->where('monthly_update_id', $update)->orderBy('id')
+        return DB::table('jairoads_next.media')->where('monthly_update_id', $update)
+            ->when($photosOnly, fn (Builder $q) => $q->where('file_type', 'like', 'image/%'))->orderBy('id')
             ->get(['id', 'file_name', 'file_type'])->map(fn (\stdClass $m): array => [
                 'id' => (int) $m->id, 'file_name' => (string) $m->file_name, 'mime_type' => (string) $m->file_type, 'size' => null,
                 'available' => $this->media->configured(), 'preview_url' => $this->media->configured() ? '/workspace/files/media/'.$m->id : null,
@@ -409,7 +412,7 @@ class OperationsFrontendController extends Controller
     }
 
     /** @param Actor $actor */
-    protected function documentQuery(array $actor): Builder
+    protected function documentQuery(array $actor, bool $includeDescription = true): Builder
     {
         return $this->scope(DB::table('jairoads_next.maintenance_documents as d')
             ->join('jairoads_next.maintenance_records as m', 'm.id', '=', 'd.maintenance_id')
@@ -417,17 +420,18 @@ class OperationsFrontendController extends Controller
             ->join('jairoads_next.road_coverages as rc', 'rc.id', '=', 'p.road_coverage_id')
             ->join('jairoads_next.lgus as l', 'l.id', '=', 'rc.lgu_id')
             ->join('jairoads_next.user_accounts as a', 'a.id', '=', 'd.uploaded_by'), $actor)
-            ->select(['d.id', 'd.maintenance_id', 'd.document_title', 'd.description', 'd.file_name', 'd.file_path', 'd.uploaded_at', 'd.updated_at',
-                'm.project_id', 'm.maintenance_year', 'm.quarter', 'm.managing_engineer_id', 'p.project_title', 'l.municipality_name', 'a.username as uploader_name']);
+            ->select(['d.id', 'd.maintenance_id', 'd.document_title', 'd.file_name', 'd.file_path', 'd.uploaded_at', 'd.updated_at',
+                'm.project_id', 'm.maintenance_year', 'm.quarter', 'm.managing_engineer_id', 'p.project_title', 'l.municipality_name', 'a.username as uploader_name'])
+            ->when($includeDescription, fn (Builder $q) => $q->addSelect('d.description'));
     }
 
     /** @param Actor $actor
      * @return array<string,mixed>
      */
-    protected function documentData(\stdClass $d, array $actor): array
+    protected function documentData(\stdClass $d, array $actor, bool $includeDescription = true): array
     {
         return ['id' => (int) $d->id, 'maintenance_id' => (int) $d->maintenance_id, 'document_title' => $d->document_title,
-            'description' => $d->description, 'file_name' => $d->file_name, 'uploaded_by' => $d->uploader_name,
+            ...($includeDescription ? ['description' => $d->description] : []), 'file_name' => $d->file_name, 'uploaded_by' => $d->uploader_name,
             'uploaded_at' => $d->uploaded_at, 'updated_at' => $d->updated_at, 'available' => $d->file_path !== '' && $this->documents->configured(),
             'delete_url' => RoleAccess::managesBusinessData($actor['role']) && ($d->file_path === '' || $this->fileDeletions->operationallyEnabled()) ? '/workspace/ui/maintenance-documents/bulk' : null,
             'download_url' => $d->file_path !== '' ? '/workspace/files/document/'.$d->id : null, 'can_edit' => $this->canWriteRecord($d, $actor),

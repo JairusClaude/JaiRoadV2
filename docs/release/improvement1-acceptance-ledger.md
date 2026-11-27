@@ -22,6 +22,8 @@ Commit `57212e54d79e70bd48b536ae3a45ce0eb25869d5`: standard CI (45952094657), fo
 
 The next candidate adds stored road-condition visualization to the Engineer dashboard map, a read-only authenticated report-period outcome lookup (not an idempotent receipt), last observed recovery batch aggregates in SuperAdmin health, and stronger multi-page report history tests. The batch telemetry is optional cached evidence for up to seven days; manual and scheduled invocations cannot be distinguished from it alone. An absent report or absent execution observation is not proof that a request did not execute. No flags, production credentials, schemas, or Storage objects are changed.
 
+Commit `b2ddbed0220ee9269da652fd24685ffc9525d6f4` passed both focused regressions (45952720970, 45952727109), both disposable rehearsals (45952720902, 45952727075), and PR standard CI (45952727133). The branch full-system repository checks completed successfully at inspection; unified browser and Docker were still running. The next candidate clamps comparison pages, projects only ID/month, filters comparison photos in SQL, omits long detail text from record history, and adds synthetic history measurements and cross-project comparison tests. Fresh exact-head verification remains required.
+
 ## Outstanding
 
 - Benchmark representative large data and verify the new record-history and monthly-choice pagination; exceptionally large single-record reporting-month collections remain unbounded.

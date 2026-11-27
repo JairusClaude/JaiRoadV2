@@ -64,6 +64,7 @@ final class UnifiedFrontendTest extends PostgresTestCase
             DB::table('jairoads_next.maintenance_documents')->insert([
                 'maintenance_id' => $record,
                 'document_title' => 'History '.$i,
+                'description' => str_repeat('Synthetic document. ', 100),
                 'file_name' => 'seed.pdf',
                 'file_path' => 'maintenance-records/'.$record.'/00000000-0000-4000-8000-'.str_pad((string) $i, 12, '0', STR_PAD_LEFT).'.pdf',
                 'uploaded_by' => $f['user']->canonical_user_account_id,
@@ -75,6 +76,7 @@ final class UnifiedFrontendTest extends PostgresTestCase
             ->has('documents', 12)->where('documentPagination.total', 13)
             ->where('documentPagination.page', 1)->where('updatePagination.total', 25)
             ->has('updates', 12)->where('updates.0.update_month', '2028-12')
+            ->missing('updates.0.summary_of_text_reports')->missing('documents.0.description')
             ->where('checkpointMonths.0', '2026-10')->where('checkpointMonths.2', '2026-10')
             ->where('checkpointMonths.3', null));
         $this->get($url.'?document_page=999&update_page=999')->assertOk()->assertInertia(fn (Assert $page) => $page
@@ -83,6 +85,11 @@ final class UnifiedFrontendTest extends PostgresTestCase
             ->has('updates', 1)->where('updatePagination.page', 3)
             ->where('updates.0.update_month', '2026-10')
             ->where('checkpointMonths.2', '2026-10'));
+        $this->get(self::UI.'/monthly-updates/'.$update)->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('update.summary_of_text_reports'));
+        $document = (int) DB::table('jairoads_next.maintenance_documents')->where('maintenance_id', $record)->orderBy('id')->value('id');
+        $this->get(self::UI.'/maintenance-documents/'.$document)->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('document.description', str_repeat('Synthetic document. ', 100)));
     }
 
     public function test_dashboard_map_distinguishes_project_creator_and_record_assignment(): void

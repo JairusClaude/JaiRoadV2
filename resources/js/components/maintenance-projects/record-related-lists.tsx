@@ -33,7 +33,11 @@ import type { DocumentSummary } from '@/types/maintenance-documents';
 import type { MonthlyUpdateSummary } from '@/types/monthly-updates';
 import '../../../css/maintenance-record-related.css';
 
-export type RelatedMonthlyUpdate = MonthlyUpdateSummary & {
+export type RelatedDocument = Omit<DocumentSummary, 'description'>;
+export type RelatedMonthlyUpdate = Omit<
+    MonthlyUpdateSummary,
+    'summary_of_text_reports'
+> & {
     photo_count: number;
     video_count: number;
     other_count: number;
@@ -190,7 +194,7 @@ export function RecordRelatedLists({
     recordId: number;
     monthlyUpdateCreateUrl?: string;
     updates: RelatedMonthlyUpdate[];
-    documents: DocumentSummary[];
+    documents: RelatedDocument[];
     documentPagination?: RelatedPagination;
     updatePagination?: RelatedPagination;
 }) {

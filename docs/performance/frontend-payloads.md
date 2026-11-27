@@ -37,6 +37,8 @@ The raw file also includes 1, 100 and 1000 roads. The one-LGU benchmark does not
 
 Maintenance record details now return at most 12 monthly updates and 12 documents per page while preserving total counts and earliest progress checkpoints across the complete history. Monthly report selection pages return 25 record choices plus at most one selected historical record, and request reporting-month keys only for that record. The regression fixture now exercises multiple report and document pages. These are structural bounds and regression assertions, not new measured latency or memory figures. The table above describes Repair 5A only; collect new same-fixture samples before claiming a speedup.
 
+The next candidate also omits the unused long report and document text from record-history list queries and returns full text on the individual detail routes. Comparison pages clamp out-of-range values, explicitly project only report ID/month, and query only image attachments for the comparison side. `HistoryPayloadMeasurementsTest.php` emits actual synthetic 1/100/1000-row observations in the focused PostgreSQL workflow logs (three warmed requests each) and asserts row bounds, exact totals, and omission of detail text. No new figures are claimed until the job runs successfully.
+
 ## Verification
 
 `LeanFormChoicesTest.php` proves all 110 authorized projects/periods remain present, the last fixed record is selectable, unauthorized fixed contexts fail, report uniqueness data is parent-scoped, batched manager eligibility is unchanged, and all 300 history rows remain reachable with complete descriptions on the detail route. Existing canonical, password, authorization and real browser suites remain enabled.

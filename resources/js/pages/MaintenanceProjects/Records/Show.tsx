@@ -10,6 +10,7 @@ import type { Milestone } from '@/components/maintenance-projects/record-milesto
 import { RecordProgressTimeline } from '@/components/maintenance-projects/record-progress-timeline';
 import { RecordRelatedLists } from '@/components/maintenance-projects/record-related-lists';
 import type {
+    RelatedDocument,
     RelatedMonthlyUpdate,
     RelatedPagination,
 } from '@/components/maintenance-projects/record-related-lists';
@@ -18,7 +19,6 @@ import { editUrl } from '@/lib/form-navigation';
 import { engineerName, validRecordDate } from '@/lib/maintenance-records';
 import { manilaTimestamp } from '@/lib/manila-time';
 import { workspaceHref } from '@/lib/workspace-navigation';
-import type { DocumentSummary } from '@/types/maintenance-documents';
 import type { ProjectSummary } from '@/types/maintenance-projects';
 import type { MaintenanceRecordDetail } from '@/types/maintenance-records';
 
@@ -46,7 +46,7 @@ export default function ShowRecord({
     project: ProjectSummary;
     record: MaintenanceRecordDetail;
     monthlyUpdateCreateUrl?: string;
-    documents?: DocumentSummary[];
+    documents?: RelatedDocument[];
     updates?: RelatedMonthlyUpdate[];
     documentPagination?: RelatedPagination;
     updatePagination?: RelatedPagination;
