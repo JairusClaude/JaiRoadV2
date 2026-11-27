@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { editUrl } from '@/lib/form-navigation';
+import { validRoadPage } from '@/lib/road-coverages/road-page';
 import { workspaceHref } from '@/lib/workspace-navigation';
 import type {
     RoadCoverageDirectoryProps,
@@ -151,7 +152,7 @@ export default function Index({
 
                 const result = await response.json();
 
-                if (!Array.isArray(result.data)) {
+                if (!validRoadPage(result, null, 'descending')) {
                     throw new Error('Unexpected map response');
                 }
 
@@ -183,7 +184,7 @@ export default function Index({
     }, [coverages, mapAttempt, mapDeferred, mapQuery]);
 
     const loadMoreMap = async () => {
-        if (mapCursor === null || mapLoading) {
+        if (mapCursor === null || mapLoading || mapRequest.current) {
             return;
         }
 
@@ -213,7 +214,7 @@ export default function Index({
                 next_cursor: number | null;
             };
 
-            if (!Array.isArray(result.data)) {
+            if (!validRoadPage(result, mapCursor, 'descending')) {
                 throw new Error('Unexpected map response.');
             }
 

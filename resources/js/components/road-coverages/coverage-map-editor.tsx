@@ -31,6 +31,7 @@ import {
     samePoint,
 } from '@/lib/road-coverages/geometry.mjs';
 import type { Point } from '@/lib/road-coverages/geometry.mjs';
+import { validRoadPage } from '@/lib/road-coverages/road-page';
 import { savedRoadLines } from '@/lib/road-coverages/saved-lines';
 import type { RoadCoverageReference } from '@/types/road-coverages';
 import { CoverageMapPreview } from './coverage-map-preview';
@@ -169,6 +170,7 @@ function EditableCoverageMapEditor({
     >([]);
     const [referenceState, setReferenceState] = useState('idle');
     const [referenceNotice, setReferenceNotice] = useState('');
+    const [referenceAttempt, retryReferences] = useState(0);
     const [draft, setDraft] = useState<Draft>(() => {
         const data = mappingData(initial);
 
@@ -1171,6 +1173,11 @@ function EditableCoverageMapEditor({
 
                 try {
                     let cursor: number | null = null;
+                    let limited = false;
+                    const deadline = AbortSignal.any([
+                        signal,
+                        AbortSignal.timeout(15_000),
+                    ]);
 
                     do {
                         if (cursor !== null) {
@@ -1179,12 +1186,16 @@ function EditableCoverageMapEditor({
 
                         const response = await fetch(
                             `${referenceUrl}?${params}`,
-                            { signal, headers: { Accept: 'application/json' } },
+                            {
+                                signal: deadline,
+                                headers: { Accept: 'application/json' },
+                                cache: 'no-store',
+                            },
                         );
 
                         if (!response.ok) {
                             throw new Error(
-                                'Reference roads could not be loaded. Pan the map to retry.',
+                                'Reference roads could not be loaded. Retry or pan the map.',
                             );
                         }
 
@@ -1192,15 +1203,29 @@ function EditableCoverageMapEditor({
                             data: RoadCoverageReference[];
                             next_cursor: number | null;
                         } = await response.json();
-                        roads.push(...page.data);
+                        if (!validRoadPage(page, cursor, 'ascending')) {
+                            throw new Error('Invalid reference-road response.');
+                        }
+
+                        const remaining = 1000 - roads.length;
+                        roads.push(...page.data.slice(0, remaining));
+                        limited = page.data.length > remaining;
                         cursor = page.next_cursor;
-                    } while (cursor !== null && !signal.aborted);
+                    } while (
+                        cursor !== null &&
+                        roads.length < 1000 &&
+                        !signal.aborted
+                    );
 
                     if (!signal.aborted) {
                         setLoadedReferences(roads);
-                        setReferenceState('ready');
+                        setReferenceState(
+                            cursor === null && !limited ? 'ready' : 'limited',
+                        );
                         setReferenceNotice(
-                            `${roads.length} reference roads loaded for this view.`,
+                            cursor === null && !limited
+                                ? `${roads.length} reference roads loaded for this view.`
+                                : `Showing ${roads.length} reference roads. Zoom in for remaining roads.`,
                         );
                     }
                 } catch (error) {
@@ -1223,7 +1248,7 @@ function EditableCoverageMapEditor({
             clearTimeout(timer);
             instance.off('moveend', refresh);
         };
-    }, [referenceUrl, municipality, all, showRoads]);
+    }, [referenceUrl, municipality, all, showRoads, referenceAttempt]);
 
     useEffect(() => {
         const layer = references.current;
@@ -1981,6 +2006,17 @@ function EditableCoverageMapEditor({
                         >
                             <strong>Saved road references</strong>
                             <p>{referenceNotice}</p>
+                            {referenceState === 'error' && (
+                                <button
+                                    type="button"
+                                    className="font-semibold underline"
+                                    onClick={() =>
+                                        retryReferences((attempt) => attempt + 1)
+                                    }
+                                >
+                                    Retry reference roads
+                                </button>
+                            )}
                             <small>
                                 These are existing road coverages returned by
                                 the server for the current map area. They are

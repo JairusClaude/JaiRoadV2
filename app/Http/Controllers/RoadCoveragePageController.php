@@ -191,7 +191,7 @@ final class RoadCoveragePageController extends OperationsFrontendController
         ]);
         $q = $this->scope(DB::table('jairoads_next.road_coverages as rc'), $actor)
             ->when(isset($v['lgu_id']), fn (Builder $q) => $q->where('rc.lgu_id', $v['lgu_id']))
-            ->when(! empty($v['q']), fn (Builder $q) => $q->where('rc.road_name', 'ilike', '%'.$v['q'].'%'))
+            ->when(! empty($v['q']), fn (Builder $q) => $q->where('rc.road_name', 'ilike', LiteralDirectorySearch::pattern($v['q'])))
             ->where('rc.id', '>', $v['after'] ?? 0);
         RoadReferenceBounds::apply($q, (float) $v['west'], (float) $v['south'], (float) $v['east'], (float) $v['north']);
         $rows = $q->orderBy('rc.id')->limit(101)->get(['rc.id', 'rc.road_name', 'rc.lgu_id', 'rc.kilometers', 'rc.pavement_type', 'rc.state_category', 'rc.geojson']);

@@ -128,7 +128,7 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with: { node-version: '22', cache: npm }
       - run: |
-          composer install --no-interaction --prefer-dist
+          bash scripts/ci/install-composer.sh
           npm ci
           touch .env
           php artisan wayfinder:generate --with-form
@@ -203,7 +203,7 @@ jobs:
         with: { persist-credentials: false }
       - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
         with: { php-version: '8.4', extensions: 'pdo_pgsql, mbstring', tools: 'composer:v2', coverage: none }
-      - run: composer install --no-interaction --prefer-dist
+      - run: bash scripts/ci/install-composer.sh
       - run: touch .env
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with: { node-version: '22', cache: npm }
@@ -243,7 +243,7 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with: { node-version: '22' }
       - run: |
-          composer install --no-interaction --prefer-dist
+          bash scripts/ci/install-composer.sh
           touch .env
           php tests/Browser/prepare-system.php > "$QUARTERLY_BROWSER_FIXTURE"
       - name: Build production image without database initialization
@@ -358,7 +358,7 @@ jobs:
         with: { node-version: '22', cache: npm }
       - name: Build real application and prepare guarded disposable fixture
         run: |
-          composer install --no-interaction --prefer-dist
+          bash scripts/ci/install-composer.sh
           npm ci
           touch .env
           npm run build
@@ -419,7 +419,7 @@ jobs:
         with: { node-version: '22', cache: npm }
       - name: Build real application and prepare guarded disposable fixture
         run: |
-          composer install --no-interaction --prefer-dist
+          bash scripts/ci/install-composer.sh
           npm ci
           touch .env
           npm run build

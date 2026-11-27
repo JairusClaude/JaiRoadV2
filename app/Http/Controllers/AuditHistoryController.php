@@ -64,7 +64,7 @@ final class AuditHistoryController extends Controller
         $this->dates($query, $v, 'activity', 'audit.created_at');
         $direction = ($v['activity_order'] ?? 'newest') === 'oldest' ? 'asc' : 'desc';
         $events = BoundedDirectoryPage::paginate($query->orderBy('audit.created_at', $direction)->orderBy('audit.id', $direction), $request, 25, ['audit.id', 'audit.user_id', 'audit.actor_identifier', 'audit.action', 'audit.entity_type', 'audit.entity_id', 'audit.description',
-                'audit.old_value', 'audit.new_value', 'audit.recipient_user_id', 'audit.notification_message', 'audit.created_at', 'account.account_type as current_account_type'])
+            'audit.old_value', 'audit.new_value', 'audit.recipient_user_id', 'audit.notification_message', 'audit.created_at', 'account.account_type as current_account_type'])
             ->withPath($request->getPathInfo())->withQueryString()->through(function (\stdClass $row): array {
                 $row->description = AuditActorIdentifier::description($row->description);
                 foreach (['old_value', 'new_value'] as $field) {
