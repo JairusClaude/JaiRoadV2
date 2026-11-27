@@ -68,7 +68,12 @@ final class MaintenanceDocumentPageController extends OperationsFrontendControll
         abort_if($id !== null && $d === null, 404);
         abort_if($d !== null && ! $this->canWriteRecord($d, $actor), 403);
 
-        return $this->render('MaintenanceDocuments/Form', $request, $this->parents($actor, $request, $d === null ? null : (int) $d->maintenance_id) + [
+        $context = $d === null ? ($request->integer('maintenance_id', $request->integer('record')) ?: null) : (int) $d->maintenance_id;
+        $parents = $context === null
+            ? ['projects' => [], 'records' => [], 'contextRecordId' => null, 'canWrite' => true, 'formChoicesUrl' => self::BASE.'/monthly-updates/form-choices']
+            : $this->parents($actor, $request, $context);
+
+        return $this->render('MaintenanceDocuments/Form', $request, $parents + [
             'document' => $d === null ? null : $this->documentData($d, $actor),
             'submitUrl' => self::BASE.'/maintenance-documents'.($id === null ? '' : '/'.$id),
             'cancelUrl' => self::BASE.'/maintenance-documents'.($id === null ? '' : '/'.$id),

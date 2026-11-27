@@ -1,6 +1,6 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { DocumentAttachment } from '@/components/maintenance-documents/document-file';
 import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialog';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
@@ -19,6 +19,17 @@ import { editUrl, formReturn } from '@/lib/form-navigation';
 import { documentFileError } from '@/lib/maintenance-documents';
 import { workspaceHref } from '@/lib/workspace-navigation';
 import type { DocumentParents } from '@/types/maintenance-documents';
+import type {
+    MonthlyParentProject,
+    MonthlyParentRecord,
+} from '@/types/monthly-updates';
+
+type RecordChoices = {
+    project: MonthlyParentProject;
+    records: MonthlyParentRecord[];
+    recordPage: number;
+    recordHasMore: boolean;
+};
 
 type Values = {
     project_id: string;
@@ -56,13 +67,83 @@ export default function Form(parents: DocumentParents) {
         remove_attachment: false,
     });
     const lock = useRef(false);
-    const project = parents.projects.find(
-        (p) => String(p.id) === form.data.project_id,
+    const { formChoicesUrl } = parents;
+    const projectId = form.data.project_id;
+    const [recordPage, setRecordPage] = useState(1);
+    const [attempt, retryChoices] = useState(0);
+    const [choices, setChoices] = useState<{
+        key: string;
+        data?: RecordChoices;
+    } | null>(null);
+    const choiceKey = JSON.stringify([projectId, recordPage, attempt]);
+    const current = choices?.key === choiceKey ? choices : null;
+    const loading = Boolean(formChoicesUrl && projectId && !current);
+    const currentPage = current?.data?.recordPage ?? 1;
+    const hasMore = current?.data?.recordHasMore ?? false;
+    const failed = Boolean(
+        formChoicesUrl && projectId && current && !current.data,
     );
-    const record = parents.records.find(
-        (r) => String(r.id) === form.data.maintenance_id,
-    );
-    const options = parents.records
+
+    useEffect(() => {
+        if (!formChoicesUrl || !projectId) {
+            return;
+        }
+
+        const controller = new AbortController();
+        const params = new URLSearchParams({
+            project: projectId,
+            record_page: String(recordPage),
+        });
+        void fetch(`${formChoicesUrl}?${params}`, {
+            headers: { Accept: 'application/json' },
+            cache: 'no-store',
+            signal: AbortSignal.any([
+                controller.signal,
+                AbortSignal.timeout(12_000),
+            ]),
+        })
+            .then(async (response) => {
+                if (!response.ok) {
+                    throw new Error('Record choices unavailable');
+                }
+
+                const data: RecordChoices = await response.json();
+
+                if (
+                    String(data.project?.id) !== projectId ||
+                    !Array.isArray(data.records) ||
+                    data.records.length > 25 ||
+                    !data.records.every(
+                        (record) => String(record.project_id) === projectId,
+                    ) ||
+                    !Number.isSafeInteger(data.recordPage) ||
+                    data.recordPage < 1 ||
+                    typeof data.recordHasMore !== 'boolean'
+                ) {
+                    throw new Error('Invalid record choices');
+                }
+
+                if (!controller.signal.aborted) {
+                    setChoices({ key: choiceKey, data });
+                }
+            })
+            .catch(() => {
+                if (!controller.signal.aborted) {
+                    setChoices({ key: choiceKey });
+                }
+            });
+
+        return () => controller.abort();
+    }, [choiceKey, formChoicesUrl, projectId, recordPage]);
+
+    const project =
+        current?.data?.project ??
+        parents.projects.find((p) => String(p.id) === projectId);
+    const records = formChoicesUrl
+        ? (current?.data?.records ?? [])
+        : parents.records;
+    const record = records.find((r) => String(r.id) === form.data.maintenance_id);
+    const options = records
         .filter((r) => r.project_id === project?.id)
         .sort((a, b) => b.year - a.year || b.quarter.localeCompare(a.quarter));
     const title = doc ? 'Edit Maintenance Document' : 'Upload Document';
@@ -87,7 +168,7 @@ export default function Form(parents: DocumentParents) {
     });
     const cancel = () => router.visit(back);
     const save = (confirmed = false) => {
-        if (disabled || lock.current) {
+        if (disabled || lock.current || loading || failed) {
             return;
         }
 
@@ -236,11 +317,20 @@ export default function Form(parents: DocumentParents) {
                                             </span>
                                         </Label>
                                         <ProjectSelector
-                                            projects={parents.projects}
+                                            projects={
+                                                formChoicesUrl && project
+                                                    ? [project]
+                                                    : parents.projects
+                                            }
+                                            choicesUrl={formChoicesUrl}
                                             value={form.data.project_id}
                                             disabled={disabled}
                                             invalid={!!form.errors.project_id}
                                             onChange={(value) => {
+                                                setRecordPage(1);
+                                                retryChoices(
+                                                    (previous) => previous + 1,
+                                                );
                                                 form.clearErrors(
                                                     'project_id',
                                                     'maintenance_id',
@@ -265,6 +355,8 @@ export default function Form(parents: DocumentParents) {
                                             value={form.data.maintenance_id}
                                             disabled={
                                                 disabled ||
+                                                loading ||
+                                                failed ||
                                                 !project ||
                                                 !options.length
                                             }
@@ -279,11 +371,13 @@ export default function Form(parents: DocumentParents) {
                                             >
                                                 <SelectValue
                                                     placeholder={
-                                                        !project
-                                                            ? 'Select a project first'
-                                                            : options.length
-                                                              ? 'Select record'
-                                                              : 'No maintenance records'
+                                                        loading
+                                                            ? 'Loading records…'
+                                                            : !project
+                                                              ? 'Select a project first'
+                                                              : options.length
+                                                                ? 'Select record'
+                                                                : 'No maintenance records'
                                                     }
                                                 />
                                             </SelectTrigger>
@@ -302,7 +396,63 @@ export default function Form(parents: DocumentParents) {
                                             </SelectContent>
                                         </Select>
                                         {error('maintenance_id')}
-                                        {project && !options.length && (
+                                        {loading && (
+                                            <p
+                                                role="status"
+                                                className="jr-field-hint"
+                                            >
+                                                Loading eligible maintenance records…
+                                            </p>
+                                        )}
+                                        {failed && (
+                                            <p
+                                                role="alert"
+                                                className="jr-field-error"
+                                            >
+                                                Record choices unavailable.{' '}
+                                                <button
+                                                    type="button"
+                                                    className="underline"
+                                                    onClick={() =>
+                                                        retryChoices(
+                                                            (previous) => previous + 1,
+                                                        )
+                                                    }
+                                                >
+                                                    Retry
+                                                </button>
+                                            </p>
+                                        )}
+                                        {current?.data && (
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    disabled={disabled || currentPage <= 1}
+                                                    onClick={() => {
+                                                        change('maintenance_id', '');
+                                                        setRecordPage(currentPage - 1);
+                                                    }}
+                                                >
+                                                    Previous records
+                                                </Button>
+                                                <span className="text-sm">
+                                                    Page {currentPage}
+                                                </span>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    disabled={disabled || !hasMore}
+                                                    onClick={() => {
+                                                        change('maintenance_id', '');
+                                                        setRecordPage(currentPage + 1);
+                                                    }}
+                                                >
+                                                    Next records
+                                                </Button>
+                                            </div>
+                                        )}
+                                        {project && !loading && !failed && !options.length && (
                                             <p className="jr-field-hint">
                                                 Add a Maintenance Record from
                                                 Project Details first.

@@ -142,8 +142,7 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
             $projects->where(fn (Builder $q) => $q->where('p.project_title', 'ilike', $pattern)->orWhere('l.municipality_name', 'ilike', $pattern));
         }
         $perPage = 20;
-        $projectPage = min((int) ($input['page'] ?? 1), max(1, (int) ceil((clone $projects)->count() / $perPage)));
-        $page = $projects->orderBy('p.project_title')->orderBy('p.id')->paginate($perPage, ['*'], 'page', $projectPage);
+        $page = BoundedDirectoryPage::paginate($projects->orderBy('p.project_title')->orderBy('p.id'), $request, $perPage);
         $page->through(fn (\stdClass $project): array => $this->projectChoiceData($project));
 
         return response()->json(['data' => $page->items(), 'page' => $page->currentPage(), 'last_page' => $page->lastPage()])

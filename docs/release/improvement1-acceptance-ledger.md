@@ -42,6 +42,8 @@ Commit `eaacc932aa624056c00efb0dbe2bfd22720b24ff` passed 501 quarterly tests (6,
 
 Commit `a4a40c779c5577e4be9b86421304b422ab500bbd` passed standard CI, staging and repository-wide quality checks; focused PostgreSQL reported 501 passed and one stale 300-row history assertion. The follow-up verifies every one of 300 IDs across 15 history pages, keeps complete detail responses, omits unrendered long text from monthly and document directories, and corrects the default monthly filter empty-state label. No deletion or authorization behavior changed; exact-head tests remain required.
 
+Commit `70f5328ec1ad7d4a12b8474f5d111c6d112266a3` passed all eight branch and pull-request workflows (standard, focused, full system and disposable staging). Follow-up makes document upload project and record selection use the existing writer-scoped bounded form-choice endpoint, loading no global catalog at entry and preserving fixed-record routes; request failures block submission and offer retry. The existing monthly project-choice paginator now reuses its count. Fresh exact-head verification remains required.
+
 ## Outstanding
 
 - Benchmark representative large data and verify the new record-history and monthly-choice pagination; the single-record month occupancy snapshot is compacted by year, but still grows with the number of distinct reporting years; verify measured behavior and hosted load.

@@ -26,7 +26,8 @@ export type DocumentSummary = MaintenanceDocument & {
 export type DocumentParents = {
     projects: MonthlyParentProject[];
     records: MonthlyParentRecord[];
-    contextRecordId?: number;
+    contextRecordId?: number | null;
+    formChoicesUrl?: string;
     document?: DocumentSummary;
     cancelUrl: string;
     submitUrl: string;

@@ -45,6 +45,8 @@ it('keeps all authorized choices without geometry or full record payloads', func
     $this->getJson('/workspace/ui/project-filter-choices?search=%25')->assertOk()->assertJsonCount(0, 'data');
     $this->get('/workspace/ui/monthly-updates/create')->assertInertia(fn (Assert $page) => $page
         ->has('projects', 0)->has('records', 0)->has('existingUpdates', 0));
+    $this->get('/workspace/ui/maintenance-documents/create')->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->has('projects', 0)->has('records', 0)->where('formChoicesUrl', '/workspace/ui/monthly-updates/form-choices'));
     $choices = '/workspace/ui/monthly-updates/form-choices';
     $seen = [];
     for ($page = 1; $page <= 6; $page++) {
@@ -59,6 +61,8 @@ it('keeps all authorized choices without geometry or full record payloads', func
     $this->getJson($choices.'?project='.$lastProject)->assertOk()->assertJsonCount(1, 'records')
         ->assertJsonPath('records.0.id', (int) $last)->assertJsonMissingPath('records.0.created_by');
     $this->get('/workspace/ui/monthly-updates/create?maintenance_id='.$last)->assertInertia(fn (Assert $page) => $page
+        ->has('projects', 1)->has('records', 1)->where('records.0.id', (int) $last)->where('contextRecordId', (int) $last));
+    $this->get('/workspace/ui/maintenance-documents/create?maintenance_id='.$last)->assertOk()->assertInertia(fn (Assert $page) => $page
         ->has('projects', 1)->has('records', 1)->where('records.0.id', (int) $last)->where('contextRecordId', (int) $last));
 });
 

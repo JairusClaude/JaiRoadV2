@@ -1098,6 +1098,20 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     }
 
     assert.ok(originalMediaStored, 'Original private media must be persisted before later deletion tests');
+    await engineer.goto(`${ui}/maintenance-documents/create`);
+    const documentChoiceRoute = '**/monthly-updates/form-choices?project=*';
+    const rejectDocumentChoices = route => route.fulfill({ status: 503, json: { message: 'Disposable lookup failure' } });
+    await engineer.route(documentChoiceRoute, rejectDocumentChoices);
+    await engineer.locator('#project_id').click();
+    await engineer.getByRole('textbox', { name: 'Search maintenance projects' }).fill(project.project_title);
+    await engineer.getByRole('option').filter({ hasText: project.project_title }).click();
+    await engineer.getByText('Record choices unavailable.', { exact: false }).waitFor();
+    assert.equal(await engineer.getByRole('button', { name: /Upload Document|Save Document/ }).isDisabled(), true);
+    await engineer.unroute(documentChoiceRoute, rejectDocumentChoices);
+    await engineer.getByRole('button', { name: 'Retry', exact: true }).click();
+    await choose(engineer, /^Maintenance Record/, `${record.quarter} ${record.year}`);
+    await engineer.getByLabel(/^Document Title/).fill('Standalone document form verified');
+    console.log('PASS: standalone document choices fail closed, retry and select authorized record.');
     await engineer.goto(
         `${ui}/maintenance-documents/create?maintenance_id=${record.id}`,
     );
