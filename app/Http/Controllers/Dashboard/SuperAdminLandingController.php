@@ -12,6 +12,7 @@ use App\Services\AuditActorIdentifier;
 use App\Services\DashboardAnalytics;
 use App\Services\Documents\PrivateSupabaseStorage;
 use App\Services\Files\FileRecoverySchedule;
+use App\Services\MaintenanceIntelligence;
 use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
@@ -123,6 +124,7 @@ final class SuperAdminLandingController extends Controller
                 'checkedAt' => now()->utc()->toIso8601String(),
             ],
             'analytics' => app(DashboardAnalytics::class)->summary($identity),
+            'maintenanceIntelligence' => app(MaintenanceIntelligence::class)->summary(),
             'privilegedAccounts' => $privilegedAccounts,
             'recentEvents' => $recentEvents,
             'recentMonthlyUpdates' => $recentMonthlyUpdates,
