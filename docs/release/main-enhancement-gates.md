@@ -8,7 +8,7 @@ Baseline: bfa846eed598a8ccdd7abd7d086a902353f0d329. Changes on the enhancement b
 - Confirm protected branch and approved revision before deploying.
 
 ## Hosted acceptance (operator + QA)
-- Verify deployed SHA and /up, HTTPS, login/logout, MFA recovery and revocation for each actual authorized role without sharing credentials.
+- Verify deployed SHA and /up, HTTPS, password login/logout, authorized password reset and session revocation for each actual authorized role without sharing credentials. Verify retired public reset, MFA and passkey endpoints remain disabled according to the current policy.
 - Exercise role-scoped read/write/deny paths, map failures, private upload/preview/download, report periods, mobile navigation and slow connections.
 - Rehearse database restore and exact private Storage object recovery in isolated staging. Record RPO/RTO and independently verify integrity.
 - Keep permanent deletion and scheduler activation disabled until approved recovery rehearsal, shared lock and single scheduler checks pass.

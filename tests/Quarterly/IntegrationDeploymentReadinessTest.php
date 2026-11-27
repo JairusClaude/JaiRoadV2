@@ -177,4 +177,35 @@ final class IntegrationDeploymentReadinessTest extends PostgresTestCase
         Http::assertSentCount(1);
         Http::assertNotSent(fn ($request): bool => $request->method() === 'DELETE');
     }
+
+    public function test_private_storage_redirect_is_not_a_successful_download(): void
+    {
+        config([
+            'jairoads_documents.supabase_url' => 'https://synthetic-storage.invalid',
+            'jairoads_documents.service_role_key' => 'sb_secret_DISPOSABLE_ONLY',
+            'jairoads_documents.bucket' => 'private-docs',
+            'jairoads_monthly_updates.supabase_url' => 'https://synthetic-storage.invalid',
+            'jairoads_monthly_updates.service_role_key' => '',
+            'jairoads_monthly_updates.bucket' => 'private-media',
+        ]);
+        Http::fake([
+            'https://synthetic-storage.invalid/*' => Http::response('', 302, ['Location' => 'https://different-origin.invalid/']),
+            'https://different-origin.invalid/*' => Http::response('unexpected', 200),
+        ]);
+
+        foreach ([
+            [app(PrivateSupabaseStorage::class), 'maintenance-records/71/00000000-0000-4000-8000-000000000001.pdf'],
+            [app(PrivateMonthlyMediaStorage::class), 'monthly-updates/29/00000000-0000-4000-8000-000000000001.png'],
+        ] as [$storage, $path]) {
+            try {
+                $storage->fetch($path);
+                $this->fail('Storage redirection may not be treated as a valid private download.');
+            } catch (RuntimeException $error) {
+                $this->assertStringContainsString('unavailable', $error->getMessage());
+            }
+        }
+
+        Http::assertSentCount(2);
+        Http::assertNotSent(fn ($request): bool => str_contains($request->url(), 'different-origin.invalid'));
+    }
 }
