@@ -3,11 +3,35 @@ export function validRoadPage(
     previous: number | null,
     direction: 'ascending' | 'descending',
 ): boolean {
-    if (!Array.isArray(page.data) || page.data.length > 100) {
+    if (!page || !Array.isArray(page.data) || page.data.length > 100) {
         return false;
     }
 
     const cursor = page.next_cursor;
+    const ordered = previous !== null || cursor !== null;
+    const ids = new Set<number>();
+    let last = previous;
+
+    for (const row of page.data) {
+        if (
+            !row ||
+            typeof row !== 'object' ||
+            !Number.isSafeInteger(row.id) ||
+            row.id <= 0 ||
+            typeof row.road_name !== 'string' ||
+            ids.has(row.id) ||
+            (ordered &&
+                last !== null &&
+                (direction === 'ascending'
+                    ? row.id <= last
+                    : row.id >= last))
+        ) {
+            return false;
+        }
+
+        ids.add(row.id);
+        last = row.id;
+    }
 
     return (
         cursor === null ||
@@ -15,9 +39,6 @@ export function validRoadPage(
             Number.isSafeInteger(cursor) &&
             cursor > 0 &&
             page.data.length > 0 &&
-            (previous === null ||
-                (direction === 'ascending'
-                    ? cursor > previous
-                    : cursor < previous)))
+            cursor === last)
     );
 }

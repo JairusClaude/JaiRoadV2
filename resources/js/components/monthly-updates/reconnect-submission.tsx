@@ -275,6 +275,8 @@ export function ReconnectSubmission({
                     values.project_id,
                     values.maintenance_id,
                     values.update_month,
+                    online,
+                    disabled || queued,
                 ])}
                 parents={parents}
                 values={values}

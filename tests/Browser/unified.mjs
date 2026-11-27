@@ -1022,6 +1022,34 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     await engineer.getByText('A report already exists for this period. Check the saved reporting period before retrying.', { exact: true }).waitFor();
     assert.equal(queuedWrites, 0);
     await engineer.unroute(outcomeRoute, occupiedOutcome);
+    // Changing a queued report invalidates its consent before any write.
+    await engineer.context().setOffline(true);
+    await engineer.getByRole('button', { name: 'Submit once when connected' }).click();
+    await engineer.getByLabel(/^Progress Summary/).fill('Changed after queueing');
+    await engineer.context().setOffline(false);
+    await engineer.getByText('Queued report cancelled. Review and save manually.', { exact: true }).waitFor();
+    assert.equal(queuedWrites, 0);
+    assert.equal(await engineer.getByLabel(/^Progress Summary/).inputValue(), 'Changed after queueing');
+    await engineer.getByLabel(/^Progress Summary/).fill(fieldDraft.summary_of_text_reports);
+    // Cancellation while the read-only preflight is outstanding must not write.
+    let releaseCancelledPreflight;
+    const cancelledPreflightGate = new Promise(resolve => {
+        releaseCancelledPreflight = resolve;
+    });
+    const cancelledPreflight = async route => {
+        await cancelledPreflightGate;
+        await route.fulfill({ json: { reportId: null } }).catch(() => {});
+    };
+    await engineer.route(outcomeRoute, cancelledPreflight);
+    await engineer.context().setOffline(true);
+    await engineer.getByRole('button', { name: 'Submit once when connected' }).click();
+    await engineer.context().setOffline(false);
+    await engineer.getByText('Verifying current reporting period before submission…', { exact: true }).waitFor();
+    await engineer.getByRole('button', { name: 'Cancel queued submission' }).click();
+    await engineer.getByText('Queued submission cancelled.', { exact: true }).waitFor();
+    releaseCancelledPreflight();
+    await engineer.unroute(outcomeRoute, cancelledPreflight);
+    assert.equal(queuedWrites, 0);
     await engineer.context().setOffline(true);
     await engineer.getByRole('button', { name: 'Submit once when connected' }).click();
     await engineer.context().setOffline(false);

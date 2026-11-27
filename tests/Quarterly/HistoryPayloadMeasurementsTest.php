@@ -24,6 +24,7 @@ final class HistoryPayloadMeasurementsTest extends PostgresTestCase
         ];
         $previous = 0;
         $measurements = [];
+        $directoryMeasurements = [];
         foreach ([1, 100, 1000] as $size) {
             $reports = [];
             $documents = [];
@@ -79,8 +80,40 @@ final class HistoryPayloadMeasurementsTest extends PostgresTestCase
                     ->assertJsonMissingPath('props.documents.0.description');
             }
             $measurements[] = ['reports_and_documents_each' => $size, 'samples' => $samples];
+            foreach ([
+                'monthly-updates' => ['updates', 'summary_of_text_reports'],
+                'maintenance-documents' => ['documents', 'description'],
+            ] as $directory => [$key, $omitted]) {
+                $directoryUrl = '/workspace/ui/'.$directory;
+                $this->get($directoryUrl, $headers)->assertOk();
+                $directorySamples = [];
+                for ($run = 0; $run < 3; $run++) {
+                    DB::enableQueryLog();
+                    DB::flushQueryLog();
+                    memory_reset_peak_usage();
+                    $memory = memory_get_usage();
+                    $start = hrtime(true);
+                    try {
+                        $response = $this->get($directoryUrl, $headers);
+                        $directorySamples[] = [
+                            'bytes' => strlen((string) $response->getContent()),
+                            'queries' => count(DB::getQueryLog()),
+                            'milliseconds' => round((hrtime(true) - $start) / 1e6, 3),
+                            'peak_delta_bytes' => max(0, memory_get_peak_usage() - $memory),
+                        ];
+                    } finally {
+                        DB::disableQueryLog();
+                    }
+                    $response->assertOk()->assertJsonCount(min(12, $size), 'props.'.$key.'.data')
+                        ->assertJsonPath('props.'.$key.'.total', $size)
+                        ->assertJsonMissingPath('props.'.$key.'.data.0.'.$omitted);
+                    $this->assertLessThan(50000, $directorySamples[$run]['bytes']);
+                }
+                $directoryMeasurements[] = ['directory' => $directory, 'rows' => $size, 'samples' => $directorySamples];
+            }
         }
 
         fwrite(STDERR, 'JAIROADS_HISTORY_MEASUREMENTS '.json_encode($measurements, JSON_THROW_ON_ERROR).PHP_EOL);
+        fwrite(STDERR, 'JAIROADS_DIRECTORY_MEASUREMENTS '.json_encode($directoryMeasurements, JSON_THROW_ON_ERROR).PHP_EOL);
     }
 }

@@ -48,6 +48,8 @@ Commit `8a0724850c46584d51682ec7861439c94d7f818b` passed both focused and stagin
 
 Commit `652a4cbbbc348d624482b0323ba269263f787a9f` passed focused branch regression and staging; standard CI reported a Prettier-only difference in the project-page guard, corrected here. Both document and monthly report record lookups (including draft imports) now share a validation guard for project identity, record membership, pagination, unique IDs, quarters, selected record, and reporting-month masks. The server remains authoritative. Exact-head validation remains required.
 
+Commit `6cb2b9df9bf8a7a4c7251573f75ca86cbd5bcd6a` passed both standard, focused and disposable staging workflows and repository-wide static checks. Full verification remained in progress at inspection. Follow-up invalidates read-only outcome UI when connectivity or submission eligibility changes, adds browser tests for edited and cancelled queues, extends synthetic directory measurements to 1/100/1,000 rows, and hardens the standalone benchmark against HTTP errors and nonadvancing reference cursors. The shared GIS page guard also rejects invalid and duplicate road IDs, wrong page order and a cursor that does not match the last returned road. Durable synchronization design is in `docs/release/offline-sync-review.md`; it is not enabled. Fresh exact-head validation remains required.
+
 ## Outstanding
 
 - Benchmark representative large data and verify the new record-history and monthly-choice pagination; the single-record month occupancy snapshot is compacted by year, but still grows with the number of distinct reporting years; verify measured behavior and hosted load.
