@@ -46,6 +46,8 @@ Commit `70f5328ec1ad7d4a12b8474f5d111c6d112266a3` passed all eight branch and pu
 
 Commit `8a0724850c46584d51682ec7861439c94d7f818b` passed both focused and staging workflows; full browser acceptance reproduced an enabled Upload Document button after a failed lookup (the handler already blocked the write). The follow-up disables the actual submit control during pending or failed lookup, applies the exact Prettier diff, and adds a shared project-page response guard and regression cases for malformed pagination and duplicate IDs. Fresh exact-head verification is required.
 
+Commit `652a4cbbbc348d624482b0323ba269263f787a9f` passed focused branch regression and staging; standard CI reported a Prettier-only difference in the project-page guard, corrected here. Both document and monthly report record lookups (including draft imports) now share a validation guard for project identity, record membership, pagination, unique IDs, quarters, selected record, and reporting-month masks. The server remains authoritative. Exact-head validation remains required.
+
 ## Outstanding
 
 - Benchmark representative large data and verify the new record-history and monthly-choice pagination; the single-record month occupancy snapshot is compacted by year, but still grows with the number of distinct reporting years; verify measured behavior and hosted load.

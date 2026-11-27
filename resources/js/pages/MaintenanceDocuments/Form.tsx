@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select';
 import { editUrl, formReturn } from '@/lib/form-navigation';
 import { documentFileError } from '@/lib/maintenance-documents';
+import { validRecordChoices } from '@/lib/project-choice-page';
 import { workspaceHref } from '@/lib/workspace-navigation';
 import type { DocumentParents } from '@/types/maintenance-documents';
 import type {
@@ -109,17 +110,7 @@ export default function Form(parents: DocumentParents) {
 
                 const data: RecordChoices = await response.json();
 
-                if (
-                    String(data.project?.id) !== projectId ||
-                    !Array.isArray(data.records) ||
-                    data.records.length > 25 ||
-                    !data.records.every(
-                        (record) => String(record.project_id) === projectId,
-                    ) ||
-                    !Number.isSafeInteger(data.recordPage) ||
-                    data.recordPage < 1 ||
-                    typeof data.recordHasMore !== 'boolean'
-                ) {
+                if (!validRecordChoices(data, projectId)) {
                     throw new Error('Invalid record choices');
                 }
 

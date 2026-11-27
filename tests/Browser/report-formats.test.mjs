@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { analyticsPdf, analyticsXlsx } from '../../resources/js/lib/analytics-report-formats.ts';
 import { maintenanceCalendar } from '../../resources/js/lib/maintenance-calendar.ts';
 import { hasOccupiedReportingMonth } from '../../resources/js/lib/occupied-reporting-months.ts';
-import { validProjectPage } from '../../resources/js/lib/project-choice-page.ts';
+import { validProjectPage, validRecordChoices } from '../../resources/js/lib/project-choice-page.ts';
 
 test('PDF summary has escaped strings and valid xref byte offsets', () => {
     const pdf = Buffer.from(analyticsPdf([['Scope', 'System-wide'], ['Metric (test)', 12]]));
@@ -87,4 +87,32 @@ test('project pickers reject malformed or duplicate paginated choices', () => {
     assert.equal(validProjectPage({ ...valid, data: [{ ...item, project_title: 7 }] }), false);
     assert.equal(validProjectPage({ ...valid, data: [{ ...item, municipality: {} }] }), false);
     assert.equal(validProjectPage({ ...valid, data: Array(31).fill(item) }), false);
+});
+
+test('record choices reject unrelated rows and inconsistent reporting occupancy', () => {
+    const record = { id: 3, project_id: 12, year: 2026, quarter: 'Q2' };
+    const page = {
+        project: { id: 12, project_title: 'Road project', municipality: null },
+        records: [record], recordPage: 1, recordHasMore: false,
+        selectedRecordId: null, existingUpdates: [], occupiedMonths: null,
+    };
+    const selected = {
+        ...page, selectedRecordId: 3, occupiedMonths: { recordId: 3, years: { '2026': 16 } },
+    };
+
+    assert.equal(validRecordChoices(page, '12'), true);
+    assert.equal(validRecordChoices(selected, '12', '3'), true);
+    assert.equal(validRecordChoices(page, '11'), false);
+    assert.equal(validRecordChoices({ ...page, records: [record, record] }, '12'), false);
+    assert.equal(validRecordChoices({ ...page, records: [{ ...record, project_id: 13 }] }, '12'), false);
+    assert.equal(validRecordChoices({ ...page, records: [{ ...record, quarter: 'Q5' }] }, '12'), false);
+    assert.equal(validRecordChoices({ ...page, recordPage: 0 }, '12'), false);
+    assert.equal(validRecordChoices({ ...page, recordHasMore: 'false' }, '12'), false);
+    assert.equal(validRecordChoices(selected, '12'), false);
+    assert.equal(validRecordChoices({ ...selected, records: [] }, '12', '3'), false);
+    assert.equal(validRecordChoices({ ...selected, occupiedMonths: null }, '12', '3'), false);
+    assert.equal(validRecordChoices({ ...selected, occupiedMonths: { recordId: 4, years: {} } }, '12', '3'), false);
+    assert.equal(validRecordChoices({ ...selected, occupiedMonths: { recordId: 3, years: { '2026': 4096 } } }, '12', '3'), false);
+    assert.equal(validRecordChoices({ ...selected, occupiedMonths: { recordId: 3, years: { '0000': 1 } } }, '12', '3'), false);
+    assert.equal(validRecordChoices({ ...selected, occupiedMonths: { recordId: 3, years: [] } }, '12', '3'), false);
 });

@@ -8,6 +8,7 @@ import { MonthlyUpdateForm } from '@/components/monthly-updates/monthly-update-f
 import { ReconnectSubmission } from '@/components/monthly-updates/reconnect-submission';
 import { editUrl, formReturn, returnLabel } from '@/lib/form-navigation';
 import { validateMonthlyUpdate } from '@/lib/monthly-updates';
+import { validRecordChoices } from '@/lib/project-choice-page';
 import { workspaceHref } from '@/lib/workspace-navigation';
 import type {
     MonthlyCreateProps,
@@ -51,7 +52,13 @@ async function loadProjectChoices(
         throw new Error('Could not verify the maintenance project.');
     }
 
-    return response.json();
+    const result = await response.json();
+
+    if (!validRecordChoices(result, id, recordId)) {
+        throw new Error('Invalid maintenance record choices.');
+    }
+
+    return result;
 }
 
 export default function Create(parents: MonthlyCreateProps) {
