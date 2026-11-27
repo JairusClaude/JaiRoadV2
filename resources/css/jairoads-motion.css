@@ -217,3 +217,37 @@ html.jr-reduce-motion
     button:active {
     scale: none !important;
 }
+
+/* Reveal navigation labels in order, without delaying interaction or layout. */
+@keyframes jr-sidebar-label-reveal {
+    from {
+        opacity: 0;
+        transform: translateX(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+@media (prefers-reduced-motion: no-preference) {
+    html:not(.jr-reduce-motion)
+        .jr-alternative-nav[data-expanded='true']
+        > div
+        > .jr-nav-link
+        > span,
+    html:not(.jr-reduce-motion)
+        .jr-alternative-nav[data-expanded='true']
+        > div
+        > .jr-alternative-parent
+        > .jr-nav-link
+        > span {
+        animation: jr-sidebar-label-reveal 180ms var(--jr-motion-in) both;
+        animation-delay: var(--jr-nav-reveal-delay, 0ms);
+    }
+    html:not(.jr-reduce-motion)
+        .jr-alternative-nav[data-expanded='true']
+        .jr-nav-link:focus-visible
+        > span {
+        animation: none;
+    }
+}

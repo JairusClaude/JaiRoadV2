@@ -8,6 +8,7 @@ import {
     MonthlyDeletionDialog,
     useMonthlyDeletion,
 } from '@/components/monthly-updates/monthly-update-deletion';
+import { PhotoComparison } from '@/components/monthly-updates/photo-comparison';
 import { Button } from '@/components/ui/button';
 import { editUrl } from '@/lib/form-navigation';
 import { updateMonth, updateTimestamp } from '@/lib/monthly-updates';
@@ -193,6 +194,7 @@ export default function Show({
                             <p className="jr-field-hint">{mediaBreakdown}</p>
                         </div>
                         <MediaGallery key={update.id} media={media} />
+                        <PhotoComparison key={update.id} media={media} />
                     </section>
                     <footer className="jr-report-footer">
                         <dl

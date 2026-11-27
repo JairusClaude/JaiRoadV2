@@ -48,7 +48,7 @@ class PrivateSupabaseStorage
         if (! $this->configured()) {
             throw new RuntimeException('Private Supabase Storage is not configured.');
         }
-        $request = Http::timeout(30)->withHeaders(['apikey' => $this->token()]);
+        $request = Http::timeout(30)->withoutRedirecting()->withHeaders(['apikey' => $this->token()]);
         // New sb_secret_* keys are opaque, not JWTs. Bearer auth is for legacy service_role JWTs only.
         if (! str_starts_with($this->token(), 'sb_secret_')) {
             $request = $request->withToken($this->token());

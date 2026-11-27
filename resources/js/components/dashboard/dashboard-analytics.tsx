@@ -9,6 +9,7 @@ import {
     MapPinned,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { downloadAnalyticsReport } from '@/lib/analytics-export';
 
 export type DashboardSummary = {
     scope: string;
@@ -116,6 +117,26 @@ export function DashboardAnalytics({
                         Live counts from Data Dictionary business records; no
                         sample data.
                     </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    {(['CSV', 'XLSX', 'PDF'] as const).map((format) => (
+                        <button
+                            key={format}
+                            type="button"
+                            className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium"
+                            onClick={() =>
+                                downloadAnalyticsReport(
+                                    format,
+                                    data.scope,
+                                    visibleCards,
+                                    data.metrics.reportingCoverage,
+                                    data.trend,
+                                )
+                            }
+                        >
+                            Export summary ({format})
+                        </button>
+                    ))}
                 </div>
                 <span className="rounded-full border border-[var(--jr-role-accent-soft)] bg-[var(--jr-role-accent-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--jr-role-accent-ink)]">
                     {data.scope}

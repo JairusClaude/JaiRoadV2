@@ -88,11 +88,12 @@ void createInertiaApp({
                         <div className="grid min-h-screen place-items-center text-sm">
                             <div className="text-center">
                                 <p role="alert">
-                                    JaiROADS could not open this page.
+                                    JaiROADS could not open this page. Check the
+                                    record before retrying a submission.
                                 </p>
                                 <button
                                     type="button"
-                                    className="mt-3 underline"
+                                    className="mt-3 rounded px-3 py-2 underline focus-visible:ring-2"
                                     onClick={() => window.location.reload()}
                                 >
                                     Reload page
@@ -105,9 +106,21 @@ void createInertiaApp({
                         fallback={
                             <div
                                 role="status"
-                                className="grid min-h-screen place-items-center text-sm"
+                                className="mx-auto flex min-h-screen w-full max-w-5xl flex-col justify-center gap-4 p-6 text-sm"
                             >
-                                Loading JaiROADS workspace…
+                                <span>Loading JaiROADS workspace…</span>
+                                <div
+                                    aria-hidden="true"
+                                    className="space-y-4 motion-safe:animate-pulse"
+                                >
+                                    <div className="h-9 w-2/5 rounded-lg bg-muted" />
+                                    <div className="grid gap-3 sm:grid-cols-3">
+                                        <div className="h-24 rounded-xl bg-muted" />
+                                        <div className="h-24 rounded-xl bg-muted" />
+                                        <div className="h-24 rounded-xl bg-muted" />
+                                    </div>
+                                    <div className="h-48 rounded-xl bg-muted" />
+                                </div>
                             </div>
                         }
                     >

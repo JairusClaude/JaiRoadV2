@@ -49,9 +49,10 @@ class MaintenanceDocumentUploadController extends Controller
         if (! $file instanceof UploadedFile) {
             throw ValidationException::withMessages(['file' => 'A document file is required.']);
         }
-        $extension = strtolower($file->getClientOriginalExtension());
-        if (! in_array($extension, ['pdf', 'docx', 'xlsx', 'pptx'], true)) {
-            throw ValidationException::withMessages(['file' => 'Only PDF, DOCX, XLSX and PPTX are supported.']);
+        $extension = strtolower((string) $file->guessExtension());
+        $clientExtension = strtolower($file->getClientOriginalExtension());
+        if (! in_array($extension, ['pdf', 'docx', 'xlsx', 'pptx'], true) || $extension !== $clientExtension) {
+            throw ValidationException::withMessages(['file' => 'The document filename extension must match its PDF, DOCX, XLSX or PPTX file type.']);
         }
         $name = basename(str_replace('\\', '/', $file->getClientOriginalName()));
         if ($name === '' || strlen($name) > 255) {

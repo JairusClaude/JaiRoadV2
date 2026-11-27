@@ -13,6 +13,10 @@ import {
 import { useState } from 'react';
 import { DashboardAnalytics } from '@/components/dashboard/dashboard-analytics';
 import type { DashboardSummary } from '@/components/dashboard/dashboard-analytics';
+import { MaintenanceIntelligencePanel } from '@/components/dashboard/maintenance-intelligence-panel';
+import type { MaintenanceIntelligenceSummary } from '@/components/dashboard/maintenance-intelligence-panel';
+import { SystemHealthPanel } from '@/components/dashboard/system-health-panel';
+import type { SystemHealth } from '@/components/dashboard/system-health-panel';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { MetricCard } from '@/components/metric-card';
 import { MonthlyProgress } from '@/components/monthly-updates/monthly-progress';
@@ -69,6 +73,8 @@ type MonthlyPreview = {
 type Props = {
     username: string;
     analytics: DashboardSummary;
+    health?: SystemHealth;
+    maintenanceIntelligence?: MaintenanceIntelligenceSummary;
     counts: Counts;
     privilegedAccounts: PrivilegedAccount[];
     recentEvents: AuditEvent[];
@@ -88,6 +94,8 @@ export default function SuperAdminCommandCenter({
     username,
     counts,
     analytics,
+    health,
+    maintenanceIntelligence,
     privilegedAccounts,
     recentEvents,
     recentMonthlyUpdates,
@@ -130,6 +138,7 @@ export default function SuperAdminCommandCenter({
                 </div>
 
                 <main className="relative mx-0 -mt-3.5 min-w-0 space-y-6 rounded-t-[20px] bg-white px-4 pt-7 pb-10 shadow-sm sm:px-6 lg:-mx-7 lg:px-7">
+                    {health && <SystemHealthPanel health={health} />}
                     {/* Top System Metrics */}
                     <section
                         aria-label="System metrics"
@@ -161,6 +170,12 @@ export default function SuperAdminCommandCenter({
                             icon={<FolderKanban className="size-5" />}
                         />
                     </section>
+
+                    {maintenanceIntelligence && (
+                        <MaintenanceIntelligencePanel
+                            data={maintenanceIntelligence}
+                        />
+                    )}
 
                     {/* Real counts and reporting chart, with a concise operations rail. */}
                     <div className="jr-command-overview grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(290px,0.9fr)]">

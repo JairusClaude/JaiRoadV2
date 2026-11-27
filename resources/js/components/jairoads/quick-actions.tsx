@@ -56,7 +56,8 @@ export function JaiRoadsQuickActions() {
     const role = page.props.jairoadsIdentity?.role;
     const isCanonicalWorkspace =
         path.startsWith('/workspace/') ||
-        path.startsWith('/workspace-superadmin-');
+        path.startsWith('/workspace-superadmin-') ||
+        path === '/superadmin-home';
     const canonicalPaths = [
         '/workspace/dashboard',
         '/workspace/projects',
@@ -88,9 +89,35 @@ export function JaiRoadsQuickActions() {
         ];
     });
 
-    const results = allowedDestinations.filter((entry) =>
-        entry.label.toLowerCase().includes(query.trim().toLowerCase()),
+    const term = query.trim().slice(0, 120);
+    const sectionResults = allowedDestinations.filter((entry) =>
+        entry.label.toLowerCase().includes(term.toLowerCase()),
     );
+    const recordDirectories = [
+        {
+            label: 'projects',
+            path: 'maintenance-projects',
+            Icon: LayoutDashboard,
+        },
+        { label: 'roads', path: 'road-coverages', Icon: Map },
+        {
+            label: 'monthly updates',
+            path: 'monthly-updates',
+            Icon: CalendarDays,
+        },
+        { label: 'documents', path: 'maintenance-documents', Icon: FileText },
+        { label: 'LGUs', path: 'lgus', Icon: Building2 },
+    ];
+    const results = [
+        ...sectionResults,
+        ...(isCanonicalWorkspace && role && term
+            ? recordDirectories.map(({ label, path, Icon }) => ({
+                  label: `Search ${label} for "${term}"`,
+                  href: `/workspace/ui/${path}?search=${encodeURIComponent(term)}`,
+                  Icon,
+              }))
+            : []),
+    ];
 
     useEffect(() => {
         const handleKeys = (event: KeyboardEvent) => {
@@ -204,7 +231,7 @@ export function JaiRoadsQuickActions() {
                                 type="search"
                                 autoComplete="off"
                                 aria-label="Search JaiROADS sections"
-                                placeholder="Find a section…"
+                                placeholder="Find a section or record…"
                                 onChange={(e) => {
                                     setQuery(e.target.value);
                                     setSelected(0);
@@ -213,7 +240,13 @@ export function JaiRoadsQuickActions() {
                                     if (e.key === 'ArrowDown') {
                                         e.preventDefault();
                                         setSelected((i) =>
-                                            Math.min(i + 1, results.length - 1),
+                                            Math.max(
+                                                0,
+                                                Math.min(
+                                                    i + 1,
+                                                    results.length - 1,
+                                                ),
+                                            ),
                                         );
                                     } else if (e.key === 'ArrowUp') {
                                         e.preventDefault();
