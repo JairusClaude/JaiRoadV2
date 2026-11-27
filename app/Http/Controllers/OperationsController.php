@@ -13,6 +13,7 @@ use App\Services\Files\PermanentFileDeletion;
 use App\Services\Files\UploadJournal;
 use App\Services\LinkedPasswordUpdater;
 use App\Services\ManagingEngineerEligibility;
+use App\Services\MonthlyUpdates\MonthlySubmissionReceipt;
 use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
 use App\Services\OperationAudit;
 use App\Services\PreservedProjectDeletion;
@@ -600,7 +601,15 @@ class OperationsController extends Controller
             'summary_of_text_reports' => ['nullable', 'string', 'max:20000'],
         ]);
         $parent = $this->recordScope($actor, (int) $v['maintenance_id'], true);
-        DB::transaction(function () use ($request, $resolver, $actor, $parent, $v, $id): void {
+        $submission = MonthlySubmissionReceipt::submissionKey($request, $actor['account_id'], (int) $parent->project_id, $id !== null);
+        $fingerprint = $submission === null ? null : MonthlySubmissionReceipt::fingerprint(
+            (int) $parent->project_id, (int) $v['maintenance_id'], $v['update_month'],
+            (string) $v['progress_percentage'], $v['summary_of_text_reports'] ?? null,
+        );
+        $reportId = DB::transaction(function () use ($request, $resolver, $actor, $parent, $v, $id, $submission, $fingerprint): ?int {
+            if ($submission !== null) {
+                MonthlySubmissionReceipt::lock($actor['account_id'], $submission);
+            }
             // Match reassignment's project -> record lock order. Authorization
             // checked before a lock wait is not authority to save after it.
             abort_unless($this->t('maintenance_projects')->where('id', $parent->project_id)->lockForUpdate()->first(['id']) !== null, 404);
@@ -613,6 +622,14 @@ class OperationsController extends Controller
             app(RecordMutationAuthority::class)->lock($login, $actor, $lgu);
             abort_unless($this->actor($request, $resolver) === $actor, 403);
             $this->recordScope($actor, (int) $record->id, true);
+            if ($submission !== null) {
+                $confirmed = MonthlySubmissionReceipt::confirmedReport(
+                    $actor['account_id'], $submission, (int) $record->project_id, (int) $record->id, $v['update_month'], $fingerprint,
+                );
+                if ($confirmed !== null) {
+                    return $confirmed;
+                }
+            }
             $duplicate = $this->t('monthly_updates')->where('maintenance_id', $v['maintenance_id'])->where('update_month', $v['update_month']);
             if ($id !== null) {
                 $duplicate->where('id', '!=', $id);
@@ -629,18 +646,28 @@ class OperationsController extends Controller
                 }
                 $uid = (int) $this->t('monthly_updates')->insertGetId($data + ['created_by' => $actor['account_id'], 'created_at' => now()]);
                 $this->audit($actor, 'CREATE', 'MonthlyUpdate', $uid, 'Authorized monthly update created.');
+                if ($submission !== null && $fingerprint !== null) {
+                    MonthlySubmissionReceipt::record($actor['account_id'], $submission, (int) $record->project_id, (int) $record->id, $v['update_month'], $fingerprint, $uid);
+                }
+
+                return $uid;
             } else {
                 $old = $this->t('monthly_updates')->where('id', $id)->lockForUpdate()->first();
                 abort_unless($old !== null, 404);
                 $this->recordScope($actor, (int) $old->maintenance_id, true);
                 abort_unless((int) $old->maintenance_id === (int) $v['maintenance_id'], 422, 'Cannot move monthly update to another maintenance record.');
                 if (! $this->changed('MonthlyUpdate', $old, $data)) {
-                    return;
+                    return null;
                 }
                 $this->t('monthly_updates')->where('id', $id)->update($data);
                 $this->audit($actor, 'UPDATE', 'MonthlyUpdate', $id, 'Authorized monthly update revised.', app(AuditValues::class)->persisted('MonthlyUpdate', $id), (array) $old);
             }
+
+            return null;
         });
+        if ($submission !== null && $reportId !== null) {
+            $request->attributes->set('jairoads.receipt_report_id', $reportId);
+        }
 
         return $this->done('updates', 'Monthly update saved.');
     }

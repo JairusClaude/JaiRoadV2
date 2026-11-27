@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Services\MonthlyUpdates\MonthlySubmissionReceipt;
 use App\Services\OperationAudit;
 use App\Services\PreviewDataService;
 use App\Services\RoleAccess;
@@ -181,10 +182,21 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
             'maintenance_id' => ['required', 'integer', 'min:1'],
             'update_month' => ['required', 'string', 'regex:/\\A(?!0000)[0-9]{4}-(0[1-9]|1[0-2])\\z/'],
             'account_id' => ['required', 'integer', 'min:1'],
+            'submission_id' => ['sometimes', 'required', 'string', 'regex:'.MonthlySubmissionReceipt::UUID_PATTERN],
         ]);
         abort_unless((int) $input['account_id'] === $actor['account_id'], 403);
         $record = $this->records($actor)->where('m.id', $input['maintenance_id'])->where('m.project_id', $input['project_id'])->first();
         abort_unless($record !== null && $this->canWriteRecord($record, $actor), 404);
+        if (isset($input['submission_id'])) {
+            MonthlySubmissionReceipt::requireEnabled();
+            $reportId = MonthlySubmissionReceipt::confirmedReport(
+                $actor['account_id'], strtolower($input['submission_id']), (int) $input['project_id'], (int) $record->id, $input['update_month'],
+            );
+
+            abort_unless($this->actor($request) === $actor, 403);
+
+            return response()->json(['reportId' => $reportId, 'receiptConfirmed' => $reportId !== null])->header('Cache-Control', 'private, no-store');
+        }
         $report = DB::table('jairoads_next.monthly_updates')->where('maintenance_id', $record->id)
             ->where('update_month', $input['update_month'])->first(['id']);
 
@@ -229,7 +241,7 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
                 throw ValidationException::withMessages(['attachments' => 'Monthly update details were saved, but one or more media removals were not confirmed. Refresh the update and retry.']);
             }
         }
-        $id ??= (int) DB::table('jairoads_next.monthly_updates')->where('maintenance_id', $request->input('maintenance_id'))
+        $id ??= $request->attributes->getInt('jairoads.receipt_report_id') ?: (int) DB::table('jairoads_next.monthly_updates')->where('maintenance_id', $request->input('maintenance_id'))
             ->where('update_month', $request->input('update_month'))->value('id');
 
         $destination = self::BASE.'/monthly-updates/'.$id;

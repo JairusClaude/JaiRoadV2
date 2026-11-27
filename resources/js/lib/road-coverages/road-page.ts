@@ -103,7 +103,8 @@ export function validCoverageChoices(
             row.id <= 0 ||
             ids.has(row.id) ||
             typeof row.road_name !== 'string' ||
-            (row.municipality !== null && typeof row.municipality !== 'string') ||
+            (row.municipality !== null &&
+                typeof row.municipality !== 'string') ||
             typeof row.kilometers !== 'string' ||
             typeof row.assigned !== 'boolean' ||
             (!showAssigned && row.assigned) ||
