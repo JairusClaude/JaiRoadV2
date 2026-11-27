@@ -70,7 +70,8 @@ it('preserves fixed context authorization and only relevant report uniqueness da
         DB::table('jairoads_next.monthly_updates')->insert(['maintenance_id' => $record, 'update_month' => '2026-01', 'progress_percentage' => 10, 'created_by' => $f['user']->canonical_user_account_id]);
     }
     $this->get('/workspace/ui/monthly-updates/create?maintenance_id='.$second)->assertInertia(fn (Assert $page) => $page
-        ->has('records', 1)->has('existingUpdates', 1)->where('existingUpdates.0.maintenance_id', (int) $second));
+        ->has('records', 1)->has('existingUpdates', 0)
+        ->where('occupiedMonths.recordId', (int) $second)->where('occupiedMonths.years.2026', 1));
     $this->get('/workspace/ui/maintenance-documents/create?maintenance_id='.$first)->assertInertia(fn (Assert $page) => $page->has('records', 1));
     DB::table('jairoads_next.maintenance_records')->where('id', $second)->update(['managing_engineer_id' => $this->engineer()]);
     $this->get('/workspace/ui/monthly-updates/create?maintenance_id='.$second)->assertForbidden();
@@ -81,11 +82,11 @@ it('preserves fixed context authorization and only relevant report uniqueness da
         ->assertJsonCount(0, 'existingUpdates');
     $this->getJson($choices.'&record='.$second)->assertNotFound();
     $this->getJson($choices.'&record='.$first)->assertOk()
-        ->assertJsonCount(1, 'records')->assertJsonCount(1, 'existingUpdates')
+        ->assertJsonCount(1, 'records')->assertJsonCount(0, 'existingUpdates')
         ->assertJsonPath('selectedRecordId', (int) $first)
-        ->assertJsonPath('existingUpdates.0.maintenance_id', (int) $first)
-        ->assertJsonMissingPath('existingUpdates.0.summary_of_text_reports')
-        ->assertJsonMissingPath('existingUpdates.0.created_by')->assertJsonMissingPath('existingUpdates.0.media_count');
+        ->assertJsonPath('occupiedMonths.recordId', (int) $first)
+        ->assertJsonPath('occupiedMonths.years.2026', 1)
+        ->assertJsonCount(2, 'occupiedMonths')->assertJsonCount(1, 'occupiedMonths.years');
 });
 
 it('batches manager choices with exactly the same eligibility as individual LGU lookups', function (string $role): void {

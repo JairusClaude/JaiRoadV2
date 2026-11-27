@@ -17,7 +17,7 @@ import type {
 
 type ProjectChoices = Pick<
     MonthlyCreateProps,
-    'records' | 'existingUpdates'
+    'records' | 'existingUpdates' | 'occupiedMonths'
 > & {
     project: MonthlyParentProject;
     recordPage: number;

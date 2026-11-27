@@ -26,9 +26,11 @@ Commit `b2ddbed0220ee9269da652fd24685ffc9525d6f4` passed both focused regression
 
 Commit `59dcbf22359f5c9391e2cd1bde4c3ddcc6340673` passed the quarterly PostgreSQL job including the new history benchmark (45953193585 / 140353560327); measured 2,942 / 12,377 / 12,427 JSON bytes and 11 queries at 1 / 100 / 1,000 reports and documents each. Frontend TypeScript failed on the history timeline prop; the unified browser job failed before running the application because an unrelated Microsoft Ubuntu apt repository returned HTTP 403. Follow-up narrows the prop contract, isolates the unrelated feed during Chromium installation on disposable runners, and preserves all verification requirements. Hosted performance and new exact-head browser evidence remain outstanding.
 
+The next candidate replaces individual monthly uniqueness rows with year-keyed 12-bit occupancy masks, including fixed-context editing and encrypted draft import. Server-side write validation remains authoritative; the compact client snapshot does not grant authorization. Regression coverage includes 1,204 months, year 0001/9999, exact record scope and exclusion of the edited report. Exact-head tests remain required.
+
 ## Outstanding
 
-- Benchmark representative large data and verify the new record-history and monthly-choice pagination; exceptionally large single-record reporting-month collections remain unbounded.
+- Benchmark representative large data and verify the new record-history and monthly-choice pagination; the single-record month occupancy snapshot is compacted by year, but still grows with the number of distinct reporting years; verify measured behavior and hosted load.
 - Verify incremental simplified map layer updates, extend condition visualization and failure recovery where missing, and validate map services in hosted staging.
 - Approve and rehearse milestone retention and runtime grants in isolated hosted staging; no production schema changes.
 - Durable background reporting synchronization requires reviewed session, revocation, durable idempotent receipts and encryption/attachment strategy; the manual period outcome lookup is implemented but is not a receipt and must not trigger silent replay.

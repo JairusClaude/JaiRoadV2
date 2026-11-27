@@ -89,8 +89,8 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
         return $this->render('MonthlyUpdates/Create', $request, $parents + [
             'update' => $u === null ? null : $this->updateData($u, $actor), 'media' => $id === null ? [] : $this->mediaData($id, $actor),
             'formChoicesUrl' => $context === null ? self::BASE.'/monthly-updates/form-choices' : null,
-            'existingUpdates' => $context === null ? [] : $this->updateQuery($actor)->where('u.maintenance_id', $context)
-                ->select(['u.id', 'u.maintenance_id', 'u.update_month'])->get(),
+            'existingUpdates' => [],
+            'occupiedMonths' => $context === null ? null : $this->occupiedMonths($actor, $context, $id),
             'reconnectAccountId' => $id === null ? $actor['account_id'] : null,
             'submitUrl' => self::BASE.'/monthly-updates'.($id === null ? '' : '/'.$id),
             'cancelUrl' => self::BASE.'/monthly-updates'.($id === null ? '' : '/'.$id),
@@ -130,8 +130,8 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
                 'recordPage' => $recordPage,
                 'recordHasMore' => $periods->hasMorePages(),
                 'selectedRecordId' => $recordId,
-                'existingUpdates' => $recordId === null ? [] : $this->updateQuery($actor)->where('u.maintenance_id', $recordId)
-                    ->select(['u.id', 'u.maintenance_id', 'u.update_month'])->get(),
+                'existingUpdates' => [],
+                'occupiedMonths' => $recordId === null ? null : $this->occupiedMonths($actor, $recordId),
             ])->header('Cache-Control', 'private, no-store');
         }
 
@@ -147,6 +147,27 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
 
         return response()->json(['data' => $page->items(), 'page' => $page->currentPage(), 'last_page' => $page->lastPage()])
             ->header('Cache-Control', 'private, no-store');
+    }
+
+    /**
+     * One 12-bit mask per occupied reporting year, with the edited report excluded.
+     * The SQL aggregate avoids materializing an individual row per historical report.
+     *
+     * @param  array{account_id:int,role:string,engineer_id:?int}  $actor
+     * @return array{recordId:int,years:object}
+     */
+    private function occupiedMonths(array $actor, int $recordId, ?int $excludeId = null): array
+    {
+        $years = $this->updateQuery($actor)->where('u.maintenance_id', $recordId)
+            ->when($excludeId !== null, fn (Builder $query) => $query->where('u.id', '!=', $excludeId))
+            ->select([])->selectRaw('substring(u.update_month, 1, 4) as year, bit_or(1 << (substring(u.update_month, 6, 2)::integer - 1)) as mask')
+            ->groupByRaw('substring(u.update_month, 1, 4)')->orderBy('year')->get();
+        $masks = [];
+        foreach ($years as $year) {
+            $masks[(string) $year->year] = (int) $year->mask;
+        }
+
+        return ['recordId' => $recordId, 'years' => (object) $masks];
     }
 
     /** Read-only period lookup; never treats a matching period as an idempotent receipt. */

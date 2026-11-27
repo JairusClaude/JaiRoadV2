@@ -63,6 +63,10 @@ export type MonthlyCreateProps = {
         maintenance_id: number;
         update_month: string;
     }[];
+    occupiedMonths?: {
+        recordId: number;
+        years: Record<string, number>;
+    } | null;
     contextRecordId?: number;
     formChoicesUrl?: string | null;
     update?: MonthlyUpdateSummary;

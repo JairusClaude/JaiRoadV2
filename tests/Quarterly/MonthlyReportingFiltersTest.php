@@ -120,7 +120,9 @@ it('loads scoped monthly form choices on demand', function (): void {
         ->assertJsonCount(1, 'records')->assertJsonPath('records.0.id', $this->recordId)
         ->assertJsonCount(0, 'existingUpdates')->assertJsonPath('recordHasMore', false);
     $this->getJson($url.'?project='.$this->f['project'].'&record='.$this->recordId)
-        ->assertOk()->assertJsonCount(2, 'existingUpdates')->assertJsonPath('selectedRecordId', $this->recordId);
+        ->assertOk()->assertJsonCount(0, 'existingUpdates')->assertJsonPath('selectedRecordId', $this->recordId)
+        ->assertJsonPath('occupiedMonths.recordId', $this->recordId)
+        ->assertJsonPath('occupiedMonths.years.2026', 1)->assertJsonPath('occupiedMonths.years.2027', 2048);
     $this->getJson($url.'?project='.$this->f['project'].'&record='.$otherRecord)->assertNotFound();
     for ($year = 2030; $year < 2056; $year++) {
         DB::table('jairoads_next.maintenance_records')->insert(
@@ -130,7 +132,8 @@ it('loads scoped monthly form choices on demand', function (): void {
     $this->getJson($url.'?project='.$this->f['project'])->assertOk()
         ->assertJsonCount(25, 'records')->assertJsonPath('recordHasMore', true)->assertJsonCount(0, 'existingUpdates');
     $this->getJson($url.'?project='.$this->f['project'].'&record='.$this->recordId)->assertOk()
-        ->assertJsonCount(26, 'records')->assertJsonCount(2, 'existingUpdates');
+        ->assertJsonCount(26, 'records')->assertJsonCount(0, 'existingUpdates')
+        ->assertJsonPath('occupiedMonths.years.2026', 1)->assertJsonPath('occupiedMonths.years.2027', 2048);
     $this->getJson($url.'?project='.$this->f['project'].'&record_page=2')->assertOk()
         ->assertJsonCount(2, 'records')->assertJsonPath('recordHasMore', false);
     $this->getJson($url.'?project='.$other['project'])->assertNotFound();
@@ -174,4 +177,31 @@ it('keeps older comparison periods reachable and clamps excessive page numbers',
     );
     $foreign = ($this->report)('2000-01', '2028-01-01 00:00:00', $otherRecord);
     $this->withSession(['password_hash_web' => null])->actingAs($this->f['user'])->get($url.'?compare='.$foreign)->assertNotFound();
+});
+
+it('compresses complete report occupancy without losing old months or rejecting the edited report itself', function (): void {
+    $rows = [];
+    for ($i = 0; $i < 1200; $i++) {
+        $rows[] = [
+            'maintenance_id' => $this->recordId,
+            'update_month' => sprintf('%04d-%02d', 1900 + intdiv($i, 12), $i % 12 + 1),
+            'progress_percentage' => 20,
+            'created_by' => $this->f['user']->canonical_user_account_id,
+        ];
+    }
+    foreach (array_chunk($rows, 100) as $chunk) {
+        DB::table('jairoads_next.monthly_updates')->insert($chunk);
+    }
+    ($this->report)('0001-01', '2028-01-01 00:00:00');
+    ($this->report)('9999-12', '2028-01-01 00:00:00');
+    $url = '/workspace/ui/monthly-updates/form-choices?project='.$this->f['project'].'&record='.$this->recordId;
+    $response = $this->getJson($url)->assertOk()->assertJsonCount(0, 'existingUpdates')
+        ->assertJsonCount(104, 'occupiedMonths.years')->assertJsonPath('occupiedMonths.years.1900', 4095)
+        ->assertJsonPath('occupiedMonths.years.1999', 4095)->assertJsonPath('occupiedMonths.years.0001', 1)
+        ->assertJsonPath('occupiedMonths.years.9999', 2048);
+    expect(strlen($response->getContent()))->toBeLessThan(5000);
+    $this->get('/workspace/ui/monthly-updates/'.$this->january.'/edit')->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->has('existingUpdates', 0)
+            ->where('occupiedMonths.recordId', $this->recordId)->missing('occupiedMonths.years.2026')
+            ->where('occupiedMonths.years.2027', 2048));
 });
