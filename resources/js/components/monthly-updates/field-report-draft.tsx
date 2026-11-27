@@ -4,7 +4,7 @@ import {
     decryptDraft,
     encryptDraft,
     isEncryptedDraft,
-} from '@/lib/encrypted-field-draft';
+} from '@/lib/encrypted-field-draft.mjs';
 import type {
     MonthlyCreateProps,
     MonthlyUpdateValues,

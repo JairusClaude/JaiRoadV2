@@ -2,6 +2,15 @@
 
 This branch contains review candidates only. Keep production deployment and permanent file deletion disabled until the existing issue #25 gates are accepted.
 
+## Current verification scope
+
+- The exact-head workflows are recorded under [Improvement1 Actions](https://github.com/JairusClaude/JaiRoadV2/actions?query=branch%3AImprovement1). At baseline `dab99d8`, focused regressions and disposable staging passed. Standard CI and full verification independently reported the same System Health Center Prettier violation. The full workflow's other applicable jobs, including the unified browser, passed. Use the candidate's own check results for release evidence.
+- The standalone offline editor downloads and restores encrypted drafts using the signed-in form's draft format. The browser can open the saved editor without network access. Plain JSON import and download in the signed-in form remain available for compatibility.
+- The workspace layout suite covers 320, 375, 390, 768, 1024, 1440 and 1920 pixels. It exercises the listed dashboards, directories, details and forms using disposable role accounts. This is a browser coverage matrix, with hosted and human acceptance tracked separately.
+- The SuperAdmin health snapshot reports a validated Render revision when available and shows Philippine timestamps. Its account counters share one grouped PostgreSQL aggregate. Private Storage, backup and scheduler execution still require direct operator evidence.
+- The milestone grant rehearsal uses a disposable non-owner database role with active RLS and verifies create, read, cancellation and denied hard deletion. The hosted proposal and activation remain approval-gated.
+- When the MapLibre basemap style fails, the workspace map loads a local style and installs the same saved road layers. The geometry remains unchanged.
+
 ## Implemented candidates
 
 - Corrected duplicate browser test variable and prior report exporter syntax. Direct tests on Improvement1 remain enabled.
@@ -31,9 +40,9 @@ The six-category search now includes maintenance records. The create-report form
 
 ## Follow-up: encrypted portable drafts and milestone schema review
 
-Encrypted report drafts use Web Crypto AES-256-GCM with fresh random salt and IV and PBKDF2-SHA-256 (310,000 iterations). The passphrase is supplied by the user and cleared from the input after use; it is not stored by the application. Existing plaintext import/export remains explicit for compatibility. Encrypted files survive browser closure; import still requires authentication, current record eligibility, normal validation and user review. No background replay or automatic persistent browser storage is introduced. The standalone offline editor still exports plaintext only.
+Encrypted report drafts use Web Crypto AES-256-GCM with fresh random salt and IV and PBKDF2-SHA-256 (310,000 iterations). The passphrase is supplied by the user, cleared from the input after use, and never stored by the application. Encrypted files survive browser closure. The signed-in form checks current record eligibility on import and normal authorization and validation on submission.
 
-A review-only milestone table proposal is in database/proposals/maintenance_milestones_REVIEW_ONLY.sql. It enables RLS and denies public access; no runtime grants or writes. Before activation, review record-preservation and deletion dependencies (RESTRICT prevents silent loss), audit/notification contracts, authorization and actual tests. Custom milestone CRUD is not yet implemented and the proposal has not been applied.
+A review-only milestone table proposal is in database/proposals/maintenance_milestones_REVIEW_ONLY.sql. It enables RLS and denies public access. The companion runtime grant proposal separately permits scoped runtime reads and writes. Before hosted activation, review record-preservation and deletion dependencies, the audit and notification contracts, and actual operator acceptance evidence.
 
 ## Milestone pilot implementation
 

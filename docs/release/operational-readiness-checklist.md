@@ -24,6 +24,8 @@ After that approval, configure a single environment-specific scheduler service u
 
 ## Repository protection
 
-Have a repository administrator require the verification checks for main (standard CI, focused regressions, full system verification, and disposable staging rehearsal), protect against force pushes and deletion, and require review before changing release gates. Confirm the exact required check names from the current workflow runs. Maintain the existing fail-closed production release checks.
+In GitHub Settings → Rules → Rulesets, an administrator can create an active branch ruleset targeting `main`. Require a pull request and at least one independent approval, dismiss stale approvals, require status checks from GitHub Actions, and enable the rules that block force pushes and restrict deletions. Keep bypass access empty unless the repository owner approves an exception. Confirm the rules against the branch settings and the pull-request checks view.
+
+Select the applicable job checks exactly as GitHub displays them. Standard CI uses `ci`. Focused regressions use `frontend`, `password-postgres` and `quarterly-postgres`. Full verification uses `feature-postgres`, `unified-browser`, `passkey-browser`, `docker`, `integration / merged-system canonical contracts`, `qa / UAT evidence must block incomplete releases`, `release / unapproved deployment must remain blocked` and each applicable `repository / …` matrix check. Disposable staging uses the six `staging / …` checks named in the [workflow](https://github.com/JairusClaude/JaiRoadV2/blob/Improvement1/.github/workflows/disposable-staging-rehearsal.yml). The alternative ancestry job is intentionally skipped for pulls targeting `main`.
 
 These are operational steps requiring an authorized operator. Passing disposable CI does not establish production acceptance or permission to change live infrastructure.

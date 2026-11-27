@@ -1,3 +1,5 @@
+import { manilaTimestamp } from '@/lib/manila-time';
+
 export type SystemHealth = {
     databaseReadSucceeded: boolean;
     documentStorageConfigured: boolean;
@@ -14,10 +16,12 @@ export type SystemHealth = {
         completed: number;
         oldest_pending_at?: string | null;
     } | null;
+    deploymentRevision?: string | null;
     checkedAt: string;
 };
 
 export function SystemHealthPanel({ health }: { health: SystemHealth }) {
+    const oldest = health.recoveryCounts?.oldest_pending_at;
     const entries = [
         {
             label: 'Database',
@@ -57,9 +61,25 @@ export function SystemHealthPanel({ health }: { health: SystemHealth }) {
         },
         {
             label: 'Oldest pending recovery',
-            detail: health.recoveryCounts
-                ? health.recoveryCounts.oldest_pending_at ?? 'None recorded'
-                : 'Recovery queue unavailable',
+            detail: health.recoveryCounts ? (
+                oldest ? (
+                    <time dateTime={oldest}>{manilaTimestamp(oldest)}</time>
+                ) : (
+                    'None recorded'
+                )
+            ) : (
+                'Recovery queue unavailable'
+            ),
+        },
+        {
+            label: 'Deployment revision',
+            detail: health.deploymentRevision ? (
+                <code title={health.deploymentRevision}>
+                    {health.deploymentRevision.slice(0, 12)}
+                </code>
+            ) : (
+                'Unavailable'
+            ),
         },
         {
             label: 'Backup and restore',
@@ -92,7 +112,10 @@ export function SystemHealthPanel({ health }: { health: SystemHealth }) {
             </dl>
             <p className="mt-3 text-xs text-slate-500">
                 Checked at{' '}
-                <time dateTime={health.checkedAt}>{health.checkedAt}</time>
+                <time dateTime={health.checkedAt}>
+                    {manilaTimestamp(health.checkedAt)}
+                </time>{' '}
+                (Philippine time)
             </p>
         </section>
     );

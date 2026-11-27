@@ -3,16 +3,12 @@ const iterations = 310000;
 const encoder = new TextEncoder();
 const decoder = new TextDecoder('utf-8', { fatal: true });
 
-const encode = (bytes: Uint8Array) =>
+const encode = (bytes) =>
     btoa(Array.from(bytes, (byte) => String.fromCharCode(byte)).join(''));
-const decode = (value: string) =>
+const decode = (value) =>
     Uint8Array.from(atob(value), (character) => character.charCodeAt(0));
 
-async function keyFor(
-    passphrase: string,
-    salt: Uint8Array<ArrayBuffer>,
-    usage: KeyUsage,
-) {
+async function keyFor(passphrase, salt, usage) {
     if (passphrase.length < 12 || passphrase.length > 256) {
         throw new Error('Use a draft passphrase of 12 to 256 characters.');
     }
@@ -34,7 +30,7 @@ async function keyFor(
     );
 }
 
-export async function encryptDraft(data: unknown, passphrase: string) {
+export async function encryptDraft(data, passphrase) {
     const plaintext = encoder.encode(JSON.stringify(data));
 
     if (plaintext.length > 90000) {
@@ -58,7 +54,7 @@ export async function encryptDraft(data: unknown, passphrase: string) {
     };
 }
 
-export function isEncryptedDraft(data: unknown): boolean {
+export function isEncryptedDraft(data) {
     return (
         !!data &&
         typeof data === 'object' &&
@@ -67,27 +63,25 @@ export function isEncryptedDraft(data: unknown): boolean {
     );
 }
 
-export async function decryptDraft(data: unknown, passphrase: string) {
+export async function decryptDraft(data, passphrase) {
     if (!isEncryptedDraft(data)) {
         throw new Error('Unrecognized encrypted draft.');
     }
 
-    const item = data as Record<string, unknown>;
-
     if (
-        typeof item.salt !== 'string' ||
-        typeof item.iv !== 'string' ||
-        typeof item.ciphertext !== 'string' ||
-        item.salt.length !== 24 ||
-        item.iv.length !== 16 ||
-        item.ciphertext.length > 120024
+        typeof data.salt !== 'string' ||
+        typeof data.iv !== 'string' ||
+        typeof data.ciphertext !== 'string' ||
+        data.salt.length !== 24 ||
+        data.iv.length !== 16 ||
+        data.ciphertext.length > 120024
     ) {
         throw new Error('Invalid encrypted draft format.');
     }
 
-    const salt = decode(item.salt);
-    const iv = decode(item.iv);
-    const ciphertext = decode(item.ciphertext);
+    const salt = decode(data.salt);
+    const iv = decode(data.iv);
+    const ciphertext = decode(data.ciphertext);
 
     if (salt.length !== 16 || iv.length !== 12 || ciphertext.length < 16) {
         throw new Error('Invalid encrypted draft format.');
@@ -102,7 +96,7 @@ export async function decryptDraft(data: unknown, passphrase: string) {
             ciphertext,
         );
 
-        return JSON.parse(decoder.decode(plaintext)) as unknown;
+        return JSON.parse(decoder.decode(plaintext));
     } catch {
         throw new Error('Wrong passphrase or damaged encrypted draft.');
     }

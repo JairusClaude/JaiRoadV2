@@ -11,6 +11,7 @@ use App\Services\Documents\PrivateSupabaseStorage;
 use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
 use App\Services\OperationAudit;
 use App\Services\RoleAccess;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -48,7 +49,7 @@ final class PermanentFileDeletion
             return null;
         }
 
-        return $row === null ? null : ['pending' => (int) $row->pending, 'retried' => (int) $row->retried, 'completed' => (int) $row->completed, 'oldest_pending_at' => $row->oldest_pending_at === null ? null : (string) $row->oldest_pending_at];
+        return $row === null ? null : ['pending' => (int) $row->pending, 'retried' => (int) $row->retried, 'completed' => (int) $row->completed, 'oldest_pending_at' => $row->oldest_pending_at === null ? null : CarbonImmutable::parse($row->oldest_pending_at, 'UTC')->utc()->toIso8601String()];
     }
 
     public function operationallyEnabled(): bool

@@ -5,6 +5,7 @@ import process from 'node:process';
 import { verifyAuditNotifications } from './audit-notifications.mjs';
 import { verifyAuthenticatedHistory } from './authenticated-history.mjs';
 import { verifyDuplicatePeriod } from './duplicate-period.mjs';
+import { verifyOfflineFieldReport } from './offline-field-report.mjs';
 import { verifyPermanentFileDeletion } from './permanent-file-deletion.mjs';
 import { verifyPreservedRelationships } from './preserved-relationships.mjs';
 import { pdf, png, startStorageMock } from './private-storage-mock.mjs';
@@ -624,6 +625,15 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     assert.ok(exportedGeometry.coordinates.every(line => line.length >= 2));
     assert.deepEqual(Object.keys(exportedGeometry).sort(), ['coordinates', 'type']);
 
+    const unavailableBasemap = 'https://tiles.openfreemap.org/**';
+    await admin.route(unavailableBasemap, (route) => route.abort('failed'));
+    await admin.goto(base + '/workspace/projects?view=show&project=' + f.project_id);
+    const fallbackMap = admin.getByRole('region', { name: 'Interactive road coverage map' });
+    await fallbackMap.getByText('Basemap unavailable. Showing saved road lines.', { exact: true }).waitFor();
+    assert.match(await fallbackMap.locator('.jr-road-map-count').textContent(), /^1 of 1 road lines$/);
+    await fallbackMap.getByRole('button', { name: 'Locate selected road' }).click();
+    await admin.unroute(unavailableBasemap);
+
     for (const saved of f.geometry_roads) {
         const path = `/road-coverages/${saved.id}`;
         const before = (await props(engineer, path)).coverage;
@@ -915,6 +925,14 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     await engineer.getByLabel(/^Progress Summary/).fill('');
     await engineer.getByLabel('Import field report draft file').setInputFiles(await fieldDraftFile.path());
     await engineer.waitForFunction(() => document.getElementById('summary_of_text_reports')?.value === 'Canonical browser report');
+
+    const passphrase = 'synthetic-browser-draft-passphrase';
+    const encryptedDraft = await verifyOfflineFieldReport({ browser, engineer, draft: fieldDraft, passphrase });
+    await engineer.getByLabel(/^Progress Summary/).fill('');
+    await engineer.getByLabel(/^Draft passphrase/).fill(passphrase);
+    await engineer.getByLabel('Import field report draft file').setInputFiles({ name: 'draft.json', mimeType: 'application/json', buffer: encryptedDraft });
+    await engineer.waitForFunction(() => document.getElementById('summary_of_text_reports')?.value === 'Canonical browser report');
+    console.log('PASS: offline editor exports and restores encrypted drafts after reload, and the signed-in form imports them.');
     await engineer.context().setOffline(true);
     await engineer.getByRole('button', { name: 'Submit once when connected' }).click();
     await engineer.getByRole('button', { name: 'Cancel queued submission' }).click();

@@ -54,6 +54,8 @@ return [
 
     'url' => env('APP_URL', env('RENDER_EXTERNAL_URL', 'http://localhost')),
 
+    'revision' => env('RENDER_GIT_COMMIT'),
+
     // Preview synthetic identities are allowed only for an explicitly
     // isolated APP_ENV=preview deployment, never via a client header or port.
     'preview_mode' => (bool) env('JAIROADS_PREVIEW_MODE', false),

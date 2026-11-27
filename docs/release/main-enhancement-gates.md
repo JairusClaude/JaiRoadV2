@@ -1,6 +1,6 @@
 # Main branch enhancement gates
 
-Baseline: bfa846eed598a8ccdd7abd7d086a902353f0d329. Changes on the enhancement branch are review candidates, not authorization to deploy.
+The recorded `main` baseline is `bfa846eed598a8ccdd7abd7d086a902353f0d329`. Use the applicable [Improvement1 review checks](https://github.com/JairusClaude/JaiRoadV2/pull/36/checks) for the candidate and record release authorization separately.
 
 ## Repository owner
 - Require successful applicable CI, focused regression, full system and disposable staging jobs on main pull requests, using exact check names from actual runs.

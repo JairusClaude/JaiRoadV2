@@ -61,28 +61,28 @@ export async function verifyMobileWorkspaces({
         const previous = page.viewportSize();
 
         try {
-            for (const width of [320, 390, 768, 1024]) {
-                await page.setViewportSize({ width, height: 844 });
-                const privileged = role === 'admin' || role === 'superadmin';
-                const paths = [
-                    ...common,
-                    ...(privileged
-                        ? [
-                              '/workspace/users',
-                              '/workspace/audit-logs',
-                              ui + '/lgus/create',
-                          ]
-                        : []),
-                    ...(role === 'viewer' ? [] : forms),
-                ];
+            const privileged = role === 'admin' || role === 'superadmin';
+            const paths = [
+                ...common,
+                ...(privileged
+                    ? ['/workspace/users', '/workspace/audit-logs', ui + '/lgus/create']
+                    : []),
+                ...(role === 'viewer' ? [] : forms),
+            ];
 
-                for (const path of paths) {
-                    const response = await page.goto(base + path);
-                    assert.ok(
-                        response && response.status() < 400,
-                        role + ': ' + path,
-                    );
-                    await page.locator('.jr-stage').waitFor();
+            for (const path of paths) {
+                // Exercise a narrow first load, then resize the same page to
+                // cover all breakpoints without repeating server work.
+                await page.setViewportSize({ width: 320, height: 844 });
+                const response = await page.goto(base + path);
+                assert.equal(response?.status(), 200, role + ': ' + path);
+                await page.locator('.jr-stage').waitFor();
+
+                for (const width of [320, 375, 390, 768, 1024, 1440, 1920]) {
+                    await page.setViewportSize({ width, height: 844 });
+                    await page.evaluate(() => new Promise(resolve => {
+                        requestAnimationFrame(() => requestAnimationFrame(resolve));
+                    }));
 
                     if (role === 'admin' && path === '/workspace/dashboard') {
                         assert.equal(
@@ -261,6 +261,8 @@ export async function verifyMobileWorkspaces({
                         await drawer.waitFor({ state: 'visible' });
                         await page.keyboard.press('Escape');
                         await drawer.waitFor({ state: 'hidden' });
+                        await page.goto(base + path);
+                        await page.locator('.jr-stage').waitFor();
                     }
 
                     count++;

@@ -28,6 +28,8 @@ Route::get('/', function (): RedirectResponse {
     return redirect('/login');
 })->name('home');
 
+Route::view('/offline-field-report.html', 'offline-field-report');
+
 Route::middleware(['auth'])->group(function () {
     // Fortify's /dashboard entry now resolves role-specific JaiROADS dashboards.
     // Never use Laravel's default starter dashboard for authorized Engineer/Viewer roles.

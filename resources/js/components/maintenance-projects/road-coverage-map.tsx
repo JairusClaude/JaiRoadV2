@@ -235,6 +235,7 @@ export function RoadCoverageMap({
     const [focus, setFocus] = useState(false);
     const [mapReady, setMapReady] = useState(false);
     const [mapError, setMapError] = useState('');
+    const basemapState = useRef<'loading' | 'ready' | 'fallback'>('loading');
     const [roadsVisible, setRoadsVisible] = useState(true);
     const roadsVisibleRef = useRef(true);
     const selectedRef = useRef<number | null>(selectedId);
@@ -344,6 +345,7 @@ export function RoadCoverageMap({
             return;
         }
 
+        basemapState.current = 'loading';
         const map = new MapLibreMap({
             container: containerRef.current,
             style: STYLE_URLS.street,
@@ -422,6 +424,12 @@ export function RoadCoverageMap({
             }
 
             setMapReady(true);
+
+            if (basemapState.current === 'fallback') {
+                setMapError('Basemap unavailable. Showing saved road lines.');
+            } else {
+                basemapState.current = 'ready';
+            }
         };
         map.on('style.load', installRoadLayers);
         // Respect a preselected project road even on the first render.
@@ -443,9 +451,19 @@ export function RoadCoverageMap({
             }
         });
         map.on('error', () => {
-            if (!map.isStyleLoaded()) {
+            if (basemapState.current === 'loading') {
+                basemapState.current = 'fallback';
+                map.setStyle(
+                    {
+                        version: 8,
+                        sources: {},
+                        layers: [],
+                    },
+                    { diff: false },
+                );
+            } else if (basemapState.current === 'ready') {
                 setMapError(
-                    'Map tiles could not load. Check internet access to tiles.openfreemap.org.',
+                    'Some basemap tiles were unavailable. Saved road lines remain visible.',
                 );
             }
         });
@@ -549,8 +567,10 @@ export function RoadCoverageMap({
         }
 
         activeStyleRef.current = style;
+        basemapState.current = 'loading';
         setMapReady(false);
-        map.setStyle(STYLE_URLS[style]);
+        setMapError('');
+        map.setStyle(STYLE_URLS[style], { diff: false });
     }, [style]);
 
     useEffect(() => {

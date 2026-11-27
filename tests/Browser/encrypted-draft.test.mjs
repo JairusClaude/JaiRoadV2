@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { decryptDraft, encryptDraft, isEncryptedDraft } from '../../resources/js/lib/encrypted-field-draft.ts';
+import { decryptDraft, encryptDraft, isEncryptedDraft } from '../../resources/js/lib/encrypted-field-draft.mjs';
 
 test('encrypted drafts are portable, authenticated and randomized', async () => {
     const report = { version: 1, summary_of_text_reports: 'Synthetic field report' };
