@@ -116,7 +116,21 @@ it('loads scoped monthly form choices on demand', function (): void {
         ->assertJsonPath('data.0.id', $this->f['project']);
     $this->getJson($url.'?project='.$this->f['project'])->assertOk()->assertJsonPath('project.id', $this->f['project'])
         ->assertJsonCount(1, 'records')->assertJsonPath('records.0.id', $this->recordId)
-        ->assertJsonCount(2, 'existingUpdates');
+        ->assertJsonCount(0, 'existingUpdates')->assertJsonPath('recordHasMore', false);
+    $this->getJson($url.'?project='.$this->f['project'].'&record='.$this->recordId)
+        ->assertOk()->assertJsonCount(2, 'existingUpdates')->assertJsonPath('selectedRecordId', $this->recordId);
+    $this->getJson($url.'?project='.$this->f['project'].'&record='.$otherRecord)->assertNotFound();
+    for ($year = 2030; $year < 2056; $year++) {
+        DB::table('jairoads_next.maintenance_records')->insert(
+            $this->recordData($this->f['project'], $this->f['engineer'], 'Q1', $year) + ['created_by' => $this->f['user']->canonical_user_account_id]
+        );
+    }
+    $this->getJson($url.'?project='.$this->f['project'])->assertOk()
+        ->assertJsonCount(25, 'records')->assertJsonPath('recordHasMore', true)->assertJsonCount(0, 'existingUpdates');
+    $this->getJson($url.'?project='.$this->f['project'].'&record='.$this->recordId)->assertOk()
+        ->assertJsonCount(26, 'records')->assertJsonCount(2, 'existingUpdates');
+    $this->getJson($url.'?project='.$this->f['project'].'&record_page=2')->assertOk()
+        ->assertJsonCount(2, 'records')->assertJsonPath('recordHasMore', false);
     $this->getJson($url.'?project='.$other['project'])->assertNotFound();
     $this->withSession(['password_hash_web' => null])->actingAs($this->account('Viewer'));
     $this->getJson($url)->assertForbidden();

@@ -354,7 +354,9 @@ export function JaiRoadsQuickActions({
                                     onChange={(e) => {
                                         const next = e.target.value;
 
-                                        if (next.trim().slice(0, 120) !== term) {
+                                        if (
+                                            next.trim().slice(0, 120) !== term
+                                        ) {
                                             setSelectedHref(null);
                                             setRecordMatches({
                                                 term: '',
@@ -375,7 +377,8 @@ export function JaiRoadsQuickActions({
                                         } else if (
                                             e.key === 'Enter' &&
                                             results.some(
-                                                (item) => item.href === selected,
+                                                (item) =>
+                                                    item.href === selected,
                                             )
                                         ) {
                                             e.preventDefault();
@@ -402,7 +405,10 @@ export function JaiRoadsQuickActions({
                                 role &&
                                 term.length >= 2 &&
                                 recordMatches.term !== term && (
-                                    <p className="jr-command-empty" role="status">
+                                    <p
+                                        className="jr-command-empty"
+                                        role="status"
+                                    >
                                         Searching records…
                                     </p>
                                 )}
@@ -415,9 +421,12 @@ export function JaiRoadsQuickActions({
                                 term.length >= 2 &&
                                 recordMatches.term === term &&
                                 recordMatches.failed && (
-                                    <p className="jr-command-empty" role="status">
-                                        Record search unavailable. Directory search
-                                        is still available.
+                                    <p
+                                        className="jr-command-empty"
+                                        role="status"
+                                    >
+                                        Record search unavailable. Directory
+                                        search is still available.
                                     </p>
                                 )}
                             {isCanonicalWorkspace &&
@@ -426,8 +435,12 @@ export function JaiRoadsQuickActions({
                                 recordMatches.term === term &&
                                 !recordMatches.failed &&
                                 recordMatches.items.length === 0 && (
-                                    <p className="jr-command-empty" role="status">
-                                        No matching records. Try directory search.
+                                    <p
+                                        className="jr-command-empty"
+                                        role="status"
+                                    >
+                                        No matching records. Try directory
+                                        search.
                                     </p>
                                 )}
                             <div className="jr-command-items">
@@ -445,10 +458,15 @@ export function JaiRoadsQuickActions({
                                             onMouseEnter={() =>
                                                 setSelectedHref(href)
                                             }
-                                            onFocus={() => setSelectedHref(href)}
+                                            onFocus={() =>
+                                                setSelectedHref(href)
+                                            }
                                             onClick={() => navigate(href)}
                                         >
-                                            <Icon size={18} aria-hidden="true" />
+                                            <Icon
+                                                size={18}
+                                                aria-hidden="true"
+                                            />
                                             <span>{label}</span>
                                             {matchesRoute(path, href) && (
                                                 <span className="jr-command-current">
@@ -464,7 +482,8 @@ export function JaiRoadsQuickActions({
                                     ))
                                 ) : (
                                     <div className="jr-command-empty">
-                                        No matching section. Try a different search.
+                                        No matching section. Try a different
+                                        search.
                                     </div>
                                 )}
                             </div>

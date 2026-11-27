@@ -102,7 +102,7 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
         abort_if(self::isPreview($request), 404);
         $actor = $this->actor($request);
         $this->writer($actor);
-        $input = $request->validate(['page' => ['sometimes', 'integer', 'min:1'], 'project' => ['sometimes', 'integer', 'min:1']]);
+        $input = $request->validate(['page' => ['sometimes', 'integer', 'min:1'], 'project' => ['sometimes', 'integer', 'min:1'], 'record' => ['sometimes', 'integer', 'min:1'], 'record_page' => ['sometimes', 'integer', 'min:1']]);
         $records = $this->records($actor)
             ->when($actor['role'] === 'Engineer', fn (Builder $q) => $q->where('m.managing_engineer_id', $actor['engineer_id']));
         $projects = $this->projectChoices($actor)->whereIn('p.id', (clone $records)->select('m.project_id'));
@@ -111,11 +111,26 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
             abort_unless($project !== null, 404);
             $records->where('m.project_id', $project->id);
 
+            $recordId = isset($input['record']) ? (int) $input['record'] : null;
+            $projection = (clone $records)->select(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter']);
+            $selected = $recordId === null ? null : (clone $projection)->where('m.id', $recordId)->first();
+            abort_if($recordId !== null && $selected === null, 404);
+            $perPage = 25;
+            $recordPage = min((int) ($input['record_page'] ?? 1), max(1, (int) ceil((clone $records)->count() / $perPage)));
+            $periods = $projection->orderByDesc('m.maintenance_year')->orderByDesc('m.quarter')->orderByDesc('m.id')
+                ->simplePaginate($perPage, ['*'], 'record_page', $recordPage);
+            $choices = collect($periods->items());
+            if ($selected !== null && ! $choices->contains('id', $recordId)) {
+                $choices->push($selected);
+            }
+
             return response()->json([
                 'project' => $this->projectChoiceData($project),
-                'records' => (clone $records)->select(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter'])
-                    ->orderByDesc('m.maintenance_year')->orderByDesc('m.quarter')->get()->map(fn (\stdClass $record): array => $this->periodChoiceData($record)),
-                'existingUpdates' => $this->updateQuery($actor)->whereIn('u.maintenance_id', $records->select('m.id'))
+                'records' => $choices->map(fn (\stdClass $record): array => $this->periodChoiceData($record))->values(),
+                'recordPage' => $recordPage,
+                'recordHasMore' => $periods->hasMorePages(),
+                'selectedRecordId' => $recordId,
+                'existingUpdates' => $recordId === null ? [] : $this->updateQuery($actor)->where('u.maintenance_id', $recordId)
                     ->select(['u.id', 'u.maintenance_id', 'u.update_month'])->get(),
             ])->header('Cache-Control', 'private, no-store');
         }

@@ -26,6 +26,8 @@ export function MonthlyUpdateForm({
     parents,
     draftTools,
     recordChoicesLoading,
+    recordChoicesPending,
+    recordPageControls,
     retryRecordChoices,
     backLabel,
     savedMedia,
@@ -42,6 +44,12 @@ export function MonthlyUpdateForm({
     parents: MonthlyCreateProps;
     draftTools?: ReactNode;
     recordChoicesLoading?: boolean;
+    recordChoicesPending?: boolean;
+    recordPageControls?: {
+        page: number;
+        hasMore: boolean;
+        onPage: (page: number) => void;
+    };
     retryRecordChoices?: () => void;
     backLabel?: string;
     savedMedia?: MonthlyMedia[];
@@ -212,6 +220,7 @@ export function MonthlyUpdateForm({
                                         disabled={
                                             disabled ||
                                             !project ||
+                                            recordChoicesLoading ||
                                             !options.length
                                         }
                                         onValueChange={(value) => {
@@ -261,6 +270,52 @@ export function MonthlyUpdateForm({
                                         ? 'This project has no Maintenance Records. Add a record from Project Details first.'
                                         : undefined,
                                 )}
+                                {recordPageControls &&
+                                    (recordPageControls.page > 1 ||
+                                        recordPageControls.hasMore) && (
+                                        <nav
+                                            aria-label="Maintenance record pages"
+                                            className="flex flex-wrap items-center gap-2 text-sm"
+                                        >
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                disabled={
+                                                    disabled ||
+                                                    recordChoicesLoading ||
+                                                    recordPageControls.page <= 1
+                                                }
+                                                onClick={() =>
+                                                    recordPageControls.onPage(
+                                                        recordPageControls.page -
+                                                            1,
+                                                    )
+                                                }
+                                            >
+                                                Previous
+                                            </Button>
+                                            <span>
+                                                Page {recordPageControls.page}
+                                            </span>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                disabled={
+                                                    disabled ||
+                                                    recordChoicesLoading ||
+                                                    !recordPageControls.hasMore
+                                                }
+                                                onClick={() =>
+                                                    recordPageControls.onPage(
+                                                        recordPageControls.page +
+                                                            1,
+                                                    )
+                                                }
+                                            >
+                                                Next
+                                            </Button>
+                                        </nav>
+                                    )}
                                 {retryRecordChoices && (
                                     <div
                                         className="jr-field-hint"
@@ -390,7 +445,7 @@ export function MonthlyUpdateForm({
                             <Button
                                 type="submit"
                                 className="jr-primary"
-                                disabled={disabled}
+                                disabled={disabled || recordChoicesPending}
                             >
                                 {processing
                                     ? 'Saving…'

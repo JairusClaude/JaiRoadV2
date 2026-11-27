@@ -20,14 +20,27 @@ type ProjectChoices = Pick<
     'records' | 'existingUpdates'
 > & {
     project: MonthlyParentProject;
+    recordPage: number;
+    recordHasMore: boolean;
+    selectedRecordId: number | null;
 };
 
 async function loadProjectChoices(
     url: string,
     id: string,
     signal: AbortSignal,
+    recordPage = 1,
+    recordId = '',
 ): Promise<ProjectChoices> {
-    const query = new URLSearchParams({ project: id });
+    const query = new URLSearchParams({
+        project: id,
+        record_page: String(recordPage),
+    });
+
+    if (recordId) {
+        query.set('record', recordId);
+    }
+
     const response = await fetch(`${url}?${query}`, {
         headers: { Accept: 'application/json' },
         cache: 'no-store',
@@ -70,7 +83,8 @@ export default function Create(parents: MonthlyCreateProps) {
         removed_media_ids: [],
     });
     const { formChoicesUrl } = parents;
-    const { project_id: projectId } = form.data;
+    const { project_id: projectId, maintenance_id: recordId } = form.data;
+    const [recordPage, setRecordPage] = useState(1);
     const [projectChoices, setProjectChoices] = useState<ProjectChoices | null>(
         null,
     );
@@ -80,12 +94,14 @@ export default function Create(parents: MonthlyCreateProps) {
         String(projectChoices?.project.id) === projectId
             ? projectChoices
             : null;
-    const choicesLoading = Boolean(
-        formChoicesUrl &&
-        projectId &&
-        !selectedChoices &&
-        choiceFailure !== projectId,
+    const choiceKey = [projectId, recordPage, recordId].join(':');
+    const choicesCurrent =
+        selectedChoices?.recordPage === recordPage &&
+        String(selectedChoices.selectedRecordId ?? '') === recordId;
+    const choicesPending = Boolean(
+        formChoicesUrl && projectId && !choicesCurrent,
     );
+    const choicesLoading = choicesPending && choiceFailure !== choiceKey;
     const formParents = selectedChoices
         ? {
               ...parents,
@@ -95,7 +111,7 @@ export default function Create(parents: MonthlyCreateProps) {
         : parents;
 
     useEffect(() => {
-        if (!formChoicesUrl || !projectId || selectedChoices) {
+        if (!formChoicesUrl || !projectId || choicesCurrent) {
             return;
         }
 
@@ -104,21 +120,36 @@ export default function Create(parents: MonthlyCreateProps) {
             controller.signal,
             AbortSignal.timeout(12_000),
         ]);
-        void loadProjectChoices(formChoicesUrl, projectId, signal)
+        void loadProjectChoices(
+            formChoicesUrl,
+            projectId,
+            signal,
+            recordPage,
+            recordId,
+        )
             .then((choices) => {
                 if (!controller.signal.aborted) {
                     setProjectChoices(choices);
+                    setRecordPage(choices.recordPage);
                     setChoiceFailure(null);
                 }
             })
             .catch(() => {
                 if (!controller.signal.aborted) {
-                    setChoiceFailure(projectId);
+                    setChoiceFailure(choiceKey);
                 }
             });
 
         return () => controller.abort();
-    }, [choiceAttempt, formChoicesUrl, projectId, selectedChoices]);
+    }, [
+        choiceAttempt,
+        choiceKey,
+        choicesCurrent,
+        formChoicesUrl,
+        projectId,
+        recordId,
+        recordPage,
+    ]);
 
     const submitting = useRef(false);
     const importing = useRef(false);
@@ -130,7 +161,8 @@ export default function Create(parents: MonthlyCreateProps) {
             !parents.submitUrl ||
             submitting.current ||
             importing.current ||
-            form.processing
+            form.processing ||
+            choicesPending
         ) {
             return;
         }
@@ -259,8 +291,18 @@ export default function Create(parents: MonthlyCreateProps) {
             <MonthlyUpdateForm
                 parents={formParents}
                 recordChoicesLoading={choicesLoading}
+                recordPageControls={
+                    formChoicesUrl && selectedChoices
+                        ? {
+                              page: selectedChoices.recordPage,
+                              hasMore: selectedChoices.recordHasMore,
+                              onPage: setRecordPage,
+                          }
+                        : undefined
+                }
+                recordChoicesPending={choicesPending}
                 retryRecordChoices={
-                    choiceFailure === projectId && !selectedChoices
+                    choiceFailure === choiceKey && choicesPending
                         ? () => {
                               setChoiceFailure(null);
                               retryChoices((attempt) => attempt + 1);
@@ -279,12 +321,7 @@ export default function Create(parents: MonthlyCreateProps) {
                                 }}
                                 onImport={async (values, signal) => {
                                     const remote =
-                                        formChoicesUrl &&
-                                        !formParents.projects.some(
-                                            (item) =>
-                                                String(item.id) ===
-                                                values.project_id,
-                                        )
+                                        formChoicesUrl
                                             ? await loadProjectChoices(
                                                   formChoicesUrl,
                                                   values.project_id,
@@ -294,6 +331,8 @@ export default function Create(parents: MonthlyCreateProps) {
                                                           12_000,
                                                       ),
                                                   ]),
+                                                  1,
+                                                  values.maintenance_id,
                                               )
                                             : null;
                                     signal.throwIfAborted();
@@ -319,6 +358,7 @@ export default function Create(parents: MonthlyCreateProps) {
 
                                     if (remote) {
                                         setProjectChoices(remote);
+                                        setRecordPage(remote.recordPage);
                                         setChoiceFailure(null);
                                     }
 
@@ -334,7 +374,11 @@ export default function Create(parents: MonthlyCreateProps) {
                                 <ReconnectSubmission
                                     parents={formParents}
                                     values={form.data}
-                                    disabled={form.processing || importBusy}
+                                    disabled={
+                                        form.processing ||
+                                        importBusy ||
+                                        choicesPending
+                                    }
                                     onSubmit={() => save(false, true)}
                                 />
                             )}
@@ -376,6 +420,8 @@ export default function Create(parents: MonthlyCreateProps) {
 
                     if (key === 'project_id') {
                         setChoiceFailure(null);
+                        setRecordPage(1);
+                        setProjectChoices(null);
                         form.clearErrors('maintenance_id', 'update_month');
                         form.setData({
                             ...form.data,
@@ -384,6 +430,7 @@ export default function Create(parents: MonthlyCreateProps) {
                         });
                     } else {
                         if (key === 'maintenance_id') {
+                            setChoiceFailure(null);
                             form.clearErrors('update_month');
                         }
 
