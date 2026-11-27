@@ -194,10 +194,7 @@ export default function ShowRecord({
                         </div>
                     </dl>
                 </section>
-                <RecordProgressTimeline
-                    record={record}
-                    updates={updates}
-                />
+                <RecordProgressTimeline record={record} updates={updates} />
                 <RecordRelatedLists
                     recordId={record.id}
                     monthlyUpdateCreateUrl={monthlyUpdateCreateUrl}

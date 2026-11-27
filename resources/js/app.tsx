@@ -88,8 +88,8 @@ void createInertiaApp({
                         <div className="grid min-h-screen place-items-center text-sm">
                             <div className="text-center">
                                 <p role="alert">
-                                    JaiROADS could not open this page. Check the record
-                                    before retrying a submission.
+                                    JaiROADS could not open this page. Check the
+                                    record before retrying a submission.
                                 </p>
                                 <button
                                     type="button"

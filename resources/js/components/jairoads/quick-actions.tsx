@@ -94,9 +94,17 @@ export function JaiRoadsQuickActions() {
         entry.label.toLowerCase().includes(term.toLowerCase()),
     );
     const recordDirectories = [
-        { label: 'projects', path: 'maintenance-projects', Icon: LayoutDashboard },
+        {
+            label: 'projects',
+            path: 'maintenance-projects',
+            Icon: LayoutDashboard,
+        },
         { label: 'roads', path: 'road-coverages', Icon: Map },
-        { label: 'monthly updates', path: 'monthly-updates', Icon: CalendarDays },
+        {
+            label: 'monthly updates',
+            path: 'monthly-updates',
+            Icon: CalendarDays,
+        },
         { label: 'documents', path: 'maintenance-documents', Icon: FileText },
         { label: 'LGUs', path: 'lgus', Icon: Building2 },
     ];
@@ -232,7 +240,13 @@ export function JaiRoadsQuickActions() {
                                     if (e.key === 'ArrowDown') {
                                         e.preventDefault();
                                         setSelected((i) =>
-                                            Math.max(0, Math.min(i + 1, results.length - 1)),
+                                            Math.max(
+                                                0,
+                                                Math.min(
+                                                    i + 1,
+                                                    results.length - 1,
+                                                ),
+                                            ),
                                         );
                                     } else if (e.key === 'ArrowUp') {
                                         e.preventDefault();

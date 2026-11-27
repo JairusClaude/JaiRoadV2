@@ -3,12 +3,12 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ArrowLeft, ArrowRight, Pencil, Trash2 } from 'lucide-react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { MediaGallery } from '@/components/monthly-updates/media-gallery';
-import { PhotoComparison } from '@/components/monthly-updates/photo-comparison';
 import { MonthlyProgress } from '@/components/monthly-updates/monthly-progress';
 import {
     MonthlyDeletionDialog,
     useMonthlyDeletion,
 } from '@/components/monthly-updates/monthly-update-deletion';
+import { PhotoComparison } from '@/components/monthly-updates/photo-comparison';
 import { Button } from '@/components/ui/button';
 import { editUrl } from '@/lib/form-navigation';
 import { updateMonth, updateTimestamp } from '@/lib/monthly-updates';
