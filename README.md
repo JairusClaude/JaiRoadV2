@@ -2,7 +2,7 @@
 
 JaiROADS manages local government road coverage, maintenance projects, quarterly maintenance records, monthly updates, and supporting documents. It uses Laravel 13, PostgreSQL 17, and Fortify password authentication. The workspace supports SuperAdmin, Admin, Engineer, and Viewer accounts.
 
-Use the [`merged-system2` branch](https://github.com/JairusClaude/JaiRoadV2/tree/merged-system2) for the backend review.
+Use the [`main` branch](https://github.com/JairusClaude/JaiRoadV2/tree/main) for the backend review.
 
 ## Where to review the backend
 
@@ -12,14 +12,14 @@ Use the [`merged-system2` branch](https://github.com/JairusClaude/JaiRoadV2/tree
 | Authentication and role permissions | [Fortify provider](app/Providers/FortifyServiceProvider.php), [identity resolver](app/Services/AccountIdentityResolver.php), and [authorization rules](app/Services/RoleAccess.php) |
 | PostgreSQL data model | [Models](app/Models), [disposable schema](tests/Quarterly/fixtures/canonical.sql), and [reviewed database proposals](database/proposals) |
 | Business rules and sensitive operations | [Quarterly maintenance](app/Services/TwiceYearlyMaintenance.php), [audit writer](app/Services/OperationAudit.php), and [private file services](app/Services/Files) |
-| Automated evidence | [PostgreSQL regressions](tests/Quarterly), [browser workflows](tests/Browser/unified.mjs), and [GitHub Actions](https://github.com/JairusClaude/JaiRoadV2/actions?query=branch%3Amerged-system2) |
+| Automated evidence | [PostgreSQL regressions](tests/Quarterly), [browser workflows](tests/Browser/unified.mjs), and [GitHub Actions](https://github.com/JairusClaude/JaiRoadV2/actions?query=branch%3Amain) |
 
 ## Run an isolated reviewer instance
 
 Use PHP 8.4 with `pdo_pgsql` and the extensions required by Composer, Composer 2, Node.js 22.12 or newer, and a local PostgreSQL 17 server. The example uses a local PostgreSQL role named `postgres`. Use your own local role and password if your setup differs.
 
 ```bash
-git clone --single-branch --branch merged-system2 https://github.com/JairusClaude/JaiRoadV2.git
+git clone --single-branch --branch main https://github.com/JairusClaude/JaiRoadV2.git
 cd JaiRoadV2
 composer install --no-interaction --prefer-dist
 npm ci

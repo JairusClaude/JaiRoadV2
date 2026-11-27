@@ -24,6 +24,6 @@ After that approval, configure a single environment-specific scheduler service u
 
 ## Repository protection
 
-Have a repository administrator require the three verification workflows for merged-system2, protect against force pushes and deletion, and require review before changing release gates. Confirm the exact required check names from the current workflow runs. Maintain the existing fail-closed production release checks.
+Have a repository administrator require the verification checks for main (standard CI, focused regressions, full system verification, and disposable staging rehearsal), protect against force pushes and deletion, and require review before changing release gates. Confirm the exact required check names from the current workflow runs. Maintain the existing fail-closed production release checks.
 
 These are operational steps requiring an authorized operator. Passing disposable CI does not establish production acceptance or permission to change live infrastructure.

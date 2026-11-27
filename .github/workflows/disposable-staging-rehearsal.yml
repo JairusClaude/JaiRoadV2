@@ -12,6 +12,7 @@ on:
       - fix/optional-feature-schema-rehearsal
       - fix/isolated-integration-readiness
       - merged-system2
+      - main
   workflow_dispatch:
 
 permissions:
