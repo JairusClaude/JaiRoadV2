@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import { analyticsPdf, analyticsXlsx } from '../../resources/js/lib/analytics-report-formats.ts';
 import { maintenanceCalendar } from '../../resources/js/lib/maintenance-calendar.ts';
 import { hasOccupiedReportingMonth } from '../../resources/js/lib/occupied-reporting-months.ts';
+import { validProjectPage } from '../../resources/js/lib/project-choice-page.ts';
 
 test('PDF summary has escaped strings and valid xref byte offsets', () => {
     const pdf = Buffer.from(analyticsPdf([['Scope', 'System-wide'], ['Metric (test)', 12]]));
@@ -69,4 +70,21 @@ test('calendar export folds UTF-8 lines and escapes text without creating inject
     assert.ok(unfolded.includes('SUMMARY:Estimated finish: Davao\\, road\\; ' + '道路🚧'.repeat(30) + '\\nBEGIN:VEVENT'));
     assert.equal(unfolded.split('\r\n').filter(line => line === 'BEGIN:VEVENT').length, 1);
     assert.ok(unfolded.endsWith('END:VCALENDAR\r\n'));
+});
+
+test('project pickers reject malformed or duplicate paginated choices', () => {
+    const item = { id: 12, project_title: 'Road project', municipality: null };
+    const valid = { data: [item], page: 1, last_page: 2 };
+
+    assert.equal(validProjectPage(valid), true);
+    assert.equal(validProjectPage({ data: [], page: 1, last_page: 1 }), true);
+    assert.equal(validProjectPage(null), false);
+    assert.equal(validProjectPage({ ...valid, page: 0 }), false);
+    assert.equal(validProjectPage({ ...valid, page: 3 }), false);
+    assert.equal(validProjectPage({ ...valid, last_page: '2' }), false);
+    assert.equal(validProjectPage({ ...valid, data: [item, item] }), false);
+    assert.equal(validProjectPage({ ...valid, data: [{ ...item, id: -1 }] }), false);
+    assert.equal(validProjectPage({ ...valid, data: [{ ...item, project_title: 7 }] }), false);
+    assert.equal(validProjectPage({ ...valid, data: [{ ...item, municipality: {} }] }), false);
+    assert.equal(validProjectPage({ ...valid, data: Array(31).fill(item) }), false);
 });

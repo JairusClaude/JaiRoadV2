@@ -142,7 +142,9 @@ export default function Form(parents: DocumentParents) {
     const records = formChoicesUrl
         ? (current?.data?.records ?? [])
         : parents.records;
-    const record = records.find((r) => String(r.id) === form.data.maintenance_id);
+    const record = records.find(
+        (r) => String(r.id) === form.data.maintenance_id,
+    );
     const options = records
         .filter((r) => r.project_id === project?.id)
         .sort((a, b) => b.year - a.year || b.quarter.localeCompare(a.quarter));
@@ -401,7 +403,8 @@ export default function Form(parents: DocumentParents) {
                                                 role="status"
                                                 className="jr-field-hint"
                                             >
-                                                Loading eligible maintenance records…
+                                                Loading eligible maintenance
+                                                records…
                                             </p>
                                         )}
                                         {failed && (
@@ -415,7 +418,8 @@ export default function Form(parents: DocumentParents) {
                                                     className="underline"
                                                     onClick={() =>
                                                         retryChoices(
-                                                            (previous) => previous + 1,
+                                                            (previous) =>
+                                                                previous + 1,
                                                         )
                                                     }
                                                 >
@@ -428,10 +432,18 @@ export default function Form(parents: DocumentParents) {
                                                 <Button
                                                     type="button"
                                                     variant="outline"
-                                                    disabled={disabled || currentPage <= 1}
+                                                    disabled={
+                                                        disabled ||
+                                                        currentPage <= 1
+                                                    }
                                                     onClick={() => {
-                                                        change('maintenance_id', '');
-                                                        setRecordPage(currentPage - 1);
+                                                        change(
+                                                            'maintenance_id',
+                                                            '',
+                                                        );
+                                                        setRecordPage(
+                                                            currentPage - 1,
+                                                        );
                                                     }}
                                                 >
                                                     Previous records
@@ -442,22 +454,32 @@ export default function Form(parents: DocumentParents) {
                                                 <Button
                                                     type="button"
                                                     variant="outline"
-                                                    disabled={disabled || !hasMore}
+                                                    disabled={
+                                                        disabled || !hasMore
+                                                    }
                                                     onClick={() => {
-                                                        change('maintenance_id', '');
-                                                        setRecordPage(currentPage + 1);
+                                                        change(
+                                                            'maintenance_id',
+                                                            '',
+                                                        );
+                                                        setRecordPage(
+                                                            currentPage + 1,
+                                                        );
                                                     }}
                                                 >
                                                     Next records
                                                 </Button>
                                             </div>
                                         )}
-                                        {project && !loading && !failed && !options.length && (
-                                            <p className="jr-field-hint">
-                                                Add a Maintenance Record from
-                                                Project Details first.
-                                            </p>
-                                        )}
+                                        {project &&
+                                            !loading &&
+                                            !failed &&
+                                            !options.length && (
+                                                <p className="jr-field-hint">
+                                                    Add a Maintenance Record
+                                                    from Project Details first.
+                                                </p>
+                                            )}
                                     </div>
                                 </div>
                             )}
@@ -550,7 +572,7 @@ export default function Form(parents: DocumentParents) {
                                 <Button
                                     type="submit"
                                     className="jr-primary"
-                                    disabled={disabled}
+                                    disabled={disabled || loading || failed}
                                 >
                                     {form.processing
                                         ? 'Saving…'

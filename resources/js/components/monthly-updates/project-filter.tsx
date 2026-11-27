@@ -8,6 +8,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
+import { validProjectPage } from '@/lib/project-choice-page';
 
 export function MonthlyProjectFilter({
     projects,
@@ -67,7 +68,7 @@ export function MonthlyProjectFilter({
 
                 const payload = await result.json();
 
-                if (!Array.isArray(payload.data)) {
+                if (!validProjectPage(payload)) {
                     throw new Error('Invalid project choices');
                 }
 
