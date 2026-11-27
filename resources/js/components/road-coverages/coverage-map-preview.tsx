@@ -1,6 +1,8 @@
 import L from 'leaflet';
 import { Download, Map, Maximize2, Minimize2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { watchBasemap } from '@/lib/road-coverages/basemap';
+import type { BasemapStatus } from '@/lib/road-coverages/basemap';
 import { mappingData } from '@/lib/road-coverages/geometry.mjs';
 import {
     savedLineMetrics,
@@ -51,7 +53,8 @@ function SavedCoverageMap({
     const node = useRef<HTMLDivElement>(null);
     const [full, setFull] = useState(false);
     const [notice, setNotice] = useState('');
-    const [tilesUnavailable, setTilesUnavailable] = useState(false);
+    const [basemap, setBasemap] = useState<BasemapStatus>('loading');
+    const tileMonitor = useRef<ReturnType<typeof watchBasemap> | null>(null);
 
     useEffect(() => {
         if (!node.current || !lines.length) {
@@ -70,7 +73,8 @@ function SavedCoverageMap({
                 attribution: '© OpenStreetMap contributors',
             },
         );
-        tiles.on('tileerror', () => setTilesUnavailable(true));
+        const monitor = watchBasemap(tiles, setBasemap);
+        tileMonitor.current = monitor;
         tiles.addTo(map);
         L.control.scale({ imperial: false }).addTo(map);
         L.polyline(
@@ -125,6 +129,8 @@ function SavedCoverageMap({
 
         return () => {
             disposed = true;
+            monitor.dispose();
+            tileMonitor.current = null;
             resize.disconnect();
             document.removeEventListener('fullscreenchange', fullscreen);
             map.stop();
@@ -194,11 +200,25 @@ function SavedCoverageMap({
                 Approx. {metrics.kilometers.toFixed(2)} km · {metrics.segments}{' '}
                 line(s) · {metrics.vertices} vertices
             </div>
-            {(notice || tilesUnavailable) && (
-                <p className="jr-coverage-map-notice" role="status">
-                    {notice ||
-                        'Some background map tiles failed to load. Saved road geometry remains available.'}
-                </p>
+            {(notice || basemap === 'unavailable') && (
+                <div className="jr-coverage-map-notice">
+                    {notice && <p role="status">{notice}</p>}
+                    {basemap === 'unavailable' && (
+                        <>
+                            <p role="status">
+                                Background map unavailable. Saved road geometry
+                                remains available.
+                            </p>
+                            <button
+                                type="button"
+                                className="font-semibold underline"
+                                onClick={() => tileMonitor.current?.retry()}
+                            >
+                                Retry map tiles
+                            </button>
+                        </>
+                    )}
+                </div>
             )}
         </div>
     );

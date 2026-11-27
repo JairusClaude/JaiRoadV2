@@ -628,6 +628,18 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     assert.ok(exportedGeometry.coordinates.every(line => line.length >= 2));
     assert.deepEqual(Object.keys(exportedGeometry).sort(), ['coordinates', 'type']);
 
+    const osmTiles = 'https://tile.openstreetmap.org/**';
+    const failTiles = route => route.abort('failed');
+    await engineer.route(osmTiles, failTiles);
+    await engineer.goto(`${ui}/road-coverages/${f.road_id}`);
+    await engineer.getByText('Background map unavailable. Saved road geometry remains available.', { exact: true }).waitFor();
+    const savedLine = await engineer.locator('.jr-saved-coverage-line').first().elementHandle();
+    await engineer.unroute(osmTiles, failTiles);
+    await engineer.getByRole('button', { name: 'Retry map tiles', exact: true }).click();
+    await engineer.locator('.leaflet-tile-loaded').first().waitFor();
+    assert.equal(await savedLine.evaluate(node => node.isConnected), true);
+    await savedLine.dispose();
+
     const unavailableBasemap = 'https://tiles.openfreemap.org/**';
     await admin.route(unavailableBasemap, (route) => route.abort('failed'));
     await admin.goto(base + '/workspace/projects?view=show&project=' + f.project_id);

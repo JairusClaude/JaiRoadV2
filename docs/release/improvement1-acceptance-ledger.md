@@ -16,6 +16,8 @@ Lock the monthly form during asynchronous import (including save and attachment 
 
 Commit `12a01ae0b157c4f49e9327cc6008d7831468abb9`: branch full verification (45950928820) passed 16 jobs, failed Prettier and skipped the conditional ancestry job. The unified browser, TypeScript, ESLint, PHPStan, production build, Docker, Laravel and release-blocking checks passed. Branch and PR disposable staging rehearsals passed (45950928863, 45950934388). Focused regressions (45950928823) failed the legacy lean-form response assertion: project-only lookup now intentionally returns no reporting months. Standard CI (45950928864) failed as well. The subsequent correction updates the test to check project-only, selected-record and revoked-record requests separately, retains the privacy assertions, and applies the exact reported formatting changes. These corrections require fresh exact-head checks; no new all-green result is claimed.
 
+Commit `4f777961b29aab83847fdaeb3b8576b6d85571cd` passed standard CI (45951713957), focused regressions (45951714001), and disposable staging (45951713966). The next candidate adds a shared Leaflet basemap timeout and retry in road detail, editor, and simplified maps; retry redraws tiles without replacing road geometry. Browser failure/retry coverage was added. Hosted map provider verification and fresh candidate checks remain necessary.
+
 ## Outstanding
 
 - Benchmark representative large data and verify the new record-history and monthly-choice pagination; exceptionally large single-record reporting-month collections remain unbounded.

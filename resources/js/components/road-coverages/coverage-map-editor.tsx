@@ -20,6 +20,8 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { watchBasemap } from '@/lib/road-coverages/basemap';
+import type { BasemapStatus } from '@/lib/road-coverages/basemap';
 import {
     distanceKm,
     geometryEditingMode,
@@ -205,7 +207,8 @@ function EditableCoverageMapEditor({
         root.current = element;
         setPortalContainer(element);
     }, []);
-    const [tilesReady, setTilesReady] = useState(false);
+    const [basemap, setBasemap] = useState<BasemapStatus>('loading');
+    const tileMonitor = useRef<ReturnType<typeof watchBasemap> | null>(null);
     const [placing, setPlacing] = useState(!editing),
         [infoOpen, setInfoOpen] = useState(true),
         [hidden, setHidden] = useState(false),
@@ -833,8 +836,10 @@ function EditableCoverageMapEditor({
                 maxZoom: 19,
                 attribution: '© OpenStreetMap contributors · Routing: OSRM',
             },
-        ).addTo(instance);
-        tiles.on('tileload', () => setTilesReady(true));
+        );
+        const monitor = watchBasemap(tiles, setBasemap);
+        tileMonitor.current = monitor;
+        tiles.addTo(instance);
         L.control.scale({ imperial: false }).addTo(instance);
         active.current = L.layerGroup().addTo(instance);
         references.current = L.layerGroup().addTo(instance);
@@ -862,6 +867,8 @@ function EditableCoverageMapEditor({
         const pendingControllers = controllers.current;
 
         return () => {
+            monitor.dispose();
+            tileMonitor.current = null;
             map.current = null;
             active.current = null;
             references.current = null;
@@ -1763,10 +1770,21 @@ function EditableCoverageMapEditor({
                 )}
                 <div className="jr-map-instruction" role="status">
                     {instruction}
-                    {!tilesReady && (
+                    {basemap === 'loading' && (
                         <small style={{ display: 'block', marginTop: 4 }}>
-                            Map tiles are loading. If this persists, check
-                            access to OpenStreetMap; your work is retained.
+                            Map tiles are loading. Your work is retained.
+                        </small>
+                    )}
+                    {basemap === 'unavailable' && (
+                        <small style={{ display: 'block', marginTop: 4 }}>
+                            Background map unavailable. Your work is retained.{' '}
+                            <button
+                                type="button"
+                                className="font-semibold underline"
+                                onClick={() => tileMonitor.current?.retry()}
+                            >
+                                Retry map tiles
+                            </button>
                         </small>
                     )}
                 </div>

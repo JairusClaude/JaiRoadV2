@@ -1,6 +1,8 @@
 import L from 'leaflet';
 import { MapPin } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { watchBasemap } from '@/lib/road-coverages/basemap';
+import type { BasemapStatus } from '@/lib/road-coverages/basemap';
 import { savedRoadLines } from '@/lib/road-coverages/saved-lines';
 import { RoadDetailsPanel } from './road-details-panel';
 import 'leaflet/dist/leaflet.css';
@@ -60,8 +62,8 @@ export function SimplifiedCoverageMap({
 }: SimplifiedCoverageMapProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<L.Map | null>(null);
-    const tilesRef = useRef<L.TileLayer | null>(null);
-    const [tilesUnavailable, setTilesUnavailable] = useState(false);
+    const tileMonitor = useRef<ReturnType<typeof watchBasemap> | null>(null);
+    const [basemap, setBasemap] = useState<BasemapStatus>('loading');
     const [conditionMode, setConditionMode] = useState(false);
     const [mineOnly, setMineOnly] = useState(false);
     const [relationship, setRelationship] = useState<
@@ -181,8 +183,8 @@ export function SimplifiedCoverageMap({
                 attribution: '© OpenStreetMap contributors',
             },
         );
-        tilesRef.current = tiles;
-        tiles.on('tileerror', () => setTilesUnavailable(true));
+        const monitor = watchBasemap(tiles, setBasemap);
+        tileMonitor.current = monitor;
         tiles.addTo(map);
 
         // Metric scale indicator in bottom-left
@@ -215,8 +217,8 @@ export function SimplifiedCoverageMap({
             entries.clear();
             roadLayers.current = [];
             fittedRoads.current = false;
-            tilesRef.current = null;
-            tiles.off('tileerror');
+            monitor.dispose();
+            tileMonitor.current = null;
             observer.disconnect();
 
             if (resizeFrame) {
@@ -470,7 +472,7 @@ export function SimplifiedCoverageMap({
                     Show road conditions
                 </label>
             )}
-            {tilesUnavailable && (
+            {basemap === 'unavailable' && (
                 <div className="jr-road-map-toolbar">
                     <span role="status">
                         Some background tiles failed. Saved road lines remain
@@ -478,10 +480,7 @@ export function SimplifiedCoverageMap({
                     </span>
                     <button
                         type="button"
-                        onClick={() => {
-                            setTilesUnavailable(false);
-                            tilesRef.current?.redraw();
-                        }}
+                        onClick={() => tileMonitor.current?.retry()}
                     >
                         Retry map tiles
                     </button>
