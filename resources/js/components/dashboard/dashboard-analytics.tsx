@@ -9,6 +9,7 @@ import {
     MapPinned,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { downloadAnalyticsCsv } from '@/lib/analytics-export';
 
 export type DashboardSummary = {
     scope: string;
@@ -117,6 +118,20 @@ export function DashboardAnalytics({
                         sample data.
                     </p>
                 </div>
+                <button
+                    type="button"
+                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium"
+                    onClick={() =>
+                        downloadAnalyticsCsv(
+                            data.scope,
+                            visibleCards,
+                            data.metrics.reportingCoverage,
+                            data.trend,
+                        )
+                    }
+                >
+                    Export summary (CSV)
+                </button>
                 <span className="rounded-full border border-[var(--jr-role-accent-soft)] bg-[var(--jr-role-accent-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--jr-role-accent-ink)]">
                     {data.scope}
                 </span>

@@ -3,6 +3,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ArrowLeft, ArrowRight, Pencil, Trash2 } from 'lucide-react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { MediaGallery } from '@/components/monthly-updates/media-gallery';
+import { PhotoComparison } from '@/components/monthly-updates/photo-comparison';
 import { MonthlyProgress } from '@/components/monthly-updates/monthly-progress';
 import {
     MonthlyDeletionDialog,
@@ -193,6 +194,7 @@ export default function Show({
                             <p className="jr-field-hint">{mediaBreakdown}</p>
                         </div>
                         <MediaGallery key={update.id} media={media} />
+                        <PhotoComparison key={update.id} media={media} />
                     </section>
                     <footer className="jr-report-footer">
                         <dl

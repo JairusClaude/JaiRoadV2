@@ -73,7 +73,8 @@ export function SystemHealthPanel({ health }: { health: SystemHealth }) {
                 ))}
             </dl>
             <p className="mt-3 text-xs text-slate-500">
-                Checked at <time dateTime={health.checkedAt}>
+                Checked at{' '}
+                <time dateTime={health.checkedAt}>
                     {health.checkedAt}
                 </time>
             </p>

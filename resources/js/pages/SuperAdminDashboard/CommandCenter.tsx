@@ -11,10 +11,10 @@ import {
     UsersRound,
 } from 'lucide-react';
 import { useState } from 'react';
-import { SystemHealthPanel } from '@/components/dashboard/system-health-panel';
-import type { SystemHealth } from '@/components/dashboard/system-health-panel';
 import { DashboardAnalytics } from '@/components/dashboard/dashboard-analytics';
 import type { DashboardSummary } from '@/components/dashboard/dashboard-analytics';
+import { SystemHealthPanel } from '@/components/dashboard/system-health-panel';
+import type { SystemHealth } from '@/components/dashboard/system-health-panel';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { MetricCard } from '@/components/metric-card';
 import { MonthlyProgress } from '@/components/monthly-updates/monthly-progress';

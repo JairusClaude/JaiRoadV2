@@ -5,6 +5,7 @@ import {
     RecordDeletionDialog,
     useRecordDeletion,
 } from '@/components/maintenance-projects/record-deletion';
+import { RecordProgressTimeline } from '@/components/maintenance-projects/record-progress-timeline';
 import { RecordRelatedLists } from '@/components/maintenance-projects/record-related-lists';
 import type { RelatedMonthlyUpdate } from '@/components/maintenance-projects/record-related-lists';
 import { Button } from '@/components/ui/button';
@@ -193,6 +194,10 @@ export default function ShowRecord({
                         </div>
                     </dl>
                 </section>
+                <RecordProgressTimeline
+                    record={record}
+                    updates={updates}
+                />
                 <RecordRelatedLists
                     recordId={record.id}
                     monthlyUpdateCreateUrl={monthlyUpdateCreateUrl}
