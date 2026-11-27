@@ -1,3 +1,5 @@
+import { RelatedPageControls } from '@/components/maintenance-projects/record-related-lists';
+import type { RelatedPagination } from '@/components/maintenance-projects/record-related-lists';
 import { updateMonth } from '@/lib/monthly-updates';
 import type { MaintenanceRecordDetail } from '@/types/maintenance-records';
 import type { MonthlyUpdateSummary } from '@/types/monthly-updates';
@@ -5,19 +7,25 @@ import type { MonthlyUpdateSummary } from '@/types/monthly-updates';
 export function RecordProgressTimeline({
     record,
     updates,
+    checkpointMonths,
+    pagination,
 }: {
     record: MaintenanceRecordDetail;
     updates: MonthlyUpdateSummary[];
+    checkpointMonths?: (string | null)[];
+    pagination?: RelatedPagination;
 }) {
     const ordered = [...updates].sort((a, b) =>
         a.update_month.localeCompare(b.update_month),
     );
 
-    const checkpoints = [25, 50, 75, 100].map((target) => ({
+    const checkpoints = [25, 50, 75, 100].map((target, index) => ({
         target,
-        firstReport: ordered.find(
-            (update) => Number(update.progress_percentage) >= target,
-        ),
+        month: checkpointMonths
+            ? checkpointMonths[index]
+            : ordered.find(
+                  (update) => Number(update.progress_percentage) >= target,
+              )?.update_month,
     }));
 
     return (
@@ -44,6 +52,11 @@ export function RecordProgressTimeline({
                     </li>
                 )}
             </ol>
+            <RelatedPageControls
+                pagination={pagination}
+                parameter="update_page"
+                label="Progress timeline pages"
+            />
             <h3 className="mt-4 font-semibold">
                 Recorded progress checkpoints
             </h3>
@@ -52,13 +65,11 @@ export function RecordProgressTimeline({
                 indicators, not separately approved project milestones.
             </p>
             <dl className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {checkpoints.map(({ target, firstReport }) => (
+                {checkpoints.map(({ target, month }) => (
                     <div key={target} className="min-w-0 rounded-lg border p-3">
                         <dt className="font-semibold">{target}% reported</dt>
                         <dd className="text-sm">
-                            {firstReport
-                                ? updateMonth(firstReport.update_month)
-                                : 'Not yet recorded'}
+                            {month ? updateMonth(month) : 'Not yet recorded'}
                         </dd>
                     </div>
                 ))}

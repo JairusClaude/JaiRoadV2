@@ -38,6 +38,65 @@ export type RelatedMonthlyUpdate = MonthlyUpdateSummary & {
     video_count: number;
     other_count: number;
 };
+export type RelatedPagination = {
+    page: number;
+    total: number;
+    perPage: number;
+};
+
+export function RelatedPageControls({
+    pagination,
+    parameter,
+    label,
+}: {
+    pagination?: RelatedPagination;
+    parameter: 'update_page' | 'document_page';
+    label: string;
+}) {
+    const { url } = usePage();
+
+    if (!pagination || pagination.total <= pagination.perPage) {
+        return null;
+    }
+
+    const pages = Math.ceil(pagination.total / pagination.perPage);
+    const pageHref = (page: number) => {
+        const destination = new URL(url, 'https://jairoads.invalid');
+        destination.searchParams.set(parameter, String(page));
+
+        return destination.pathname + destination.search;
+    };
+
+    return (
+        <nav
+            aria-label={label}
+            className="mt-3 flex flex-wrap items-center gap-2 text-sm"
+        >
+            {pagination.page > 1 && (
+                <Link
+                    href={pageHref(pagination.page - 1)}
+                    preserveScroll
+                    className="rounded-md border px-3 py-2"
+                >
+                    Previous
+                </Link>
+            )}
+            <span>
+                Page {pagination.page} of {pages}
+            </span>
+            {pagination.page < pages && (
+                <Link
+                    href={pageHref(pagination.page + 1)}
+                    preserveScroll
+                    className="rounded-md border px-3 py-2"
+                >
+                    Next
+                </Link>
+            )}
+        </nav>
+    );
+}
+
 function RelatedActions({
     label,
     enabled,
@@ -125,11 +184,15 @@ export function RecordRelatedLists({
     monthlyUpdateCreateUrl,
     updates,
     documents,
+    documentPagination,
+    updatePagination,
 }: {
     recordId: number;
     monthlyUpdateCreateUrl?: string;
     updates: RelatedMonthlyUpdate[];
     documents: DocumentSummary[];
+    documentPagination?: RelatedPagination;
+    updatePagination?: RelatedPagination;
 }) {
     const page = usePage();
     const isViewer =
@@ -141,6 +204,8 @@ export function RecordRelatedLists({
         (page.props.previewOnly === true ||
             (page.props.canonicalFrontend === true &&
                 page.props.canWrite === true));
+    const updateTotal = updatePagination?.total ?? updates.length;
+    const documentTotal = documentPagination?.total ?? documents.length;
     const monthlyDeletion = useMonthlyDeletion(`record=${recordId}`);
     const documentDeletion = useDocumentDeletion(recordId);
     const orderedUpdates = [...updates].sort(
@@ -158,8 +223,8 @@ export function RecordRelatedLists({
                         <div>
                             <h2 id="monthly-updates-title">Monthly Updates</h2>
                             <p>
-                                {updates.length}{' '}
-                                {updates.length === 1 ? 'update' : 'updates'}{' '}
+                                {updateTotal}{' '}
+                                {updateTotal === 1 ? 'update' : 'updates'}{' '}
                                 for this record
                             </p>
                         </div>
@@ -246,6 +311,11 @@ export function RecordRelatedLists({
                             </p>
                         </div>
                     )}
+                    <RelatedPageControls
+                        pagination={updatePagination}
+                        parameter="update_page"
+                        label="Monthly update pages"
+                    />
                 </section>
                 <section aria-labelledby="maintenance-documents-title">
                     <div className="jr-section-title-row">
@@ -254,8 +324,8 @@ export function RecordRelatedLists({
                                 Maintenance Documents
                             </h2>
                             <p>
-                                {documents.length}{' '}
-                                {documents.length === 1
+                                {documentTotal}{' '}
+                                {documentTotal === 1
                                     ? 'document'
                                     : 'documents'}{' '}
                                 for this record
@@ -351,6 +421,11 @@ export function RecordRelatedLists({
                             </p>
                         </div>
                     )}
+                    <RelatedPageControls
+                        pagination={documentPagination}
+                        parameter="document_page"
+                        label="Maintenance document pages"
+                    />
                 </section>
             </div>
             <MonthlyDeletionDialog deletion={monthlyDeletion} />

@@ -103,13 +103,28 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
         $p = $this->projects($actor)->where('p.id', $project)->first();
         abort_unless($p !== null, 404);
 
+        $documentQuery = $this->documentQuery($actor)->where('d.maintenance_id', $id);
+        $updateQuery = $this->updateQuery($actor)->where('u.maintenance_id', $id);
+        $documentTotal = (clone $documentQuery)->count();
+        $updateTotal = (clone $updateQuery)->count();
+        $perPage = 12;
+        $documentPage = min(max(1, $request->integer('document_page', 1)), max(1, (int) ceil($documentTotal / $perPage)));
+        $updatePage = min(max(1, $request->integer('update_page', 1)), max(1, (int) ceil($updateTotal / $perPage)));
+        $checkpoints = (clone $updateQuery)->select([])
+            ->selectRaw('min(case when u.progress_percentage >= 25 then u.update_month end) as month25, min(case when u.progress_percentage >= 50 then u.update_month end) as month50, min(case when u.progress_percentage >= 75 then u.update_month end) as month75, min(case when u.progress_percentage >= 100 then u.update_month end) as month100')
+            ->first();
+        $checkpointMonths = [$checkpoints->month25 ?? null, $checkpoints->month50 ?? null, $checkpoints->month75 ?? null, $checkpoints->month100 ?? null];
+
         return $this->render('MaintenanceProjects/Records/Show', $request, [
             'project' => $this->projectData($p, $actor), 'record' => $this->recordData($r, $actor),
             'milestones' => $this->milestonesEnabled() ? DB::table('jairoads_next.maintenance_milestones')->where('maintenance_id', $id)->orderBy('planned_date')->orderBy('id')->limit(100)->get(['id', 'title', 'planned_date', 'completed_date', 'status', 'version']) : null,
             'milestonesWritable' => $this->milestonesEnabled() && ! config('jairoads_file_deletion.operationally_enabled') && $this->canWriteRecord($r, $actor),
             'monthlyUpdateCreateUrl' => $this->canWriteRecord($r, $actor) ? self::BASE.'/monthly-updates/create?maintenance_id='.$id : null,
-            'documents' => $this->documentQuery($actor)->where('d.maintenance_id', $id)->orderByDesc('d.id')->get()->map(fn (\stdClass $d): array => $this->documentData($d, $actor)),
-            'updates' => $this->updateQuery($actor)->where('u.maintenance_id', $id)->orderByDesc('u.update_month')->get()->map(fn (\stdClass $u): array => $this->updateData($u, $actor)),
+            'documents' => $documentQuery->orderByDesc('d.uploaded_at')->orderByDesc('d.id')->forPage($documentPage, $perPage)->get()->map(fn (\stdClass $d): array => $this->documentData($d, $actor)),
+            'updates' => $updateQuery->orderByDesc('u.update_month')->orderByDesc('u.id')->forPage($updatePage, $perPage)->get()->map(fn (\stdClass $u): array => $this->updateData($u, $actor)),
+            'documentPagination' => ['page' => $documentPage, 'total' => $documentTotal, 'perPage' => $perPage],
+            'updatePagination' => ['page' => $updatePage, 'total' => $updateTotal, 'perPage' => $perPage],
+            'checkpointMonths' => $checkpointMonths,
             'canWrite' => $this->canWriteRecord($r, $actor),
             'canReassign' => RoleAccess::managesBusinessData($actor['role']),
             'canUnassign' => false,

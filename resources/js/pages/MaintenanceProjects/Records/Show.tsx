@@ -9,7 +9,10 @@ import { RecordMilestones } from '@/components/maintenance-projects/record-miles
 import type { Milestone } from '@/components/maintenance-projects/record-milestones';
 import { RecordProgressTimeline } from '@/components/maintenance-projects/record-progress-timeline';
 import { RecordRelatedLists } from '@/components/maintenance-projects/record-related-lists';
-import type { RelatedMonthlyUpdate } from '@/components/maintenance-projects/record-related-lists';
+import type {
+    RelatedMonthlyUpdate,
+    RelatedPagination,
+} from '@/components/maintenance-projects/record-related-lists';
 import { Button } from '@/components/ui/button';
 import { editUrl } from '@/lib/form-navigation';
 import { engineerName, validRecordDate } from '@/lib/maintenance-records';
@@ -34,6 +37,9 @@ export default function ShowRecord({
     monthlyUpdateCreateUrl,
     documents = [],
     updates = [],
+    documentPagination,
+    updatePagination,
+    checkpointMonths,
     milestones = null,
     milestonesWritable = false,
 }: {
@@ -42,6 +48,9 @@ export default function ShowRecord({
     monthlyUpdateCreateUrl?: string;
     documents?: DocumentSummary[];
     updates?: RelatedMonthlyUpdate[];
+    documentPagination?: RelatedPagination;
+    updatePagination?: RelatedPagination;
+    checkpointMonths?: (string | null)[];
     milestones?: Milestone[] | null;
     milestonesWritable?: boolean;
     canReassign?: boolean;
@@ -200,7 +209,12 @@ export default function ShowRecord({
                         </div>
                     </dl>
                 </section>
-                <RecordProgressTimeline record={record} updates={updates} />
+                <RecordProgressTimeline
+                    record={record}
+                    updates={updates}
+                    checkpointMonths={checkpointMonths}
+                    pagination={updatePagination}
+                />
                 {milestones && (
                     <RecordMilestones
                         milestones={milestones}
@@ -215,6 +229,8 @@ export default function ShowRecord({
                     monthlyUpdateCreateUrl={monthlyUpdateCreateUrl}
                     updates={updates}
                     documents={documents}
+                    documentPagination={documentPagination}
+                    updatePagination={updatePagination}
                 />
             </ProjectWorkspace>
             <RecordDeletionDialog deletion={deletion} />

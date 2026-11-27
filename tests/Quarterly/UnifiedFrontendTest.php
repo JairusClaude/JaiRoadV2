@@ -45,6 +45,34 @@ final class UnifiedFrontendTest extends PostgresTestCase
         }
     }
 
+    public function test_record_history_paginates_documents_and_preserves_totals_and_checkpoints(): void
+    {
+        $f = $this->fixture('Admin');
+        $record = $this->record($f);
+        $update = $this->monthly($f, $record);
+        DB::table('jairoads_next.monthly_updates')->where('id', $update)->update(['progress_percentage' => 75]);
+        for ($i = 1; $i <= 13; $i++) {
+            DB::table('jairoads_next.maintenance_documents')->insert([
+                'maintenance_id' => $record,
+                'document_title' => 'History '.$i,
+                'file_name' => 'seed.pdf',
+                'file_path' => 'maintenance-records/'.$record.'/00000000-0000-4000-8000-'.str_pad((string) $i, 12, '0', STR_PAD_LEFT).'.pdf',
+                'uploaded_by' => $f['user']->canonical_user_account_id,
+            ]);
+        }
+
+        $url = self::UI.'/maintenance-projects/'.$f['project'].'/records/'.$record;
+        $this->get($url)->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('documents', 12)->where('documentPagination.total', 13)
+            ->where('documentPagination.page', 1)->where('updatePagination.total', 1)
+            ->where('checkpointMonths.0', '2026-10')->where('checkpointMonths.2', '2026-10')
+            ->where('checkpointMonths.3', null));
+        $this->get($url.'?document_page=999')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('documents', 1)->where('documentPagination.total', 13)
+            ->where('documentPagination.page', 2)->where('documents.0.document_title', 'History 1')
+            ->where('checkpointMonths.2', '2026-10'));
+    }
+
     public function test_dashboard_map_distinguishes_project_creator_and_record_assignment(): void
     {
         $f = $this->fixture('Engineer');
