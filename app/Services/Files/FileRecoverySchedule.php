@@ -56,7 +56,13 @@ final class FileRecoverySchedule
 
         try {
             $finishedAt = Carbon::parse($evidence['finished_at']);
-            $age = (int) $finishedAt->diffInSeconds(now(), false);
+            $canonical = str_ends_with($evidence['finished_at'], 'Z')
+                ? substr($evidence['finished_at'], 0, -1).'+00:00'
+                : $evidence['finished_at'];
+            if ($finishedAt->toIso8601String() !== $canonical) {
+                return null;
+            }
+            $age = $finishedAt->diffInSeconds(now(), false);
         } catch (\Throwable) {
             return null;
         }
@@ -70,7 +76,7 @@ final class FileRecoverySchedule
             'completed' => $evidence['completed'],
             'pending' => $evidence['pending'],
             'budget_reached' => $evidence['budget_reached'],
-            'age_seconds' => $age,
+            'age_seconds' => (int) $age,
             'stale' => $age > 15 * 60,
         ];
     }

@@ -6,6 +6,7 @@ namespace Tests\Quarterly;
 
 use App\Services\Files\FileRecoverySchedule;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 final class FileRecoveryScheduleTest extends PostgresTestCase
@@ -47,6 +48,22 @@ final class FileRecoveryScheduleTest extends PostgresTestCase
         $this->assertGreaterThanOrEqual(960, FileRecoverySchedule::lastRun()['age_seconds']);
         $this->travel(8)->days();
         $this->assertNull(FileRecoverySchedule::lastRun());
+    }
+
+    public function test_batch_evidence_rejects_normalized_invalid_dates_and_future_timestamps(): void
+    {
+        config(['cache.default' => 'array']);
+        $this->travelTo(now()->setDate(2026, 3, 3)->setTime(12, 0)->utc());
+        $key = 'jairoads:recovery:last-finished-batch:v1';
+        FileRecoverySchedule::recordRun(2, 1, false);
+        $evidence = Cache::get($key);
+        $this->assertNotNull(FileRecoverySchedule::lastRun());
+        foreach (['2026-02-30T12:00:00+00:00', '2026-03-02T24:00:00+00:00', now()->addSecond()->toIso8601String()] as $timestamp) {
+            Cache::put($key, array_replace($evidence, ['finished_at' => $timestamp]));
+            $this->assertNull(FileRecoverySchedule::lastRun());
+        }
+        Cache::put($key, array_replace($evidence, ['finished_at' => now()->utc()->format('Y-m-d\TH:i:s\Z')]));
+        $this->assertNotNull(FileRecoverySchedule::lastRun());
     }
 
     public function test_scheduler_registers_only_the_approved_bounded_command_with_locks(): void

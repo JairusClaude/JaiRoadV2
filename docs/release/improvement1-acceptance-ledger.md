@@ -52,6 +52,8 @@ Commit `6cb2b9df9bf8a7a4c7251573f75ca86cbd5bcd6a` passed both standard, focused 
 
 Commit `9c458989e12dbbb17d74dd42f820b2112c812c12` passed 502 quarterly tests (7,784 assertions), focused frontend/password jobs, staging and dependency audits. Its standard workflow failed on the Pint and Prettier differences reproduced and applied in this follow-up. Recorded directory measurements are in `docs/performance/improvement1-directory-measurements.md`. Road directory rows now omit geometry already supplied by the dedicated map/detail endpoints and reset bulk selection when the visible scope changes. Existing road coordinates are untouched. Fresh exact-head verification remains required.
 
+Commit `08fb5d29ceb1a779cfab29b7c44d91a4fd6f0ed2` passed standard, focused, and disposable staging workflows on branch and PR; all 17 applicable branch full-system jobs passed (45960756210, one conditional skip), including unified browser, Docker, and static checks. Follow-up restores canonical directory search text from server filter changes, resets LGU selection across result scopes, includes search in project selection scope, cancels pending project search before delete dialogs, and rejects normalized-invalid or future recovery timestamps. New browser and PostgreSQL regressions cover LGU scope and invalid telemetry. No operational feature activation. Exact-head verification required.
+
 ## Outstanding
 
 - Benchmark representative large data and verify the new record-history and monthly-choice pagination; the single-record month occupancy snapshot is compacted by year, but still grows with the number of distinct reporting years; verify measured behavior and hosted load.

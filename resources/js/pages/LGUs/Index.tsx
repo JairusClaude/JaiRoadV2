@@ -82,6 +82,19 @@ export default function Index({
     const [busy, setBusy] = useState(false);
     const [selecting, setSelecting] = useState(false);
     const [selected, setSelected] = useState<Set<number>>(new Set());
+    const scope = JSON.stringify([
+        lgus.current_page,
+        filters,
+        lgus.data.map((lgu) => lgu.id),
+    ]);
+    const [previousScope, setPreviousScope] = useState(scope);
+
+    if (previousScope !== scope) {
+        setPreviousScope(scope);
+        setSelecting(false);
+        setSelected(new Set());
+    }
+
     const [bulkTargets, setBulkTargets] = useState<LguSummary[] | null>(null);
     const [bulkDeleting, setBulkDeleting] = useState(false);
     const [bulkError, setBulkError] = useState('');

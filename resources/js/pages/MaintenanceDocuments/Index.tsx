@@ -47,6 +47,13 @@ export default function Index({
                 page.props.canWrite === true));
     const deletion = useDocumentDeletion();
     const [search, setSearch] = useState(filters.search);
+    const [previousSearch, setPreviousSearch] = useState(filters.search);
+
+    if (previousSearch !== filters.search) {
+        setPreviousSearch(filters.search);
+        setSearch(filters.search);
+    }
+
     const [selecting, setSelecting] = useState(false);
     const [selected, setSelected] = useState<Set<number>>(new Set());
     const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);

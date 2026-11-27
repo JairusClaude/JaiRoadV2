@@ -232,6 +232,18 @@ assert.deepEqual(pair, [foreground, background], path);
         await page.goto(base + '/workspace/dashboard');
     }
 
+    // A filtered-away LGU must never remain in the visible selection count.
+    await superadmin.goto(`${ui}/lgus`);
+    await superadmin.getByRole('button', { name: 'Select LGUs', exact: true }).click();
+    await superadmin.getByRole('checkbox', { name: 'Select all LGUs on this page' }).check();
+    await superadmin.getByText(/^\d+ selected$/, { exact: true }).waitFor();
+    await superadmin.getByRole('searchbox', { name: 'Search LGUs' }).fill('NoSuchLguForSelectionRegression');
+    await superadmin.waitForURL(url => url.searchParams.get('search') === 'NoSuchLguForSelectionRegression');
+    await superadmin.getByRole('button', { name: 'Select LGUs', exact: true }).waitFor();
+    assert.equal(await superadmin.getByRole('button', { name: 'Delete selected', exact: true }).count(), 0);
+    console.log('PASS: LGU selection is cleared when the directory scope changes.');
+    await superadmin.goto(base + '/workspace/dashboard');
+
     // Viewer palette is selected from the signed-in canonical role, not URL or preference.
     await viewer.locator('.jr-viewer-workspace').waitFor();
     await viewer.locator('.jr-viewer-brand-logo').first().waitFor();

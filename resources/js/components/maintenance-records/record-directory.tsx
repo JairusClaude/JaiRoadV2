@@ -84,6 +84,13 @@ export function RecordDirectory({
             page.props.jairoadsIdentity as { role?: string } | undefined
         )?.role?.toLowerCase() === 'viewer';
     const [search, setSearch] = useState(filters.search);
+    const [previousSearch, setPreviousSearch] = useState(filters.search);
+
+    if (previousSearch !== filters.search) {
+        setPreviousSearch(filters.search);
+        setSearch(filters.search);
+    }
+
     const [selecting, setSelecting] = useState(false);
     const [selected, setSelected] = useState<Set<number>>(new Set());
     const scope = JSON.stringify([

@@ -62,9 +62,20 @@ export function ProjectDirectory({
             page.props.jairoadsIdentity as { role?: string } | undefined
         )?.role?.toLowerCase() === 'viewer';
     const [search, setSearch] = useState(filters.search);
+    const [previousSearch, setPreviousSearch] = useState(filters.search);
+
+    if (previousSearch !== filters.search) {
+        setPreviousSearch(filters.search);
+        setSearch(filters.search);
+    }
+
     const [selecting, setSelecting] = useState(false);
     const [selected, setSelected] = useState<Set<number>>(new Set());
-    const selectionScope = `${projects.current_page}:${filters.municipality}:${filters.sort}:${projects.data.map((project) => project.id).join(',')}`;
+    const selectionScope = JSON.stringify([
+        projects.current_page,
+        filters,
+        projects.data.map((project) => project.id),
+    ]);
     const [previousScope, setPreviousScope] = useState(selectionScope);
 
     // Reset only selection when the returned scope changes. Keep the directory
