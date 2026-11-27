@@ -1002,7 +1002,9 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     const outcomeRoute = '**/monthly-updates/submission-outcome?*';
     let queuedWrites = 0;
     const observeQueuedWrite = request => {
-        if (request.method() === 'POST' && new URL(request.url()).pathname === '/workspace/ui/monthly-updates') queuedWrites++;
+        if (request.method() === 'POST' && new URL(request.url()).pathname === '/workspace/ui/monthly-updates') {
+            queuedWrites++;
+        }
     };
     engineer.on('request', observeQueuedWrite);
     const deniedOutcome = route => route.fulfill({ status: 403, json: { message: 'Denied fixture' } });
