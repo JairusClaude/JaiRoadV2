@@ -1,6 +1,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 import { MaintenanceHistory } from '@/components/maintenance-projects/maintenance-history';
+import type { HistoryPagination } from '@/components/maintenance-projects/maintenance-history';
 import {
     ProjectDeletionDialog,
     useProjectDeletion,
@@ -22,11 +23,13 @@ export default function Show({
     records,
     recordCreateUrl,
     expandedYear,
+    historyPagination,
 }: {
     project: ProjectSummary;
     records: MaintenanceRecordSummary[];
     recordCreateUrl?: string;
     expandedYear?: number;
+    historyPagination?: HistoryPagination;
 }) {
     const deletion = useProjectDeletion();
     const page = usePage();
@@ -132,6 +135,7 @@ export default function Show({
                     records={records}
                     recordCreateUrl={recordCreateUrl}
                     expandedYear={expandedYear}
+                    pagination={historyPagination}
                 />
             </ProjectWorkspace>
             <ProjectDeletionDialog deletion={deletion} />

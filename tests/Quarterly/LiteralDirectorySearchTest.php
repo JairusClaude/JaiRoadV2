@@ -207,7 +207,6 @@ it('normalizes out of range numeric filters without database conversion errors',
         ->assertInertia(fn (Assert $page) => $page->where('filters.project', (string) $f['project'])->has('projects', 1));
 });
 
-
 it('bounds administrative directories and honors direct engineer profiles despite old filters', function (): void {
     $f = $this->fixture('SuperAdmin');
     for ($i = 0; $i < 20; $i++) {

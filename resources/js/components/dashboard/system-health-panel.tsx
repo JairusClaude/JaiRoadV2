@@ -14,6 +14,9 @@ export type SystemHealth = {
         pending: number;
         retried: number;
         completed: number;
+        review_required?: number;
+        retryable?: number;
+        unattempted?: number;
         oldest_pending_at?: string | null;
     } | null;
     lastRecoveryRun?: {
@@ -95,6 +98,12 @@ export function SystemHealthPanel({ health }: { health: SystemHealth }) {
             detail: health.recoveryCounts
                 ? `${health.recoveryCounts.pending} pending · ${health.recoveryCounts.retried} previously attempted · ${health.recoveryCounts.completed} completed`
                 : 'Recovery intent table unavailable',
+        },
+        {
+            label: 'Pending recovery breakdown',
+            detail: health.recoveryCounts
+                ? `${health.recoveryCounts.review_required ?? 0} last failed a safeguard · ${health.recoveryCounts.retryable ?? 0} last failed Storage or finalization · ${health.recoveryCounts.unattempted ?? 0} not yet attempted`
+                : 'Recovery queue unavailable',
         },
         {
             label: 'Oldest pending recovery',

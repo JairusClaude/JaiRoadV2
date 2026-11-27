@@ -38,6 +38,8 @@ Commit `2eb6da60e282c79edd3ce6cd4b70598be90a4470` passed both focused regression
 
 Commit `7ca335700f469f093e3fd349dd296ef6f3b1627c` passed both focused regression and disposable staging workflows. Its standard CI failed ESLint and the PR Prettier check identified an exact formatting correction in the road editor. The follow-up fixes both, reuses bounded pagination counts in account and engineer directories, forces direct profile bookmarks to page one regardless of old filters, cancels closed notification requests, and rechecks canonical identity before returning private notifications. No additional schema, flags or production access changed. Fresh exact-head verification remains required.
 
+Commit `eaacc932aa624056c00efb0dbe2bfd22720b24ff` passed 501 quarterly tests (6,687 assertions); the focused workflow then failed on one extra blank line, corrected here. Follow-up paginates project maintenance history in five-year groups, honors direct links to a retained year, and reports aggregate last-failure categories in recovery health without disclosing object paths or changing deletion behavior. Exact-head verification remains required; the five-year display size is an implementation choice, not a retention policy.
+
 ## Outstanding
 
 - Benchmark representative large data and verify the new record-history and monthly-choice pagination; the single-record month occupancy snapshot is compacted by year, but still grows with the number of distinct reporting years; verify measured behavior and hosted load.

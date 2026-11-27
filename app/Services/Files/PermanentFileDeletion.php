@@ -36,20 +36,20 @@ final class PermanentFileDeletion
         return $this->available ??= Schema::hasTable(self::TABLE);
     }
 
-    /** @return array{pending:int,retried:int,completed:int,oldest_pending_at:?string}|null */
+    /** @return array{pending:int,retried:int,completed:int,oldest_pending_at:?string,review_required:int,retryable:int,unattempted:int}|null */
     public function recoveryCounts(): ?array
     {
         try {
             if (! $this->available()) {
                 return null;
             }
-            $row = DB::table(self::TABLE)->selectRaw("count(*) filter (where state = 'pending') as pending, count(*) filter (where state = 'pending' and attempts > 0) as retried, count(*) filter (where state = 'completed') as completed, min(created_at) filter (where state = 'pending') as oldest_pending_at")->first();
+            $row = DB::table(self::TABLE)->selectRaw("count(*) filter (where state = 'pending') as pending, count(*) filter (where state = 'pending' and attempts > 0) as retried, count(*) filter (where state = 'completed') as completed, min(created_at) filter (where state = 'pending') as oldest_pending_at, count(*) filter (where state = 'pending' and last_error_code in ('authorization_revoked', 'target_changed', 'shared_object_reference', 'storage_configuration_changed')) as review_required, count(*) filter (where state = 'pending' and last_error_code in ('storage_unavailable', 'database_finalize_failed')) as retryable, count(*) filter (where state = 'pending' and attempts = 0) as unattempted")->first();
         } catch (QueryException) {
             // A missing or inaccessible optional recovery table must not take down the dashboard.
             return null;
         }
 
-        return $row === null ? null : ['pending' => (int) $row->pending, 'retried' => (int) $row->retried, 'completed' => (int) $row->completed, 'oldest_pending_at' => $row->oldest_pending_at === null ? null : CarbonImmutable::parse($row->oldest_pending_at, 'UTC')->utc()->toIso8601String()];
+        return $row === null ? null : ['pending' => (int) $row->pending, 'retried' => (int) $row->retried, 'completed' => (int) $row->completed, 'review_required' => (int) $row->review_required, 'retryable' => (int) $row->retryable, 'unattempted' => (int) $row->unattempted, 'oldest_pending_at' => $row->oldest_pending_at === null ? null : CarbonImmutable::parse($row->oldest_pending_at, 'UTC')->utc()->toIso8601String()];
     }
 
     public function operationallyEnabled(): bool

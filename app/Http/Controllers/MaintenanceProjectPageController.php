@@ -157,13 +157,25 @@ final class MaintenanceProjectPageController extends OperationsFrontendControlle
         $p = $this->projects($actor)->where('p.id', $id)->first();
         abort_unless($p !== null, 404);
 
-        $records = $this->records($actor)->where('m.project_id', $id)->orderByDesc('m.maintenance_year')->orderByDesc('m.quarter')
-            ->get(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter', 'm.status', 'm.managing_engineer_id', 'm.start_date', 'e.first_name', 'e.last_name']);
-        $latestYear = $records->first()?->maintenance_year;
+        $base = $this->records($actor)->where('m.project_id', $id);
+        $years = (clone $base)->select('m.maintenance_year')->groupBy('m.maintenance_year');
+        $requestedYear = (int) LiteralDirectorySearch::numericOption($request->query('record_year'), 9999);
+        $perPage = 5;
+        $preferredPage = null;
+        if ($requestedYear > 0 && (clone $base)->where('m.maintenance_year', $requestedYear)->exists()) {
+            $newerYears = (clone $base)->where('m.maintenance_year', '>', $requestedYear)->distinct()->count('m.maintenance_year');
+            $preferredPage = intdiv($newerYears, $perPage) + 1;
+        }
+        $yearPage = BoundedDirectoryPage::paginate($years->orderByDesc('m.maintenance_year'), $request, $perPage, ['m.maintenance_year'], 'history_page', $preferredPage);
+        $visibleYears = collect($yearPage->items())->pluck('maintenance_year')->map(fn ($year): int => (int) $year)->all();
+        $records = (clone $base)->whereIn('m.maintenance_year', $visibleYears)
+            ->select(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter', 'm.status', 'm.managing_engineer_id', 'm.start_date', 'e.first_name', 'e.last_name'])
+            ->orderByDesc('m.maintenance_year')->orderByDesc('m.quarter')->orderByDesc('m.id')->get();
 
         return $this->render('MaintenanceProjects/Show', $request, ['project' => $this->projectData($p, $actor),
             'records' => $records->map(fn (\stdClass $r): array => $this->historyData($r, $actor)),
+            'historyPagination' => ['page' => $yearPage->currentPage(), 'pages' => $yearPage->lastPage(), 'totalYears' => $yearPage->total()],
             'recordCreateUrl' => $this->writable($actor) ? self::BASE.'/maintenance-projects/'.$id.'/records/create' : null,
-            'expandedYear' => $request->integer('record_year', (int) ($latestYear ?? date('Y')))]);
+            'expandedYear' => in_array($requestedYear, $visibleYears, true) ? $requestedYear : ($visibleYears[0] ?? (int) now('Asia/Manila')->format('Y'))]);
     }
 }

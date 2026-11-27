@@ -244,6 +244,10 @@ final class PermanentFileDeletionTest extends PostgresTestCase
         $this->assertSame(0, DB::table('jairoads_next.audit_logs')->where('action', 'DELETE')->count());
         $this->assertSame($history, $this->history());
         $this->assertDatabaseHas('jairoads_next.file_deletions', ['state' => 'pending', 'last_error_code' => 'storage_unavailable']);
+        $counts = app(PermanentFileDeletion::class)->recoveryCounts();
+        $this->assertSame(1, $counts['retryable']);
+        $this->assertSame(0, $counts['review_required']);
+        $this->assertSame(0, $counts['unattempted']);
         // A new process/service need not know whether the timed-out request removed bytes.
         $this->app->make(PermanentFileDeletion::class); // No in-memory deletion state.
         $this->deleteJson($url)->assertOk()->assertJsonPath('state', 'completed');
@@ -389,6 +393,9 @@ final class PermanentFileDeletionTest extends PostgresTestCase
         $this->artisan('jairoads:resume-file-deletions')->assertFailed();
         $this->assertSame($count, Http::recorded()->count()); // No new destructive HTTP call while revoked.
         $this->assertDatabaseHas('jairoads_next.file_deletions', ['last_error_code' => 'authorization_revoked']);
+        $counts = app(PermanentFileDeletion::class)->recoveryCounts();
+        $this->assertSame(1, $counts['review_required']);
+        $this->assertSame(0, $counts['retryable']);
         $this->deleteJson($url)->assertForbidden();
         $replacement = $this->account('SuperAdmin');
         $this->withSession(['password_hash_web' => null])->actingAs($replacement)->deleteJson($url)->assertOk();

@@ -45,6 +45,30 @@ final class UnifiedFrontendTest extends PostgresTestCase
         }
     }
 
+    public function test_project_history_paginates_whole_years_and_preserves_direct_year_links(): void
+    {
+        $f = $this->fixture('Admin');
+        for ($year = 2014; $year <= 2026; $year++) {
+            foreach (['Q1', 'Q4'] as $quarter) {
+                DB::table('jairoads_next.maintenance_records')->insert(
+                    $this->recordData($f['project'], $f['engineer'], $quarter, $year)
+                        + ['created_by' => $f['user']->canonical_user_account_id]
+                );
+            }
+        }
+        $url = self::UI.'/maintenance-projects/'.$f['project'];
+        $this->get($url)->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('historyPagination.page', 1)->where('historyPagination.pages', 3)
+            ->where('historyPagination.totalYears', 13)->has('records', 10)
+            ->where('records.0.year', 2026)->where('records.9.year', 2022));
+        $this->get($url.'?history_page=999999999')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('historyPagination.page', 3)->has('records', 6)->where('records.5.year', 2014));
+        $this->get($url.'?record_year=2017&history_page=1')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('historyPagination.page', 2)->where('expandedYear', 2017)->has('records', 10));
+        $this->get($url.'?record_year%5B%5D=invalid')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('historyPagination.page', 1)->where('expandedYear', 2026));
+    }
+
     public function test_record_history_paginates_documents_and_preserves_totals_and_checkpoints(): void
     {
         $f = $this->fixture('Admin');
