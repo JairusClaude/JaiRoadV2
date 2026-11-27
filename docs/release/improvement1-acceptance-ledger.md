@@ -30,6 +30,8 @@ The next candidate replaces individual monthly uniqueness rows with year-keyed 1
 
 The next candidate preflights queued reconnect submissions with the existing account-bound, writable-record period lookup. Expired, cancelled, changed, unauthorized, occupied or unverifiable queued requests are not sent; a verified empty period permits at most one attempt with existing transactional server authorization and uniqueness checks. The preflight is not a reservation or durable receipt, and the queue is still in-page only. Browser cases cover denied and occupied preflights and the single successful attempt.
 
+Commit `acd0f1d0c5627c2f598cb0b8e6f9e1c226be7c4c` passed standard CI (45954251740), focused regressions (45954251756), disposable staging (45954251722) and its repository TypeScript, PHPStan, Pint and Prettier jobs; full verification was still in progress at inspection. The next candidate adds explicit road-review totals, a tested non-multiplying provisional score, UTF-8-safe iCalendar exports of the displayed estimates, and freshness/integrity checks for optional recovery batch telemetry. These are not approval of the priority policy, a scheduler execution proof, or hosted recovery evidence.
+
 ## Outstanding
 
 - Benchmark representative large data and verify the new record-history and monthly-choice pagination; the single-record month occupancy snapshot is compacted by year, but still grows with the number of distinct reporting years; verify measured behavior and hosted load.

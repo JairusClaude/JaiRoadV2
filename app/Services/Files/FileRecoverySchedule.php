@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Files;
 
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 
 final class FileRecoverySchedule
@@ -30,7 +31,7 @@ final class FileRecoverySchedule
         ];
     }
 
-    /** @return array{finished_at:string,attempted:int,completed:int,pending:int,budget_reached:bool}|null */
+    /** @return array{finished_at:string,attempted:int,completed:int,pending:int,budget_reached:bool,age_seconds:int,stale:bool}|null */
     public static function lastRun(): ?array
     {
         try {
@@ -41,10 +42,25 @@ final class FileRecoverySchedule
 
         if (! is_array($evidence)
             || ! is_string($evidence['finished_at'] ?? null)
+            || preg_match('/\A[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:Z|[+-][0-9]{2}:[0-9]{2})\z/', $evidence['finished_at']) !== 1
             || ! is_int($evidence['attempted'] ?? null)
             || ! is_int($evidence['completed'] ?? null)
             || ! is_int($evidence['pending'] ?? null)
-            || ! is_bool($evidence['budget_reached'] ?? null)) {
+            || ! is_bool($evidence['budget_reached'] ?? null)
+            || $evidence['attempted'] < 0
+            || $evidence['completed'] < 0
+            || $evidence['pending'] < 0
+            || $evidence['completed'] + $evidence['pending'] !== $evidence['attempted']) {
+            return null;
+        }
+
+        try {
+            $finishedAt = Carbon::parse($evidence['finished_at']);
+            $age = (int) $finishedAt->diffInSeconds(now(), false);
+        } catch (\Throwable) {
+            return null;
+        }
+        if ($age < 0 || $age > 7 * 24 * 60 * 60) {
             return null;
         }
 
@@ -54,11 +70,16 @@ final class FileRecoverySchedule
             'completed' => $evidence['completed'],
             'pending' => $evidence['pending'],
             'budget_reached' => $evidence['budget_reached'],
+            'age_seconds' => $age,
+            'stale' => $age > 15 * 60,
         ];
     }
 
     public static function recordRun(int $attempted, int $completed, bool $budgetReached): void
     {
+        if ($attempted < 0 || $completed < 0 || $completed > $attempted) {
+            return;
+        }
         try {
             Cache::put(self::RUN_EVIDENCE_KEY, [
                 'finished_at' => now()->utc()->toIso8601String(),

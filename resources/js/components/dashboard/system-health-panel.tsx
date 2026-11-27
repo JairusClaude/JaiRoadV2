@@ -22,6 +22,8 @@ export type SystemHealth = {
         completed: number;
         pending: number;
         budget_reached: boolean;
+        age_seconds: number;
+        stale: boolean;
     } | null;
     deploymentRevision?: string | null;
     checkedAt: string;
@@ -72,6 +74,11 @@ export function SystemHealthPanel({ health }: { health: SystemHealth }) {
                             : 'Batch finished'}
                         {' · Manual or scheduled invocation'}
                     </p>
+                    <p>
+                        {lastRun.stale
+                            ? 'Evidence older than 15 minutes; verify runner.'
+                            : 'Recent batch evidence; scheduler not verified.'}
+                    </p>
                 </>
             ) : (
                 'No recent execution evidence available'
@@ -120,10 +127,10 @@ export function SystemHealthPanel({ health }: { health: SystemHealth }) {
     return (
         <section
             aria-label="System health and readiness"
-            className="jr-command-panel rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6"
+            className="jr-command-panel rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6 dark:border-violet-900/70 dark:bg-slate-900 dark:text-slate-100"
         >
             <h2 className="text-lg font-bold">System health and readiness</h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">
                 Read-only snapshot. Configuration is not proof of availability
                 or recoverability.
             </p>
@@ -131,16 +138,16 @@ export function SystemHealthPanel({ health }: { health: SystemHealth }) {
                 {entries.map(({ label, detail }) => (
                     <div
                         key={label}
-                        className="min-w-0 rounded-xl border border-slate-200 p-3"
+                        className="min-w-0 rounded-xl border border-slate-200 p-3 dark:border-violet-900/70"
                     >
                         <dt className="text-sm font-semibold">{label}</dt>
-                        <dd className="mt-1 text-sm text-slate-600">
+                        <dd className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                             {detail}
                         </dd>
                     </div>
                 ))}
             </dl>
-            <p className="mt-3 text-xs text-slate-500">
+            <p className="mt-3 text-xs text-slate-500 dark:text-slate-300">
                 Checked at{' '}
                 <time dateTime={health.checkedAt}>
                     {manilaTimestamp(health.checkedAt)}

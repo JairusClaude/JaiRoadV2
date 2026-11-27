@@ -35,6 +35,20 @@ final class FileRecoveryScheduleTest extends PostgresTestCase
         Http::assertNothingSent();
     }
 
+    public function test_batch_evidence_expires_and_rejects_impossible_counts(): void
+    {
+        config(['cache.default' => 'array']);
+        FileRecoverySchedule::recordRun(3, 2, true);
+        $this->assertFalse(FileRecoverySchedule::lastRun()['stale']);
+        FileRecoverySchedule::recordRun(1, 2, false);
+        $this->assertSame(3, FileRecoverySchedule::lastRun()['attempted']);
+        $this->travel(16)->minutes();
+        $this->assertTrue(FileRecoverySchedule::lastRun()['stale']);
+        $this->assertGreaterThanOrEqual(960, FileRecoverySchedule::lastRun()['age_seconds']);
+        $this->travel(8)->days();
+        $this->assertNull(FileRecoverySchedule::lastRun());
+    }
+
     public function test_scheduler_registers_only_the_approved_bounded_command_with_locks(): void
     {
         Http::fake();

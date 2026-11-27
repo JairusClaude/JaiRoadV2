@@ -327,7 +327,7 @@ assert.deepEqual(pair, [foreground, background], path);
     await superadmin.getByText('File recovery queue', { exact: true }).waitFor();
     await superadmin.getByRole('heading', { name: 'Road review priority' }).waitFor();
     const intelligence = JSON.parse(await superadmin.locator('script[data-page]').textContent()).props.maintenanceIntelligence;
-    assert.ok(intelligence.priority.length <= 12);
+    assert.equal(intelligence.priority.length, Math.min(12, intelligence.priorityTotal));
     assert.ok(intelligence.priority.every(road => road.score === road.conditionScore + road.overdueScore + road.reportScore && road.score > 0 && road.score <= 100));
     assert.ok(intelligence.priority.every((road, index, roads) => index === 0 || roads[index - 1].score >= road.score));
 

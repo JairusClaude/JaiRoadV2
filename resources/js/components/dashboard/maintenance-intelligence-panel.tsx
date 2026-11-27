@@ -11,6 +11,7 @@ import {
     SlidersHorizontal,
 } from 'lucide-react';
 import { useState } from 'react';
+import { maintenanceCalendar } from '@/lib/maintenance-calendar';
 import { manilaDate } from '@/lib/manila-time';
 
 export type MaintenanceIntelligenceSummary = {
@@ -20,6 +21,7 @@ export type MaintenanceIntelligenceSummary = {
     noCurrentReport: number;
     pastEstimate: number;
     ongoingCount: number;
+    priorityTotal: number;
     priority: {
         id: number;
         roadName: string;
@@ -47,44 +49,10 @@ const factors = [
 ];
 
 function downloadCalendar(items: MaintenanceIntelligenceSummary['calendar']) {
-    const timestamp = new Date()
-        .toISOString()
-        .replace(/[-:]/g, '')
-        .replace(/\.\d{3}/, '');
-    const escape = (value: string) =>
-        value
-            .replace(/\\/g, '\\\\')
-            .replace(/\r?\n|\r/g, '\\n')
-            .replace(/;/g, '\\;')
-            .replace(/,/g, '\\,');
-    const events = items.flatMap((item) => [
-        'BEGIN:VEVENT',
-        'UID:jairoads-estimate-' + item.id + '@jairoads',
-        'DTSTAMP:' + timestamp,
-        'DTSTART;VALUE=DATE:' + item.estimatedFinish.replaceAll('-', ''),
-        'SUMMARY:' + escape('Estimated finish: ' + item.projectTitle),
-        'DESCRIPTION:Estimated date only. Confirm the official schedule before acting.',
-        'BEGIN:VALARM',
-        'TRIGGER:-P1D',
-        'ACTION:DISPLAY',
-        'DESCRIPTION:Review estimated maintenance finish date',
-        'END:VALARM',
-        'END:VEVENT',
-    ]);
     const url = URL.createObjectURL(
-        new Blob(
-            [
-                [
-                    'BEGIN:VCALENDAR',
-                    'VERSION:2.0',
-                    'PRODID:-//JaiROADS//Maintenance estimates//EN',
-                    ...events,
-                    'END:VCALENDAR',
-                    '',
-                ].join('\r\n'),
-            ],
-            { type: 'text/calendar;charset=utf-8' },
-        ),
+        new Blob([maintenanceCalendar(items)], {
+            type: 'text/calendar;charset=utf-8',
+        }),
     );
     const link = document.createElement('a');
     link.href = url;
@@ -344,6 +312,14 @@ export function MaintenanceIntelligencePanel({
                             {data.calendar.length} of {data.ongoingCount}{' '}
                             ongoing records, earliest estimate first.
                         </p>
+                        {data.ongoingCount > data.calendar.length && (
+                            <Link
+                                href="/workspace/ui/maintenance-records?status=Ongoing"
+                                className={`mt-2 inline-block text-sm ${linkStyle}`}
+                            >
+                                View all ongoing records
+                            </Link>
+                        )}
                         {data.calendar.length > 0 && (
                             <button
                                 type="button"
@@ -354,7 +330,7 @@ export function MaintenanceIntelligencePanel({
                                     aria-hidden="true"
                                     className="size-4 shrink-0"
                                 />
-                                Download estimated schedule (.ics)
+                                Download displayed estimates (.ics)
                             </button>
                         )}
                     </div>
@@ -413,8 +389,8 @@ export function MaintenanceIntelligencePanel({
                             Road review priority
                         </h3>
                         <p className={`mt-1 ${subtleText}`}>
-                            Provisional scores for up to 12 roads with review
-                            indicators.
+                            {data.priority.length} of {data.priorityTotal}{' '}
+                            roads with provisional review indicators.
                         </p>
                         <details className="mt-2 text-sm">
                             <summary className="cursor-pointer font-medium text-violet-800 focus-visible:outline-violet-600 dark:text-violet-200">
@@ -425,7 +401,9 @@ export function MaintenanceIntelligencePanel({
                                 estimate adds 25, and a missing current report
                                 adds 15. Scores guide record review. Safety
                                 decisions and work authorization use their own
-                                assessments.
+                                assessments. Each factor is counted at most
+                                once per road, even when several records are
+                                overdue or missing reports.
                             </p>
                         </details>
                     </div>

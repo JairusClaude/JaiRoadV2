@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
 import { test } from 'node:test';
 import { analyticsPdf, analyticsXlsx } from '../../resources/js/lib/analytics-report-formats.ts';
+import { maintenanceCalendar } from '../../resources/js/lib/maintenance-calendar.ts';
 import { hasOccupiedReportingMonth } from '../../resources/js/lib/occupied-reporting-months.ts';
 
 test('PDF summary has escaped strings and valid xref byte offsets', () => {
@@ -51,4 +52,21 @@ test('report occupancy matches each month, year and record exactly', () => {
     for (let month = 1; month <= 12; month++) {
         assert.equal(hasOccupiedReportingMonth(occupied, 42, `2027-${String(month).padStart(2, '0')}`), true);
     }
+});
+
+test('calendar export folds UTF-8 lines and escapes text without creating injected events', () => {
+    const title = 'Davao, road; ' + '道路🚧'.repeat(30) + '\nBEGIN:VEVENT';
+    const calendar = maintenanceCalendar([{ id: 7, projectTitle: title, estimatedFinish: '2026-11-30' }], new Date('2026-11-27T00:00:00Z'));
+
+    for (const line of calendar.split('\r\n')) {
+        assert.ok(Buffer.byteLength(line, 'utf8') <= 75);
+    }
+
+    const unfolded = calendar.replace(/\r\n /g, '');
+    assert.ok(unfolded.includes('DTSTAMP:20261127T000000Z'));
+    assert.ok(unfolded.includes('DTSTART;VALUE=DATE:20261130'));
+    assert.ok(unfolded.includes('UID:jairoads-estimate-7@jairoads'));
+    assert.ok(unfolded.includes('SUMMARY:Estimated finish: Davao\\, road\\; ' + '道路🚧'.repeat(30) + '\\nBEGIN:VEVENT'));
+    assert.equal(unfolded.split('\r\n').filter(line => line === 'BEGIN:VEVENT').length, 1);
+    assert.ok(unfolded.endsWith('END:VCALENDAR\r\n'));
 });

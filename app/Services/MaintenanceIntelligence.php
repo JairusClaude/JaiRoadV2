@@ -59,21 +59,23 @@ final class MaintenanceIntelligence
             ->groupBy('rc.id', 'rc.road_name', 'rc.state_category');
         $priority = DB::query()->fromSub($signals, 'signals')
             ->select(['id', 'road_name', 'state_category', 'condition_score', 'overdue_score', 'report_score'])
-            ->selectRaw('condition_score + overdue_score + report_score as score')
+            ->selectRaw('condition_score + overdue_score + report_score as score, count(*) over () as review_total')
             ->whereRaw('condition_score + overdue_score + report_score > 0')
-            ->orderByDesc('score')->orderBy('id')->limit(12)->get()
-            ->map(static fn (\stdClass $row): array => [
-                'id' => (int) $row->id,
-                'roadName' => (string) $row->road_name,
-                'condition' => (string) $row->state_category,
-                'conditionScore' => (int) $row->condition_score,
-                'overdueScore' => (int) $row->overdue_score,
-                'reportScore' => (int) $row->report_score,
-                'score' => (int) $row->score,
-            ])->all();
+            ->orderByDesc('score')->orderBy('id')->limit(12)->get();
+        $priorityTotal = (int) ($priority->first()->review_total ?? 0);
+        $priority = $priority->map(static fn (\stdClass $row): array => [
+            'id' => (int) $row->id,
+            'roadName' => (string) $row->road_name,
+            'condition' => (string) $row->state_category,
+            'conditionScore' => (int) $row->condition_score,
+            'overdueScore' => (int) $row->overdue_score,
+            'reportScore' => (int) $row->report_score,
+            'score' => (int) $row->score,
+        ])->all();
 
         return [
             'priority' => $priority,
+            'priorityTotal' => $priorityTotal,
             'asOf' => $today,
             'reportingMonth' => $month,
             'conditions' => [
