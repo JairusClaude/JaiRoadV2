@@ -658,33 +658,34 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     assert.equal(await savedLine.evaluate(node => node.isConnected), true);
     await savedLine.dispose();
 
+    lastPage = superadmin;
     const unavailableBasemap = 'https://tiles.openfreemap.org/**';
-    await admin.route(unavailableBasemap, (route) => route.abort('failed'));
-    await admin.goto(base + '/workspace/projects?view=show&project=' + f.project_id);
-    const fallbackMap = admin.getByRole('region', { name: 'Interactive road coverage map' });
+    await superadmin.route(unavailableBasemap, (route) => route.abort('failed'));
+    await superadmin.goto(base + '/workspace/projects?view=show&project=' + f.project_id);
+    const fallbackMap = superadmin.getByRole('region', { name: 'Interactive road coverage map' });
     const degradedBasemap = fallbackMap.getByText(
         /^(Basemap unavailable\. Showing saved road lines\.|Some basemap tiles were unavailable\. Saved road lines remain visible\.)$/,
     );
     await degradedBasemap.waitFor();
     assert.match(await fallbackMap.locator('.jr-road-map-count').textContent(), /^1 of 1 road lines$/);
     await fallbackMap.getByRole('button', { name: 'Locate selected road' }).click();
-    await admin.unroute(unavailableBasemap);
+    await superadmin.unroute(unavailableBasemap);
     let releaseBasemap;
     const stalledBasemap = new Promise(resolve => {
         releaseBasemap = resolve;
     });
-    await admin.route(unavailableBasemap, async (route) => {
+    await superadmin.route(unavailableBasemap, async (route) => {
         await stalledBasemap;
         await route.abort('failed').catch(() => {});
     });
 
     try {
-        await admin.goto(base + '/workspace/projects?view=show&project=' + f.project_id);
+        await superadmin.goto(base + '/workspace/projects?view=show&project=' + f.project_id);
         await degradedBasemap.waitFor();
         await fallbackMap.getByRole('button', { name: 'Locate selected road' }).click();
     } finally {
         releaseBasemap();
-        await admin.unroute(unavailableBasemap);
+        await superadmin.unroute(unavailableBasemap);
     }
 
     for (const saved of f.geometry_roads) {
