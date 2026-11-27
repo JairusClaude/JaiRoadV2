@@ -51,6 +51,15 @@ final class UnifiedFrontendTest extends PostgresTestCase
         $record = $this->record($f);
         $update = $this->monthly($f, $record);
         DB::table('jairoads_next.monthly_updates')->where('id', $update)->update(['progress_percentage' => 75]);
+        for ($i = 1; $i <= 24; $i++) {
+            DB::table('jairoads_next.monthly_updates')->insert([
+                'maintenance_id' => $record,
+                'update_month' => sprintf('%04d-%02d', 2027 + intdiv($i - 1, 12), ($i - 1) % 12 + 1),
+                'progress_percentage' => 80,
+                'summary_of_text_reports' => str_repeat('Synthetic history. ', 100),
+                'created_by' => $f['user']->canonical_user_account_id,
+            ]);
+        }
         for ($i = 1; $i <= 13; $i++) {
             DB::table('jairoads_next.maintenance_documents')->insert([
                 'maintenance_id' => $record,
@@ -64,12 +73,15 @@ final class UnifiedFrontendTest extends PostgresTestCase
         $url = self::UI.'/maintenance-projects/'.$f['project'].'/records/'.$record;
         $this->get($url)->assertOk()->assertInertia(fn (Assert $page) => $page
             ->has('documents', 12)->where('documentPagination.total', 13)
-            ->where('documentPagination.page', 1)->where('updatePagination.total', 1)
+            ->where('documentPagination.page', 1)->where('updatePagination.total', 25)
+            ->has('updates', 12)->where('updates.0.update_month', '2028-12')
             ->where('checkpointMonths.0', '2026-10')->where('checkpointMonths.2', '2026-10')
             ->where('checkpointMonths.3', null));
-        $this->get($url.'?document_page=999')->assertOk()->assertInertia(fn (Assert $page) => $page
+        $this->get($url.'?document_page=999&update_page=999')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->has('documents', 1)->where('documentPagination.total', 13)
             ->where('documentPagination.page', 2)->where('documents.0.document_title', 'History 1')
+            ->has('updates', 1)->where('updatePagination.page', 3)
+            ->where('updates.0.update_month', '2026-10')
             ->where('checkpointMonths.2', '2026-10'));
     }
 

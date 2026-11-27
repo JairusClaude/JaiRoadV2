@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Quarterly;
 
+use App\Services\Files\FileRecoverySchedule;
 use App\Services\Files\PermanentFileDeletion;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -271,6 +272,7 @@ final class PermanentFileDeletionTest extends PostgresTestCase
 
     public function test_audit_failure_after_storage_removal_rolls_metadata_back_and_reconciles_once(): void
     {
+        config(['cache.default' => 'array']);
         $f = $this->files();
         Http::fake(['*/storage/v1/object/*' => fn () => Http::response(['message' => 'Successfully deleted'])]);
         DB::unprepared("CREATE FUNCTION jairoads_next.reject_permanent_delete_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.action = 'DELETE' THEN RAISE EXCEPTION 'Disposable audit insertion failure'; END IF; RETURN NEW; END $$; CREATE TRIGGER reject_permanent_delete_audit BEFORE INSERT ON jairoads_next.audit_logs FOR EACH ROW EXECUTE FUNCTION jairoads_next.reject_permanent_delete_audit()");
@@ -282,6 +284,12 @@ final class PermanentFileDeletionTest extends PostgresTestCase
         DB::statement('DROP TRIGGER reject_permanent_delete_audit ON jairoads_next.audit_logs');
         Http::fake(['*/storage/v1/object/*' => fn () => Http::response(['code' => 'NoSuchKey'], 404)]);
         $this->artisan('jairoads:resume-file-deletions')->assertSuccessful();
+        $evidence = FileRecoverySchedule::lastRun();
+        $this->assertNotNull($evidence);
+        $this->assertSame(1, $evidence['attempted']);
+        $this->assertSame(1, $evidence['completed']);
+        $this->assertSame(0, $evidence['pending']);
+        $this->assertFalse($evidence['budget_reached']);
         $this->deleteJson($url)->assertOk();
         $this->assertDatabaseMissing('jairoads_next.media', ['id' => $f['media'][0]]);
         $this->assertSame(1, DB::table('jairoads_next.audit_logs')->where('action', 'DELETE')->count());

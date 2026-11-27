@@ -16,12 +16,20 @@ export type SystemHealth = {
         completed: number;
         oldest_pending_at?: string | null;
     } | null;
+    lastRecoveryRun?: {
+        finished_at: string;
+        attempted: number;
+        completed: number;
+        pending: number;
+        budget_reached: boolean;
+    } | null;
     deploymentRevision?: string | null;
     checkedAt: string;
 };
 
 export function SystemHealthPanel({ health }: { health: SystemHealth }) {
     const oldest = health.recoveryCounts?.oldest_pending_at;
+    const lastRun = health.lastRecoveryRun;
     const entries = [
         {
             label: 'Database',
@@ -46,6 +54,28 @@ export function SystemHealthPanel({ health }: { health: SystemHealth }) {
             detail: health.recovery.registration_allowed
                 ? 'Registration allowed · execution unverified'
                 : 'Registration blocked by configuration',
+        },
+        {
+            label: 'Last observed recovery batch',
+            detail: lastRun ? (
+                <>
+                    <time dateTime={lastRun.finished_at}>
+                        {manilaTimestamp(lastRun.finished_at)}
+                    </time>
+                    <p>
+                        {lastRun.attempted} attempted · {lastRun.completed}{' '}
+                        completed · {lastRun.pending} still pending
+                    </p>
+                    <p>
+                        {lastRun.budget_reached
+                            ? 'Time budget reached'
+                            : 'Batch finished'}
+                        {' · Manual or scheduled invocation'}
+                    </p>
+                </>
+            ) : (
+                'No recent execution evidence available'
+            ),
         },
         {
             label: 'Shared locking',

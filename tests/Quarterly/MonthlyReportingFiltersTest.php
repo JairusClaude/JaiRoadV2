@@ -135,3 +135,20 @@ it('loads scoped monthly form choices on demand', function (): void {
     $this->withSession(['password_hash_web' => null])->actingAs($this->account('Viewer'));
     $this->getJson($url)->assertForbidden();
 });
+
+it('checks an uncertain report period without writing or exposing report content', function (): void {
+    $url = '/workspace/ui/monthly-updates/submission-outcome?'.http_build_query([
+        'account_id' => $this->f['user']->canonical_user_account_id,
+        'project_id' => $this->f['project'],
+        'maintenance_id' => $this->recordId,
+    ]);
+    $this->getJson($url.'&update_month=2026-01')->assertOk()
+        ->assertHeader('Cache-Control', 'no-store, private')
+        ->assertExactJson(['reportId' => $this->january]);
+    $this->getJson($url.'&update_month=2026-02')->assertOk()->assertExactJson(['reportId' => null]);
+    $this->getJson($url.'&update_month=0000-01')->assertUnprocessable();
+    $this->getJson($url.'&update_month=2026-01&account_id=999999999')->assertForbidden();
+    DB::table('jairoads_next.maintenance_records')->where('id', $this->recordId)->update(['managing_engineer_id' => $this->engineer()]);
+    $this->getJson($url.'&update_month=2026-01')->assertNotFound();
+    expect(DB::table('jairoads_next.monthly_updates')->count())->toBe(2);
+});

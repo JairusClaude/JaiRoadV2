@@ -33,6 +33,10 @@ At 500 roads:
 
 The raw file also includes 1, 100 and 1000 roads. The one-LGU benchmark does not measure an N-LGU speedup; the regression fixture with 110 LGUs instead asserts a bounded query count (at most 12 for record creation) and compares batched choices with the individual approved eligibility results for Engineer/Admin/SuperAdmin. PHP memory/timing and browser limitations are described in the road report.
 
+## Improvement1 follow-up
+
+Maintenance record details now return at most 12 monthly updates and 12 documents per page while preserving total counts and earliest progress checkpoints across the complete history. Monthly report selection pages return 25 record choices plus at most one selected historical record, and request reporting-month keys only for that record. The regression fixture now exercises multiple report and document pages. These are structural bounds and regression assertions, not new measured latency or memory figures. The table above describes Repair 5A only; collect new same-fixture samples before claiming a speedup.
+
 ## Verification
 
 `LeanFormChoicesTest.php` proves all 110 authorized projects/periods remain present, the last fixed record is selectable, unauthorized fixed contexts fail, report uniqueness data is parent-scoped, batched manager eligibility is unchanged, and all 300 history rows remain reachable with complete descriptions on the detail route. Existing canonical, password, authorization and real browser suites remain enabled.

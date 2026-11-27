@@ -124,6 +124,7 @@ final class SuperAdminLandingController extends Controller
                 'documentStorageConfigured' => app(PrivateSupabaseStorage::class)->configured(),
                 'mediaStorageConfigured' => app(PrivateMonthlyMediaStorage::class)->configured(),
                 'recovery' => FileRecoverySchedule::readiness(),
+                'lastRecoveryRun' => FileRecoverySchedule::lastRun(),
                 'recoveryCounts' => app(PermanentFileDeletion::class)->recoveryCounts(),
                 'deploymentRevision' => is_string($revision) && preg_match('/\A[a-f0-9]{40}\z/i', $revision) === 1 ? $revision : null,
                 'checkedAt' => now()->utc()->toIso8601String(),

@@ -1,3 +1,4 @@
+import { Link } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { validateMonthlyUpdate } from '@/lib/monthly-updates';
@@ -147,11 +148,144 @@ export function ReconnectSubmission({
                     </Button>
                 )}
             </div>
+            <ReportingPeriodLookup
+                key={JSON.stringify([
+                    parents.reconnectAccountId,
+                    values.project_id,
+                    values.maintenance_id,
+                    values.update_month,
+                ])}
+                parents={parents}
+                values={values}
+                disabled={disabled || queued}
+                online={online}
+            />
             {message && (
                 <p className="mt-2 text-sm" role="status">
                     {message}
                 </p>
             )}
         </section>
+    );
+}
+
+function ReportingPeriodLookup({
+    parents,
+    values,
+    disabled,
+    online,
+}: {
+    parents: MonthlyCreateProps;
+    values: MonthlyUpdateValues;
+    disabled: boolean;
+    online: boolean;
+}) {
+    const outcomeRequest = useRef<AbortController | null>(null);
+    const [outcome, setOutcome] = useState<{
+        message: string;
+        reportId?: number;
+        checking?: boolean;
+    } | null>(null);
+    const canCheckOutcome =
+        !disabled &&
+        online &&
+        Boolean(parents.reconnectAccountId) &&
+        parents.records.some(
+            (record) =>
+                String(record.id) === values.maintenance_id &&
+                String(record.project_id) === values.project_id,
+        ) &&
+        /^(?!0000)\d{4}-(0[1-9]|1[0-2])$/.test(values.update_month);
+
+    useEffect(() => {
+        return () => outcomeRequest.current?.abort();
+    }, []);
+
+    const checkOutcome = async () => {
+        if (!canCheckOutcome || outcome?.checking) {
+            return;
+        }
+
+        outcomeRequest.current?.abort();
+        const controller = new AbortController();
+        outcomeRequest.current = controller;
+        setOutcome({ message: 'Checking…', checking: true });
+
+        try {
+            const query = new URLSearchParams({
+                account_id: String(parents.reconnectAccountId),
+                project_id: values.project_id,
+                maintenance_id: values.maintenance_id,
+                update_month: values.update_month,
+            });
+            const response = await fetch(
+                '/workspace/ui/monthly-updates/submission-outcome?' + query,
+                {
+                    headers: { Accept: 'application/json' },
+                    cache: 'no-store',
+                    signal: AbortSignal.any([
+                        controller.signal,
+                        AbortSignal.timeout(12_000),
+                    ]),
+                },
+            );
+
+            if (!response.ok) {
+                throw new Error('Outcome lookup unavailable');
+            }
+
+            const data = (await response.json()) as {
+                reportId: number | null;
+            };
+
+            if (
+                data.reportId !== null &&
+                (!Number.isSafeInteger(data.reportId) || data.reportId < 1)
+            ) {
+                throw new Error('Invalid outcome response');
+            }
+
+            if (!controller.signal.aborted) {
+                setOutcome({
+                    message: data.reportId
+                        ? 'A report exists for this period. Open it and compare the saved values before retrying.'
+                        : 'No report was found at the time of checking. An earlier request may still be processing.',
+                    reportId: data.reportId ?? undefined,
+                });
+            }
+        } catch {
+            if (!controller.signal.aborted) {
+                setOutcome({
+                    message:
+                        'Unable to verify the saved report. Do not automatically retry an uncertain submission.',
+                });
+            }
+        }
+    };
+
+    return (
+        <div className="mt-2">
+            <Button
+                type="button"
+                variant="outline"
+                disabled={!canCheckOutcome || Boolean(outcome?.checking)}
+                onClick={() => void checkOutcome()}
+            >
+                Check saved reporting period
+            </Button>
+            {outcome && (
+                <div className="mt-2 text-sm" role="status">
+                    <p>{outcome.message}</p>
+                    {outcome.reportId && (
+                        <Link
+                            className="font-semibold underline"
+                            href={`/workspace/ui/monthly-updates/${outcome.reportId}`}
+                        >
+                            Open saved report
+                        </Link>
+                    )}
+                </div>
+            )}
+        </div>
     );
 }

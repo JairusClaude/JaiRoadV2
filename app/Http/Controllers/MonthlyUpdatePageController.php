@@ -147,6 +147,29 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
             ->header('Cache-Control', 'private, no-store');
     }
 
+    /** Read-only period lookup; never treats a matching period as an idempotent receipt. */
+    public function submissionOutcome(Request $request): JsonResponse
+    {
+        abort_if(self::isPreview($request), 404);
+        $actor = $this->actor($request);
+        $this->writer($actor);
+        $input = $request->validate([
+            'project_id' => ['required', 'integer', 'min:1'],
+            'maintenance_id' => ['required', 'integer', 'min:1'],
+            'update_month' => ['required', 'string', 'regex:/\\A(?!0000)[0-9]{4}-(0[1-9]|1[0-2])\\z/'],
+            'account_id' => ['required', 'integer', 'min:1'],
+        ]);
+        abort_unless((int) $input['account_id'] === $actor['account_id'], 403);
+        $record = $this->records($actor)->where('m.id', $input['maintenance_id'])->where('m.project_id', $input['project_id'])->first();
+        abort_unless($record !== null && $this->canWriteRecord($record, $actor), 404);
+        $report = DB::table('jairoads_next.monthly_updates')->where('maintenance_id', $record->id)
+            ->where('update_month', $input['update_month'])->first(['id']);
+
+        return response()->json([
+            'reportId' => $report === null ? null : (int) $report->id,
+        ])->header('Cache-Control', 'private, no-store');
+    }
+
     public function saveUpdate(Request $request, ?int $id = null): RedirectResponse
     {
         $actor = $this->actor($request);

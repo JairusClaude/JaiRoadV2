@@ -18,12 +18,16 @@ Commit `12a01ae0b157c4f49e9327cc6008d7831468abb9`: branch full verification (459
 
 Commit `4f777961b29aab83847fdaeb3b8576b6d85571cd` passed standard CI (45951713957), focused regressions (45951714001), and disposable staging (45951713966). The next candidate adds a shared Leaflet basemap timeout and retry in road detail, editor, and simplified maps; retry redraws tiles without replacing road geometry. Browser failure/retry coverage was added. Hosted map provider verification and fresh candidate checks remain necessary.
 
+Commit `57212e54d79e70bd48b536ae3a45ce0eb25869d5`: standard CI (45952094657), focused regressions (45952094742) and disposable staging (45952094677) succeeded. PR equivalents also succeeded (45952100591, 45952100482, 45952100902). Full-system workflows were still running at the last observation; no exact-head release approval is implied.
+
+The next candidate adds stored road-condition visualization to the Engineer dashboard map, a read-only authenticated report-period outcome lookup (not an idempotent receipt), last observed recovery batch aggregates in SuperAdmin health, and stronger multi-page report history tests. The batch telemetry is optional cached evidence for up to seven days; manual and scheduled invocations cannot be distinguished from it alone. An absent report or absent execution observation is not proof that a request did not execute. No flags, production credentials, schemas, or Storage objects are changed.
+
 ## Outstanding
 
 - Benchmark representative large data and verify the new record-history and monthly-choice pagination; exceptionally large single-record reporting-month collections remain unbounded.
 - Verify incremental simplified map layer updates, extend condition visualization and failure recovery where missing, and validate map services in hosted staging.
 - Approve and rehearse milestone retention and runtime grants in isolated hosted staging; no production schema changes.
-- Durable background reporting synchronization requires reviewed session, revocation, idempotency, outcome lookup and encryption/attachment strategy; no silent replay.
+- Durable background reporting synchronization requires reviewed session, revocation, durable idempotent receipts and encryption/attachment strategy; the manual period outcome lookup is implemented but is not a receipt and must not trigger silent replay.
 - Formal server reminder and road priority policy approval.
 - GitHub owner branch protection and required review.
 - Hosted database restore and independent private object-byte recovery rehearsal, verified shared locks and recovery scheduler execution.

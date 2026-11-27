@@ -117,7 +117,7 @@ final class RoleLandingController extends Controller
         $query = DB::table('jairoads_next.road_coverages as rc')
             ->join('jairoads_next.lgus as l', 'l.id', '=', 'rc.lgu_id')
             ->leftJoin('jairoads_next.maintenance_projects as p', 'p.road_coverage_id', '=', 'rc.id')
-            ->select(['rc.id', 'rc.road_name', 'rc.geojson', 'l.municipality_name', 'p.id as project_id', 'p.project_title', 'p.created_by as project_creator'])
+            ->select(['rc.id', 'rc.road_name', 'rc.geojson', 'rc.state_category', 'l.municipality_name', 'p.id as project_id', 'p.project_title', 'p.created_by as project_creator'])
             ->selectSub(DB::table('jairoads_next.maintenance_records as mr')
                 ->selectRaw('count(*)')->whereColumn('mr.project_id', 'p.id')
                 ->whereNotNull('mr.managing_engineer_id')->where('mr.managing_engineer_id', $engineerId), 'my_record_count');
@@ -131,6 +131,7 @@ final class RoleLandingController extends Controller
             'data' => array_values($page->map(static fn (\stdClass $road): array => [
                 'id' => (int) $road->id,
                 'road_name' => (string) $road->road_name,
+                'state_category' => (string) $road->state_category,
                 'municipality' => (string) $road->municipality_name,
                 'geojson' => json_decode((string) $road->geojson, true, 512, JSON_THROW_ON_ERROR),
                 'assigned' => $road->project_id !== null,
