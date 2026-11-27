@@ -3,6 +3,7 @@ import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialog';
+import { FieldReportDraft } from '@/components/monthly-updates/field-report-draft';
 import { MonthlyUpdateForm } from '@/components/monthly-updates/monthly-update-form';
 import { editUrl, formReturn, returnLabel } from '@/lib/form-navigation';
 import { validateMonthlyUpdate } from '@/lib/monthly-updates';
@@ -154,6 +155,19 @@ export default function Create(parents: MonthlyCreateProps) {
             />
             <MonthlyUpdateForm
                 parents={parents}
+                draftTools={
+                    !update && page.props.canonicalFrontend === true && preview && (
+                        <FieldReportDraft
+                            parents={parents}
+                            values={form.data}
+                            disabled={form.processing}
+                            onImport={(values) => {
+                                form.clearErrors();
+                                form.setData({ ...values, attachments: [], removed_media_ids: [] });
+                            }}
+                        />
+                    )
+                }
                 backLabel={
                     update
                         ? returnLabel(

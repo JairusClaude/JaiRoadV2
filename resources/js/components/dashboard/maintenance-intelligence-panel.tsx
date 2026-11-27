@@ -23,6 +23,31 @@ const factors = [
     { label: 'Safety concern', weight: 10 },
 ];
 
+function downloadCalendar(items: MaintenanceIntelligenceSummary['calendar']) {
+    const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    const escape = (value: string) =>
+        value.replace(/\\/g, '\\\\').replace(/\r?\n|\r/g, '\\n').replace(/;/g, '\\;').replace(/,/g, '\\,');
+    const events = items.flatMap((item) => [
+        'BEGIN:VEVENT',
+        'UID:jairoads-estimate-' + item.id + '@jairoads',
+        'DTSTAMP:' + timestamp,
+        'DTSTART;VALUE=DATE:' + item.estimatedFinish.replaceAll('-', ''),
+        'SUMMARY:' + escape('Estimated finish: ' + item.projectTitle),
+        'DESCRIPTION:Estimated date only. Confirm the official schedule before acting.',
+        'END:VEVENT',
+    ]);
+    const url = URL.createObjectURL(new Blob([
+        ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//JaiROADS//Maintenance estimates//EN', ...events, 'END:VCALENDAR', ''].join('\r\n'),
+    ], { type: 'text/calendar;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'jairoads-maintenance-estimates.ics';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 function PriorityScenario() {
     const [values, setValues] = useState([0, 0, 0, 0, 0]);
     const score = factors.reduce(
@@ -115,6 +140,15 @@ export function MaintenanceIntelligencePanel({
                 Showing {data.calendar.length} of {data.ongoingCount} ongoing
                 records, earliest estimated finish first.
             </p>
+            {data.calendar.length > 0 && (
+                <button
+                    type="button"
+                    className="mt-3 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold"
+                    onClick={() => downloadCalendar(data.calendar)}
+                >
+                    Download estimated schedule (.ics)
+                </button>
+            )}
             <ul className="mt-3 space-y-2">
                 {data.calendar.map((item) => (
                     <li

@@ -24,6 +24,7 @@ import { ProjectSelector } from './project-selector';
 
 export function MonthlyUpdateForm({
     parents,
+    draftTools,
     backLabel,
     savedMedia,
     onRemoveSaved,
@@ -37,6 +38,7 @@ export function MonthlyUpdateForm({
     onCancel,
 }: {
     parents: MonthlyCreateProps;
+    draftTools?: ReactNode;
     backLabel?: string;
     savedMedia?: MonthlyMedia[];
     onRemoveSaved?: (id: number) => void;
@@ -338,6 +340,7 @@ export function MonthlyUpdateForm({
                             onChange={onFiles}
                         />
                     </section>
+                    {draftTools}
                     <footer className="jr-form-footer">
                         <p>
                             {canonical
