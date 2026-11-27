@@ -612,11 +612,11 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     await engineer.getByRole('button', { name: 'Download saved road geometry (GeoJSON)' }).click();
     const geometryFile = await geometryDownload;
     assert.equal(geometryFile.suggestedFilename(), 'jairoads-road-geometry.geojson');
-    const geometry = JSON.parse(await readFile(await geometryFile.path(), 'utf8'));
-    assert.equal(geometry.type, 'MultiLineString');
-    assert.ok(geometry.coordinates.length > 0);
-    assert.ok(geometry.coordinates.every(line => line.length >= 2));
-    assert.deepEqual(Object.keys(geometry).sort(), ['coordinates', 'type']);
+    const exportedGeometry = JSON.parse(await readFile(await geometryFile.path(), 'utf8'));
+    assert.equal(exportedGeometry.type, 'MultiLineString');
+    assert.ok(exportedGeometry.coordinates.length > 0);
+    assert.ok(exportedGeometry.coordinates.every(line => line.length >= 2));
+    assert.deepEqual(Object.keys(exportedGeometry).sort(), ['coordinates', 'type']);
 
     for (const saved of f.geometry_roads) {
         const path = `/road-coverages/${saved.id}`;

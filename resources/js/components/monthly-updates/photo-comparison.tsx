@@ -1,22 +1,39 @@
 import { useState } from 'react';
 import type { MonthlyMedia } from '@/types/monthly-updates';
 
-export function PhotoComparison({ media }: { media: MonthlyMedia[] }) {
+export function PhotoComparison({
+    media,
+    comparisonMedia,
+}: {
+    media: MonthlyMedia[];
+    comparisonMedia?: MonthlyMedia[];
+}) {
     const [left, setLeft] = useState('');
     const [right, setRight] = useState('');
-    const photos = media.filter(
-        (file) =>
-            file.available &&
-            file.preview_url &&
-            file.mime_type?.startsWith('image/'),
-    );
+    const available = (files: MonthlyMedia[]) =>
+        files.filter(
+            (file) =>
+                file.available &&
+                file.preview_url &&
+                file.mime_type?.startsWith('image/'),
+        );
+    const photos = available(media);
+    const otherPhotos = comparisonMedia ? available(comparisonMedia) : photos;
 
-    if (photos.length < 2) {
+    if (comparisonMedia && (!photos.length || !otherPhotos.length)) {
+        return (
+            <p className="mt-3 text-sm" role="status">
+                Both reporting periods need an available photo for comparison.
+            </p>
+        );
+    }
+
+    if (!comparisonMedia && photos.length < 2) {
         return null;
     }
 
     const first = photos.find((file) => String(file.id) === left);
-    const second = photos.find((file) => String(file.id) === right);
+    const second = otherPhotos.find((file) => String(file.id) === right);
 
     return (
         <details className="mt-4 rounded-xl border border-slate-200 p-4">
@@ -29,9 +46,9 @@ export function PhotoComparison({ media }: { media: MonthlyMedia[] }) {
             </p>
             <div className="mt-3 grid gap-4 sm:grid-cols-2">
                 {[
-                    { title: 'First photo', value: left, set: setLeft },
-                    { title: 'Second photo', value: right, set: setRight },
-                ].map(({ title, value, set }) => (
+                    { title: 'First photo', value: left, set: setLeft, options: photos },
+                    { title: 'Second photo', value: right, set: setRight, options: otherPhotos },
+                ].map(({ title, value, set, options }) => (
                     <label key={title} className="grid min-w-0 gap-2 text-sm">
                         {title}
                         <select
@@ -40,7 +57,7 @@ export function PhotoComparison({ media }: { media: MonthlyMedia[] }) {
                             onChange={(event) => set(event.target.value)}
                         >
                             <option value="">Select a photo</option>
-                            {photos.map((photo) => (
+                            {options.map((photo) => (
                                 <option key={photo.id} value={photo.id}>
                                     {photo.file_name} (#{photo.id})
                                 </option>
@@ -60,6 +77,7 @@ export function PhotoComparison({ media }: { media: MonthlyMedia[] }) {
                                 className="aspect-video w-full rounded-lg object-contain"
                             />
                             <figcaption className="mt-1 text-sm break-words">
+                                {photo.parent_label && `${photo.parent_label} · `}
                                 {photo.file_name}
                             </figcaption>
                         </figure>

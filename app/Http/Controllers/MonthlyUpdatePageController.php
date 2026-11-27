@@ -147,7 +147,17 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
         $u = $this->updateQuery($actor)->where('u.id', $id)->first();
         abort_unless($u !== null, 404);
 
+        $comparisonQuery = $this->updateQuery($actor)->where('m.project_id', $u->project_id)->where('u.id', '!=', $id);
+        $comparisonPeriods = (clone $comparisonQuery)->select(['u.id', 'u.update_month'])->orderByDesc('u.update_month')->orderByDesc('u.id')->limit(60)->get()
+            ->map(static fn (\stdClass $row): array => ['id' => (int) $row->id, 'month' => (string) $row->update_month])->all();
+        $comparisonId = $request->integer('compare');
+        $comparison = $comparisonId > 0 ? (clone $comparisonQuery)->where('u.id', $comparisonId)->first() : null;
+        abort_if($comparisonId > 0 && $comparison === null, 404);
+
         return $this->render('MonthlyUpdates/Show', $request, [
+            'comparisonPeriods' => $comparisonPeriods,
+            'comparisonMedia' => $comparison === null ? [] : array_values(array_filter($this->mediaData((int) $comparison->id, $actor), static fn (array $file): bool => str_starts_with((string) $file['mime_type'], 'image/'))),
+            'comparisonPeriod' => $comparison === null ? null : ['id' => (int) $comparison->id, 'month' => (string) $comparison->update_month],
             'update' => $this->updateData($u, $actor), 'media' => $this->mediaData($id, $actor), 'canWrite' => $this->canWriteRecord($u, $actor),
             'canUploadMedia' => $this->canWriteRecord($u, $actor) && $this->media->configured(),
             'backUrl' => self::BASE.'/monthly-updates', 'backLabel' => 'Monthly Updates', 'directoryUrl' => self::BASE.'/monthly-updates',

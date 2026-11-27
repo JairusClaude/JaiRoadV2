@@ -21,6 +21,9 @@ export default function Show({
     backUrl,
     backLabel,
     directoryUrl,
+    comparisonPeriods = [],
+    comparisonMedia = [],
+    comparisonPeriod,
 }: MonthlyDetailProps) {
     const page = usePage();
     const preview =
@@ -194,7 +197,43 @@ export default function Show({
                             <p className="jr-field-hint">{mediaBreakdown}</p>
                         </div>
                         <MediaGallery key={update.id} media={media} />
-                        <PhotoComparison key={update.id} media={media} />
+                        {comparisonPeriods.length > 0 && (
+                            <label className="mt-4 grid gap-2 text-sm">
+                                Compare with another reporting period
+                                <select
+                                    className="w-full max-w-md rounded-lg border p-2"
+                                    value={comparisonPeriod?.id ?? ''}
+                                    onChange={(event) => {
+                                        const id = event.target.value;
+                                        router.get(
+                                            workspaceHref(
+                                                `/monthly-updates/${update.id}`,
+                                            ),
+                                            id ? { compare: id } : {},
+                                            { preserveScroll: true },
+                                        );
+                                    }}
+                                >
+                                    <option value="">Current update only</option>
+                                    {comparisonPeriods.map((period) => (
+                                        <option key={period.id} value={period.id}>
+                                            {updateMonth(period.month)} (#{period.id})
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                        )}
+                        <PhotoComparison
+                            key={`${update.id}:${comparisonPeriod?.id ?? ''}`}
+                            media={media.map((file) => ({
+                                ...file,
+                                parent_label: updateMonth(update.update_month),
+                            }))}
+                            comparisonMedia={comparisonPeriod ? comparisonMedia.map((file) => ({
+                                ...file,
+                                parent_label: updateMonth(comparisonPeriod.month),
+                            })) : undefined}
+                        />
                     </section>
                     <footer className="jr-report-footer">
                         <dl

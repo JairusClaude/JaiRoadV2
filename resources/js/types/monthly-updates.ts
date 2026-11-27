@@ -88,4 +88,7 @@ export type MonthlyDetailProps = {
     backLabel: string;
     directoryUrl: string;
     canUploadMedia?: boolean;
+    comparisonPeriods?: { id: number; month: string }[];
+    comparisonMedia?: MonthlyMedia[];
+    comparisonPeriod?: { id: number; month: string } | null;
 };
