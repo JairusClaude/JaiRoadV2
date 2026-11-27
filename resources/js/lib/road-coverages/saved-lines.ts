@@ -61,3 +61,29 @@ export function savedRoadLines(value: unknown, depth = 0): Point[][] {
 
     return lines.every((l) => l.length > 0) ? lines.flat() : [];
 }
+
+/** Approximate spherical length of saved geometry, not a surveyed road length. */
+export function savedLineMetrics(lines: Point[][]) {
+    const radians = Math.PI / 180;
+    let kilometers = 0;
+    let vertices = 0;
+
+    for (const line of lines) {
+        vertices += line.length;
+
+        for (let i = 1; i < line.length; i++) {
+            const [lng1, lat1] = line[i - 1];
+            const [lng2, lat2] = line[i];
+            const deltaLat = (lat2 - lat1) * radians;
+            const deltaLng = (lng2 - lng1) * radians;
+            const a =
+                Math.sin(deltaLat / 2) ** 2 +
+                Math.cos(lat1 * radians) *
+                    Math.cos(lat2 * radians) *
+                    Math.sin(deltaLng / 2) ** 2;
+            kilometers += 2 * 6371.0088 * Math.asin(Math.sqrt(Math.min(1, a)));
+        }
+    }
+
+    return { kilometers, vertices, segments: lines.length };
+}

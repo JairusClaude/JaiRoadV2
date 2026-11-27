@@ -1,26 +1,28 @@
 import L from 'leaflet';
 import { Download, Map, Maximize2, Minimize2 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { mappingData } from '@/lib/road-coverages/geometry.mjs';
-import { savedRoadLines } from '@/lib/road-coverages/saved-lines';
+import {
+    savedLineMetrics,
+    savedRoadLines,
+} from '@/lib/road-coverages/saved-lines';
 import 'leaflet/dist/leaflet.css';
 import '../../../css/road-coverage-details.css';
 
 // A display-only map: never initialize the editor, call routing, or change data.
 export function CoverageMapPreview({ geojson }: { geojson: unknown | null }) {
-    let parsed: object | null = null;
-
-    if (typeof geojson === 'string') {
-        try {
-            parsed = JSON.parse(geojson);
-        } catch {
-            parsed = null;
+    const parsed = useMemo(() => {
+        if (typeof geojson === 'string') {
+            try {
+                return JSON.parse(geojson) as object;
+            } catch {
+                return null;
+            }
         }
-    } else if (geojson && typeof geojson === 'object') {
-        parsed = geojson;
-    }
 
-    const lines = savedRoadLines(parsed);
+        return geojson && typeof geojson === 'object' ? geojson : null;
+    }, [geojson]);
+    const lines = useMemo(() => savedRoadLines(parsed), [parsed]);
 
     if (!lines.length) {
         return (
@@ -35,10 +37,16 @@ export function CoverageMapPreview({ geojson }: { geojson: unknown | null }) {
         );
     }
 
-    return <SavedCoverageMap geojson={parsed!} />;
+    return <SavedCoverageMap geojson={parsed!} lines={lines} />;
 }
 
-function SavedCoverageMap({ geojson }: { geojson: object }) {
+function SavedCoverageMap({
+    geojson,
+    lines,
+}: {
+    geojson: object;
+    lines: ReturnType<typeof savedRoadLines>;
+}) {
     const container = useRef<HTMLDivElement>(null);
     const node = useRef<HTMLDivElement>(null);
     const [full, setFull] = useState(false);
@@ -46,8 +54,6 @@ function SavedCoverageMap({ geojson }: { geojson: object }) {
     const [tilesUnavailable, setTilesUnavailable] = useState(false);
 
     useEffect(() => {
-        const lines = savedRoadLines(geojson);
-
         if (!node.current || !lines.length) {
             return;
         }
@@ -124,7 +130,8 @@ function SavedCoverageMap({ geojson }: { geojson: object }) {
             map.stop();
             map.remove();
         };
-    }, [geojson]);
+    }, [geojson, lines]);
+    const metrics = useMemo(() => savedLineMetrics(lines), [lines]);
 
     return (
         <div className="jr-coverage-map-preview" ref={container}>
@@ -142,7 +149,7 @@ function SavedCoverageMap({ geojson }: { geojson: object }) {
                 onClick={() => {
                     const geometry = {
                         type: 'MultiLineString',
-                        coordinates: savedRoadLines(geojson),
+                        coordinates: lines,
                     };
                     const url = URL.createObjectURL(
                         new Blob([JSON.stringify(geometry)], {
@@ -180,6 +187,10 @@ function SavedCoverageMap({ geojson }: { geojson: object }) {
             >
                 {full ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
             </button>
+            <div className="jr-map-geometry-facts" aria-label="Saved geometry measurements">
+                Approx. {metrics.kilometers.toFixed(2)} km · {metrics.segments}{' '}
+                line(s) · {metrics.vertices} vertices
+            </div>
             {(notice || tilesUnavailable) && (
                 <p className="jr-coverage-map-notice" role="status">
                     {notice ||

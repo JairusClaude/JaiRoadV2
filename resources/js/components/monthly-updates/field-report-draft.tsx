@@ -128,6 +128,13 @@ export function FieldReportDraft({
                 The JSON file is not encrypted; use an authorized device and delete
                 it when finished. Import after reconnecting and signing in.
             </p>
+            <a
+                className="mt-2 inline-block text-sm font-semibold underline"
+                href="/offline-field-report.html"
+                download="jairoads-offline-field-report.html"
+            >
+                Download standalone offline report editor
+            </a>
             <label className="my-3 flex items-start gap-2 text-sm">
                 <input
                     type="checkbox"

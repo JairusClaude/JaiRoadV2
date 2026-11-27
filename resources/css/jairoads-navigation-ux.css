@@ -379,3 +379,43 @@ html.jr-reduce-motion .jr-spin {
 html.jr-reduce-motion :is(.jr-quick-search, .jr-quick-refresh) {
     transition: none;
 }
+
+/* Keep long search result labels and the geometry summary inside narrow screens. */
+.jr-command-item > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.jr-command-box {
+    max-height: calc(100dvh - 24px);
+}
+.jr-command-items {
+    overscroll-behavior: contain;
+}
+.jr-map-geometry-facts {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    left: 58px;
+    z-index: 500;
+    width: fit-content;
+    max-width: calc(100% - 70px);
+    padding: 6px 9px;
+    border-radius: 6px;
+    background: #fff;
+    color: #334155;
+    font-size: 12px;
+    line-height: 1.4;
+    pointer-events: none;
+}
+@media (max-width: 639px) {
+    .jr-command-box {
+        width: calc(100vw - 20px);
+        max-width: 100%;
+    }
+    .jr-command-item {
+        min-height: 44px;
+    }
+    .jr-map-geometry-facts {
+        font-size: 11px;
+    }
+}

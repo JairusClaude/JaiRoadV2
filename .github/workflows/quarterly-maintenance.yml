@@ -7,6 +7,11 @@ on:
   pull_request:
     branches: [merged-system2, main]
 
+# Supersede obsolete runs only on the review branch; keep other release runs independent.
+concurrency:
+  group: ${{ github.workflow }}-${{ (github.head_ref == 'Improvement1' || github.ref_name == 'Improvement1') && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.head_ref == 'Improvement1' || github.ref_name == 'Improvement1' }}
+
 permissions:
   contents: read
 
@@ -83,8 +88,8 @@ jobs:
           npm ci
           touch .env
           php artisan wayfinder:generate --with-form
-      - name: Report format regression
-        run: node --experimental-strip-types --test tests/Browser/report-formats.test.mjs
+      - name: Report and geometry regression
+        run: node --experimental-strip-types --test tests/Browser/report-formats.test.mjs tests/Browser/geometry-metrics.test.mjs
       - run: npm run build
       - run: npm run types:check
       - name: Scheduling UI lint

@@ -13,6 +13,13 @@ export function RecordProgressTimeline({
         a.update_month.localeCompare(b.update_month),
     );
 
+    const checkpoints = [25, 50, 75, 100].map((target) => ({
+        target,
+        firstReport: ordered.find(
+            (update) => Number(update.progress_percentage) >= target,
+        ),
+    }));
+
     return (
         <section className="jr-detail-section" aria-label="Progress timeline">
             <h2>Progress timeline</h2>
@@ -37,6 +44,26 @@ export function RecordProgressTimeline({
                     </li>
                 )}
             </ol>
+            <h3 className="mt-4 font-semibold">Recorded progress checkpoints</h3>
+            <p className="jr-field-hint">
+                Earliest saved report at each threshold. These are derived
+                indicators, not separately approved project milestones.
+            </p>
+            <dl className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {checkpoints.map(({ target, firstReport }) => (
+                    <div
+                        key={target}
+                        className="min-w-0 rounded-lg border p-3"
+                    >
+                        <dt className="font-semibold">{target}% reported</dt>
+                        <dd className="text-sm">
+                            {firstReport
+                                ? updateMonth(firstReport.update_month)
+                                : 'Not yet recorded'}
+                        </dd>
+                    </div>
+                ))}
+            </dl>
             {ordered.length === 0 && (
                 <p className="jr-field-hint">No monthly updates recorded.</p>
             )}

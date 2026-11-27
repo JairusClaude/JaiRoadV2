@@ -5,6 +5,11 @@ on:
   pull_request:
     branches: [merged-system2, main]
   workflow_dispatch:
+# Supersede obsolete runs only on the review branch; keep other release runs independent.
+concurrency:
+  group: ${{ github.workflow }}-${{ (github.head_ref == 'Improvement1' || github.ref_name == 'Improvement1') && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.head_ref == 'Improvement1' || github.ref_name == 'Improvement1' }}
+
 permissions:
   contents: read
 jobs:
