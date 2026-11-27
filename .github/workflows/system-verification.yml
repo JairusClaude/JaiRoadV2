@@ -377,6 +377,24 @@ jobs:
             sleep 1
           done
           PLAYWRIGHT_MODULE="$RUNNER_TEMP/jairoads-browser/node_modules/playwright/index.mjs" node tests/Browser/unified.mjs
+      - name: Real encrypted receipt queue lifecycle on a separate disposable database
+        env:
+          DB_DATABASE: jairoads_scratch_receipt_browser
+          APP_URL: http://127.0.0.1:8012
+          QUARTERLY_BROWSER_URL: http://127.0.0.1:8012
+          QUARTERLY_BROWSER_FIXTURE: /tmp/jairoads-receipt-fixture.json
+          JAIROADS_MONTHLY_RECEIPTS_ENABLED: 'true'
+        run: |
+          PGPASSWORD="$DB_PASSWORD" createdb -h 127.0.0.1 -p 5432 -U postgres "$DB_DATABASE"
+          php tests/Browser/prepare-unified.php > "$QUARTERLY_BROWSER_FIXTURE"
+          php artisan serve --host=127.0.0.1 --port=8012 --no-reload > /tmp/jairoads-receipt-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -fsS "$APP_URL/up" >/dev/null; then break; fi
+            sleep 1
+          done
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/jairoads-browser/node_modules/playwright/index.mjs" node tests/Browser/durable-report-queue.mjs
 
   passkey-browser:
     runs-on: ubuntu-24.04

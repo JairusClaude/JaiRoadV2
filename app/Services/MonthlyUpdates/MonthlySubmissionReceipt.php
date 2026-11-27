@@ -18,10 +18,15 @@ final class MonthlySubmissionReceipt
 
     private const TABLE = 'jairoads_next.monthly_submission_receipts';
 
+    public static function available(): bool
+    {
+        return config('jairoads_monthly_updates.durable_receipts_enabled') === true
+            && Schema::hasTable(self::TABLE);
+    }
+
     public static function requireEnabled(): void
     {
-        abort_unless(config('jairoads_monthly_updates.durable_receipts_enabled') === true
-            && Schema::hasTable(self::TABLE), 503, 'Durable reporting receipts are not available.');
+        abort_unless(self::available(), 503, 'Durable reporting receipts are not available.');
     }
 
     public static function submissionKey(Request $request, int $account, int $project, bool $editing): ?string

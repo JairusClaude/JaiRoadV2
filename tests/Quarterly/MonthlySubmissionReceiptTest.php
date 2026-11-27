@@ -7,6 +7,7 @@ namespace Tests\Quarterly;
 use App\Services\MonthlyUpdates\MonthlySubmissionReceipt;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Inertia\Testing\AssertableInertia as Assert;
 use Symfony\Component\Process\Process;
 
 final class MonthlySubmissionReceiptTest extends PostgresTestCase
@@ -40,10 +41,14 @@ final class MonthlySubmissionReceiptTest extends PostgresTestCase
             'project_id' => $f['project'], 'maintenance_id' => $record, 'update_month' => '2026-01',
         ], $overrides));
 
+        $this->get(self::URL.'/create?maintenance_id='.$record)->assertInertia(fn (Assert $page) => $page
+            ->where('durableReceiptsAvailable', false));
         $this->postJson(self::URL, $payload)->assertServiceUnavailable();
         config(['jairoads_monthly_updates.durable_receipts_enabled' => true]);
         $this->postJson(self::URL, $payload)->assertServiceUnavailable();
         $this->applyProposal('monthly_submission_receipts');
+        $this->get(self::URL.'/create?maintenance_id='.$record)->assertInertia(fn (Assert $page) => $page
+            ->where('durableReceiptsAvailable', true));
         $this->getJson($lookup())->assertOk()->assertExactJson(['reportId' => null, 'receiptConfirmed' => false]);
         $this->postJson(self::URL, $payload)->assertRedirect();
         $id = (int) DB::table(self::TABLE)->value('report_id');

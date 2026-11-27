@@ -94,6 +94,7 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
             'existingUpdates' => [],
             'occupiedMonths' => $context === null ? null : $this->occupiedMonths($actor, $context, $id),
             'reconnectAccountId' => $id === null ? $actor['account_id'] : null,
+            'durableReceiptsAvailable' => $id === null && MonthlySubmissionReceipt::available(),
             'submitUrl' => self::BASE.'/monthly-updates'.($id === null ? '' : '/'.$id),
             'cancelUrl' => self::BASE.'/monthly-updates'.($id === null ? '' : '/'.$id),
         ]);

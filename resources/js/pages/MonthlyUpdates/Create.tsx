@@ -3,6 +3,7 @@ import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialog';
+import { DurableReportQueue } from '@/components/monthly-updates/durable-report-queue';
 import { FieldReportDraft } from '@/components/monthly-updates/field-report-draft';
 import { MonthlyUpdateForm } from '@/components/monthly-updates/monthly-update-form';
 import { ReconnectSubmission } from '@/components/monthly-updates/reconnect-submission';
@@ -321,7 +322,7 @@ export default function Create(parents: MonthlyCreateProps) {
                         <>
                             <FieldReportDraft
                                 values={form.data}
-                                disabled={form.processing}
+                                disabled={form.processing || importBusy}
                                 onImportBusy={(busy) => {
                                     importing.current = busy;
                                     setImportBusy(busy);
@@ -374,18 +375,45 @@ export default function Create(parents: MonthlyCreateProps) {
                                     });
                                 }}
                             />
-                            {parents.reconnectAccountId && (
-                                <ReconnectSubmission
-                                    parents={formParents}
-                                    values={form.data}
-                                    disabled={
-                                        form.processing ||
-                                        importBusy ||
-                                        choicesPending
-                                    }
-                                    onSubmit={() => save(false, true)}
-                                />
-                            )}
+                            {parents.durableReceiptsAvailable &&
+                                parents.reconnectAccountId && (
+                                    <DurableReportQueue
+                                        key={parents.reconnectAccountId}
+                                        accountId={parents.reconnectAccountId}
+                                        contextRecordId={parents.contextRecordId}
+                                        values={form.data}
+                                        valid={
+                                            Object.keys(
+                                                validateMonthlyUpdate(
+                                                    form.data,
+                                                    formParents,
+                                                ),
+                                            ).length === 0
+                                        }
+                                        disabled={
+                                            form.processing ||
+                                            importBusy ||
+                                            choicesPending
+                                        }
+                                        onBusy={(busy) => {
+                                            importing.current = busy;
+                                            setImportBusy(busy);
+                                        }}
+                                    />
+                                )}
+                            {parents.reconnectAccountId &&
+                                !parents.durableReceiptsAvailable && (
+                                    <ReconnectSubmission
+                                        parents={formParents}
+                                        values={form.data}
+                                        disabled={
+                                            form.processing ||
+                                            importBusy ||
+                                            choicesPending
+                                        }
+                                        onSubmit={() => save(false, true)}
+                                    />
+                                )}
                         </>
                     )
                 }

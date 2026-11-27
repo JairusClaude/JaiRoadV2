@@ -78,6 +78,7 @@ export type MonthlyCreateProps = {
     media?: MonthlyMedia[];
     submitUrl?: string;
     reconnectAccountId?: number | null;
+    durableReceiptsAvailable?: boolean;
     cancelUrl: string;
 };
 
