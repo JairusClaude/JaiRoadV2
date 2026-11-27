@@ -34,7 +34,7 @@ final class RoadCoveragePageController extends OperationsFrontendController
         }
 
         $actor = $this->actor($request);
-        $query = $this->roads($actor);
+        $query = $this->roads($actor, false);
         $filters = $this->applyRoadFilters($query, $request);
         $sort = LiteralDirectorySearch::option($request->input('sort'), 'newest');
         $filters['sort'] = in_array($sort, ['newest', 'oldest', 'name-asc', 'name-desc'], true) ? $sort : 'newest';
@@ -54,7 +54,7 @@ final class RoadCoveragePageController extends OperationsFrontendController
             'linkedProjects' => $linkedProjects,
             'totalLengthKm' => $totalLengthKm,
             'mapDeferred' => true,
-            'coverages' => BoundedDirectoryPage::paginate($query, $request, 12)->through(fn (\stdClass $r): array => $this->roadData($r)),
+            'coverages' => BoundedDirectoryPage::paginate($query, $request, 12)->through(fn (\stdClass $r): array => $this->roadData($r, false)),
             'municipalities' => $this->municipalities($actor), 'filters' => $filters, 'canEdit' => $this->writable($actor),
             'canDelete' => RoleAccess::canDeleteOperations($actor['role']),
         ]);

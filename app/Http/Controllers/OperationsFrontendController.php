@@ -168,24 +168,25 @@ class OperationsFrontendController extends Controller
     }
 
     /** @param Actor $actor */
-    protected function roads(array $actor): Builder
+    protected function roads(array $actor, bool $includeGeometry = true): Builder
     {
         return $this->scope(DB::table('jairoads_next.road_coverages as rc')
             ->join('jairoads_next.lgus as l', 'l.id', '=', 'rc.lgu_id')
             ->leftJoin('jairoads_next.engineers as e', 'e.id', '=', 'rc.created_by')
             ->leftJoin('jairoads_next.maintenance_projects as p', 'p.road_coverage_id', '=', 'rc.id'), $actor)
-            ->select(['rc.*', 'l.municipality_name', 'e.first_name', 'e.last_name', 'p.id as project_id', 'p.project_title']);
+            ->select($includeGeometry ? ['rc.*'] : ['rc.id', 'rc.road_name', 'rc.lgu_id', 'rc.kilometers', 'rc.pavement_type', 'rc.state_category', 'rc.created_by', 'rc.created_at', 'rc.updated_at'])
+            ->addSelect(['l.municipality_name', 'e.first_name', 'e.last_name', 'p.id as project_id', 'p.project_title']);
     }
 
     /** @return array<string,mixed> */
-    protected function roadData(\stdClass $row): array
+    protected function roadData(\stdClass $row, bool $includeGeometry = true): array
     {
         return [
             'id' => (int) $row->id, 'road_name' => $row->road_name,
             // Frontend response alias only; the canonical column remains lgu_id.
             'lgus_id' => (int) $row->lgu_id, 'lgu' => ['id' => (int) $row->lgu_id, 'municipality_name' => $row->municipality_name],
             'kilometers' => $row->kilometers, 'pavement_type' => $row->pavement_type, 'state_category' => $row->state_category,
-            'geojson' => json_decode($row->geojson, true, 512, JSON_THROW_ON_ERROR), 'created_by' => (int) $row->created_by,
+            ...($includeGeometry ? ['geojson' => json_decode($row->geojson, true, 512, JSON_THROW_ON_ERROR)] : []), 'created_by' => (int) $row->created_by,
             'created_at' => $row->created_at, 'updated_at' => $row->updated_at,
             'has_projects' => ! empty($row->project_id),
             'project_title' => $row->project_title ?? null,

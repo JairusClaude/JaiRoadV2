@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\OperationsFrontendController;
 use App\Http\Controllers\RoadCoveragePageController;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Http\Request;
@@ -72,7 +73,7 @@ $benchmark = new class('runMeasurements') extends PostgresTestCase
                 }
                 $results[] = ['roads' => $i, 'page' => $name, 'samples' => $samples];
             }
-            if (method_exists(RoadCoveragePageController::class, 'roadReferences') || method_exists(\App\Http\Controllers\OperationsFrontendController::class, 'roadReferences')) {
+            if (method_exists(RoadCoveragePageController::class, 'roadReferences') || method_exists(OperationsFrontendController::class, 'roadReferences')) {
                 $samples = [];
                 for ($run = 0; $run < 3; $run++) {
                     $cursor = null;

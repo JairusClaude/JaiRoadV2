@@ -50,6 +50,8 @@ Commit `652a4cbbbc348d624482b0323ba269263f787a9f` passed focused branch regressi
 
 Commit `6cb2b9df9bf8a7a4c7251573f75ca86cbd5bcd6a` passed both standard, focused and disposable staging workflows and repository-wide static checks. Full verification remained in progress at inspection. Follow-up invalidates read-only outcome UI when connectivity or submission eligibility changes, adds browser tests for edited and cancelled queues, extends synthetic directory measurements to 1/100/1,000 rows, and hardens the standalone benchmark against HTTP errors and nonadvancing reference cursors. The shared GIS page guard also rejects invalid and duplicate road IDs, wrong page order and a cursor that does not match the last returned road. Durable synchronization design is in `docs/release/offline-sync-review.md`; it is not enabled. Fresh exact-head validation remains required.
 
+Commit `9c458989e12dbbb17d74dd42f820b2112c812c12` passed 502 quarterly tests (7,784 assertions), focused frontend/password jobs, staging and dependency audits. Its standard workflow failed on the Pint and Prettier differences reproduced and applied in this follow-up. Recorded directory measurements are in `docs/performance/improvement1-directory-measurements.md`. Road directory rows now omit geometry already supplied by the dedicated map/detail endpoints and reset bulk selection when the visible scope changes. Existing road coordinates are untouched. Fresh exact-head verification remains required.
+
 ## Outstanding
 
 - Benchmark representative large data and verify the new record-history and monthly-choice pagination; the single-record month occupancy snapshot is compacted by year, but still grows with the number of distinct reporting years; verify measured behavior and hosted load.

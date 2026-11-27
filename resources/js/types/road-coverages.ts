@@ -19,6 +19,7 @@ export type RoadCoverageRow = RoadCoverage & {
     has_projects?: boolean;
     project_title?: string | null;
 };
+export type RoadCoverageDirectoryRow = Omit<RoadCoverageRow, 'geojson'>;
 export type RoadCoverageFilters = {
     search: string;
     municipality: string;
@@ -43,7 +44,7 @@ export type RoadCoverageDirectoryProps = {
     mapNextCursor?: number | null;
     mapDeferred?: boolean;
     coverages: {
-        data: RoadCoverageRow[];
+        data: RoadCoverageDirectoryRow[];
         total: number;
         current_page: number;
         last_page: number;

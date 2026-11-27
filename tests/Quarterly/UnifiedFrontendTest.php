@@ -292,6 +292,24 @@ final class UnifiedFrontendTest extends PostgresTestCase
             ->deleteJson(self::UI.'/maintenance-records/'.$empty)->assertForbidden();
     }
 
+    public function test_road_directory_omits_geometry_without_changing_detail_or_map_geometry(): void
+    {
+        $f = $this->fixture('Engineer');
+        $points = [];
+        for ($i = 0; $i < 1000; $i++) {
+            $points[] = [125.95 + $i * 0.00001, 7.59 + $i * 0.00001];
+        }
+        $geometry = ['type' => 'LineString', 'coordinates' => $points];
+        DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->update(['geojson' => json_encode($geometry, JSON_THROW_ON_ERROR)]);
+        $this->get(self::UI.'/road-coverages')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('coverages.data', 1)->missing('coverages.data.0.geojson')
+            ->where('coverages.data.0.id', $f['road'])->where('mapDeferred', true));
+        $this->get(self::UI.'/road-coverages/'.$f['road'])->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('coverage.geojson.coordinates', $points));
+        $this->getJson(self::UI.'/map/road-index')->assertOk()
+            ->assertJsonPath('data.0.geojson.coordinates', $points);
+    }
+
     public function test_project_form_includes_assigned_roads_as_reference_only_and_preserves_current_edit_selection(): void
     {
         $f = $this->fixture('Admin');

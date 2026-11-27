@@ -822,9 +822,12 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         .click();
     assert.ok((await saved).status() < 400);
     await engineer.waitForURL(`${ui}/road-coverages`);
-    const road = (
+    const roadRow = (
         await props(engineer, '/road-coverages?search=Unified browser road')
     ).coverages.data[0];
+    assert.equal(roadRow.road_name, 'Unified browser road');
+    assert.equal(roadRow.geojson, undefined);
+    const road = (await props(engineer, `/road-coverages/${roadRow.id}`)).coverage;
     assert.equal(road.road_name, 'Unified browser road');
     assert.equal(
         road.geojson.properties.jairoads_mapping.control_points.length,

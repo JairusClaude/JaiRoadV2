@@ -32,8 +32,8 @@ import { validRoadPage } from '@/lib/road-coverages/road-page';
 import { workspaceHref } from '@/lib/workspace-navigation';
 import type {
     RoadCoverageDirectoryProps,
+    RoadCoverageDirectoryRow,
     RoadCoverageFilters,
-    RoadCoverageRow,
 } from '@/types/road-coverages';
 import '../../../css/road-coverage-directory.css';
 
@@ -83,10 +83,24 @@ export default function Index({
     const [selecting, setSelecting] = useState(false);
     const [selected, setSelected] = useState<Set<number>>(new Set());
     const [deleteTargets, setDeleteTargets] = useState<
-        RoadCoverageRow[] | null
+        RoadCoverageDirectoryRow[] | null
     >(null);
     const [deleting, setDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState('');
+    const selectionScope = JSON.stringify([
+        coverages.current_page,
+        filters,
+        coverages.data.map((road) => road.id),
+    ]);
+    const [previousSelectionScope, setPreviousSelectionScope] =
+        useState(selectionScope);
+
+    if (previousSelectionScope !== selectionScope) {
+        setPreviousSelectionScope(selectionScope);
+        setSelecting(false);
+        setSelected(new Set());
+    }
+
     const [loadedMap, setLoadedMap] = useState(mapCoverages ?? []);
     const [mapCursor, setMapCursor] = useState<number | null>(
         mapNextCursor ?? null,
@@ -360,9 +374,9 @@ export default function Index({
     };
     const filtered = !!(
         filters.search ||
-        filters.municipality ||
-        filters.condition ||
-        filters.pavement
+        (filters.municipality && filters.municipality !== 'all') ||
+        (filters.condition && filters.condition !== 'all') ||
+        (filters.pavement && filters.pavement !== 'all')
     );
 
     return (

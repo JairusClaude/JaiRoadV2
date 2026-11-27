@@ -22,9 +22,7 @@ export function validRoadPage(
             ids.has(row.id) ||
             (ordered &&
                 last !== null &&
-                (direction === 'ascending'
-                    ? row.id <= last
-                    : row.id >= last))
+                (direction === 'ascending' ? row.id <= last : row.id >= last))
         ) {
             return false;
         }
