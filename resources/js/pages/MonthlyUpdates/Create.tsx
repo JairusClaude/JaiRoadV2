@@ -55,7 +55,7 @@ export default function Create(parents: MonthlyCreateProps) {
         }
 
         if (!navigator.onLine) {
-            toast.error('No connection. Save a draft or use reconnect submission.');
+            toast.error('Offline. Save a draft or queue reconnect submission.');
 
             return;
         }

@@ -301,7 +301,7 @@ jobs:
         if: always()
         run: docker rm -f jairoads-system || true
   unified-browser:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     services:
       postgres:
         image: postgres:17
@@ -367,7 +367,7 @@ jobs:
           PLAYWRIGHT_MODULE="$RUNNER_TEMP/jairoads-browser/node_modules/playwright/index.mjs" node tests/Browser/unified.mjs
 
   passkey-browser:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     services:
       postgres:
         image: postgres:17

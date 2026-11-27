@@ -59,12 +59,16 @@ export function ReconnectSubmission({
                 report.snapshot !== snapshot ||
                 Date.now() >= report.expiresAt
             ) {
-                setMessage('Queued report cancelled. Review and save manually.');
+                setMessage(
+                    'Queued report cancelled. Review and save manually.',
+                );
 
                 return;
             }
 
-            setMessage('Submitting once. Check the saved record before retrying.');
+            setMessage(
+                'Submitting once. Check the saved record before retrying.',
+            );
             onSubmit();
         };
         window.addEventListener('offline', disconnect);
@@ -83,11 +87,12 @@ export function ReconnectSubmission({
         >
             <h2>Reconnect submission</h2>
             <p className="jr-field-hint">
-                {online ? 'Connection detected.' : 'Currently offline.'} Queue
-                a valid text-only report for one submission within 15 minutes
-                when the connection returns. Keep this page open. Changes,
-                attachments, expiration or leaving the page cancel the queue.
-                No background storage or automatic retries.
+                {online ? 'Connection detected.' : 'Currently offline.'}
+            </p>
+            <p className="jr-field-hint">
+                Queue a text-only report for one reconnect attempt within 15
+                minutes. Keep this page open. The same report values must still
+                be valid at reconnection. No automatic retries or local storage.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
                 <Button

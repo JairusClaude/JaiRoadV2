@@ -44,7 +44,9 @@ export function RecordProgressTimeline({
                     </li>
                 )}
             </ol>
-            <h3 className="mt-4 font-semibold">Recorded progress checkpoints</h3>
+            <h3 className="mt-4 font-semibold">
+                Recorded progress checkpoints
+            </h3>
             <p className="jr-field-hint">
                 Earliest saved report at each threshold. These are derived
                 indicators, not separately approved project milestones.
