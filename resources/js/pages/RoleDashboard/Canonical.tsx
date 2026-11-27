@@ -18,6 +18,7 @@ import type { DashboardSummary } from '@/components/dashboard/dashboard-analytic
 import { RenderErrorBoundary } from '@/components/jairoads/render-error-boundary';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import type { SimplifiedCoverageItem } from '@/components/road-coverages/simplified-coverage-map';
+import { validRoadPage } from '@/lib/road-coverages/road-page';
 import '../../../css/maintenance-projects-exploration.css';
 
 type Role = 'engineer' | 'viewer';
@@ -103,14 +104,7 @@ function DashboardRoadMap({
                     next_cursor: number | null;
                 };
 
-                if (
-                    !Array.isArray(result.data) ||
-                    (result.next_cursor !== null &&
-                        (!Number.isSafeInteger(result.next_cursor) ||
-                            result.next_cursor <= 0 ||
-                            (requestCursor !== null &&
-                                result.next_cursor >= requestCursor)))
-                ) {
+                if (!validRoadPage(result, requestCursor, 'descending')) {
                     throw new Error('Invalid map data');
                 }
 

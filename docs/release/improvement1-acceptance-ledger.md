@@ -54,6 +54,8 @@ Commit `9c458989e12dbbb17d74dd42f820b2112c812c12` passed 502 quarterly tests (7,
 
 Commit `08fb5d29ceb1a779cfab29b7c44d91a4fd6f0ed2` passed standard, focused, and disposable staging workflows on branch and PR; all 17 applicable branch full-system jobs passed (45960756210, one conditional skip), including unified browser, Docker, and static checks. Follow-up restores canonical directory search text from server filter changes, resets LGU selection across result scopes, includes search in project selection scope, cancels pending project search before delete dialogs, and rejects normalized-invalid or future recovery timestamps. New browser and PostgreSQL regressions cover LGU scope and invalid telemetry. No operational feature activation. Exact-head verification required.
 
+Commit `fe2ec9ca41e58a770bfdd45096588a6bebf6c4da` passed all completed repository static checks at inspection; full verification remained in progress. Follow-up applies the existing strict map-page guard to the Engineer dashboard, validates project road-choice responses including bounded page size, counts, unique identities and assignment eligibility, and adds malformed-response tests. Server-side eligibility remains authoritative. No stored geometry, schema, or operational flags changed. Fresh exact-head verification is required.
+
 ## Outstanding
 
 - Benchmark representative large data and verify the new record-history and monthly-choice pagination; the single-record month occupancy snapshot is compacted by year, but still grows with the number of distinct reporting years; verify measured behavior and hosted load.

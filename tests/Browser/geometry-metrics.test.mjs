@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { validRoadPage } from '../../resources/js/lib/road-coverages/road-page.ts';
+import { validCoverageChoices, validRoadPage } from '../../resources/js/lib/road-coverages/road-page.ts';
 import { savedLineMetrics, savedRoadLines } from '../../resources/js/lib/road-coverages/saved-lines.ts';
 
 test('geometry measurements preserve gaps and every saved vertex', () => {
@@ -41,4 +41,23 @@ test('road pages must have unique IDs and advancing matching cursors', () => {
     assert.equal(validRoadPage({ data: [{ id: 1 }], next_cursor: null }, null, 'ascending'), false);
     // Isolated, unpaginated preview results may use their own display order.
     assert.equal(validRoadPage({ data: [road(3), road(1)], next_cursor: null }, null, 'ascending'), true);
+});
+
+test('project road picker rejects malformed, unrelated and inconsistent pages', () => {
+    const road = { id: 1, road_name: 'Road', municipality: 'Test', kilometers: '1.2', assigned: false, geojson: null };
+    const page = { data: [road], available: 1, assigned: 2, page: 1, last_page: 1 };
+
+    assert.equal(validCoverageChoices(page, false), true);
+    assert.equal(validCoverageChoices({ ...page, data: [], available: 0 }, false), true);
+    assert.equal(validCoverageChoices(page, true), false);
+    assert.equal(validCoverageChoices({ ...page, assigned: 0 }, true), true);
+    assert.equal(validCoverageChoices({ ...page, data: [{ ...road, assigned: true }] }, false), false);
+    assert.equal(validCoverageChoices({ ...page, data: [road, road], available: 2 }, false), false);
+    assert.equal(validCoverageChoices({ ...page, data: [{ ...road, id: 0 }] }, false), false);
+    assert.equal(validCoverageChoices({ ...page, data: [{ ...road, geojson: {} }] }, false), false);
+    assert.equal(validCoverageChoices({ ...page, data: [{ ...road, kilometers: 1.2 }] }, false), false);
+    assert.equal(validCoverageChoices({ ...page, last_page: 2 }, false), false);
+    assert.equal(validCoverageChoices({ ...page, page: 0 }, false), false);
+    assert.equal(validCoverageChoices({ ...page, available: -1 }, false), false);
+    assert.equal(validCoverageChoices(null, false), false);
 });

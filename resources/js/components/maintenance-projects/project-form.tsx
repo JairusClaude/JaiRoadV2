@@ -8,6 +8,7 @@ import { CoverageMapPreview } from '@/components/road-coverages/coverage-map-pre
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { validCoverageChoices } from '@/lib/road-coverages/road-page';
 import '../../../css/maintenance-project-create.css';
 import type {
     CoverageChoice,
@@ -110,6 +111,10 @@ export function ProjectForm({
 
                 const data: CoveragePagination & { data: CoverageChoice[] } =
                     await response.json();
+
+                if (!validCoverageChoices(data, !create || showAssigned)) {
+                    throw new Error('Invalid road choices');
+                }
 
                 if (!controller.signal.aborted) {
                     setResult({ key, data: data.data, pagination: data });

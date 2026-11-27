@@ -40,3 +40,80 @@ export function validRoadPage(
             cursor === last)
     );
 }
+
+/** The project picker must never render an unvalidated remote choice. */
+export function validCoverageChoices(
+    payload: unknown,
+    showAssigned: boolean,
+): boolean {
+    if (!payload || typeof payload !== 'object') {
+        return false;
+    }
+
+    const {
+        data,
+        available,
+        assigned,
+        page,
+        last_page: lastPage,
+    } = payload as {
+        data?: unknown;
+        available?: unknown;
+        assigned?: unknown;
+        page?: unknown;
+        last_page?: unknown;
+    };
+
+    if (
+        !Array.isArray(data) ||
+        data.length > 30 ||
+        typeof available !== 'number' ||
+        !Number.isSafeInteger(available) ||
+        available < 0 ||
+        typeof assigned !== 'number' ||
+        !Number.isSafeInteger(assigned) ||
+        assigned < 0 ||
+        typeof page !== 'number' ||
+        !Number.isSafeInteger(page) ||
+        page < 1 ||
+        typeof lastPage !== 'number' ||
+        !Number.isSafeInteger(lastPage) ||
+        lastPage < page
+    ) {
+        return false;
+    }
+
+    const total = showAssigned ? available + assigned : available;
+
+    if (
+        !Number.isSafeInteger(total) ||
+        lastPage !== Math.max(1, Math.ceil(total / 30)) ||
+        data.length !== Math.min(30, Math.max(0, total - (page - 1) * 30))
+    ) {
+        return false;
+    }
+
+    const ids = new Set<number>();
+
+    for (const row of data) {
+        if (
+            !row ||
+            typeof row !== 'object' ||
+            !Number.isSafeInteger(row.id) ||
+            row.id <= 0 ||
+            ids.has(row.id) ||
+            typeof row.road_name !== 'string' ||
+            (row.municipality !== null && typeof row.municipality !== 'string') ||
+            typeof row.kilometers !== 'string' ||
+            typeof row.assigned !== 'boolean' ||
+            (!showAssigned && row.assigned) ||
+            row.geojson !== null
+        ) {
+            return false;
+        }
+
+        ids.add(row.id);
+    }
+
+    return true;
+}
