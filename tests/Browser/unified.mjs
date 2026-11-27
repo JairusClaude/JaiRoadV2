@@ -659,6 +659,18 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     await savedLine.dispose();
 
     lastPage = superadmin;
+    superadmin.on('console', (message) => {
+        if (message.type() === 'error') {
+            console.error('Map fallback browser error:', message.text());
+        }
+    });
+    superadmin.on('requestfailed', (request) => {
+        console.error(
+            'Map fallback request failed:',
+            request.url(),
+            request.failure()?.errorText,
+        );
+    });
     const unavailableBasemap = 'https://tiles.openfreemap.org/**';
     await superadmin.route(unavailableBasemap, (route) => route.abort('failed'));
     await superadmin.goto(base + '/workspace/projects?view=show&project=' + f.project_id);
