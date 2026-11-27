@@ -46,6 +46,7 @@
     font-weight: 600;
     box-shadow: 0 1px 4px #0003;
 }
+.jr-coverage-map-preview .jr-map-geometry-download,
 .jr-coverage-map-preview .jr-map-fullscreen {
     position: absolute;
     right: 12px;
@@ -60,6 +61,9 @@
     border-radius: 6px;
     color: #475569;
     cursor: pointer;
+}
+.jr-coverage-map-preview .jr-map-geometry-download {
+    bottom: 70px;
 }
 .jr-coverage-map-preview:fullscreen {
     height: 100%;

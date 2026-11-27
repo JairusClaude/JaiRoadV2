@@ -1,5 +1,5 @@
 import L from 'leaflet';
-import { Map, Maximize2, Minimize2 } from 'lucide-react';
+import { Download, Map, Maximize2, Minimize2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { mappingData } from '@/lib/road-coverages/geometry.mjs';
 import { savedRoadLines } from '@/lib/road-coverages/saved-lines';
@@ -43,6 +43,7 @@ function SavedCoverageMap({ geojson }: { geojson: object }) {
     const node = useRef<HTMLDivElement>(null);
     const [full, setFull] = useState(false);
     const [notice, setNotice] = useState('');
+    const [tilesUnavailable, setTilesUnavailable] = useState(false);
 
     useEffect(() => {
         const lines = savedRoadLines(geojson);
@@ -56,10 +57,15 @@ function SavedCoverageMap({ geojson }: { geojson: object }) {
             zoomAnimation: false,
             inertia: false,
         });
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '© OpenStreetMap contributors',
-        }).addTo(map);
+        const tiles = L.tileLayer(
+            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap contributors',
+            },
+        );
+        tiles.on('tileerror', () => setTilesUnavailable(true));
+        tiles.addTo(map);
         L.control.scale({ imperial: false }).addTo(map);
         L.polyline(
             lines.map((line) =>
@@ -130,6 +136,32 @@ function SavedCoverageMap({ geojson }: { geojson: object }) {
             />
             <button
                 type="button"
+                className="jr-map-geometry-download"
+                aria-label="Download saved road geometry (GeoJSON)"
+                title="Download GeoJSON"
+                onClick={() => {
+                    const geometry = {
+                        type: 'MultiLineString',
+                        coordinates: savedRoadLines(geojson),
+                    };
+                    const url = URL.createObjectURL(
+                        new Blob([JSON.stringify(geometry)], {
+                            type: 'application/geo+json',
+                        }),
+                    );
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'jairoads-road-geometry.geojson';
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+                }}
+            >
+                <Download size={18} aria-hidden="true" />
+            </button>
+            <button
+                type="button"
                 className="jr-map-fullscreen"
                 aria-label={
                     full ? 'Exit fullscreen' : 'Fullscreen road coverage map'
@@ -148,9 +180,10 @@ function SavedCoverageMap({ geojson }: { geojson: object }) {
             >
                 {full ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
             </button>
-            {notice && (
+            {(notice || tilesUnavailable) && (
                 <p className="jr-coverage-map-notice" role="status">
-                    {notice}
+                    {notice ||
+                        'Some background map tiles failed to load. Saved road geometry remains available.'}
                 </p>
             )}
         </div>
