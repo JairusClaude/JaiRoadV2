@@ -999,9 +999,33 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     await engineer.getByRole('button', { name: 'Submit once when connected' }).click();
     await engineer.getByRole('button', { name: 'Cancel queued submission' }).click();
     await engineer.getByText('Queued submission cancelled.', { exact: true }).waitFor();
+    const outcomeRoute = '**/monthly-updates/submission-outcome?*';
+    let queuedWrites = 0;
+    const observeQueuedWrite = request => {
+        if (request.method() === 'POST' && new URL(request.url()).pathname === '/workspace/ui/monthly-updates') queuedWrites++;
+    };
+    engineer.on('request', observeQueuedWrite);
+    const deniedOutcome = route => route.fulfill({ status: 403, json: { message: 'Denied fixture' } });
+    await engineer.route(outcomeRoute, deniedOutcome);
+    await engineer.getByRole('button', { name: 'Submit once when connected' }).click();
+    await engineer.context().setOffline(false);
+    await engineer.getByText('Could not verify current access or reporting period. No queued submission was sent.', { exact: true }).waitFor();
+    assert.equal(queuedWrites, 0);
+    await engineer.unroute(outcomeRoute, deniedOutcome);
+    await engineer.context().setOffline(true);
+    const occupiedOutcome = route => route.fulfill({ json: { reportId: 1 } });
+    await engineer.route(outcomeRoute, occupiedOutcome);
+    await engineer.getByRole('button', { name: 'Submit once when connected' }).click();
+    await engineer.context().setOffline(false);
+    await engineer.getByText('A report already exists for this period. Check the saved reporting period before retrying.', { exact: true }).waitFor();
+    assert.equal(queuedWrites, 0);
+    await engineer.unroute(outcomeRoute, occupiedOutcome);
+    await engineer.context().setOffline(true);
     await engineer.getByRole('button', { name: 'Submit once when connected' }).click();
     await engineer.context().setOffline(false);
     await engineer.waitForURL(/workspace\/ui\/monthly-updates\/\d+$/);
+    assert.equal(queuedWrites, 1);
+    engineer.off('request', observeQueuedWrite);
     const report = (
         await props(
             engineer,

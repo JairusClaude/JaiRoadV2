@@ -47,6 +47,7 @@ test('report occupancy matches each month, year and record exactly', () => {
     assert.equal(hasOccupiedReportingMonth(occupied, 42, '9999-12'), true);
     assert.equal(hasOccupiedReportingMonth(occupied, 42, '0000-01'), false);
     assert.equal(hasOccupiedReportingMonth(occupied, 42, '2027-13'), false);
+
     for (let month = 1; month <= 12; month++) {
         assert.equal(hasOccupiedReportingMonth(occupied, 42, `2027-${String(month).padStart(2, '0')}`), true);
     }

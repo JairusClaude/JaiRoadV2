@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { validateMonthlyUpdate } from '@/lib/monthly-updates';
 import type {
@@ -8,6 +8,47 @@ import type {
 } from '@/types/monthly-updates';
 
 type PendingReport = { snapshot: string; expiresAt: number };
+
+async function findSavedReport(
+    query: URLSearchParams,
+    signal: AbortSignal,
+): Promise<number | null> {
+    const response = await fetch(
+        '/workspace/ui/monthly-updates/submission-outcome?' + query,
+        {
+            headers: { Accept: 'application/json' },
+            cache: 'no-store',
+            signal: AbortSignal.any([signal, AbortSignal.timeout(12_000)]),
+        },
+    );
+
+    if (!response.ok) {
+        throw new Error('Outcome lookup unavailable');
+    }
+
+    const data = (await response.json()) as { reportId: number | null };
+
+    if (
+        data.reportId !== null &&
+        (!Number.isSafeInteger(data.reportId) || data.reportId < 1)
+    ) {
+        throw new Error('Invalid outcome response');
+    }
+
+    return data.reportId;
+}
+
+function reportingPeriodQuery(
+    parents: MonthlyCreateProps,
+    values: MonthlyUpdateValues,
+) {
+    return new URLSearchParams({
+        account_id: String(parents.reconnectAccountId),
+        project_id: values.project_id,
+        maintenance_id: values.maintenance_id,
+        update_month: values.update_month,
+    });
+}
 
 export function ReconnectSubmission({
     parents,
@@ -26,6 +67,7 @@ export function ReconnectSubmission({
     const [queued, setQueued] = useState(false);
     const [message, setMessage] = useState('');
     const pending = useRef<PendingReport | null>(null);
+    const preflight = useRef<AbortController | null>(null);
     const snapshot = JSON.stringify([
         parents.reconnectAccountId,
         values.project_id,
@@ -41,6 +83,18 @@ export function ReconnectSubmission({
         !values.removed_media_ids.length &&
         Object.keys(validateMonthlyUpdate(values, parents)).length === 0;
 
+    const latest = useRef({
+        valid,
+        snapshot,
+        parents,
+        values,
+        onSubmit,
+    });
+
+    useLayoutEffect(() => {
+        latest.current = { valid, snapshot, parents, values, onSubmit };
+    }, [valid, snapshot, parents, values, onSubmit]);
+
     useEffect(() => {
         const report = pending.current;
 
@@ -52,6 +106,8 @@ export function ReconnectSubmission({
             () => {
                 if (pending.current === report) {
                     pending.current = null;
+                    preflight.current?.abort();
+                    preflight.current = null;
                     setQueued(false);
                     setMessage(
                         'Queue expired. Review and queue the report again.',
@@ -65,24 +121,35 @@ export function ReconnectSubmission({
     }, [queued]);
 
     useEffect(() => {
-        const disconnect = () => setOnline(false);
-        const reconnect = () => {
+        const disconnect = () => {
+            setOnline(false);
+
+            if (preflight.current) {
+                preflight.current.abort();
+                preflight.current = null;
+                pending.current = null;
+                setQueued(false);
+                setMessage(
+                    'Connection lost during verification. Review and queue again.',
+                );
+            }
+        };
+        const reconnect = async () => {
             setOnline(true);
             const report = pending.current;
+            const current = latest.current;
 
-            if (!report) {
+            if (!report || preflight.current) {
                 return;
             }
 
-            // Consume first: never retry a request with an uncertain outcome.
-            pending.current = null;
-            setQueued(false);
-
             if (
-                !valid ||
-                report.snapshot !== snapshot ||
+                !current.valid ||
+                report.snapshot !== current.snapshot ||
                 Date.now() >= report.expiresAt
             ) {
+                pending.current = null;
+                setQueued(false);
                 setMessage(
                     'Queued report cancelled. Review and save manually.',
                 );
@@ -90,10 +157,57 @@ export function ReconnectSubmission({
                 return;
             }
 
-            setMessage(
-                'Submitting once. Check the saved record before retrying.',
-            );
-            onSubmit();
+            const controller = new AbortController();
+            preflight.current = controller;
+            setMessage('Verifying current reporting period before submission…');
+
+            try {
+                const reportId = await findSavedReport(
+                    reportingPeriodQuery(current.parents, current.values),
+                    controller.signal,
+                );
+
+                if (controller.signal.aborted || pending.current !== report) {
+                    return;
+                }
+
+                // Consume before a write; never replay an uncertain request.
+                pending.current = null;
+                setQueued(false);
+                const refreshed = latest.current;
+
+                if (
+                    !navigator.onLine ||
+                    !refreshed.valid ||
+                    refreshed.snapshot !== report.snapshot ||
+                    Date.now() >= report.expiresAt
+                ) {
+                    setMessage(
+                        'Queued report cancelled. Review and save manually.',
+                    );
+                } else if (reportId !== null) {
+                    setMessage(
+                        'A report already exists for this period. Check the saved reporting period before retrying.',
+                    );
+                } else {
+                    setMessage(
+                        'Submitting once. Check the saved record before retrying.',
+                    );
+                    refreshed.onSubmit();
+                }
+            } catch {
+                if (!controller.signal.aborted && pending.current === report) {
+                    pending.current = null;
+                    setQueued(false);
+                    setMessage(
+                        'Could not verify current access or reporting period. No queued submission was sent.',
+                    );
+                }
+            } finally {
+                if (preflight.current === controller) {
+                    preflight.current = null;
+                }
+            }
         };
         window.addEventListener('offline', disconnect);
         window.addEventListener('online', reconnect);
@@ -101,8 +215,11 @@ export function ReconnectSubmission({
         return () => {
             window.removeEventListener('offline', disconnect);
             window.removeEventListener('online', reconnect);
+            preflight.current?.abort();
+            preflight.current = null;
+            pending.current = null;
         };
-    }, [valid, snapshot, onSubmit]);
+    }, []);
 
     return (
         <section
@@ -116,7 +233,9 @@ export function ReconnectSubmission({
             <p className="jr-field-hint">
                 Queue a text-only report for one reconnect attempt within 15
                 minutes. Keep this page open. The same report values must still
-                be valid at reconnection. No automatic retries or local storage.
+                be valid at reconnection. Current access and the reporting
+                period are checked before submission. No automatic retries or
+                local storage.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
                 <Button
@@ -140,6 +259,8 @@ export function ReconnectSubmission({
                         variant="outline"
                         onClick={() => {
                             pending.current = null;
+                            preflight.current?.abort();
+                            preflight.current = null;
                             setQueued(false);
                             setMessage('Queued submission cancelled.');
                         }}
@@ -212,45 +333,17 @@ function ReportingPeriodLookup({
         setOutcome({ message: 'Checking…', checking: true });
 
         try {
-            const query = new URLSearchParams({
-                account_id: String(parents.reconnectAccountId),
-                project_id: values.project_id,
-                maintenance_id: values.maintenance_id,
-                update_month: values.update_month,
-            });
-            const response = await fetch(
-                '/workspace/ui/monthly-updates/submission-outcome?' + query,
-                {
-                    headers: { Accept: 'application/json' },
-                    cache: 'no-store',
-                    signal: AbortSignal.any([
-                        controller.signal,
-                        AbortSignal.timeout(12_000),
-                    ]),
-                },
+            const reportId = await findSavedReport(
+                reportingPeriodQuery(parents, values),
+                controller.signal,
             );
-
-            if (!response.ok) {
-                throw new Error('Outcome lookup unavailable');
-            }
-
-            const data = (await response.json()) as {
-                reportId: number | null;
-            };
-
-            if (
-                data.reportId !== null &&
-                (!Number.isSafeInteger(data.reportId) || data.reportId < 1)
-            ) {
-                throw new Error('Invalid outcome response');
-            }
 
             if (!controller.signal.aborted) {
                 setOutcome({
-                    message: data.reportId
+                    message: reportId
                         ? 'A report exists for this period. Open it and compare the saved values before retrying.'
                         : 'No report was found at the time of checking. An earlier request may still be processing.',
-                    reportId: data.reportId ?? undefined,
+                    reportId: reportId ?? undefined,
                 });
             }
         } catch {

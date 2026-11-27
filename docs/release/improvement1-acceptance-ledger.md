@@ -28,6 +28,8 @@ Commit `59dcbf22359f5c9391e2cd1bde4c3ddcc6340673` passed the quarterly PostgreSQ
 
 The next candidate replaces individual monthly uniqueness rows with year-keyed 12-bit occupancy masks, including fixed-context editing and encrypted draft import. Server-side write validation remains authoritative; the compact client snapshot does not grant authorization. Regression coverage includes 1,204 months, year 0001/9999, exact record scope and exclusion of the edited report. Exact-head tests remain required.
 
+The next candidate preflights queued reconnect submissions with the existing account-bound, writable-record period lookup. Expired, cancelled, changed, unauthorized, occupied or unverifiable queued requests are not sent; a verified empty period permits at most one attempt with existing transactional server authorization and uniqueness checks. The preflight is not a reservation or durable receipt, and the queue is still in-page only. Browser cases cover denied and occupied preflights and the single successful attempt.
+
 ## Outstanding
 
 - Benchmark representative large data and verify the new record-history and monthly-choice pagination; the single-record month occupancy snapshot is compacted by year, but still grows with the number of distinct reporting years; verify measured behavior and hosted load.
