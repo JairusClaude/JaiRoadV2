@@ -13,6 +13,7 @@ on:
       - fix/isolated-integration-readiness
       - merged-system2
       - main
+      - Improvement1
   workflow_dispatch:
 
 permissions:
