@@ -28,3 +28,9 @@ See docs/release/main-enhancement-gates.md and GitHub issue #25.
 ## Follow-up: reconnect submission and search coverage
 
 The six-category search now includes maintenance records. The create-report form can explicitly queue a valid text-only report for one reconnect attempt within 15 minutes, only while the current page remains open. The server checks the expected canonical account in addition to normal authorization and uniqueness validation. The queue is memory-only and never automatically retries ambiguous requests or attachments. Full browser verification, encrypted durable offline storage, custom persistent milestones and all production gates remain pending.
+
+## Follow-up: encrypted portable drafts and milestone schema review
+
+Encrypted report drafts use Web Crypto AES-256-GCM with fresh random salt and IV and PBKDF2-SHA-256 (310,000 iterations). The passphrase is supplied by the user and cleared from the input after use; it is not stored by the application. Existing plaintext import/export remains explicit for compatibility. Encrypted files survive browser closure; import still requires authentication, current record eligibility, normal validation and user review. No background replay or automatic persistent browser storage is introduced. The standalone offline editor still exports plaintext only.
+
+A review-only milestone table proposal is in database/proposals/maintenance_milestones_REVIEW_ONLY.sql. It enables RLS and denies public access; no runtime grants or writes. Before activation, review record-preservation and deletion dependencies (RESTRICT prevents silent loss), audit/notification contracts, authorization and actual tests. Custom milestone CRUD is not yet implemented and the proposal has not been applied.

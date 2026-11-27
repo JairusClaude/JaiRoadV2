@@ -1,5 +1,10 @@
 import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+    decryptDraft,
+    encryptDraft,
+    isEncryptedDraft,
+} from '@/lib/encrypted-field-draft';
 import type {
     MonthlyCreateProps,
     MonthlyUpdateValues,
@@ -26,10 +31,13 @@ export function FieldReportDraft({
     disabled: boolean;
 }) {
     const input = useRef<HTMLInputElement>(null);
+    const password = useRef<HTMLInputElement>(null);
+    const [busy, setBusy] = useState(false);
     const [message, setMessage] = useState('');
     const [confirmed, setConfirmed] = useState(false);
-    const canImport = !disabled && confirmed && !values.attachments.length;
-    const download = () => {
+    const blocked = disabled || busy || !confirmed;
+    const canImport = !blocked && !values.attachments.length;
+    const download = async (encrypted = false) => {
         const data = {
             version: 1,
             project_id: values.project_id,
@@ -38,27 +46,51 @@ export function FieldReportDraft({
             progress_percentage: values.progress_percentage,
             summary_of_text_reports: values.summary_of_text_reports,
         };
-        const url = URL.createObjectURL(
-            new Blob([JSON.stringify(data, null, 2)], {
-                type: 'application/json',
-            }),
-        );
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'jairoads-field-report-draft.json';
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-        setMessage('Draft downloaded. No report was submitted.');
+        setBusy(true);
+
+        try {
+            const contents = encrypted
+                ? await encryptDraft(data, password.current?.value ?? '')
+                : data;
+            const url = URL.createObjectURL(
+                new Blob([JSON.stringify(contents, null, 2)], {
+                    type: 'application/json',
+                }),
+            );
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = encrypted
+                ? 'jairoads-encrypted-draft.json'
+                : 'jairoads-field-report-draft.json';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+            setMessage('Draft downloaded. No report was submitted.');
+        } catch (error) {
+            setMessage(
+                error instanceof Error ? error.message : 'Unable to save draft.',
+            );
+        } finally {
+            if (password.current) {
+                password.current.value = '';
+            }
+
+            setBusy(false);
+        }
     };
     const restore = async (file: File) => {
+        setBusy(true);
+
         try {
             if (file.size > 128 * 1024) {
                 throw new Error('Draft exceeds the 128 KB size limit.');
             }
 
-            const data: unknown = JSON.parse(await file.text());
+            const envelope: unknown = JSON.parse(await file.text());
+            const data = isEncryptedDraft(envelope)
+                ? await decryptDraft(envelope, password.current?.value ?? '')
+                : envelope;
 
             if (!data || typeof data !== 'object' || Array.isArray(data)) {
                 throw new Error('Invalid draft format.');
@@ -116,6 +148,12 @@ export function FieldReportDraft({
                     ? error.message
                     : 'Unable to import draft.';
             setMessage(message);
+        } finally {
+            if (password.current) {
+                password.current.value = '';
+            }
+
+            setBusy(false);
         }
     };
 
@@ -126,10 +164,9 @@ export function FieldReportDraft({
         >
             <h2>Offline field report draft</h2>
             <p className="jr-field-hint">
-                Save a local copy while the form is open. No credentials,
-                private media, or attachments are included. The JSON file is not
-                encrypted. Use an authorized device and delete it when finished.
-                Import after reconnecting and signing in.
+                Prefer an encrypted draft. No credentials, private media, or
+                attachments are included. Plain JSON is not encrypted. Use an
+                authorized device and delete drafts when finished.
             </p>
             <a
                 className="mt-2 inline-block text-sm font-semibold underline"
@@ -148,12 +185,35 @@ export function FieldReportDraft({
                 I understand that the draft contains report text and record
                 identifiers, and importing replaces the form.
             </label>
+            <label className="my-3 grid gap-1 text-sm">
+                Draft passphrase (12–256 characters; not your account password)
+                <input
+                    ref={password}
+                    type="password"
+                    autoComplete="new-password"
+                    maxLength={256}
+                    disabled={blocked}
+                    className="rounded-lg border p-2"
+                />
+            </label>
+            <p className="jr-field-hint mb-3">
+                Keep the passphrase separately. It is needed to import the
+                encrypted file and cannot be recovered by JaiROADS.
+            </p>
             <div className="flex flex-wrap gap-2">
                 <Button
                     type="button"
                     variant="outline"
-                    disabled={disabled || !confirmed}
-                    onClick={download}
+                    disabled={blocked}
+                    onClick={() => void download(true)}
+                >
+                    Download encrypted draft
+                </Button>
+                <Button
+                    type="button"
+                    variant="outline"
+                    disabled={blocked}
+                    onClick={() => void download()}
                 >
                     Download draft
                 </Button>
