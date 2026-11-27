@@ -65,10 +65,16 @@ Commit `432ffaa6a6b94edcb4205f35b9e18ab49086dd3c` passed both standard, focused 
 - Benchmark representative large data and verify the new record-history and monthly-choice pagination; the single-record month occupancy snapshot is compacted by year, but still grows with the number of distinct reporting years; verify measured behavior and hosted load.
 - Verify incremental simplified map layer updates, extend condition visualization and failure recovery where missing, and validate map services in hosted staging.
 - Approve and rehearse milestone retention and runtime grants in isolated hosted staging; no production schema changes.
-- Durable background reporting synchronization requires reviewed session, revocation, durable idempotent receipts and encryption/attachment strategy; the manual period outcome lookup is implemented but is not a receipt and must not trigger silent replay.
+- Durable background reporting remains disabled. Improvement1 implements a review-only server receipt transaction and a single-slot encrypted local text queue with explicit manual submission. Disposable transaction and browser lifecycle checks pass on the exact head recorded below. Hosted activation still requires approved schema, grants/RLS, retention, backup/restore and owner acceptance. Automatic background submission, retries and attachment synchronization are not implemented.
 - Formal server reminder and road priority policy approval.
 - GitHub owner branch protection and required review.
 - Hosted database restore and independent private object-byte recovery rehearsal, verified shared locks and recovery scheduler execution.
 - Exact release candidate acceptance, production owner approval, actual human UAT and signoff.
 
 See docs/release/improvement1-consolidated-handoff.md and issue #25. Never equate synthetic checks with hosted recovery or human acceptance.
+
+## Exact-head verification — 2026-11-27
+
+Commit `ff737a522af3cab063783ad678bfc527eeb6a593` is the reviewed head of `Improvement1` and PR #36. On this exact SHA, push and PR runs passed Standard CI (46021961324, 46021974735), focused regressions (46021961374, 46021974750), full-system verification (46021961304, 46021974763), and disposable staging rehearsal (46021961388, 46021974663). The full-system run's conditional ancestry job was intentionally skipped; applicable canonical contract jobs passed. These runs include repository ESLint, Prettier, TypeScript, build, Laravel, Pint, PHPStan, dependency audits, PostgreSQL, passkey/browser, Docker, release-gate and staging checks. Exact-head receipt concurrency and browser lifecycle checks passed on disposable infrastructure.
+
+The follow-up on this SHA corrects ESLint padding in `tests/Browser/durable-report-queue.mjs` and Prettier formatting in the durable queue component and monthly update creation page. Any commit after this SHA requires new exact-head checks. Hosted account/RLS acceptance, branch protection, private Storage byte recovery, human UAT, independent review and release authorization remain open; this CI result does not satisfy them.
