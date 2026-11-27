@@ -17,6 +17,7 @@ import {
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { toast } from 'sonner';
+import { JaiRoadsQuickActions } from '@/components/jairoads/quick-actions';
 import {
     AlternativeNavigation,
     isAlternativeNavigation,
@@ -421,6 +422,7 @@ export function MaintenanceProjectShell({
                             className="jr-navigation-status-slot"
                             data-jr-navigation-status
                         />
+                        {canonical && <JaiRoadsQuickActions searchOnly />}
                         {viewerTheme ? null : canonical ? (
                             <NotificationBell />
                         ) : (

@@ -70,6 +70,18 @@ export function SimplifiedCoverageMap({
     const dashboardView = engineerView || viewerView;
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const roadLayers = useRef<{ id: number; line: L.Polyline }[]>([]);
+    const roadGroupRef = useRef<L.FeatureGroup | null>(null);
+    const renderedRoads = useRef(
+        new Map<
+            number,
+            {
+                signature: string;
+                group: L.FeatureGroup;
+                lines: L.Polyline[];
+            }
+        >(),
+    );
+    const fittedRoads = useRef(false);
 
     const mappedCoverages = useMemo(() => {
         return coverages.map((coverage) => {
@@ -158,6 +170,8 @@ export function SimplifiedCoverageMap({
             inertia: false,
         });
         mapRef.current = map;
+        roadGroupRef.current = L.featureGroup().addTo(map);
+        const entries = renderedRoads.current;
 
         // Standard OpenStreetMap tile layer (identical to Road Coverage Details and Add pages)
         const tiles = L.tileLayer(
@@ -197,6 +211,10 @@ export function SimplifiedCoverageMap({
 
         return () => {
             mapRef.current = null;
+            roadGroupRef.current = null;
+            entries.clear();
+            roadLayers.current = [];
+            fittedRoads.current = false;
             tilesRef.current = null;
             tiles.off('tileerror');
             observer.disconnect();
@@ -212,13 +230,22 @@ export function SimplifiedCoverageMap({
 
     useEffect(() => {
         const map = mapRef.current;
+        const roadGroup = roadGroupRef.current;
 
-        if (!map) {
+        if (!map || !roadGroup) {
             return;
         }
 
-        const roadGroup = L.featureGroup();
+        const entries = renderedRoads.current;
+        const desired = new Set(visibleCoverages.map((item) => item.id));
         roadLayers.current = [];
+
+        for (const [id, entry] of entries) {
+            if (!desired.has(id)) {
+                roadGroup.removeLayer(entry.group);
+                entries.delete(id);
+            }
+        }
 
         // Draw background roads first so the engineer's highlighted roads stay on top.
         const ordered = engineerView
@@ -228,9 +255,30 @@ export function SimplifiedCoverageMap({
             : visibleCoverages;
 
         for (const item of ordered) {
+            const signature = JSON.stringify([
+                item,
+                engineerView,
+                viewerView,
+                dashboardView,
+                showConditions,
+            ]);
+            const existing = entries.get(item.id);
+
+            if (existing?.signature === signature) {
+                continue;
+            }
+
+            if (existing) {
+                roadGroup.removeLayer(existing.group);
+                entries.delete(item.id);
+            }
+
             if (!item.lines.length) {
                 continue;
             }
+
+            const group = L.featureGroup();
+            const lines: L.Polyline[] = [];
 
             // Use the canonical road brown (#843b12) from the Add Road Coverage editor and Details view
             const highlighted = engineerView && item.mine;
@@ -265,7 +313,7 @@ export function SimplifiedCoverageMap({
                     opacity: muted ? 0.55 : 0.9,
                     smoothFactor: 0,
                     interactive: false,
-                }).addTo(roadGroup);
+                }).addTo(group);
 
                 // Main colored road polyline matching Add Road Coverage page
                 const line = L.polyline(segment, {
@@ -290,7 +338,7 @@ export function SimplifiedCoverageMap({
 
                 if (dashboardView) {
                     line.on('click', () => setSelectedId(item.id));
-                    roadLayers.current.push({ id: item.id, line });
+                    lines.push(line);
                 } else {
                     // Preserve the read-only popup for every other map.
                     const popup = document.createElement('div');
@@ -314,14 +362,31 @@ export function SimplifiedCoverageMap({
                     line.bindPopup(popup, { closeButton: true });
                 }
 
-                line.addTo(roadGroup);
+                line.addTo(group);
+            }
+
+            group.addTo(roadGroup);
+            entries.set(item.id, { signature, group, lines });
+        }
+
+        // Keep the engineer's foreground roads above the background roads.
+        for (const item of ordered) {
+            const entry = entries.get(item.id);
+
+            if (entry) {
+                if (engineerView && item.mine) {
+                    entry.group.bringToFront();
+                }
+
+                for (const line of entry.lines) {
+                    roadLayers.current.push({ id: item.id, line });
+                }
             }
         }
 
-        roadGroup.addTo(map);
-
-        // Auto-fit bounds to the road network or fall back to Davao de Oro province bounds
-        if (roadGroup.getLayers().length > 0) {
+        // Fit the first available geometry only. Pagination and filtering
+        // must not discard the user's chosen viewport or zoom.
+        if (!fittedRoads.current && roadGroup.getLayers().length > 0) {
             const bounds = roadGroup.getBounds();
 
             if (bounds.isValid()) {
@@ -329,20 +394,9 @@ export function SimplifiedCoverageMap({
                     maxZoom: 15,
                     animate: false,
                 });
-            } else {
-                map.fitBounds(PROVINCE_BOUNDS, { animate: false });
+                fittedRoads.current = true;
             }
-        } else {
-            map.fitBounds(PROVINCE_BOUNDS, { animate: false });
         }
-
-        return () => {
-            if (mapRef.current === map) {
-                roadGroup.removeFrom(map);
-            }
-
-            roadLayers.current = [];
-        };
     }, [
         visibleCoverages,
         engineerView,
@@ -362,7 +416,7 @@ export function SimplifiedCoverageMap({
                 line.bringToFront();
             }
         }
-    }, [selected?.id, visibleCoverages]);
+    }, [selected?.id, visibleCoverages, showConditions]);
 
     return (
         <div className={`jr-road-map-panel w-full ${className}`}>

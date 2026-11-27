@@ -443,7 +443,10 @@ throw new Error('Wave transform is static');
     await roadDetails.getByRole('heading', { name: 'Maintenance project', exact: true }).waitFor();
     await roadDetails.getByRole('button', { name: 'Close road details' }).click();
     await roadDetails.waitFor({ state: 'hidden' });
+    const retainedRoad = await dashboardMap.locator('.jr-dashboard-road-mine').first().elementHandle();
     await myProjects.check();
+    assert.equal(await retainedRoad.evaluate(node => node.isConnected), true);
+    await retainedRoad.dispose();
     assert.equal(await dashboardMap.locator('.jr-dashboard-road-other').count(), 0);
     assert.equal(await dashboardMap.locator('.jr-dashboard-road-mine').count(), mineCount);
     await myProjects.uncheck();
@@ -992,6 +995,34 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     assert.ok(recordSearchResults.some(item => item.href === `/workspace/ui/monthly-updates/${report.id}`));
     assert.ok(recordSearchResults.some(item => item.href === `/workspace/ui/maintenance-projects/${project.id}/records/${record.id}`));
     assert.ok(recordSearchResults.every(item => Object.keys(item).sort().join(',') === 'href,kind,label'));
+    // A delayed record result must not change the highlighted directory.
+    const viewerBeforeQuickSearch = viewer.url();
+    await viewer.goto(`${ui}/maintenance-projects`);
+    let releaseSearch;
+    const searchGate = new Promise(resolve => {
+        releaseSearch = resolve;
+    });
+    const delayedSearch = async route => {
+        await searchGate;
+        await route.fulfill({
+            json: { results: recordSearchResults },
+        });
+    };
+    await viewer.route('**/workspace/ui/record-search?q=*', delayedSearch);
+    await viewer.getByRole('button', { name: 'Search JaiROADS pages (Control K)' }).click();
+    const quickSearch = viewer.getByRole('searchbox', { name: 'Search JaiROADS sections' });
+    await quickSearch.fill('synthetic delayed query');
+    await viewer.getByText('Searching records…', { exact: true }).waitFor();
+    const selectedBefore = await viewer.locator('.jr-command-selected').innerText();
+    releaseSearch();
+    await viewer.getByText(recordSearchResults[0].kind + ': ' + recordSearchResults[0].label, { exact: true }).waitFor();
+    assert.equal(await viewer.locator('.jr-command-selected').innerText(), selectedBefore);
+    await quickSearch.press('ArrowDown');
+    assert.notEqual(await viewer.locator('.jr-command-selected').innerText(), selectedBefore);
+    await quickSearch.press('Escape');
+    await viewer.getByRole('dialog', { name: 'Quick navigation' }).waitFor({ state: 'hidden' });
+    await viewer.unroute('**/workspace/ui/record-search?q=*', delayedSearch);
+    await viewer.goto(viewerBeforeQuickSearch);
     // File upload is part of the editable Monthly Update form, not its
     // read-only report page. Saving the form uploads the selected media.
     await engineer.goto(`${ui}/monthly-updates/${report.id}/edit`);

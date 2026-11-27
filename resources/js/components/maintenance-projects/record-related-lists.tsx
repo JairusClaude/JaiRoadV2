@@ -224,8 +224,8 @@ export function RecordRelatedLists({
                             <h2 id="monthly-updates-title">Monthly Updates</h2>
                             <p>
                                 {updateTotal}{' '}
-                                {updateTotal === 1 ? 'update' : 'updates'}{' '}
-                                for this record
+                                {updateTotal === 1 ? 'update' : 'updates'} for
+                                this record
                             </p>
                         </div>
                         {enabled && Boolean(monthlyUpdateCreateUrl) && (
@@ -325,9 +325,7 @@ export function RecordRelatedLists({
                             </h2>
                             <p>
                                 {documentTotal}{' '}
-                                {documentTotal === 1
-                                    ? 'document'
-                                    : 'documents'}{' '}
+                                {documentTotal === 1 ? 'document' : 'documents'}{' '}
                                 for this record
                             </p>
                         </div>
