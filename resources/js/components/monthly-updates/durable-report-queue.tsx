@@ -186,9 +186,7 @@ export function DurableReportQueue({
 
             localStorage.setItem(receiptQueueKey, JSON.stringify(encrypted));
             setUnlocked(queue);
-            setMessage(
-                'Encrypted report saved on this device. Not submitted.',
-            );
+            setMessage('Encrypted report saved on this device. Not submitted.');
         });
 
     const unlock = () =>
@@ -386,7 +384,7 @@ export function DurableReportQueue({
                         {unlocked.report.update_month} ·{' '}
                         {unlocked.report.progress_percentage}%
                     </p>
-                    <p className="max-h-48 overflow-auto whitespace-pre-wrap break-words">
+                    <p className="max-h-48 overflow-auto break-words whitespace-pre-wrap">
                         {unlocked.report.summary_of_text_reports ||
                             'No report summary'}
                     </p>

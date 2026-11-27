@@ -380,7 +380,9 @@ export default function Create(parents: MonthlyCreateProps) {
                                     <DurableReportQueue
                                         key={parents.reconnectAccountId}
                                         accountId={parents.reconnectAccountId}
-                                        contextRecordId={parents.contextRecordId}
+                                        contextRecordId={
+                                            parents.contextRecordId
+                                        }
                                         values={form.data}
                                         valid={
                                             Object.keys(

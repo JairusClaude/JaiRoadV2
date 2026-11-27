@@ -23,6 +23,7 @@ context.on('request', request => {
         posts++;
     }
 });
+
 try {
     let page = await context.newPage();
     page.setDefaultTimeout(15000);
