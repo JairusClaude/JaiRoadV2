@@ -28,6 +28,7 @@ export function FieldReportDraft({
     const input = useRef<HTMLInputElement>(null);
     const [message, setMessage] = useState('');
     const [confirmed, setConfirmed] = useState(false);
+    const canImport = !disabled && confirmed && !values.attachments.length;
     const download = () => {
         const data = {
             version: 1,
@@ -110,9 +111,11 @@ export function FieldReportDraft({
                 'Draft loaded. Review all values, attach evidence, and submit when connected.',
             );
         } catch (error) {
-            setMessage(
-                error instanceof Error ? error.message : 'Unable to import draft.',
-            );
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : 'Unable to import draft.';
+            setMessage(message);
         }
     };
 
@@ -123,10 +126,10 @@ export function FieldReportDraft({
         >
             <h2>Offline field report draft</h2>
             <p className="jr-field-hint">
-                Save an explicit local copy of this report while the form is open.
-                No account credentials, private media, or attachments are included.
-                The JSON file is not encrypted; use an authorized device and delete
-                it when finished. Import after reconnecting and signing in.
+                Save a local copy while the form is open. No credentials,
+                private media, or attachments are included. The JSON file is not
+                encrypted. Use an authorized device and delete it when finished.
+                Import after reconnecting and signing in.
             </p>
             <a
                 className="mt-2 inline-block text-sm font-semibold underline"
@@ -157,11 +160,7 @@ export function FieldReportDraft({
                 <Button
                     type="button"
                     variant="outline"
-                    disabled={
-                        disabled ||
-                        !confirmed ||
-                        values.attachments.length > 0
-                    }
+                    disabled={!canImport}
                     onClick={() => input.current?.click()}
                 >
                     Import draft
@@ -176,12 +175,7 @@ export function FieldReportDraft({
                         const file = event.target.files?.[0];
                         event.target.value = '';
 
-                        if (
-                            file &&
-                            confirmed &&
-                            !disabled &&
-                            !values.attachments.length
-                        ) {
+                        if (file && canImport) {
                             void restore(file);
                         }
                     }}

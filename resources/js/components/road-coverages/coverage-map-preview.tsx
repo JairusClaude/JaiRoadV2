@@ -187,7 +187,10 @@ function SavedCoverageMap({
             >
                 {full ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
             </button>
-            <div className="jr-map-geometry-facts" aria-label="Saved geometry measurements">
+            <div
+                className="jr-map-geometry-facts"
+                aria-label="Saved geometry measurements"
+            >
                 Approx. {metrics.kilometers.toFixed(2)} km · {metrics.segments}{' '}
                 line(s) · {metrics.vertices} vertices
             </div>

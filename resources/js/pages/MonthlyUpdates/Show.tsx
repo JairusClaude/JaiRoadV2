@@ -214,9 +214,14 @@ export default function Show({
                                         );
                                     }}
                                 >
-                                    <option value="">Current update only</option>
+                                    <option value="">
+                                        Current update only
+                                    </option>
                                     {comparisonPeriods.map((period) => (
-                                        <option key={period.id} value={period.id}>
+                                        <option
+                                            key={period.id}
+                                            value={period.id}
+                                        >
                                             {updateMonth(period.month)} (#
                                             {period.id})
                                         </option>

@@ -19,6 +19,8 @@ export default function Create(parents: MonthlyCreateProps) {
         page.props.previewOnly === true ||
         (page.props.canonicalFrontend === true && page.props.canWrite === true);
     const update = parents.update;
+    const canUseDrafts =
+        !update && page.props.canonicalFrontend === true && preview;
     const cancel = update
         ? formReturn(page.url, workspaceHref(`/monthly-updates/${update.id}`), [
               workspaceHref('/monthly-updates'),
@@ -156,7 +158,7 @@ export default function Create(parents: MonthlyCreateProps) {
             <MonthlyUpdateForm
                 parents={parents}
                 draftTools={
-                    !update && page.props.canonicalFrontend === true && preview && (
+                    canUseDrafts && (
                         <FieldReportDraft
                             parents={parents}
                             values={form.data}

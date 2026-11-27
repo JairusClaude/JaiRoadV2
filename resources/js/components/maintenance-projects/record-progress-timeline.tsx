@@ -51,10 +51,7 @@ export function RecordProgressTimeline({
             </p>
             <dl className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {checkpoints.map(({ target, firstReport }) => (
-                    <div
-                        key={target}
-                        className="min-w-0 rounded-lg border p-3"
-                    >
+                    <div key={target} className="min-w-0 rounded-lg border p-3">
                         <dt className="font-semibold">{target}% reported</dt>
                         <dd className="text-sm">
                             {firstReport
