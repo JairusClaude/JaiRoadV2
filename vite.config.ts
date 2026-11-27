@@ -29,6 +29,13 @@ export default defineConfig(({ mode }) => ({
                 codeSplitting: {
                     groups: [
                         {
+                            name: 'maplibre-text',
+                            test: /node_modules[\\/](?:maplibre-gl[\\/]src[\\/](?:symbol[\\/]|util[\\/]unicode_properties\.g\.ts$))/,
+                            priority: 30,
+                            minSize: 20_000,
+                            maxSize: 400_000,
+                        },
+                        {
                             name: 'maplibre-vendor',
                             test: /node_modules[\\/](?:maplibre-gl|@maplibre)[\\/]/,
                             priority: 20,
@@ -58,3 +65,4 @@ export default defineConfig(({ mode }) => ({
         ...(mode === 'review' ? [] : [wayfinder({ formVariants: true })]),
     ],
 }));
+
