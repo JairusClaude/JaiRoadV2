@@ -323,10 +323,12 @@ assert.deepEqual(pair, [foreground, background], path);
     await superadmin.getByText('Highest Authority · SuperAdmin', { exact: true }).waitFor();
     await superadmin.getByRole('region', { name: 'System health and readiness' }).waitFor();
     await superadmin.getByRole('region', { name: 'Maintenance intelligence' }).waitFor();
+
     for (const other of [viewer, engineer, admin]) {
         assert.equal(await other.getByRole('region', { name: 'System health and readiness' }).count(), 0);
         assert.equal(await other.getByRole('region', { name: 'Maintenance intelligence' }).count(), 0);
     }
+
     const summaryDownload = superadmin.waitForEvent('download');
     await superadmin.getByRole('button', { name: 'Export summary (CSV)' }).click();
     const summaryFile = await summaryDownload;
@@ -335,6 +337,7 @@ assert.deepEqual(pair, [foreground, background], path);
     assert.ok(summaryText.includes('"Scope","System-wide"'));
     assert.ok(summaryText.includes('"Reporting month","Update count"'));
     assert.ok(!summaryText.includes('sb_secret_'));
+
     for (const [format, signature] of [['XLSX', 'PK'], ['PDF', '%PDF-1.4']]) {
         const downloadPromise = superadmin.waitForEvent('download');
         await superadmin.getByRole('button', { name: `Export summary (${format})` }).click();
@@ -342,9 +345,10 @@ assert.deepEqual(pair, [foreground, background], path);
         assert.equal(file.suggestedFilename(), `jairoads-analytics-summary.${format.toLowerCase()}`);
         const bytes = await readFile(await file.path());
         assert.equal(bytes.subarray(0, signature.length).toString(), signature);
-        assert.ok(bytes.includes(Buffer.from('System-wide')));
-        assert.ok(!bytes.includes(Buffer.from('sb_secret_')));
+        assert.ok(bytes.toString('utf8').includes('System-wide'));
+        assert.ok(!bytes.toString('utf8').includes('sb_secret_'));
     }
+
     await superadmin.getByRole('button', { name: 'Refresh dashboard' }).waitFor();
     await superadmin.waitForFunction(() => {
         const logo = document.querySelector('.jr-superadmin-brand-logo');

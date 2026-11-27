@@ -4,8 +4,13 @@
 type Cell = string | number;
 const encoder = new TextEncoder();
 const xml = (text: string) =>
-    text
-        .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '')
+    Array.from(text)
+        .filter((character) => {
+            const code = character.charCodeAt(0);
+
+            return code >= 32 || code === 9 || code === 10 || code === 13;
+        })
+        .join('')
         .replaceAll('&', '&amp;')
         .replaceAll('<', '&lt;')
         .replaceAll('>', '&gt;')
@@ -108,14 +113,19 @@ export function analyticsXlsx(rows: Cell[][]) {
         .join('');
     const header = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
     const sheetNs = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
-    const relNs = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
-    const pkgNs = 'http://schemas.openxmlformats.org/package/2006/relationships';
-    const typeNs = 'http://schemas.openxmlformats.org/package/2006/content-types';
+    const relNs =
+        'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+    const pkgNs =
+        'http://schemas.openxmlformats.org/package/2006/relationships';
+    const typeNs =
+        'http://schemas.openxmlformats.org/package/2006/content-types';
 
     return zip({
         '[Content_Types].xml':
             header +
-            '<Types xmlns="' + typeNs + '">' +
+            '<Types xmlns="' +
+            typeNs +
+            '">' +
             '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
             '<Default Extension="xml" ContentType="application/xml"/>' +
             '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
@@ -123,23 +133,39 @@ export function analyticsXlsx(rows: Cell[][]) {
             '</Types>',
         '_rels/.rels':
             header +
-            '<Relationships xmlns="' + pkgNs + '">' +
-            '<Relationship Id="rId1" Type="' + relNs + '/officeDocument" Target="xl/workbook.xml"/>' +
+            '<Relationships xmlns="' +
+            pkgNs +
+            '">' +
+            '<Relationship Id="rId1" Type="' +
+            relNs +
+            '/officeDocument" Target="xl/workbook.xml"/>' +
             '</Relationships>',
         'xl/workbook.xml':
             header +
-            '<workbook xmlns="' + sheetNs + '" xmlns:r="' + relNs + '">' +
+            '<workbook xmlns="' +
+            sheetNs +
+            '" xmlns:r="' +
+            relNs +
+            '">' +
             '<sheets><sheet name="Summary" sheetId="1" r:id="rId1"/></sheets></workbook>',
         'xl/_rels/workbook.xml.rels':
             header +
-            '<Relationships xmlns="' + pkgNs + '">' +
-            '<Relationship Id="rId1" Type="' + relNs + '/worksheet" Target="worksheets/sheet1.xml"/>' +
+            '<Relationships xmlns="' +
+            pkgNs +
+            '">' +
+            '<Relationship Id="rId1" Type="' +
+            relNs +
+            '/worksheet" Target="worksheets/sheet1.xml"/>' +
             '</Relationships>',
         'xl/worksheets/sheet1.xml':
             header +
-            '<worksheet xmlns="' + sheetNs + '">' +
+            '<worksheet xmlns="' +
+            sheetNs +
+            '">' +
             '<cols><col min="1" max="1" width="35" customWidth="1"/><col min="2" max="2" width="30" customWidth="1"/></cols>' +
-            '<sheetData>' + body + '</sheetData></worksheet>',
+            '<sheetData>' +
+            body +
+            '</sheetData></worksheet>',
     });
 }
 
@@ -147,9 +173,15 @@ export function analyticsPdf(rows: Cell[][]) {
     // Dashboard labels, scope and numerical metrics are bounded ASCII. Strip
     // unsupported characters rather than emitting malformed font encodings.
     const literal = (value: string) =>
+        value.replace(/[^\x20-\x7e]/g, '?').replace(/[\\()]/g, '\\    // Dashboard labels, scope and numerical metrics are bounded ASCII. Strip
+    // unsupported characters rather than emitting malformed font encodings.
+    const literal = (value: string) =>
         value
             .replace(/[^\x20-\x7e]/g, '?')
             .replace(/[\\()]/g, '\\$&');
+    const lines = [
+        'JaiROADS | Dashboard summary',
+        'Visible aggregate metrics only',');
     const lines = [
         'JaiROADS | Dashboard summary',
         'Visible aggregate metrics only',
@@ -158,8 +190,9 @@ export function analyticsPdf(rows: Cell[][]) {
     ];
     const stream = [
         'BT /F1 12 Tf 48 790 Td 18 TL',
-        ...lines.map((line, index) =>
-            (index ? 'T* ' : '') + '(' + literal(line) + ') Tj',
+        ...lines.map(
+            (line, index) =>
+                (index ? 'T* ' : '') + '(' + literal(line) + ') Tj',
         ),
         'ET',
     ].join('\n');
@@ -168,14 +201,18 @@ export function analyticsPdf(rows: Cell[][]) {
         '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
         '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
         '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
-        '<< /Length ' + encoder.encode(stream).length + ' >>\nstream\n' + stream + '\nendstream',
+        '<< /Length ' +
+            encoder.encode(stream).length +
+            ' >>\nstream\n' +
+            stream +
+            '\nendstream',
     ];
     let pdf = '%PDF-1.4\n';
     const offsets = [0];
 
     objects.forEach((object, index) => {
         offsets.push(encoder.encode(pdf).length);
-        pdf += (index + 1) + ' 0 obj\n' + object + '\nendobj\n';
+        pdf += index + 1 + ' 0 obj\n' + object + '\nendobj\n';
     });
 
     const xref = encoder.encode(pdf).length;
@@ -184,7 +221,12 @@ export function analyticsPdf(rows: Cell[][]) {
         .slice(1)
         .map((offset) => String(offset).padStart(10, '0') + ' 00000 n \n')
         .join('');
-    pdf += 'trailer\n<< /Size ' + offsets.length + ' /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF\n';
+    pdf +=
+        'trailer\n<< /Size ' +
+        offsets.length +
+        ' /Root 1 0 R >>\nstartxref\n' +
+        xref +
+        '\n%%EOF\n';
 
     return encoder.encode(pdf);
 }

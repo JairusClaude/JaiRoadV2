@@ -35,7 +35,9 @@ export function downloadAnalyticsReport(
               : new Blob(
                     [
                         '\uFEFF',
-                        rows.map((row) => row.map(escape).join(',')).join('\r\n'),
+                        rows
+                            .map((row) => row.map(escape).join(','))
+                            .join('\r\n'),
                     ],
                     { type: 'text/csv;charset=utf-8' },
                 );

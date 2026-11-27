@@ -79,8 +79,8 @@ export function MaintenanceIntelligencePanel({
         >
             <h2 className="text-lg font-bold">Maintenance intelligence</h2>
             <p className="mt-1 text-sm text-slate-500">
-                Stored road conditions and reporting indicators as of {data.asOf}.
-                Estimates are not approved deadlines.
+                Stored road conditions and reporting indicators as of{' '}
+                {data.asOf}. Estimates are not approved deadlines.
             </p>
             <dl className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {Object.entries(data.conditions).map(([condition, count]) => (
@@ -89,12 +89,15 @@ export function MaintenanceIntelligencePanel({
                         className="rounded-xl border border-slate-200 p-3"
                     >
                         <dt className="text-sm">{condition} road condition</dt>
-                        <dd className="text-xl font-bold tabular-nums">{count}</dd>
+                        <dd className="text-xl font-bold tabular-nums">
+                            {count}
+                        </dd>
                     </div>
                 ))}
                 <div className="rounded-xl border border-slate-200 p-3">
                     <dt className="text-sm">
-                        Started ongoing records without {data.reportingMonth} report
+                        Started ongoing records without {data.reportingMonth}{' '}
+                        report
                     </dt>
                     <dd className="text-xl font-bold tabular-nums">
                         {data.noCurrentReport}
@@ -118,7 +121,9 @@ export function MaintenanceIntelligencePanel({
                         key={item.id}
                         className="rounded-lg border border-slate-200 p-3"
                     >
-                        <strong className="break-words">{item.projectTitle}</strong>
+                        <strong className="break-words">
+                            {item.projectTitle}
+                        </strong>
                         <p className="text-sm text-slate-600">
                             Start: {item.startDate} · Estimated finish:{' '}
                             {item.estimatedFinish}
