@@ -348,6 +348,7 @@ export function RoadCoverageMap({
 
         window.clearTimeout(basemapDeadline.current);
         basemapState.current = 'fallback';
+        setMapError('Basemap unavailable. Showing saved road lines.');
         map.setStyle({ version: 8, sources: {}, layers: [] }, { diff: false });
     }, []);
 
@@ -811,3 +812,4 @@ export function RoadCoverageMap({
         </>
     );
 }
+
