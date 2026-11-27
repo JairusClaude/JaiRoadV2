@@ -40,6 +40,8 @@ Commit `7ca335700f469f093e3fd349dd296ef6f3b1627c` passed both focused regression
 
 Commit `eaacc932aa624056c00efb0dbe2bfd22720b24ff` passed 501 quarterly tests (6,687 assertions); the focused workflow then failed on one extra blank line, corrected here. Follow-up paginates project maintenance history in five-year groups, honors direct links to a retained year, and reports aggregate last-failure categories in recovery health without disclosing object paths or changing deletion behavior. Exact-head verification remains required; the five-year display size is an implementation choice, not a retention policy.
 
+Commit `a4a40c779c5577e4be9b86421304b422ab500bbd` passed standard CI, staging and repository-wide quality checks; focused PostgreSQL reported 501 passed and one stale 300-row history assertion. The follow-up verifies every one of 300 IDs across 15 history pages, keeps complete detail responses, omits unrendered long text from monthly and document directories, and corrects the default monthly filter empty-state label. No deletion or authorization behavior changed; exact-head tests remain required.
+
 ## Outstanding
 
 - Benchmark representative large data and verify the new record-history and monthly-choice pagination; the single-record month occupancy snapshot is compacted by year, but still grows with the number of distinct reporting years; verify measured behavior and hosted load.

@@ -31,13 +31,13 @@ final class MaintenanceDocumentPageController extends OperationsFrontendControll
         $actor = $this->actor($request);
         $filters = ['search' => LiteralDirectorySearch::normalize($request->query('search')), 'project' => LiteralDirectorySearch::numericOption($request->query('project')),
             'sort' => $request->query('sort') === 'oldest' ? 'oldest' : 'newest'];
-        $q = $this->documentQuery($actor)->when($filters['search'] !== '', fn (Builder $q) => $q->where('d.document_title', 'ilike', LiteralDirectorySearch::pattern($filters['search'])));
+        $q = $this->documentQuery($actor, false)->when($filters['search'] !== '', fn (Builder $q) => $q->where('d.document_title', 'ilike', LiteralDirectorySearch::pattern($filters['search'])));
         if (ctype_digit($filters['project'])) {
             $q->where('p.id', $filters['project']);
         }
 
         return $this->render('MaintenanceDocuments/Index', $request, [
-            'documents' => BoundedDirectoryPage::paginate($q->orderBy('d.id', $filters['sort'] === 'oldest' ? 'asc' : 'desc'), $request, 12)->through(fn (\stdClass $d): array => $this->documentData($d, $actor)),
+            'documents' => BoundedDirectoryPage::paginate($q->orderBy('d.id', $filters['sort'] === 'oldest' ? 'asc' : 'desc'), $request, 12)->through(fn (\stdClass $d): array => $this->documentData($d, $actor, false)),
             ...$this->projectFilterProps($actor, $filters['project']),
             'filters' => $filters, 'canWrite' => $this->writable($actor),
         ]);

@@ -110,9 +110,21 @@ it('retains every project history entry while deferring unrendered details to it
         $data['description'] = $description;
         $last = DB::table('jairoads_next.maintenance_records')->insertGetId($data + ['created_by' => $f['user']->canonical_user_account_id]);
     }
-    $this->get('/workspace/ui/maintenance-projects/'.$f['project'])->assertInertia(fn (Assert $page) => $page
-        ->has('records', 300)->missing('records.0.description')->has('records.0.details_url')->has('records.0.managing_engineer')
-        ->has('project.geojson'));
+    $url = '/workspace/ui/maintenance-projects/'.$f['project'];
+    $expected = DB::table('jairoads_next.maintenance_records')->where('project_id', $f['project'])
+        ->orderByDesc('maintenance_year')->orderByDesc('quarter')->orderByDesc('id')->pluck('id')->map(fn ($id): int => (int) $id)->all();
+    for ($number = 1; $number <= 15; $number++) {
+        $ids = array_slice($expected, ($number - 1) * 20, 20);
+        $this->get($url.'?history_page='.$number)->assertOk()->assertInertia(function (Assert $page) use ($number, $ids): void {
+            $page->where('historyPagination.page', $number)->where('historyPagination.pages', 15)
+                ->where('historyPagination.totalYears', 75)->has('records', 20)
+                ->missing('records.0.description')->has('records.0.details_url')->has('records.0.managing_engineer')
+                ->has('project.geojson');
+            foreach ($ids as $index => $id) {
+                $page->where('records.'.$index.'.id', $id);
+            }
+        });
+    }
     $this->get('/workspace/ui/maintenance-projects/'.$f['project'].'/records/'.$last)->assertInertia(fn (Assert $page) => $page
         ->where('record.description', $description));
     expect(DB::table('jairoads_next.maintenance_records')->count())->toBe(300);

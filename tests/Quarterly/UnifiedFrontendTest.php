@@ -109,6 +109,12 @@ final class UnifiedFrontendTest extends PostgresTestCase
             ->has('updates', 1)->where('updatePagination.page', 3)
             ->where('updates.0.update_month', '2026-10')
             ->where('checkpointMonths.2', '2026-10'));
+        $this->get(self::UI.'/monthly-updates')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('updates.data', 12)->missing('updates.data.0.summary_of_text_reports')
+            ->has('updates.data.0.media_count')->has('updates.data.0.project'));
+        $this->get(self::UI.'/maintenance-documents')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('documents.data', 12)->missing('documents.data.0.description')
+            ->has('documents.data.0.document_title')->has('documents.data.0.available'));
         $this->get(self::UI.'/monthly-updates/'.$update)->assertOk()->assertInertia(fn (Assert $page) => $page
             ->has('update.summary_of_text_reports'));
         $document = (int) DB::table('jairoads_next.maintenance_documents')->where('maintenance_id', $record)->orderBy('id')->value('id');

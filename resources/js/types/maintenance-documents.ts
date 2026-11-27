@@ -38,7 +38,7 @@ export type DocumentFilters = {
 };
 export type DocumentDirectoryProps = {
     documents: {
-        data: DocumentSummary[];
+        data: Omit<DocumentSummary, 'description'>[];
         total: number;
         current_page: number;
         last_page: number;

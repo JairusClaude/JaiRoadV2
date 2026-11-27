@@ -30,9 +30,9 @@ import { Input } from '@/components/ui/input';
 import { manilaDate } from '@/lib/manila-time';
 import { updateMonth } from '@/lib/monthly-updates';
 import type {
+    MonthlyDirectoryRow,
     MonthlyUpdateFilters,
     MonthlyUpdatePage,
-    MonthlyUpdateSummary,
 } from '@/types/monthly-updates';
 
 export { updateMonth } from '@/lib/monthly-updates';
@@ -67,10 +67,10 @@ export function MonthlyUpdateDirectory({
     onSearch: (search: string) => void;
     onFilters: (filters: MonthlyUpdateFilters) => void;
     onPage: (page: number, search: string) => void;
-    onDelete: (updates: MonthlyUpdateSummary[], bulk: boolean) => void;
+    onDelete: (updates: MonthlyDirectoryRow[], bulk: boolean) => void;
     onAction: (
         action: 'Add' | 'Details' | 'Edit',
-        update?: MonthlyUpdateSummary,
+        update?: MonthlyDirectoryRow,
     ) => void;
 }) {
     const page = usePage();
@@ -117,7 +117,9 @@ export function MonthlyUpdateDirectory({
         updates.data.length > 0 &&
         updates.data.every((item) => selected.has(item.id));
     const hasFilters = Boolean(
-        filters.search || filters.project || filters.year,
+        filters.search ||
+        (filters.project && filters.project !== 'all') ||
+        (filters.year && filters.year !== 'all'),
     );
 
     const displayedTotalReports =

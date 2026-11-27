@@ -23,8 +23,13 @@ export type MonthlyUpdateSummary = {
     media_count: number;
 };
 
+export type MonthlyDirectoryRow = Omit<
+    MonthlyUpdateSummary,
+    'summary_of_text_reports'
+>;
+
 export type MonthlyUpdatePage = {
-    data: MonthlyUpdateSummary[];
+    data: MonthlyDirectoryRow[];
     total: number;
     current_page: number;
     last_page: number;

@@ -37,7 +37,7 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
         $filters = ['search' => LiteralDirectorySearch::normalize($request->query('search')), 'project' => LiteralDirectorySearch::numericOption($request->query('project')),
             'year' => $year,
             'sort' => is_string($sort) && in_array($sort, ['newest', 'oldest', 'modified'], true) ? $sort : 'newest'];
-        $authorized = $this->updateQuery($actor);
+        $authorized = $this->updateQuery($actor, false);
         $q = (clone $authorized)->when($filters['search'] !== '', fn (Builder $q) => $q->where('p.project_title', 'ilike', LiteralDirectorySearch::pattern($filters['search'])));
         if (ctype_digit($filters['project'])) {
             $q->where('p.id', $filters['project']);
@@ -59,7 +59,7 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
         return $this->render('MonthlyUpdates/Index', $request, [
             'totalReports' => (clone $authorized)->count(),
             'reportsThisMonth' => $thisMonthCount,
-            'updates' => BoundedDirectoryPage::paginate($q, $request, 12)->appends($filters)->through(fn (\stdClass $u): array => $this->updateData($u, $actor)),
+            'updates' => BoundedDirectoryPage::paginate($q, $request, 12)->appends($filters)->through(fn (\stdClass $u): array => $this->updateData($u, $actor, false)),
             ...$this->projectFilterProps($actor, $filters['project']),
             // Choice projection only; filtering above does not apply a function to the column.
             'years' => (clone $authorized)->select([])->selectRaw('substring(u.update_month, 1, 4)::integer as reporting_year')
