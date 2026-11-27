@@ -29,6 +29,13 @@ export default defineConfig(({ mode }) => ({
                 codeSplitting: {
                     groups: [
                         {
+                            name: 'maplibre-property-transfer',
+                            test: /node_modules[\\/](?:maplibre-gl[\\/]src[\\/](?:style[\\/]properties\.ts|util[\\/]web_worker_transfer\.ts))$/,
+                            priority: 50,
+                            minSize: 1_000,
+                            maxSize: 400_000,
+                        },
+                        {
                             name: 'maplibre-text',
                             test: /node_modules[\\/](?:maplibre-gl[\\/]src[\\/](?:symbol[\\/]|util[\\/]unicode_properties\.g\.ts$))/,
                             priority: 30,
