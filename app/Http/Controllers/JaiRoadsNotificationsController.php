@@ -30,7 +30,10 @@ final class JaiRoadsNotificationsController extends Controller
             $identity = app(AccountIdentityResolver::class)->resolve($user);
             abort_unless($identity !== null, 403);
 
-            return response()->json(['notifications' => app(ActivityNotifications::class)->feed((int) $identity['account_id'])])->header('Cache-Control', 'private, no-store');
+            $notifications = app(ActivityNotifications::class)->feed((int) $identity['account_id']);
+            abort_unless(app(AccountIdentityResolver::class)->resolve($user) === $identity, 403);
+
+            return response()->json(['notifications' => $notifications])->header('Cache-Control', 'private, no-store');
         } else {
             $account = $accounts->require($user);
             $role = strtolower((string) $account->accountType);
@@ -53,6 +56,6 @@ final class JaiRoadsNotificationsController extends Controller
             ])
             ->all();
 
-        return response()->json(['notifications' => $notifications]);
+        return response()->json(['notifications' => $notifications])->header('Cache-Control', 'private, no-store');
     }
 }

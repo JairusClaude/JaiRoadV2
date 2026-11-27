@@ -17,13 +17,13 @@ final class BoundedDirectoryPage
      * @param  list<string>  $columns
      * @return LengthAwarePaginator<int, \stdClass>
      */
-    public static function paginate(Builder $query, Request $request, int $perPage, array $columns = ['*'], string $pageName = 'page'): LengthAwarePaginator
+    public static function paginate(Builder $query, Request $request, int $perPage, array $columns = ['*'], string $pageName = 'page', ?int $preferredPage = null): LengthAwarePaginator
     {
         $raw = $request->query($pageName);
         $requested = is_string($raw) && ctype_digit($raw) ? max(1, (int) $raw) : 1;
         $total = $query->getCountForPagination();
         $last = max(1, (int) ceil($total / $perPage));
 
-        return $query->paginate($perPage, $columns, $pageName, min($requested, $last), $total)->withQueryString();
+        return $query->paginate($perPage, $columns, $pageName, min(max(1, $preferredPage ?? $requested), $last), $total)->withQueryString();
     }
 }

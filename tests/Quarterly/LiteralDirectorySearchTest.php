@@ -206,3 +206,23 @@ it('normalizes out of range numeric filters without database conversion errors',
     $this->get('/workspace/ui/monthly-updates?project=000'.$f['project'])->assertOk()
         ->assertInertia(fn (Assert $page) => $page->where('filters.project', (string) $f['project'])->has('projects', 1));
 });
+
+
+it('bounds administrative directories and honors direct engineer profiles despite old filters', function (): void {
+    $f = $this->fixture('SuperAdmin');
+    for ($i = 0; $i < 20; $i++) {
+        $this->engineer();
+    }
+    $url = '/workspace/users?';
+    $this->get($url.http_build_query(['directory_tab' => 'engineers', 'directory_page' => '999999999999999999999999']))->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('directory.page', 2)->where('directory.pages', 2)
+            ->where('directory.total', 21)->has('engineers', 6));
+    $this->get($url.http_build_query(['engineer_id' => $f['engineer'], 'directory_page' => 2,
+        'directory_search' => 'NoSuchFixture', 'directory_state' => 'inactive']))->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('directory.tab', 'engineers')->where('directory.page', 1)
+            ->where('directory.search', '')->where('directory.state', 'all')
+            ->where('initialEngineerId', $f['engineer'])->where('engineers.0.id', $f['engineer']));
+    $this->get($url.http_build_query(['engineer_id' => ['invalid'], 'directory_page' => ['invalid']]))->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('directory.tab', 'accounts')->where('directory.page', 1)
+            ->where('initialEngineerId', null));
+});

@@ -36,6 +36,8 @@ Commit `9c818e2e1516ab5a57328eb71f9ddfa9ba7e6ad6`: focused quarterly tests passe
 
 Commit `2eb6da60e282c79edd3ce6cd4b70598be90a4470` passed both focused regressions and both disposable staging rehearsals; standard CI failed the AuditHistoryController indentation check, and PR unified browser and branch Pint setup hit HTTP 429 during Composer installation. The follow-up applies the exact Pint correction, adds bounded Composer install retries, validates map cursor progression, limits each reference view to 1,000 roads with an explicit zoom-in notice, adds a 15-second total reference request deadline and retry control, and escapes literal reference search. These limits are chosen to bound browser work; hosted GIS verification remains required.
 
+Commit `7ca335700f469f093e3fd349dd296ef6f3b1627c` passed both focused regression and disposable staging workflows. Its standard CI failed ESLint and the PR Prettier check identified an exact formatting correction in the road editor. The follow-up fixes both, reuses bounded pagination counts in account and engineer directories, forces direct profile bookmarks to page one regardless of old filters, cancels closed notification requests, and rechecks canonical identity before returning private notifications. No additional schema, flags or production access changed. Fresh exact-head verification remains required.
+
 ## Outstanding
 
 - Benchmark representative large data and verify the new record-history and monthly-choice pagination; the single-record month occupancy snapshot is compacted by year, but still grows with the number of distinct reporting years; verify measured behavior and hosted load.

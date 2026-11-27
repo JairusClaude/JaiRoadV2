@@ -1203,6 +1203,7 @@ function EditableCoverageMapEditor({
                             data: RoadCoverageReference[];
                             next_cursor: number | null;
                         } = await response.json();
+
                         if (!validRoadPage(page, cursor, 'ascending')) {
                             throw new Error('Invalid reference-road response.');
                         }
@@ -2011,7 +2012,9 @@ function EditableCoverageMapEditor({
                                     type="button"
                                     className="font-semibold underline"
                                     onClick={() =>
-                                        retryReferences((attempt) => attempt + 1)
+                                        retryReferences(
+                                            (attempt) => attempt + 1,
+                                        )
                                     }
                                 >
                                     Retry reference roads

@@ -14,7 +14,8 @@ export function NotificationBell({
     variant?: 'light' | 'dark';
 }) {
     const [open, setOpen] = useState(false);
-    const { status, items, message, refresh } = useJaiRoadsNotificationFeed();
+    const { status, items, message, refresh, cancel } =
+        useJaiRoadsNotificationFeed();
     const dark = variant === 'dark';
 
     return (
@@ -25,6 +26,8 @@ export function NotificationBell({
 
                 if (next) {
                     void refresh();
+                } else {
+                    cancel();
                 }
             }}
         >
@@ -60,6 +63,7 @@ export function NotificationBell({
                     <button
                         type="button"
                         onClick={() => void refresh()}
+                        disabled={status === 'loading'}
                         className="jr-notification-refresh inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-amber-800 hover:bg-amber-50 dark:text-amber-200 dark:hover:bg-slate-800"
                     >
                         <RefreshCw className="h-3.5 w-3.5" /> Refresh
