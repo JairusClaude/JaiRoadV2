@@ -44,6 +44,8 @@ Route::middleware(['auth'])->prefix('workspace/ui')->name('jairoads.ui.')->group
     Route::get('/maintenance-projects/{project}/records/{id}/edit', [MaintenanceRecordPageController::class, 'recordForm'])->whereNumber('project')->whereNumber('id')->name('records.edit');
     Route::post('/maintenance-projects/{project}/records', [MaintenanceRecordPageController::class, 'saveRecord'])->whereNumber('project')->name('records.store');
     Route::put('/maintenance-projects/{project}/records/{id}', [MaintenanceRecordPageController::class, 'saveRecord'])->whereNumber('project')->whereNumber('id')->name('records.update');
+    Route::post('/maintenance-projects/{project}/records/{id}/milestones', [MaintenanceRecordPageController::class, 'saveMilestone'])->whereNumber('project')->whereNumber('id')->middleware('throttle:20,1,jr-milestones-')->name('records.milestones.store');
+    Route::put('/maintenance-projects/{project}/records/{id}/milestones/{milestone}', [MaintenanceRecordPageController::class, 'saveMilestone'])->whereNumber('project')->whereNumber('id')->whereNumber('milestone')->middleware('throttle:20,1,jr-milestones-')->name('records.milestones.update');
     Route::post('/maintenance-projects/{project}/records/{id}/reassignment', [MaintenanceRecordPageController::class, 'reassign'])->whereNumber('project')->whereNumber('id')->middleware('throttle:10,1,jr-records-reassign-')->name('records.reassign');
     Route::get('/maintenance-records', [MaintenanceRecordPageController::class, 'recordIndex'])->name('records.index');
     Route::get('/record-period-choices', [MaintenanceRecordPageController::class, 'periodChoices'])->middleware('throttle:90,1,jr-record-period-choices-')->name('records.period-choices');

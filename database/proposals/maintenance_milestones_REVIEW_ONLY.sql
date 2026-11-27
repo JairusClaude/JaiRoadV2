@@ -12,6 +12,7 @@ CREATE TABLE jairoads_next.maintenance_milestones (
         CHECK (status IN ('planned', 'completed', 'cancelled')),
     created_by bigint NOT NULL REFERENCES jairoads_next.user_accounts(id) ON DELETE RESTRICT,
     updated_by bigint NOT NULL REFERENCES jairoads_next.user_accounts(id) ON DELETE RESTRICT,
+    version integer NOT NULL DEFAULT 1 CHECK (version > 0),
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now(),
     CHECK ((status = 'completed') = (completed_date IS NOT NULL))

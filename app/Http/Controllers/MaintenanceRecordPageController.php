@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
+use App\Services\AuditValues;
 use App\Services\DeletionChallenge;
 use App\Services\DuplicateMaintenancePeriod;
 use App\Services\OperationAudit;
 use App\Services\PreservedProjectDeletion;
 use App\Services\PreviewDataService;
+use App\Services\RecordMutationAuthority;
 use App\Services\RoleAccess;
 use App\Support\LiteralDirectorySearch;
 use Illuminate\Database\QueryException;
@@ -16,6 +19,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 use Inertia\Response;
 
@@ -101,6 +105,8 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
 
         return $this->render('MaintenanceProjects/Records/Show', $request, [
             'project' => $this->projectData($p, $actor), 'record' => $this->recordData($r, $actor),
+            'milestones' => $this->milestonesEnabled() ? DB::table('jairoads_next.maintenance_milestones')->where('maintenance_id', $id)->orderBy('planned_date')->orderBy('id')->limit(100)->get(['id', 'title', 'planned_date', 'completed_date', 'status', 'version']) : null,
+            'milestonesWritable' => $this->milestonesEnabled() && ! config('jairoads_file_deletion.operationally_enabled') && $this->canWriteRecord($r, $actor),
             'monthlyUpdateCreateUrl' => $this->canWriteRecord($r, $actor) ? self::BASE.'/monthly-updates/create?maintenance_id='.$id : null,
             'documents' => $this->documentQuery($actor)->where('d.maintenance_id', $id)->orderByDesc('d.id')->get()->map(fn (\stdClass $d): array => $this->documentData($d, $actor)),
             'updates' => $this->updateQuery($actor)->where('u.maintenance_id', $id)->orderByDesc('u.update_month')->get()->map(fn (\stdClass $u): array => $this->updateData($u, $actor)),
@@ -109,6 +115,64 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
             'canUnassign' => false,
             'managerChoices' => RoleAccess::managesBusinessData($actor['role']) ? $this->eligibility->choices($actor, (int) $r->lgu_id)->get() : [],
         ]);
+    }
+
+    private function milestonesEnabled(): bool
+    {
+        return config('jairoads_milestones.enabled') === true
+            && Schema::hasTable('jairoads_next.maintenance_milestones');
+    }
+
+    public function saveMilestone(Request $request, int $project, int $id, ?int $milestone = null): RedirectResponse
+    {
+        abort_if(self::isPreview($request) || ! $this->milestonesEnabled(), 404);
+        // Pilot writes cannot run alongside irreversible project/file deletion.
+        abort_if(config('jairoads_file_deletion.operationally_enabled'), 409, 'Milestone writes are unavailable while permanent deletion is enabled.');
+        $actor = $this->actor($request);
+        $this->writer($actor);
+        $login = $request->user();
+        abort_unless($login instanceof User, 403);
+        $data = $request->validate([
+            'title' => ['required', 'string', 'max:160'],
+            'planned_date' => ['required', 'date_format:Y-m-d'],
+            'completed_date' => ['nullable', 'required_if:status,completed', 'prohibited_unless:status,completed', 'date_format:Y-m-d'],
+            'status' => ['required', 'in:planned,completed,cancelled'],
+            'version' => [$milestone === null ? 'prohibited' : 'required', 'integer', 'min:1'],
+        ]);
+
+        DB::transaction(function () use ($actor, $login, $project, $id, $milestone, $data): void {
+            $parent = DB::table('jairoads_next.maintenance_projects')->where('id', $project)->lockForUpdate()->first();
+            abort_unless($parent !== null, 404);
+            $record = DB::table('jairoads_next.maintenance_records')->where('project_id', $project)->where('id', $id)->lockForUpdate()->first();
+            abort_unless($record !== null, 404);
+            $lgu = DB::table('jairoads_next.road_coverages')->where('id', $parent->road_coverage_id)->value('lgu_id');
+            abort_unless($lgu !== null, 404);
+            app(RecordMutationAuthority::class)->lock($login, $actor, (int) $lgu);
+            abort_unless($this->canWriteRecord($record, $actor), 403);
+
+            $query = DB::table('jairoads_next.maintenance_milestones')->where('maintenance_id', $id);
+            $values = ['title' => trim($data['title']), 'planned_date' => $data['planned_date'], 'completed_date' => $data['completed_date'] ?? null, 'status' => $data['status'], 'updated_by' => $actor['account_id'], 'updated_at' => now()];
+            if ($milestone === null) {
+                if ($query->count() >= 100) {
+                    throw ValidationException::withMessages(['title' => 'This record already has 100 retained milestones.']);
+                }
+                $newId = (int) DB::table('jairoads_next.maintenance_milestones')->insertGetId($values + ['maintenance_id' => $id, 'created_by' => $actor['account_id'], 'created_at' => now()]);
+                app(OperationAudit::class)->record($actor, 'CREATE', 'MaintenanceMilestone', $newId, 'Authorized maintenance milestone created.');
+
+                return;
+            }
+
+            $target = $query->where('id', $milestone);
+            $before = (clone $target)->lockForUpdate()->first();
+            abort_unless($before !== null, 404);
+            if ((int) $before->version !== (int) $data['version']) {
+                throw ValidationException::withMessages(['version' => 'The milestone changed. Refresh before editing.']);
+            }
+            $target->update($values + ['version' => (int) $before->version + 1]);
+            app(OperationAudit::class)->record($actor, 'UPDATE', 'MaintenanceMilestone', $milestone, 'Authorized maintenance milestone updated.', app(AuditValues::class)->persisted('MaintenanceMilestone', $milestone), (array) $before);
+        });
+
+        return redirect(self::BASE.'/maintenance-projects/'.$project.'/records/'.$id)->with('jairoads_operations_status', 'Milestone saved.');
     }
 
     public function recordIndex(Request $request): Response

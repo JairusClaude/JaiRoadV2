@@ -69,7 +69,9 @@ export function FieldReportDraft({
             setMessage('Draft downloaded. No report was submitted.');
         } catch (error) {
             setMessage(
-                error instanceof Error ? error.message : 'Unable to save draft.',
+                error instanceof Error
+                    ? error.message
+                    : 'Unable to save draft.',
             );
         } finally {
             if (password.current) {

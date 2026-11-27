@@ -5,6 +5,8 @@ import {
     RecordDeletionDialog,
     useRecordDeletion,
 } from '@/components/maintenance-projects/record-deletion';
+import { RecordMilestones } from '@/components/maintenance-projects/record-milestones';
+import type { Milestone } from '@/components/maintenance-projects/record-milestones';
 import { RecordProgressTimeline } from '@/components/maintenance-projects/record-progress-timeline';
 import { RecordRelatedLists } from '@/components/maintenance-projects/record-related-lists';
 import type { RelatedMonthlyUpdate } from '@/components/maintenance-projects/record-related-lists';
@@ -32,12 +34,16 @@ export default function ShowRecord({
     monthlyUpdateCreateUrl,
     documents = [],
     updates = [],
+    milestones = null,
+    milestonesWritable = false,
 }: {
     project: ProjectSummary;
     record: MaintenanceRecordDetail;
     monthlyUpdateCreateUrl?: string;
     documents?: DocumentSummary[];
     updates?: RelatedMonthlyUpdate[];
+    milestones?: Milestone[] | null;
+    milestonesWritable?: boolean;
     canReassign?: boolean;
     canUnassign?: boolean;
     managerChoices?: { id: number; first_name: string; last_name: string }[];
@@ -195,6 +201,15 @@ export default function ShowRecord({
                     </dl>
                 </section>
                 <RecordProgressTimeline record={record} updates={updates} />
+                {milestones && (
+                    <RecordMilestones
+                        milestones={milestones}
+                        writable={milestonesWritable && !isViewer}
+                        url={workspaceHref(
+                            `/maintenance-projects/${project.id}/records/${record.id}/milestones`,
+                        )}
+                    />
+                )}
                 <RecordRelatedLists
                     recordId={record.id}
                     monthlyUpdateCreateUrl={monthlyUpdateCreateUrl}
