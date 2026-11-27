@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Services\PreviewDataService;
 use App\Services\RoleAccess;
+use App\Support\BoundedDirectoryPage;
 use App\Support\LiteralDirectorySearch;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
@@ -28,14 +29,14 @@ final class MaintenanceProjectPageController extends OperationsFrontendControlle
         }
 
         $actor = $this->actor($request);
-        $filters = ['search' => LiteralDirectorySearch::normalize($request->query('search')), 'municipality' => LiteralDirectorySearch::option($request->query('municipality')), 'sort' => $request->query('sort') === 'oldest' ? 'oldest' : 'newest'];
+        $filters = ['search' => LiteralDirectorySearch::normalize($request->query('search')), 'municipality' => LiteralDirectorySearch::numericOption($request->query('municipality')), 'sort' => $request->query('sort') === 'oldest' ? 'oldest' : 'newest'];
         $q = $this->projects($actor, false)->when($filters['search'] !== '', fn (Builder $q) => $q->where('p.project_title', 'ilike', LiteralDirectorySearch::pattern($filters['search'])));
         if (ctype_digit($filters['municipality'])) {
             $q->where('rc.lgu_id', $filters['municipality']);
         }
 
         return $this->render('MaintenanceProjects/Index', $request, [
-            'projects' => $q->orderBy('p.id', $filters['sort'] === 'oldest' ? 'asc' : 'desc')->paginate(12)->withQueryString()->through(fn (\stdClass $p): array => $this->projectData($p, $actor)),
+            'projects' => BoundedDirectoryPage::paginate($q->orderBy('p.id', $filters['sort'] === 'oldest' ? 'asc' : 'desc'), $request, 12)->through(fn (\stdClass $p): array => $this->projectData($p, $actor)),
             'municipalities' => $this->municipalities($actor), 'filters' => $filters,
             'integration' => ['ready' => true, 'message' => null], 'canCreate' => $this->writable($actor), 'canBulkDelete' => RoleAccess::canDeleteOperations($actor['role']),
         ]);

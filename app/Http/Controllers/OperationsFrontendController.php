@@ -230,6 +230,7 @@ class OperationsFrontendController extends Controller
      */
     protected function projectFilterProps(array $actor, string $selected): array
     {
+        $selected = LiteralDirectorySearch::numericOption($selected);
         $project = ctype_digit($selected) ? $this->projectChoices($actor)->where('p.id', $selected)->first() : null;
 
         return ['projects' => $project === null ? [] : [$this->projectChoiceData($project)],

@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Services\OperationAudit;
 use App\Services\PreviewDataService;
 use App\Services\RoleAccess;
+use App\Support\BoundedDirectoryPage;
 use App\Support\LiteralDirectorySearch;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Query\Builder;
@@ -33,7 +34,7 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
         $sort = $request->query('sort');
         $year = LiteralDirectorySearch::option($request->query('year'));
         $year = ctype_digit($year) && strlen($year) <= 4 ? (string) (int) $year : 'all';
-        $filters = ['search' => LiteralDirectorySearch::normalize($request->query('search')), 'project' => LiteralDirectorySearch::option($request->query('project')),
+        $filters = ['search' => LiteralDirectorySearch::normalize($request->query('search')), 'project' => LiteralDirectorySearch::numericOption($request->query('project')),
             'year' => $year,
             'sort' => is_string($sort) && in_array($sort, ['newest', 'oldest', 'modified'], true) ? $sort : 'newest'];
         $authorized = $this->updateQuery($actor);
@@ -58,7 +59,7 @@ final class MonthlyUpdatePageController extends OperationsFrontendController
         return $this->render('MonthlyUpdates/Index', $request, [
             'totalReports' => (clone $authorized)->count(),
             'reportsThisMonth' => $thisMonthCount,
-            'updates' => $q->paginate(12)->withQueryString()->appends($filters)->through(fn (\stdClass $u): array => $this->updateData($u, $actor)),
+            'updates' => BoundedDirectoryPage::paginate($q, $request, 12)->appends($filters)->through(fn (\stdClass $u): array => $this->updateData($u, $actor)),
             ...$this->projectFilterProps($actor, $filters['project']),
             // Choice projection only; filtering above does not apply a function to the column.
             'years' => (clone $authorized)->select([])->selectRaw('substring(u.update_month, 1, 4)::integer as reporting_year')

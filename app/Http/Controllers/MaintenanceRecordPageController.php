@@ -13,6 +13,7 @@ use App\Services\PreservedProjectDeletion;
 use App\Services\PreviewDataService;
 use App\Services\RecordMutationAuthority;
 use App\Services\RoleAccess;
+use App\Support\BoundedDirectoryPage;
 use App\Support\LiteralDirectorySearch;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -200,7 +201,9 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
         $filters = $request->only(['search', 'municipality', 'year', 'quarter', 'status', 'sort'])
             + ['search' => '', 'municipality' => 'all', 'year' => 'all', 'quarter' => 'all', 'status' => 'all', 'sort' => 'newest'];
         $filters['search'] = LiteralDirectorySearch::normalize($filters['search']);
-        foreach (['municipality', 'year', 'quarter', 'status'] as $key) {
+        $filters['municipality'] = LiteralDirectorySearch::numericOption($filters['municipality']);
+        $filters['year'] = LiteralDirectorySearch::numericOption($filters['year'], 9999);
+        foreach (['quarter', 'status'] as $key) {
             $filters[$key] = LiteralDirectorySearch::option($filters[$key]);
         }
         $filters['sort'] = $filters['sort'] === 'oldest' ? 'oldest' : 'newest';
@@ -229,7 +232,7 @@ final class MaintenanceRecordPageController extends OperationsFrontendController
             'totalRecords' => (int) ($statistics->total ?? 0),
             'completedRoads' => (int) ($statistics->completed ?? 0),
             'ongoingRoads' => (int) ($statistics->ongoing ?? 0),
-            'records' => $q->orderBy('m.id', $filters['sort'] === 'oldest' ? 'asc' : 'desc')->paginate(12)->withQueryString()->through(fn (\stdClass $r): array => $this->recordData($r, $actor)),
+            'records' => BoundedDirectoryPage::paginate($q->orderBy('m.id', $filters['sort'] === 'oldest' ? 'asc' : 'desc'), $request, 12)->through(fn (\stdClass $r): array => $this->recordData($r, $actor)),
             'projects' => [], // The directory uses totalProjects, not the full project catalog.
             'municipalities' => $this->municipalities($actor)->map(fn (\stdClass $l): array => ['value' => (string) $l->id, 'label' => $l->municipality_name]),
             'years' => $this->records($actor)->reorder()->select('m.maintenance_year')->distinct()->orderByDesc('m.maintenance_year')->pluck('m.maintenance_year'),

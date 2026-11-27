@@ -58,13 +58,21 @@ it('matches percent signs literally in every canonical operational directory', f
         ['monthly-updates', 'Project%Alpha', 'updates.data', $updateA],
         ['maintenance-documents', 'Document%Alpha', 'documents.data', $documentA],
     ] as [$path, $search, $dataKey, $expectedId]) {
-        $this->get('/workspace/ui/'.$path.'?'.http_build_query(['search' => $search]))->assertOk()->assertInertia(fn (Assert $page) => $page->has($dataKey, 1)->where($dataKey.'.0.id', $expectedId));
+        foreach ([['search' => $search], ['search' => $search, 'page' => '999999999999999999999999'], ['search' => $search, 'page' => ['invalid']]] as $params) {
+            $paginationKey = substr($dataKey, 0, -5);
+            $this->get('/workspace/ui/'.$path.'?'.http_build_query($params))->assertOk()->assertInertia(fn (Assert $page) => $page
+                ->has($dataKey, 1)->where($dataKey.'.0.id', $expectedId)
+                ->where($paginationKey.'.current_page', 1)->where($paginationKey.'.last_page', 1));
+        }
     }
 
     $this->get('/workspace/ui/audit-logs?'.http_build_query(['search' => 'Audit%Alpha']))
         ->assertRedirect(route('jairoads.workspace.audit.index', ['activity_search' => 'Audit%Alpha']));
     $this->get('/workspace/audit-logs?'.http_build_query(['activity_search' => 'Audit%Alpha']))->assertOk()
         ->assertInertia(fn (Assert $page) => $page->has('events.data', 1)->where('events.data.0.id', $auditA));
+    $this->get('/workspace/audit-logs?'.http_build_query(['activity_search' => 'Audit%Alpha', 'page' => '99999999999999999999999', 'auth_page' => '99999999999999999999999']))->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->has('events.data', 1)->where('events.data.0.id', $auditA)
+            ->where('events.current_page', 1)->where('authentication.current_page', 1));
 });
 
 it('normalizes malformed and unicode search inputs instead of interpolating patterns', function (): void {
@@ -166,4 +174,35 @@ it('keeps LGU dependency counts correct without a per-row SQL query and paginate
     expect($singleRowCounts)->toHaveCount(0);
 
     $this->get('/workspace/ui/lgus?'.http_build_query(['search' => 'Repeated LGU', 'page' => 2]))->assertOk()->assertInertia(fn (Assert $page) => $page->where('lgus.data', fn ($rows): bool => collect($rows)->pluck('id')->all() === array_slice($ids, 10)));
+});
+
+it('clamps the final page of a multi-page directory and returns page one for empty results', function (): void {
+    $f = $this->fixture('Admin');
+    for ($i = 0; $i < 12; $i++) {
+        $this->road($f['engineer']);
+    }
+    $this->get('/workspace/ui/road-coverages?page=999999999&sort=oldest')->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('coverages.current_page', 2)
+            ->where('coverages.last_page', 2)->where('coverages.total', 13)->has('coverages.data', 1));
+    $this->get('/workspace/ui/road-coverages?page=999999999&search=NoSuchFixture')->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('coverages.current_page', 1)
+            ->where('coverages.last_page', 1)->where('coverages.total', 0)->has('coverages.data', 0));
+});
+
+it('normalizes out of range numeric filters without database conversion errors', function (): void {
+    $f = $this->fixture('Admin');
+    $invalid = '9223372036854775808';
+    foreach ([
+        ['road-coverages', 'municipality'],
+        ['maintenance-projects', 'municipality'],
+        ['maintenance-records', 'municipality'],
+        ['maintenance-records', 'year'],
+        ['monthly-updates', 'project'],
+        ['maintenance-documents', 'project'],
+    ] as [$module, $filter]) {
+        $this->get('/workspace/ui/'.$module.'?'.http_build_query([$filter => $invalid]))->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('filters.'.$filter, 'all'));
+    }
+    $this->get('/workspace/ui/monthly-updates?project=000'.$f['project'])->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('filters.project', (string) $f['project'])->has('projects', 1));
 });

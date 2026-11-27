@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Quarterly;
 
 use App\Services\Files\FileRecoverySchedule;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -30,7 +31,7 @@ final class SuperAdminDashboardDesignTest extends PostgresTestCase
     public function test_intelligence_reports_exact_review_counts_and_does_not_multiply_factors(): void
     {
         $f = $this->fixture('SuperAdmin');
-        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-27 12:00:00', 'Asia/Manila'));
+        $this->travelTo(Carbon::parse('2026-11-27 12:00:00', 'Asia/Manila'));
         $account = $f['user']->canonical_user_account_id;
         DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->update(['state_category' => 'Bad']);
         foreach (['Q1', 'Q2'] as $quarter) {

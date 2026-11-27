@@ -32,6 +32,8 @@ The next candidate preflights queued reconnect submissions with the existing acc
 
 Commit `acd0f1d0c5627c2f598cb0b8e6f9e1c226be7c4c` passed standard CI (45954251740), focused regressions (45954251756), disposable staging (45954251722) and its repository TypeScript, PHPStan, Pint and Prettier jobs; full verification was still in progress at inspection. The next candidate adds explicit road-review totals, a tested non-multiplying provisional score, UTF-8-safe iCalendar exports of the displayed estimates, and freshness/integrity checks for optional recovery batch telemetry. These are not approval of the priority policy, a scheduler execution proof, or hosted recovery evidence.
 
+Commit `9c818e2e1516ab5a57328eb71f9ddfa9ba7e6ad6`: focused quarterly tests passed 498 tests and 6,318 assertions (45954617991 / 140358100924), but the job failed its subsequent Pint check. Full verification reported exact Prettier and Pint formatting diffs. Follow-up applies those diffs and bounds the six canonical directories plus the activity and authentication history paginators before executing their data queries. New tests cover oversized, malformed, empty and final-page requests while preserving literal search and role scopes. Numeric municipality, project and maintenance-year filters now normalize to valid positive integers before hitting SQL, with out-of-range and zero-padded inputs covered. Fresh exact-head verification remains required.
+
 ## Outstanding
 
 - Benchmark representative large data and verify the new record-history and monthly-choice pagination; the single-record month occupancy snapshot is compacted by year, but still grows with the number of distinct reporting years; verify measured behavior and hosted load.

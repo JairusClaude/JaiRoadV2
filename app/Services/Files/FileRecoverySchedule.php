@@ -50,7 +50,7 @@ final class FileRecoverySchedule
             || $evidence['attempted'] < 0
             || $evidence['completed'] < 0
             || $evidence['pending'] < 0
-            || $evidence['completed'] + $evidence['pending'] !== $evidence['attempted']) {
+            || $evidence['attempted'] !== $evidence['completed'] + $evidence['pending']) {
             return null;
         }
 

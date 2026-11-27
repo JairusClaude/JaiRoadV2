@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Services\OperationAudit;
 use App\Services\PreviewDataService;
 use App\Services\RoleAccess;
+use App\Support\BoundedDirectoryPage;
 use App\Support\LiteralDirectorySearch;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\QueryException;
@@ -61,10 +62,9 @@ final class LguPageController extends OperationsFrontendController
             $query->where('l.region', $region);
         }
 
-        $paginated = $query
-            ->orderBy('l.municipality_name', $sort)->orderBy('l.id', $sort)
-            ->paginate(10)
-            ->withQueryString();
+        $paginated = BoundedDirectoryPage::paginate(
+            $query->orderBy('l.municipality_name', $sort)->orderBy('l.id', $sort), $request, 10
+        );
 
         $lgus = [
             'data' => collect($paginated->items())->map(function (\stdClass $lgu): array {

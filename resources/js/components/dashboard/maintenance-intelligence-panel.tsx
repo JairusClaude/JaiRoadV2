@@ -389,8 +389,8 @@ export function MaintenanceIntelligencePanel({
                             Road review priority
                         </h3>
                         <p className={`mt-1 ${subtleText}`}>
-                            {data.priority.length} of {data.priorityTotal}{' '}
-                            roads with provisional review indicators.
+                            {data.priority.length} of {data.priorityTotal} roads
+                            with provisional review indicators.
                         </p>
                         <details className="mt-2 text-sm">
                             <summary className="cursor-pointer font-medium text-violet-800 focus-visible:outline-violet-600 dark:text-violet-200">
@@ -401,9 +401,9 @@ export function MaintenanceIntelligencePanel({
                                 estimate adds 25, and a missing current report
                                 adds 15. Scores guide record review. Safety
                                 decisions and work authorization use their own
-                                assessments. Each factor is counted at most
-                                once per road, even when several records are
-                                overdue or missing reports.
+                                assessments. Each factor is counted at most once
+                                per road, even when several records are overdue
+                                or missing reports.
                             </p>
                         </details>
                     </div>

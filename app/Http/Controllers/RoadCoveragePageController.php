@@ -8,6 +8,7 @@ use App\Services\OperationAudit;
 use App\Services\PreviewDataService;
 use App\Services\RoadReferenceBounds;
 use App\Services\RoleAccess;
+use App\Support\BoundedDirectoryPage;
 use App\Support\LiteralDirectorySearch;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\QueryException;
@@ -53,7 +54,7 @@ final class RoadCoveragePageController extends OperationsFrontendController
             'linkedProjects' => $linkedProjects,
             'totalLengthKm' => $totalLengthKm,
             'mapDeferred' => true,
-            'coverages' => $query->paginate(12)->withQueryString()->through(fn (\stdClass $r): array => $this->roadData($r)),
+            'coverages' => BoundedDirectoryPage::paginate($query, $request, 12)->through(fn (\stdClass $r): array => $this->roadData($r)),
             'municipalities' => $this->municipalities($actor), 'filters' => $filters, 'canEdit' => $this->writable($actor),
             'canDelete' => RoleAccess::canDeleteOperations($actor['role']),
         ]);
@@ -64,7 +65,7 @@ final class RoadCoveragePageController extends OperationsFrontendController
     {
         $filters = [
             'search' => LiteralDirectorySearch::normalize($request->input('search')),
-            'municipality' => LiteralDirectorySearch::option($request->input('municipality')),
+            'municipality' => LiteralDirectorySearch::numericOption($request->input('municipality')),
             'condition' => LiteralDirectorySearch::option($request->input('condition')),
             'pavement' => LiteralDirectorySearch::option($request->input('pavement')),
         ];
