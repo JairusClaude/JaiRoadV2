@@ -335,6 +335,16 @@ assert.deepEqual(pair, [foreground, background], path);
     assert.ok(summaryText.includes('"Scope","System-wide"'));
     assert.ok(summaryText.includes('"Reporting month","Update count"'));
     assert.ok(!summaryText.includes('sb_secret_'));
+    for (const [format, signature] of [['XLSX', 'PK'], ['PDF', '%PDF-1.4']]) {
+        const downloadPromise = superadmin.waitForEvent('download');
+        await superadmin.getByRole('button', { name: `Export summary (${format})` }).click();
+        const file = await downloadPromise;
+        assert.equal(file.suggestedFilename(), `jairoads-analytics-summary.${format.toLowerCase()}`);
+        const bytes = await readFile(await file.path());
+        assert.equal(bytes.subarray(0, signature.length).toString(), signature);
+        assert.ok(bytes.includes(Buffer.from('System-wide')));
+        assert.ok(!bytes.includes(Buffer.from('sb_secret_')));
+    }
     await superadmin.getByRole('button', { name: 'Refresh dashboard' }).waitFor();
     await superadmin.waitForFunction(() => {
         const logo = document.querySelector('.jr-superadmin-brand-logo');
