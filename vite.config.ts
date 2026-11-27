@@ -58,4 +58,3 @@ export default defineConfig(({ mode }) => ({
         ...(mode === 'review' ? [] : [wayfinder({ formVariants: true })]),
     ],
 }));
-
