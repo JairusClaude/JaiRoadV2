@@ -173,9 +173,7 @@ export function analyticsPdf(rows: Cell[][]) {
     // Dashboard labels, scope and numerical metrics are bounded ASCII. Strip
     // unsupported characters rather than emitting malformed font encodings.
     const literal = (value: string) =>
-        value
-            .replace(/[^\x20-\x7e]/g, '?')
-            .replace(/[\\()]/g, '\\$&');
+        value.replace(/[^\x20-\x7e]/g, '?').replace(/[\\()]/g, '\\$&');
     const lines = [
         'JaiROADS | Dashboard summary',
         'Visible aggregate metrics only',
