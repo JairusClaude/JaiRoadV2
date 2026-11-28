@@ -473,6 +473,7 @@ export default function RoleDashboard({
                         omitInventoryMetrics
                         omitOngoingMetric={isEngineer}
                         showActivity={false}
+                        showExport={isEngineer}
                         activityReplacement={
                             isEngineer ? notificationPanel : undefined
                         }

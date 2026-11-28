@@ -626,10 +626,19 @@ try {
         );
     }
 
+    await viewer
+        .getByRole('heading', { name: 'Read-only inventory analytics' })
+        .waitFor();
+    assert.equal(
+        await viewer
+            .getByRole('button', { name: 'Export report', includeHidden: true })
+            .count(),
+        0,
+    );
+
     for (const [page, scope] of [
         [admin, 'Operations overview'],
         [engineer, 'My assigned work'],
-        [viewer, 'Read-only inventory'],
     ]) {
         await page.getByRole('button', { name: 'Export report' }).click();
         const download = page.waitForEvent('download');
