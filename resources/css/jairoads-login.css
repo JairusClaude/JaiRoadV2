@@ -216,7 +216,7 @@
     width: 40px;
     height: 40px;
 }
-@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+@media (prefers-reduced-motion: no-preference) {
     html:not(.jr-reduce-motion)
         .jr-login-showcase[data-playing='true']
         .jr-login-photo[data-current='true']
@@ -644,5 +644,174 @@ html.jr-reduce-motion .jr-login-slide-indicator {
     }
     .jr-login-panel {
         padding-inline: 16px;
+    }
+}
+
+/* Size the mobile sign-in to the available screen. Keep normal document flow
+   so the form also works with an on-screen keyboard or enlarged text. */
+@media (max-width: 1023px) {
+    .jr-login[data-sign-in] {
+        --jr-login-gutter: clamp(0px, (100vw - 520px) * 0.05, 12px);
+        --jr-login-screen: calc(100svh - 2 * var(--jr-login-gutter));
+        padding: var(--jr-login-gutter);
+    }
+    .jr-login[data-sign-in] .jr-login-frame {
+        min-height: var(--jr-login-screen);
+    }
+    .jr-login[data-sign-in] .jr-login-showcase {
+        background: #f3eadc;
+    }
+    .jr-login[data-sign-in] .jr-login-showcase::before {
+        content: '';
+        position: absolute;
+        z-index: -1;
+        inset: 0;
+        background: var(--jr-login-landscape) center bottom / cover no-repeat;
+        transform-origin: 65% 100%;
+    }
+    .jr-login[data-sign-in][data-mobile-intro='false'] .jr-login-showcase {
+        min-height: clamp(94px, 21svh, 176px);
+    }
+    .jr-login[data-sign-in] .jr-login-slide-content {
+        padding: clamp(15px, 3.5svh, 28px) clamp(18px, 6vw, 30px);
+    }
+    .jr-login[data-sign-in] .jr-login-brand {
+        text-shadow: none;
+    }
+    .jr-login[data-sign-in] .jr-login-brand-row {
+        flex-wrap: nowrap;
+        gap: 8px;
+    }
+    .jr-login[data-sign-in] .jr-login-panel {
+        margin-top: -16px;
+        gap: clamp(8px, 1.7svh, 16px);
+        padding: clamp(12px, 2.5svh, 20px) clamp(18px, 6vw, 32px) 14px;
+    }
+    .jr-login[data-sign-in] .jr-login-form {
+        margin-block: clamp(0px, (100svh - 600px) * 0.13, 24px) 0;
+    }
+    .jr-login[data-sign-in] .jr-login-form-intro {
+        margin-bottom: clamp(10px, 2svh, 18px);
+    }
+    .jr-login[data-sign-in] .jr-login-form-intro h2 {
+        font-size: clamp(26px, 4.7svh, 34px);
+        line-height: 1.12;
+    }
+    .jr-login[data-sign-in] form > :not(:last-child) {
+        margin-block-end: clamp(8px, 1.55svh, 14px);
+    }
+    .jr-login[data-sign-in]
+        :is(input[data-slot='input'], [data-test='login-button']) {
+        min-height: 44px;
+        height: clamp(44px, 6.6svh, 50px);
+    }
+    .jr-login[data-sign-in] .jr-login-status {
+        margin-bottom: 10px;
+        padding-block: 6px;
+    }
+    .jr-login[data-sign-in] .jr-login-support {
+        margin-top: 10px;
+    }
+    .jr-login[data-sign-in] .jr-login-explore {
+        flex: 0 0 auto;
+        min-height: 44px;
+        margin: 0;
+        padding: 0 10px;
+        border: 1px solid #d7bfa7;
+        border-radius: 999px;
+        background: #fbf8f2cf;
+    }
+    .jr-login[data-sign-in] .jr-login-footer {
+        display: none;
+    }
+    .jr-login[data-sign-in][data-mobile-intro='true']
+        :is(.jr-login-showcase, .jr-login-slide-content) {
+        min-height: var(--jr-login-screen);
+    }
+    .jr-login[data-sign-in][data-mobile-intro='true']
+        .jr-login-showcase::before {
+        background-position: center 15%;
+        background-size: auto 45%;
+    }
+    .jr-login[data-sign-in][data-mobile-intro='true'] .jr-login-photo {
+        inset: 15% 0 34%;
+    }
+    .jr-login[data-sign-in][data-mobile-intro='true'] .jr-login-caption {
+        padding-top: clamp(48px, 24svh, 160px);
+    }
+}
+
+@media (max-width: 520px) {
+    .jr-login[data-sign-in] :is(.jr-login-frame, .jr-login-showcase) {
+        border: 0;
+        border-radius: 0;
+    }
+}
+
+@media (max-width: 1023px) and (max-height: 530px) {
+    .jr-login[data-sign-in] .jr-login-slide-content {
+        padding-block: 10px;
+    }
+    .jr-login[data-sign-in][data-mobile-intro='false'] .jr-login-showcase {
+        min-height: 80px;
+    }
+    .jr-login[data-sign-in] .jr-login-panel {
+        padding-block: 8px;
+    }
+    .jr-login[data-sign-in] .jr-login-secure-label {
+        display: none;
+    }
+    .jr-login[data-sign-in] .jr-login-form-intro {
+        margin-bottom: 8px;
+    }
+    .jr-login[data-sign-in]
+        :is(
+            .jr-login-form-intro > :not(:last-child),
+            form > :not(:last-child)
+        ) {
+        margin-block-end: 5px;
+    }
+    .jr-login[data-sign-in] .jr-login-form .jr-login-help {
+        line-height: 1.35;
+    }
+    .jr-login[data-sign-in] .jr-login-support {
+        margin-top: 6px;
+    }
+}
+
+@media (max-width: 1023px) and (orientation: landscape) and (max-height: 530px) {
+    .jr-login[data-sign-in] {
+        --jr-login-gutter: 0px;
+    }
+    .jr-login[data-sign-in][data-mobile-intro='false'] .jr-login-frame {
+        grid-template-columns: minmax(0, 0.75fr) minmax(300px, 1fr);
+        grid-template-rows: 1fr;
+        max-width: 780px;
+    }
+    .jr-login[data-sign-in][data-mobile-intro='false'] .jr-login-panel {
+        margin-top: 0;
+        border-radius: 0;
+    }
+    .jr-login[data-sign-in][data-mobile-intro='false'] .jr-login-showcase {
+        border-radius: 0;
+    }
+}
+
+@media (max-width: 1023px) and (prefers-reduced-motion: no-preference) {
+    html:not(.jr-reduce-motion)
+        .jr-login[data-sign-in][data-mobile-intro='false']
+        .jr-login-showcase::before {
+        animation: jr-login-road-arrival 3.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+}
+
+@keyframes jr-login-road-arrival {
+    from {
+        opacity: 0.55;
+        transform: translateY(8px) scale(1.09);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
     }
 }

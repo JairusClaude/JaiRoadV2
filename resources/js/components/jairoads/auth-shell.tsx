@@ -24,10 +24,38 @@ export default function AuthShell({
     const [intro, setIntro] = useState(false);
 
     return (
-        <div className="jr-login" data-mobile-intro={showMobileIntro && intro}>
+        <div
+            className="jr-login"
+            data-sign-in={showMobileIntro || undefined}
+            data-mobile-intro={showMobileIntro && intro}
+        >
             <div className="jr-login-frame">
                 <AuthShowcase
                     expandedMobile={showMobileIntro && intro}
+                    mobileAction={
+                        showMobileIntro &&
+                        !intro && (
+                            <button
+                                type="button"
+                                className="jr-login-explore"
+                                aria-label="Explore JaiROADS"
+                                onClick={() => {
+                                    setIntro(true);
+                                    requestAnimationFrame(() =>
+                                        document
+                                            .getElementById('jr-login-continue')
+                                            ?.focus({ preventScroll: true }),
+                                    );
+                                }}
+                            >
+                                Explore{' '}
+                                <ArrowRight
+                                    aria-hidden="true"
+                                    className="size-4"
+                                />
+                            </button>
+                        )
+                    }
                     onContinue={() => {
                         setIntro(false);
                         requestAnimationFrame(() =>
@@ -61,26 +89,6 @@ export default function AuthShell({
                             </p>
                         </div>
                         {children}
-                        {showMobileIntro && (
-                            <button
-                                type="button"
-                                className="jr-login-explore"
-                                onClick={() => {
-                                    setIntro(true);
-                                    requestAnimationFrame(() =>
-                                        document
-                                            .getElementById('jr-login-continue')
-                                            ?.focus({ preventScroll: true }),
-                                    );
-                                }}
-                            >
-                                Explore JaiROADS{' '}
-                                <ArrowRight
-                                    aria-hidden="true"
-                                    className="size-4"
-                                />
-                            </button>
-                        )}
                     </div>
                     <div className="jr-login-footer">
                         <span>© {new Date().getFullYear()} JaiROADS</span>

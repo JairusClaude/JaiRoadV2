@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 
 // Photographs are illustrative. This application does not claim to be an official DPWH website.
@@ -52,8 +53,13 @@ function serverCompactSnapshot() {
 
 export default function AuthShowcase({
     expandedMobile = false,
+    mobileAction,
     onContinue,
-}: { expandedMobile?: boolean; onContinue?: () => void } = {}) {
+}: {
+    expandedMobile?: boolean;
+    mobileAction?: ReactNode;
+    onContinue?: () => void;
+} = {}) {
     const compact = useSyncExternalStore(
         subscribeCompact,
         compactSnapshot,
@@ -179,6 +185,7 @@ export default function AuthShowcase({
                     <span className="jr-login-showcase-tag hidden rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-[10px] font-semibold tracking-[.16em] text-white/90 uppercase backdrop-blur-sm sm:inline-flex">
                         Engineering & public works
                     </span>
+                    {mobileAction}
                 </div>
 
                 <div className="jr-login-caption" key={visibleSlide}>

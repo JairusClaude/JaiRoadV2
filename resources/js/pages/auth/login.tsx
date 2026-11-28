@@ -32,7 +32,7 @@ export default function Login({ status }: Props) {
                 {status && (
                     <p
                         role="status"
-                        className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"
+                        className="jr-login-status mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"
                     >
                         {status}
                     </p>
@@ -208,15 +208,14 @@ export default function Login({ status }: Props) {
                 >
                     Use only on a private, trusted device.
                 </p>
-                <div className="mt-5">
+                <div className="jr-login-support mt-5">
                     <div className="flex items-start gap-3">
                         <LockKeyhole
                             aria-hidden="true"
                             className="mt-0.5 size-[18px] shrink-0 text-[#8a9db0]"
                         />
                         <p className="jr-login-help text-xs leading-5">
-                            Need an account or help signing in? Contact your
-                            system administrator.
+                            Need help? Contact your administrator.
                         </p>
                     </div>
                 </div>
