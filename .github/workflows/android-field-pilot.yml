@@ -21,6 +21,13 @@ jobs:
   apk:
     name: Build internal Android pilot APK
     runs-on: ubuntu-24.04
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+      CACHE_STORE: array
+      SESSION_DRIVER: array
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -31,7 +38,17 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx vite build --config mobile/android-pilot/vite.config.mjs
-      - run: npm run build -- --mode review
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with:
+          php-version: '8.4'
+          extensions: 'pdo_pgsql, pdo_sqlite, mbstring'
+          tools: composer:v2
+          coverage: none
+      - run: |
+          bash scripts/ci/install-composer.sh
+          touch .env
+          php artisan wayfinder:generate --with-form
+          npm run build -- --mode review
       - run: node mobile/android-pilot/package-workspace.mjs
       - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
         with:
@@ -46,6 +63,8 @@ jobs:
           apk=mobile/android-pilot/android/app/build/outputs/apk/debug/app-debug.apk
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$apk"
           unzip -l "$apk" | grep 'assets/index.html'
+          unzip -l "$apk" | grep 'assets/workspace.html'
+          unzip -l "$apk" | grep 'assets/site-build/manifest.json'
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: JaiROADS-Android-Field-Pilot
