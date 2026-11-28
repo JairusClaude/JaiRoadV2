@@ -580,9 +580,6 @@ body:has(.jr-engineer-workspace) .jr-engineer-sidebar .jr-brand-toggle {
 }
 
 /* Engineer road inspection keeps the same geometry and assignment semantics. */
-.jr-engineer-workspace .jr-engineer-map-toggle input:checked {
-    background: #a94b0c;
-}
 .jr-engineer-workspace .jr-dashboard-road-mine {
     stroke: #a94b0c;
 }

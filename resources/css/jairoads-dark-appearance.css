@@ -178,3 +178,80 @@ html.dark .jr-workspace-settings .jr-appearance-choice[aria-pressed='true'] {
     background-color: var(--jr-dark-selection-bg, #432868) !important;
     border-color: var(--jr-dark-selection-text, #c4b5fd) !important;
 }
+
+/* Canonical directory surfaces and controls share a palette across role themes. */
+html.dark {
+    --jr-dark-surface: #1e293b;
+    --jr-dark-elevated: #263449;
+    --jr-dark-border: #40516a;
+    --jr-dark-text: #e2e8f0;
+    --jr-dark-muted: #a7b5ca;
+}
+
+html.dark
+    .jr-app
+    :is(.jr-directory-exploration, .jr-monthly-directory)
+    .jr-page-head {
+    background-color: var(--jr-dark-surface);
+}
+
+html.dark
+    .jr-app
+    :is(.jr-directory-exploration, .jr-monthly-directory)
+    .jr-page-head::before {
+    opacity: 0.24;
+}
+
+html.dark .jr-app :is(.jr-filters, .jr-metric-card, .jr-empty) {
+    background-color: var(--jr-dark-surface);
+    border-color: var(--jr-dark-border);
+    color: var(--jr-dark-text);
+}
+
+html.dark .jr-app :is(.jr-search input, .jr-filter-row [data-slot='select-trigger']),
+html.dark .jr-app .jr-table-footer [data-slot='button']:not([aria-current]) {
+    background-color: var(--jr-dark-elevated);
+    border-color: var(--jr-dark-border);
+    color: var(--jr-dark-text);
+}
+
+html.dark .jr-app .jr-search input::placeholder {
+    color: var(--jr-dark-muted);
+}
+
+html.dark .jr-app .jr-table th {
+    background-color: var(--jr-dark-elevated);
+    color: var(--jr-dark-text);
+}
+
+html.dark .jr-app .jr-table td {
+    border-color: var(--jr-dark-border);
+    color: var(--jr-dark-text);
+}
+
+html.dark .jr-app .jr-table tr:is(:hover, :focus-within) {
+    background-color: var(--jr-dark-elevated);
+}
+
+html.dark .jr-app .jr-table tr[data-selected='true'] {
+    background-color: var(--jr-display-soft, var(--jr-dark-elevated));
+}
+
+html.dark .jr-app .jr-table :is(.jr-project-title, .jr-monthly-context-links a) {
+    color: var(--jr-dark-text);
+}
+
+html.dark .jr-app .jr-table :is(.jr-project-title, .jr-monthly-context-links a):hover {
+    color: var(--jr-display-accent, var(--jr-dark-text));
+    text-decoration: underline;
+}
+
+html.dark
+    .jr-app
+    :is(.jr-project-id, .jr-muted, .jr-table-toolbar, .jr-table-footer) {
+    color: var(--jr-dark-muted);
+}
+
+html.dark .jr-app .jr-monthly-progress-track {
+    background-color: var(--jr-dark-elevated);
+}

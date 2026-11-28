@@ -265,6 +265,61 @@ try {
         await page.goto(base + '/workspace/dashboard');
     }
 
+
+    // Check actual rendered colors for every role, including System switching.
+    const luminance = (color) => {
+        const channels = color.match(/\d+(?:\.\d+)?/g).slice(0, 3);
+        const [red, green, blue] = channels.map((channel) => {
+            const value = Number(channel) / 255;
+
+            return value <= 0.04045
+                ? value / 12.92
+                : ((value + 0.055) / 1.055) ** 2.4;
+        });
+
+        return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+    };
+
+    for (const page of [superadmin, admin, engineer, viewer]) {
+        await page.goto(ui + '/maintenance-projects');
+        const banner = page.locator('.jr-page-head').first();
+        await banner.waitFor();
+        for (const [mode, scheme, dark] of [
+            ['light', 'light', false],
+            ['dark', 'light', true],
+            ['system', 'dark', true],
+        ]) {
+            await page.emulateMedia({ colorScheme: scheme });
+            await page.evaluate((mode) => {
+                localStorage.setItem('appearance', mode);
+            }, mode);
+            await page.reload();
+            await banner.waitFor();
+            const colors = await banner.evaluate((element) => ({
+                dark: document.documentElement.classList.contains('dark'),
+                heading: getComputedStyle(element.querySelector('h1')).color,
+                banner: getComputedStyle(element).backgroundColor,
+            }));
+            assert.equal(colors.dark, dark);
+            const foreground = luminance(colors.heading);
+            const background = luminance(colors.banner);
+            assert.ok(
+                (Math.max(foreground, background) + 0.05) /
+                    (Math.min(foreground, background) + 0.05) >=
+                    4.5,
+                `Directory banner contrast in ${mode}: ${JSON.stringify(colors)}`,
+            );
+            assert.ok(dark ? background < 0.2 : background > 0.5);
+        }
+        await page.emulateMedia({ colorScheme: 'light' });
+        await page.waitForFunction(
+            () => !document.documentElement.classList.contains('dark'),
+        );
+        await page.evaluate(() => localStorage.setItem('appearance', 'light'));
+        await page.goto(base + '/workspace/dashboard');
+    }
+    console.log('PASS: directory banner contrast in all three appearance modes for all four roles.');
+
     // A filtered-away LGU must never remain in the visible selection count.
     await superadmin.goto(`${ui}/lgus`);
     await superadmin
@@ -565,9 +620,12 @@ try {
     }
 
     const summaryDownload = superadmin.waitForEvent('download');
-    await superadmin
-        .getByRole('button', { name: 'Export summary (CSV)' })
-        .click();
+    const exportMenu = superadmin.getByRole('button', {
+        name: 'Export report',
+    });
+    await exportMenu.focus();
+    await exportMenu.press('Enter');
+    await superadmin.getByRole('menuitem', { name: 'CSV Data' }).click();
     const summaryFile = await summaryDownload;
     assert.equal(
         summaryFile.suggestedFilename(),
@@ -578,14 +636,13 @@ try {
     assert.ok(summaryText.includes('"Reporting month","Update count"'));
     assert.ok(!summaryText.includes('sb_secret_'));
 
-    for (const [format, signature] of [
-        ['XLSX', 'PK'],
-        ['PDF', '%PDF-1.4'],
+    for (const [format, label, signature] of [
+        ['XLSX', 'Excel Workbook', 'PK'],
+        ['PDF', 'PDF Report', '%PDF-1.4'],
     ]) {
         const downloadPromise = superadmin.waitForEvent('download');
-        await superadmin
-            .getByRole('button', { name: `Export summary (${format})` })
-            .click();
+        await exportMenu.click();
+        await superadmin.getByRole('menuitem', { name: label }).click();
         const file = await downloadPromise;
         assert.equal(
             file.suggestedFilename(),
@@ -820,9 +877,10 @@ try {
         0,
     );
     await relationship.selectOption('all');
-    const conditions = dashboardMap.getByRole('checkbox', {
-        name: 'Show road conditions',
-    });
+    const conditions = dashboardMap.locator('.jr-road-map-header').getByRole(
+        'switch',
+        { name: 'Show road conditions' },
+    );
     await conditions.check();
     await dashboardMap
         .locator('.jr-road-map-legend')

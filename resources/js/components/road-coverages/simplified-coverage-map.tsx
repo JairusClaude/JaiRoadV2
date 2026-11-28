@@ -99,12 +99,19 @@ export function SimplifiedCoverageMap({
             const assigned =
                 coverage.assigned === true || coverage.has_projects === true;
 
+            const condition = coverage.state_category;
+
             return {
                 id: coverage.id,
                 name: coverage.road_name,
                 municipality,
                 assigned,
-                condition: coverage.state_category ?? 'Unknown',
+                condition:
+                    condition === 'Good' ||
+                    condition === 'Fair' ||
+                    condition === 'Bad'
+                        ? condition
+                        : ('Unknown' as const),
                 projectId: coverage.project_id,
                 projectTitle: coverage.project_title,
                 mine:
@@ -122,10 +129,7 @@ export function SimplifiedCoverageMap({
         });
     }, [coverages]);
 
-    const hasConditions = mappedCoverages.some(
-        (item) => item.condition !== 'Unknown',
-    );
-    const showConditions = conditionMode && hasConditions;
+    const showConditions = conditionMode;
     const mappedCount = mappedCoverages.filter(
         (c) => c.lines.length > 0,
     ).length;
@@ -153,6 +157,9 @@ export function SimplifiedCoverageMap({
         [mappedCoverages, myOnly, engineerView, relationship],
     );
 
+    const visibleMappedCount = visibleCoverages.filter(
+        (coverage) => coverage.lines.length > 0,
+    ).length;
     const selected = dashboardView
         ? visibleCoverages.find((item) => item.id === selectedId)
         : undefined;
@@ -294,13 +301,7 @@ export function SimplifiedCoverageMap({
                         ? 'assigned'
                         : 'other';
             const lineColor = showConditions
-                ? CONDITION_COLORS[
-                      item.condition === 'Good' ||
-                      item.condition === 'Fair' ||
-                      item.condition === 'Bad'
-                          ? item.condition
-                          : 'Unknown'
-                  ]
+                ? CONDITION_COLORS[item.condition]
                 : engineerView
                   ? ROAD_COLORS[category]
                   : viewerView
@@ -424,54 +425,50 @@ export function SimplifiedCoverageMap({
         <div className={`jr-road-map-panel w-full ${className}`}>
             <div className="jr-road-map-header">
                 <div className="jr-road-map-heading">
-                    <MapPin size={17} />
+                    <MapPin size={17} aria-hidden="true" />
                     <strong>Davao de Oro · Road Coverage Map</strong>
                     <span className="jr-road-map-count">
-                        {
-                            visibleCoverages.filter((c) => c.lines.length > 0)
-                                .length
-                        }{' '}
-                        mapped road line
-                        {visibleCoverages.filter((c) => c.lines.length > 0)
-                            .length === 1
-                            ? ''
-                            : 's'}
+                        {visibleMappedCount} mapped road line
+                        {visibleMappedCount === 1 ? '' : 's'}
                     </span>
                 </div>
-                {engineerView && (
+                <div className="jr-road-map-switches">
+                    {engineerView && (
+                        <label className="jr-engineer-map-toggle">
+                            <input
+                                type="checkbox"
+                                role="switch"
+                                checked={mineOnly}
+                                onChange={(event) => {
+                                    const checked = event.target.checked;
+                                    setMineOnly(checked);
+
+                                    if (
+                                        checked &&
+                                        selected &&
+                                        !selected.mine
+                                    ) {
+                                        setSelectedId(null);
+                                    }
+                                }}
+                            />
+                            My projects only
+                        </label>
+                    )}
                     <label className="jr-engineer-map-toggle">
                         <input
                             type="checkbox"
                             role="switch"
-                            checked={mineOnly}
-                            onChange={(event) => {
-                                setMineOnly(event.target.checked);
-
-                                if (
-                                    event.target.checked &&
-                                    selected &&
-                                    !selected.mine
-                                ) {
-                                    setSelectedId(null);
-                                }
-                            }}
+                            checked={showConditions}
+                            disabled={visibleMappedCount === 0}
+                            onChange={(event) =>
+                                setConditionMode(event.target.checked)
+                            }
                         />
-                        My projects only
+                        Show road conditions
                     </label>
-                )}
+                </div>
             </div>
-            {hasConditions && (
-                <label className="jr-engineer-map-toggle">
-                    <input
-                        type="checkbox"
-                        checked={showConditions}
-                        onChange={(event) =>
-                            setConditionMode(event.target.checked)
-                        }
-                    />
-                    Show road conditions
-                </label>
-            )}
             {basemap === 'unavailable' && (
                 <div className="jr-road-map-toolbar">
                     <span role="status">
