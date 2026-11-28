@@ -42,7 +42,7 @@ type Entry = {
 
 type Stored = { version: 1; snapshot: Envelope; entries: Envelope[] };
 
-const key = 'jairoads:android-pilot:v1';
+const keyPrefix = 'jairoads:android-pilot:account:v1:';
 const workspaceUrl = '/workspace/ui/android-pilot/workspace';
 const reportsUrl = '/workspace/ui/android-pilot/reports';
 const outcomeUrl = '/workspace/ui/monthly-updates/submission-outcome';
@@ -77,14 +77,6 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     return (await response.json()) as T;
 }
 
-export async function availability() {
-    const data = await request<{ pilot: string }>(
-        '/android-pilot/availability',
-    );
-
-    return data.pilot === 'jairoads-android-v1';
-}
-
 export async function loadWorkspace(): Promise<Workspace> {
     const data = await request<Workspace>(workspaceUrl);
 
@@ -102,39 +94,75 @@ export async function loadWorkspace(): Promise<Workspace> {
     return data;
 }
 
-export function hasOfflineData() {
-    return localStorage.getItem(key) !== null;
+async function digest(value: string) {
+    const bytes = await crypto.subtle.digest(
+        'SHA-256',
+        new TextEncoder().encode(value),
+    );
+
+    return Array.from(new Uint8Array(bytes), (byte) =>
+        byte.toString(16).padStart(2, '0'),
+    ).join('');
 }
 
 export class Vault {
     private constructor(
+        private readonly storageKey: string,
         private readonly passphrase: string,
         private saved: Stored,
         public snapshot: Snapshot,
         public entries: Entry[],
     ) {}
 
-    static async create(workspace: Workspace, passphrase: string) {
+    static async prepare(
+        email: string,
+        password: string,
+        workspace: Workspace,
+    ) {
+        const storageKey = keyPrefix + (await digest(email));
+        const passphrase = await digest(JSON.stringify([email, password]));
+        const raw = localStorage.getItem(storageKey);
+
+        if (raw) {
+            const vault = await this.restore(storageKey, passphrase, raw);
+            await vault.update(workspace);
+
+            return vault;
+        }
+
         const snapshot = snapshotOf(workspace);
         const saved: Stored = {
             version: 1,
             snapshot: await encryptDraft(snapshot, passphrase),
             entries: [],
         };
-        const vault = new Vault(passphrase, saved, snapshot, []);
+        const vault = new Vault(storageKey, passphrase, saved, snapshot, []);
 
         vault.persist(saved);
 
         return vault;
     }
 
-    static async open(passphrase: string) {
-        const raw = localStorage.getItem(key);
+    static async open(email: string, password: string) {
+        const storageKey = keyPrefix + (await digest(email));
+        const raw = localStorage.getItem(storageKey);
 
         if (!raw) {
-            throw new Error('Set up the offline workspace online first.');
+            throw new Error(
+                'Sign in online on this phone before using offline mode.',
+            );
         }
 
+        const passphrase = await digest(JSON.stringify([email, password]));
+
+        return this.restore(storageKey, passphrase, raw);
+    }
+
+    private static async restore(
+        storageKey: string,
+        passphrase: string,
+        raw: string,
+    ) {
         const saved = JSON.parse(raw) as Stored;
 
         if (
@@ -169,11 +197,11 @@ export class Vault {
             entries.push(entry);
         }
 
-        return new Vault(passphrase, saved, snapshot, entries);
+        return new Vault(storageKey, passphrase, saved, snapshot, entries);
     }
 
     private persist(saved: Stored) {
-        localStorage.setItem(key, JSON.stringify(saved));
+        localStorage.setItem(this.storageKey, JSON.stringify(saved));
         this.saved = saved;
     }
 

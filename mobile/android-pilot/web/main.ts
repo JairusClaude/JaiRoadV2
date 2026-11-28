@@ -1,42 +1,20 @@
-import {
-    availability,
-    hasOfflineData,
-    loadWorkspace,
-    RequestError,
-    Vault,
-} from './queue';
+import type { Vault } from './queue';
+import { loadWorkspace, RequestError } from './queue';
 import './style.css';
 
 const el = <T extends HTMLElement>(id: string) =>
     document.getElementById(id) as T;
 const message = el('message');
-const connection = el('connection');
-const unlock = el<HTMLFormElement>('unlock');
 const form = el<HTMLFormElement>('report');
-const signIn = el<HTMLButtonElement>('sign-in');
 const sync = el<HTMLButtonElement>('sync');
 const cache = el<HTMLButtonElement>('cache');
-let vault: Vault | null = null;
+let vault: Vault;
+let offline = false;
 let busy = false;
 
 function render() {
-    connection.textContent = navigator.onLine
-        ? 'Network available'
-        : 'Offline · saved data stays on this phone';
-    signIn.disabled = busy;
-    el('setup').hidden = vault !== null;
-    el('workspace').hidden = vault === null;
-    unlock.querySelector('button')!.disabled = busy;
-    el('setup-title').textContent = hasOfflineData()
-        ? 'Unlock offline access'
-        : 'Prepare for fieldwork';
-    el('unlock-button').textContent = hasOfflineData()
-        ? 'Unlock'
-        : 'Save offline workspace';
-
-    if (!vault) {
-        return;
-    }
+    el('offline-mode').hidden = !offline && navigator.onLine;
+    el('online-dashboard').hidden = offline || !navigator.onLine;
 
     const { snapshot, entries } = vault;
     el('workspace-title').textContent = snapshot.role + ' workspace';
@@ -123,7 +101,7 @@ function render() {
                 item.append(explanation);
             }
 
-            if (reportId) {
+            if (reportId && !offline && navigator.onLine) {
                 const link = document.createElement('a');
                 link.href = '/workspace/ui/monthly-updates/' + reportId;
                 link.textContent = 'Open saved report';
@@ -137,11 +115,8 @@ function render() {
                 remove.textContent = 'Remove local copy';
                 remove.disabled = busy;
                 remove.addEventListener('click', () => {
-                    if (
-                        vault &&
-                        confirm('Remove this report from this phone?')
-                    ) {
-                        void run(() => vault!.remove(index));
+                    if (confirm('Remove this report from this phone?')) {
+                        void run(() => vault.remove(index));
                     }
                 });
                 item.append(remove);
@@ -166,7 +141,7 @@ async function run(task: () => Promise<void>) {
     } catch (error) {
         message.textContent =
             error instanceof RequestError && [401, 419].includes(error.status)
-                ? 'Sign in to staging again. Reports are still saved on this phone.'
+                ? 'Lock the workspace and sign in online to sync your saved reports.'
                 : error instanceof Error && !(error instanceof TypeError)
                   ? error.message
                   : 'The staging server is unreachable. Saved reports remain on this phone.';
@@ -178,7 +153,6 @@ async function run(task: () => Promise<void>) {
 
 async function syncReports() {
     if (
-        !vault ||
         busy ||
         !navigator.onLine ||
         !vault.entries.some(({ status }) =>
@@ -190,8 +164,9 @@ async function syncReports() {
 
     await run(async () => {
         message.textContent = 'Syncing reports…';
-        await vault!.sync(render);
-        message.textContent = vault!.entries.some(
+        await vault.sync(render);
+        offline = false;
+        message.textContent = vault.entries.some(
             ({ status }) => status === 'checking',
         )
             ? 'A server receipt is still pending. Check again after reconnecting.'
@@ -199,33 +174,13 @@ async function syncReports() {
     });
 }
 
-unlock.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const passphrase = String(new FormData(unlock).get('passphrase') ?? '');
-    unlock.reset();
-    void run(async () => {
-        if (hasOfflineData()) {
-            vault = await Vault.open(passphrase);
-        } else {
-            if (!(await availability())) {
-                throw new Error(
-                    'The Android pilot is unavailable on this staging server.',
-                );
-            }
-
-            vault = await Vault.create(await loadWorkspace(), passphrase);
-        }
-    }).then(syncReports);
-});
-signIn.addEventListener('click', () => {
-    location.assign('./sign-in.html');
-});
 el('lock').addEventListener('click', () => {
     location.reload();
 });
 cache.addEventListener('click', () => {
     void run(async () => {
-        await vault!.update(await loadWorkspace());
+        await vault.update(await loadWorkspace());
+        offline = false;
         message.textContent = 'Authorized records updated.';
     });
 });
@@ -233,7 +188,7 @@ sync.addEventListener('click', () => void syncReports());
 form.addEventListener('submit', (event) => {
     event.preventDefault();
     const values = new FormData(form);
-    const record = vault?.snapshot.records.find(
+    const record = vault.snapshot.records.find(
         ({ id }) => id === values.get('record'),
     );
 
@@ -242,7 +197,7 @@ form.addEventListener('submit', (event) => {
     }
 
     void run(async () => {
-        await vault!.save({
+        await vault.save({
             project_id: record.projectId,
             maintenance_id: record.id,
             update_month: String(values.get('month')),
@@ -256,9 +211,37 @@ form.addEventListener('submit', (event) => {
 
 window.addEventListener('online', () => {
     render();
-    void syncReports();
+
+    if (
+        vault.entries.some(
+            ({ status }) => status === 'pending' || status === 'checking',
+        )
+    ) {
+        void syncReports();
+    } else {
+        void run(async () => {
+            await vault.update(await loadWorkspace());
+            offline = false;
+        });
+    }
 });
 window.addEventListener('offline', () => {
+    offline = true;
     render();
 });
-render();
+
+export function openFieldReports(workspace: Vault, offlineSignIn: boolean) {
+    vault = workspace;
+    offline = offlineSignIn;
+    history.replaceState(null, '', '#field-reports');
+    el('sign-in-screen').hidden = true;
+    document.body.classList.add('field-reports-open');
+    const fieldReports = el('field-reports');
+    fieldReports.hidden = false;
+    render();
+    fieldReports.focus({ preventScroll: true });
+
+    if (!offlineSignIn) {
+        void syncReports();
+    }
+}

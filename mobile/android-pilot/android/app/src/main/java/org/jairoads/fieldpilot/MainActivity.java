@@ -1,10 +1,8 @@
 package org.jairoads.fieldpilot;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.net.Uri;
 import android.os.Bundle;
-import android.text.InputType;
 import android.view.ViewGroup;
 import android.webkit.CookieManager;
 import android.webkit.WebResourceRequest;
@@ -12,19 +10,13 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import androidx.webkit.WebViewAssetLoader;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Locale;
-
 public final class MainActivity extends Activity {
     private static final String PILOT_PATH = "/jairoads-android-pilot/";
+    private static final String PILOT_PAGE = PILOT_PATH + "index.html";
     private WebView web;
     private LinearLayout layout;
     private static final String origin = "https://jairoads-android-pilot-lvin.onrender.com";
@@ -42,10 +34,18 @@ public final class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
-        if (web != null && !(origin + PILOT_PATH + "index.html").equals(web.getUrl())) {
-            openPilot();
-        } else {
+        if (web == null) {
             super.onBackPressed();
+            return;
+        }
+
+        String url = web.getUrl();
+        if ((origin + PILOT_PAGE).equals(url)) {
+            super.onBackPressed();
+        } else if ((origin + PILOT_PAGE + "#field-reports").equals(url)) {
+            web.reload();
+        } else {
+            openPilot();
         }
     }
 
@@ -66,13 +66,6 @@ public final class MainActivity extends Activity {
             CookieManager.getInstance().setAcceptThirdPartyCookies(web, false);
             web.setWebViewClient(new WebViewClient() {
                 @Override
-                public void onPageFinished(WebView view, String url) {
-                    if (url.equals(origin + "/workspace/dashboard") || url.equals(origin + "/dashboard")) {
-                        openPilot();
-                    }
-                }
-
-                @Override
                 public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                     return loader.shouldInterceptRequest(request.getUrl());
                 }
@@ -91,7 +84,7 @@ public final class MainActivity extends Activity {
             layout.addView(web, new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
         }
-        web.loadUrl(origin + PILOT_PATH + "index.html");
+        web.loadUrl(origin + PILOT_PAGE);
     }
 
     @Override

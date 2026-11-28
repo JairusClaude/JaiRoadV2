@@ -1,3 +1,4 @@
+import { loadWorkspace, RequestError, Vault } from './queue';
 import './sign-in.css';
 
 const element = <T extends HTMLElement>(id: string) =>
@@ -13,6 +14,10 @@ const showcase = element('showcase');
 
 let signingIn = false;
 
+if (location.hash) {
+    history.replaceState(null, '', location.pathname);
+}
+
 function showStatus(message: string, error = false) {
     status.textContent = message;
     status.hidden = !message;
@@ -20,15 +25,15 @@ function showStatus(message: string, error = false) {
 }
 
 function renderConnection() {
-    submit.disabled = signingIn || !navigator.onLine;
+    submit.disabled = signingIn;
     form.setAttribute('aria-busy', String(signingIn));
 
-    if (!signingIn) {
-        if (!navigator.onLine) {
-            showStatus('Connect to the internet to sign in.');
-        } else if (status.dataset.error !== 'true') {
-            showStatus('');
-        }
+    if (!signingIn && status.dataset.error !== 'true') {
+        showStatus(
+            navigator.onLine
+                ? ''
+                : 'Offline mode · Sign in with an account previously used online on this phone.',
+        );
     }
 }
 
@@ -41,27 +46,58 @@ function csrfCookie() {
     return cookie ? decodeURIComponent(cookie.slice(name.length)) : '';
 }
 
-async function authenticate(fields: FormData) {
-    // Initialize Laravel's session and CSRF cookie on the same HTTPS origin.
-    const session = await fetch('/login', {
-        cache: 'no-store',
-        credentials: 'same-origin',
-        signal: AbortSignal.timeout(20000),
-    });
+class PilotUnreachable extends Error {}
 
-    if (!session.ok || new URL(session.url).origin !== location.origin) {
-        throw new Error('JaiROADS sign-in is temporarily unavailable.');
+async function startSession() {
+    try {
+        return await fetch('/login', {
+            cache: 'no-store',
+            credentials: 'same-origin',
+            redirect: 'manual',
+            signal: AbortSignal.timeout(12000),
+        });
+    } catch {
+        throw new PilotUnreachable();
     }
+}
 
-    if (session.redirected) {
-        // A browser session might already be signed in.
-        return;
-    }
-
+function sessionHeaders() {
     const csrf = csrfCookie();
 
     if (!csrf) {
         throw new Error('Could not start a secure session. Try again.');
+    }
+
+    return { Accept: 'application/json', 'X-XSRF-TOKEN': csrf };
+}
+
+async function authenticate(
+    emailAddress: string,
+    secret: string,
+    remember: boolean,
+) {
+    // Open a Fortify guest session before validating the submitted credentials.
+    // A previous online session is never proof of the newly submitted password.
+    let session = await startSession();
+
+    if (session.type === 'opaqueredirect') {
+        const logout = await fetch('/logout', {
+            method: 'POST',
+            credentials: 'same-origin',
+            redirect: 'error',
+            signal: AbortSignal.timeout(12000),
+            headers: sessionHeaders(),
+        });
+
+        if (!logout.ok) {
+            throw new Error('Could not switch accounts. Try again.');
+        }
+
+        session = await startSession();
+    }
+
+    if (!session.ok || new URL(session.url).origin !== location.origin) {
+        throw new Error('JaiROADS sign-in is temporarily unavailable.');
     }
 
     const response = await fetch('/login', {
@@ -70,15 +106,11 @@ async function authenticate(fields: FormData) {
         cache: 'no-store',
         redirect: 'error',
         signal: AbortSignal.timeout(15000),
-        headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            'X-XSRF-TOKEN': csrf,
-        },
+        headers: { ...sessionHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            email: String(fields.get('email') ?? '').trim(),
-            password: String(fields.get('password') ?? ''),
-            remember: fields.has('remember'),
+            email: emailAddress,
+            password: secret,
+            remember,
         }),
     });
 
@@ -101,23 +133,84 @@ async function authenticate(fields: FormData) {
     }
 }
 
+async function openWorkspace(vault: Vault, offline: boolean) {
+    const { openFieldReports } = await import('./main');
+    password.value = '';
+    openFieldReports(vault, offline);
+}
+
+async function signInOffline(emailAddress: string, secret: string) {
+    try {
+        await openWorkspace(await Vault.open(emailAddress, secret), true);
+    } catch {
+        throw new Error(
+            'Offline sign-in could not unlock this account. Use the email and password from your last online sign-in on this phone.',
+        );
+    }
+}
+
 form.addEventListener('submit', async (event) => {
     event.preventDefault();
 
-    if (signingIn || !navigator.onLine) {
+    if (signingIn) {
         return;
     }
 
     signingIn = true;
     showStatus('Signing in…');
     renderConnection();
+    const emailAddress = email.value.trim().toLowerCase();
+    const secret = password.value;
 
     try {
-        await authenticate(new FormData(form));
-        password.value = '';
-        location.replace('/dashboard');
+        if (!navigator.onLine) {
+            await signInOffline(emailAddress, secret);
+
+            return;
+        }
+
+        try {
+            await authenticate(
+                emailAddress,
+                secret,
+                new FormData(form).has('remember'),
+            );
+        } catch (error) {
+            if (error instanceof PilotUnreachable) {
+                await signInOffline(emailAddress, secret);
+
+                return;
+            }
+
+            throw error;
+        }
+
+        const workspace = await loadWorkspace().catch((error: unknown) => {
+            if (error instanceof RequestError && error.status === 403) {
+                return null;
+            }
+
+            throw error;
+        });
+
+        if (!workspace) {
+            password.value = '';
+            location.replace('/dashboard');
+
+            return;
+        }
+
+        try {
+            await openWorkspace(
+                await Vault.prepare(emailAddress, secret, workspace),
+                false,
+            );
+        } catch {
+            throw new Error(
+                'Could not open saved fieldwork with this password. Your existing files are still on this phone.',
+            );
+        }
     } catch (error) {
-        signingIn = false;
         showStatus(
             error instanceof Error &&
                 !['TypeError', 'TimeoutError', 'SyntaxError'].includes(
@@ -127,6 +220,8 @@ form.addEventListener('submit', async (event) => {
                 : 'Could not reach JaiROADS. Check your connection and try again.',
             true,
         );
+    } finally {
+        signingIn = false;
         renderConnection();
     }
 });

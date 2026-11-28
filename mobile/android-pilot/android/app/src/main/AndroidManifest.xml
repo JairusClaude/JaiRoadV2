@@ -3,7 +3,7 @@
     <application
         android:allowBackup="false"
         android:usesCleartextTraffic="false"
-        android:label="JaiROADS Field Pilot"
+        android:label="JaiROADS Offline Pilot"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <activity
             android:name=".MainActivity"

@@ -1,4 +1,4 @@
-:root {
+#field-reports {
     color-scheme: light dark;
     font:
         16px/1.5 system-ui,
@@ -11,7 +11,7 @@
     --accent: #a54811;
 }
 @media (prefers-color-scheme: dark) {
-    :root {
+    #field-reports {
         --page: #201710;
         --surface: #332319;
         --ink: #fff4e8;
@@ -25,152 +25,158 @@
 *::after {
     box-sizing: border-box;
 }
-body {
+body.field-reports-open {
     margin: 0;
-    background: var(--page);
-    color: var(--ink);
+    background: #f6f4f0;
 }
-main {
+@media (prefers-color-scheme: dark) {
+    body.field-reports-open {
+        background: #201710;
+    }
+}
+#field-reports {
+    color: var(--ink);
     max-width: 46rem;
     margin: auto;
     padding: 1rem 1rem max(2rem, env(safe-area-inset-bottom));
 }
-section {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 1rem;
-    padding: 1rem;
-    margin-block: 1rem;
-}
-h1 {
-    font-size: clamp(1.55rem, 7vw, 2rem);
-    line-height: 1.2;
-    margin: 0;
-}
-h2 {
-    font-size: 1.12rem;
-    margin: 0;
-}
-p {
-    margin-block: 0.4rem;
-    overflow-wrap: anywhere;
-}
-.eyebrow {
-    color: var(--muted);
-    font-size: 0.8rem;
-    font-weight: 700;
-}
-#connection {
-    color: var(--muted);
-    font-weight: 600;
-}
-#message:not(:empty) {
-    background: var(--surface);
-    border-inline-start: 3px solid var(--accent);
-    padding: 0.7rem;
-}
-form {
-    display: grid;
-    gap: 0.9rem;
-    margin-block: 1rem;
-}
-label {
-    display: grid;
-    gap: 0.3rem;
-    min-width: 0;
-}
-input,
-select,
-textarea,
-button {
-    font: inherit;
-    min-height: 44px;
-}
-input,
-select,
-textarea {
-    background: var(--surface);
-    color: var(--ink);
-    border: 1px solid var(--line);
-    border-radius: 0.55rem;
-    width: 100%;
-    padding: 0.45rem;
-}
-button {
-    border: 1px solid transparent;
-    border-radius: 0.55rem;
-    font-weight: 650;
-    background: var(--accent);
-    color: #fff;
-    padding: 0.45rem 0.8rem;
-}
-button:disabled {
-    opacity: 0.55;
-}
-button.secondary {
-    border-color: var(--line);
-    color: var(--ink);
-    background: var(--surface);
-}
-:focus-visible {
-    outline: 2px solid #c76e36;
-    outline-offset: 2px;
-}
-.fields {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 135px), 1fr));
-    gap: 0.6rem;
-}
-.check {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.6rem;
-}
-.check input {
-    width: 1.3rem;
-    min-height: 1.3rem;
-    margin-top: 0.22rem;
-    flex: none;
-}
-.title-row,
-.actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.65rem;
-    justify-content: space-between;
-    align-items: center;
-}
-.actions {
-    justify-content: flex-start;
-    margin-block: 0.8rem;
-}
-details {
-    margin-block: 0.8rem;
-}
-summary {
-    cursor: pointer;
-    min-height: 44px;
-    align-content: center;
-}
-ul {
-    padding: 0;
-    list-style: none;
-}
-li {
-    border-top: 1px solid var(--line);
-    padding-block: 0.65rem;
-    overflow-wrap: anywhere;
-}
-li button,
-li a {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-    margin-inline-end: 0.5rem;
-}
-a {
-    color: var(--ink);
-}
-[hidden] {
-    display: none !important;
+#field-reports {
+    section {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 1rem;
+        padding: 1rem;
+        margin-block: 1rem;
+    }
+    h1 {
+        font-size: clamp(1.55rem, 7vw, 2rem);
+        line-height: 1.2;
+        margin: 0;
+    }
+    h2 {
+        font-size: 1.12rem;
+        margin: 0;
+    }
+    p {
+        margin-block: 0.4rem;
+        overflow-wrap: anywhere;
+    }
+    .eyebrow {
+        color: var(--muted);
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+    #message:not(:empty) {
+        background: var(--surface);
+        border-inline-start: 3px solid var(--accent);
+        padding: 0.7rem;
+    }
+    form {
+        display: grid;
+        gap: 0.9rem;
+        margin-block: 1rem;
+    }
+    label {
+        display: grid;
+        gap: 0.3rem;
+        min-width: 0;
+    }
+    input,
+    select,
+    textarea,
+    button {
+        font: inherit;
+        min-height: 44px;
+    }
+    input,
+    select,
+    textarea {
+        background: var(--surface);
+        color: var(--ink);
+        border: 1px solid var(--line);
+        border-radius: 0.55rem;
+        width: 100%;
+        padding: 0.45rem;
+    }
+    button {
+        border: 1px solid transparent;
+        border-radius: 0.55rem;
+        font-weight: 650;
+        background: var(--accent);
+        color: #fff;
+        padding: 0.45rem 0.8rem;
+    }
+    button:disabled {
+        opacity: 0.55;
+    }
+    button.secondary {
+        border-color: var(--line);
+        color: var(--ink);
+        background: var(--surface);
+    }
+    :focus-visible {
+        outline: 2px solid #c76e36;
+        outline-offset: 2px;
+    }
+    .fields {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 135px), 1fr));
+        gap: 0.6rem;
+    }
+    .check {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.6rem;
+    }
+    .check input {
+        width: 1.3rem;
+        min-height: 1.3rem;
+        margin-top: 0.22rem;
+        flex: none;
+    }
+    .title-row,
+    .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .actions {
+        justify-content: flex-start;
+        margin-block: 0.8rem;
+    }
+    details {
+        margin-block: 0.8rem;
+    }
+    summary {
+        cursor: pointer;
+        min-height: 44px;
+        align-content: center;
+    }
+    ul {
+        padding: 0;
+        list-style: none;
+    }
+    li {
+        border-top: 1px solid var(--line);
+        padding-block: 0.65rem;
+        overflow-wrap: anywhere;
+    }
+    li button,
+    li a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        margin-inline-end: 0.5rem;
+    }
+    a {
+        color: var(--ink);
+    }
+    #offline-mode {
+        border: 1px solid var(--line);
+        border-radius: 0.6rem;
+        background: var(--surface);
+        padding: 0.7rem;
+    }
 }
