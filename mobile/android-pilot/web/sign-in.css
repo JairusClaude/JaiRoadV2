@@ -372,3 +372,60 @@ form {
         }
     }
 }
+
+html,
+body {
+    overscroll-behavior: none;
+}
+.auth-sheet {
+    color: inherit;
+    position: fixed;
+    inset: auto 0 0;
+    margin: 0 auto;
+    width: min(100%, 580px);
+    max-width: 100%;
+    max-height: calc(100dvh - 22px);
+    overflow: auto;
+    overscroll-behavior: contain;
+    border: 0;
+    padding: 0 clamp(16px, 6vw, 32px) max(16px, env(safe-area-inset-bottom));
+}
+.auth-sheet::backdrop {
+    background: rgb(34 21 14 / 35%);
+}
+.auth-sheet .panel-top {
+    margin-block: 0 10px;
+}
+.drag-handle {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 38px;
+    border: 0;
+    background: transparent;
+    touch-action: none;
+    cursor: grab;
+}
+.drag-handle::before {
+    content: '';
+    width: 36px;
+    height: 4px;
+    background: currentColor;
+    opacity: 0.3;
+    border-radius: 99px;
+}
+.auth-sheet[open] {
+    animation: none;
+}
+@media (orientation: landscape) and (max-height: 530px) {
+    .auth-sheet {
+        border-radius: 20px 20px 0 0;
+        padding-bottom: max(10px, env(safe-area-inset-bottom));
+    }
+    .auth-sheet .panel-top {
+        display: none;
+    }
+    .drag-handle {
+        height: 24px;
+    }
+}

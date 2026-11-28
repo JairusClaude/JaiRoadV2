@@ -1,6 +1,8 @@
 import { router } from '@inertiajs/react';
+import { WifiOff } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { toast } from 'sonner';
 import '../../../css/jairoads-navigation-ux.css';
 
 /**
@@ -216,4 +218,62 @@ export function JaiRoadsNavigationFeedback() {
         : message === 'loading'
           ? null
           : indicator;
+}
+
+export function AndroidFieldFeedback() {
+    const [offline, setOffline] = useState(false);
+
+    useEffect(() => {
+        if (!navigator.userAgent.includes('JaiROADSField/')) {
+            return;
+        }
+
+        const update = () => {
+            const workspace = document.querySelector(
+                '.jr-engineer-workspace, .jr-viewer-workspace, .jr-admin-workspace, .jr-superadmin-workspace',
+            );
+            const show = Boolean(workspace) && !navigator.onLine;
+            document.body.classList.toggle('jr-android-hosted-offline', show);
+            setOffline(show);
+        };
+        const offNavigate = router.on('navigate', () =>
+            requestAnimationFrame(update),
+        );
+        update();
+        window.addEventListener('online', update);
+        window.addEventListener('offline', update);
+        const stopRawError = router.on('httpException', (event) => {
+            const status = event.detail.response.status;
+
+            if (status >= 500 || status === 419 || status === 401) {
+                toast.error(
+                    status === 401 || status === 419
+                        ? 'Your online session expired. Your local field work is still available.'
+                        : 'JaiROADS could not complete that request. Try again when the server is available.',
+                    { id: 'jr-android-request-error' },
+                );
+
+                return false;
+            }
+        });
+
+        return () => {
+            offNavigate();
+            stopRawError();
+            window.removeEventListener('online', update);
+            window.removeEventListener('offline', update);
+            document.body.classList.remove('jr-android-hosted-offline');
+        };
+    }, []);
+
+    if (!offline) {
+        return null;
+    }
+
+    return createPortal(
+        <div className="jr-android-hosted-banner" role="status">
+            <WifiOff size={17} aria-hidden="true" /> Offline Mode
+        </div>,
+        document.body,
+    );
 }

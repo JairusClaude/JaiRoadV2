@@ -2,7 +2,10 @@ import { createInertiaApp } from '@inertiajs/react';
 import { lazy, Suspense, useEffect } from 'react';
 import '../css/jairoads-role-components.css';
 import '../css/jairoads-dark-appearance.css';
-import { JaiRoadsNavigationFeedback } from '@/components/jairoads/navigation-feedback';
+import {
+    AndroidFieldFeedback,
+    JaiRoadsNavigationFeedback,
+} from '@/components/jairoads/navigation-feedback';
 import { RenderErrorBoundary } from '@/components/jairoads/render-error-boundary';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -129,6 +132,7 @@ void createInertiaApp({
                 </RenderErrorBoundary>
                 <DismissStartupMessage />
                 <JaiRoadsNavigationFeedback />
+                <AndroidFieldFeedback />
                 <Toaster />
             </TooltipProvider>
         );

@@ -18,7 +18,7 @@ const encode = (bytes) =>
 const decode = (value) =>
     Uint8Array.from(atob(value), (character) => character.charCodeAt(0));
 
-async function keyFor(passphrase, salt, usage) {
+export async function keyFor(passphrase, salt, usage) {
     if (passphrase.length < 12 || passphrase.length > 256) {
         throw new Error('Use a draft passphrase of 12 to 256 characters.');
     }

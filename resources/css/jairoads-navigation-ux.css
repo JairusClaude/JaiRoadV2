@@ -419,3 +419,26 @@ html.jr-reduce-motion :is(.jr-quick-search, .jr-quick-refresh) {
         font-size: 11px;
     }
 }
+
+.jr-android-hosted-offline {
+    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom));
+}
+
+.jr-android-hosted-offline :is(main.jr-content, main.jr-responsive-main) {
+    padding-bottom: max(3.5rem, env(safe-area-inset-bottom));
+}
+
+.jr-android-hosted-banner {
+    position: fixed;
+    z-index: 30;
+    inset: auto 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    padding: 9px 16px max(9px, env(safe-area-inset-bottom));
+    color: var(--primary-foreground);
+    background: var(--primary);
+    font-size: 0.86rem;
+    font-weight: 650;
+}

@@ -1,9 +1,9 @@
-# JaiROADS Android field pilot
+# JaiROADS Android field workspace
 
-The APK opens a bundled sign-in page. It authenticates online through Fortify on the dedicated Render pilot. Install the Offline Pilot alongside the earlier Field Pilot to keep access to drafts saved by that app.
+Install the Field Review APK alongside earlier pilot builds. It opens the bundled introduction and sign-in sheet, then uses the JaiROADS review service and its normal account credentials. The install has a separate data directory. Drafts from older pilot builds remain in those apps.
 
-Sign in online once on the phone to cache assigned records automatically. When offline, use the same email and password to unlock that account's encrypted workspace. The Offline mode notice appears above cached records and draft reports. Admin and SuperAdmin dashboards require a connection. Viewer access to its cached workspace is read-only.
+Online sign-in downloads recent authorized work. Sign in with the same credentials on the same phone in airplane mode to open the encrypted workspace. Engineers can save and edit roads, projects, records, and monthly text reports locally, with manual coordinates when maps are unavailable. The app automatically tries to sync at reconnect, resume, and intervals while open. Retry uses the original operation ID until Laravel confirms the database transaction. Review unresolved conflicts before retrying. Viewer access is read-only.
 
-Engineers can queue monthly text reports for existing assigned maintenance records. Queued reports sync after reconnecting while the workspace is open and the pilot session is valid. Sign in online again if the session has expired. The server rechecks the account and assignment before accepting a report. An uncertain submission is checked through its receipt. Sync only runs in the foreground.
+Supported files can be attached locally to the workspace. Upload them through the online private Storage workflow. Cached road alignments over 32 KiB are retained on the server and must be edited in the online map. Admin and SuperAdmin use the online dashboard.
 
-On a pilot phone, sign in online as an Engineer, activate airplane mode, lock the workspace, then sign in with the same credentials. Confirm Offline mode appears and save a report for an assigned record. Lock and reopen while still offline to confirm the draft persists. Reconnect and check that one report is recorded.
+The review service enables field routes with `JAIROADS_ANDROID_FIELD_ENABLED=true` and uses the private schema in `database/proposals/android_field_receipts.sql`. The APK includes neither database credentials nor Supabase API keys.

@@ -180,3 +180,57 @@ body.field-reports-open {
         padding: 0.7rem;
     }
 }
+
+#field-reports {
+    --accent: var(--primary, var(--ink));
+}
+#field-reports.has-field-banner {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+}
+#field-tabs,
+#field-inputs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+#field-inputs {
+    flex-direction: column;
+}
+#field-tabs button[aria-pressed='true'] {
+    color: var(--primary-foreground);
+    background: var(--primary);
+}
+#field-banner {
+    position: fixed;
+    z-index: 10;
+    inset: auto 0 0;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 9px 16px max(9px, env(safe-area-inset-bottom));
+    color: var(--primary-foreground);
+    background: var(--primary);
+    font-size: 0.86rem;
+    font-weight: 650;
+}
+#field-banner svg {
+    flex: none;
+}
+#discard-field-dialog {
+    max-width: min(24rem, calc(100vw - 24px));
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+}
+#discard-field-dialog::backdrop {
+    background: rgb(0 0 0 / 40%);
+}
+#field-message,
+#field-error {
+    padding: 0.55rem 0.75rem;
+    border-inline-start: 3px solid var(--primary);
+    background: var(--surface);
+}

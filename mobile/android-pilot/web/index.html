@@ -27,16 +27,23 @@
                         <small>Road infrastructure management</small>
                     </div>
                 </div>
-                <button type="button" class="outline" id="explore">
-                    Explore <span aria-hidden="true">→</span>
-                </button>
                 <div class="landscape" aria-hidden="true"></div>
             </header>
-            <main class="panel" id="sign-in-panel">
+            <dialog
+                class="panel auth-sheet"
+                id="sign-in-panel"
+                aria-labelledby="sign-in-title"
+            >
+                <button
+                    id="drag-handle"
+                    class="drag-handle"
+                    type="button"
+                    aria-label="Back to preview"
+                ></button>
                 <div class="panel-top">
                     <span>Secure workspace</span>
                 </div>
-                <h1>Welcome back</h1>
+                <h1 id="sign-in-title">Welcome back</h1>
                 <p class="description">Sign in to your JaiROADS workspace.</p>
                 <form
                     id="credentials"
@@ -121,12 +128,11 @@
                     Use only on a private, trusted device.
                 </p>
                 <p class="note">Need help? Contact your administrator.</p>
-            </main>
+            </dialog>
             <section
                 id="showcase"
                 class="showcase"
-                aria-label="Explore JaiROADS"
-                hidden
+                aria-label="JaiROADS preview"
             >
                 <div class="photo"><img id="slide-image" alt="" /></div>
                 <div class="caption" aria-live="polite">
@@ -159,82 +165,94 @@
             </section>
         </div>
         <main id="field-reports" tabindex="-1" hidden>
-            <header>
-                <p class="eyebrow">Android staging pilot</p>
-                <h1>JaiROADS Field Reports</h1>
-                <p id="offline-mode" role="status" hidden>
-                    <strong>Offline mode</strong> · Cached records and monthly
-                    report drafts are available.
-                </p>
+            <header class="title-row">
+                <div>
+                    <p class="eyebrow" id="workspace-role"></p>
+                    <h1>Field workspace</h1>
+                </div>
+                <button type="button" id="lock" class="secondary">
+                    Lock workspace
+                </button>
             </header>
-            <p id="message" role="status" aria-live="polite"></p>
-            <section id="workspace">
+            <p id="field-message" role="status" hidden></p>
+            <nav id="field-tabs" aria-label="Field workspace">
+                <button type="button" class="secondary" data-tab="project">
+                    Projects
+                </button>
+                <button type="button" class="secondary" data-tab="record">
+                    Records
+                </button>
+                <button type="button" class="secondary" data-tab="road">
+                    Road coverage
+                </button>
+                <button type="button" class="secondary" data-tab="monthly">
+                    Reports
+                </button>
+                <button type="button" class="secondary" data-tab="files">
+                    Files
+                </button>
+            </nav>
+            <section id="field-directory">
                 <div class="title-row">
-                    <div>
-                        <h2 id="workspace-title">Offline workspace</h2>
-                        <p id="scope"></p>
-                    </div>
-                    <button type="button" id="lock" class="secondary">
-                        Lock workspace
-                    </button>
+                    <h2 id="directory-title"></h2>
+                    <button type="button" id="new-field-item"></button>
                 </div>
-                <div class="actions">
-                    <a id="online-dashboard" href="/dashboard"
-                        >Online dashboard</a
-                    >
-                    <button type="button" id="cache" class="secondary">
-                        Refresh cached records
-                    </button>
-                    <button type="button" id="sync">Sync now</button>
-                </div>
-                <details id="records">
-                    <summary>Cached maintenance records</summary>
-                    <ul id="record-list"></ul>
-                </details>
-                <form id="report" hidden>
-                    <h2>New field report</h2>
-                    <label
-                        >Maintenance record<select
-                            name="record"
-                            required
-                        ></select
-                    ></label>
-                    <div class="fields">
-                        <label
-                            >Reporting month<input
-                                name="month"
-                                type="month"
-                                required
-                        /></label>
-                        <label
-                            >Progress (%)<input
-                                name="progress"
-                                type="number"
-                                min="0"
-                                max="100"
-                                step="0.01"
-                                inputmode="decimal"
-                                required
-                        /></label>
-                    </div>
-                    <label
-                        >Report notes<textarea
-                            name="summary"
-                            rows="4"
-                            maxlength="20000"
-                        ></textarea>
-                    </label>
-                    <label class="check"
-                        ><input type="checkbox" name="consent" required />Send
-                        this saved report when connectivity returns while the
-                        workspace is unlocked.</label
-                    >
-                    <button>Save on this phone</button>
-                </form>
-                <h2>Reports on this phone</h2>
-                <p id="empty">No queued reports.</p>
-                <ul id="entries"></ul>
+                <ul id="field-items"></ul>
             </section>
+            <section id="field-editor" hidden>
+                <h2 id="editor-title"></h2>
+                <form id="field-form">
+                    <div id="field-inputs"></div>
+                    <p id="field-error" role="alert" hidden></p>
+                    <div class="actions">
+                        <button type="submit">Save locally</button>
+                        <button
+                            type="button"
+                            class="secondary"
+                            id="cancel-edit"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </section>
+            <section id="field-outbox" hidden>
+                <h2>Pending synchronization</h2>
+                <ul id="field-pending"></ul>
+            </section>
+            <a id="online-dashboard" href="/dashboard">Online dashboard</a>
+            <footer id="field-banner" role="status" aria-live="polite" hidden>
+                <svg
+                    id="field-wifi-off"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    aria-hidden="true"
+                >
+                    <path
+                        d="m3 3 18 18M2 8c.7-.6 1.4-1.2 2.2-1.6M9 4.4A16 16 0 0 1 22 8M5 12.5a11 11 0 0 1 3.2-2M13.5 10.1a11 11 0 0 1 5.5 2.4M8.5 16a6 6 0 0 1 7 0M12 20h.01"
+                    />
+                </svg>
+                <span id="field-banner-text"></span>
+            </footer>
+            <dialog
+                id="discard-field-dialog"
+                aria-labelledby="discard-field-title"
+            >
+                <h2 id="discard-field-title">Discard unsaved changes?</h2>
+                <p>
+                    Changes already saved on this device will remain available.
+                </p>
+                <form method="dialog" class="actions">
+                    <button class="secondary" value="keep" autofocus>
+                        Keep editing
+                    </button>
+                    <button value="discard">Discard changes</button>
+                </form>
+            </dialog>
         </main>
     </body>
 </html>

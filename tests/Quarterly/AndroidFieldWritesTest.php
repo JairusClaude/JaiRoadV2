@@ -1,0 +1,83 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Quarterly;
+
+use Illuminate\Support\Facades\DB;
+
+final class AndroidFieldWritesTest extends PostgresTestCase
+{
+    private const URL = '/workspace/ui/android-field';
+
+    public function test_field_operations_commit_with_receipts_and_reject_stale_edits(): void
+    {
+        $fixture = $this->fixture('Engineer');
+        $account = (int) $fixture['user']->canonical_user_account_id;
+        $this->getJson(self::URL.'/workspace')->assertNotFound();
+        config(['jairoads_monthly_updates.android_field_enabled' => true]);
+        $this->getJson(self::URL.'/workspace')->assertOk()->assertJsonPath('canSync', false);
+
+        DB::unprepared(<<<'SQL'
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'jairoads_app_runtime') THEN
+                    CREATE ROLE jairoads_app_runtime;
+                END IF;
+                IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'anon') THEN
+                    CREATE ROLE anon;
+                END IF;
+                IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'authenticated') THEN
+                    CREATE ROLE authenticated;
+                END IF;
+            END $$;
+            SQL);
+        $sql = file_get_contents(base_path('database/proposals/android_field_receipts.sql'));
+        $this->assertIsString($sql);
+        DB::unprepared(str_replace(["BEGIN;\n", "COMMIT;\n"], '', $sql));
+
+        $operation = [
+            'account_id' => $account,
+            'operation_id' => '104b840c-6914-4d85-8dd6-d677d41aa946',
+            'kind' => 'road',
+            'fields' => [
+                'road_name' => 'Offline fixture road',
+                'lgu_id' => (int) DB::table('jairoads_next.road_coverages')->where('id', $fixture['road'])->value('lgu_id'),
+                'kilometers' => '1.50',
+                'pavement_type' => 'Concrete',
+                'state_category' => 'Good',
+                'geojson' => '{"type":"LineString","coordinates":[[123,10],[123.01,10.01]]}',
+            ],
+        ];
+        $saved = $this->postJson(self::URL.'/operations', $operation)->assertOk()->json();
+        $this->postJson(self::URL.'/operations', $operation)->assertOk()->assertExactJson($saved);
+        $this->postJson(self::URL.'/operations', array_replace($operation, [
+            'fields' => array_replace($operation['fields'], ['kilometers' => '2.50']),
+        ]))->assertConflict();
+        $this->assertSame(1, DB::table('jairoads_next.road_coverages')->where('road_name', 'Offline fixture road')->count());
+
+        $project = [
+            'account_id' => $account,
+            'operation_id' => 'b1bbdeb4-4797-4d13-8d8b-7af44340da32',
+            'kind' => 'project',
+            'fields' => ['project_title' => 'Offline fixture project', 'road_coverage_id' => $saved['id'], 'description' => 'Fieldwork'],
+        ];
+        $savedProject = $this->postJson(self::URL.'/operations', $project)->assertOk()->json();
+        $this->postJson(self::URL.'/operations', [
+            'account_id' => $account,
+            'operation_id' => '45ecdd55-caaf-4fb0-a9f9-479eff532f26',
+            'kind' => 'record',
+            'fields' => [
+                'project_id' => $savedProject['id'], 'maintenance_year' => 2026, 'quarter' => 'Q1',
+                'start_date' => '2026-01-01', 'estimated_duration_days' => 5, 'status' => 'Ongoing',
+            ],
+        ])->assertOk();
+        $this->getJson(self::URL.'/workspace')->assertOk()->assertJsonPath('canSync', true)
+            ->assertJsonPath('records.0.project_id', $savedProject['id']);
+        $this->postJson(self::URL.'/operations', array_replace($project, [
+            'operation_id' => 'bf176a01-defc-4931-bc4c-ce9ed79b29b0', 'id' => $savedProject['id'], 'version' => 'stale',
+        ]))->assertConflict();
+        $this->postJson(self::URL.'/operations', array_replace($project, ['account_id' => $account + 100]))->assertForbidden();
+        $this->assertSame(3, DB::table('jairoads_security.android_field_receipts')->count());
+    }
+}

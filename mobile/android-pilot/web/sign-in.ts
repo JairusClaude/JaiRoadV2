@@ -1,4 +1,5 @@
 import { loadWorkspace, RequestError, Vault } from './queue';
+import { bindSignInSheet } from './sign-in-sheet';
 import './sign-in.css';
 
 const element = <T extends HTMLElement>(id: string) =>
@@ -9,10 +10,9 @@ const email = element<HTMLInputElement>('email');
 const password = element<HTMLInputElement>('password');
 const showPassword = element<HTMLButtonElement>('show-password');
 const status = element('sign-in-status');
-const explore = element<HTMLButtonElement>('explore');
-const showcase = element('showcase');
 
 let signingIn = false;
+const sheet = bindSignInSheet(() => signingIn);
 
 if (location.hash) {
     history.replaceState(null, '', location.pathname);
@@ -136,6 +136,7 @@ async function authenticate(
 async function openWorkspace(vault: Vault, offline: boolean) {
     const { openFieldReports } = await import('./main');
     password.value = '';
+    sheet.close();
     openFieldReports(vault, offline);
 }
 
@@ -250,10 +251,7 @@ const slides = [
             'Coordinate roadway rehabilitation and keep essential infrastructure information in one place.',
     },
     {
-        image: new URL(
-            '../../../public/images/jairoads/road-mapping-fallback.svg',
-            import.meta.url,
-        ).href,
+        image: new URL('./road-mapping.jpg', import.meta.url).href,
         label: 'Road mapping',
         title: 'Every road has a story to tell.',
         description:
@@ -291,21 +289,9 @@ function showSlide(index: number) {
         activeSlide + 1 + ' / ' + slides.length;
 }
 
-explore.addEventListener('click', () => {
-    element('sign-in-panel').hidden = true;
-    explore.hidden = true;
-    showcase.hidden = false;
-    showSlide(activeSlide);
-    element('continue').focus({ preventScroll: true });
-});
 element('previous').addEventListener('click', () => showSlide(activeSlide - 1));
 element('next').addEventListener('click', () => showSlide(activeSlide + 1));
-element('continue').addEventListener('click', () => {
-    showcase.hidden = true;
-    explore.hidden = false;
-    element('sign-in-panel').hidden = false;
-    email.focus({ preventScroll: true });
-});
+showSlide(1);
 window.addEventListener('online', renderConnection);
 window.addEventListener('offline', renderConnection);
 renderConnection();
