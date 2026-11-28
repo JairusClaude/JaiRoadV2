@@ -2,7 +2,7 @@ name: JaiROADS Android field pilot
 
 on:
   push:
-    branches: [Improvement1]
+    branches: [Improvement1, offline-expanded-qa-v052]
     paths:
       - 'mobile/android-pilot/**'
       - '.github/workflows/android-field-pilot.yml'
@@ -13,6 +13,11 @@ on:
       - 'public/images/**'
       - 'vite.config.ts'
   workflow_dispatch:
+    inputs:
+      require_stable_signing:
+        description: Require the organization's stable signing certificate
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -21,6 +26,7 @@ jobs:
   apk:
     name: Build internal Android pilot APK
     runs-on: ubuntu-24.04
+    timeout-minutes: 25
     env:
       APP_ENV: testing
       APP_KEY: base64:MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
@@ -52,23 +58,68 @@ jobs:
           npx tsc --project mobile/android-pilot/tsconfig.json
           npm run build -- --mode review
       - run: node mobile/android-pilot/package-workspace.mjs
+      - name: Prepare real offline maps from open geographic source data
+        run: |
+          python3 -m venv /tmp/jairoads-maps
+          /tmp/jairoads-maps/bin/pip install --disable-pip-version-check requests numpy pillow rasterio shapely osmium
+          /tmp/jairoads-maps/bin/python mobile/android-pilot/build-open-map-packs.py
+      - name: Verify source and map asset hashes
+        run: |
+          node tests/Browser/offline-network-unit.mjs
+          python3 mobile/android-pilot/build-open-map-packs.py --verify-only
       - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
         with:
           packages: 'platforms;android-35 build-tools;35.0.0'
-      - name: Assemble and verify the debug APK
+      - name: Assemble APK and verify signing certificate
+        env:
+          ANDROID_KEYSTORE_B64: ${{ secrets.JAIROADS_ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.JAIROADS_ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.JAIROADS_ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.JAIROADS_ANDROID_KEY_PASSWORD }}
+          ANDROID_CERT_SHA256: ${{ secrets.JAIROADS_ANDROID_CERT_SHA256 }}
+          REQUIRE_STABLE: ${{ inputs.require_stable_signing || false }}
         run: |
+          set -euo pipefail
           gradle_archive="$RUNNER_TEMP/gradle-8.11.1-bin.zip"
           curl --fail --silent --show-error --location https://services.gradle.org/distributions/gradle-8.11.1-bin.zip -o "$gradle_archive"
           echo "f397b287023acdba1e9f6fc5ea72d22dd63669d59ed4a289a29b1a76eee151c6  $gradle_archive" | sha256sum --check
           unzip -q "$gradle_archive" -d "$RUNNER_TEMP"
-          "$RUNNER_TEMP/gradle-8.11.1/bin/gradle" --no-daemon -p mobile/android-pilot/android :app:assembleDebug
-          apk=mobile/android-pilot/android/app/build/outputs/apk/debug/app-debug.apk
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$apk"
+          gradle="$RUNNER_TEMP/gradle-8.11.1/bin/gradle"
+          signer="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          mkdir -p mobile/android-pilot/build/delivery
+          apk=mobile/android-pilot/build/delivery/JaiROADS.apk
+          if [[ -n "$ANDROID_KEYSTORE_B64" || -n "$ANDROID_KEYSTORE_PASSWORD" || -n "$ANDROID_KEY_ALIAS" || -n "$ANDROID_KEY_PASSWORD" || -n "$ANDROID_CERT_SHA256" || "$REQUIRE_STABLE" == true ]]; then
+            if [[ -z "$ANDROID_KEYSTORE_B64" || -z "$ANDROID_KEYSTORE_PASSWORD" || -z "$ANDROID_KEY_ALIAS" || -z "$ANDROID_KEY_PASSWORD" || -z "$ANDROID_CERT_SHA256" ]]; then
+              echo "Stable signing requested but the organization's signing configuration is incomplete."
+              exit 1
+            fi
+            keyfile=$(mktemp "$RUNNER_TEMP/jairoads-signing-XXXXXX.p12")
+            trap 'rm -f "$keyfile"' EXIT
+            chmod 600 "$keyfile"
+            printf '%s' "$ANDROID_KEYSTORE_B64" | base64 --decode > "$keyfile"
+            "$gradle" --no-daemon -p mobile/android-pilot/android :app:assembleRelease
+            "$signer" sign --ks "$keyfile" --ks-key-alias "$ANDROID_KEY_ALIAS" --ks-pass env:ANDROID_KEYSTORE_PASSWORD --key-pass env:ANDROID_KEY_PASSWORD --out "$apk" mobile/android-pilot/android/app/build/outputs/apk/release/app-release-unsigned.apk
+            actual=$("$signer" verify --print-certs "$apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+            expected=$(printf '%s' "$ANDROID_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')
+            if [[ "$actual" != "$expected" ]]; then
+              echo "Signing certificate does not match the pinned organization certificate."
+              exit 1
+            fi
+            echo "Stable release signing verified."
+          else
+            "$gradle" --no-daemon -p mobile/android-pilot/android :app:assembleDebug
+            cp mobile/android-pilot/android/app/build/outputs/apk/debug/app-debug.apk "$apk"
+            echo "::warning::Ephemeral debug signing is for review only; do not uninstall a prior app containing unsynced work."
+          fi
+          "$signer" verify --print-certs "$apk"
           unzip -l "$apk" | grep 'assets/index.html'
           unzip -l "$apk" | grep 'assets/workspace.html'
           unzip -l "$apk" | grep 'assets/site-build/manifest.json'
+          unzip -l "$apk" | grep 'assets/bundled-maps/road-network.json'
+          unzip -p "$apk" assets/bundled-maps/manifest.json | python3 -c 'import json,sys; m=json.load(sys.stdin); p=m["packs"]; assert {x["id"] for x in p} == {"ddo-streets","ddo-sentinel"}; assert m["network"]["bytes"] > 0; print([(x["id"], len(x["tiles"]), x["maxZoom"]) for x in p])'
+          sha256sum "$apk"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: JaiROADS-Android-Field-Pilot
-          path: mobile/android-pilot/android/app/build/outputs/apk/debug/app-debug.apk
+          path: mobile/android-pilot/build/delivery/JaiROADS.apk
           if-no-files-found: error

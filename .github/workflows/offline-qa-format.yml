@@ -1,0 +1,214 @@
+name: Offline review isolated QA and formatting
+on:
+  push:
+    branches: [offline-expanded-qa-v052]
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: jairoads_scratch_offline
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable-ci-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d jairoads_scratch_offline"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DB_DATABASE: jairoads_scratch_offline
+      DB_USERNAME: postgres
+      DB_PASSWORD: disposable-ci-only
+      DB_SSLMODE: disable
+      DB_URL: ''
+      JAIROADS_SCRATCH_APPROVAL: DISPOSABLE_LOCAL_ONLY
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      PAO_DISABLE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with:
+          php-version: '8.4'
+          extensions: 'pdo_pgsql, pdo_sqlite, mbstring'
+          tools: composer:v2
+          coverage: none
+      - run: |
+          bash scripts/ci/install-composer.sh
+          npm ci
+          touch .env
+          php artisan wayfinder:generate --with-form
+      - name: Apply existing project formatters (report files, no repository writes)
+        run: |
+          git diff --name-only dad0dfafd9e06c82fcf5c8ef84f8e0d50d015d28 HEAD -- app tests resources mobile > /tmp/offline-qa-paths
+          sort -u /tmp/offline-qa-paths -o /tmp/offline-qa-paths
+          grep -E '^(resources|mobile|tests/Browser)/.*\.(ts|tsx|mts|mjs) /tmp/offline-qa-paths | xargs -r npx eslint --fix || true
+          grep -E '^(resources|mobile|tests/Browser)/.*\.(ts|tsx|mts|mjs|css|html) /tmp/offline-qa-paths | xargs -r npx prettier --write
+          grep -E '^(app|tests)/.*\.php$' /tmp/offline-qa-paths | xargs -r vendor/bin/pint
+          git diff --name-only
+          python3 - <<'PY'
+          import pathlib,subprocess,base64
+          for path in subprocess.check_output(['git','diff','--name-only'],text=True).splitlines():
+              if not path.startswith(('resources/','mobile/','app/','tests/')):
+                  raise SystemExit('Unexpected formatter path '+path)
+              encoded=base64.b64encode(pathlib.Path(path).read_bytes()).decode()
+              for offset in range(0,len(encoded),3000):
+                  print('OFFLINE_FORMAT|'+path+'|'+str(offset)+'|'+encoded[offset:offset+3000])
+          PY
+      - name: Type checks
+        if: always()
+        run: |
+          npm run types:check
+          cat > /tmp/jairoads-mobile-tsconfig.json <<EOF
+          {"extends":"$PWD/tsconfig.json","include":["$PWD/mobile/android-pilot/web/**/*.ts","$PWD/resources/js/**/*.d.ts"],"compilerOptions":{"noEmit":true}}
+          EOF
+          npx tsc --project /tmp/jairoads-mobile-tsconfig.json
+          node tests/Browser/offline-network-unit.mjs
+      - name: Lint and formatting gates
+        if: always()
+        run: |
+          npm run lint:check
+          npm run format:check
+          vendor/bin/pint --test
+      - name: PHP static analysis
+        if: always()
+        run: composer types:check
+      - name: Build both frontend bundles
+        if: always()
+        run: |
+          npm run build -- --mode review
+          npx vite build --config mobile/android-pilot/vite.config.mjs
+          node mobile/android-pilot/package-workspace.mjs
+      - name: Disposable PostgreSQL offline receipt tests
+        if: always()
+        run: php artisan test tests/Quarterly/AndroidFieldWritesTest.php --stop-on-failure
+ /tmp/offline-qa-paths | xargs -r npx prettier --write
+          grep -E '^(app|tests)/.*\.php$' /tmp/offline-qa-paths | xargs -r vendor/bin/pint
+          git diff --name-only
+          python3 - <<'PY'
+          import pathlib,subprocess,base64
+          for path in subprocess.check_output(['git','diff','--name-only'],text=True).splitlines():
+              if not path.startswith(('resources/','mobile/','app/','tests/')):
+                  raise SystemExit('Unexpected formatter path '+path)
+              encoded=base64.b64encode(pathlib.Path(path).read_bytes()).decode()
+              for offset in range(0,len(encoded),3000):
+                  print('OFFLINE_FORMAT|'+path+'|'+str(offset)+'|'+encoded[offset:offset+3000])
+          PY
+      - name: Type checks
+        if: always()
+        run: |
+          npm run types:check
+          cat > /tmp/jairoads-mobile-tsconfig.json <<EOF
+          {"extends":"$PWD/tsconfig.json","include":["$PWD/mobile/android-pilot/web/**/*.ts","$PWD/resources/js/**/*.d.ts"],"compilerOptions":{"noEmit":true}}
+          EOF
+          npx tsc --project /tmp/jairoads-mobile-tsconfig.json
+      - name: Lint and formatting gates
+        if: always()
+        run: |
+          npm run lint:check
+          npm run format:check
+          vendor/bin/pint --test
+      - name: PHP static analysis
+        if: always()
+        run: composer types:check
+      - name: Build both frontend bundles
+        if: always()
+        run: |
+          npm run build -- --mode review
+          npx vite build --config mobile/android-pilot/vite.config.mjs
+          node mobile/android-pilot/package-workspace.mjs
+      - name: Disposable PostgreSQL offline receipt tests
+        if: always()
+        run: php artisan test tests/Quarterly/AndroidFieldWritesTest.php --stop-on-failure
+ /tmp/offline-qa-paths | xargs -r npx eslint --fix || true
+          grep -E '^(resources|mobile|tests/Browser)/.*\.(ts|tsx|mts|mjs|css|html) /tmp/offline-qa-paths | xargs -r npx prettier --write
+          grep -E '^(app|tests)/.*\.php$' /tmp/offline-qa-paths | xargs -r vendor/bin/pint
+          git diff --name-only
+          python3 - <<'PY'
+          import pathlib,subprocess,base64
+          for path in subprocess.check_output(['git','diff','--name-only'],text=True).splitlines():
+              if not path.startswith(('resources/','mobile/','app/','tests/')):
+                  raise SystemExit('Unexpected formatter path '+path)
+              encoded=base64.b64encode(pathlib.Path(path).read_bytes()).decode()
+              for offset in range(0,len(encoded),3000):
+                  print('OFFLINE_FORMAT|'+path+'|'+str(offset)+'|'+encoded[offset:offset+3000])
+          PY
+      - name: Type checks
+        if: always()
+        run: |
+          npm run types:check
+          cat > /tmp/jairoads-mobile-tsconfig.json <<EOF
+          {"extends":"$PWD/tsconfig.json","include":["$PWD/mobile/android-pilot/web/**/*.ts","$PWD/resources/js/**/*.d.ts"],"compilerOptions":{"noEmit":true}}
+          EOF
+          npx tsc --project /tmp/jairoads-mobile-tsconfig.json
+      - name: Lint and formatting gates
+        if: always()
+        run: |
+          npm run lint:check
+          npm run format:check
+          vendor/bin/pint --test
+      - name: PHP static analysis
+        if: always()
+        run: composer types:check
+      - name: Build both frontend bundles
+        if: always()
+        run: |
+          npm run build -- --mode review
+          npx vite build --config mobile/android-pilot/vite.config.mjs
+          node mobile/android-pilot/package-workspace.mjs
+      - name: Disposable PostgreSQL offline receipt tests
+        if: always()
+        run: php artisan test tests/Quarterly/AndroidFieldWritesTest.php --stop-on-failure
+ /tmp/offline-qa-paths | xargs -r npx prettier --write
+          grep -E '^(app|tests)/.*\.php$' /tmp/offline-qa-paths | xargs -r vendor/bin/pint
+          git diff --name-only
+          python3 - <<'PY'
+          import pathlib,subprocess,base64
+          for path in subprocess.check_output(['git','diff','--name-only'],text=True).splitlines():
+              if not path.startswith(('resources/','mobile/','app/','tests/')):
+                  raise SystemExit('Unexpected formatter path '+path)
+              encoded=base64.b64encode(pathlib.Path(path).read_bytes()).decode()
+              for offset in range(0,len(encoded),3000):
+                  print('OFFLINE_FORMAT|'+path+'|'+str(offset)+'|'+encoded[offset:offset+3000])
+          PY
+      - name: Type checks
+        if: always()
+        run: |
+          npm run types:check
+          cat > /tmp/jairoads-mobile-tsconfig.json <<EOF
+          {"extends":"$PWD/tsconfig.json","include":["$PWD/mobile/android-pilot/web/**/*.ts","$PWD/resources/js/**/*.d.ts"],"compilerOptions":{"noEmit":true}}
+          EOF
+          npx tsc --project /tmp/jairoads-mobile-tsconfig.json
+      - name: Lint and formatting gates
+        if: always()
+        run: |
+          npm run lint:check
+          npm run format:check
+          vendor/bin/pint --test
+      - name: PHP static analysis
+        if: always()
+        run: composer types:check
+      - name: Build both frontend bundles
+        if: always()
+        run: |
+          npm run build -- --mode review
+          npx vite build --config mobile/android-pilot/vite.config.mjs
+          node mobile/android-pilot/package-workspace.mjs
+      - name: Disposable PostgreSQL offline receipt tests
+        if: always()
+        run: php artisan test tests/Quarterly/AndroidFieldWritesTest.php --stop-on-failure
