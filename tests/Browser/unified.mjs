@@ -1458,7 +1458,10 @@ try {
     await engineer.goto(
         `${ui}/monthly-updates/create?maintenance_id=${record.id}`,
     );
-    await engineer.getByLabel(/^Reporting Month/).click();
+    lastPage = engineer;
+    await engineer
+        .getByRole('button', { name: 'Select month and year', exact: true })
+        .click();
     await engineer
         .getByRole('button', { name: 'April 2026', exact: true })
         .click();
@@ -2328,4 +2331,3 @@ try {
     await browser.close();
     await storage.close();
 }
-
