@@ -422,7 +422,9 @@ export function MonthlyUpdateDirectory({
                                         >
                                             {!selecting && canWrite && (
                                                 <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
+                                                    <DropdownMenuTrigger
+                                                        asChild
+                                                    >
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
@@ -464,7 +466,8 @@ export function MonthlyUpdateDirectory({
                                                             }
                                                         >
                                                             <Trash2 className="size-4" />
-                                                            Delete Monthly Update
+                                                            Delete Monthly
+                                                            Update
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>

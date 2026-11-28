@@ -219,9 +219,14 @@ export default function Index({
                 >
                     <table className="jr-table jr-document-table">
                         <colgroup>
-                            {[isViewer ? 34 : 27, 24, 16, 12, 14].map((width, i) => (
-                                <col key={i} style={{ width: `${width}%` }} />
-                            ))}
+                            {[isViewer ? 34 : 27, 24, 16, 12, 14].map(
+                                (width, i) => (
+                                    <col
+                                        key={i}
+                                        style={{ width: `${width}%` }}
+                                    />
+                                ),
+                            )}
                             {!isViewer && <col style={{ width: '7%' }} />}
                         </colgroup>
                         <thead>
@@ -346,7 +351,9 @@ export default function Index({
                                         >
                                             {!selecting && enabled && (
                                                 <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
+                                                    <DropdownMenuTrigger
+                                                        asChild
+                                                    >
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
@@ -391,7 +398,9 @@ export default function Index({
                                                                     : !enabled
                                                             }
                                                             onSelect={() =>
-                                                                deletion.open([doc])
+                                                                deletion.open([
+                                                                    doc,
+                                                                ])
                                                             }
                                                         >
                                                             <Trash2 />

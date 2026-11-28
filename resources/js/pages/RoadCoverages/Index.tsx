@@ -686,11 +686,17 @@ export default function Index({
                                             width: selecting ? '27%' : '30%',
                                         }}
                                     />
-                                    <col style={{ width: isViewer ? '26%' : '19%' }} />
+                                    <col
+                                        style={{
+                                            width: isViewer ? '26%' : '19%',
+                                        }}
+                                    />
                                     <col style={{ width: '12%' }} />
                                     <col style={{ width: '16%' }} />
                                     <col style={{ width: '16%' }} />
-                                    {!isViewer && <col style={{ width: '7%' }} />}
+                                    {!isViewer && (
+                                        <col style={{ width: '7%' }} />
+                                    )}
                                 </colgroup>
                                 <thead>
                                     <tr>
@@ -728,7 +734,9 @@ export default function Index({
                                         <th>Pavement Type</th>
                                         <th>Road Condition</th>
                                         {!isViewer && (
-                                            <th className="text-right">Actions</th>
+                                            <th className="text-right">
+                                                Actions
+                                            </th>
                                         )}
                                     </tr>
                                 </thead>
@@ -854,7 +862,8 @@ export default function Index({
                                                                         }
                                                                     >
                                                                         <Pencil />
-                                                                        Edit Road
+                                                                        Edit
+                                                                        Road
                                                                         Coverage
                                                                     </DropdownMenuItem>
                                                                     <DropdownMenuItem
@@ -882,7 +891,8 @@ export default function Index({
                                                                         }}
                                                                     >
                                                                         <Trash2 className="size-4" />
-                                                                        Delete Road
+                                                                        Delete
+                                                                        Road
                                                                         Coverage
                                                                     </DropdownMenuItem>
                                                                 </DropdownMenuContent>

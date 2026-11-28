@@ -351,9 +351,14 @@ export function RecordDirectory({
             >
                 <table className="jr-table">
                     <colgroup>
-                        {[isViewer ? 35 : 27, 12, 9, 10, 14, 20].map((width, index) => (
-                            <col key={index} style={{ width: `${width}%` }} />
-                        ))}
+                        {[isViewer ? 35 : 27, 12, 9, 10, 14, 20].map(
+                            (width, index) => (
+                                <col
+                                    key={index}
+                                    style={{ width: `${width}%` }}
+                                />
+                            ),
+                        )}
                         {!isViewer && <col style={{ width: '8%' }} />}
                     </colgroup>
                     <thead>
@@ -509,7 +514,9 @@ export function RecordDirectory({
                                 {!isViewer && (
                                     <td
                                         className="text-right"
-                                        onClick={(event) => event.stopPropagation()}
+                                        onClick={(event) =>
+                                            event.stopPropagation()
+                                        }
                                     >
                                         {!isViewer && !selecting && (
                                             <DropdownMenu>
@@ -532,7 +539,8 @@ export function RecordDirectory({
                                                 >
                                                     <DropdownMenuItem
                                                         disabled={
-                                                            !record.edit_url || busy
+                                                            !record.edit_url ||
+                                                            busy
                                                         }
                                                         onSelect={() =>
                                                             record.edit_url &&
@@ -558,7 +566,8 @@ export function RecordDirectory({
                                                         }
                                                     >
                                                         <Trash2 className="size-4" />
-                                                        Delete Maintenance Record
+                                                        Delete Maintenance
+                                                        Record
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>

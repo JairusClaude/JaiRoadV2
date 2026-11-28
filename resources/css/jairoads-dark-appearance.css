@@ -268,7 +268,10 @@ html.dark .jr-app .jr-metric-card .jr-metric-value {
     color: var(--jr-dark-text);
 }
 
-html.dark .jr-app .jr-metric-card :is(.jr-metric-label, .jr-metric-description) {
+html.dark
+    .jr-app
+    .jr-metric-card
+    :is(.jr-metric-label, .jr-metric-description) {
     color: var(--jr-dark-muted);
 }
 
@@ -289,7 +292,10 @@ html.dark
     color: var(--jr-dark-text);
 }
 
-html.dark .jr-app .jr-road-coverage-directory :is(.jr-metric-unit, .jr-map-count) {
+html.dark
+    .jr-app
+    .jr-road-coverage-directory
+    :is(.jr-metric-unit, .jr-map-count) {
     color: var(--jr-dark-muted);
 }
 

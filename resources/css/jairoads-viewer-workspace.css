@@ -420,7 +420,10 @@ html.dark .jr-viewer-workspace .jr-global-header {
 html.dark .jr-app.jr-viewer-workspace .jr-viewer-dashboard .jr-page-head {
     background: #142e54;
 }
-html.dark .jr-app.jr-viewer-workspace .jr-viewer-dashboard .jr-page-head::before {
+html.dark
+    .jr-app.jr-viewer-workspace
+    .jr-viewer-dashboard
+    .jr-page-head::before {
     opacity: 0.26;
 }
 html.dark .jr-viewer-workspace .jr-viewer-dashboard main {
