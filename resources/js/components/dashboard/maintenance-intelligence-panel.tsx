@@ -17,7 +17,7 @@ import { manilaDate } from '@/lib/manila-time';
 export type MaintenanceIntelligenceSummary = {
     asOf: string;
     reportingMonth: string;
-    conditions: Record<'Good' | 'Fair' | 'Bad', number>;
+    conditions: Record<'Good' | 'Fair' | 'Bad' | 'Unknown', number>;
     noCurrentReport: number;
     pastEstimate: number;
     ongoingCount: number;
@@ -76,8 +76,12 @@ const conditionStyles = {
         label: 'text-rose-800 bg-rose-50 dark:bg-rose-950 dark:text-rose-200',
         fill: 'bg-rose-500',
     },
+    Unknown: {
+        label: 'text-slate-800 bg-slate-100 dark:bg-slate-800 dark:text-slate-200',
+        fill: 'bg-slate-500',
+    },
 };
-const conditions = ['Good', 'Fair', 'Bad'] as const;
+const conditions = ['Good', 'Fair', 'Bad', 'Unknown'] as const;
 const panel =
     'min-w-0 rounded-2xl border border-violet-100 bg-white dark:border-violet-900/70 dark:bg-slate-900';
 const linkStyle =

@@ -1,8 +1,52 @@
 import { analyticsPdf, analyticsXlsx } from './analytics-report-formats';
+import type { AnalyticsReport } from './analytics-report-formats';
 
-export type ReportCell = string | number;
+type CsvCell = string | number;
 
-/** Export only the aggregate cards actually displayed, not private records. */
+function csvCell(value: CsvCell) {
+    if (typeof value === 'number') {
+        return String(value);
+    }
+
+    // Neutralize spreadsheet formulas and leading spreadsheet control prefixes.
+    const safe = /^(?:[\t\r\n]|\s*[=+\-@])/.test(value) ? "'" + value : value;
+
+    return '"' + safe.replaceAll('"', '""') + '"';
+}
+
+function analyticsCsv(report: AnalyticsReport) {
+    const rows: CsvCell[][] = [
+        ['report_scope', 'category', 'metric', 'period', 'value', 'unit'],
+        ...report.cards.map(({ label, value }) => [
+            report.scope,
+            'maintenance',
+            label,
+            '',
+            value,
+            'count',
+        ]),
+        [
+            report.scope,
+            'maintenance',
+            'Reporting coverage',
+            report.reportingMonth,
+            report.reportingCoverage ?? '',
+            'percent',
+        ],
+        ...report.trend.map(({ month, count }) => [
+            report.scope,
+            'monthly_trend',
+            'Monthly updates',
+            month,
+            count,
+            'count',
+        ]),
+    ];
+
+    return '\uFEFF' + rows.map((row) => row.map(csvCell).join(',')).join('\r\n');
+}
+
+/** Only currently displayed aggregate values are eligible for an export. */
 export function downloadAnalyticsReport(
     format: 'CSV' | 'XLSX' | 'PDF',
     scope: string,
@@ -10,43 +54,58 @@ export function downloadAnalyticsReport(
     reportingCoverage: number | null,
     trend: { month: string; count: number }[],
 ) {
-    const rows: ReportCell[][] = [
-        ['Scope', scope],
-        ['Metric', 'Value'],
-        ...cards.map(({ label, value }) => [label, value]),
-        ['Reporting coverage (%)', reportingCoverage ?? 'Not applicable'],
-        ['Reporting month', 'Update count'],
-        ...trend.map(({ month, count }) => [month, count]),
-    ];
-    const escape = (value: ReportCell) => {
-        const cell = String(value);
-        // Neutralize formula prefixes, including leading whitespace.
-        const safe = /^\s*[=+\-@\t\r\n]/.test(cell) ? "'" + cell : cell;
+    const now = new Date();
+    const dateParts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Manila',
+        year: 'numeric',
+        month: '2-digit',
+    }).formatToParts(now);
+    const year = dateParts.find((part) => part.type === 'year')?.value;
+    const month = dateParts.find((part) => part.type === 'month')?.value;
 
-        return '"' + safe.replaceAll('"', '""') + '"';
+    if (!year || !month) {
+        throw new Error('Report date is unavailable.');
+    }
+
+    const reportingMonth = trend.at(-1)?.month ?? year + '-' + month;
+    const scopeName = scope.replace(/[^a-z0-9-]+/gi, '_');
+    const report: AnalyticsReport = {
+        scope,
+        id: 'JR-' + now.toISOString().replace(/[^0-9]/g, '') + '-' + scopeName,
+        generatedAt: now.toISOString(),
+        reportingMonth,
+        cards,
+        reportingCoverage,
+        trend,
     };
     const blob =
         format === 'XLSX'
-            ? new Blob([analyticsXlsx(rows)], {
+            ? new Blob([analyticsXlsx(report)], {
                   type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
               })
             : format === 'PDF'
-              ? new Blob([analyticsPdf(rows)], { type: 'application/pdf' })
-              : new Blob(
-                    [
-                        '\uFEFF',
-                        rows
-                            .map((row) => row.map(escape).join(','))
-                            .join('\r\n'),
-                    ],
-                    { type: 'text/csv;charset=utf-8' },
-                );
+              ? new Blob([analyticsPdf(report)], { type: 'application/pdf' })
+              : new Blob([analyticsCsv(report)], {
+                    type: 'text/csv;charset=utf-8',
+                });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `jairoads-analytics-summary.${format.toLowerCase()}`;
+    link.download =
+        'JaiROADS_' +
+        scopeName +
+        '_Analytics_' +
+        year +
+        '-' +
+        month +
+        '.' +
+        format.toLowerCase();
     document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+    try {
+        link.click();
+    } finally {
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
 }

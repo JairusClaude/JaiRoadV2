@@ -208,7 +208,9 @@ html.dark .jr-app :is(.jr-filters, .jr-metric-card, .jr-empty) {
     color: var(--jr-dark-text);
 }
 
-html.dark .jr-app :is(.jr-search input, .jr-filter-row [data-slot='select-trigger']),
+html.dark
+    .jr-app
+    :is(.jr-search input, .jr-filter-row [data-slot='select-trigger']),
 html.dark .jr-app .jr-table-footer [data-slot='button']:not([aria-current]) {
     background-color: var(--jr-dark-elevated);
     border-color: var(--jr-dark-border);
@@ -237,11 +239,17 @@ html.dark .jr-app .jr-table tr[data-selected='true'] {
     background-color: var(--jr-display-soft, var(--jr-dark-elevated));
 }
 
-html.dark .jr-app .jr-table :is(.jr-project-title, .jr-monthly-context-links a) {
+html.dark
+    .jr-app
+    .jr-table
+    :is(.jr-project-title, .jr-monthly-context-links a) {
     color: var(--jr-dark-text);
 }
 
-html.dark .jr-app .jr-table :is(.jr-project-title, .jr-monthly-context-links a):hover {
+html.dark
+    .jr-app
+    .jr-table
+    :is(.jr-project-title, .jr-monthly-context-links a):hover {
     color: var(--jr-display-accent, var(--jr-dark-text));
     text-decoration: underline;
 }

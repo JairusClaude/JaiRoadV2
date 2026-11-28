@@ -15,9 +15,9 @@ final class MaintenanceIntelligence
         $today = now('Asia/Manila')->toDateString();
         $month = substr($today, 0, 7);
         $conditions = DB::table('jairoads_next.road_coverages')
-            ->selectRaw('state_category, count(*) as total')
-            ->groupBy('state_category')
-            ->pluck('total', 'state_category');
+            ->selectRaw("case when state_category in ('Good', 'Fair', 'Bad') then state_category else 'Unknown' end as condition, count(*) as total")
+            ->groupBy('condition')
+            ->pluck('total', 'condition');
         $ongoing = DB::table('jairoads_next.maintenance_records as m')
             ->where('m.status', 'Ongoing');
         $noReport = (clone $ongoing)
@@ -82,6 +82,7 @@ final class MaintenanceIntelligence
                 'Good' => (int) ($conditions['Good'] ?? 0),
                 'Fair' => (int) ($conditions['Fair'] ?? 0),
                 'Bad' => (int) ($conditions['Bad'] ?? 0),
+                'Unknown' => (int) ($conditions['Unknown'] ?? 0),
             ],
             'noCurrentReport' => (int) $noReport,
             'pastEstimate' => (int) $pastEstimate,

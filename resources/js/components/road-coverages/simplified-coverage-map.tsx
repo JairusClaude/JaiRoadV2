@@ -443,11 +443,7 @@ export function SimplifiedCoverageMap({
                                     const checked = event.target.checked;
                                     setMineOnly(checked);
 
-                                    if (
-                                        checked &&
-                                        selected &&
-                                        !selected.mine
-                                    ) {
+                                    if (checked && selected && !selected.mine) {
                                         setSelectedId(null);
                                     }
                                 }}

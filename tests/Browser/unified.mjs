@@ -284,6 +284,7 @@ try {
         await page.goto(ui + '/maintenance-projects');
         const banner = page.locator('.jr-page-head').first();
         await banner.waitFor();
+
         for (const [mode, scheme, dark] of [
             ['light', 'light', false],
             ['dark', 'light', true],
@@ -311,6 +312,7 @@ try {
             );
             assert.ok(dark ? background < 0.2 : background > 0.5);
         }
+
         await page.emulateMedia({ colorScheme: 'light' });
         await page.waitForFunction(
             () => !document.documentElement.classList.contains('dark'),
@@ -318,7 +320,10 @@ try {
         await page.evaluate(() => localStorage.setItem('appearance', 'light'));
         await page.goto(base + '/workspace/dashboard');
     }
-    console.log('PASS: directory banner contrast in all three appearance modes for all four roles.');
+
+    console.log(
+        'PASS: directory banner contrast in all three appearance modes for all four roles.',
+    );
 
     // A filtered-away LGU must never remain in the visible selection count.
     await superadmin.goto(`${ui}/lgus`);
@@ -582,6 +587,8 @@ try {
     const intelligence = JSON.parse(
         await superadmin.locator('script[data-page]').textContent(),
     ).props.maintenanceIntelligence;
+    assert.ok(Number.isInteger(intelligence.conditions.Unknown));
+    assert.ok(intelligence.conditions.Unknown >= 0);
     assert.equal(
         intelligence.priority.length,
         Math.min(12, intelligence.priorityTotal),
@@ -619,6 +626,22 @@ try {
         );
     }
 
+    for (const [page, scope] of [
+        [admin, 'Operations overview'],
+        [engineer, 'My assigned work'],
+        [viewer, 'Read-only inventory'],
+    ]) {
+        await page.getByRole('button', { name: 'Export report' }).click();
+        const download = page.waitForEvent('download');
+        await page.getByRole('menuitem', { name: 'CSV Data' }).click();
+        const file = await download;
+        const csv = await readFile(await file.path(), 'utf8');
+        const rows = csv.trim().split(/\r?\n/).slice(1);
+        assert.ok(rows.length > 0);
+        assert.ok(rows.every((row) => row.startsWith('"' + scope + '",')));
+        assert.doesNotMatch(csv, /sb_secret_|password_hash|signed_url/i);
+    }
+
     const summaryDownload = superadmin.waitForEvent('download');
     const exportMenu = superadmin.getByRole('button', {
         name: 'Export report',
@@ -627,13 +650,17 @@ try {
     await exportMenu.press('Enter');
     await superadmin.getByRole('menuitem', { name: 'CSV Data' }).click();
     const summaryFile = await summaryDownload;
-    assert.equal(
+    assert.match(
         summaryFile.suggestedFilename(),
-        'jairoads-analytics-summary.csv',
+        /^JaiROADS_System-wide_Analytics_\d{4}-\d{2}\.csv$/,
     );
     const summaryText = await readFile(await summaryFile.path(), 'utf8');
-    assert.ok(summaryText.includes('"Scope","System-wide"'));
-    assert.ok(summaryText.includes('"Reporting month","Update count"'));
+    assert.ok(
+        summaryText.includes(
+            '"report_scope","category","metric","period","value","unit"',
+        ),
+    );
+    assert.ok(summaryText.includes('"System-wide","monthly_trend"'));
     assert.ok(!summaryText.includes('sb_secret_'));
 
     for (const [format, label, signature] of [
@@ -644,14 +671,23 @@ try {
         await exportMenu.click();
         await superadmin.getByRole('menuitem', { name: label }).click();
         const file = await downloadPromise;
-        assert.equal(
+        assert.match(
             file.suggestedFilename(),
-            `jairoads-analytics-summary.${format.toLowerCase()}`,
+            /^JaiROADS_System-wide_Analytics_\d{4}-\d{2}\.(pdf|xlsx)$/,
         );
+        assert.ok(file.suggestedFilename().endsWith('.' + format.toLowerCase()));
         const bytes = await readFile(await file.path());
         assert.equal(bytes.subarray(0, signature.length).toString(), signature);
-        assert.ok(bytes.toString('utf8').includes('System-wide'));
-        assert.ok(!bytes.toString('utf8').includes('sb_secret_'));
+        const content = bytes.toString('utf8');
+        assert.ok(content.includes('System-wide'));
+        assert.ok(!content.includes('sb_secret_'));
+        assert.ok(
+            content.includes(
+                format === 'XLSX'
+                    ? 'name="Monthly Trends"'
+                    : '/MediaBox [0 0 595 842]',
+            ),
+        );
     }
 
     await superadmin
