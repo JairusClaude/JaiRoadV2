@@ -843,7 +843,7 @@ function EditableCoverageMapEditor({
         const monitor = watchBasemap(tiles, setBasemap);
         tileMonitor.current = monitor;
         tiles.addTo(instance);
-        attachFieldBasemap(instance,tiles);
+        attachFieldBasemap(instance,tiles,setBasemap);
         L.control.scale({ imperial: false }).addTo(instance);
         active.current = L.layerGroup().addTo(instance);
         references.current = L.layerGroup().addTo(instance);

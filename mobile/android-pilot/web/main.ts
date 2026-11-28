@@ -52,11 +52,16 @@ let sharedFrame: HTMLIFrameElement | undefined;
 function fieldStatus() {
     const offline = !connected() || !reachable;
     const pending = pendingCount();
+    const files=(vault.state.snapshot.files??[]).filter(file=>file.available);
+    const cached=files.filter(file=>vault.fileAvailable(file)).length;
     return { offline, message: offline ? (pending ? 'Offline Mode — Saved locally · Waiting for internet' : 'Offline Mode')
         : checking && pending ? 'Synchronizing saved work…'
         : pending ? 'Pending synchronization'
         : unresolvedFileCount() ? 'Some local files need review'
-        : synced ? 'All changes synced' : '' };
+        : synced ? 'All changes synced'
+        : preparingFiles&&cached<files.length?'Preparing offline files ('+cached+'/'+files.length+')'
+        : cached<files.length?'Offline files: '+cached+'/'+files.length+' ready'
+        : '' };
 }
 function signalShared() {
     if (!sharedFrame?.contentWindow) return;
@@ -486,9 +491,9 @@ async function refresh() {
         if (!preparingFiles && workspace.fileSync) {
             preparingFiles = true;
             const active = vault;
-            void active.prepareFiles(workspace, () => ready && active === vault && connected()).finally(() => {
+            void active.prepareFiles(workspace, () => ready && active === vault && connected(),()=>{if(ready&&active===vault)showStatus();}).finally(() => {
                 preparingFiles = false;
-                if (ready && active === vault && visibleLocally && editor.hidden) renderDirectory();
+                if (ready && active === vault) {showStatus();if(visibleLocally&&editor.hidden)renderDirectory();}
             });
         }
 

@@ -194,7 +194,7 @@ export function SimplifiedCoverageMap({
         const monitor = watchBasemap(tiles, setBasemap);
         tileMonitor.current = monitor;
         tiles.addTo(map);
-        attachFieldBasemap(map,tiles);
+        attachFieldBasemap(map,tiles,setBasemap);
 
         // Metric scale indicator in bottom-left
         L.control.scale({ imperial: false, maxWidth: 120 }).addTo(map);

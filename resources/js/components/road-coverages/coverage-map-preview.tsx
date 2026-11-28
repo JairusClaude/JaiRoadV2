@@ -77,7 +77,7 @@ function SavedCoverageMap({
         const monitor = watchBasemap(tiles, setBasemap);
         tileMonitor.current = monitor;
         tiles.addTo(map);
-        attachFieldBasemap(map,tiles);
+        attachFieldBasemap(map,tiles,setBasemap);
         L.control.scale({ imperial: false }).addTo(map);
         L.polyline(
             lines.map((line) =>

@@ -81,6 +81,16 @@ final class AndroidFieldWritesTest extends PostgresTestCase
         ]))->assertConflict();
         $this->postJson(self::URL.'/operations', array_replace($project, ['account_id' => $account + 100]))->assertForbidden();
         $this->assertSame(3, DB::table('jairoads_security.android_field_receipts')->count());
+        $month = ['account_id' => $account, 'operation_id' => '2b819d89-729d-446d-9d51-2fe74a29a001', 'kind' => 'monthly',
+            'fields' => ['maintenance_id' => $record['id'], 'update_month' => '2026-02', 'progress_percentage' => '25', 'summary_of_text_reports' => 'Initial field report']];
+        $report = $this->postJson(self::URL.'/operations', $month)->assertOk()->json();
+        $edit = array_replace($month, ['operation_id' => '2b819d89-729d-446d-9d51-2fe74a29a002', 'id' => $report['id'], 'version' => $report['version'],
+            'fields' => array_replace($month['fields'], ['progress_percentage' => '40'])]);
+        $edited = $this->postJson(self::URL.'/operations', $edit)->assertOk()->json();
+        $this->postJson(self::URL.'/operations', $edit)->assertOk()->assertExactJson($edited);
+        $this->assertSame((float) 40, (float) DB::table('jairoads_next.monthly_updates')->where('id', $report['id'])->value('progress_percentage'));
+        $this->postJson(self::URL.'/operations', array_replace($edit, ['operation_id' => '2b819d89-729d-446d-9d51-2fe74a29a003', 'version' => 'stale']))->assertConflict();
+        $this->getJson(self::URL.'/workspace')->assertOk()->assertJsonStructure(['municipalities' => [['id', 'municipality_name', 'province', 'region']], 'lguAssignments', 'monthly' => [['id', 'version']]]);
 
         config(['jairoads_documents.supabase_url' => 'https://disposable-storage.test',
             'jairoads_documents.service_role_key' => 'sb_secret_disposable', 'jairoads_documents.bucket' => 'private-documents',
@@ -95,5 +105,8 @@ final class AndroidFieldWritesTest extends PostgresTestCase
         $this->assertSame(1, DB::table('jairoads_next.maintenance_documents')->where('maintenance_id', $record['id'])->count());
         Http::assertSentCount(1);
         $this->getJson(self::URL.'/workspace')->assertOk()->assertJsonPath('fileSync', true)->assertJsonPath('files.0.id', $first['id']);
+        $large = UploadedFile::fake()->createWithContent('inspection-large.pdf', "%PDF-1.4\n".str_repeat('% field evidence padding '.str_repeat('x', 100)."\n", 45000)."%%EOF");
+        $this->post(self::URL.'/attachments', array_replace($attachment, ['operation_id' => '611c973d-6d78-4433-a3e5-6705ad7248d4']) + ['file' => $large], ['Accept' => 'application/json'])->assertOk();
+        $this->assertSame(2, DB::table('jairoads_next.maintenance_documents')->where('maintenance_id', $record['id'])->count());
     }
 }

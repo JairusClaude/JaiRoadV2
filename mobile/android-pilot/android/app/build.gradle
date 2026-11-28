@@ -10,8 +10,8 @@ android {
         applicationId 'org.jairoads.fieldpilot.review.mobile'
         minSdk 24
         targetSdk 34
-        versionCode 5
-        versionName '0.5.0-review'
+        versionCode 6
+        versionName '0.5.1-review'
     }
 
     sourceSets {

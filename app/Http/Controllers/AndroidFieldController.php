@@ -65,7 +65,7 @@ final class AndroidFieldController extends OperationsFrontendController
         $recordIds = $visibleRecords->pluck('id')->all();
         $monthly = Schema::hasTable('jairoads_next.monthly_updates')
             ? DB::table('jairoads_next.monthly_updates')->whereIn('maintenance_id', $recordIds)
-                ->orderByDesc('id')->limit(100)->get(['id', 'maintenance_id', 'update_month', 'progress_percentage', 'summary_of_text_reports', 'created_at', 'updated_at'])
+                ->orderByDesc('id')->limit(100)->select(['id', 'maintenance_id', 'update_month', 'progress_percentage', 'summary_of_text_reports', 'created_at', 'updated_at'])->selectRaw('xmin::text as version')->get()
             : collect();
         $files = collect();
         if (Schema::hasTable('jairoads_next.maintenance_documents')) {
@@ -101,7 +101,9 @@ final class AndroidFieldController extends OperationsFrontendController
             'canSync' => $canWrite && Schema::hasTable(self::RECEIPTS),
             'csrfToken' => $request->session()->token(),
             'truncated' => $visibleRecords->count() < $records->count() || $visibleProjects->count() < $projects->count() || $roads->count() > 200,
-            'municipalities' => $this->municipalities($actor),
+            'municipalities' => DB::table('jairoads_next.lgus')->orderBy('municipality_name')->get(['id', 'municipality_name', 'province', 'region', 'mayor_first_name', 'mayor_middle_name', 'mayor_last_name']),
+            'lguAssignments' => DB::table('jairoads_next.engineer_lgus as el')->join('jairoads_next.engineers as e', 'e.id', '=', 'el.engineer_id')
+                ->orderBy('el.lgu_id')->orderBy('e.id')->limit(2001)->get(['el.lgu_id', 'e.id as engineer_id', 'e.first_name', 'e.last_name', 'e.rank', 'el.is_active']),
             'roads' => $roads->take(200)->values()->map(function (\stdClass $road): \stdClass {
                 $road->geojson = $road->geojson === null ? null : json_decode($road->geojson, true, 64);
 
@@ -121,7 +123,7 @@ final class AndroidFieldController extends OperationsFrontendController
             'account_id' => ['required', 'integer', 'min:1'],
             'operation_id' => ['required', 'uuid'],
             'kind' => ['required', 'in:road,project,record,monthly'],
-            'id' => ['nullable', 'integer', 'min:1', 'prohibited_if:kind,monthly'],
+            'id' => ['nullable', 'integer', 'min:1'],
             'version' => ['nullable', 'required_with:id', Rule::prohibitedIf(! $request->filled('id')), 'string', 'max:64'],
             'fields' => ['required', 'array:road_name,lgu_id,kilometers,pavement_type,state_category,geojson,correction_reason,project_title,road_coverage_id,description,project_id,maintenance_year,quarter,start_date,estimated_duration_days,complete_date,status,maintenance_id,update_month,progress_percentage,summary_of_text_reports'],
         ]);
@@ -154,7 +156,7 @@ final class AndroidFieldController extends OperationsFrontendController
                     'road' => $this->operations->saveRoad($request, $this->identities, $id),
                     'project' => $this->operations->saveProject($request, $this->identities, $id),
                     'record' => $this->operations->saveRecord($request, $this->identities, $id),
-                    'monthly' => $this->operations->saveUpdate($request, $this->identities),
+                    'monthly' => $this->operations->saveUpdate($request, $this->identities, $id),
                     default => throw ValidationException::withMessages(['kind' => 'Unknown field operation.']),
                 };
                 $savedId = $id ?? $request->attributes->getInt('jairoads.field_saved_id');

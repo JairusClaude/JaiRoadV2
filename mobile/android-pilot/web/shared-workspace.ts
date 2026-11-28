@@ -95,7 +95,7 @@ export async function openSharedWorkspace(vault:Vault,frame:HTMLIFrameElement,op
         const [section,first,nested,fourth]=parts;
         const method=text(data._method||config.method).toLowerCase();
         ensure(['post','put'].includes(method),'This action requires an online connection.');
-        ensure(!bool(data.remove_attachment)&&(!Array.isArray(data.removed_media_ids)||!data.removed_media_ids.length),'Removing files requires an online connection.');
+        ensure(!bool(data.remove_attachment)&&(!Array.isArray(data.removed_media_ids)||!data.removed_media_ids.length)&&!Object.keys(data).some(key=>/^removed_media_ids\[/.test(key)),'Removing files requires an online connection.');
         let kind:Kind;
         let row:ReturnType<typeof cachedRow>;
         let fields:Fields;
@@ -162,13 +162,17 @@ export async function openSharedWorkspace(vault:Vault,frame:HTMLIFrameElement,op
                 fields.complete_date ||= '';
                 validateFields(kind,fields,row);
                 destination=BASE+'/maintenance-projects/'+first;
-            } else if(section==='monthly-updates'&&!first) {
-                kind='monthly'; row=undefined;
+            } else if(section==='monthly-updates'&&!nested) {
+                kind='monthly'; row=first?cachedRow(vault,kind,first):undefined;
+                ensure(!first||row,'Monthly update is not cached.');
+                ensure(!row||row.version||isLocalId(presentationId(row.id)),'This older cached report must be refreshed before editing.');
                 fields=fieldsFrom(data,['update_month','progress_percentage','summary_of_text_reports']);
                 fields.maintenance_id=rawId(vault,data.maintenance_id);
+                ensure(!row||rawId(vault,row.maintenance_id)===fields.maintenance_id,'The maintenance record cannot change.');
                 ensure(projection.records.some(r=>r.id===presentationId(fields.maintenance_id)&&r.edit_url),'Select a maintenance record assigned to you.');
-                ensure(/^\d{4}-(0[1-9]|1[0-2])$/.test(fields.update_month??'')&&Number.isFinite(Number(fields.progress_percentage))&&Number(fields.progress_percentage)>=0&&Number(fields.progress_percentage)<=100,'Enter a valid reporting month and progress.');
-                ensure(!vault.rows('monthly').some(r=>String(r.maintenance_id)===fields.maintenance_id&&String(r.update_month).slice(0,7)===fields.update_month),'A report for this month is already available.');
+                ensure(/^\d{4}-(0[1-9]|1[0-2])$/.test(fields.update_month??'')&&/^(?:\d+)(?:\.\d{1,2})?$/.test(fields.progress_percentage??'')&&Number(fields.progress_percentage)>=0&&Number(fields.progress_percentage)<=100,'Enter a valid reporting month and progress.');
+                ensure([...(fields.summary_of_text_reports??'')].length<=20000,'Report exceeds 20,000 characters.');
+                ensure(!vault.rows('monthly').some(r=>String(r.id)!==String(row?.id)&&rawId(vault,r.maintenance_id)===fields.maintenance_id&&String(r.update_month).slice(0,7)===fields.update_month),'A report for this month is already available.');
                 destination=BASE+'/monthly-updates';
             } else throw new Error('This action requires internet. No changes were discarded.');
             const photos:{name:string;data:string}[]=[];

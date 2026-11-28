@@ -59,7 +59,8 @@ type Snapshot = {
     canWrite: boolean;
     canSync: boolean;
     truncated: boolean;
-    municipalities: { id: number; municipality_name: string }[];
+    municipalities: { id: number; municipality_name: string; province?:string|null;region?:string|null;mayor_first_name?:string|null;mayor_middle_name?:string|null;mayor_last_name?:string|null }[];
+    lguAssignments?: {lgu_id:number;engineer_id:number;first_name:string;last_name:string;rank:string|null;is_active:boolean}[];
     roads: Row[];
     projects: Row[];
     records: Row[];
@@ -294,6 +295,7 @@ function snapshotOf(workspace: Workspace): Snapshot {
         canSync: workspace.canSync,
         truncated: workspace.truncated,
         municipalities: workspace.municipalities,
+        lguAssignments: Array.isArray(workspace.lguAssignments)?workspace.lguAssignments:[],
         roads: workspace.roads,
         projects: workspace.projects,
         records: workspace.records,
@@ -614,14 +616,27 @@ export class Vault {
         try{await task;}finally{this.fileDownloads.delete(key);}
     }
     private fileRetry=new Map<string,number>();
-    async prepareFiles(workspace:Workspace,shouldContinue:()=>boolean) {
+    async prepareFiles(workspace:Workspace,shouldContinue:()=>boolean,onProgress:()=>void=()=>{}) {
         this.assertIdentity(workspace);
         for(const file of this.state.snapshot.files??[]){
             if(!shouldContinue())return;
             if(!file.available||this.fileAvailable(file)||(this.fileRetry.get(fileKey(file))??0)>Date.now())continue;
-            try{await this.cacheFile(file);}
+            try{await this.cacheFile(file);onProgress();}
             catch{this.fileRetry.set(fileKey(file),Date.now()+5*60*1000);}
         }
+        if(!shouldContinue())return;
+        const retired:Attachment[]=[];
+        await this.change(state=>{
+            const remaining=state.attachments.filter(item=>{
+                if(!item.receipt)return true;
+                const confirmed=state.snapshot.files?.find(file=>file.kind===(item.kind??'document')&&file.id===item.receipt?.id);
+                if(!confirmed||!this.fileAvailable(confirmed))return true;
+                retired.push(item);return false;
+            });
+            return retired.length?{...state,attachments:remaining}:state;
+        });
+        for(const item of retired)if(item.storedBytes)await this.deleteFile('attachment:'+item.id).catch(()=>{});
+        onProgress();
     }
 
     async syncAttachments(workspace: Workspace) {

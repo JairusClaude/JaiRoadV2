@@ -145,7 +145,7 @@ export function projectData(vault: Vault, dashboard: Page) {
             progress_percentage: number(r.progress_percentage), summary_of_text_reports: text(r.summary_of_text_reports) || null,
             created_by: text(r.creator_name) || '', created_at: date(r.created_at), updated_at: date(r.updated_at),
             project: record.project, record: { id: record.id, year: record.year, quarter: record.quarter },
-            media_count: files.length, photo_count: files.length, video_count: 0, other_count: 0, can_edit: false,
+            media_count: files.length, photo_count: files.length, video_count: 0, other_count: 0, can_edit: Boolean(record.edit_url&&(r.version||isLocalId(id))),
         }];
     });
     const mapRows = rows.map((r) => ({ id: r.id, road_name: r.road_name, municipality: r.lgu.municipality_name,
@@ -192,6 +192,24 @@ export function offlinePage(vault: Vault, dashboard: Page, url: URL, status = ''
     const lookup = <T extends {id:number}>(rows: T[], id: string | undefined) => rows.find((r) => r.id === entity(id) || same(rawId(vault, id), r.id));
     if (path === '/dashboard' || path === '/workspace/dashboard') {
         return page('RoleDashboard/Canonical', { ...dashboard.props, ...baseProps, status: '' });
+    }
+    if(section==='lgus') {
+        const permissions={can_edit:false,can_delete:false};
+        const assignments=snapshot.lguAssignments??[];
+        const lgus=snapshot.municipalities.map(lgu=>({...lgu,province:lgu.province??'',region:lgu.region??'',mayor_first_name:lgu.mayor_first_name??'',mayor_middle_name:lgu.mayor_middle_name??'',mayor_last_name:lgu.mayor_last_name??'',
+            deletion_check:{available:false,road_coverages:d.roads.filter(road=>road.lgus_id===lgu.id).length,engineer_assignments:assignments.filter(a=>Number(a.lgu_id)===lgu.id).length}}));
+        const notice='Offline directory: showing saved municipality information and cached relationships. Administrative changes require a live authorized session.';
+        if(!first){
+            const filters={search:url.searchParams.get('search')??'',province:url.searchParams.get('province')??'',region:url.searchParams.get('region')??'',sort:url.searchParams.get('sort')==='desc'?'desc':'asc'};
+            const rows=lgus.filter(lgu=>match(filters.province,lgu.province)&&match(filters.region,lgu.region)&&queryMatch(filters.search,lgu.municipality_name,lgu.province,lgu.region,lgu.mayor_first_name,lgu.mayor_middle_name,lgu.mayor_last_name)).sort((a,b)=>a.municipality_name.localeCompare(b.municipality_name)*(filters.sort==='desc'?-1:1));
+            return page('LGUs/Index',{lgus:paginate(rows,url),filters,provinces:[...new Set(lgus.map(lgu=>lgu.province).filter(Boolean))],regions:[...new Set(lgus.map(lgu=>lgu.region).filter(Boolean))],lguPermissions:permissions,canBulkDelete:false,canDelete:false,lguReviewNotice:notice});
+        }
+        if(nested)return null;
+        const lgu=lgus.find(lgu=>lgu.id===Number(first));
+        if(!lgu)return null;
+        const roadCoverages=d.roads.filter(road=>road.lgus_id===lgu.id);
+        const assignedEngineers=assignments.filter(a=>Number(a.lgu_id)===lgu.id).map(a=>({engineer_id:Number(a.engineer_id),full_name:[a.first_name,a.last_name].filter(Boolean).join(' '),rank:a.rank,assignment_is_active:a.is_active}));
+        return page('LGUs/Show',{lgu,roadCoverages,assignedEngineers,relationshipDataAvailable:{roadCoverages:false,engineerAssignments:Boolean(snapshot.lguAssignments&&assignments.length<=2000)},engineerDetailsAvailable:false,directoryUrl:BASE+'/lgus',lguPermissions:permissions,lguReviewNotice:notice});
     }
     if (section === 'maintenance-projects') {
         if (!first) {
@@ -275,7 +293,12 @@ export function offlinePage(vault: Vault, dashboard: Page, url: URL, status = ''
             return page('MonthlyUpdates/Create',{...d.parents(fixed||undefined),existingUpdates:d.updates,submitUrl:BASE+'/monthly-updates',cancelUrl:BASE+'/monthly-updates'});
         }
         const update=lookup(d.updates,first);
-        if(!update||nested)return null;
+        if(!update)return null;
+        if(nested==='edit'){
+            if(!d.canWrite||!update.can_edit)return null;
+            return page('MonthlyUpdates/Create',{...d.parents(update.maintenance_id),update,media:d.mediaFor(update.id),existingUpdates:d.updates,submitUrl:BASE+'/monthly-updates/'+update.id,cancelUrl:BASE+'/monthly-updates/'+update.id});
+        }
+        if(nested)return null;
         return page('MonthlyUpdates/Show',{update,media:d.mediaFor(update.id),backUrl:BASE+'/monthly-updates',backLabel:'Monthly Updates',directoryUrl:BASE+'/monthly-updates',canUploadMedia:d.canWrite});
     }
     if(section==='maintenance-documents') {

@@ -670,9 +670,12 @@ class OperationsController extends Controller
 
                 return $uid;
             } else {
-                $old = $this->t('monthly_updates')->where('id', $id)->lockForUpdate()->first();
+                $old = $this->t('monthly_updates')->where('id', $id)
+                    ->when($request->attributes->getBoolean('jairoads.field_write'), fn (Builder $query) => $query->selectRaw('*, xmin::text as field_version'))
+                    ->lockForUpdate()->first();
                 abort_unless($old !== null, 404);
                 $this->recordScope($actor, (int) $old->maintenance_id, true);
+                $this->assertFieldVersion($request, $old);
                 abort_unless((int) $old->maintenance_id === (int) $v['maintenance_id'], 422, 'Cannot move monthly update to another maintenance record.');
                 if (! $this->changed('MonthlyUpdate', $old, $data)) {
                     return null;

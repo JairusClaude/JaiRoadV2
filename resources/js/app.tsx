@@ -38,7 +38,14 @@ function DismissStartupMessage() {
 }
 
 const fieldWorkspace = androidWorkspace();
-if (fieldWorkspace) installFieldResources(fieldWorkspace);
+if (fieldWorkspace) {
+    installFieldResources(fieldWorkspace);
+    void import('@/lib/road-coverages/offline-map-packs').then(({prepareOfflineMapPacks})=>{
+        const prepare=()=>{void prepareOfflineMapPacks(()=>!fieldWorkspace.status().offline);};
+        window.addEventListener('jairoads-field-status',prepare);
+        prepare();
+    });
+}
 
 void createInertiaApp({
     ...(fieldWorkspace ? { page: fieldWorkspace.initial, http: fieldHttp(fieldWorkspace) } : {}),
