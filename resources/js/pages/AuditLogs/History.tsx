@@ -266,13 +266,18 @@ function Table({
                 onKeyDown={scrollWithKeyboard}
             >
                 <table
-                    className="jr-audit-grid w-full text-left text-sm"
+                    role="table"
+                    className="jr-audit-grid jr-mobile-table w-full text-left text-sm"
                     data-columns={headers.length}
                 >
-                    <thead className="bg-slate-50 text-xs text-slate-600">
-                        <tr>
+                    <thead
+                        role="rowgroup"
+                        className="bg-slate-50 text-xs text-slate-600"
+                    >
+                        <tr role="row">
                             {headers.map((h) => (
                                 <th
+                                    role="columnheader"
                                     key={h}
                                     scope="col"
                                     className="px-3 py-3 font-semibold"
@@ -282,7 +287,10 @@ function Table({
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 [&_td]:px-3 [&_td]:py-3 [&_td]:align-top">
+                    <tbody
+                        role="rowgroup"
+                        className="divide-slate-100 sm:divide-y [&_td]:px-3 [&_td]:py-3 [&_td]:align-top"
+                    >
                         {children}
                     </tbody>
                 </table>
@@ -777,13 +785,22 @@ export default function AuditHistory({
                             ]}
                         >
                             {events.data.map((e) => (
-                                <tr key={e.id}>
-                                    <td className="whitespace-nowrap">
+                                <tr role="row" key={e.id}>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Date and time"
+                                        data-mobile-cell="full"
+                                        className="whitespace-nowrap"
+                                    >
                                         <time dateTime={e.created_at}>
                                             {time(e.created_at)}
                                         </time>
                                     </td>
-                                    <td className="max-w-64 min-w-40 break-words">
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Performed by"
+                                        className="max-w-64 min-w-40 break-words"
+                                    >
                                         <span className="font-medium">
                                             {actorName(e.actor_identifier)}
                                         </span>
@@ -792,14 +809,17 @@ export default function AuditHistory({
                                             {e.user_id ?? 'Not recorded'}
                                         </span>
                                     </td>
-                                    <td>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Account type"
+                                    >
                                         {e.current_account_type ??
                                             'Not recorded'}
                                         <span className="block text-xs text-slate-400">
                                             Current role
                                         </span>
                                     </td>
-                                    <td>
+                                    <td role="cell" data-mobile-label="Action">
                                         <Badge action={e.action} />
                                         {['LOGIN', 'LOGOUT'].includes(
                                             e.action,
@@ -814,17 +834,31 @@ export default function AuditHistory({
                                             </span>
                                         )}
                                     </td>
-                                    <td>{e.entity_type}</td>
-                                    <td>
+                                    <td role="cell" data-mobile-label="Module">
+                                        {e.entity_type}
+                                    </td>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Affected record"
+                                    >
                                         {e.entity_type}{' '}
                                         {e.entity_id === null
                                             ? '—'
                                             : `#${e.entity_id}`}
                                     </td>
-                                    <td className="max-w-80 min-w-48 break-words">
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Description"
+                                        data-mobile-cell="full"
+                                        className="max-w-80 min-w-48 break-words"
+                                    >
                                         {e.description}
                                     </td>
-                                    <td>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Details"
+                                        data-mobile-cell="full"
+                                    >
                                         <details className="min-w-52">
                                             <summary className="cursor-pointer font-semibold text-[var(--jr-role-accent)]">
                                                 Safe before / after values
@@ -918,8 +952,8 @@ export default function AuditHistory({
                                 </tr>
                             ))}
                             {events.data.length === 0 && (
-                                <tr>
-                                    <td colSpan={8}>
+                                <tr role="row">
+                                    <td role="cell" colSpan={8}>
                                         No system activity matches these
                                         filters.
                                     </td>
@@ -977,11 +1011,20 @@ export default function AuditHistory({
                             ]}
                         >
                             {authentication.data.map((e) => (
-                                <tr key={e.id}>
-                                    <td className="whitespace-nowrap">
+                                <tr role="row" key={e.id}>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Date and time"
+                                        data-mobile-cell="full"
+                                        className="whitespace-nowrap"
+                                    >
                                         {time(e.created_at)}
                                     </td>
-                                    <td className="min-w-48 break-words">
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Account / attempted identifier"
+                                        className="min-w-48 break-words"
+                                    >
                                         <span className="font-medium">
                                             {actorName(
                                                 e.actor_identifier ??
@@ -994,8 +1037,13 @@ export default function AuditHistory({
                                                 : `Account ID: ${e.user_account_id}`}
                                         </span>
                                     </td>
-                                    <td>{e.account_type ?? 'Not verified'}</td>
-                                    <td>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Account type"
+                                    >
+                                        {e.account_type ?? 'Not verified'}
+                                    </td>
+                                    <td role="cell" data-mobile-label="Event">
                                         <Badge action={e.event} />
                                         {e.event === 'LOGIN' &&
                                             e.method === 'remember' && (
@@ -1004,9 +1052,20 @@ export default function AuditHistory({
                                                 </span>
                                             )}
                                     </td>
-                                    <td>{e.outcome}</td>
-                                    <td>{e.client_description}</td>
-                                    <td>
+                                    <td role="cell" data-mobile-label="Outcome">
+                                        {e.outcome}
+                                    </td>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Client information"
+                                    >
+                                        {e.client_description}
+                                    </td>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Details"
+                                        data-mobile-cell="full"
+                                    >
                                         <details>
                                             <summary className="cursor-pointer font-semibold text-[var(--jr-role-accent)]">
                                                 Authentication details
@@ -1030,8 +1089,8 @@ export default function AuditHistory({
                                 </tr>
                             ))}
                             {authentication.data.length === 0 && (
-                                <tr>
-                                    <td colSpan={7}>
+                                <tr role="row">
+                                    <td role="cell" colSpan={7}>
                                         No recorded authentication events match
                                         these filters.
                                     </td>
@@ -1072,8 +1131,12 @@ export default function AuditHistory({
                             ]}
                         >
                             {presence.accounts.map((a) => (
-                                <tr key={a.account_id}>
-                                    <td>
+                                <tr role="row" key={a.account_id}>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Username"
+                                        data-mobile-cell="full"
+                                    >
                                         <span className="font-medium">
                                             {a.username}
                                         </span>
@@ -1086,8 +1149,16 @@ export default function AuditHistory({
                                             Account ID: {a.account_id}
                                         </span>
                                     </td>
-                                    <td>{a.account_type}</td>
-                                    <td>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Account type"
+                                    >
+                                        {a.account_type}
+                                    </td>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Session status"
+                                    >
                                         <span
                                             className={
                                                 a.status === 'Active'
@@ -1104,18 +1175,32 @@ export default function AuditHistory({
                                             {a.session_count === 1 ? '' : 's'}
                                         </span>
                                     </td>
-                                    <td className="whitespace-nowrap">
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Login time"
+                                        className="whitespace-nowrap"
+                                    >
                                         {time(a.login_at)}
                                     </td>
-                                    <td className="whitespace-nowrap">
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Last activity"
+                                        className="whitespace-nowrap"
+                                    >
                                         {time(a.last_activity)}
                                     </td>
-                                    <td>{a.client_description}</td>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Device / browser"
+                                        data-mobile-cell="full"
+                                    >
+                                        {a.client_description}
+                                    </td>
                                 </tr>
                             ))}
                             {presence.accounts.length === 0 && (
-                                <tr>
-                                    <td colSpan={6}>
+                                <tr role="row">
+                                    <td role="cell" colSpan={6}>
                                         {presence.available
                                             ? 'No eligible accounts are recently active.'
                                             : 'Online presence is unavailable; no unverified sessions are shown.'}

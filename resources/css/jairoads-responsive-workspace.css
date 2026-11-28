@@ -368,6 +368,19 @@
     .jr-stage .jr-directory-exploration {
         --jr-exploration-gutter: 12px;
     }
+    .jr-stage
+        .jr-workspace
+        :is(
+            .jr-map-card-container,
+            .jr-table-card-container,
+            .jr-detail-section,
+            .jr-command-panel,
+            :is(.jr-audit-history, .jr-workspace-settings) main section
+        ) {
+        min-width: 0;
+        padding-inline: 12px;
+        overflow-wrap: anywhere;
+    }
     .jr-stage .jr-directory-exploration .jr-page-head {
         min-height: 0;
         gap: 12px;
@@ -481,10 +494,13 @@
         opacity: 0.78;
         line-height: 1.4;
     }
-    .jr-stage .jr-table-wrap:has(> .jr-mobile-table)::before {
+    .jr-stage
+        :is(.jr-table-wrap, .um-table-scroll):has(> .jr-mobile-table)::before {
         content: none;
     }
-    .jr-stage .jr-mobile-table {
+    .jr-stage
+        :is(.jr-table-wrap, .um-table-scroll, .jr-audit-table-scroll)
+        > table.jr-mobile-table {
         --jr-mobile-row-surface: #fff;
         --jr-mobile-row-border: #dbe2eb;
         display: block;
@@ -498,20 +514,22 @@
     .jr-stage .jr-mobile-table colgroup {
         display: none;
     }
-    .jr-stage .jr-mobile-table :is(thead, thead tr, tbody) {
+    .jr-stage .jr-mobile-table > :is(thead, tbody),
+    .jr-stage .jr-mobile-table > thead > tr {
         display: block;
     }
     /* The clipped headings still describe the cells to assistive technology. */
-    .jr-stage .jr-mobile-table thead th:not(:has([role='checkbox'])) {
+    .jr-stage .jr-mobile-table > thead > tr > th:not(:has([role='checkbox'])) {
         position: absolute;
         width: 1px;
+        max-width: 1px;
         height: 1px;
         padding: 0;
         overflow: hidden;
         clip-path: inset(50%);
         white-space: nowrap;
     }
-    .jr-stage .jr-mobile-table thead th:has([role='checkbox']) {
+    .jr-stage .jr-mobile-table > thead > tr > th:has([role='checkbox']) {
         display: flex;
         align-items: center;
         gap: 10px;
@@ -519,11 +537,15 @@
         margin-bottom: 8px;
         border-radius: 10px;
     }
-    .jr-stage .jr-mobile-table thead th:has(> [role='checkbox'])::after {
+    .jr-stage
+        .jr-mobile-table
+        > thead
+        > tr
+        > th:has(> [role='checkbox'])::after {
         content: 'Select all';
         content: 'Select all' / '';
     }
-    .jr-stage .jr-mobile-table tbody tr {
+    .jr-stage .jr-mobile-table > tbody > tr {
         position: relative;
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -535,17 +557,17 @@
         border-radius: 12px;
         background-color: var(--jr-mobile-row-surface);
     }
-    .jr-stage .jr-mobile-table tbody tr[data-selected='true'] {
+    .jr-stage .jr-mobile-table > tbody > tr[data-selected='true'] {
         border-color: var(--jr-display-accent, var(--ring));
         background-color: var(--jr-display-soft, var(--muted));
     }
-    .jr-stage .jr-mobile-table tbody td {
+    .jr-stage .jr-mobile-table > tbody > tr > td {
         display: block;
         width: auto;
         min-width: 0;
         height: auto;
         padding: 0;
-        border-block-end: 0;
+        border-block: 0;
         white-space: normal;
         overflow-wrap: anywhere;
         font-size: 14px;
@@ -562,7 +584,10 @@
     html.dark .jr-stage .jr-mobile-table td[data-mobile-label]::before {
         color: var(--jr-dark-muted);
     }
-    .jr-stage .jr-mobile-table [data-mobile-cell='primary'] {
+    .jr-stage
+        .jr-mobile-table
+        :is([data-mobile-cell='primary'], [data-mobile-cell='full']),
+    .jr-stage .jr-mobile-table > tbody > tr > td[colspan] {
         grid-column: 1 / -1;
     }
     .jr-stage .jr-mobile-table [data-mobile-cell='primary'] .jr-project-title {
@@ -573,20 +598,51 @@
         tr:has([data-mobile-cell='actions'] > button)
         [data-mobile-cell='primary'] {
         min-height: 34px;
-        padding-inline-end: 48px;
+        padding-inline-end: var(--jr-mobile-action-space, 48px);
     }
     .jr-stage .jr-mobile-table [data-mobile-cell='actions'] {
         position: absolute;
         top: 4px;
         inset-inline-end: 4px;
     }
-    .jr-stage .jr-mobile-table [data-mobile-cell='actions'] .jr-action-trigger {
+    .jr-stage .jr-mobile-table [data-mobile-cell='actions'] > button {
         min-width: 44px;
         min-height: 44px;
     }
     .jr-stage .jr-mobile-table [data-mobile-cell='selection'] {
         grid-column: 1 / -1;
         justify-self: start;
+    }
+    .jr-stage
+        :is(.um-table-scroll, .jr-audit-table-scroll):has(> .jr-mobile-table) {
+        border: 0;
+        border-radius: 0;
+    }
+    .jr-stage .um-table.jr-mobile-table {
+        --jr-mobile-action-space: 84px;
+    }
+    .jr-stage .um-table.jr-mobile-table .um-person {
+        min-width: 0;
+        gap: 8px;
+    }
+    .jr-stage .um-table.jr-mobile-table > tbody > tr:hover > td {
+        background: transparent;
+    }
+    html.dark
+        .jr-stage
+        :is(.um-table, .jr-audit-grid).jr-mobile-table
+        > tbody
+        > tr
+        > td,
+    html.dark .jr-stage .um-table.jr-mobile-table .um-person strong {
+        color: var(--jr-dark-text);
+    }
+    html.dark .jr-stage .um-table.jr-mobile-table :is(.um-muted, small),
+    html.dark .jr-stage .jr-audit-grid.jr-mobile-table .text-slate-500 {
+        color: var(--jr-dark-muted);
+    }
+    html.dark .jr-stage .jr-audit-grid.jr-mobile-table summary {
+        color: var(--jr-display-accent, var(--jr-dark-text));
     }
     .jr-stage :is(.jr-table, .um-table) :is(th, td) {
         line-height: 1.4;

@@ -180,6 +180,34 @@ export async function verifyMobileWorkspaces({
                             JSON.stringify(sizes),
                     );
 
+                    if (width === 390) {
+                        const overflowingCards = await page
+                            .locator('.jr-mobile-table')
+                            .evaluateAll((tables) =>
+                                tables
+                                    .filter((table) => {
+                                        const region = table.parentElement;
+                                        return (
+                                            region.scrollWidth >
+                                            region.clientWidth + 1
+                                        );
+                                    })
+                                    .map((table) =>
+                                        table.parentElement.getAttribute(
+                                            'aria-label',
+                                        ),
+                                    ),
+                            );
+                        assert.deepEqual(
+                            overflowingCards,
+                            [],
+                            role +
+                                ' ' +
+                                path +
+                                ' mobile cards fit without swiping',
+                        );
+                    }
+
                     if (width < 1024) {
                         assert.ok(
                             sizes.stageLeft < 2,

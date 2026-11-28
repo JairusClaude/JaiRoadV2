@@ -76,12 +76,8 @@ const conditionStyles = {
         label: 'text-rose-800 bg-rose-50 dark:bg-rose-950 dark:text-rose-200',
         fill: 'bg-rose-500',
     },
-    Unknown: {
-        label: 'text-slate-800 bg-slate-100 dark:bg-slate-800 dark:text-slate-200',
-        fill: 'bg-slate-500',
-    },
 };
-const conditions = ['Good', 'Fair', 'Bad', 'Unknown'] as const;
+const conditions = ['Good', 'Fair', 'Bad'] as const;
 const panel =
     'min-w-0 rounded-2xl border border-violet-100 bg-white dark:border-violet-900/70 dark:bg-slate-900';
 const linkStyle =
@@ -255,15 +251,22 @@ export function MaintenanceIntelligencePanel({
                                 ))}
                         </div>
                     )}
-                    <dl className="mt-3 grid grid-cols-3 gap-2">
+                    <dl className="mt-3 grid grid-cols-3 gap-1.5 text-center sm:gap-2">
                         {conditions.map((condition) => (
-                            <div key={condition} className="min-w-0">
+                            <div
+                                key={condition}
+                                className="flex min-w-0 flex-col items-center gap-1.5 py-1"
+                            >
                                 <dt
-                                    className={`inline-block rounded-md px-1.5 py-0.5 text-xs font-medium ${conditionStyles[condition].label}`}
+                                    className={`inline-flex items-center justify-center gap-1.5 rounded-md px-1.5 py-0.5 text-xs font-semibold ${conditionStyles[condition].label}`}
                                 >
+                                    <span
+                                        aria-hidden="true"
+                                        className={`size-2 shrink-0 rounded-full ${conditionStyles[condition].fill}`}
+                                    />
                                     {condition}
                                 </dt>
-                                <dd className="mt-1 text-xl leading-tight font-bold text-slate-900 tabular-nums dark:text-slate-100">
+                                <dd className="text-xl leading-tight font-bold text-slate-900 tabular-nums dark:text-slate-100">
                                     {data.conditions[condition]}
                                 </dd>
                             </div>

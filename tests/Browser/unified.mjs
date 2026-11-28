@@ -663,6 +663,26 @@ try {
     ).props.maintenanceIntelligence;
     assert.ok(Number.isInteger(intelligence.conditions.Unknown));
     assert.ok(intelligence.conditions.Unknown >= 0);
+    const conditionsSummary = superadmin.getByRole('region', {
+        name: 'Road condition',
+        exact: true,
+    });
+    const conditionLabels = ['Good', 'Fair', 'Bad'];
+    assert.deepEqual(
+        await conditionsSummary.locator('dt').allTextContents(),
+        conditionLabels,
+    );
+    assert.deepEqual(
+        (await conditionsSummary.locator('dd').allTextContents()).map(Number),
+        conditionLabels.map((condition) => intelligence.conditions[condition]),
+    );
+    const classified = conditionLabels.reduce(
+        (total, condition) => total + intelligence.conditions[condition],
+        0,
+    );
+    await conditionsSummary
+        .getByText(classified + ' classified', { exact: true })
+        .waitFor();
     assert.equal(
         intelligence.priority.length,
         Math.min(12, intelligence.priorityTotal),
