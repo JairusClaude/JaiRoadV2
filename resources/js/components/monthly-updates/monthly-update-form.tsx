@@ -38,6 +38,7 @@ export function MonthlyUpdateForm({
     enabled,
     onChange,
     onFiles,
+    saveError,
     onSave,
     onCancel,
 }: {
@@ -66,6 +67,7 @@ export function MonthlyUpdateForm({
         value: string,
     ) => void;
     onFiles: (files: File[]) => void;
+    saveError?: string;
     onSave: () => void;
     onCancel: () => void;
 }) {
@@ -427,6 +429,11 @@ export function MonthlyUpdateForm({
                         />
                     </section>
                     {draftTools}
+                    {saveError && (
+                        <p className="jr-field-error" role="alert">
+                            {saveError}
+                        </p>
+                    )}
                     <footer className="jr-form-footer">
                         <p>
                             {canonical

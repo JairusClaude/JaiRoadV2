@@ -5,6 +5,7 @@ import {
     Dialog,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
@@ -80,6 +81,7 @@ export function DocumentViewer({
             }}
         >
             <DialogContent
+                mobileLayout="fullscreen"
                 className="jr-theme jr-document-viewer"
                 onCloseAutoFocus={(event) => {
                     if (returnFocus.current?.isConnected) {
@@ -114,7 +116,7 @@ export function DocumentViewer({
                             className="jr-document-pdf"
                         />
                     ))}
-                <div className="flex justify-end gap-2">
+                <DialogFooter className="flex-row justify-end">
                     <Button
                         variant="outline"
                         onClick={() => onOpenChange(false)}
@@ -131,7 +133,7 @@ export function DocumentViewer({
                             Download
                         </a>
                     </Button>
-                </div>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

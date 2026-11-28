@@ -422,6 +422,35 @@ export async function verifyMobileWorkspaces({
                 .getByRole('button', { name: 'Close navigation', exact: true })
                 .tap();
             await drawer.waitFor({ state: 'hidden' });
+            const notifications = phone.getByRole('button', {
+                name: 'My account notifications',
+                exact: true,
+            });
+
+            if (role !== 'viewer') {
+                await notifications.tap();
+                const sheet = phone.getByRole('dialog', {
+                    name: 'My notifications',
+                    exact: true,
+                });
+                await sheet.waitFor();
+                assert.ok(
+                    await sheet.evaluate((element) => {
+                        const bounds = element.getBoundingClientRect();
+
+                        return (
+                            Math.abs(bounds.bottom - innerHeight) <= 2 &&
+                            Math.abs(bounds.width - innerWidth) <= 2
+                        );
+                    }),
+                    role + ' notifications open as a full-width bottom sheet',
+                );
+                await sheet
+                    .getByRole('button', { name: 'Close', exact: true })
+                    .tap();
+                await sheet.waitFor({ state: 'hidden' });
+            }
+
             await phone
                 .locator('html')
                 .evaluate((el) => el.classList.add('dark'));
@@ -437,6 +466,28 @@ export async function verifyMobileWorkspaces({
                     path: evidence + '/touch-dark-' + role + '.png',
                     fullPage: true,
                 });
+            }
+
+            await phone.goto(base + ui + '/road-coverages');
+            await phone
+                .getByRole('link', { name: 'Road list', exact: true })
+                .tap();
+            await phone.waitForURL(/#road-coverage-list$/);
+            await phone
+                .getByRole('link', { name: 'Back to map', exact: true })
+                .tap();
+            await phone.waitForURL(/#road-coverage-map$/);
+
+            if (role !== 'viewer') {
+                await phone.goto(base + '/workspace/dashboard');
+                const refresh = phone.getByRole('button', {
+                    name: 'Refresh dashboard',
+                    exact: true,
+                });
+                await refresh.tap();
+                await phone
+                    .locator('.jr-dashboard-refresh-status time')
+                    .waitFor();
             }
         } finally {
             await context.close();

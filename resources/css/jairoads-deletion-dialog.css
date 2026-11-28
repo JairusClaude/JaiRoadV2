@@ -592,3 +592,20 @@ html.jr-reduce-motion
     :is(.jr-delete-verification, .jr-delete-confirm) {
     transition: none;
 }
+
+@media (max-width: 639px) {
+    .jr-delete-dialog.jr-delete-premium[data-mobile-layout] {
+        top: auto;
+        bottom: var(--jr-dialog-bottom, 0px);
+        left: 0;
+        width: 100%;
+        max-height: min(90dvh, calc(var(--jr-dialog-height, 100dvh) - 12px));
+        transform: none;
+        border-radius: 20px 20px 0 0;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    html:not(.jr-reduce-motion)
+        .jr-delete-premium[data-mobile-layout][data-state] {
+        animation: none;
+    }
+}

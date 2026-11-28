@@ -445,9 +445,18 @@ export default function Index({
                         />
                     </section>
 
+                    <nav
+                        className="jr-road-mobile-links"
+                        aria-label="Road coverage views"
+                    >
+                        <a href="#road-coverage-map">Map</a>
+                        <a href="#road-coverage-list">Road list</a>
+                    </nav>
                     {/* 2. Simplified Coverage Map (Separated Cards Layout) */}
                     <section
                         aria-label="Road coverage map"
+                        id="road-coverage-map"
+                        tabIndex={-1}
                         className="jr-map-card-container mb-6 overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white p-4 shadow-sm sm:p-5"
                     >
                         {mapReady ? (
@@ -509,8 +518,13 @@ export default function Index({
                     {/* 3. Road Coverages Directory Table (Separated Cards Layout) */}
                     <section
                         aria-label="Road coverages directory"
+                        id="road-coverage-list"
+                        tabIndex={-1}
                         className="jr-table-card-container rounded-t-[20px] rounded-b-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm"
                     >
+                        <div className="jr-road-mobile-links">
+                            <a href="#road-coverage-map">Back to map</a>
+                        </div>
                         <form
                             className="jr-filters"
                             onSubmit={(event) => {

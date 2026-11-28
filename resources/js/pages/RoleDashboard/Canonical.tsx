@@ -1,8 +1,7 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import {
     Bell,
     Eye,
-    RefreshCw,
     CircleAlert,
     FileText,
     FolderKanban,
@@ -15,6 +14,7 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { DashboardAnalytics } from '@/components/dashboard/dashboard-analytics';
 import type { DashboardSummary } from '@/components/dashboard/dashboard-analytics';
+import { DashboardRefresh } from '@/components/dashboard/dashboard-refresh';
 import { RenderErrorBoundary } from '@/components/jairoads/render-error-boundary';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import type { SimplifiedCoverageItem } from '@/components/road-coverages/simplified-coverage-map';
@@ -280,7 +280,6 @@ export default function RoleDashboard({
     analytics,
 }: Props) {
     const isEngineer = role === 'engineer';
-    const [refreshing, setRefreshing] = useState(false);
     const notificationPanel = (
         <section
             className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm"
@@ -350,27 +349,7 @@ export default function RoleDashboard({
                         </p>
                     </div>
                     {isEngineer && (
-                        <button
-                            type="button"
-                            className={
-                                isEngineer
-                                    ? 'jr-engineer-refresh'
-                                    : 'jr-viewer-refresh'
-                            }
-                            disabled={refreshing}
-                            onClick={() =>
-                                router.reload({
-                                    onStart: () => setRefreshing(true),
-                                    onFinish: () => setRefreshing(false),
-                                })
-                            }
-                        >
-                            <RefreshCw
-                                className={`size-4${refreshing ? 'animate-spin' : ''}`}
-                                aria-hidden="true"
-                            />
-                            {refreshing ? 'Refreshing…' : 'Refresh dashboard'}
-                        </button>
+                        <DashboardRefresh className="jr-engineer-refresh" />
                     )}
                 </div>
 

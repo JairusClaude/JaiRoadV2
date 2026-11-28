@@ -1,37 +1,32 @@
 import { useSyncExternalStore } from 'react';
 
-// Tablets use the drawer too, leaving the full width for data tables and forms.
-const MOBILE_BREAKPOINT = 1024;
+function viewport(query: string) {
+    const media =
+        typeof window === 'undefined' ? undefined : window.matchMedia(query);
 
-const mql =
-    typeof window === 'undefined'
-        ? undefined
-        : window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
+    return {
+        subscribe(callback: () => void) {
+            media?.addEventListener('change', callback);
 
-function mediaQueryListener(callback: (event: MediaQueryListEvent) => void) {
-    if (!mql) {
-        return () => {};
-    }
-
-    mql.addEventListener('change', callback);
-
-    return () => {
-        mql.removeEventListener('change', callback);
+            return () => media?.removeEventListener('change', callback);
+        },
+        matches: () => media?.matches ?? false,
     };
 }
 
-function isSmallerThanBreakpoint(): boolean {
-    return mql?.matches ?? false;
-}
-
-function getServerSnapshot(): boolean {
-    return false;
-}
+// Tablets share the navigation drawer. Phone dialogs use the smaller breakpoint.
+const mobile = viewport('(max-width: 1023px)');
+const phone = viewport('(max-width: 639px)');
+const serverSnapshot = () => false;
 
 export function useIsMobile(): boolean {
     return useSyncExternalStore(
-        mediaQueryListener,
-        isSmallerThanBreakpoint,
-        getServerSnapshot,
+        mobile.subscribe,
+        mobile.matches,
+        serverSnapshot,
     );
+}
+
+export function useIsPhone(): boolean {
+    return useSyncExternalStore(phone.subscribe, phone.matches, serverSnapshot);
 }

@@ -119,11 +119,13 @@ export function DashboardAnalytics({
     );
     const items = data.activity;
     const [exporting, setExporting] = useState(false);
+    const [exportError, setExportError] = useState('');
 
     const exportReport = async (
         format: (typeof reportFormats)[number]['format'],
     ) => {
         setExporting(true);
+        setExportError('');
 
         try {
             const { downloadAnalyticsReport } =
@@ -137,7 +139,7 @@ export function DashboardAnalytics({
             );
             toast.success(`${format} report download started.`);
         } catch {
-            toast.error('The report could not be generated. Try again.');
+            setExportError('The report could not be generated. Try again.');
         } finally {
             setExporting(false);
         }
@@ -160,35 +162,42 @@ export function DashboardAnalytics({
                     </p>
                 </div>
                 {showExport && (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger
-                            type="button"
-                            className="jr-analytics-export"
-                            disabled={exporting}
-                            aria-busy={exporting}
-                        >
-                            <Download size={16} aria-hidden="true" />
-                            Export report
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                            align="end"
-                            className="jr-analytics-export-menu"
-                        >
-                            {reportFormats.map(
-                                ({ format, label, icon: Icon }) => (
-                                    <DropdownMenuItem
-                                        key={format}
-                                        onSelect={() =>
-                                            void exportReport(format)
-                                        }
-                                    >
-                                        <Icon aria-hidden="true" />
-                                        {label}
-                                    </DropdownMenuItem>
-                                ),
-                            )}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="min-w-0">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger
+                                type="button"
+                                className="jr-analytics-export"
+                                disabled={exporting}
+                                aria-busy={exporting}
+                            >
+                                <Download size={16} aria-hidden="true" />
+                                Export report
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                align="end"
+                                className="jr-analytics-export-menu"
+                            >
+                                {reportFormats.map(
+                                    ({ format, label, icon: Icon }) => (
+                                        <DropdownMenuItem
+                                            key={format}
+                                            onSelect={() =>
+                                                void exportReport(format)
+                                            }
+                                        >
+                                            <Icon aria-hidden="true" />
+                                            {label}
+                                        </DropdownMenuItem>
+                                    ),
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        {exportError && (
+                            <p className="jr-field-error mt-2" role="alert">
+                                {exportError}
+                            </p>
+                        )}
+                    </div>
                 )}
                 <span className="rounded-full border border-[var(--jr-role-accent-soft)] bg-[var(--jr-role-accent-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--jr-role-accent-ink)]">
                     {data.scope}

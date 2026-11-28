@@ -21,6 +21,7 @@ import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import AccountLifecycle from '@/components/user-management/account-lifecycle';
 import AccountTypeBadge from '@/components/user-management/account-type-badge';
 import EngineerLifecycle from '@/components/user-management/engineer-lifecycle';
+import { useMobileDialogViewport } from '@/hooks/use-mobile-dialog-viewport';
 import '../../../css/canonical-user-management.css';
 
 type Role = 'SuperAdmin' | 'Admin' | 'Engineer' | 'Viewer';
@@ -409,6 +410,7 @@ export default function CanonicalUserManagement({
     const [role, setRole] = useState(directory?.role ?? 'all');
     const [state, setState] = useState(directory?.state ?? 'all');
     const [page, setPage] = useState(1);
+    const dialogViewport = useMobileDialogViewport();
     const [modal, setModal] = useState<Modal | null>(() =>
         initialEngineerId && engineers.some((e) => e.id === initialEngineerId)
             ? { kind: 'engineer', id: initialEngineerId }
@@ -1080,6 +1082,8 @@ export default function CanonicalUserManagement({
                     <Dialog.Overlay className="um-overlay" />
                     <Dialog.Content
                         className="um-dialog"
+                        data-mobile-layout="fullscreen"
+                        ref={dialogViewport}
                         onEscapeKeyDown={(e) => {
                             if (busy) {
                                 e.preventDefault();

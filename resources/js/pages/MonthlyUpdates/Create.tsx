@@ -1,7 +1,6 @@
 import '../../../css/maintenance-projects.css';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
 import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialog';
 import { DurableReportQueue } from '@/components/monthly-updates/durable-report-queue';
 import { FieldReportDraft } from '@/components/monthly-updates/field-report-draft';
@@ -163,6 +162,7 @@ export default function Create(parents: MonthlyCreateProps) {
     const importing = useRef(false);
     const [importBusy, setImportBusy] = useState(false);
     const [confirmRemoval, setConfirmRemoval] = useState(false);
+    const [saveError, setSaveError] = useState('');
     const save = (confirmed = false, reconnect = false) => {
         if (
             !preview ||
@@ -176,7 +176,9 @@ export default function Create(parents: MonthlyCreateProps) {
         }
 
         if (!navigator.onLine) {
-            toast.error('Offline. Save a draft or queue reconnect submission.');
+            setSaveError(
+                'Offline. Save a draft or queue reconnect submission.',
+            );
 
             return;
         }
@@ -191,6 +193,7 @@ export default function Create(parents: MonthlyCreateProps) {
             return;
         }
 
+        setSaveError('');
         form.clearErrors();
         const errors = validateMonthlyUpdate(form.data, formParents);
 
@@ -277,7 +280,6 @@ export default function Create(parents: MonthlyCreateProps) {
                                         errors.file ??
                                         'The update was saved, but a media file could not be uploaded. Open the saved update and retry.';
                                     form.setError('attachments', message);
-                                    toast.error(message);
                                 },
                             },
                         );
@@ -480,6 +482,7 @@ export default function Create(parents: MonthlyCreateProps) {
                     form.setData('attachments', files);
                 }}
                 onCancel={() => router.visit(cancel)}
+                saveError={saveError}
                 onSave={() => save()}
             />
             <DeletionDialog

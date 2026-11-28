@@ -797,6 +797,20 @@
     .jr-stage .jr-settings {
         overflow-wrap: anywhere;
     }
+    .jr-stage
+        :is(.jr-admin-metrics, .jr-engineer-metrics, .jr-viewer-metrics)
+        > div {
+        display: grid;
+        grid-template-rows: 1fr auto;
+        gap: 6px;
+    }
+    .jr-stage
+        :is(.jr-admin-metrics, .jr-engineer-metrics, .jr-viewer-metrics)
+        > div
+        > div:last-child {
+        margin-top: 0;
+        font-variant-numeric: tabular-nums;
+    }
     .jr-stage .jr-settings nav[aria-label='Settings sections'] button {
         padding: 10px 9px;
         min-width: 0;
@@ -993,5 +1007,190 @@ html.jr-reduce-motion .jr-responsive-shell > aside {
     }
     .jr-stage .jr-command-panel dd {
         overflow-wrap: anywhere;
+    }
+}
+
+.jr-dashboard-refresh {
+    display: flex;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+}
+.jr-dashboard-refresh-status {
+    font-size: 12px;
+    color: #475569;
+    overflow-wrap: anywhere;
+}
+html.dark .jr-dashboard-refresh-status {
+    color: var(--jr-dark-muted);
+}
+html.dark .jr-stage .jr-field-error {
+    color: #fca5a5;
+}
+.jr-dashboard-refresh > button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+}
+.jr-road-mobile-links {
+    display: none;
+}
+
+@media (max-width: 639px) {
+    .jr-stage .jr-page-head .jr-dashboard-refresh {
+        align-self: stretch;
+        justify-content: space-between;
+    }
+    .jr-stage .jr-page-head .jr-dashboard-refresh > button {
+        align-self: center;
+        min-height: 44px;
+        padding-inline: 14px;
+    }
+    .jr-stage .jr-metrics-grid .jr-metric-value {
+        min-width: 0;
+        font-variant-numeric: tabular-nums;
+        overflow-wrap: anywhere;
+    }
+    .jr-stage .jr-road-mobile-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    .jr-stage .jr-road-mobile-links a {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        padding-inline: 14px;
+        border: 1px solid currentColor;
+        border-radius: 10px;
+        color: var(--jr-display-accent);
+        background: var(--jr-display-soft);
+        font-size: 14px;
+        font-weight: 600;
+    }
+    body:has(.jr-stage, .jr-responsive-shell)
+        [data-slot='dialog-content'][data-mobile-layout] {
+        top: auto;
+        bottom: var(--jr-dialog-bottom, 0px);
+        left: 0;
+        display: flex;
+        width: 100%;
+        max-width: 100%;
+        max-height: min(88dvh, calc(var(--jr-dialog-height, 100dvh) - 16px));
+        translate: none;
+        transform: none;
+        transition-property: none;
+        flex-direction: column;
+        gap: 0;
+        overflow: hidden;
+        border-radius: 20px 20px 0 0;
+        padding: 0;
+    }
+    body:has(.jr-stage, .jr-responsive-shell)
+        [data-slot='dialog-content'][data-mobile-layout='fullscreen'],
+    .um-dialog.um-dialog[data-mobile-layout='fullscreen'] {
+        top: auto;
+        bottom: var(--jr-dialog-bottom, 0px);
+        left: 0;
+        width: 100%;
+        max-width: 100%;
+        height: var(--jr-dialog-height, 100dvh);
+        max-height: var(--jr-dialog-height, 100dvh);
+        translate: none;
+        transform: none;
+        border-radius: 0;
+    }
+    body:has(.jr-stage, .jr-responsive-shell)
+        [data-slot='dialog-content'][data-mobile-layout]
+        > .jr-dialog-scroll {
+        display: flex;
+        min-height: 0;
+        flex: 1 1 auto;
+        flex-direction: column;
+        gap: 16px;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 0 16px max(16px, env(safe-area-inset-bottom, 0px));
+        scroll-padding-block: 72px;
+    }
+    body:has(.jr-stage, .jr-responsive-shell)
+        .jr-dialog-scroll
+        > :is([data-slot='dialog-header'], [data-slot='dialog-footer']) {
+        position: sticky;
+        z-index: 1;
+        flex-shrink: 0;
+        margin-inline: -16px;
+        padding: 12px 16px;
+        background-color: var(--jr-role-dark-surface, var(--background));
+        text-align: start;
+    }
+    body:has(.jr-stage, .jr-responsive-shell)
+        .jr-dialog-scroll
+        > [data-slot='dialog-header'] {
+        top: 0;
+        padding-top: max(16px, env(safe-area-inset-top, 0px));
+        padding-inline-end: 62px;
+    }
+    body:has(.jr-stage, .jr-responsive-shell)
+        .jr-dialog-scroll
+        > [data-slot='dialog-footer'] {
+        bottom: 0;
+    }
+    body:has(.jr-stage, .jr-responsive-shell)
+        .jr-dialog-scroll
+        [data-slot='dialog-footer']
+        :is(button, a) {
+        min-width: 0;
+        min-height: 44px;
+        white-space: normal;
+    }
+    body:has(.jr-stage, .jr-responsive-shell)
+        [data-slot='dialog-content'][data-mobile-layout]
+        > [data-slot='dialog-close'] {
+        top: max(4px, env(safe-area-inset-top, 0px));
+        z-index: 2;
+        display: grid;
+        width: 44px;
+        height: 44px;
+        place-items: center;
+    }
+    body:has(.jr-stage, .jr-responsive-shell)
+        [data-slot='dialog-content'][data-mobile-layout]
+        :is(
+            input:not([type='checkbox']):not([type='radio']),
+            textarea,
+            select
+        ) {
+        font-size: 16px;
+    }
+    .um-dialog[data-mobile-layout='fullscreen'] {
+        scroll-padding-block: 84px;
+    }
+    .um-dialog[data-mobile-layout='fullscreen'] .um-dialog-head {
+        padding-top: max(12px, env(safe-area-inset-top, 0px));
+    }
+    .um-dialog[data-mobile-layout='fullscreen'] .um-dialog-head button {
+        display: grid;
+        min-width: 44px;
+        min-height: 44px;
+        place-items: center;
+    }
+    .um-dialog[data-mobile-layout='fullscreen'] .um-dialog-actions {
+        padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    }
+    body:has([data-mobile-layout][data-state='open']) .toaster {
+        z-index: 40;
+    }
+    .jr-notification-sheet .jr-notification-refresh {
+        min-height: 44px;
+    }
+    .jr-notification-sheet .jr-notification-list {
+        min-height: 0;
+        max-height: none;
+        overflow: visible;
     }
 }
