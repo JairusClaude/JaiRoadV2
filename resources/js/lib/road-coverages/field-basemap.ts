@@ -95,7 +95,19 @@ export function attachFieldBasemap(
         for (const pack of packs) {
             const layer = packedMapLayer(pack);
             layers.push(layer);
-            choices[pack.label.replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char] ?? char))] = layer;
+            choices[
+                pack.label.replace(
+                    /[&<>"']/g,
+                    (char) =>
+                        ({
+                            '&': '&amp;',
+                            '<': '&lt;',
+                            '>': '&gt;',
+                            '"': '&quot;',
+                            "'": '&#39;',
+                        })[char] ?? char,
+                )
+            ] = layer;
         }
 
         if (map.hasLayer(boundary)) {

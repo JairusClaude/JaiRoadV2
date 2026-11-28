@@ -119,13 +119,22 @@ const storageReserve = 64 * 1024 * 1024;
 async function fileBudget(used: number, pending: boolean) {
     try {
         const estimate = await navigator.storage?.estimate();
+
         if (estimate?.quota !== undefined && estimate.usage !== undefined) {
-            const free = Math.max(0, estimate.quota - estimate.usage - storageReserve);
-            return Math.min(maxFileBudget, used + Math.floor(free * (pending ? 0.8 : 0.5)));
+            const free = Math.max(
+                0,
+                estimate.quota - estimate.usage - storageReserve,
+            );
+
+            return Math.min(
+                maxFileBudget,
+                used + Math.floor(free * (pending ? 0.8 : 0.5)),
+            );
         }
     } catch {
         // Older WebViews may not provide a storage estimate.
     }
+
     return fallbackFileBudget;
 }
 const encodedFileLimit = Math.ceil(fileLimit / 3) * 4 + 256;
@@ -294,7 +303,9 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export async function loadWorkspace(): Promise<Workspace> {
-    const data = await request<Workspace>('/workspace?profile=expanded', { signal: AbortSignal.timeout(45000) });
+    const data = await request<Workspace>('/workspace?profile=expanded', {
+        signal: AbortSignal.timeout(45000),
+    });
 
     if (
         !Number.isSafeInteger(data.accountId) ||
@@ -390,7 +401,21 @@ function snapshotOf(workspace: Workspace): Snapshot {
         records: workspace.records,
         monthly: Array.isArray(workspace.monthly) ? workspace.monthly : [],
         documentEdit: workspace.documentEdit === true,
-        documents: Array.isArray(workspace.files) ? workspace.files.filter(file => validFileReference(file) && file.kind === 'document' && typeof file.rowVersion === 'string').map(file => ({ id: file.id, version: file.rowVersion, document_title: file.title, description: file.description ?? '' })) : [],
+        documents: Array.isArray(workspace.files)
+            ? workspace.files
+                  .filter(
+                      (file) =>
+                          validFileReference(file) &&
+                          file.kind === 'document' &&
+                          typeof file.rowVersion === 'string',
+                  )
+                  .map((file) => ({
+                      id: file.id,
+                      version: file.rowVersion,
+                      document_title: file.title,
+                      description: file.description ?? '',
+                  }))
+            : [],
         files: Array.isArray(workspace.files)
             ? workspace.files.filter(validFileReference)
             : [],
@@ -662,9 +687,15 @@ export class Vault {
                     throw new Error('This workspace only allows viewing.');
                 }
 
-                if (kind === 'document' && (!row?.version || !state.snapshot.documentEdit)) {
-                    throw new Error('Refresh this document online before editing.');
+                if (
+                    kind === 'document' &&
+                    (!row?.version || !state.snapshot.documentEdit)
+                ) {
+                    throw new Error(
+                        'Refresh this document online before editing.',
+                    );
                 }
+
                 const resolved = row
                     ? state.confirmed[String(row.id)]
                     : undefined;
@@ -784,7 +815,10 @@ export class Vault {
 
                 attachmentBlob(data, name);
 
-                if (this.pendingSize(state) + data.length > (await fileBudget(this.pendingSize(state), true))) {
+                if (
+                    this.pendingSize(state) + data.length >
+                    (await fileBudget(this.pendingSize(state), true))
+                ) {
                     throw new Error(
                         'Local attachment storage is full. Synchronize saved work first.',
                     );
@@ -886,7 +920,7 @@ export class Vault {
                             0,
                         );
 
-                    if (used + data.length > await fileBudget(used, false)) {
+                    if (used + data.length > (await fileBudget(used, false))) {
                         throw new Error(
                             'Offline file cache is full. Existing files were retained.',
                         );
@@ -1094,7 +1128,10 @@ export class Vault {
 
     private wire(change: Change): Wire | null {
         const fields = { ...change.fields };
-        const name = change.kind === 'road' || change.kind === 'document' ? null : relation[change.kind];
+        const name =
+            change.kind === 'road' || change.kind === 'document'
+                ? null
+                : relation[change.kind];
 
         if (name && !/^\d+$/.test(fields[name])) {
             const parent = this.state.confirmed[fields[name]];
@@ -1229,8 +1266,18 @@ export class Vault {
                 }
 
                 if (item.kind === 'document') {
-                    snapshot.files = (snapshot.files ?? []).map(file => file.kind === 'document' && file.id === receipt.id ? { ...file, title: wire.fields.document_title, description: wire.fields.description, rowVersion: receipt.version } : file);
+                    snapshot.files = (snapshot.files ?? []).map((file) =>
+                        file.kind === 'document' && file.id === receipt.id
+                            ? {
+                                  ...file,
+                                  title: wire.fields.document_title,
+                                  description: wire.fields.description,
+                                  rowVersion: receipt.version,
+                              }
+                            : file,
+                    );
                 }
+
                 return {
                     ...state,
                     snapshot,

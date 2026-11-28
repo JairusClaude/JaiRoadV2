@@ -552,8 +552,8 @@ export default function Form(parents: DocumentParents) {
                                 {page.props.offlineSnapshot === true
                                     ? 'Changes are saved locally and synchronized when connected.'
                                     : page.props.canonicalFrontend === true
-                                    ? 'Files remain private. X stages removal; Save Changes confirms permanent deletion. Cancel retains the file.'
-                                    : 'Local preview only · files and changes reset on restart.'}
+                                      ? 'Files remain private. X stages removal; Save Changes confirms permanent deletion. Cancel retains the file.'
+                                      : 'Local preview only · files and changes reset on restart.'}
                             </p>
                             <div className="flex gap-2">
                                 <Button

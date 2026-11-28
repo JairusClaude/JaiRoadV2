@@ -336,16 +336,32 @@ export function packedMapLayer(pack: MapPack): L.GridLayer {
                         response = await cache.match(path);
                     }
 
-                    if (!response && (await bundledMapPacks()).some((entry) => key(entry) === key(pack))) {
-                        const tileInfo = pack.tiles.find((entry) => entry.z === coords.z && entry.x === coords.x && entry.y === coords.y);
+                    if (
+                        !response &&
+                        (await bundledMapPacks()).some(
+                            (entry) => key(entry) === key(pack),
+                        )
+                    ) {
+                        const tileInfo = pack.tiles.find(
+                            (entry) =>
+                                entry.z === coords.z &&
+                                entry.x === coords.x &&
+                                entry.y === coords.y,
+                        );
 
                         if (tileInfo) {
-                            const candidate = await fetch(bundledRoot + path.slice(root.length), {
-                                credentials: 'omit',
-                                redirect: 'error',
-                            });
+                            const candidate = await fetch(
+                                bundledRoot + path.slice(root.length),
+                                {
+                                    credentials: 'omit',
+                                    redirect: 'error',
+                                },
+                            );
 
-                            if (candidate.ok && await verified(candidate.clone(), tileInfo)) {
+                            if (
+                                candidate.ok &&
+                                (await verified(candidate.clone(), tileInfo))
+                            ) {
                                 response = candidate;
                             }
                         }

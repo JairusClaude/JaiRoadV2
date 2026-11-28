@@ -246,7 +246,9 @@ function renderDirectory() {
     }
 
     if (vault.state.snapshot.truncated && home && el('field-message').hidden) {
-        note('Some records or files exceed the prepared offline snapshot. Connect to access additional data.');
+        note(
+            'Some records or files exceed the prepared offline snapshot. Connect to access additional data.',
+        );
     }
 
     const create = el<HTMLButtonElement>('new-field-item');

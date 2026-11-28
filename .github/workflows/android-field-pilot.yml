@@ -2,7 +2,7 @@ name: JaiROADS Android field pilot
 
 on:
   push:
-    branches: [Improvement1, offline-expanded-qa-v052]
+    branches: [Improvement1]
     paths:
       - 'mobile/android-pilot/**'
       - '.github/workflows/android-field-pilot.yml'

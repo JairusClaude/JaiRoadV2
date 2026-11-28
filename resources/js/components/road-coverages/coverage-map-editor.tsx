@@ -591,19 +591,44 @@ function EditableCoverageMapEditor({
         }
 
         try {
-            const a = state.points[i], b = state.points[i + 1];
+            const a = state.points[i],
+                b = state.points[i + 1];
             const offline = androidWorkspace()?.status().offline === true;
+
             if (offline && alternatives) {
-                setNotice('Offline map provides one road alignment suggestion. Trace an alternative manually.');
+                setNotice(
+                    'Offline map provides one road alignment suggestion. Trace an alternative manually.',
+                );
+
                 return;
             }
+
             let response;
+
             if (offline) {
-                const { offlineAlignment } = await import('@/lib/road-coverages/offline-network.mjs');
-                const line = await offlineAlignment(a,b,c.signal);
-                response = {code:line?'Ok':'NoRoute',routes:line?[{geometry:{type:'LineString',coordinates:line}}]:[]};
+                const { offlineAlignment } =
+                    await import('@/lib/road-coverages/offline-network.mjs');
+                const line = await offlineAlignment(a, b, c.signal);
+                response = {
+                    code: line ? 'Ok' : 'NoRoute',
+                    routes: line
+                        ? [
+                              {
+                                  geometry: {
+                                      type: 'LineString',
+                                      coordinates: line,
+                                  },
+                              },
+                          ]
+                        : [],
+                };
             } else {
-                if (!services?.routing) throw new Error('Routing is not configured. Trace this portion manually.');
+                if (!services?.routing) {
+                    throw new Error(
+                        'Routing is not configured. Trace this portion manually.',
+                    );
+                }
+
                 response = await json(
                     `${services.routing}/${a.join(',')};${b.join(',')}?overview=full&geometries=geojson&alternatives=${alternatives}&steps=false&radiuses=50;50`,
                     c.signal,
@@ -646,7 +671,12 @@ function EditableCoverageMapEditor({
                 const next = structuredClone(current.current);
                 acceptAutomatic(next, i, lines[0]);
                 apply(next);
-                if (offline) setNotice('Offline road alignment suggestion · OpenStreetMap. Verify road position and condition in the field.');
+
+                if (offline) {
+                    setNotice(
+                        'Offline road alignment suggestion · OpenStreetMap. Verify road position and condition in the field.',
+                    );
+                }
             }
         } catch (e) {
             if (c.signal.aborted || generation !== generations.current[i]) {
@@ -1682,12 +1712,25 @@ function EditableCoverageMapEditor({
                         onClick={async () => {
                             try {
                                 if (androidWorkspace()?.status().offline) {
-                                    const { offlinePlaceSearch } = await import('@/lib/road-coverages/offline-network.mjs');
-                                    const matches = await offlinePlaceSearch(query);
-                                    setResults(matches.map(entry => ({p:entry.point,label:entry.name})));
-                                    setSearchNotice(matches.length?'Offline road and place index.':'No matching cached place.');
+                                    const { offlinePlaceSearch } =
+                                        await import('@/lib/road-coverages/offline-network.mjs');
+                                    const matches =
+                                        await offlinePlaceSearch(query);
+                                    setResults(
+                                        matches.map((entry) => ({
+                                            p: entry.point,
+                                            label: entry.name,
+                                        })),
+                                    );
+                                    setSearchNotice(
+                                        matches.length
+                                            ? 'Offline road and place index.'
+                                            : 'No matching cached place.',
+                                    );
+
                                     return;
                                 }
+
                                 if (!services?.geocoding) {
                                     throw new Error(
                                         'Location search is not configured.',
@@ -1746,7 +1789,10 @@ function EditableCoverageMapEditor({
                                 </button>
                             ))}
                             <small>
-                                {searchNotice} Place search: {androidWorkspace()?.status().offline ? 'Offline OpenStreetMap' : 'Photon / OpenStreetMap'}
+                                {searchNotice} Place search:{' '}
+                                {androidWorkspace()?.status().offline
+                                    ? 'Offline OpenStreetMap'
+                                    : 'Photon / OpenStreetMap'}
                             </small>
                         </div>
                     )}
