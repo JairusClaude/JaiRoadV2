@@ -146,6 +146,7 @@ void createInertiaApp({
 }).then(() => {
     if (fieldWorkspace) {
         router.on('navigate', (event) => fieldWorkspace.current(event.detail.page));
+        window.addEventListener('jairoads-field-back',()=>router.visit('/workspace/dashboard'));
         fieldWorkspace.ready();
     }
 }).catch(() => {

@@ -4,10 +4,11 @@ import type { HttpClient, HttpRequestConfig, HttpResponse, Page } from '@inertia
 export type FieldBridge = {
     initial: Page;
     request: (config: HttpRequestConfig, fallback?: boolean) => Promise<HttpResponse | null>;
-    observe: (response: HttpResponse) => void;
+    observe: (response: HttpResponse) => boolean;
     current: (page: Page) => void;
     resource: (url: string, force?: boolean) => Promise<Response | null>;
     exportFile: (url: string) => Promise<boolean>;
+    hasLocalFile: (url:string) => boolean;
     status: () => { offline: boolean; message: string };
     ready: () => void;
     fail: () => void;
@@ -32,7 +33,7 @@ export function fieldHttp(bridge: FieldBridge): HttpClient {
             if (local) return local;
             try {
                 const response = await original.request(config);
-                bridge.observe(response);
+                if (!bridge.observe(response)) throw new HttpCancelledError('Workspace locked',config.url);
                 return response;
             } catch (error) {
                 // Never replay a failed online mutation: its result may be ambiguous.
@@ -73,7 +74,7 @@ export function installFieldResources(bridge: FieldBridge) {
         const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href]') : null;
         if (!link || !/^\/workspace\/files\/(document|media)\/\d+$/.test(new URL(link.href).pathname)) return;
         if (new URL(link.href).origin !== location.origin) return;
-        if (bridge.status().offline || link.hasAttribute('download')) {
+        if (bridge.status().offline || bridge.hasLocalFile(link.href)) {
             event.preventDefault();
             void bridge.exportFile(link.href);
         }

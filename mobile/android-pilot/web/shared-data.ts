@@ -299,11 +299,54 @@ export function offlinePage(vault: Vault, dashboard: Page, url: URL, status = ''
 export function offlineResource(vault: Vault, dashboard: Page, url: URL): unknown | undefined {
     const d=projectData(vault,dashboard);
     const path=url.pathname;
+    const choicesPage = <T>(rows:T[], size:number, key='page') => {
+        const last_page=Math.max(1,Math.ceil(rows.length/size));
+        const page=Math.max(1,Math.min(last_page,Math.floor(Number(url.searchParams.get(key))||1)));
+        return {data:rows.slice((page-1)*size,page*size),page,last_page};
+    };
     if(path==='/workspace/dashboard/map-roads'||path===BASE+'/map/road-index') {
         const before=Number(url.searchParams.get('before')||0);
-        return {data:d.mapRows.filter(r=>r.geojson&&(!before||r.id<before)).sort((a,b)=>b.id-a.id),next_cursor:null};
+        const rows=d.mapRows.filter(r=>r.geojson&&(!before||r.id<before)&&queryMatch(url.searchParams.get('search')||'',r.road_name)&&
+            match(url.searchParams.get('municipality'),d.roads.find(road=>road.id===r.id)?.lgus_id)&&match(url.searchParams.get('condition'),r.state_category)&&
+            match(url.searchParams.get('pavement'),d.roads.find(road=>road.id===r.id)?.pavement_type)).sort((a,b)=>b.id-a.id);
+        const data=rows.slice(0,100);
+        return {data,next_cursor:rows.length>100?data[data.length-1].id:null};
     }
-    if(path===BASE+'/map/roads') return {data:d.roads};
+    if(path===BASE+'/map/roads') {
+        const after=Number(url.searchParams.get('after')||0);
+        const rows=d.roads.filter(r=>r.geojson&&r.id>after&&match(url.searchParams.get('lgu_id'),r.lgus_id)&&queryMatch(url.searchParams.get('q')||'',r.road_name)).sort((a,b)=>a.id-b.id);
+        const data=rows.slice(0,100);
+        return {data,next_cursor:rows.length>100?data[data.length-1].id:null};
+    }
+    if(path===BASE+'/project-road-choices') {
+        const rows=d.coverages(Number(url.searchParams.get('project')||0)||undefined).filter(r=>queryMatch(url.searchParams.get('search')||'',r.road_name,r.municipality));
+        const available=rows.filter(r=>!r.assigned).length;
+        const visible=rows.filter(r=>url.searchParams.get('show_assigned')==='1'||!r.assigned).map(r=>({...r,geojson:null})).sort((a,b)=>a.road_name.localeCompare(b.road_name));
+        return {...choicesPage(visible,30),available,assigned:rows.length-available};
+    }
+    if(path===BASE+'/project-filter-choices') return choicesPage(d.projects.filter(r=>queryMatch(url.searchParams.get('search')||'',r.project_title,r.municipality)).sort((a,b)=>a.project_title.localeCompare(b.project_title)),30);
+    if(path===BASE+'/record-period-choices') return {data:d.records.filter(r=>same(r.project_id,url.searchParams.get('project'))&&same(r.year,url.searchParams.get('year')))};
+    if(path===BASE+'/monthly-updates/form-choices') {
+        const own=d.parents();
+        const projectId=Number(url.searchParams.get('project')||0);
+        if(!projectId)return choicesPage(own.projects.filter(r=>queryMatch(url.searchParams.get('search')||'',r.project_title,r.municipality)),20);
+        const project=own.projects.find(r=>r.id===projectId);
+        if(!project)return undefined;
+        const records=own.records.filter(r=>r.project_id===projectId).sort((a,b)=>b.year-a.year||b.quarter.localeCompare(a.quarter));
+        const page=choicesPage(records,25,'record_page');
+        const selectedRecordId=Number(url.searchParams.get('record')||0)||null;
+        const selected=records.find(r=>r.id===selectedRecordId);
+        if(selectedRecordId&&!selected)return undefined;
+        const choices=page.data.slice();
+        if(selected&&!choices.some(r=>r.id===selected.id))choices.push(selected);
+        const years:Record<string,number>={};
+        for(const update of d.updates.filter(r=>r.maintenance_id===selectedRecordId)){
+            const [year,month]=update.update_month.split('-');const num=Number(month);
+            if(num>=1&&num<=12)years[year]=(years[year]??0)|(1<<(num-1));
+        }
+        return {project,records:choices,recordPage:page.page,recordHasMore:page.page<page.last_page,selectedRecordId,existingUpdates:[],
+            occupiedMonths:selectedRecordId?{recordId:selectedRecordId,years}:null};
+    }
     const geom=path.match(/\/project-road-choices\/(\d+)\/geometry$/);
     if(geom) return {geojson:d.roads.find(r=>r.id===Number(geom[1]))?.geojson??null};
     if(path===BASE+'/record-search') {

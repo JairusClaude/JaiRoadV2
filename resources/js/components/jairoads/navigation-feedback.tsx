@@ -248,6 +248,8 @@ export function AndroidFieldFeedback() {
         window.addEventListener('online', update);
         window.addEventListener('offline', update);
         window.addEventListener('jairoads-field-status', update);
+        const fieldNotice=(event:Event)=>{const message=(event as CustomEvent<string>).detail;if(message)toast.error(message,{id:'jr-field-local-error'});};
+        window.addEventListener('jairoads-field-message',fieldNotice);
         const stopRawError = router.on('httpException', (event) => {
             const status = event.detail.response.status;
 
@@ -269,6 +271,7 @@ export function AndroidFieldFeedback() {
             window.removeEventListener('online', update);
             window.removeEventListener('offline', update);
             window.removeEventListener('jairoads-field-status', update);
+            window.removeEventListener('jairoads-field-message',fieldNotice);
             document.body.classList.remove('jr-android-hosted-offline');
         };
     }, []);

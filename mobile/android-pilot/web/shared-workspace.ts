@@ -103,7 +103,7 @@ export async function openSharedWorkspace(vault:Vault,frame:HTMLIFrameElement,op
         const projection=projectData(vault,lastDashboard);
         if(section==='maintenance-documents'&&!first&&method==='post') {
             const record=rawId(vault,data.maintenance_id);
-            ensure(cachedRow(vault,'record',record),'Select an available maintenance record.');
+            ensure(projection.records.some(r=>r.id===presentationId(record)&&r.edit_url),'Select a maintenance record assigned to you.');
             ensure(text(data.document_title).trim()&&text(data.document_title).length<=255,'Enter a document title.');
             const file=await readAttachment(data.attachment);
             ensure(/\.(pdf|docx|xlsx|pptx)$/i.test(file.name),'Choose a supported document.');
@@ -112,6 +112,7 @@ export async function openSharedWorkspace(vault:Vault,frame:HTMLIFrameElement,op
         } else if(section==='monthly-updates'&&first&&nested==='media'&&method==='post') {
             const report=cachedRow(vault,'monthly',first);
             ensure(report,'This monthly update is not available locally.');
+            ensure(projection.records.some(r=>r.id===presentationId(rawId(vault,report.maintenance_id))&&r.edit_url),'Select a maintenance record assigned to you.');
             const file=await readAttachment(data.file);
             ensure(/\.(jpe?g|png|webp)$/i.test(file.name),'Choose a supported photo.');
             await vault.attach(rawId(vault,report.maintenance_id),file.name,'',file.data,'media',String(report.id),file.name);
@@ -158,18 +159,24 @@ export async function openSharedWorkspace(vault:Vault,frame:HTMLIFrameElement,op
                 ensure(['Q1','Q2','Q3','Q4'].includes(fields.quarter)&&['Ongoing','Completed'].includes(fields.status),'Choose the quarter and status.');
                 ensure(/^\d{4}-\d{2}-\d{2}$/.test(fields.start_date??'')&&Number.isInteger(Number(fields.estimated_duration_days))&&Number(fields.estimated_duration_days)>0,'Enter valid dates and duration.');
                 ensure(!vault.rows('record').some(r=>String(r.id)!==String(row?.id)&&String(r.project_id)===project&&String(r.maintenance_year)===fields.maintenance_year&&r.quarter===fields.quarter),'A record for that project and period already exists.');
+                fields.complete_date ||= '';
                 validateFields(kind,fields,row);
                 destination=BASE+'/maintenance-projects/'+first;
             } else if(section==='monthly-updates'&&!first) {
                 kind='monthly'; row=undefined;
                 fields=fieldsFrom(data,['update_month','progress_percentage','summary_of_text_reports']);
                 fields.maintenance_id=rawId(vault,data.maintenance_id);
-                ensure(cachedRow(vault,'record',fields.maintenance_id),'Choose a cached maintenance record.');
+                ensure(projection.records.some(r=>r.id===presentationId(fields.maintenance_id)&&r.edit_url),'Select a maintenance record assigned to you.');
                 ensure(/^\d{4}-(0[1-9]|1[0-2])$/.test(fields.update_month??'')&&Number.isFinite(Number(fields.progress_percentage))&&Number(fields.progress_percentage)>=0&&Number(fields.progress_percentage)<=100,'Enter a valid reporting month and progress.');
                 ensure(!vault.rows('monthly').some(r=>String(r.maintenance_id)===fields.maintenance_id&&String(r.update_month).slice(0,7)===fields.update_month),'A report for this month is already available.');
                 destination=BASE+'/monthly-updates';
             } else throw new Error('This action requires internet. No changes were discarded.');
-            const id=await vault.save(kind!,fields!,row);
+            const photos:{name:string;data:string}[]=[];
+            if(kind==='monthly'){
+                const files=Array.isArray(data.attachments)?data.attachments:Object.entries(data).filter(([key])=>/^attachments\[\d*\]$/.test(key)).map(([,file])=>file);
+                for(const file of files){const photo=await readAttachment(file);ensure(/\.(jpe?g|png|webp)$/i.test(photo.name),'Choose a supported photo.');photos.push(photo);}
+            }
+            const id=await vault.save(kind!,fields!,row,photos);
             if(kind==='monthly')destination=BASE+'/monthly-updates/'+presentationId(id);
             else if(row&&kind==='project')destination=BASE+'/maintenance-projects/'+presentationId(id);
             else if(row&&kind==='road')destination=BASE+'/road-coverages/'+presentationId(id);
@@ -194,14 +201,13 @@ export async function openSharedWorkspace(vault:Vault,frame:HTMLIFrameElement,op
                 active=false;options.onLock();return errorPage('Workspace locked.');
             }
             if(fallback)options.onUnavailable();
-            const virtual=url.pathname.split('/').some(part=>/^\d+$/.test(part)&&isLocalId(part));
+            const virtual=[...url.pathname.split('/'),...url.searchParams.values()].some(part=>/^\d+$/.test(part)&&isLocalId(part));
             const values=plainData(config.data);
             const localRelation=['project_id','maintenance_id','road_coverage_id'].some(key=>isLocalId(values[key]));
-            const offline=options.status().offline||fallback||virtual||localRelation;
+            const offline=options.status().offline||fallback||virtual||localRelation||((method!=='get')&&allowed.test(url.pathname)&&(current.props.offlineSnapshot===true||bool(values._jairoads_local)));
             if(!offline)return null;
             if(method==='get') {
-                const page=localPage(url);
-                if(page)return responsePage(page);
+                try {const page=localPage(url);if(page)return responsePage(page);} catch {}
                 userMessage('This page was not prepared for offline use. Connect to access it.');
                 return errorPage('This page requires an internet connection.');
             }
@@ -210,15 +216,22 @@ export async function openSharedWorkspace(vault:Vault,frame:HTMLIFrameElement,op
             catch(error) { const message=error instanceof Error?error.message:'Local save failed. Your entries are still available.';userMessage(message);return errorPage(message); }
         },
         observe(response) {
-            if(!active)return;
-            if(response.status>=200&&response.status<400)options.onOnline();
+            if(!active)return false;
             if(response.headers['x-inertia']) {
                 const page=parsePage(response.data);
+                const props=page?.props as Record<string,any>|undefined;
+                const auth=props?.auth;
+                if(page?.component.startsWith('auth/')||(auth&&(!auth.user||Number(auth.user.canonical_user_account_id)!==vault.state.snapshot.accountId))||
+                    (props?.jairoadsIdentity?.role&&props.jairoadsIdentity.role!==vault.state.snapshot.role.toLowerCase())) {
+                    active=false;options.onLock();return false;
+                }
                 if(dashboardMatches(vault,page)) {
                     lastDashboard={...page,encryptHistory:true};
                     void vault.cacheDashboard(lastDashboard).catch(()=>{});
                 }
             }
+            if(response.status>=200&&response.status<400)options.onOnline();
+            return true;
         },
         current(page) { current=page; },
         async resource(raw,force=false) {
@@ -233,12 +246,21 @@ export async function openSharedWorkspace(vault:Vault,frame:HTMLIFrameElement,op
                     return new Response(blob,{headers:{'Content-Type':blob.type,'Cache-Control':'private, no-store'}});
                 }
                 if(force||options.status().offline)return new Response(null,{status:503});
+                if(found?.ref) {
+                    try {await vault.cacheFile(found.ref);const cached=findFile(vault,file[1] as 'document'|'media',Number(file[2]));
+                        if(cached?.data){const blob=bytes(cached.data);return new Response(blob,{headers:{'Content-Type':blob.type,'Cache-Control':'private, no-store'}});}
+                    } catch {}
+                }
                 return null;
             }
-            if(!force&&!options.status().offline)return null;
+            if(!force&&!options.status().offline&&![...url.pathname.split('/'),...url.searchParams.values()].some(part=>isLocalId(part)))return null;
             const data=offlineResource(vault,lastDashboard,url);
             if(data!==undefined)return new Response(JSON.stringify(data),{headers:{'Content-Type':'application/json'}});
             return new Response(null,{status:503});
+        },
+        hasLocalFile(raw) {
+            const url=urlFor(raw);const file=url.pathname.match(/^\/workspace\/files\/(document|media)\/(\d+)$/);
+            return Boolean(active&&url.origin===location.origin&&file&&findFile(vault,file[1] as 'document'|'media',Number(file[2]))?.data);
         },
         async exportFile(raw) {
             const url=urlFor(raw);

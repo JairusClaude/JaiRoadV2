@@ -661,7 +661,7 @@ window.addEventListener('jairoads-back', (event) => {
     if (sharedActive && sharedFrame?.contentWindow) {
         event.preventDefault();
         const target = sharedFrame.contentWindow;
-        target.history.back();
+        target.dispatchEvent(new Event('jairoads-field-back'));
         return;
     }
     if (menu.open) {
@@ -756,6 +756,14 @@ export async function openFieldReports(workspace: Vault, offlineSignIn: boolean)
         hostMode('show-local');
         document.body.append(frame);
         frame.src = '/jairoads-android-pilot/workspace.html';
+        window.setTimeout(()=>{
+            if(frame.dataset.ready==='true'||sharedFrame!==frame)return;
+            sharedActive=false;sharedFrame=undefined;
+            delete (window as Window & {JaiRoadsSharedWorkspace?:unknown}).JaiRoadsSharedWorkspace;
+            frame.remove();
+            if(connected()&&reachable){opening.hidden=false;goOnline(true);}
+            else{showCachedWorkspace();note('The shared workspace could not start. Saved work remains available in recovery mode.');}
+        },18000);
     } else if (offlineSignIn || !connected()) {
         showCachedWorkspace();
     } else {

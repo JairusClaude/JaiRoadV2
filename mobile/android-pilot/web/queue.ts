@@ -444,7 +444,7 @@ export class Vault {
         await this.change((state) => ({ ...state, dashboard: page }));
     }
 
-    async save(kind: Kind, fields: Fields, row?: Row) {
+    async save(kind: Kind, fields: Fields, row?: Row, photos:{name:string;data:string}[] = []) {
         let saved = '';
         await this.change((state) => {
             if (!state.snapshot.canWrite) {
@@ -493,7 +493,10 @@ export class Vault {
                   )
                 : [...state.pending, change];
 
-            return { ...state, pending };
+            const attachments = photos.length && kind === 'monthly' ? [...state.attachments, ...photos.map((photo):Attachment=>({
+                id:crypto.randomUUID(),record:fields.maintenance_id,name:photo.name,description:'',data:photo.data,kind:'media',parent:entity,title:photo.name,
+            }))] : state.attachments;
+            return { ...state, pending, attachments };
         });
         return saved;
     }

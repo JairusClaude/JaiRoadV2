@@ -218,11 +218,13 @@ export default function Create(parents: MonthlyCreateProps) {
         submitting.current = true;
 
         const selectedAttachments = [...form.data.attachments];
+        const saveLocally = Boolean(androidWorkspace()?.status().offline || (androidWorkspace() && page.props.offlineSnapshot));
 
         if (page.props.canonicalFrontend === true) {
             form.transform((data) => ({
                 ...data,
-                attachments: undefined,
+                attachments: saveLocally ? data.attachments : undefined,
+                ...(saveLocally ? {_jairoads_local:'1'} : {}),
                 ...(reconnect
                     ? { reconnect_account_id: parents.reconnectAccountId }
                     : {}),
@@ -233,12 +235,12 @@ export default function Create(parents: MonthlyCreateProps) {
             update ? 'put' : 'post',
             update ? editUrl(parents.submitUrl, cancel) : parents.submitUrl,
             {
-                forceFormData: page.props.canonicalFrontend !== true,
+                forceFormData: saveLocally || page.props.canonicalFrontend !== true,
                 preserveScroll: true,
                 onSuccess: (responsePage) => {
                     setConfirmRemoval(false);
 
-                    if (page.props.canonicalFrontend !== true) {
+                    if (saveLocally || page.props.canonicalFrontend !== true) {
                         return;
                     }
 
