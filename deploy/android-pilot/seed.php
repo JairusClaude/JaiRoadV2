@@ -20,8 +20,60 @@ if (! app()->environment('staging')
     exit(1);
 }
 
+$accounts = [
+    'SuperAdmin' => 'sadmin@gmail.com',
+    'Admin' => 'admin@gmail.com',
+    'Engineer' => 'engineer@gmail.com',
+    'Viewer' => 'viewer@gmail.com',
+];
+
+$rotateAccounts = static function () use ($database, $accounts): void {
+    $replacementPassword = getenv('PILOT_REPLACEMENT_PASSWORD');
+    if ($replacementPassword === false) {
+        return;
+    }
+
+    if (strlen($replacementPassword) < 12 || strlen($replacementPassword) > 72) {
+        throw new RuntimeException('Pilot replacement password has an invalid length.');
+    }
+
+    $state = $database->selectOne("select to_regclass('jairoads_security.android_pilot_accounts_v2') as rotated");
+    if ($state->rotated !== null) {
+        return;
+    }
+
+    foreach ($accounts as $role => $email) {
+        $oldEmail = strtolower($role).'@android-pilot.example.test';
+        $account = $database->table('jairoads_next.user_accounts')
+            ->where('email', $oldEmail)
+            ->where('account_type', $role)
+            ->lockForUpdate()
+            ->sole(['id']);
+        $hash = Illuminate\Support\Facades\Hash::make($replacementPassword);
+        $updated = $database->table('public.users')
+            ->where('canonical_user_account_id', $account->id)
+            ->where('email', $oldEmail)
+            ->update([
+                'email' => $email,
+                'password' => $hash,
+                'remember_token' => null,
+                'updated_at' => now(),
+            ]);
+        if ($updated !== 1) {
+            throw new RuntimeException('The pilot login does not match the expected seeded account.');
+        }
+
+        $database->table('jairoads_next.user_accounts')
+            ->where('id', $account->id)
+            ->update(['email' => $email, 'password' => $hash]);
+        $database->table('public.password_reset_tokens')->where('email', $oldEmail)->delete();
+    }
+
+    $database->unprepared('CREATE TABLE jairoads_security.android_pilot_accounts_v2 (rotated_at timestamptz NOT NULL DEFAULT now())');
+};
+
 try {
-    $database->transaction(function () use ($database): void {
+    $database->transaction(function () use ($database, $accounts, $rotateAccounts): void {
         $metadata = $database->selectOne(
             "select current_database() as name, current_user as owner, current_setting('server_version_num')::int as version",
         );
@@ -38,6 +90,8 @@ try {
                    or exists (select 1 from pg_tables where schemaname = 'public') as populated
             SQL);
         if ($state->initialized !== null) {
+            $rotateAccounts();
+
             return;
         }
         if ($state->populated || strlen((string) getenv('PILOT_TEST_PASSWORD')) < 24) {
@@ -56,11 +110,10 @@ try {
         $database->unprepared("CREATE ROLE jairoads_pilot_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS PASSWORD {$password}");
         $database->unprepared(file_get_contents(__DIR__.'/grants.sql'));
 
-        $accounts = ['SuperAdmin', 'Admin', 'Engineer', 'Viewer'];
         $superadmin = null;
         $engineer = null;
         $engineerAccount = null;
-        foreach ($accounts as $role) {
+        foreach (array_keys($accounts) as $role) {
             $username = strtolower($role);
             $email = $username.'@android-pilot.example.test';
             $profile = in_array($role, ['Engineer', 'Admin'], true)
@@ -107,6 +160,7 @@ try {
         $database->statement('select set_config(?, ?, true)', ['jairoads.pilot_account', (string) $engineerAccount]);
         $database->unprepared(file_get_contents(__DIR__.'/records.sql'));
         $database->unprepared('CREATE TABLE jairoads_security.android_pilot_initialized (created_at timestamptz NOT NULL DEFAULT now())');
+        $rotateAccounts();
     });
 } catch (Throwable $error) {
     // Do not log SQL bindings, the database URL or credentials.
