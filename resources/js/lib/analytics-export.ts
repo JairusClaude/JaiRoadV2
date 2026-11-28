@@ -1,52 +1,5 @@
-import { analyticsPdf, analyticsXlsx } from './analytics-report-formats';
+import { analyticsCsv, analyticsPdf, analyticsXlsx } from './analytics-report-formats';
 import type { AnalyticsReport } from './analytics-report-formats';
-
-type CsvCell = string | number;
-
-function csvCell(value: CsvCell) {
-    if (typeof value === 'number') {
-        return String(value);
-    }
-
-    // Neutralize spreadsheet formulas and leading spreadsheet control prefixes.
-    const safe = /^(?:[\t\r\n]|\s*[=+\-@])/.test(value) ? "'" + value : value;
-
-    return '"' + safe.replaceAll('"', '""') + '"';
-}
-
-function analyticsCsv(report: AnalyticsReport) {
-    const rows: CsvCell[][] = [
-        ['report_scope', 'category', 'metric', 'period', 'value', 'unit'],
-        ...report.cards.map(({ label, value }) => [
-            report.scope,
-            'maintenance',
-            label,
-            '',
-            value,
-            'count',
-        ]),
-        [
-            report.scope,
-            'maintenance',
-            'Reporting coverage',
-            report.reportingMonth,
-            report.reportingCoverage ?? '',
-            'percent',
-        ],
-        ...report.trend.map(({ month, count }) => [
-            report.scope,
-            'monthly_trend',
-            'Monthly updates',
-            month,
-            count,
-            'count',
-        ]),
-    ];
-
-    return (
-        '\uFEFF' + rows.map((row) => row.map(csvCell).join(',')).join('\r\n')
-    );
-}
 
 /** Only currently displayed aggregate values are eligible for an export. */
 export function downloadAnalyticsReport(

@@ -32,6 +32,51 @@ const xml = (text: string) =>
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&apos;');
 
+function csvCell(value: Cell) {
+    if (typeof value === 'number') {
+        return String(value);
+    }
+
+    // Neutralize spreadsheet formulas and leading spreadsheet control prefixes.
+    const safe = /^(?:[\t\r\n]|\s*[=+\-@])/.test(value) ? "'" + value : value;
+
+    return '"' + safe.replaceAll('"', '""') + '"';
+}
+
+export function analyticsCsv(report: AnalyticsReport) {
+    const rows: Cell[][] = [
+        ['report_scope', 'category', 'metric', 'period', 'value', 'unit'],
+        ...report.cards.map(({ label, value }) => [
+            report.scope,
+            'maintenance',
+            label,
+            '',
+            value,
+            'count',
+        ]),
+        [
+            report.scope,
+            'maintenance',
+            'Reporting coverage',
+            report.reportingMonth,
+            report.reportingCoverage ?? '',
+            'percent',
+        ],
+        ...report.trend.map(({ month, count }) => [
+            report.scope,
+            'monthly_trend',
+            'Monthly updates',
+            month,
+            count,
+            'count',
+        ]),
+    ];
+
+    return (
+        '\uFEFF' + rows.map((row) => row.map(csvCell).join(',')).join('\r\n')
+    );
+}
+
 function crc32(bytes: Uint8Array) {
     let crc = 0xffffffff;
 

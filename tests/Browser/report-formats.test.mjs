@@ -1,31 +1,55 @@
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
 import { test } from 'node:test';
-import { analyticsPdf, analyticsXlsx } from '../../resources/js/lib/analytics-report-formats.ts';
+import { analyticsCsv, analyticsPdf, analyticsXlsx } from '../../resources/js/lib/analytics-report-formats.ts';
 import { maintenanceCalendar } from '../../resources/js/lib/maintenance-calendar.ts';
 import { hasOccupiedReportingMonth } from '../../resources/js/lib/occupied-reporting-months.ts';
 import { validProjectPage, validRecordChoices } from '../../resources/js/lib/project-choice-page.ts';
 
-test('PDF summary has escaped strings and valid xref byte offsets', () => {
-    const pdf = Buffer.from(analyticsPdf([['Scope', 'System-wide'], ['Metric (test)', 12]]));
+const report = {
+    id: 'JR-test',
+    scope: 'System-wide',
+    generatedAt: '2026-11-28T04:00:00.000Z',
+    reportingMonth: '2026-11',
+    reportingCoverage: 62.5,
+    cards: [
+        { label: 'Metric (test)', value: 12 },
+        { label: '=1+1', value: 2 },
+        { label: '<tag> A & B Résumé', value: 1 },
+    ],
+    trend: [{ month: '2026-11', count: 3 }],
+};
+
+test('PDF report wraps content into A4 pages with escaped strings and valid xref offsets', () => {
+    const cards = [
+        ...report.cards,
+        ...Array.from({ length: 28 }, (_, index) => ({
+            label: 'Long maintenance label '.repeat(3) + index,
+            value: index,
+        })),
+    ];
+    const pdf = Buffer.from(analyticsPdf({ ...report, cards }));
     const text = pdf.toString('ascii');
 
     assert.ok(text.startsWith('%PDF-1.4\n'));
     assert.ok(text.includes(String.raw`Metric \(test\)`));
+    assert.ok(text.includes('/MediaBox [0 0 595 842]'));
+    assert.ok(text.match(/\/Type \/Page /g).length > 1);
     const start = Number(text.match(/startxref\n(\d+)/)[1]);
 
     assert.equal(text.slice(start, start + 4), 'xref');
-    const offsets = text.slice(start).split('\n').slice(3, 8);
+    const [, range, , ...entries] = text.slice(start).split('\n');
+    const count = Number(range.split(' ')[1]);
 
-    for (const [index, entry] of offsets.entries()) {
+    for (const [index, entry] of entries.slice(0, count - 1).entries()) {
         const offset = Number(entry.slice(0, 10));
 
         assert.ok(text.slice(offset).startsWith((index + 1) + ' 0 obj\n'));
     }
 });
 
-test('XLSX summary stores values as literal strings and numbers', () => {
-    const data = Buffer.from(analyticsXlsx([['=1+1', 12], ['<tag>', 'A & B']]));
+test('XLSX report stores styled sheets, formatted numeric values and literal text', () => {
+    const data = Buffer.from(analyticsXlsx(report));
     const text = data.toString('utf8');
 
     assert.equal(data.readUInt32LE(0), 0x04034b50);
@@ -33,9 +57,20 @@ test('XLSX summary stores values as literal strings and numbers', () => {
     assert.ok(text.includes('t="inlineStr"'));
     assert.ok(text.includes('>=1+1</t>'));
     assert.ok(text.includes('<v>12</v>'));
-    assert.ok(text.includes('&lt;tag&gt;'));
-    assert.ok(text.includes('A &amp; B'));
+    assert.ok(text.includes('<v>0.625</v>'));
+    assert.ok(text.includes('&lt;tag&gt; A &amp; B Résumé'));
+    assert.ok(text.includes('name="Monthly Trends"'));
+    assert.ok(text.includes('state="frozen"'));
     assert.ok(!text.includes('<f>'));
+});
+
+test('CSV report preserves the schema, escapes spreadsheet formulas and represents missing coverage', () => {
+    const csv = analyticsCsv({ ...report, reportingCoverage: null });
+
+    assert.ok(csv.startsWith('\uFEFF"report_scope","category","metric","period","value","unit"\r\n'));
+    assert.ok(csv.includes('"' + "'=1+1" + '","",2,"count"'));
+    assert.ok(csv.includes('"Reporting coverage","2026-11","","percent"'));
+    assert.ok(csv.endsWith('"Monthly updates","2026-11",3,"count"'));
 });
 
 test('report occupancy matches each month, year and record exactly', () => {
