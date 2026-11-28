@@ -57,7 +57,7 @@ jobs:
       - name: Prepare real offline maps from open geographic source data
         run: |
           python3 -m venv /tmp/jairoads-maps
-          /tmp/jairoads-maps/bin/pip install --disable-pip-version-check requests numpy pillow rasterio shapely
+          /tmp/jairoads-maps/bin/pip install --disable-pip-version-check requests numpy pillow rasterio shapely osmium
           /tmp/jairoads-maps/bin/python mobile/android-pilot/build-open-map-packs.py
       - name: Verify source and map asset hashes
         run: |

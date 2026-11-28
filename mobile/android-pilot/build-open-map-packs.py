@@ -1,6 +1,6 @@
 """Build a bounded, licensed Davao de Oro raster pack from source data, never public tile scraping.
 The review build must fail if the real data cannot be obtained or verified.
-Street source: OSM Overpass data, ODbL 1.0. Imagery: Copernicus Sentinel-2 L2A visual COGs, Earth Search.
+Street source: OpenStreetMap France regional PBF, ODbL 1.0. Imagery: Copernicus Sentinel-2 L2A visual COGs, Earth Search.
 """
 import hashlib
 import json
@@ -95,18 +95,60 @@ def write_tiles(pack_id, label, attribution, native_zoom, image_at_zoom, sources
     return pack
 
 
-# One region-bounded vector data query; no public map tile server requests.
+# Use an official regional PBF dump instead of burdening a public Overpass instance.
+# No personal contributor metadata, private system data or public map tiles are retained.
+import osmium
+from tempfile import TemporaryDirectory
+
 w,s,e,n=BBOX
-query=f'[out:json][timeout:90];(way["highway"]({s},{w},{n},{e});way["waterway"~"river|stream"]({s},{w},{n},{e});node["place"~"city|town|village"]({s},{w},{n},{e}););out geom;'
-osm=request_json("https://overpass-api.de/api/interpreter",params={"data":query},timeout=115)
-if osm.get("remark") or not isinstance(osm.get("elements"),list):
-    raise RuntimeError("OSM extraction incomplete")
-roads=[a for a in osm["elements"] if a.get("type")=="way" and a.get("tags",{}).get("highway") and len(a.get("geometry",[]))>=2]
-water=[a for a in osm["elements"] if a.get("type")=="way" and a.get("tags",{}).get("waterway") and len(a.get("geometry",[]))>=2]
-places=[a for a in osm["elements"] if a.get("type")=="node" and a.get("tags",{}).get("name") and a.get("tags",{}).get("place")]
-assert len(roads)>200 and places, "Unexpectedly sparse road extract"
-print("OSM source",len(roads),"road ways and",len(places),"settlements",flush=True)
-osm_date=osm.get("osm3s",{}).get("timestamp_osm_base","unknown")
+roads=[]
+water=[]
+places=[]
+source_url="https://download.openstreetmap.fr/extracts/asia/philippines/davao_region-latest.osm.pbf"
+
+class RegionSource(osmium.SimpleHandler):
+    def node(self,node):
+        place=node.tags.get("place")
+        name=node.tags.get("name")
+        if place in ("city","town","village") and name and node.location.valid():
+            lon,lat=node.location.lon,node.location.lat
+            if w<=lon<=e and s<=lat<=n:
+                places.append({"lat":lat,"lon":lon,"tags":{"place":place,"name":name}})
+
+    def way(self,way):
+        highway=way.tags.get("highway")
+        waterway=way.tags.get("waterway")
+        if not highway and waterway not in ("river","stream"):
+            return
+        points=[(node.lon,node.lat) for node in way.nodes if node.location.valid()]
+        if len(points)<2:return
+        xs,ys=zip(*points)
+        if max(xs)<w or min(xs)>e or max(ys)<s or min(ys)>n:return
+        item={"geometry":[{"lon":lon,"lat":lat} for lon,lat in points],"tags":{}}
+        if highway:
+            item["tags"]["highway"]=highway
+            roads.append(item)
+        elif waterway:
+            item["tags"]["waterway"]=waterway
+            water.append(item)
+
+with TemporaryDirectory() as temporary:
+    pbf=pathlib.Path(temporary)/"region.osm.pbf"
+    digest=hashlib.sha256()
+    size=0
+    with session.get(source_url,timeout=(20,120),stream=True) as response:
+        response.raise_for_status()
+        osm_date=response.headers.get("Last-Modified","unknown")
+        with pbf.open("wb") as out:
+            for chunk in response.iter_content(1024*1024):
+                size+=len(chunk)
+                if size>80*1024*1024:raise RuntimeError("Regional extract exceeds 80 MiB bound")
+                digest.update(chunk);out.write(chunk)
+    if size<1024*1024:raise RuntimeError("Regional PBF file unexpectedly small")
+    RegionSource().apply_file(str(pbf),locations=True,idx="flex_mem")
+    source_hash=digest.hexdigest()
+assert len(roads)>200 and places,"Unexpectedly sparse regional road extract"
+print("OSM regional source",len(roads),"roads,",len(places),"settlements,",size,"bytes",flush=True)
 font_path="/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 major={"motorway","trunk","primary","secondary"}
 middle={"tertiary","unclassified","residential"}
@@ -145,7 +187,7 @@ def streets(z):
         draw.text((x+4,y-8),label,fill="#463b2e",font=font,stroke_width=1,stroke_fill="#ffffff")
     return img
 
-street_pack=write_tiles("ddo-streets","Davao de Oro roads (offline)","© OpenStreetMap contributors — ODbL 1.0; openstreetmap.org/copyright",14,streets,{"date":osm_date,"source":"https://overpass-api.de","bbox":BBOX})
+street_pack=write_tiles("ddo-streets","Davao de Oro roads (offline)","© OpenStreetMap contributors — ODbL 1.0; openstreetmap.org/copyright",14,streets,{"date":osm_date,"source":source_url,"source_sha256":source_hash,"bbox":BBOX})
 
 # Use a low-cloud L2A RGB product mosaic, not imagery from an unlicensed commercial tile layer.
 # The native satellite zoom is 13 (~19 m pixels at the equator).
