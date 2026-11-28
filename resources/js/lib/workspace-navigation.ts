@@ -9,7 +9,9 @@ export function workspaceHref(url: string): string {
 
     const canonical =
         typeof window !== 'undefined' &&
-        (window.location.pathname.startsWith('/jairoads-android-pilot/workspace.html') ||
+        (window.location.pathname.startsWith(
+            '/jairoads-android-pilot/workspace.html',
+        ) ||
             window.location.pathname.startsWith('/workspace') ||
             window.location.pathname.startsWith('/user-management') ||
             window.location.pathname.startsWith('/audit-logs') ||

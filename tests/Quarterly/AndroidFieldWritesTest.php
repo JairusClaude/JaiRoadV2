@@ -105,7 +105,7 @@ final class AndroidFieldWritesTest extends PostgresTestCase
         $this->assertSame(1, DB::table('jairoads_next.maintenance_documents')->where('maintenance_id', $record['id'])->count());
         Http::assertSentCount(1);
         $this->getJson(self::URL.'/workspace')->assertOk()->assertJsonPath('fileSync', true)->assertJsonPath('files.0.id', $first['id']);
-        $large = UploadedFile::fake()->createWithContent('inspection-large.pdf', "%PDF-1.4\n".str_repeat('% field evidence padding '.str_repeat('x', 100)."\n", 45000)."%%EOF");
+        $large = UploadedFile::fake()->createWithContent('inspection-large.pdf', "%PDF-1.4\n".str_repeat('% field evidence padding '.str_repeat('x', 100)."\n", 45000).'%%EOF');
         $this->post(self::URL.'/attachments', array_replace($attachment, ['operation_id' => '611c973d-6d78-4433-a3e5-6705ad7248d4']) + ['file' => $large], ['Accept' => 'application/json'])->assertOk();
         $this->assertSame(2, DB::table('jairoads_next.maintenance_documents')->where('maintenance_id', $record['id'])->count());
     }

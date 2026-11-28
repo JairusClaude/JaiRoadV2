@@ -834,7 +834,7 @@ class OperationsController extends Controller
      * Called inside the existing metadata/audit transaction. A duplicate receipt
      * rolls back the duplicate metadata; upload-journal recovery owns any orphan.
      *
-     * @param array{account_id:int,role:string,engineer_id:?int} $actor
+     * @param  array{account_id:int,role:string,engineer_id:?int}  $actor
      */
     private function recordFieldAttachmentReceipt(Request $request, array $actor, int $id, string $table): void
     {

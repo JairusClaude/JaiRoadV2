@@ -238,14 +238,29 @@ export function renderFields(
             choices: list('record'),
         });
         input('monthly_update_id', 'Monthly update (required for photos)', {
-            choices: vault.rows('monthly').map((report) => [
-                String(report.id),
-                String(report.update_month) + ' · ' + (vault.rows('record').find((r) => String(r.id) === String(report.maintenance_id))?.maintenance_year ?? 'Record'),
-            ]),
+            choices: vault
+                .rows('monthly')
+                .map((report) => [
+                    String(report.id),
+                    String(report.update_month) +
+                        ' · ' +
+                        (vault
+                            .rows('record')
+                            .find(
+                                (r) =>
+                                    String(r.id) ===
+                                    String(report.maintenance_id),
+                            )?.maintenance_year ?? 'Record'),
+                ]),
             required: false,
         });
-        input('document_title', 'Document title (optional)', { required: false, max: 255 });
-        input('attachment', 'Photo or document (up to 20 MB)', { type: 'file' });
+        input('document_title', 'Document title (optional)', {
+            required: false,
+            max: 255,
+        });
+        input('attachment', 'Photo or document (up to 20 MB)', {
+            type: 'file',
+        });
         input('description', 'Description', {
             type: 'textarea',
             required: false,

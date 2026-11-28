@@ -2,8 +2,8 @@ import L from 'leaflet';
 import { MapPin } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { watchBasemap } from '@/lib/road-coverages/basemap';
-import { attachFieldBasemap } from '@/lib/road-coverages/field-basemap';
 import type { BasemapStatus } from '@/lib/road-coverages/basemap';
+import { attachFieldBasemap } from '@/lib/road-coverages/field-basemap';
 import { savedRoadLines } from '@/lib/road-coverages/saved-lines';
 import { RoadDetailsPanel } from './road-details-panel';
 import 'leaflet/dist/leaflet.css';
@@ -194,7 +194,7 @@ export function SimplifiedCoverageMap({
         const monitor = watchBasemap(tiles, setBasemap);
         tileMonitor.current = monitor;
         tiles.addTo(map);
-        attachFieldBasemap(map,tiles,setBasemap);
+        attachFieldBasemap(map, tiles, setBasemap);
 
         // Metric scale indicator in bottom-left
         L.control.scale({ imperial: false, maxWidth: 120 }).addTo(map);

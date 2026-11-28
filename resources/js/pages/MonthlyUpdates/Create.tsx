@@ -6,11 +6,11 @@ import { DurableReportQueue } from '@/components/monthly-updates/durable-report-
 import { FieldReportDraft } from '@/components/monthly-updates/field-report-draft';
 import { MonthlyUpdateForm } from '@/components/monthly-updates/monthly-update-form';
 import { ReconnectSubmission } from '@/components/monthly-updates/reconnect-submission';
+import { androidWorkspace } from '@/lib/android-workspace-bridge';
 import { editUrl, formReturn, returnLabel } from '@/lib/form-navigation';
 import { validateMonthlyUpdate } from '@/lib/monthly-updates';
 import { validRecordChoices } from '@/lib/project-choice-page';
 import { workspaceHref } from '@/lib/workspace-navigation';
-import { androidWorkspace } from '@/lib/android-workspace-bridge';
 import type {
     MonthlyCreateProps,
     MonthlyParentProject,
@@ -218,13 +218,16 @@ export default function Create(parents: MonthlyCreateProps) {
         submitting.current = true;
 
         const selectedAttachments = [...form.data.attachments];
-        const saveLocally = Boolean(androidWorkspace()?.status().offline || (androidWorkspace() && page.props.offlineSnapshot));
+        const saveLocally = Boolean(
+            androidWorkspace()?.status().offline ||
+            (androidWorkspace() && page.props.offlineSnapshot),
+        );
 
         if (page.props.canonicalFrontend === true) {
             form.transform((data) => ({
                 ...data,
                 attachments: saveLocally ? data.attachments : undefined,
-                ...(saveLocally ? {_jairoads_local:'1'} : {}),
+                ...(saveLocally ? { _jairoads_local: '1' } : {}),
                 ...(reconnect
                     ? { reconnect_account_id: parents.reconnectAccountId }
                     : {}),
@@ -235,7 +238,8 @@ export default function Create(parents: MonthlyCreateProps) {
             update ? 'put' : 'post',
             update ? editUrl(parents.submitUrl, cancel) : parents.submitUrl,
             {
-                forceFormData: saveLocally || page.props.canonicalFrontend !== true,
+                forceFormData:
+                    saveLocally || page.props.canonicalFrontend !== true,
                 preserveScroll: true,
                 onSuccess: (responsePage) => {
                     setConfirmRemoval(false);

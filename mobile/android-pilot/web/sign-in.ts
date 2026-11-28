@@ -220,6 +220,7 @@ form.addEventListener('submit', async (event) => {
                     true,
                 );
             }
+
             openHostedDashboard();
         }
     } catch (error) {
