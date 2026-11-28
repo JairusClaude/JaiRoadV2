@@ -115,8 +115,9 @@ export default function Index({
                     <div>
                         <h1>Maintenance Documents</h1>
                         <p>
-                            Browse and manage documents associated with
-                            maintenance records.
+                            {isViewer
+                                ? 'Browse documents associated with maintenance records.'
+                                : 'Manage documents associated with maintenance records.'}
                         </p>
                     </div>
                     {enabled && (
@@ -218,9 +219,10 @@ export default function Index({
                 >
                     <table className="jr-table jr-document-table">
                         <colgroup>
-                            {[27, 24, 16, 12, 14, 7].map((width, i) => (
+                            {[isViewer ? 34 : 27, 24, 16, 12, 14].map((width, i) => (
                                 <col key={i} style={{ width: `${width}%` }} />
                             ))}
+                            {!isViewer && <col style={{ width: '7%' }} />}
                         </colgroup>
                         <thead>
                             <tr>
@@ -260,7 +262,9 @@ export default function Index({
                                 <th>Maintenance Record</th>
                                 <th>Uploaded By</th>
                                 <th>Date Uploaded</th>
-                                <th className="text-right">Actions</th>
+                                {!isViewer && (
+                                    <th className="text-right">Actions</th>
+                                )}
                             </tr>
                         </thead>
                         <tbody>
@@ -335,68 +339,70 @@ export default function Index({
                                     </td>
                                     <td>{doc.uploaded_by}</td>
                                     <td>{documentDate(doc.uploaded_at)}</td>
-                                    <td
-                                        className="text-right"
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        {!selecting && enabled && (
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="jr-action-trigger"
-                                                        aria-label={`Actions for document ${doc.id}`}
+                                    {!isViewer && (
+                                        <td
+                                            className="text-right"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            {!selecting && enabled && (
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="jr-action-trigger"
+                                                            aria-label={`Actions for document ${doc.id}`}
+                                                        >
+                                                            <MoreHorizontal />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent
+                                                        align="end"
+                                                        className="jr-theme jr-menu"
                                                     >
-                                                        <MoreHorizontal />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent
-                                                    align="end"
-                                                    className="jr-theme jr-menu"
-                                                >
-                                                    <DropdownMenuItem
-                                                        disabled={
-                                                            !enabled ||
-                                                            doc.can_edit ===
-                                                                false
-                                                        }
-                                                        onSelect={() =>
-                                                            router.visit(
-                                                                editUrl(
-                                                                    workspaceHref(
-                                                                        `/maintenance-documents/${doc.id}/edit`,
+                                                        <DropdownMenuItem
+                                                            disabled={
+                                                                !enabled ||
+                                                                doc.can_edit ===
+                                                                    false
+                                                            }
+                                                            onSelect={() =>
+                                                                router.visit(
+                                                                    editUrl(
+                                                                        workspaceHref(
+                                                                            `/maintenance-documents/${doc.id}/edit`,
+                                                                        ),
+                                                                        page.url,
                                                                     ),
-                                                                    page.url,
-                                                                ),
-                                                            )
-                                                        }
-                                                    >
-                                                        <Pencil />
-                                                        Edit Maintenance
-                                                        Document
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        variant="destructive"
-                                                        disabled={
-                                                            page.props
-                                                                .canonicalFrontend ===
-                                                            true
-                                                                ? !doc.delete_url
-                                                                : !enabled
-                                                        }
-                                                        onSelect={() =>
-                                                            deletion.open([doc])
-                                                        }
-                                                    >
-                                                        <Trash2 />
-                                                        Delete Maintenance
-                                                        Document
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        )}
-                                    </td>
+                                                                )
+                                                            }
+                                                        >
+                                                            <Pencil />
+                                                            Edit Maintenance
+                                                            Document
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            variant="destructive"
+                                                            disabled={
+                                                                page.props
+                                                                    .canonicalFrontend ===
+                                                                true
+                                                                    ? !doc.delete_url
+                                                                    : !enabled
+                                                            }
+                                                            onSelect={() =>
+                                                                deletion.open([doc])
+                                                            }
+                                                        >
+                                                            <Trash2 />
+                                                            Delete Maintenance
+                                                            Document
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            )}
+                                        </td>
+                                    )}
                                 </tr>
                             ))}
                         </tbody>

@@ -325,6 +325,80 @@ try {
         'PASS: directory banner contrast in all three appearance modes for all four roles.',
     );
 
+    await viewer.evaluate(() => localStorage.setItem('appearance', 'dark'));
+    await viewer.goto(base + '/workspace/dashboard');
+    const dashboard = viewer.locator('.jr-viewer-dashboard');
+    await dashboard.waitFor();
+    const overviewBackground = await dashboard
+        .locator('main')
+        .evaluate((element) => getComputedStyle(element).backgroundColor);
+    assert.ok(luminance(overviewBackground) < 0.2);
+    await dashboard
+        .getByRole('heading', { name: 'Read-only inventory analytics' })
+        .waitFor();
+
+    for (const route of [
+        '/maintenance-records',
+        '/monthly-updates',
+        '/maintenance-documents',
+        '/road-coverages',
+        '/lgus',
+    ]) {
+        await viewer.goto(ui + route);
+        const table = viewer.locator('.jr-table').first();
+        await table.waitFor();
+        assert.equal(
+            await table.getByRole('columnheader', { name: 'Actions', exact: true }).count(),
+            0,
+            route,
+        );
+
+        if (route === '/maintenance-documents') {
+            continue;
+        }
+
+        const metrics = viewer.locator('.jr-metric-card');
+        await metrics.first().waitFor();
+        const colors = await metrics.evaluateAll((cards) =>
+            cards.map((card) => ({
+                background: getComputedStyle(card).backgroundColor,
+                text: [...card.querySelectorAll('p')].map((p) => ({
+                    value: p.textContent.trim(),
+                    color: getComputedStyle(p).color,
+                })),
+            })),
+        );
+
+        for (const card of colors) {
+            const background = luminance(card.background);
+            assert.match(card.text[1].value, /\d/);
+
+            for (const text of card.text) {
+                const foreground = luminance(text.color);
+                assert.ok(
+                    (Math.max(foreground, background) + 0.05) /
+                        (Math.min(foreground, background) + 0.05) >= 4.5,
+                    route + ' metric contrast for ' + text.value,
+                );
+            }
+        }
+    }
+
+    await viewer.goto(ui + '/road-coverages');
+    const roadPanel = viewer.locator('.jr-table-card-container');
+    const roadColors = await roadPanel.evaluate((panel) => ({
+        background: getComputedStyle(panel).backgroundColor,
+        text: getComputedStyle(panel.querySelector('tbody td')).color,
+    }));
+    const roadBackground = luminance(roadColors.background);
+    assert.ok(roadBackground < 0.2);
+    assert.ok((luminance(roadColors.text) + 0.05) / (roadBackground + 0.05) >= 4.5);
+    await viewer.evaluate(() => localStorage.setItem('appearance', 'light'));
+    await viewer.goto(base + '/workspace/dashboard');
+    console.log(
+        'PASS: Viewer dark dashboard, readable directory metrics and road rows, and read-only table columns.',
+    );
+
     // A filtered-away LGU must never remain in the visible selection count.
     await superadmin.goto(`${ui}/lgus`);
     await superadmin

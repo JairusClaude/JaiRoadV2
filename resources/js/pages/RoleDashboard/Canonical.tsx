@@ -315,7 +315,11 @@ export default function RoleDashboard({
 
     return (
         <div
-            className={`jr-directory-exploration${isEngineer ? 'jr-engineer-dashboard' : 'jr-viewer-dashboard'}`}
+            className={
+                isEngineer
+                    ? 'jr-directory-exploration jr-engineer-dashboard'
+                    : 'jr-directory-exploration jr-viewer-dashboard'
+            }
         >
             <Head
                 title={`${isEngineer ? 'Engineer' : 'Viewer'} Dashboard · JaiROADS`}
@@ -380,7 +384,7 @@ export default function RoleDashboard({
                         aria-label="Road maintenance summary"
                     >
                         <div
-                            className={`grid gap-3 sm:grid-cols-2 xl:grid-cols-4${isEngineer ? 'jr-engineer-metrics' : 'jr-viewer-metrics'}`}
+                            className={`grid gap-3 sm:grid-cols-2 xl:grid-cols-4 ${isEngineer ? 'jr-engineer-metrics' : 'jr-viewer-metrics'}`}
                         >
                             {isEngineer ? (
                                 <>

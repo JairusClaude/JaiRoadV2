@@ -149,8 +149,9 @@ export function MonthlyUpdateDirectory({
                     <div>
                         <h1>Monthly Updates</h1>
                         <p>
-                            Browse and manage monthly maintenance progress
-                            reports.
+                            {isViewer
+                                ? 'Browse monthly maintenance progress reports.'
+                                : 'Manage monthly maintenance progress reports.'}
                         </p>
                     </div>
                     {canWrite && (
@@ -300,10 +301,10 @@ export function MonthlyUpdateDirectory({
                     <table className="jr-table jr-monthly-table">
                         <colgroup>
                             <col style={{ width: '20%' }} />
-                            <col style={{ width: '35%' }} />
+                            <col style={{ width: isViewer ? '44%' : '35%' }} />
                             <col style={{ width: '18%' }} />
                             <col style={{ width: '18%' }} />
-                            <col style={{ width: '9%' }} />
+                            {!isViewer && <col style={{ width: '9%' }} />}
                         </colgroup>
                         <thead>
                             <tr>
@@ -339,7 +340,9 @@ export function MonthlyUpdateDirectory({
                                 <th>Maintenance Project</th>
                                 <th>Progress</th>
                                 <th>Last Updated</th>
-                                <th className="text-right">Actions</th>
+                                {!isViewer && (
+                                    <th className="text-right">Actions</th>
+                                )}
                             </tr>
                         </thead>
                         <tbody>
@@ -410,62 +413,64 @@ export function MonthlyUpdateDirectory({
                                             {modifiedDate(item.updated_at)}
                                         </time>
                                     </td>
-                                    <td
-                                        className="text-right"
-                                        onClick={(event) =>
-                                            event.stopPropagation()
-                                        }
-                                    >
-                                        {!selecting && canWrite && (
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="jr-action-trigger"
-                                                        aria-label={`Actions for update ${item.id}`}
+                                    {!isViewer && (
+                                        <td
+                                            className="text-right"
+                                            onClick={(event) =>
+                                                event.stopPropagation()
+                                            }
+                                        >
+                                            {!selecting && canWrite && (
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="jr-action-trigger"
+                                                            aria-label={`Actions for update ${item.id}`}
+                                                        >
+                                                            <MoreHorizontal />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent
+                                                        className="jr-theme jr-menu"
+                                                        align="end"
                                                     >
-                                                        <MoreHorizontal />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent
-                                                    className="jr-theme jr-menu"
-                                                    align="end"
-                                                >
-                                                    <DropdownMenuItem
-                                                        disabled={
-                                                            !canWrite ||
-                                                            item.can_edit ===
-                                                                false
-                                                        }
-                                                        onSelect={() =>
-                                                            onAction(
-                                                                'Edit',
-                                                                item,
-                                                            )
-                                                        }
-                                                    >
-                                                        <Pencil />
-                                                        Edit Monthly Update
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        variant="destructive"
-                                                        disabled={busy}
-                                                        className="text-red-600 focus:bg-red-50 focus:text-red-700"
-                                                        onSelect={() =>
-                                                            onDelete(
-                                                                [item],
-                                                                false,
-                                                            )
-                                                        }
-                                                    >
-                                                        <Trash2 className="size-4" />
-                                                        Delete Monthly Update
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        )}
-                                    </td>
+                                                        <DropdownMenuItem
+                                                            disabled={
+                                                                !canWrite ||
+                                                                item.can_edit ===
+                                                                    false
+                                                            }
+                                                            onSelect={() =>
+                                                                onAction(
+                                                                    'Edit',
+                                                                    item,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Pencil />
+                                                            Edit Monthly Update
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            variant="destructive"
+                                                            disabled={busy}
+                                                            className="text-red-600 focus:bg-red-50 focus:text-red-700"
+                                                            onSelect={() =>
+                                                                onDelete(
+                                                                    [item],
+                                                                    false,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Trash2 className="size-4" />
+                                                            Delete Monthly Update
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            )}
+                                        </td>
+                                    )}
                                 </tr>
                             ))}
                         </tbody>

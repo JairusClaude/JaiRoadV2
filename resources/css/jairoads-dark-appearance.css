@@ -263,3 +263,40 @@ html.dark
 html.dark .jr-app .jr-monthly-progress-track {
     background-color: var(--jr-dark-elevated);
 }
+
+html.dark .jr-app .jr-metric-card .jr-metric-value {
+    color: var(--jr-dark-text);
+}
+
+html.dark .jr-app .jr-metric-card :is(.jr-metric-label, .jr-metric-description) {
+    color: var(--jr-dark-muted);
+}
+
+html.dark .jr-app .jr-metric-card:first-child > .jr-metric-label {
+    color: var(--jr-display-accent, var(--jr-dark-text)) !important;
+}
+
+html.dark
+    .jr-app
+    .jr-road-coverage-directory
+    :is(
+        .jr-road-coverage-main-container,
+        .jr-map-card-container,
+        .jr-table-card-container
+    ) {
+    background-color: var(--jr-dark-surface);
+    border-color: var(--jr-dark-border);
+    color: var(--jr-dark-text);
+}
+
+html.dark .jr-app .jr-road-coverage-directory :is(.jr-metric-unit, .jr-map-count) {
+    color: var(--jr-dark-muted);
+}
+
+html.dark body:has(.jr-viewer-workspace) .jr-monthly-progress > span {
+    color: var(--jr-display-accent) !important;
+}
+
+html.dark body:has(.jr-viewer-workspace) .jr-monthly-progress-track > span {
+    background: var(--jr-display-accent) !important;
+}

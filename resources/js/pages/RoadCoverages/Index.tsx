@@ -435,7 +435,7 @@ export default function Index({
                             value={
                                 <>
                                     {Number(displayedTotalLengthKm).toFixed(2)}{' '}
-                                    <span className="text-sm font-medium text-[#64748B]">
+                                    <span className="jr-metric-unit text-sm font-medium text-[#64748B]">
                                         km
                                     </span>
                                 </>
@@ -479,7 +479,7 @@ export default function Index({
                         )}
                         {mapCursor !== null && (
                             <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
-                                <p>
+                                <p className="jr-map-count">
                                     Showing {loadedMap.length} of{' '}
                                     {coverages.total} matching road coverages on
                                     the map.
@@ -686,11 +686,11 @@ export default function Index({
                                             width: selecting ? '27%' : '30%',
                                         }}
                                     />
-                                    <col style={{ width: '19%' }} />
+                                    <col style={{ width: isViewer ? '26%' : '19%' }} />
                                     <col style={{ width: '12%' }} />
                                     <col style={{ width: '16%' }} />
                                     <col style={{ width: '16%' }} />
-                                    <col style={{ width: '7%' }} />
+                                    {!isViewer && <col style={{ width: '7%' }} />}
                                 </colgroup>
                                 <thead>
                                     <tr>
@@ -727,7 +727,9 @@ export default function Index({
                                         <th>Length</th>
                                         <th>Pavement Type</th>
                                         <th>Road Condition</th>
-                                        <th className="text-right">Actions</th>
+                                        {!isViewer && (
+                                            <th className="text-right">Actions</th>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -809,83 +811,85 @@ export default function Index({
                                                     {coverage.state_category}
                                                 </span>
                                             </td>
-                                            <td
-                                                className="text-right"
-                                                onClick={(event) =>
-                                                    event.stopPropagation()
-                                                }
-                                            >
-                                                {!isViewer &&
-                                                    (canEdit ||
-                                                        effectiveCanDelete) && (
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger
-                                                                asChild
-                                                            >
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="jr-action-trigger"
-                                                                    aria-label={`Actions for ${coverage.road_name}`}
+                                            {!isViewer && (
+                                                <td
+                                                    className="text-right"
+                                                    onClick={(event) =>
+                                                        event.stopPropagation()
+                                                    }
+                                                >
+                                                    {!isViewer &&
+                                                        (canEdit ||
+                                                            effectiveCanDelete) && (
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger
+                                                                    asChild
                                                                 >
-                                                                    <MoreHorizontal />
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent
-                                                                className="jr-theme jr-menu"
-                                                                align="end"
-                                                            >
-                                                                <DropdownMenuItem
-                                                                    disabled={
-                                                                        !canEdit
-                                                                    }
-                                                                    onSelect={() =>
-                                                                        router.visit(
-                                                                            editUrl(
-                                                                                workspaceHref(
-                                                                                    `/road-coverages/${coverage.id}/edit`,
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="jr-action-trigger"
+                                                                        aria-label={`Actions for ${coverage.road_name}`}
+                                                                    >
+                                                                        <MoreHorizontal />
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent
+                                                                    className="jr-theme jr-menu"
+                                                                    align="end"
+                                                                >
+                                                                    <DropdownMenuItem
+                                                                        disabled={
+                                                                            !canEdit
+                                                                        }
+                                                                        onSelect={() =>
+                                                                            router.visit(
+                                                                                editUrl(
+                                                                                    workspaceHref(
+                                                                                        `/road-coverages/${coverage.id}/edit`,
+                                                                                    ),
+                                                                                    page.url,
                                                                                 ),
-                                                                                page.url,
-                                                                            ),
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <Pencil />
-                                                                    Edit Road
-                                                                    Coverage
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem
-                                                                    disabled={
-                                                                        !effectiveCanDelete ||
-                                                                        Boolean(
-                                                                            coverage.has_projects,
-                                                                        )
-                                                                    }
-                                                                    title={
-                                                                        coverage.has_projects
-                                                                            ? `Referenced by ${coverage.project_title || 'a maintenance project'}`
-                                                                            : undefined
-                                                                    }
-                                                                    className="text-red-600 focus:bg-red-50 focus:text-red-700"
-                                                                    onSelect={() => {
-                                                                        setDeleteError(
-                                                                            '',
-                                                                        );
-                                                                        setDeleteTargets(
-                                                                            [
-                                                                                coverage,
-                                                                            ],
-                                                                        );
-                                                                    }}
-                                                                >
-                                                                    <Trash2 className="size-4" />
-                                                                    Delete Road
-                                                                    Coverage
-                                                                </DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    )}
-                                            </td>
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <Pencil />
+                                                                        Edit Road
+                                                                        Coverage
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem
+                                                                        disabled={
+                                                                            !effectiveCanDelete ||
+                                                                            Boolean(
+                                                                                coverage.has_projects,
+                                                                            )
+                                                                        }
+                                                                        title={
+                                                                            coverage.has_projects
+                                                                                ? `Referenced by ${coverage.project_title || 'a maintenance project'}`
+                                                                                : undefined
+                                                                        }
+                                                                        className="text-red-600 focus:bg-red-50 focus:text-red-700"
+                                                                        onSelect={() => {
+                                                                            setDeleteError(
+                                                                                '',
+                                                                            );
+                                                                            setDeleteTargets(
+                                                                                [
+                                                                                    coverage,
+                                                                                ],
+                                                                            );
+                                                                        }}
+                                                                    >
+                                                                        <Trash2 className="size-4" />
+                                                                        Delete Road
+                                                                        Coverage
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        )}
+                                                </td>
+                                            )}
                                         </tr>
                                     ))}
                                 </tbody>

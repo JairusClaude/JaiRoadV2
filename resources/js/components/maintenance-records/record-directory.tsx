@@ -182,8 +182,9 @@ export function RecordDirectory({
                 <div>
                     <h1>Maintenance Records</h1>
                     <p>
-                        Browse and manage quarterly maintenance records across
-                        projects.
+                        {isViewer
+                            ? 'Browse quarterly maintenance records across projects.'
+                            : 'Manage quarterly maintenance records across projects.'}
                     </p>
                 </div>
                 {!isViewer && canCreate && (
@@ -350,9 +351,10 @@ export function RecordDirectory({
             >
                 <table className="jr-table">
                     <colgroup>
-                        {[27, 12, 9, 10, 14, 20, 8].map((width, index) => (
+                        {[isViewer ? 35 : 27, 12, 9, 10, 14, 20].map((width, index) => (
                             <col key={index} style={{ width: `${width}%` }} />
                         ))}
+                        {!isViewer && <col style={{ width: '8%' }} />}
                     </colgroup>
                     <thead>
                         <tr>
@@ -390,7 +392,7 @@ export function RecordDirectory({
                             <th>Status</th>
                             <th>Managing Engineer</th>
                             <th>Maintenance Timeline</th>
-                            <th>Actions</th>
+                            {!isViewer && <th>Actions</th>}
                         </tr>
                     </thead>
                     <tbody>
@@ -504,63 +506,65 @@ export function RecordDirectory({
                                             : `Estimated: ${Number.isInteger(record.estimated_duration_days) && record.estimated_duration_days > 0 ? `${record.estimated_duration_days} ${record.estimated_duration_days === 1 ? 'day' : 'days'}` : 'Unavailable'}`}
                                     </div>
                                 </td>
-                                <td
-                                    className="text-right"
-                                    onClick={(event) => event.stopPropagation()}
-                                >
-                                    {!isViewer && !selecting && (
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="jr-action-trigger"
-                                                    aria-label={`Actions for Record ID: ${record.id}`}
-                                                >
-                                                    <MoreHorizontal className="size-[18px]" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent
-                                                className="jr-theme jr-menu"
-                                                align="end"
-                                                onClick={(event) =>
-                                                    event.stopPropagation()
-                                                }
-                                            >
-                                                <DropdownMenuItem
-                                                    disabled={
-                                                        !record.edit_url || busy
-                                                    }
-                                                    onSelect={() =>
-                                                        record.edit_url &&
-                                                        onNavigate(
-                                                            record.edit_url,
-                                                        )
+                                {!isViewer && (
+                                    <td
+                                        className="text-right"
+                                        onClick={(event) => event.stopPropagation()}
+                                    >
+                                        {!isViewer && !selecting && (
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="jr-action-trigger"
+                                                        aria-label={`Actions for Record ID: ${record.id}`}
+                                                    >
+                                                        <MoreHorizontal className="size-[18px]" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent
+                                                    className="jr-theme jr-menu"
+                                                    align="end"
+                                                    onClick={(event) =>
+                                                        event.stopPropagation()
                                                     }
                                                 >
-                                                    <Pencil />
-                                                    Edit Maintenance Record
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem
-                                                    variant="destructive"
-                                                    disabled={
-                                                        !canDelete || busy
-                                                    }
-                                                    className="text-red-600 focus:bg-red-50 focus:text-red-700"
-                                                    onSelect={() =>
-                                                        onDelete(
-                                                            [record],
-                                                            false,
-                                                        )
-                                                    }
-                                                >
-                                                    <Trash2 className="size-4" />
-                                                    Delete Maintenance Record
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    )}
-                                </td>
+                                                    <DropdownMenuItem
+                                                        disabled={
+                                                            !record.edit_url || busy
+                                                        }
+                                                        onSelect={() =>
+                                                            record.edit_url &&
+                                                            onNavigate(
+                                                                record.edit_url,
+                                                            )
+                                                        }
+                                                    >
+                                                        <Pencil />
+                                                        Edit Maintenance Record
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        variant="destructive"
+                                                        disabled={
+                                                            !canDelete || busy
+                                                        }
+                                                        className="text-red-600 focus:bg-red-50 focus:text-red-700"
+                                                        onSelect={() =>
+                                                            onDelete(
+                                                                [record],
+                                                                false,
+                                                            )
+                                                        }
+                                                    >
+                                                        <Trash2 className="size-4" />
+                                                        Delete Maintenance Record
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        )}
+                                    </td>
+                                )}
                             </tr>
                         ))}
                     </tbody>
