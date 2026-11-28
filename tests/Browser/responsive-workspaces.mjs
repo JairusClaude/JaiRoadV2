@@ -434,29 +434,38 @@ export async function verifyMobileWorkspaces({
                     exact: true,
                 });
                 await sheet.waitFor();
-                await phone.waitForFunction(
-                    () => {
-                        const bounds = document
-                            .querySelector('.jr-notification-sheet')
-                            ?.getBoundingClientRect();
+                const geometry = await sheet.evaluate(async (element) => {
+                    await Promise.all(
+                        element
+                            .getAnimations()
+                            .map((animation) =>
+                                animation.finished.catch(() => {}),
+                            ),
+                    );
+                    const bounds = element.getBoundingClientRect();
+                    const overlay = document
+                        .querySelector(
+                            '[data-slot="dialog-overlay"][data-state="open"]',
+                        )
+                        ?.getBoundingClientRect();
+                    const style = getComputedStyle(element);
 
-                        if (!bounds) {
-                            return false;
-                        }
-
-                        const viewport = window.visualViewport;
-                        const bottom = viewport
-                            ? viewport.offsetTop + viewport.height
-                            : window.innerHeight;
-
-                        return (
-                            Math.abs(bounds.left) <= 2 &&
-                            Math.abs(bounds.bottom - bottom) <= 2 &&
-                            Math.abs(bounds.right - window.innerWidth) <= 2
-                        );
-                    },
-                    undefined,
-                    { timeout: 5000 },
+                    return {
+                        position: style.position,
+                        inset: Number.parseFloat(style.bottom),
+                        left: bounds.left - (overlay?.left ?? 0),
+                        right: bounds.right - (overlay?.right ?? 0),
+                        gap: (overlay?.bottom ?? 0) - bounds.bottom,
+                    };
+                });
+                assert.ok(
+                    geometry.position === 'fixed' &&
+                        Math.abs(geometry.left) <= 2 &&
+                        Math.abs(geometry.right) <= 2 &&
+                        Math.abs(geometry.gap - geometry.inset) <= 2,
+                    role +
+                        ' notification sheet geometry ' +
+                        JSON.stringify(geometry),
                 );
                 await sheet
                     .getByRole('button', { name: 'Close', exact: true })

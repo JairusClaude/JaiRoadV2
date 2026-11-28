@@ -1186,6 +1186,7 @@ html.dark .jr-stage .jr-field-error {
         z-index: 40;
     }
     [data-slot='dialog-content'].jr-notification-sheet[data-mobile-layout] {
+        position: fixed;
         inset: auto 0 var(--jr-dialog-bottom, 0px);
         width: auto;
         max-width: none;
