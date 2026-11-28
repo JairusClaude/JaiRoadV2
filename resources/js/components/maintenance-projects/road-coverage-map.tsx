@@ -812,4 +812,3 @@ export function RoadCoverageMap({
         </>
     );
 }
-
