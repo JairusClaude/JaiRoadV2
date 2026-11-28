@@ -2,6 +2,7 @@ import L from 'leaflet';
 
 const root = '/offline-maps/';
 const metaPath = root + 'manifest.json';
+const bundledRoot = '/jairoads-android-pilot/bundled-maps/';
 const metaCache = 'jairoads-offline-map-index-v1';
 const packPrefix = 'jairoads-offline-map-v1-';
 const maxBytes = 512 * 1024 * 1024;
@@ -136,7 +137,7 @@ async function verified(response: Response, tile: Tile) {
 
     return sha === tile.sha256;
 }
-export async function readyMapPacks(): Promise<MapPack[]> {
+async function downloadedMapPacks(): Promise<MapPack[]> {
     if (!('caches' in window)) {
         return [];
     }
@@ -149,6 +150,42 @@ export async function readyMapPacks(): Promise<MapPack[]> {
     } catch {
         return [];
     }
+}
+let bundled: Promise<MapPack[]> | undefined;
+function bundledMapPacks(): Promise<MapPack[]> {
+    bundled ??= (async () => {
+        try {
+            const response = await fetch(bundledRoot + 'manifest.json', {
+                credentials: 'omit',
+                redirect: 'error',
+                signal: AbortSignal.timeout(5000),
+            });
+
+            return response.ok ? manifest(await response.json()) : [];
+        } catch {
+            return [];
+        }
+    })();
+
+    return bundled;
+}
+
+export async function readyMapPacks(): Promise<MapPack[]> {
+    const installed = await bundledMapPacks();
+    const downloaded = await downloadedMapPacks();
+    const combined = [...installed];
+
+    for (const pack of downloaded) {
+        const index = combined.findIndex((entry) => entry.id === pack.id);
+
+        if (index >= 0) {
+            combined[index] = pack;
+        } else {
+            combined.push(pack);
+        }
+    }
+
+    return combined.length <= 2 ? combined : installed;
 }
 let running: Promise<void> | undefined;
 let lastAttempt = 0;
@@ -194,7 +231,7 @@ export function prepareOfflineMapPacks(connected: () => boolean) {
                 return;
             }
 
-            const old = await readyMapPacks();
+            const old = await downloadedMapPacks();
             const complete = [...old];
 
             for (const pack of packs) {
@@ -291,14 +328,28 @@ export function packedMapLayer(pack: MapPack): L.GridLayer {
             tile.style.background = '#e7e9eb';
             void (async () => {
                 try {
-                    const cache = await caches.open(key(pack));
-                    const response = await cache.match(
-                        tilePath(pack, {
-                            z: coords.z,
-                            x: coords.x,
-                            y: coords.y,
-                        }),
-                    );
+                    const path = tilePath(pack, coords);
+                    let response: Response | undefined;
+
+                    if ('caches' in window) {
+                        const cache = await caches.open(key(pack));
+                        response = await cache.match(path);
+                    }
+
+                    if (!response && (await bundledMapPacks()).some((entry) => key(entry) === key(pack))) {
+                        const tileInfo = pack.tiles.find((entry) => entry.z === coords.z && entry.x === coords.x && entry.y === coords.y);
+
+                        if (tileInfo) {
+                            const candidate = await fetch(bundledRoot + path.slice(root.length), {
+                                credentials: 'omit',
+                                redirect: 'error',
+                            });
+
+                            if (candidate.ok && await verified(candidate.clone(), tileInfo)) {
+                                response = candidate;
+                            }
+                        }
+                    }
 
                     if (!response) {
                         done(undefined, tile);

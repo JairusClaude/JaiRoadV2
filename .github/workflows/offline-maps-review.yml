@@ -1,0 +1,86 @@
+name: Licensed offline maps Android review
+
+on:
+  push:
+    branches: [offline-map-review-dad0dfa]
+    paths:
+      - 'mobile/android-pilot/**'
+      - '.github/workflows/android-field-pilot.yml'
+      - 'resources/js/lib/encrypted-field-draft.mjs'
+      - 'resources/js/lib/receipt-queue.ts'
+      - 'resources/js/**'
+      - 'resources/css/**'
+      - 'public/images/**'
+      - 'vite.config.ts'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    name: Build internal Android pilot APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write resources/js/lib/road-coverages/offline-map-packs.ts
+      - run: npx vite build --config mobile/android-pilot/vite.config.mjs
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with:
+          php-version: '8.4'
+          extensions: 'pdo_pgsql, pdo_sqlite, mbstring'
+          tools: composer:v2
+          coverage: none
+      - run: |
+          bash scripts/ci/install-composer.sh
+          touch .env
+          php artisan wayfinder:generate --with-form
+          npm run types:check
+          npx tsc --project mobile/android-pilot/tsconfig.json
+          npm run build -- --mode review
+      - run: node mobile/android-pilot/package-workspace.mjs
+      - name: Prepare real offline maps from open geographic source data
+        run: |
+          python3 -m venv /tmp/jairoads-maps
+          /tmp/jairoads-maps/bin/pip install --disable-pip-version-check requests numpy pillow rasterio shapely
+          /tmp/jairoads-maps/bin/python mobile/android-pilot/build-open-map-packs.py
+      - name: Verify source and map asset hashes
+        run: |
+          npx prettier --check resources/js/lib/road-coverages/offline-map-packs.ts
+          python3 mobile/android-pilot/build-open-map-packs.py --verify-only
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
+        with:
+          packages: 'platforms;android-35 build-tools;35.0.0'
+      - name: Assemble and verify the debug APK
+        run: |
+          gradle_archive="$RUNNER_TEMP/gradle-8.11.1-bin.zip"
+          curl --fail --silent --show-error --location https://services.gradle.org/distributions/gradle-8.11.1-bin.zip -o "$gradle_archive"
+          echo "f397b287023acdba1e9f6fc5ea72d22dd63669d59ed4a289a29b1a76eee151c6  $gradle_archive" | sha256sum --check
+          unzip -q "$gradle_archive" -d "$RUNNER_TEMP"
+          "$RUNNER_TEMP/gradle-8.11.1/bin/gradle" --no-daemon -p mobile/android-pilot/android :app:assembleDebug
+          apk=mobile/android-pilot/android/app/build/outputs/apk/debug/app-debug.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$apk"
+          unzip -l "$apk" | grep 'assets/index.html'
+          unzip -l "$apk" | grep 'assets/workspace.html'
+          unzip -l "$apk" | grep 'assets/site-build/manifest.json'
+          unzip -p "$apk" assets/bundled-maps/manifest.json | python3 -c 'import json,sys; p=json.load(sys.stdin)["packs"]; assert {x["id"] for x in p} == {"ddo-streets","ddo-sentinel"}; print([(x["id"], len(x["tiles"])) for x in p])'
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: JaiROADS-Android-Licensed-Map-Review
+          path: mobile/android-pilot/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
