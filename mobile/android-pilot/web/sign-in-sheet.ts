@@ -1,15 +1,29 @@
-// Full-screen vertical navigation; keep the preview mounted so its slide is preserved.
+// Full-screen navigation. Keep the preview mounted so its carousel state survives.
 export function bindSignInSheet(busy: () => boolean) {
     const page = document.querySelector<HTMLElement>('#auth-page')!;
     const preview = document.querySelector<HTMLElement>('#preview-screen')!;
     const start = document.querySelector<HTMLButtonElement>('#continue')!;
-    const explore = document.querySelector<HTMLButtonElement>('#explore')!;
     const heading = document.querySelector<HTMLElement>('#sign-in-title')!;
     const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+    const swipeArea = '.hero, .panel-top, #sign-in-title, .description';
+    const interactive = 'input, textarea, select, button, a, label, [contenteditable]';
     let motion: Animation | undefined;
     let previewMotion: Animation | undefined;
     let moving = false;
-    let touch: { id: number; x: number; y: number; time: number; delta: number; dragging: boolean } | undefined;
+    let drag: { id: number; x: number; y: number; time: number; delta: number; active: boolean } | undefined;
+
+    function updateSwipeMode() {
+        if (!page.hidden) {
+            page.dataset.swipeMode = page.scrollHeight <= page.clientHeight + 2 ? 'full' : 'header';
+        }
+    }
+
+    // Reserve the gesture before pointerdown so Android cannot claim it as scrolling.
+    const observer = new ResizeObserver(updateSwipeMode);
+    observer.observe(page);
+    observer.observe(document.querySelector<HTMLElement>('#sign-in-panel')!);
+    window.addEventListener('resize', updateSwipeMode);
+    window.visualViewport?.addEventListener('resize', updateSwipeMode);
 
     function stop() {
         motion?.cancel();
@@ -50,7 +64,7 @@ export function bindSignInSheet(busy: () => boolean) {
 
     function close() {
         stop();
-        touch = undefined;
+        drag = undefined;
         page.hidden = true;
         page.style.transform = '';
         preview.style.transform = '';
@@ -64,20 +78,24 @@ export function bindSignInSheet(busy: () => boolean) {
         preview.inert = true;
         page.hidden = false;
         page.scrollTop = 0;
+        updateSwipeMode();
         animate('translateY(100%)', 'translateY(0)', false, () => {
             preview.style.visibility = 'hidden';
             heading.focus({ preventScroll: true });
+            updateSwipeMode();
         });
     }
 
     function dismiss(from = getComputedStyle(page).transform) {
         if (busy() || moving || page.hidden) return;
+        if (document.activeElement instanceof HTMLElement && page.contains(document.activeElement)) {
+            document.activeElement.blur();
+        }
         preview.style.visibility = '';
         animate(from, 'translateY(100%)', true, close);
     }
 
     start.addEventListener('click', open);
-    explore.addEventListener('click', () => dismiss());
     window.addEventListener('jairoads-back', (event) => {
         if (!page.hidden) {
             event.preventDefault();
@@ -90,46 +108,43 @@ export function bindSignInSheet(busy: () => boolean) {
             dismiss();
         }
     });
-    const interactive = 'input, textarea, select, button, a, label, [contenteditable]';
-    page.addEventListener('touchstart', (event) => {
-        if (moving || busy() || page.scrollTop > 1 || event.touches.length !== 1 ||
-            (event.target as Element | null)?.closest(interactive) ||
-            document.activeElement?.matches('input, textarea, select, [contenteditable]')) {
-            touch = undefined;
-            return;
-        }
-        const point = event.touches[0];
-        touch = { id: point.identifier, x: point.clientX, y: point.clientY, time: performance.now(), delta: 0, dragging: false };
-    }, { passive: true });
-    page.addEventListener('touchmove', (event) => {
-        if (!touch || busy() || event.touches.length !== 1) return;
-        const point = Array.from(event.touches).find((p) => p.identifier === touch?.id);
-        if (!point) return;
-        const dy = point.clientY - touch.y;
-        const dx = point.clientX - touch.x;
-        if (!touch.dragging) {
-            if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) || dy < -10) {
-                touch = undefined;
+    page.addEventListener('pointerdown', (event) => {
+        const target = event.target instanceof Element ? event.target : null;
+        if (moving || busy() || page.hidden || !event.isPrimary || event.button !== 0 ||
+            page.scrollTop > 1 || target?.closest(interactive) ||
+            (page.dataset.swipeMode !== 'full' && !target?.closest(swipeArea))) return;
+        drag = { id: event.pointerId, x: event.clientX, y: event.clientY, time: performance.now(), delta: 0, active: false };
+        // Capture at the start on non-interactive content. Form controls retain native behavior.
+        page.setPointerCapture(event.pointerId);
+    });
+    page.addEventListener('pointermove', (event) => {
+        if (!drag || drag.id !== event.pointerId) return;
+        const dx = event.clientX - drag.x;
+        const dy = event.clientY - drag.y;
+        if (!drag.active) {
+            if (dy < -12 || (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy))) {
+                drag = undefined;
+                if (page.hasPointerCapture(event.pointerId)) page.releasePointerCapture(event.pointerId);
                 return;
             }
-            if (dy < 10 || dy <= Math.abs(dx) || !event.cancelable || page.scrollTop > 1) return;
-            touch.dragging = true;
+            if (dy < 8 || dy <= Math.abs(dx)) return;
+            drag.active = true;
             preview.style.visibility = '';
         }
         if (event.cancelable) event.preventDefault();
-        touch.delta = Math.max(0, dy);
-        if (!reduced.matches) page.style.transform = `translateY(${touch.delta}px)`;
-    }, { passive: false });
-    function finishTouch(event: TouchEvent) {
-        if (!touch) return;
-        const cancelled = event.type === 'touchcancel';
-        if (!cancelled && !Array.from(event.changedTouches).some((p) => p.identifier === touch?.id)) return;
-        const { dragging, delta, time } = touch;
-        touch = undefined;
-        if (!dragging) return;
+        drag.delta = Math.max(0, dy);
+        if (!reduced.matches) page.style.transform = `translateY(${drag.delta}px)`;
+    });
+    function finishDrag(event: PointerEvent) {
+        if (!drag || drag.id !== event.pointerId) return;
+        const { active, delta, time } = drag;
+        drag = undefined;
+        if (page.hasPointerCapture(event.pointerId)) page.releasePointerCapture(event.pointerId);
+        if (!active) return;
         const speed = delta / Math.max(1, performance.now() - time);
         const from = getComputedStyle(page).transform;
-        if (!cancelled && !busy() && (delta > Math.min(120, page.clientHeight * 0.25) || (delta > 35 && speed > 0.65))) {
+        if (event.type === 'pointerup' && !busy() &&
+            (delta > Math.min(110, page.clientHeight * 0.22) || (delta > 35 && speed > 0.65))) {
             dismiss(from);
         } else {
             animate(from, 'translateY(0)', false, () => {
@@ -137,7 +152,8 @@ export function bindSignInSheet(busy: () => boolean) {
             });
         }
     }
-    page.addEventListener('touchend', finishTouch);
-    page.addEventListener('touchcancel', finishTouch);
+    page.addEventListener('pointerup', finishDrag);
+    page.addEventListener('pointercancel', finishDrag);
+    page.addEventListener('lostpointercapture', finishDrag);
     return { close };
 }

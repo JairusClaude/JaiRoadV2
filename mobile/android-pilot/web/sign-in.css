@@ -418,9 +418,6 @@ body {
     font-weight: 500;
     font-size: 10px;
 }
-.auth-page .outline {
-    padding-inline: 12px;
-}
 .auth-page .panel {
     flex: 1 0 auto;
     border: 0;
@@ -497,4 +494,19 @@ body {
         margin-top: 10px;
         gap: 8px;
     }
+}
+
+/* Keep native scrolling on short displays/when the keyboard reduces available height. */
+.auth-page[data-swipe-mode='full'],
+.auth-page .hero,
+.auth-page .panel-top,
+.auth-page #sign-in-title,
+.auth-page .description {
+    touch-action: none;
+}
+.auth-page .hero,
+.auth-page .panel-top,
+.auth-page #sign-in-title,
+.auth-page .description {
+    user-select: none;
 }
