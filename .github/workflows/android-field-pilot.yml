@@ -117,6 +117,11 @@ jobs:
           unzip -l "$apk" | grep 'assets/site-build/manifest.json'
           unzip -l "$apk" | grep 'assets/bundled-maps/road-network.json'
           unzip -p "$apk" assets/bundled-maps/manifest.json | python3 -c 'import json,sys; m=json.load(sys.stdin); p=m["packs"]; assert {x["id"] for x in p} == {"ddo-streets","ddo-sentinel"}; assert m["network"]["bytes"] > 0; print([(x["id"], len(x["tiles"]), x["maxZoom"]) for x in p])'
+          # Confirm the packaged manifest references the branded launcher resource.
+          "$ANDROID_HOME/build-tools/35.0.0/aapt2" dump badging "$apk" > "$RUNNER_TEMP/jairoads-apk-badging.txt"
+          grep -E "^application: .*icon='[^']*ic_launcher" "$RUNNER_TEMP/jairoads-apk-badging.txt"
+          unzip -l "$apk" | grep -E 'res/.*peo_ddo_logo\.webp'
+          unzip -l "$apk" | grep -E 'res/.*ic_launcher\.xml'
           sha256sum "$apk"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:

@@ -5,6 +5,8 @@
         android:allowBackup="false"
         android:usesCleartextTraffic="false"
         android:label="JaiROADS Review"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <activity
             android:name=".MainActivity"
