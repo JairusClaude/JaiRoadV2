@@ -54,6 +54,8 @@ final class MonthlySubmissionReceiptTest extends PostgresTestCase
         $id = (int) DB::table(self::TABLE)->value('report_id');
         $this->assertGreaterThan(0, $id);
         $this->postJson(self::URL, $payload)->assertRedirect(self::URL.'/'.$id);
+        $this->postJson(self::URL, array_replace($payload, ['progress_percentage' => '030.00']))->assertRedirect(self::URL.'/'.$id);
+        $this->postJson(self::URL, array_replace($payload, ['progress_percentage' => '30.001']))->assertConflict();
         $this->getJson($lookup())->assertOk()->assertExactJson(['reportId' => $id, 'receiptConfirmed' => true])
             ->assertHeader('Cache-Control', 'no-store, private');
         $this->postJson(self::URL, array_replace($payload, ['summary_of_text_reports' => 'Different text']))->assertConflict();

@@ -39,7 +39,8 @@ final class FileRecoveryScheduleTest extends PostgresTestCase
     public function test_batch_evidence_expires_and_rejects_impossible_counts(): void
     {
         config(['cache.default' => 'array']);
-        FileRecoverySchedule::recordRun(3, 2, true);
+        FileRecoverySchedule::recordRun(3, 2, true, scheduled: true);
+        $this->assertSame('scheduled', FileRecoverySchedule::lastRun()['trigger']);
         $this->assertFalse(FileRecoverySchedule::lastRun()['stale']);
         FileRecoverySchedule::recordRun(1, 2, false);
         $this->assertSame(3, FileRecoverySchedule::lastRun()['attempted']);
@@ -57,7 +58,10 @@ final class FileRecoveryScheduleTest extends PostgresTestCase
         $key = 'jairoads:recovery:last-finished-batch:v1';
         FileRecoverySchedule::recordRun(2, 1, false);
         $evidence = Cache::get($key);
-        $this->assertNotNull(FileRecoverySchedule::lastRun());
+        $this->assertSame('manual', FileRecoverySchedule::lastRun()['trigger']);
+        unset($evidence['trigger']);
+        Cache::put($key, $evidence);
+        $this->assertSame('unknown', FileRecoverySchedule::lastRun()['trigger']);
         foreach (['2026-02-30T12:00:00+00:00', '2026-03-02T24:00:00+00:00', now()->addSecond()->toIso8601String()] as $timestamp) {
             Cache::put($key, array_replace($evidence, ['finished_at' => $timestamp]));
             $this->assertNull(FileRecoverySchedule::lastRun());
@@ -78,7 +82,7 @@ final class FileRecoveryScheduleTest extends PostgresTestCase
         FileRecoverySchedule::register($schedule);
         $this->assertCount(1, $schedule->events());
         $event = $schedule->events()[0];
-        $this->assertStringContainsString(FileRecoverySchedule::COMMAND, $event->command);
+        $this->assertStringContainsString(FileRecoverySchedule::COMMAND.' --scheduled', $event->command);
         $this->assertSame('*/5 * * * *', $event->expression);
         $this->assertTrue($event->withoutOverlapping);
         $this->assertTrue($event->onOneServer);
