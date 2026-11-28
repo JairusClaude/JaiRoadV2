@@ -27,13 +27,15 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx vite build --config mobile/android-pilot/vite.config.mjs
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
+        with:
+          packages: 'platforms;android-35 build-tools;35.0.0'
       - name: Assemble and verify the debug APK
         run: |
           gradle_archive="$RUNNER_TEMP/gradle-8.11.1-bin.zip"
           curl --fail --silent --show-error --location https://services.gradle.org/distributions/gradle-8.11.1-bin.zip -o "$gradle_archive"
           echo "f397b287023acdba1e9f6fc5ea72d22dd63669d59ed4a289a29b1a76eee151c6  $gradle_archive" | sha256sum --check
           unzip -q "$gradle_archive" -d "$RUNNER_TEMP"
-          sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
           "$RUNNER_TEMP/gradle-8.11.1/bin/gradle" --no-daemon -p mobile/android-pilot/android :app:assembleDebug
           apk=mobile/android-pilot/android/app/build/outputs/apk/debug/app-debug.apk
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$apk"
