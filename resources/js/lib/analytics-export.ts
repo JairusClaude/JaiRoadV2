@@ -1,4 +1,8 @@
-import { analyticsCsv, analyticsPdf, analyticsXlsx } from './analytics-report-formats';
+import {
+    analyticsCsv,
+    analyticsPdf,
+    analyticsXlsx,
+} from './analytics-report-formats';
 import type { AnalyticsReport } from './analytics-report-formats';
 
 /** Only currently displayed aggregate values are eligible for an export. */
