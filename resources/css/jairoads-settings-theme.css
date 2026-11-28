@@ -4,7 +4,7 @@
 html.dark .jr-app,
 html.dark .jr-stage,
 html.dark .jr-content {
-    background-color: #111927 !important;
+    background-color: var(--jr-role-dark-canvas, #111927) !important;
     color: #e5edf8;
 }
 html.dark .jr-global-header,
@@ -26,10 +26,10 @@ html.dark .jr-identity small,
 html.dark .jr-nav-caption,
 html.dark .jr-global-header span,
 html.dark .jr-workspace .jr-page-head p {
-    color: #b9c7d9 !important;
+    color: var(--jr-role-dark-muted, #b9c7d9) !important;
 }
 html.dark .jr-nav-link:hover {
-    background-color: #29394f !important;
+    background-color: var(--jr-role-dark-elevated, #29394f) !important;
 }
 html.dark .jr-nav-link.jr-active {
     background-color: #463426 !important;
@@ -40,14 +40,14 @@ html.dark .jr-identity {
     border-color: #344259 !important;
 }
 html.dark .jr-workspace {
-    background-color: #1c2839 !important;
-    color: #eef4fb;
-    border-color: #334258 !important;
+    background-color: var(--jr-role-dark-canvas, #1c2839) !important;
+    color: var(--jr-role-dark-text, #eef4fb);
+    border-color: var(--jr-role-dark-border, #334258) !important;
 }
 html.dark .jr-menu {
-    background-color: #1e2a3b !important;
-    border-color: #45536a !important;
-    color: #eef4fb;
+    background-color: var(--jr-role-dark-surface, #1e2a3b) !important;
+    border-color: var(--jr-role-dark-border, #45536a) !important;
+    color: var(--jr-role-dark-text, #eef4fb);
 }
 html.dark .jr-icon-button,
 html.dark .jr-account-trigger {

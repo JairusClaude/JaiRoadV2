@@ -87,7 +87,11 @@ export function DirectorySelectionToolbar({
             </span>
             {isViewer || !canDelete ? null : selecting ? (
                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={onCancel}>
+                    <Button
+                        className="jr-selection-toggle"
+                        variant="outline"
+                        onClick={onCancel}
+                    >
                         Cancel selection
                     </Button>
                     {canDelete && (
@@ -102,6 +106,7 @@ export function DirectorySelectionToolbar({
                 </div>
             ) : (
                 <Button
+                    className="jr-selection-toggle"
                     variant="outline"
                     disabled={disabled || total === 0}
                     onClick={onSelect}
