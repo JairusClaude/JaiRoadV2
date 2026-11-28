@@ -30,7 +30,7 @@ function render() {
     unlock.querySelector('button')!.disabled = busy;
     el('setup-title').textContent = hasOfflineData()
         ? 'Unlock offline access'
-        : 'Set up offline access';
+        : 'Prepare for fieldwork';
     el('unlock-button').textContent = hasOfflineData()
         ? 'Unlock'
         : 'Save offline workspace';

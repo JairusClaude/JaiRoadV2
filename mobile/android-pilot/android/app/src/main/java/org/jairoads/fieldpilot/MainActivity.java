@@ -27,7 +27,7 @@ public final class MainActivity extends Activity {
     private static final String PILOT_PATH = "/jairoads-android-pilot/";
     private WebView web;
     private LinearLayout layout;
-    private String origin;
+    private static final String origin = "https://jairoads-android-pilot-lvin.onrender.com";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,87 +37,19 @@ public final class MainActivity extends Activity {
         layout.setOrientation(LinearLayout.VERTICAL);
         setContentView(layout);
 
-        LinearLayout toolbar = new LinearLayout(this);
-        layout.addView(toolbar, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        Button offline = new Button(this);
-        offline.setText("Field reports");
-        offline.setOnClickListener(view -> openPilot());
-        toolbar.addView(offline);
-        Button server = new Button(this);
-        server.setText("Staging server");
-        server.setOnClickListener(view -> chooseServer());
-        toolbar.addView(server);
+        openPilot();
+    }
 
-        origin = getPreferences(MODE_PRIVATE).getString("staging_origin", null);
-        if (origin == null) {
-            TextView instructions = new TextView(this);
-            instructions.setText("Add a JaiROADS HTTPS staging URL to begin. This pilot uses a disposable database and staging test accounts.");
-            instructions.setPadding(24, 24, 24, 24);
-            layout.addView(instructions);
-            chooseServer();
-        } else {
+    @Override
+    public void onBackPressed() {
+        if (web != null && !(origin + PILOT_PATH + "index.html").equals(web.getUrl())) {
             openPilot();
-        }
-    }
-
-    private void chooseServer() {
-        EditText input = new EditText(this);
-        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
-        input.setHint("https://staging.example.gov.ph");
-        input.setText(origin);
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("JaiROADS staging server")
-                .setMessage("Use the HTTPS origin of the staging application. Saved reports are isolated by server.")
-                .setView(input)
-                .setNegativeButton("Cancel", null)
-                .setPositiveButton("Connect", null)
-                .create();
-        dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-                .setOnClickListener(view -> {
-                    try {
-                        String chosen = parseOrigin(input.getText().toString().trim());
-                        if (web != null && !chosen.equals(origin)) {
-                            layout.removeView(web);
-                            web.destroy();
-                            web = null;
-                        }
-
-                        origin = chosen;
-                        getPreferences(MODE_PRIVATE).edit().putString("staging_origin", origin).apply();
-                        if (layout.getChildCount() > 1 && web == null) {
-                            layout.removeViewAt(1);
-                        }
-                        dialog.dismiss();
-                        openPilot();
-                    } catch (IllegalArgumentException error) {
-                        input.setError(error.getMessage());
-                    }
-                }));
-        dialog.show();
-    }
-
-    private static String parseOrigin(String value) {
-        try {
-            URI uri = new URI(value);
-            String host = uri.getHost();
-            if (!"https".equalsIgnoreCase(uri.getScheme()) || host == null
-                    || uri.getUserInfo() != null || uri.getQuery() != null || uri.getFragment() != null
-                    || (uri.getPort() != -1 && uri.getPort() != 443)
-                    || !(uri.getPath().isEmpty() || "/".equals(uri.getPath()))) {
-                throw new IllegalArgumentException("Enter an HTTPS origin without a path or port.");
-            }
-            return "https://" + host.toLowerCase(Locale.ROOT);
-        } catch (URISyntaxException error) {
-            throw new IllegalArgumentException("Enter a valid HTTPS staging URL.");
+        } else {
+            super.onBackPressed();
         }
     }
 
     private void openPilot() {
-        if (origin == null) {
-            chooseServer();
-            return;
-        }
         if (web == null) {
             String host = Uri.parse(origin).getHost();
             WebViewAssetLoader loader = new WebViewAssetLoader.Builder()
@@ -133,6 +65,13 @@ public final class MainActivity extends Activity {
             web.getSettings().setAllowContentAccess(false);
             CookieManager.getInstance().setAcceptThirdPartyCookies(web, false);
             web.setWebViewClient(new WebViewClient() {
+                @Override
+                public void onPageFinished(WebView view, String url) {
+                    if (url.equals(origin + "/workspace/dashboard") || url.equals(origin + "/dashboard")) {
+                        openPilot();
+                    }
+                }
+
                 @Override
                 public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                     return loader.shouldInterceptRequest(request.getUrl());
