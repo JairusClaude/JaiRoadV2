@@ -207,30 +207,19 @@ form.addEventListener('submit', async (event) => {
             throw error;
         }
 
-        const workspace = await loadWorkspace().catch((error: unknown) => {
-            if (error instanceof RequestError && error.status === 403) {
-                return null;
-            }
-
-            throw error;
-        });
-
-        if (!workspace) {
-            openHostedDashboard();
-
-            return;
-        }
-
+        // Authentication already succeeded. An unavailable field-cache endpoint,
+        // ineligible role, or local vault problem must not replace the dashboard.
         try {
-            await openWorkspace(
-                await Vault.prepare(emailAddress, secret, workspace),
-                false,
-            );
-        } catch {
-            showStatus(
-                'Offline preparation was unavailable. Saved fieldwork remains on this phone.',
-                true,
-            );
+            const workspace = await loadWorkspace();
+            const vault = await Vault.prepare(emailAddress, secret, workspace);
+            await openWorkspace(vault, false);
+        } catch (error) {
+            if (!(error instanceof RequestError && error.status === 403)) {
+                showStatus(
+                    'Offline preparation was unavailable. Saved fieldwork remains on this phone.',
+                    true,
+                );
+            }
             openHostedDashboard();
         }
     } catch (error) {

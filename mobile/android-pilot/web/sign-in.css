@@ -377,55 +377,124 @@ html,
 body {
     overscroll-behavior: none;
 }
-.auth-sheet {
-    color: inherit;
+
+/* The authentication page is a full viewport, not a modal or bottom sheet. */
+#sign-in-screen {
+    overflow-x: clip;
+}
+.auth-page {
     position: fixed;
-    inset: auto 0 0;
-    margin: 0 auto;
-    width: min(100%, 580px);
-    max-width: 100%;
-    max-height: calc(100dvh - 22px);
-    overflow: auto;
-    overscroll-behavior: contain;
-    border: 0;
-    padding: 0 clamp(16px, 6vw, 32px) max(16px, env(safe-area-inset-bottom));
-}
-.auth-sheet::backdrop {
-    background: rgb(34 21 14 / 35%);
-}
-.auth-sheet .panel-top {
-    margin-block: 0 10px;
-}
-.drag-handle {
-    display: grid;
-    place-items: center;
+    z-index: 2;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
     width: 100%;
-    height: 38px;
+    height: 100dvh;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: var(--sand);
+    touch-action: pan-y;
+}
+.auth-page .hero {
+    flex: 0 0 auto;
+    min-height: clamp(116px, 21svh, 185px);
+    padding-top: max(clamp(22px, 4svh, 36px), env(safe-area-inset-top));
+}
+.auth-page .brand {
+    min-width: 0;
+}
+.auth-page .brand img {
+    flex-basis: 48px;
+    width: 48px;
+    height: 48px;
+}
+.auth-page .brand strong {
+    font-size: clamp(21px, 5.8vw, 26px);
+}
+.auth-page .brand small {
+    max-width: 180px;
+    font-weight: 500;
+    font-size: 10px;
+}
+.auth-page .outline {
+    padding-inline: 12px;
+}
+.auth-page .panel {
+    flex: 1 0 auto;
     border: 0;
-    background: transparent;
-    touch-action: none;
-    cursor: grab;
-}
-.drag-handle::before {
-    content: '';
-    width: 36px;
-    height: 4px;
-    background: currentColor;
-    opacity: 0.3;
-    border-radius: 99px;
-}
-.auth-sheet[open] {
+    padding: clamp(20px, 3.1svh, 28px) clamp(16px, 6vw, 32px) max(24px, env(safe-area-inset-bottom));
+    margin-top: -16px;
     animation: none;
 }
-@media (orientation: landscape) and (max-height: 530px) {
-    .auth-sheet {
-        border-radius: 20px 20px 0 0;
-        padding-bottom: max(10px, env(safe-area-inset-bottom));
+.auth-page .panel-top {
+    margin-bottom: clamp(24px, 5svh, 42px);
+    font-weight: 500;
+}
+.secure-label,
+.help-note {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.secure-label svg {
+    color: #a45323;
+    flex: none;
+}
+.auth-page .description {
+    margin-top: 10px;
+}
+.auth-page .field label {
+    font-weight: 500;
+}
+.auth-page form {
+    margin-top: clamp(18px, 3.1svh, 26px);
+    gap: clamp(12px, 2.1svh, 20px);
+}
+.auth-page .field input {
+    height: clamp(48px, 6.4svh, 54px);
+}
+.input-icon-wrap {
+    position: relative;
+}
+.input-icon-wrap .input-icon {
+    position: absolute;
+    pointer-events: none;
+    left: 13px;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    transform: translateY(-50%);
+    color: var(--muted);
+}
+.auth-page .input-icon-wrap input {
+    padding-left: 40px;
+}
+.auth-page .primary {
+    min-height: clamp(48px, 6.4svh, 54px);
+}
+.auth-page .help-note {
+    margin-top: 15px;
+}
+.auth-page .help-note svg {
+    flex: none;
+    color: #788c9d;
+}
+@media (max-height: 530px) {
+    .auth-page .hero {
+        min-height: 100px;
+        padding-block: 12px;
     }
-    .auth-sheet .panel-top {
-        display: none;
+    .auth-page .panel {
+        margin-top: -10px;
+        padding-block: 14px;
     }
-    .drag-handle {
-        height: 24px;
+    .auth-page .panel-top {
+        margin-bottom: 12px;
+    }
+    .auth-page form {
+        margin-top: 10px;
+        gap: 8px;
     }
 }

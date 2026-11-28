@@ -1,24 +1,22 @@
 #field-reports {
-    color-scheme: light dark;
+    color-scheme: light;
     font:
         16px/1.5 system-ui,
         sans-serif;
-    --page: #f6f4f0;
+    --page: #f4f5f8;
     --surface: #fff;
-    --ink: #211e1b;
-    --muted: #594d43;
-    --line: #ddcfc1;
-    --accent: #a54811;
+    --ink: #15253b;
+    --muted: #53657a;
+    --line: #e9e6e2;
+    --accent: var(--primary, #15253b);
 }
-@media (prefers-color-scheme: dark) {
-    #field-reports {
-        --page: #201710;
-        --surface: #332319;
-        --ink: #fff4e8;
-        --muted: #ebccb3;
-        --line: #93705a;
-        --accent: #a54811;
-    }
+#field-reports[data-appearance='dark'] {
+    color-scheme: dark;
+    --page: #111927;
+    --surface: #192435;
+    --ink: #eef4fb;
+    --muted: #b9c7d9;
+    --line: #344259;
 }
 *,
 *::before,
@@ -27,12 +25,10 @@
 }
 body.field-reports-open {
     margin: 0;
-    background: #f6f4f0;
+    background: #f4f5f8;
 }
-@media (prefers-color-scheme: dark) {
-    body.field-reports-open {
-        background: #201710;
-    }
+body.field-reports-open:has(#field-reports[data-appearance='dark']) {
+    background: #111927;
 }
 #field-reports {
     color: var(--ink);
@@ -210,8 +206,8 @@ body.field-reports-open {
     align-items: center;
     gap: 0.55rem;
     padding: 9px 16px max(9px, env(safe-area-inset-bottom));
-    color: var(--primary-foreground);
-    background: var(--primary);
+    color: var(--primary-foreground, #fff);
+    background: var(--primary, var(--ink));
     font-size: 0.86rem;
     font-weight: 650;
 }
@@ -350,4 +346,48 @@ body.field-reports-open {
 }
 #field-reports #field-tabs button {
     text-align: start;
+}
+
+/* Match the hosted workspace's role-aware header, navigation and surfaces. */
+#field-reports .workspace-brand {
+    font-size: 1rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+#field-reports .workspace-role {
+    flex: none;
+}
+#field-reports .workspace-topbar {
+    min-height: 56px;
+    box-shadow: 0 1px 3px rgb(15 23 42 / 5%);
+}
+#field-reports .workspace-content {
+    padding-bottom: 1.25rem;
+}
+#field-reports .workspace-menu {
+    width: min(84vw, 280px);
+}
+#field-reports .workspace-menu-header {
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0.9rem;
+}
+#field-reports #field-tabs button {
+    border-color: transparent;
+    border-radius: 0.75rem;
+    padding-inline: 1rem;
+}
+#field-reports #field-tabs button[aria-pressed='true'] {
+    color: var(--primary-foreground, #fff);
+    background: var(--primary, var(--ink));
+}
+#field-reports #field-banner {
+    width: 100%;
+    text-align: center;
+    padding-inline: max(12px, env(safe-area-inset-left));
+}
+#field-reports[data-appearance='dark'] .workspace-heading,
+#field-reports[data-appearance='dark'] .workspace-role {
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--line);
 }

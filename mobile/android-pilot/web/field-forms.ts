@@ -7,11 +7,11 @@ import type { Fields, Kind, Row, Vault } from './queue';
 export type Tab = Kind | 'files';
 export type Choices = [string, string][];
 export const labels: Record<Tab, [string, string]> = {
-    project: ['Projects', 'project'],
-    record: ['Maintenance records', 'maintenance record'],
-    road: ['Road coverage', 'road coverage'],
-    monthly: ['Monthly reports', 'monthly report'],
-    files: ['Local documentation', 'local attachment'],
+    project: ['Maintenance Projects', 'project'],
+    record: ['Maintenance Records', 'maintenance record'],
+    road: ['Road Sections', 'road coverage'],
+    monthly: ['Monthly Updates', 'monthly report'],
+    files: ['Maintenance Documents', 'local attachment'],
 };
 
 export function titleFor(kind: Kind, row: Row | Fields) {

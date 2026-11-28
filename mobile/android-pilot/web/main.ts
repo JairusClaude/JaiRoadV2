@@ -23,6 +23,19 @@ let visibleLocally = false;
 let nativeLink: boolean | undefined;
 let ready = false;
 const connected = () => nativeLink ?? navigator.onLine;
+const systemDark = matchMedia('(prefers-color-scheme: dark)');
+
+function applyWorkspaceAppearance() {
+    let appearance = 'light';
+    try { appearance = localStorage.getItem('appearance') ?? 'light'; } catch { /* Use default. */ }
+    const dark = appearance === 'dark' || (appearance === 'system' && systemDark.matches);
+    field.dataset.appearance = dark ? 'dark' : 'light';
+    field.style.colorScheme = dark ? 'dark' : 'light';
+}
+systemDark.addEventListener('change', applyWorkspaceAppearance);
+window.addEventListener('storage', (event) => {
+    if (event.key === 'appearance' || event.key === null) applyWorkspaceAppearance();
+});
 let editing: Row | undefined;
 let dirty = false;
 let busy = false;
@@ -47,7 +60,7 @@ function showStatus() {
         : checking && pending.length
           ? 'Connection restored — Synchronizing'
           : !reachable
-            ? 'Offline Mode — Server unavailable'
+            ? 'Server unavailable — Working locally'
             : pending.length
               ? 'Pending synchronization'
               : synced
@@ -56,7 +69,7 @@ function showStatus() {
     banner.hidden = !message;
     field.classList.toggle('has-field-banner', Boolean(message));
     el('field-banner-text').textContent = message;
-    el('field-wifi-off').hidden = connected();
+    el('field-wifi-off').hidden = connected() && reachable;
     el('online-dashboard').hidden =
         !reachable || !connected() || !editor.hidden || !visibleLocally;
 }
@@ -89,6 +102,9 @@ function item(title: string, detail = '') {
 function renderDirectory() {
     const { snapshot, pending, attachments } = vault.state;
     el('directory-title').textContent = labels[tab][0];
+    el('workspace-page-title').textContent = editor.hidden
+        ? (home ? 'Dashboard' : labels[tab][0])
+        : el('editor-title').textContent;
     el('field-home').hidden = !home || !editor.hidden;
     directory.hidden = home || !editor.hidden;
 
@@ -209,6 +225,7 @@ function openEditor(row?: Row) {
     renderFields(inputs, vault, tab, row);
     note('', 'field-error');
     editor.hidden = false;
+    el('workspace-page-title').textContent = el('editor-title').textContent;
     el('field-home').hidden = true;
     directory.hidden = true;
     showStatus();
@@ -293,6 +310,7 @@ function presentLocal(path = '') {
     }
 
     visibleLocally = true;
+    applyWorkspaceAppearance();
     opening.hidden = true;
     field.hidden = false;
     renderDirectory();
@@ -302,14 +320,14 @@ function presentLocal(path = '') {
     }
 }
 
-function goOnline() {
+function goOnline(allowPending = false) {
     if (
         !connected() ||
         !reachable ||
         !editor.hidden ||
         menu.open ||
         busy ||
-        vault.state.pending.length
+        (!allowPending && vault.state.pending.length)
     ) {
         return;
     }
@@ -380,7 +398,10 @@ async function refresh() {
         const status = error instanceof RequestError ? error.status : 0;
         reachable = status === 429;
 
-        if (!reachable) {
+        // A failed background snapshot/sync request is not proof that the
+        // already-open hosted dashboard is offline. Native link loss and main
+        // frame failures are handled separately; never replace a healthy page.
+        if (!connected()) {
             showCachedWorkspace();
         }
 
@@ -502,7 +523,7 @@ el('field-home').addEventListener('click', (event) => {
 });
 el('new-field-item').addEventListener('click', () => openEditor());
 el('cancel-edit').addEventListener('click', () => leave(closeEditor));
-el('online-dashboard').addEventListener('click', goOnline);
+el('online-dashboard').addEventListener('click', () => goOnline(true));
 el('lock').addEventListener('click', () =>
     leave(() => {
         hostMode('lock');
@@ -564,6 +585,7 @@ document.addEventListener('visibilitychange', () => {
 
 export function openFieldReports(workspace: Vault, offlineSignIn: boolean) {
     vault = workspace;
+    applyWorkspaceAppearance();
     ready = true;
     reachable = !offlineSignIn;
     history.replaceState(null, '', '#field-reports');
