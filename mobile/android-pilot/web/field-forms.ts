@@ -275,7 +275,7 @@ export function validateFields(kind: Kind, fields: Fields, row?: Row) {
         delete fields.coordinates;
 
         if (lines) {
-            const points = lines
+            const coordinates = lines
                 .split(/\r?\n/)
                 .filter(Boolean)
                 .map((line) =>
@@ -285,9 +285,10 @@ export function validateFields(kind: Kind, fields: Fields, row?: Row) {
                             part.trim() === '' ? NaN : Number(part.trim()),
                         ),
                 );
-            const geojson = { type: 'LineString', coordinates: points };
+            const geojson = { type: 'LineString', coordinates };
+            const points = lineCoordinates(geojson);
 
-            if (!lineCoordinates(geojson) || distanceKm(points) === 0) {
+            if (!points || distanceKm(points) === 0) {
                 throw new Error(
                     'Enter two or more distinct, valid longitude and latitude points.',
                 );

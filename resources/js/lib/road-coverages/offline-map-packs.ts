@@ -286,39 +286,43 @@ const safe = (value: string) =>
 export function packedMapLayer(pack: MapPack): L.GridLayer {
     class PackedLayer extends L.GridLayer {
         protected createTile(coords: L.Coords, done: L.DoneCallback) {
-        const tile = document.createElement('img');
-        tile.alt = '';
-        tile.style.background = '#e7e9eb';
-        void (async () => {
-            try {
-                const cache = await caches.open(key(pack));
-                const response = await cache.match(
-                    tilePath(pack, { z: coords.z, x: coords.x, y: coords.y }),
-                );
+            const tile = document.createElement('img');
+            tile.alt = '';
+            tile.style.background = '#e7e9eb';
+            void (async () => {
+                try {
+                    const cache = await caches.open(key(pack));
+                    const response = await cache.match(
+                        tilePath(pack, {
+                            z: coords.z,
+                            x: coords.x,
+                            y: coords.y,
+                        }),
+                    );
 
-                if (!response) {
+                    if (!response) {
+                        done(undefined, tile);
+
+                        return;
+                    }
+
+                    const url = URL.createObjectURL(await response.blob());
+                    tile.onload = () => {
+                        URL.revokeObjectURL(url);
+                        done(undefined, tile);
+                    };
+                    tile.onerror = () => {
+                        URL.revokeObjectURL(url);
+                        done(undefined, tile);
+                    };
+                    tile.src = url;
+                } catch {
                     done(undefined, tile);
-
-                    return;
                 }
+            })();
 
-                const url = URL.createObjectURL(await response.blob());
-                tile.onload = () => {
-                    URL.revokeObjectURL(url);
-                    done(undefined, tile);
-                };
-                tile.onerror = () => {
-                    URL.revokeObjectURL(url);
-                    done(undefined, tile);
-                };
-                tile.src = url;
-            } catch {
-                done(undefined, tile);
-            }
-        })();
-
-        return tile;
-    }
+            return tile;
+        }
     }
 
     return new PackedLayer({

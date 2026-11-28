@@ -192,7 +192,7 @@ export async function openSharedWorkspace(
             ...current,
             props: {
                 ...current.props,
-                errors: { [field]: message },
+                errors: { [field]: message } as Page['props']['errors'],
                 status: '',
             },
             encryptHistory: true,
@@ -206,8 +206,8 @@ export async function openSharedWorkspace(
                 new CustomEvent('jairoads-field-message', { detail: message }),
             );
         } catch {
-                // Preserve local data when the optional network operation fails.
-            }
+            // Preserve local data when the optional network operation fails.
+        }
     };
     async function mutate(
         url: URL,
@@ -635,8 +635,8 @@ export async function openSharedWorkspace(
                         return responsePage(page);
                     }
                 } catch {
-                // Preserve local data when the optional network operation fails.
-            }
+                    // Preserve local data when the optional network operation fails.
+                }
 
                 userMessage(
                     'This page was not prepared for offline use. Connect to access it.',
@@ -763,8 +763,8 @@ export async function openSharedWorkspace(
                             });
                         }
                     } catch {
-                // Preserve local data when the optional network operation fails.
-            }
+                        // Preserve local data when the optional network operation fails.
+                    }
                 }
 
                 return null;
@@ -828,8 +828,8 @@ export async function openSharedWorkspace(
                 try {
                     await vault.cacheFile(found.ref);
                 } catch {
-                // Preserve local data when the optional network operation fails.
-            }
+                    // Preserve local data when the optional network operation fails.
+                }
 
                 found = findFile(
                     vault,

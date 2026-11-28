@@ -2,6 +2,12 @@ export const maxDraftFileBytes: number;
 export const maxReportSummaryCharacters: number;
 export function validateDraftSummary(summary: string): void;
 
+export function keyFor(
+    passphrase: string,
+    salt: BufferSource,
+    usage: 'encrypt' | 'decrypt',
+): Promise<CryptoKey>;
+
 export function encryptDraft(
     data: unknown,
     passphrase: string,

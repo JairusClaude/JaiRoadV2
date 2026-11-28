@@ -6,15 +6,26 @@ export function bindSignInSheet(busy: () => boolean) {
     const heading = document.querySelector<HTMLElement>('#sign-in-title')!;
     const reduced = matchMedia('(prefers-reduced-motion: reduce)');
     const swipeArea = '.hero, .panel-top, #sign-in-title, .description';
-    const interactive = 'input, textarea, select, button, a, label, [contenteditable]';
+    const interactive =
+        'input, textarea, select, button, a, label, [contenteditable]';
     let motion: Animation | undefined;
     let previewMotion: Animation | undefined;
     let moving = false;
-    let drag: { id: number; x: number; y: number; time: number; delta: number; active: boolean } | undefined;
+    let drag:
+        | {
+              id: number;
+              x: number;
+              y: number;
+              time: number;
+              delta: number;
+              active: boolean;
+          }
+        | undefined;
 
     function updateSwipeMode() {
         if (!page.hidden) {
-            page.dataset.swipeMode = page.scrollHeight <= page.clientHeight + 2 ? 'full' : 'header';
+            page.dataset.swipeMode =
+                page.scrollHeight <= page.clientHeight + 2 ? 'full' : 'header';
         }
     }
 
@@ -33,30 +44,49 @@ export function bindSignInSheet(busy: () => boolean) {
         moving = false;
     }
 
-    function animate(from: string, to: string, closing: boolean, finish: () => void) {
+    function animate(
+        from: string,
+        to: string,
+        closing: boolean,
+        finish: () => void,
+    ) {
         stop();
         page.style.transform = '';
         preview.style.transform = '';
+
         if (reduced.matches) {
             finish();
+
             return;
         }
+
         moving = true;
         const timing: KeyframeAnimationOptions = {
             duration: 280,
             easing: 'cubic-bezier(.22,.75,.28,1)',
             fill: 'both',
         };
+
         if (closing) {
             previewMotion = preview.animate(
-                [{ transform: 'translateY(4%)' }, { transform: 'translateY(0)' }],
+                [
+                    { transform: 'translateY(4%)' },
+                    { transform: 'translateY(0)' },
+                ],
                 timing,
             );
         }
-        const current = page.animate([{ transform: from }, { transform: to }], timing);
+
+        const current = page.animate(
+            [{ transform: from }, { transform: to }],
+            timing,
+        );
         motion = current;
         current.onfinish = () => {
-            if (motion !== current) return;
+            if (motion !== current) {
+                return;
+            }
+
             stop();
             finish();
         };
@@ -74,7 +104,10 @@ export function bindSignInSheet(busy: () => boolean) {
     }
 
     function open() {
-        if (moving || !page.hidden) return;
+        if (moving || !page.hidden) {
+            return;
+        }
+
         preview.inert = true;
         page.hidden = false;
         page.scrollTop = 0;
@@ -87,10 +120,17 @@ export function bindSignInSheet(busy: () => boolean) {
     }
 
     function dismiss(from = getComputedStyle(page).transform) {
-        if (busy() || moving || page.hidden) return;
-        if (document.activeElement instanceof HTMLElement && page.contains(document.activeElement)) {
+        if (busy() || moving || page.hidden) {
+            return;
+        }
+
+        if (
+            document.activeElement instanceof HTMLElement &&
+            page.contains(document.activeElement)
+        ) {
             document.activeElement.blur();
         }
+
         preview.style.visibility = '';
         animate(from, 'translateY(100%)', true, close);
     }
@@ -110,41 +150,96 @@ export function bindSignInSheet(busy: () => boolean) {
     });
     page.addEventListener('pointerdown', (event) => {
         const target = event.target instanceof Element ? event.target : null;
-        if (moving || busy() || page.hidden || !event.isPrimary || event.button !== 0 ||
-            page.scrollTop > 1 || target?.closest(interactive) ||
-            (page.dataset.swipeMode !== 'full' && !target?.closest(swipeArea))) return;
-        drag = { id: event.pointerId, x: event.clientX, y: event.clientY, time: performance.now(), delta: 0, active: false };
+
+        if (
+            moving ||
+            busy() ||
+            page.hidden ||
+            !event.isPrimary ||
+            event.button !== 0 ||
+            page.scrollTop > 1 ||
+            target?.closest(interactive) ||
+            (page.dataset.swipeMode !== 'full' && !target?.closest(swipeArea))
+        ) {
+            return;
+        }
+
+        drag = {
+            id: event.pointerId,
+            x: event.clientX,
+            y: event.clientY,
+            time: performance.now(),
+            delta: 0,
+            active: false,
+        };
         // Capture at the start on non-interactive content. Form controls retain native behavior.
         page.setPointerCapture(event.pointerId);
     });
     page.addEventListener('pointermove', (event) => {
-        if (!drag || drag.id !== event.pointerId) return;
+        if (!drag || drag.id !== event.pointerId) {
+            return;
+        }
+
         const dx = event.clientX - drag.x;
         const dy = event.clientY - drag.y;
+
         if (!drag.active) {
-            if (dy < -12 || (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy))) {
+            if (
+                dy < -12 ||
+                (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy))
+            ) {
                 drag = undefined;
-                if (page.hasPointerCapture(event.pointerId)) page.releasePointerCapture(event.pointerId);
+
+                if (page.hasPointerCapture(event.pointerId)) {
+                    page.releasePointerCapture(event.pointerId);
+                }
+
                 return;
             }
-            if (dy < 8 || dy <= Math.abs(dx)) return;
+
+            if (dy < 8 || dy <= Math.abs(dx)) {
+                return;
+            }
+
             drag.active = true;
             preview.style.visibility = '';
         }
-        if (event.cancelable) event.preventDefault();
+
+        if (event.cancelable) {
+            event.preventDefault();
+        }
+
         drag.delta = Math.max(0, dy);
-        if (!reduced.matches) page.style.transform = `translateY(${drag.delta}px)`;
+
+        if (!reduced.matches) {
+            page.style.transform = `translateY(${drag.delta}px)`;
+        }
     });
     function finishDrag(event: PointerEvent) {
-        if (!drag || drag.id !== event.pointerId) return;
+        if (!drag || drag.id !== event.pointerId) {
+            return;
+        }
+
         const { active, delta, time } = drag;
         drag = undefined;
-        if (page.hasPointerCapture(event.pointerId)) page.releasePointerCapture(event.pointerId);
-        if (!active) return;
+
+        if (page.hasPointerCapture(event.pointerId)) {
+            page.releasePointerCapture(event.pointerId);
+        }
+
+        if (!active) {
+            return;
+        }
+
         const speed = delta / Math.max(1, performance.now() - time);
         const from = getComputedStyle(page).transform;
-        if (event.type === 'pointerup' && !busy() &&
-            (delta > Math.min(110, page.clientHeight * 0.22) || (delta > 35 && speed > 0.65))) {
+
+        if (
+            event.type === 'pointerup' &&
+            !busy() &&
+            (delta > Math.min(110, page.clientHeight * 0.22) ||
+                (delta > 35 && speed > 0.65))
+        ) {
             dismiss(from);
         } else {
             animate(from, 'translateY(0)', false, () => {
@@ -155,5 +250,6 @@ export function bindSignInSheet(busy: () => boolean) {
     page.addEventListener('pointerup', finishDrag);
     page.addEventListener('pointercancel', finishDrag);
     page.addEventListener('lostpointercapture', finishDrag);
+
     return { close };
 }
