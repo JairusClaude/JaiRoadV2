@@ -158,7 +158,8 @@ export function ProjectDirectory({
                     disabled={!integration.ready || busy}
                     onReset={
                         search ||
-                        (filters.municipality && filters.municipality !== 'all') ||
+                        (filters.municipality &&
+                            filters.municipality !== 'all') ||
                         filters.sort !== 'newest'
                             ? () => {
                                   setSearch('');
@@ -215,7 +216,10 @@ export function ProjectDirectory({
                                     All Municipalities
                                 </SelectItem>
                                 {municipalities.map((lgu) => (
-                                    <SelectItem key={lgu.id} value={String(lgu.id)}>
+                                    <SelectItem
+                                        key={lgu.id}
+                                        value={String(lgu.id)}
+                                    >
                                         {lgu.municipality_name}
                                     </SelectItem>
                                 ))}
@@ -241,8 +245,12 @@ export function ProjectDirectory({
                                 align="start"
                                 sideOffset={4}
                             >
-                                <SelectItem value="newest">Newest first</SelectItem>
-                                <SelectItem value="oldest">Oldest first</SelectItem>
+                                <SelectItem value="newest">
+                                    Newest first
+                                </SelectItem>
+                                <SelectItem value="oldest">
+                                    Oldest first
+                                </SelectItem>
                             </SelectContent>
                         </Select>
                     </DirectoryFilterField>

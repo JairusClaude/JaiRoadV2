@@ -184,50 +184,101 @@ export async function verifyMobileWorkspaces({
                         const imbalance = await page.evaluate(() => {
                             const problems = [];
                             const close = (a, b) => Math.abs(a - b) <= 2;
+
                             for (const summary of document.querySelectorAll(
                                 '.jr-directory-summary',
                             )) {
                                 const cards = [...summary.children];
                                 const bounds = summary.getBoundingClientRect();
+
                                 if (cards.length === 3) {
-                                    const first = cards[0].getBoundingClientRect();
-                                    const second = cards[1].getBoundingClientRect();
-                                    const last = cards[2].getBoundingClientRect();
+                                    const first =
+                                        cards[0].getBoundingClientRect();
+                                    const second =
+                                        cards[1].getBoundingClientRect();
+                                    const last =
+                                        cards[2].getBoundingClientRect();
+
                                     if (
                                         !close(first.width, second.width) ||
                                         !close(first.top, second.top) ||
                                         !close(last.width, bounds.width - 2)
                                     ) {
-                                        problems.push('Unbalanced three-metric summary');
+                                        problems.push(
+                                            'Unbalanced three-metric summary',
+                                        );
                                     }
                                 }
+
                                 for (const card of cards) {
-                                    if (card.scrollWidth > card.clientWidth + 2) {
-                                        problems.push('Metric content overflows');
+                                    if (
+                                        card.scrollWidth >
+                                        card.clientWidth + 2
+                                    ) {
+                                        problems.push(
+                                            'Metric content overflows',
+                                        );
                                     }
                                 }
                             }
+
                             for (const row of document.querySelectorAll(
                                 '.jr-directory-filter-panel .jr-filter-row',
                             )) {
                                 const fields = [...row.children];
-                                if (fields.length > 1 && fields.length % 2 === 1) {
-                                    const last = fields.at(-1).getBoundingClientRect();
-                                    if (!close(last.width, row.getBoundingClientRect().width)) {
-                                        problems.push('Final filter leaves an empty cell');
+
+                                if (
+                                    fields.length > 1 &&
+                                    fields.length % 2 === 1
+                                ) {
+                                    const last = fields
+                                        .at(-1)
+                                        .getBoundingClientRect();
+
+                                    if (
+                                        !close(
+                                            last.width,
+                                            row.getBoundingClientRect().width,
+                                        )
+                                    ) {
+                                        problems.push(
+                                            'Final filter leaves an empty cell',
+                                        );
                                     }
                                 }
+
                                 for (const field of fields) {
-                                    const control = field.querySelector('[data-slot="select-trigger"]');
-                                    const label = field.querySelector('.jr-directory-filter-label');
-                                    if (!label || !control || control.getBoundingClientRect().height < 43) {
-                                        problems.push('Filter missing caption or touch target');
+                                    const control = field.querySelector(
+                                        '[data-slot="select-trigger"]',
+                                    );
+                                    const label = field.querySelector(
+                                        '.jr-directory-filter-label',
+                                    );
+
+                                    if (
+                                        !label ||
+                                        !control ||
+                                        control.getBoundingClientRect().height <
+                                            43
+                                    ) {
+                                        problems.push(
+                                            'Filter missing caption or touch target',
+                                        );
                                     }
                                 }
                             }
+
                             return problems;
                         });
-                        assert.deepEqual(imbalance, [], role + ' ' + path + ' balanced controls at ' + width);
+                        assert.deepEqual(
+                            imbalance,
+                            [],
+                            role +
+                                ' ' +
+                                path +
+                                ' balanced controls at ' +
+                                width,
+                        );
                     }
 
                     if (width === 390) {
