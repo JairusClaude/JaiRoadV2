@@ -1455,14 +1455,25 @@ try {
         csrfPost,
         props,
     });
-    await engineer.goto(
+    lastPage = engineer;
+    const monthlyCreateResponse = await engineer.goto(
         `${ui}/monthly-updates/create?maintenance_id=${record.id}`,
     );
-    lastPage = engineer;
+    assert.equal(monthlyCreateResponse?.status(), 200);
     await engineer
-        .getByRole('button', { name: 'Select month and year', exact: true })
+        .getByRole('combobox', { name: /^Reporting Month/ })
         .click();
-    await engineer
+    const reportingPicker = engineer.getByRole('dialog', {
+        name: 'Choose reporting month and year',
+    });
+    await reportingPicker
+        .getByRole('button', { name: /^Change reporting year,/ })
+        .click();
+    await reportingPicker.getByLabel('Go to year').fill('2026');
+    await reportingPicker
+        .getByRole('button', { name: 'Go', exact: true })
+        .click();
+    await reportingPicker
         .getByRole('button', { name: 'April 2026', exact: true })
         .click();
     await engineer.getByLabel(/^Progress Percentage/).fill('43.5');
@@ -1481,6 +1492,7 @@ try {
         'Canonical browser report',
     );
     assert.equal(fieldDraft.progress_percentage, '43.5');
+    assert.equal(fieldDraft.update_month, '2026-04');
     assert.equal(fieldDraft.attachments, undefined);
     await engineer.getByLabel(/^Progress Summary/).fill('');
     await engineer
