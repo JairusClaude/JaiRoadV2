@@ -18,13 +18,12 @@ const sync = el<HTMLButtonElement>('sync');
 const cache = el<HTMLButtonElement>('cache');
 let vault: Vault | null = null;
 let busy = false;
-let reachable = false;
 
 function render() {
     connection.textContent = navigator.onLine
         ? 'Network available'
         : 'Offline · saved data stays on this phone';
-    signIn.disabled = busy || !reachable;
+    signIn.disabled = busy;
     el('setup').hidden = vault !== null;
     el('workspace').hidden = vault === null;
     unlock.querySelector('button')!.disabled = busy;
@@ -200,11 +199,6 @@ async function syncReports() {
     });
 }
 
-async function checkServer() {
-    reachable = navigator.onLine && (await availability().catch(() => false));
-    render();
-}
-
 unlock.addEventListener('submit', (event) => {
     event.preventDefault();
     const passphrase = String(new FormData(unlock).get('passphrase') ?? '');
@@ -224,7 +218,7 @@ unlock.addEventListener('submit', (event) => {
     }).then(syncReports);
 });
 signIn.addEventListener('click', () => {
-    location.assign('/login');
+    location.assign('./sign-in.html');
 });
 el('lock').addEventListener('click', () => {
     location.reload();
@@ -261,11 +255,10 @@ form.addEventListener('submit', (event) => {
 });
 
 window.addEventListener('online', () => {
-    void checkServer().then(syncReports);
+    render();
+    void syncReports();
 });
 window.addEventListener('offline', () => {
-    reachable = false;
     render();
 });
 render();
-void checkServer();

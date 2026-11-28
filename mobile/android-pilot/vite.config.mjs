@@ -7,5 +7,10 @@ export default defineConfig({
     build: {
         outDir: fileURLToPath(new URL('./build/web', import.meta.url)),
         emptyOutDir: true,
+        rolldownOptions: {
+            input: ['index.html', 'sign-in.html'].map((page) =>
+                fileURLToPath(new URL('./web/' + page, import.meta.url)),
+            ),
+        },
     },
 });
