@@ -5,7 +5,7 @@ import { wayfinder } from '@laravel/vite-plugin-wayfinder';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
-import { defineConfig } from 'vite';
+import { defineConfig, transformWithOxc } from 'vite';
 
 // MapLibre's published ESM entry is a single 1 MB file. Use its distributed
 // source modules so Rolldown can split the map-only code without changing the
@@ -15,6 +15,27 @@ const mapLibrePackageRoot = dirname(
     dirname(require.resolve('maplibre-gl/dist/maplibre-gl.mjs')),
 );
 const mapLibreSourceEntry = resolve(mapLibrePackageRoot, 'src/index.ts');
+
+const mapLibreClassFieldCompat = {
+    name: 'maplibre-class-field-compat',
+    enforce: 'pre' as const,
+    async transform(code: string, id: string) {
+        const normalizedId = id.replaceAll('\\', '/');
+
+        if (
+            !normalizedId.includes('/node_modules/maplibre-gl/src/') ||
+            !/\.(?:[cm]?ts|tsx)$/.test(normalizedId)
+        ) {
+            return null;
+        }
+
+        const result = await transformWithOxc(code, id, {
+            tsconfig: { compilerOptions: { useDefineForClassFields: false } },
+        });
+
+        return { code: result.code, map: result.map };
+    },
+};
 
 export default defineConfig(({ mode }) => ({
     resolve: {
@@ -42,6 +63,7 @@ export default defineConfig(({ mode }) => ({
         },
     },
     plugins: [
+        mapLibreClassFieldCompat,
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
             refresh: true,
