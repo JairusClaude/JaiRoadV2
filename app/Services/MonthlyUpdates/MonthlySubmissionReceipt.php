@@ -50,11 +50,24 @@ final class MonthlySubmissionReceipt
         return strtolower($input['submission_id']);
     }
 
-    public static function fingerprint(int $project, int $record, string $month, string $progress, ?string $summary): string
+    /** @return array{0:string,1:string} Current fingerprint and exact legacy replay fingerprint. */
+    public static function fingerprints(int $project, int $record, string $month, string $progress, ?string $summary): array
     {
-        // Preserve the validated decimal spelling and UTF-8 text exactly.
-        // A differently spelled value is a conservative conflict, not a replay.
-        return hash('sha256', json_encode([1, $project, $record, $month, $progress, $summary], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));
+        $normalized = $progress;
+        // Normalize decimal spelling without converting through a float. Exponents
+        // keep their validated spelling so distinct inputs never collapse by rounding.
+        if (preg_match('/\A\+?([0-9]+)(?:\.([0-9]*))?\z/', $progress, $parts) === 1) {
+            $whole = ltrim($parts[1], '0');
+            $fraction = rtrim($parts[2] ?? '', '0');
+            $normalized = ($whole === '' ? '0' : $whole).($fraction === '' ? '' : '.'.$fraction);
+        }
+
+        $flags = JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE;
+
+        return [
+            hash('sha256', json_encode([2, $project, $record, $month, $normalized, $summary], $flags)),
+            hash('sha256', json_encode([1, $project, $record, $month, $progress, $summary], $flags)),
+        ];
     }
 
     public static function lock(int $account, string $submission): void
@@ -64,7 +77,8 @@ final class MonthlySubmissionReceipt
         DB::select('SELECT pg_advisory_xact_lock(hashtextextended(?, 0))', ['jairoads-monthly-receipt-v1:'.$account.':'.$submission]);
     }
 
-    public static function confirmedReport(int $account, string $submission, int $project, int $record, string $month, ?string $fingerprint = null): ?int
+    /** @param  array{0:string,1:string}|null  $fingerprints */
+    public static function confirmedReport(int $account, string $submission, int $project, int $record, string $month, ?array $fingerprints = null): ?int
     {
         $receipt = DB::table(self::TABLE)->where('account_id', $account)->where('submission_id', $submission)->first();
         if ($receipt === null) {
@@ -74,7 +88,9 @@ final class MonthlySubmissionReceipt
         abort_unless((int) $receipt->project_id === $project
             && (int) $receipt->maintenance_id === $record
             && $receipt->reporting_month === $month
-            && ($fingerprint === null || hash_equals($receipt->fingerprint, $fingerprint)),
+            && ($fingerprints === null
+                || hash_equals($receipt->fingerprint, $fingerprints[0])
+                || hash_equals($receipt->fingerprint, $fingerprints[1])),
             409, 'Submission receipt conflicts with this report. Review before saving.');
         $report = (int) $receipt->report_id;
         abort_unless(DB::table('jairoads_next.monthly_updates')->where('id', $report)->where('created_by', $account)

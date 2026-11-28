@@ -37,6 +37,10 @@ Copy this row for each ID from `system-role-acceptance-plan-2026-11-07.md`. Do n
 | IMP-04 | SuperAdmin opens health and compares the displayed revision against the hosting dashboard. The operator checks the designated staging environment with a scheduled synthetic recovery intent. | Configuration is clearly distinguished from observed execution. Record the precise revision and sanitized scheduler output. Require approval before executing any hosted recovery scenario. |
 | IMP-05 | Admin and the authorized Engineer test an approved milestone pilot with two editing sessions. Viewer attempts to change the milestone. | A stale edit is rejected, the Viewer cannot mutate it, and cancellation preserves history. Do not enable the pilot before schema and retention acceptance. |
 
+| IMP-06 | In each role, open Maintenance Projects in Light, Dark and System appearance. Follow a record link, open a filter and return to the directory. | Record contrast, layout and focus in each appearance at phone and desktop widths. Change the OS preference while System is selected and verify the change is reflected. |
+| IMP-07 | Use the keyboard to open Export report in every role. Download PDF, Excel and CSV for authorized synthetic data. | Verify current scope, expected counts, six-month trend, workbook numeric values, PDF pagination, and absence of restricted fields. Use the approved desktop document readers. |
+| IMP-08 | In an isolated environment with receipt approval, repeat the same authorized v2 submission with equivalent decimal spelling, then with a distinct value. | The equivalent spelling resolves the original report; the distinct value conflicts. Verify one saved report, a valid receipt, and a rollback plan before enabling hosted receipts. |
+
 ## Defect report (one record per defect)
 
 | Attribute | Record |

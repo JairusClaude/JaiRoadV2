@@ -406,7 +406,7 @@ export function analyticsPdf(report: AnalyticsReport) {
     const pages = Array.from({ length: Math.ceil(rows.length / 26) }, (_, i) =>
         rows.slice(i * 26, (i + 1) * 26),
     );
-    const kids = pages.map((_, i) => (5 + i * 2) + ' 0 R').join(' ');
+    const kids = pages.map((_, i) => 5 + i * 2 + ' 0 R').join(' ');
     const objects = [
         '<< /Type /Catalog /Pages 2 0 R >>',
         '<< /Type /Pages /Kids [' + kids + '] /Count ' + pages.length + ' >>',
@@ -414,7 +414,9 @@ export function analyticsPdf(report: AnalyticsReport) {
         '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>',
     ];
     const peak = Math.max(1, ...report.trend.map(({ count }) => count));
-    const trend = new Map(report.trend.map(({ month, count }) => [month, count]));
+    const trend = new Map(
+        report.trend.map(({ month, count }) => [month, count]),
+    );
 
     pages.forEach((page, index) => {
         const stream = [

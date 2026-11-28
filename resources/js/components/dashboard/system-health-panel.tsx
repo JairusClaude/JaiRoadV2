@@ -21,6 +21,7 @@ export type SystemHealth = {
     } | null;
     lastRecoveryRun?: {
         finished_at: string;
+        trigger?: 'manual' | 'scheduled' | 'unknown';
         attempted: number;
         completed: number;
         pending: number;
@@ -75,7 +76,12 @@ export function SystemHealthPanel({ health }: { health: SystemHealth }) {
                         {lastRun.budget_reached
                             ? 'Time budget reached'
                             : 'Batch finished'}
-                        {' · Manual or scheduled invocation'}
+                        {' · '}
+                        {lastRun.trigger === 'scheduled'
+                            ? 'Scheduled invocation requested'
+                            : lastRun.trigger === 'manual'
+                              ? 'Manual invocation'
+                              : 'Invocation source unknown'}
                     </p>
                     <p>
                         {lastRun.stale

@@ -602,11 +602,11 @@ class OperationsController extends Controller
         ]);
         $parent = $this->recordScope($actor, (int) $v['maintenance_id'], true);
         $submission = MonthlySubmissionReceipt::submissionKey($request, $actor['account_id'], (int) $parent->project_id, $id !== null);
-        $fingerprint = $submission === null ? null : MonthlySubmissionReceipt::fingerprint(
+        $fingerprints = $submission === null ? null : MonthlySubmissionReceipt::fingerprints(
             (int) $parent->project_id, (int) $v['maintenance_id'], $v['update_month'],
             (string) $v['progress_percentage'], $v['summary_of_text_reports'] ?? null,
         );
-        $reportId = DB::transaction(function () use ($request, $resolver, $actor, $parent, $v, $id, $submission, $fingerprint): ?int {
+        $reportId = DB::transaction(function () use ($request, $resolver, $actor, $parent, $v, $id, $submission, $fingerprints): ?int {
             if ($submission !== null) {
                 MonthlySubmissionReceipt::lock($actor['account_id'], $submission);
             }
@@ -624,7 +624,7 @@ class OperationsController extends Controller
             $this->recordScope($actor, (int) $record->id, true);
             if ($submission !== null) {
                 $confirmed = MonthlySubmissionReceipt::confirmedReport(
-                    $actor['account_id'], $submission, (int) $record->project_id, (int) $record->id, $v['update_month'], $fingerprint,
+                    $actor['account_id'], $submission, (int) $record->project_id, (int) $record->id, $v['update_month'], $fingerprints,
                 );
                 if ($confirmed !== null) {
                     return $confirmed;
@@ -641,13 +641,10 @@ class OperationsController extends Controller
                 'progress_percentage' => $v['progress_percentage'],
                 'summary_of_text_reports' => $v['summary_of_text_reports'] ?? null, 'updated_at' => now()];
             if ($id === null) {
-                if ($this->t('monthly_updates')->where('maintenance_id', $v['maintenance_id'])->where('update_month', $v['update_month'])->exists()) {
-                    throw ValidationException::withMessages(['update_month' => 'An update already exists for this maintenance record and month.']);
-                }
                 $uid = (int) $this->t('monthly_updates')->insertGetId($data + ['created_by' => $actor['account_id'], 'created_at' => now()]);
                 $this->audit($actor, 'CREATE', 'MonthlyUpdate', $uid, 'Authorized monthly update created.');
-                if ($submission !== null && $fingerprint !== null) {
-                    MonthlySubmissionReceipt::record($actor['account_id'], $submission, (int) $record->project_id, (int) $record->id, $v['update_month'], $fingerprint, $uid);
+                if ($submission !== null && $fingerprints !== null) {
+                    MonthlySubmissionReceipt::record($actor['account_id'], $submission, (int) $record->project_id, (int) $record->id, $v['update_month'], $fingerprints[0], $uid);
                 }
 
                 return $uid;

@@ -12,9 +12,17 @@ This checklist prepares an authorized release; it does not replace the release m
 
 ## File recovery
 
-The application registers `jairoads:resume-file-deletions --limit=20 --budget=240` every five minutes when both `JAIROADS_PERMANENT_FILE_DELETION_ENABLED` and `JAIROADS_FILE_DELETION_SCHEDULE_ENABLED` are enabled. The batch stops starting new operations after four minutes, allows an in-flight item to finish, and holds a 30-minute overlap lock. Keep both flags off until the file-deletion approval and exact-object recovery rehearsal are complete. Registration also requires a cache driver configured for shared atomic locks (database, Redis, Memcached or DynamoDB); file, array and failover stores cannot activate the schedule. Run `php artisan jairoads:file-recovery-readiness` for a secret-free configuration check. Verify the backend and locks independently in the target environment.
+The application registers `jairoads:resume-file-deletions --limit=20 --budget=240 --scheduled` every five minutes when both `JAIROADS_PERMANENT_FILE_DELETION_ENABLED` and `JAIROADS_FILE_DELETION_SCHEDULE_ENABLED` are enabled. The batch stops starting new operations after four minutes, allows an in-flight item to finish, and holds a 30-minute overlap lock. Keep both flags off until the file-deletion approval and exact-object recovery rehearsal are complete. Registration also requires a cache driver configured for shared atomic locks (database, Redis, Memcached or DynamoDB); file, array and failover stores cannot activate the schedule. Run `php artisan jairoads:file-recovery-readiness` for a secret-free configuration check. Verify the backend and locks independently in the target environment.
 
 After that approval, configure a single environment-specific scheduler service using the same pinned image, application key, restricted database credentials, and private Storage settings. Run `php artisan schedule:run --no-interaction` every minute (the application controls the five-minute task cadence). Use a shared, atomic-lock-capable cache store; never use an ephemeral per-container cache for cross-process locks. Review `php artisan schedule:list`, verify a synthetic pending command is handled once, and inspect failures without exposing object paths or credentials. Do not create multiple recovery schedulers against the same live database.
+
+Recovery evidence records whether the scheduler-marked or manual command path was requested. This label can also be supplied by a console operator. Confirm scheduler activity from runner logs and the isolated recovery rehearsal. Cached evidence can expire or be unavailable.
+
+## Dashboard exports and receipt compatibility
+
+- Dashboard PDF, XLSX and CSV files contain the current role's displayed aggregate metrics, reporting coverage and monthly counts. Before approving a server export, review an independent role/field allowlist, retention and audit policy. Keep private records and raw authentication or Storage details outside the export.
+- The PDF uses the built-in WinAnsi fonts. The workbook and CSV retain Unicode. Include supported script coverage and office-application compatibility in release acceptance.
+- New optional monthly intake receipts normalize ordinary decimal spelling without a floating-point conversion. Existing legacy receipts still match their original validated spellings. A rollback to code that only reads the original fingerprints cannot reconcile new-version receipts. Keep activation disabled until staging and rollback evidence is approved.
 
 ## Storage and indexes
 

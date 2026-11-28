@@ -31,7 +31,7 @@ final class FileRecoverySchedule
         ];
     }
 
-    /** @return array{finished_at:string,attempted:int,completed:int,pending:int,budget_reached:bool,age_seconds:int,stale:bool}|null */
+    /** @return array{finished_at:string,attempted:int,completed:int,pending:int,budget_reached:bool,age_seconds:int,stale:bool,trigger:'manual'|'scheduled'|'unknown'}|null */
     public static function lastRun(): ?array
     {
         try {
@@ -70,8 +70,15 @@ final class FileRecoverySchedule
             return null;
         }
 
+        $trigger = match ($evidence['trigger'] ?? null) {
+            'manual' => 'manual',
+            'scheduled' => 'scheduled',
+            default => 'unknown',
+        };
+
         return [
             'finished_at' => $evidence['finished_at'],
+            'trigger' => $trigger,
             'attempted' => $evidence['attempted'],
             'completed' => $evidence['completed'],
             'pending' => $evidence['pending'],
@@ -81,7 +88,7 @@ final class FileRecoverySchedule
         ];
     }
 
-    public static function recordRun(int $attempted, int $completed, bool $budgetReached): void
+    public static function recordRun(int $attempted, int $completed, bool $budgetReached, bool $scheduled = false): void
     {
         if ($attempted < 0 || $completed < 0 || $completed > $attempted) {
             return;
@@ -93,6 +100,7 @@ final class FileRecoverySchedule
                 'completed' => $completed,
                 'pending' => $attempted - $completed,
                 'budget_reached' => $budgetReached,
+                'trigger' => $scheduled ? 'scheduled' : 'manual',
             ], now()->addDays(7));
         } catch (\Throwable) {
             // Optional aggregate telemetry must not alter the recovery result.
@@ -105,6 +113,6 @@ final class FileRecoverySchedule
             return;
         }
 
-        $schedule->command(self::COMMAND)->everyFiveMinutes()->withoutOverlapping(30)->onOneServer();
+        $schedule->command(self::COMMAND.' --scheduled')->everyFiveMinutes()->withoutOverlapping(30)->onOneServer();
     }
 }

@@ -43,7 +43,9 @@ function analyticsCsv(report: AnalyticsReport) {
         ]),
     ];
 
-    return '\uFEFF' + rows.map((row) => row.map(csvCell).join(',')).join('\r\n');
+    return (
+        '\uFEFF' + rows.map((row) => row.map(csvCell).join(',')).join('\r\n')
+    );
 }
 
 /** Only currently displayed aggregate values are eligible for an export. */

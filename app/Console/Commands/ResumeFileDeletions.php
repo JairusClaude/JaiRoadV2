@@ -10,7 +10,8 @@ final class ResumeFileDeletions extends Command
 {
     protected $signature = 'jairoads:resume-file-deletions
         {--limit=50 : Maximum accepted commands to retry in this batch}
-        {--budget= : Seconds after which the batch stops starting new operations}';
+        {--budget= : Seconds after which the batch stops starting new operations}
+        {--scheduled : Record that the scheduler invocation was requested}';
 
     protected $description = 'Reconcile previously authorized individual file deletions; never accepts a path or creates a new deletion command';
 
@@ -50,7 +51,7 @@ final class ResumeFileDeletions extends Command
             $completed += $result['state'] === 'completed' ? 1 : 0;
             $this->line('Operation '.$id.': '.$result['state']);
         }
-        FileRecoverySchedule::recordRun($attempted, $completed, $budgetReached);
+        FileRecoverySchedule::recordRun($attempted, $completed, $budgetReached, $this->option('scheduled') === true);
 
         return $attempted !== $completed ? self::FAILURE : self::SUCCESS;
     }
