@@ -5,6 +5,7 @@
 import '../../../css/maintenance-projects.css';
 import '../../../css/jairoads-settings-theme.css';
 import '../../../css/jairoads-module-content.css';
+import '../../../css/jairoads-directory-balance.css';
 import { usePage } from '@inertiajs/react';
 import { AlertCircle, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import type { ReactNode } from 'react';

@@ -1,0 +1,320 @@
+/*
+ * Canonical directory overview and filter rhythm.
+ * Scoped to opted-in modules; dashboard cards and all data actions are unchanged.
+ */
+.jr-app .jr-stage .jr-directory-summary.jr-metrics-grid,
+.jr-app .jr-stage .jr-directory-filter-panel.jr-filters {
+    --jr-directory-surface: #fff;
+    --jr-directory-panel: #f8fafc;
+    --jr-directory-line: #e2e8f0;
+    --jr-directory-ink: #1e293b;
+    --jr-directory-muted: #526173;
+}
+html.dark .jr-app .jr-stage .jr-directory-summary.jr-metrics-grid,
+html.dark .jr-app .jr-stage .jr-directory-filter-panel.jr-filters {
+    --jr-directory-surface: var(--jr-dark-surface, #172234);
+    --jr-directory-panel: var(--jr-dark-elevated, #202d40);
+    --jr-directory-line: var(--jr-dark-border, #39465a);
+    --jr-directory-ink: var(--jr-dark-text, #f1f5f9);
+    --jr-directory-muted: var(--jr-dark-muted, #a9b6c8);
+}
+
+.jr-app .jr-stage .jr-directory-summary.jr-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;
+    width: 100%;
+    margin: 0 0 16px;
+    overflow: hidden;
+    border: 1px solid var(--jr-directory-line);
+    border-radius: 14px;
+    background: var(--jr-directory-line);
+}
+.jr-app .jr-stage .jr-directory-summary.jr-metrics-grid > .jr-metric-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto 1fr;
+    align-items: center;
+    align-content: start;
+    gap: 4px 8px;
+    min-width: 0;
+    margin: 0;
+    padding: 12px 14px;
+    border: 0;
+    border-radius: 0;
+    background: var(--jr-directory-surface);
+    box-shadow: none;
+}
+.jr-app .jr-stage .jr-directory-summary.jr-metrics-grid .jr-metric-value {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+    margin: 0;
+    color: var(--jr-directory-ink);
+    font-size: clamp(1.375rem, 5vw, 1.75rem);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.035em;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+}
+.jr-app .jr-stage .jr-directory-summary.jr-metrics-grid .jr-metric-icon {
+    position: static;
+    grid-column: 2;
+    grid-row: 1;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+}
+.jr-app .jr-stage .jr-directory-summary.jr-metrics-grid .jr-metric-icon svg {
+    width: 17px;
+    height: 17px;
+}
+.jr-app .jr-stage .jr-directory-summary.jr-metrics-grid .jr-metric-label {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    color: var(--jr-directory-ink);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: normal;
+    line-height: 1.35;
+    text-transform: none;
+}
+.jr-app .jr-stage .jr-directory-summary.jr-metrics-grid .jr-metric-description {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    align-self: start;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    color: var(--jr-directory-muted);
+    font-size: 0.75rem;
+    line-height: 1.35;
+}
+.jr-app .jr-stage .jr-directory-summary.jr-metrics-grid .jr-metric-unit {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: normal;
+    white-space: nowrap;
+}
+
+/* A three-stat group has no empty fourth cell. The final stat is an inline total. */
+@media (max-width: 639px) {
+    .jr-app
+        .jr-stage
+        .jr-directory-summary.jr-metrics-grid
+        > .jr-metric-card:last-child:nth-child(odd) {
+        grid-column: 1 / -1;
+        grid-template-columns: 30px minmax(0, 1fr) auto;
+        grid-template-rows: auto auto;
+        column-gap: 10px;
+    }
+    .jr-app
+        .jr-stage
+        .jr-directory-summary.jr-metrics-grid
+        > .jr-metric-card:last-child:nth-child(odd)
+        .jr-metric-icon {
+        grid-column: 1;
+        grid-row: 1 / 3;
+    }
+    .jr-app
+        .jr-stage
+        .jr-directory-summary.jr-metrics-grid
+        > .jr-metric-card:last-child:nth-child(odd)
+        .jr-metric-label {
+        grid-column: 2;
+        grid-row: 1;
+    }
+    .jr-app
+        .jr-stage
+        .jr-directory-summary.jr-metrics-grid
+        > .jr-metric-card:last-child:nth-child(odd)
+        .jr-metric-description {
+        grid-column: 2;
+        grid-row: 2;
+    }
+    .jr-app
+        .jr-stage
+        .jr-directory-summary.jr-metrics-grid
+        > .jr-metric-card:last-child:nth-child(odd)
+        .jr-metric-value {
+        grid-column: 3;
+        grid-row: 1 / 3;
+        text-align: right;
+    }
+}
+@media (min-width: 640px) {
+    .jr-app
+        .jr-stage
+        .jr-directory-summary.jr-metrics-grid:has(> :nth-child(3):last-child) {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+@media (min-width: 1280px) {
+    .jr-app
+        .jr-stage
+        .jr-directory-summary.jr-metrics-grid:has(> :nth-child(4):last-child) {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+/* Search is a primary input; field captions explain the secondary controls. */
+.jr-app .jr-stage .jr-directory-filter-panel.jr-filters {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
+    margin: 0 0 14px;
+    padding: 12px;
+    border: 1px solid var(--jr-directory-line);
+    border-radius: 14px;
+    background: var(--jr-directory-panel);
+    box-shadow: none;
+}
+.jr-app .jr-stage .jr-directory-filter-panel .jr-directory-filter-heading {
+    display: flex;
+    min-height: 28px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.jr-directory-filter-heading h2 {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0;
+    color: var(--jr-directory-ink);
+    font-size: 0.875rem;
+    font-weight: 650;
+    line-height: 1.3;
+}
+.jr-directory-filter-heading h2 svg {
+    width: 16px;
+    height: 16px;
+    flex: none;
+    color: var(--jr-display-accent, var(--jr-role-accent, #90451f));
+}
+.jr-directory-filter-reset {
+    min-height: 44px;
+    padding: 0 6px;
+    color: var(--jr-display-accent, var(--jr-role-accent, #90451f));
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.jr-directory-filter-reset:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+.jr-directory-filter-reset:focus-visible {
+    outline: 2px solid var(--jr-display-accent, #90451f);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+.jr-app .jr-stage .jr-directory-filter-panel .jr-record-filter-controls {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+}
+.jr-app .jr-stage .jr-directory-filter-panel .jr-search {
+    flex: none;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+}
+.jr-app .jr-stage .jr-directory-filter-panel .jr-search input {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    height: 44px;
+    border: 1px solid var(--jr-directory-line);
+    border-radius: 9px;
+    background: var(--jr-directory-surface);
+    color: var(--jr-directory-ink);
+    box-shadow: none;
+    font-size: 0.875rem;
+}
+.jr-app .jr-stage .jr-directory-filter-panel .jr-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 8px;
+    width: 100%;
+    margin: 0;
+}
+.jr-app
+    .jr-stage
+    .jr-directory-filter-panel
+    .jr-filter-row
+    > .jr-directory-filter-field {
+    display: grid;
+    flex: 1 1 144px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+    min-width: 0;
+    width: auto;
+    max-width: 100%;
+}
+.jr-directory-filter-label {
+    color: var(--jr-directory-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+.jr-app
+    .jr-stage
+    .jr-directory-filter-panel
+    .jr-filter-row
+    [data-slot='select-trigger'] {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 44px;
+    height: 44px;
+    padding: 0 30px 0 10px;
+    border: 1px solid var(--jr-directory-line);
+    border-radius: 9px;
+    background: var(--jr-directory-surface);
+    color: var(--jr-directory-ink);
+    box-shadow: none;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    text-align: left;
+}
+.jr-app
+    .jr-stage
+    .jr-directory-filter-panel
+    .jr-filter-row
+    [data-slot='select-trigger']
+    > span {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 639px) {
+    .jr-app
+        .jr-stage
+        .jr-directory-filter-panel
+        .jr-filter-row
+        > .jr-directory-filter-field {
+        flex: 1 1 calc(50% - 4px);
+    }
+    .jr-app .jr-stage .jr-road-coverage-directory .jr-road-mobile-links {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+        gap: 8px;
+    }
+    .jr-app .jr-stage .jr-road-coverage-directory .jr-road-mobile-links a {
+        justify-content: center;
+        text-align: center;
+    }
+}

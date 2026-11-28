@@ -3,6 +3,8 @@ import { MoreHorizontal, Pencil, Search, Trash2, Upload } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import {
     DirectoryFilter,
+    DirectoryFilterHeading,
+    DirectoryFilterField,
     DirectoryPagination,
     DirectorySelectionToolbar,
 } from '@/components/directory-controls';
@@ -141,18 +143,35 @@ export default function Index({
                     )}
                 </div>
                 <form
-                    className="jr-filters"
+                    className="jr-filters jr-directory-filter-panel"
                     onSubmit={(e) => {
                         e.preventDefault();
                         visit({ ...filters, search });
                     }}
                 >
+                    <DirectoryFilterHeading
+                        disabled={deletion.processing}
+                        onReset={
+                            search ||
+                            (filters.project && filters.project !== 'all') ||
+                            filters.sort !== 'newest'
+                                ? () => {
+                                      setSearch('');
+                                      visit({
+                                          search: '',
+                                          project: 'all',
+                                          sort: 'newest',
+                                      });
+                                  }
+                                : undefined
+                        }
+                    />
                     <div className="jr-search">
                         <Search className="size-[18px]" />
                         <Input
                             type="search"
                             aria-label="Search documents"
-                            placeholder="Search document titles or filenames..."
+                            placeholder="Search documents..."
                             value={search}
                             onChange={(e) => {
                                 const value = e.target.value;
@@ -167,16 +186,19 @@ export default function Index({
                         />
                     </div>
                     <div className="jr-filter-row">
-                        <MonthlyProjectFilter
-                            projects={projects}
-                            choicesUrl={projectFilterUrl}
-                            value={filters.project}
-                            onChange={(project) =>
-                                visit({ ...filters, search, project })
-                            }
-                        />
+                        <DirectoryFilterField label="Project">
+                            <MonthlyProjectFilter
+                                projects={projects}
+                                choicesUrl={projectFilterUrl}
+                                value={filters.project}
+                                onChange={(project) =>
+                                    visit({ ...filters, search, project })
+                                }
+                            />
+                        </DirectoryFilterField>
                         <DirectoryFilter
                             label="Sort documents"
+                            fieldLabel="Sort by"
                             value={filters.sort}
                             options={[
                                 { value: 'newest', label: 'Newest First' },

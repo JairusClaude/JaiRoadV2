@@ -12,6 +12,7 @@ import {
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import {
     DirectoryFilter,
+    DirectoryFilterHeading,
     DirectoryPagination,
     DirectorySelectionToolbar,
 } from '@/components/directory-controls';
@@ -415,10 +416,10 @@ export default function Index({
                     {/* 1. Metric Cards */}
                     <section
                         aria-label="Road coverage statistics"
-                        className="jr-metrics-grid mb-6 grid gap-4 sm:grid-cols-3"
+                        className="jr-metrics-grid jr-directory-summary"
                     >
                         <MetricCard
-                            title="Total Road Coverages"
+                            title="Road coverages"
                             value={displayedTotalCoverages}
                             subtitle="Registered road coverages"
                             highlight
@@ -427,11 +428,11 @@ export default function Index({
                         <MetricCard
                             title="Linked Projects"
                             value={displayedLinkedProjects}
-                            subtitle="Maintenance projects linked to coverages"
+                            subtitle="With road coverage"
                             icon={<FolderKanban className="size-5" />}
                         />
                         <MetricCard
-                            title="Total Network Length"
+                            title="Network length"
                             value={
                                 <>
                                     {Number(displayedTotalLengthKm).toFixed(2)}{' '}
@@ -526,19 +527,38 @@ export default function Index({
                             <a href="#road-coverage-map">Back to map</a>
                         </div>
                         <form
-                            className="jr-filters"
+                            className="jr-filters jr-directory-filter-panel"
                             onSubmit={(event) => {
                                 event.preventDefault();
                                 visit({ ...filters, search });
                             }}
                         >
+                            <DirectoryFilterHeading
+                                disabled={busy}
+                                onReset={
+                                    search ||
+                                    filtered ||
+                                    filters.sort !== 'newest'
+                                        ? () => {
+                                              setSearch('');
+                                              visit({
+                                                  search: '',
+                                                  municipality: '',
+                                                  condition: '',
+                                                  pavement: '',
+                                                  sort: 'newest',
+                                              });
+                                          }
+                                        : undefined
+                                }
+                            />
                             <div className="jr-search">
                                 <Search className="size-[18px]" />
                                 <Input
                                     type="search"
                                     maxLength={255}
                                     aria-label="Search road coverages"
-                                    placeholder="Search road coverage names..."
+                                    placeholder="Search roads..."
                                     value={search}
                                     onChange={(event) => {
                                         const value = event.target.value;
@@ -559,6 +579,7 @@ export default function Index({
                             <div className="jr-filter-row">
                                 <DirectoryFilter
                                     label="Municipality filter"
+                                    fieldLabel="Municipality"
                                     className="jr-road-municipality-filter"
                                     value={filters.municipality || 'all'}
                                     options={[
@@ -582,6 +603,7 @@ export default function Index({
                                 />
                                 <DirectoryFilter
                                     label="Road Condition filter"
+                                    fieldLabel="Road condition"
                                     value={filters.condition || 'all'}
                                     options={[
                                         {
@@ -606,6 +628,7 @@ export default function Index({
                                 />
                                 <DirectoryFilter
                                     label="Pavement Type filter"
+                                    fieldLabel="Pavement"
                                     value={filters.pavement || 'all'}
                                     options={[
                                         {
@@ -633,6 +656,7 @@ export default function Index({
                                 />
                                 <DirectoryFilter
                                     label="Sort road coverages"
+                                    fieldLabel="Sort by"
                                     value={filters.sort}
                                     options={[
                                         {

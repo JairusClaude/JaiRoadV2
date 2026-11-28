@@ -14,6 +14,7 @@ import { useState } from 'react';
 import type { RefObject } from 'react';
 import {
     DirectoryFilter,
+    DirectoryFilterHeading,
     DirectoryPagination,
     DirectorySelectionToolbar,
 } from '@/components/directory-controls';
@@ -133,6 +134,7 @@ export function RecordDirectory({
     ) => (
         <DirectoryFilter
             label={`${label} filter`}
+            fieldLabel={label === 'Reporting Year' ? 'Year' : label}
             value={filters[key] || 'all'}
             disabled={!integration.ready || busy}
             onChange={(value) =>
@@ -200,44 +202,61 @@ export function RecordDirectory({
                 )}
             </div>
             <IntegrationNotice integration={integration} />
+            <section
+                aria-label="Maintenance records statistics"
+                className="jr-metrics-grid jr-directory-summary"
+            >
+                <MetricCard
+                    title="Total Projects"
+                    icon={<FolderKanban className="size-5" />}
+                    value={displayedTotalProjects}
+                    subtitle="Active maintenance projects"
+                    highlight={true}
+                />
+                <MetricCard
+                    title="Total Records"
+                    icon={<ClipboardList className="size-5" />}
+                    value={displayedTotalRecords}
+                    subtitle="Quarterly maintenance records"
+                />
+                <MetricCard
+                    title="Completed Records"
+                    icon={<ClipboardCheck className="size-5" />}
+                    value={displayedCompletedRoads}
+                    subtitle="Completed maintenance"
+                />
+                <MetricCard
+                    title="Ongoing Records"
+                    icon={<Clock className="size-5" />}
+                    value={displayedOngoingRoads}
+                    subtitle="In progress or scheduled"
+                />
+            </section>
             <form
-                className="jr-filters"
+                className="jr-filters jr-directory-filter-panel"
                 onSubmit={(event) => {
                     event.preventDefault();
                     apply({ ...filters, search });
                 }}
             >
-                {/* 4 Metric Cards */}
-                <section
-                    aria-label="Maintenance records statistics"
-                    className="jr-metrics-grid mb-5 grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-4"
-                >
-                    <MetricCard
-                        title="Total Projects"
-                        icon={<FolderKanban className="size-5" />}
-                        value={displayedTotalProjects}
-                        subtitle="Active maintenance projects"
-                        highlight={true}
-                    />
-                    <MetricCard
-                        title="Total Records"
-                        icon={<ClipboardList className="size-5" />}
-                        value={displayedTotalRecords}
-                        subtitle="Quarterly maintenance records"
-                    />
-                    <MetricCard
-                        title="Completed Records"
-                        icon={<ClipboardCheck className="size-5" />}
-                        value={displayedCompletedRoads}
-                        subtitle="Completed maintenance"
-                    />
-                    <MetricCard
-                        title="Ongoing Records"
-                        icon={<Clock className="size-5" />}
-                        value={displayedOngoingRoads}
-                        subtitle="In progress or scheduled"
-                    />
-                </section>
+                <DirectoryFilterHeading
+                    disabled={!integration.ready || busy}
+                    onReset={
+                        search || hasFilters || filters.sort !== 'newest'
+                            ? () => {
+                                  setSearch('');
+                                  apply({
+                                      search: '',
+                                      municipality: 'all',
+                                      year: 'all',
+                                      quarter: 'all',
+                                      status: 'all',
+                                      sort: 'newest',
+                                  });
+                              }
+                            : undefined
+                    }
+                />
                 <div className="jr-record-filter-controls">
                     <div className="jr-search">
                         <Search className="size-[18px]" />
@@ -245,7 +264,7 @@ export function RecordDirectory({
                             type="search"
                             maxLength={255}
                             aria-label="Search maintenance projects or managing engineers"
-                            placeholder="Search maintenance projects or managing engineers..."
+                            placeholder="Search records..."
                             value={search}
                             disabled={!integration.ready || busy}
                             onChange={(event) => {
@@ -283,6 +302,7 @@ export function RecordDirectory({
                         )}
                         <DirectoryFilter
                             label="Sort records"
+                            fieldLabel="Sort by"
                             value={filters.sort}
                             disabled={!integration.ready || busy}
                             options={[
@@ -299,25 +319,6 @@ export function RecordDirectory({
                         />
                     </div>
                 </div>
-                {hasFilters && (
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                            setSearch('');
-                            apply({
-                                search: '',
-                                municipality: 'all',
-                                year: 'all',
-                                quarter: 'all',
-                                status: 'all',
-                                sort: 'newest',
-                            });
-                        }}
-                    >
-                        Clear filters
-                    </Button>
-                )}
                 <span className="sr-only">
                     Search results update automatically while typing.
                 </span>

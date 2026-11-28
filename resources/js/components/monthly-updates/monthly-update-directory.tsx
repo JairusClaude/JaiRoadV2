@@ -11,6 +11,8 @@ import {
 import { useState } from 'react';
 import {
     DirectoryFilter,
+    DirectoryFilterHeading,
+    DirectoryFilterField,
     DirectoryPagination,
     DirectorySelectionToolbar,
 } from '@/components/directory-controls';
@@ -165,32 +167,47 @@ export function MonthlyUpdateDirectory({
                         </Button>
                     )}
                 </div>
+                <section
+                    aria-label="Monthly update statistics"
+                    className="jr-metrics-grid jr-directory-summary"
+                >
+                    <MetricCard
+                        title="Total reports"
+                        icon={<ClipboardList className="size-5" />}
+                        value={displayedTotalReports}
+                        subtitle="Submitted progress reports"
+                        highlight={true}
+                    />
+                    <MetricCard
+                        title="Reports this month"
+                        icon={<CalendarDays className="size-5" />}
+                        value={displayedReportsThisMonth}
+                        subtitle="Current reporting period"
+                    />
+                </section>
                 <form
-                    className="jr-filters"
+                    className="jr-filters jr-directory-filter-panel"
                     onSubmit={(event) => {
                         event.preventDefault();
                         apply({ ...filters, search });
                     }}
                 >
-                    {/* 2 Metric Cards */}
-                    <section
-                        aria-label="Monthly update statistics"
-                        className="jr-metrics-grid mb-5 grid w-full gap-4 sm:grid-cols-2"
-                    >
-                        <MetricCard
-                            title="Total Monthly Reports"
-                            icon={<ClipboardList className="size-5" />}
-                            value={displayedTotalReports}
-                            subtitle="Submitted progress reports"
-                            highlight={true}
-                        />
-                        <MetricCard
-                            title="Reports this Month"
-                            icon={<CalendarDays className="size-5" />}
-                            value={displayedReportsThisMonth}
-                            subtitle="For current reporting period"
-                        />
-                    </section>
+                    <DirectoryFilterHeading
+                        disabled={busy}
+                        onReset={
+                            search || hasFilters || filters.sort !== 'newest'
+                                ? () => {
+                                      setSearch('');
+                                      apply({
+                                          search: '',
+                                          project: 'all',
+                                          year: '',
+                                          sort: 'newest',
+                                      });
+                                  }
+                                : undefined
+                        }
+                    />
                     <div className="jr-search">
                         <Search className="size-[18px]" />
                         <Input
@@ -207,20 +224,23 @@ export function MonthlyUpdateDirectory({
                         />
                     </div>
                     <div className="jr-filter-row">
-                        <MonthlyProjectFilter
-                            projects={projects}
-                            choicesUrl={projectFilterUrl}
-                            value={filters.project}
-                            onChange={(value) =>
-                                apply({
-                                    ...filters,
-                                    search,
-                                    project: value,
-                                })
-                            }
-                        />
+                        <DirectoryFilterField label="Project">
+                            <MonthlyProjectFilter
+                                projects={projects}
+                                choicesUrl={projectFilterUrl}
+                                value={filters.project}
+                                onChange={(value) =>
+                                    apply({
+                                        ...filters,
+                                        search,
+                                        project: value,
+                                    })
+                                }
+                            />
+                        </DirectoryFilterField>
                         <DirectoryFilter
                             label="Reporting Year filter"
+                            fieldLabel="Year"
                             className="jr-monthly-year-filter"
                             value={filters.year || 'all'}
                             onChange={(value) =>
@@ -240,6 +260,7 @@ export function MonthlyUpdateDirectory({
                         />
                         <DirectoryFilter
                             label="Sort monthly updates"
+                            fieldLabel="Sort by"
                             className="jr-monthly-sort-filter"
                             value={filters.sort}
                             onChange={(sort) =>

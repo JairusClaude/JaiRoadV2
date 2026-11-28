@@ -12,6 +12,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import {
     DirectoryFilter,
+    DirectoryFilterHeading,
     DirectoryPagination,
     DirectorySelectionToolbar,
 } from '@/components/directory-controls';
@@ -250,45 +251,63 @@ export default function Index({
                         {lguReviewNotice}
                     </p>
                 )}
+                <section
+                    aria-label="LGU statistics"
+                    className="jr-metrics-grid jr-directory-summary"
+                >
+                    <MetricCard
+                        title="Municipalities"
+                        icon={<Building2 className="size-5" />}
+                        value={displayedMunicipalities}
+                        subtitle="Registered LGUs"
+                        highlight={true}
+                    />
+                    <MetricCard
+                        title="Road Coverages"
+                        icon={<MapPinned className="size-5" />}
+                        value={displayedRoadCoverages}
+                        subtitle="Across all municipalities"
+                    />
+                    <MetricCard
+                        title="Engineer Assignments"
+                        icon={<UsersRound className="size-5" />}
+                        value={displayedEngineerAssignments}
+                        subtitle="Active assignments"
+                    />
+                </section>
                 <form
-                    className="jr-filters"
+                    className="jr-filters jr-directory-filter-panel"
                     onSubmit={(e) => {
                         e.preventDefault();
                         visit({ ...filters, search });
                     }}
                 >
-                    {/* 3 Metric Cards */}
-                    <section
-                        aria-label="LGU statistics"
-                        className="jr-metrics-grid mb-5 grid w-full gap-4 sm:grid-cols-3"
-                    >
-                        <MetricCard
-                            title="Municipalities"
-                            icon={<Building2 className="size-5" />}
-                            value={displayedMunicipalities}
-                            subtitle="Registered local government units"
-                            highlight={true}
-                        />
-                        <MetricCard
-                            title="Road Coverages"
-                            icon={<MapPinned className="size-5" />}
-                            value={displayedRoadCoverages}
-                            subtitle="Across all municipalities"
-                        />
-                        <MetricCard
-                            title="Engineer Assignments"
-                            icon={<UsersRound className="size-5" />}
-                            value={displayedEngineerAssignments}
-                            subtitle="Active municipal engineers"
-                        />
-                    </section>
+                    <DirectoryFilterHeading
+                        disabled={busy}
+                        onReset={
+                            search ||
+                            filters.province ||
+                            filters.region ||
+                            filters.sort !== 'asc'
+                                ? () => {
+                                      setSearch('');
+                                      visit({
+                                          search: '',
+                                          province: '',
+                                          region: '',
+                                          sort: 'asc',
+                                      });
+                                  }
+                                : undefined
+                        }
+                    />
                     <div className="jr-search">
                         <Search className="size-[18px]" />
                         <Input
                             type="search"
                             maxLength={255}
                             aria-label="Search LGUs"
-                            placeholder="Search municipalities, provinces, regions, or mayors..."
+                            placeholder="Search LGUs..."
                             value={search}
                             onChange={(e) => {
                                 const value = e.target.value;
@@ -305,6 +324,7 @@ export default function Index({
                     <div className="jr-filter-row">
                         <DirectoryFilter
                             label="Province filter"
+                            fieldLabel="Province"
                             value={filters.province || 'all'}
                             options={[
                                 { value: 'all', label: 'All Provinces' },
@@ -323,6 +343,7 @@ export default function Index({
                         />
                         <DirectoryFilter
                             label="Region filter"
+                            fieldLabel="Region"
                             value={filters.region || 'all'}
                             options={[
                                 { value: 'all', label: 'All Regions' },
@@ -341,6 +362,7 @@ export default function Index({
                         />
                         <DirectoryFilter
                             label="Sort LGUs"
+                            fieldLabel="Sort by"
                             value={filters.sort}
                             options={[
                                 { value: 'asc', label: 'Municipality A–Z' },
