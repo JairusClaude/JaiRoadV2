@@ -411,7 +411,7 @@ export default function Index({
                 </div>
 
                 {/* Main White Content Container matching Maintenance Documents smooth fully-rounded top corners */}
-                <main className="jr-road-coverage-main-container relative -mx-7 -mt-3.5 rounded-t-[20px] bg-white px-7 pb-8 pt-6 shadow-sm">
+                <main className="jr-road-coverage-main-container relative -mx-7 -mt-3.5 rounded-t-[20px] bg-white px-7 pt-6 pb-8 shadow-sm">
                     {/* 1. Metric Cards */}
                     <section
                         aria-label="Road coverage statistics"
@@ -509,7 +509,7 @@ export default function Index({
                     {/* 3. Road Coverages Directory Table (Separated Cards Layout) */}
                     <section
                         aria-label="Road coverages directory"
-                        className="jr-table-card-container rounded-b-2xl rounded-t-[20px] border border-[#E2E8F0] bg-white p-5 shadow-sm"
+                        className="jr-table-card-container rounded-t-[20px] rounded-b-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm"
                     >
                         <form
                             className="jr-filters"
