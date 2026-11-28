@@ -18,3 +18,10 @@ bootstrap/cache/*.php
 
 # Never bake local staging credentials or fixture email IDs into the application image.
 .free-staging/
+
+# The dedicated Android pilot startup consumes only these synthetic fixtures.
+!deploy/android-pilot/*.sql
+!tests/Quarterly/fixtures/canonical.sql
+!database/proposals/canonical_account_provisioning.sql
+!database/proposals/audit_notification_recipients.sql
+!database/proposals/monthly_submission_receipts_REVIEW_ONLY.sql

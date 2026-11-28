@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: jairoads-android-pilot
+    runtime: docker
+    plan: free
+    region: singapore
+    autoDeployTrigger: off
+    dockerCommand: sh deploy/android-pilot/start.sh
+    healthCheckPath: /up
+    envVars:
+      - key: APP_ENV
+        value: staging
+      - key: APP_DEBUG
+        value: 'false'
+      - key: PILOT_APP_SECRET
+        generateValue: true
+      - key: DB_URL
+        fromDatabase:
+          name: jairoads-android-pilot-db
+          property: connectionString
+      - key: PILOT_RUNTIME_PASSWORD
+        generateValue: true
+      - key: SESSION_DRIVER
+        value: file
+      - key: SESSION_SECURE_COOKIE
+        value: 'true'
+      - key: CACHE_STORE
+        value: file
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: JAIROADS_ANDROID_PILOT_ENABLED
+        value: 'true'
+      - key: JAIROADS_MONTHLY_RECEIPTS_ENABLED
+        value: 'true'
+      - key: JAIROADS_MONTHLY_UPDATES_WRITES_ENABLED
+        value: 'true'
