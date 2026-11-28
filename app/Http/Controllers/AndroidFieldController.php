@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Services\DuplicateMaintenancePeriod;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
@@ -166,7 +167,6 @@ final class AndroidFieldController extends OperationsFrontendController
                     'project' => 'maintenance_projects',
                     'record' => 'maintenance_records',
                     'monthly' => 'monthly_updates',
-                    default => throw ValidationException::withMessages(['kind' => 'Unknown field operation.']),
                 };
                 $version = DB::table('jairoads_next.'.$table)->where('id', $savedId)->selectRaw('xmin::text as version')->first()?->version;
                 abort_unless(is_string($version), 500);
@@ -185,6 +185,7 @@ final class AndroidFieldController extends OperationsFrontendController
             ->header('Cache-Control', 'private, no-store');
     }
 
+    /** @phpstan-impure */
     private function attachmentReceipt(int $account, string $key): ?\stdClass
     {
         return DB::table(self::RECEIPTS)->where('account_id', $account)->where('operation_id', $key)->first();
@@ -209,7 +210,7 @@ final class AndroidFieldController extends OperationsFrontendController
         ]);
         abort_unless((int) $v['account_id'] === $actor['account_id'], 403);
         $file = $request->file('file');
-        abort_unless($file instanceof \Illuminate\Http\UploadedFile, 422);
+        abort_unless($file instanceof UploadedFile, 422);
         $hash = hash_file('sha256', $file->getRealPath());
         abort_unless(is_string($hash), 422);
         $key = strtolower($v['operation_id']);
@@ -219,6 +220,7 @@ final class AndroidFieldController extends OperationsFrontendController
         ], JSON_THROW_ON_ERROR));
         $answer = function (\stdClass $row) use ($fingerprint, $key): JsonResponse {
             abort_unless(hash_equals($row->fingerprint, $fingerprint), 409, 'This saved file operation has different content.');
+
             return response()->json(['operationId' => $key, 'id' => (int) $row->entity_id, 'version' => $row->entity_version])
                 ->header('Cache-Control', 'private, no-store');
         };
@@ -248,6 +250,7 @@ final class AndroidFieldController extends OperationsFrontendController
         }
         $saved = $this->attachmentReceipt($actor['account_id'], $key);
         abort_unless($saved !== null, 503, 'The file receipt was not confirmed.');
+
         return $answer($saved);
     }
 }

@@ -21,8 +21,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { watchBasemap } from '@/lib/road-coverages/basemap';
-import { attachFieldBasemap } from '@/lib/road-coverages/field-basemap';
 import type { BasemapStatus } from '@/lib/road-coverages/basemap';
+import { attachFieldBasemap } from '@/lib/road-coverages/field-basemap';
 import {
     distanceKm,
     geometryEditingMode,
@@ -843,7 +843,7 @@ function EditableCoverageMapEditor({
         const monitor = watchBasemap(tiles, setBasemap);
         tileMonitor.current = monitor;
         tiles.addTo(instance);
-        attachFieldBasemap(instance,tiles,setBasemap);
+        attachFieldBasemap(instance, tiles, setBasemap);
         L.control.scale({ imperial: false }).addTo(instance);
         active.current = L.layerGroup().addTo(instance);
         references.current = L.layerGroup().addTo(instance);

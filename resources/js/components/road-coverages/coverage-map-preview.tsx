@@ -2,8 +2,8 @@ import L from 'leaflet';
 import { Download, Map, Maximize2, Minimize2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { watchBasemap } from '@/lib/road-coverages/basemap';
-import { attachFieldBasemap } from '@/lib/road-coverages/field-basemap';
 import type { BasemapStatus } from '@/lib/road-coverages/basemap';
+import { attachFieldBasemap } from '@/lib/road-coverages/field-basemap';
 import { mappingData } from '@/lib/road-coverages/geometry.mjs';
 import {
     savedLineMetrics,
@@ -77,7 +77,7 @@ function SavedCoverageMap({
         const monitor = watchBasemap(tiles, setBasemap);
         tileMonitor.current = monitor;
         tiles.addTo(map);
-        attachFieldBasemap(map,tiles,setBasemap);
+        attachFieldBasemap(map, tiles, setBasemap);
         L.control.scale({ imperial: false }).addTo(map);
         L.polyline(
             lines.map((line) =>

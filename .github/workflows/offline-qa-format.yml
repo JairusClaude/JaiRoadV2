@@ -58,6 +58,7 @@ jobs:
           git diff --name-only 91820c3b913b0310b1b0f23aedfb5efeb4b3ff4a HEAD -- app tests resources mobile > /tmp/offline-qa-paths
           # Include earlier review files already reported as failing lint/format.
           git diff --name-only 0192f3e00e8cf16170af7ee259a1280e60a91e8d HEAD -- app tests resources mobile >> /tmp/offline-qa-paths
+          printf '%s\n' mobile/android-pilot/web/offline-map.ts mobile/android-pilot/web/sign-in-sheet.ts >> /tmp/offline-qa-paths
           sort -u /tmp/offline-qa-paths -o /tmp/offline-qa-paths
           grep -E '^(resources|mobile)/.*\.(ts|tsx|mjs)$' /tmp/offline-qa-paths | xargs -r npx eslint --fix || true
           grep -E '^(resources|mobile)/.*\.(ts|tsx|mjs|css|html)$' /tmp/offline-qa-paths | xargs -r npx prettier --write
