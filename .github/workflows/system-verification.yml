@@ -377,6 +377,9 @@ jobs:
             sleep 1
           done
           PLAYWRIGHT_MODULE="$RUNNER_TEMP/jairoads-browser/node_modules/playwright/index.mjs" node tests/Browser/unified.mjs
+      - name: Print Laravel browser server log on failure
+        if: failure()
+        run: cat /tmp/jairoads-unified-server.log || true
       - name: Real encrypted receipt queue lifecycle on a separate disposable database
         env:
           DB_DATABASE: jairoads_scratch_receipt_browser
