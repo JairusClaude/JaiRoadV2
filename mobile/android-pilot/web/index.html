@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="referrer" content="same-origin" />
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="default-src 'self'; base-uri 'none'; object-src 'none'; form-action 'self'"
+        />
+        <title>JaiROADS Field Pilot</title>
+    </head>
+    <body>
+        <main>
+            <header>
+                <p class="eyebrow">Android staging pilot</p>
+                <h1>JaiROADS Field Reports</h1>
+                <p id="connection" role="status"></p>
+            </header>
+            <p id="message" role="status" aria-live="polite"></p>
+            <section id="setup">
+                <h2 id="setup-title">Set up offline access</h2>
+                <p>
+                    Connect to staging and sign in first. The passphrase
+                    encrypts records and reports on this phone. Use at least 12
+                    characters.
+                </p>
+                <form id="unlock">
+                    <label
+                        >Offline passphrase<input
+                            name="passphrase"
+                            type="password"
+                            autocomplete="off"
+                            minlength="12"
+                            maxlength="256"
+                            required
+                    /></label>
+                    <button id="unlock-button">Save offline workspace</button>
+                </form>
+            </section>
+            <button id="sign-in" type="button" class="secondary">
+                Open staging sign-in
+            </button>
+            <section id="workspace" hidden>
+                <div class="title-row">
+                    <div>
+                        <h2 id="workspace-title">Offline workspace</h2>
+                        <p id="scope"></p>
+                    </div>
+                    <button type="button" id="lock" class="secondary">
+                        Lock
+                    </button>
+                </div>
+                <div class="actions">
+                    <button type="button" id="cache" class="secondary">
+                        Refresh cached records
+                    </button>
+                    <button type="button" id="sync">Sync now</button>
+                </div>
+                <details id="records">
+                    <summary>Cached maintenance records</summary>
+                    <ul id="record-list"></ul>
+                </details>
+                <form id="report" hidden>
+                    <h2>New field report</h2>
+                    <label
+                        >Maintenance record<select
+                            name="record"
+                            required
+                        ></select
+                    ></label>
+                    <div class="fields">
+                        <label
+                            >Reporting month<input
+                                name="month"
+                                type="month"
+                                required
+                        /></label>
+                        <label
+                            >Progress (%)<input
+                                name="progress"
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.01"
+                                inputmode="decimal"
+                                required
+                        /></label>
+                    </div>
+                    <label
+                        >Report notes<textarea
+                            name="summary"
+                            rows="4"
+                            maxlength="20000"
+                        ></textarea>
+                    </label>
+                    <label class="check"
+                        ><input type="checkbox" name="consent" required />Send
+                        this saved report when connectivity returns while the
+                        workspace is unlocked.</label
+                    >
+                    <button>Save on this phone</button>
+                </form>
+                <h2>Reports on this phone</h2>
+                <p id="empty">No queued reports.</p>
+                <ul id="entries"></ul>
+            </section>
+        </main>
+        <script type="module" src="./main.ts"></script>
+    </body>
+</html>

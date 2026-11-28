@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\AndroidPilotController;
 use App\Http\Controllers\AuditLogPageController;
 use App\Http\Controllers\LguPageController;
 use App\Http\Controllers\MaintenanceDocumentPageController;
@@ -13,8 +14,15 @@ use App\Http\Controllers\PreservedHistoryController;
 use App\Http\Controllers\RoadCoveragePageController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/android-pilot/availability', [AndroidPilotController::class, 'availability'])
+    ->middleware('throttle:30,1,jr-android-availability-')->name('jairoads.android.availability');
+
 // These URLs are canonical DD projections. Legacy public.* route quarantine stays intact.
 Route::middleware(['auth'])->prefix('workspace/ui')->name('jairoads.ui.')->group(function (): void {
+    Route::get('/android-pilot/workspace', [AndroidPilotController::class, 'workspace'])
+        ->middleware('throttle:60,1,jr-android-workspace-')->name('android.workspace');
+    Route::post('/android-pilot/reports', [AndroidPilotController::class, 'submit'])
+        ->middleware('throttle:30,1,jr-android-reports-')->name('android.reports');
     Route::get('/record-search', [OperationsFrontendController::class, 'recordSearch'])->middleware('throttle:60,1,jr-record-search-')->name('record-search');
     Route::get('/map/roads', [RoadCoveragePageController::class, 'roadReferences'])->name('roads.references');
     Route::get('/map/road-index', [RoadCoveragePageController::class, 'roadMapPage'])->middleware('throttle:90,1,jr-road-index-map-')->name('roads.map-page');

@@ -73,6 +73,46 @@ final class MonthlySubmissionReceiptTest extends PostgresTestCase
         $this->postJson(self::URL, $payload)->assertForbidden();
     }
 
+    public function test_android_pilot_requires_opt_in_and_commits_each_report_once(): void
+    {
+        $f = $this->fixture('Engineer');
+        $account = (int) $f['user']->canonical_user_account_id;
+        $record = (int) DB::table('jairoads_next.maintenance_records')->insertGetId(
+            $this->recordData($f['project'], $f['engineer']) + ['created_by' => $account]
+        );
+        $url = '/workspace/ui/android-pilot';
+        $this->getJson('/android-pilot/availability')->assertNotFound();
+        $this->getJson($url.'/workspace')->assertNotFound();
+
+        config([
+            'jairoads_monthly_updates.android_pilot_enabled' => true,
+            'jairoads_monthly_updates.durable_receipts_enabled' => true,
+        ]);
+        $this->getJson('/android-pilot/availability')->assertExactJson(['pilot' => 'jairoads-android-v1']);
+        $this->getJson($url.'/workspace')->assertJsonPath('canSync', false);
+        $this->applyProposal('monthly_submission_receipts');
+        $this->getJson($url.'/workspace')->assertOk()->assertHeader('Cache-Control', 'no-store, private')
+            ->assertJsonPath('accountId', $account)->assertJsonPath('role', 'Engineer')
+            ->assertJsonPath('canSync', true)->assertJsonPath('records.0.id', (string) $record);
+
+        $payload = [
+            'submission_id' => '104b840c-6914-4d85-8dd6-d677d41aa946',
+            'reconnect_account_id' => $account, 'project_id' => $f['project'],
+            'maintenance_id' => $record, 'update_month' => '2026-01',
+            'progress_percentage' => '30', 'summary_of_text_reports' => 'Synthetic Android report',
+        ];
+        $this->postJson($url.'/reports', array_replace($payload, ['reconnect_account_id' => $account + 1]))->assertForbidden();
+        $id = $this->postJson($url.'/reports', $payload)->assertOk()->assertJsonPath('receiptConfirmed', true)->json('reportId');
+        $this->postJson($url.'/reports', $payload)->assertExactJson(['reportId' => $id, 'receiptConfirmed' => true]);
+        $this->postJson($url.'/reports', array_replace($payload, ['submission_id' => 'c430df14-0892-45e2-a1f4-d7b71d9bde81']))->assertUnprocessable();
+        $this->assertSame(1, DB::table(self::TABLE)->count());
+        $this->assertSame(1, DB::table('jairoads_next.audit_logs')->where('entity_type', 'MonthlyUpdate')->whereNull('recipient_user_id')->count());
+
+        $this->withSession(['password_hash_web' => null])->actingAs($this->account('Viewer'));
+        $this->getJson($url.'/workspace')->assertOk()->assertJsonPath('role', 'Viewer')->assertJsonPath('canSync', false);
+        $this->postJson($url.'/reports', $payload)->assertForbidden();
+    }
+
     public function test_receipt_failure_rolls_back_the_report_and_audit(): void
     {
         $f = $this->fixture('Engineer');

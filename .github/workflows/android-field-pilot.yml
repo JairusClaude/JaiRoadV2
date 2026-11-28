@@ -1,0 +1,45 @@
+name: JaiROADS Android field pilot
+
+on:
+  push:
+    branches: [Improvement1]
+    paths:
+      - 'mobile/android-pilot/**'
+      - '.github/workflows/android-field-pilot.yml'
+      - 'resources/js/lib/encrypted-field-draft.mjs'
+      - 'resources/js/lib/receipt-queue.ts'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    name: Build internal Android pilot APK
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx vite build --config mobile/android-pilot/vite.config.mjs
+      - name: Assemble and verify the debug APK
+        run: |
+          gradle_archive="$RUNNER_TEMP/gradle-8.11.1-bin.zip"
+          curl --fail --silent --show-error --location https://services.gradle.org/distributions/gradle-8.11.1-bin.zip -o "$gradle_archive"
+          echo "f397b287023acdba1e9f6fc5ea72d22dd63669d59ed4a289a29b1a76eee151c6  $gradle_archive" | sha256sum --check
+          unzip -q "$gradle_archive" -d "$RUNNER_TEMP"
+          sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+          "$RUNNER_TEMP/gradle-8.11.1/bin/gradle" --no-daemon -p mobile/android-pilot/android :app:assembleDebug
+          apk=mobile/android-pilot/android/app/build/outputs/apk/debug/app-debug.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$apk"
+          unzip -l "$apk" | grep 'assets/index.html'
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: JaiROADS-Android-Field-Pilot
+          path: mobile/android-pilot/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
