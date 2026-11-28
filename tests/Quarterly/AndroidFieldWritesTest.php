@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Quarterly;
 
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 
 final class AndroidFieldWritesTest extends PostgresTestCase
 {
@@ -63,7 +65,7 @@ final class AndroidFieldWritesTest extends PostgresTestCase
             'fields' => ['project_title' => 'Offline fixture project', 'road_coverage_id' => $saved['id'], 'description' => 'Fieldwork'],
         ];
         $savedProject = $this->postJson(self::URL.'/operations', $project)->assertOk()->json();
-        $this->postJson(self::URL.'/operations', [
+        $record = $this->postJson(self::URL.'/operations', [
             'account_id' => $account,
             'operation_id' => '45ecdd55-caaf-4fb0-a9f9-479eff532f26',
             'kind' => 'record',
@@ -71,7 +73,7 @@ final class AndroidFieldWritesTest extends PostgresTestCase
                 'project_id' => $savedProject['id'], 'maintenance_year' => 2026, 'quarter' => 'Q1',
                 'start_date' => '2026-01-01', 'estimated_duration_days' => 5, 'status' => 'Ongoing',
             ],
-        ])->assertOk();
+        ])->assertOk()->json();
         $this->getJson(self::URL.'/workspace')->assertOk()->assertJsonPath('canSync', true)
             ->assertJsonPath('records.0.project_id', $savedProject['id']);
         $this->postJson(self::URL.'/operations', array_replace($project, [
@@ -79,5 +81,19 @@ final class AndroidFieldWritesTest extends PostgresTestCase
         ]))->assertConflict();
         $this->postJson(self::URL.'/operations', array_replace($project, ['account_id' => $account + 100]))->assertForbidden();
         $this->assertSame(3, DB::table('jairoads_security.android_field_receipts')->count());
+
+        config(['jairoads_documents.supabase_url' => 'https://disposable-storage.test',
+            'jairoads_documents.service_role_key' => 'sb_secret_disposable', 'jairoads_documents.bucket' => 'private-documents',
+            'jairoads_file_deletion.upload_journal_enabled' => false]);
+        Http::fake(['*/storage/v1/object/*' => Http::response([], 200)]);
+        $attachment = ['account_id' => $account, 'operation_id' => '611c973d-6d78-4433-a3e5-6705ad7248d3',
+            'kind' => 'document', 'parent_id' => $record['id'], 'document_title' => 'Field inspection', 'description' => 'Saved offline'];
+        $pdf = static fn () => UploadedFile::fake()->createWithContent('inspection.pdf', "%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF");
+        $first = $this->post(self::URL.'/attachments', $attachment + ['file' => $pdf()], ['Accept' => 'application/json'])->assertOk()->json();
+        $this->post(self::URL.'/attachments', $attachment + ['file' => $pdf()], ['Accept' => 'application/json'])->assertOk()->assertExactJson($first);
+        $this->post(self::URL.'/attachments', array_replace($attachment, ['document_title' => 'Changed']) + ['file' => $pdf()], ['Accept' => 'application/json'])->assertConflict();
+        $this->assertSame(1, DB::table('jairoads_next.maintenance_documents')->where('maintenance_id', $record['id'])->count());
+        Http::assertSentCount(1);
+        $this->getJson(self::URL.'/workspace')->assertOk()->assertJsonPath('fileSync', true)->assertJsonPath('files.0.id', $first['id']);
     }
 }

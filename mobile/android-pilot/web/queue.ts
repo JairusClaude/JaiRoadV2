@@ -90,6 +90,28 @@ const allowedFileTypes = new Set([
     'application/vnd.openxmlformats-officedocument.presentationml.presentation',
     'image/jpeg', 'image/png', 'image/webp',
 ]);
+const extensionTypes: Record<string, string> = {
+    pdf: 'application/pdf',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp',
+};
+export function attachmentMime(name: string) {
+    return extensionTypes[name.split('.').pop()?.toLowerCase() ?? ''] ?? '';
+}
+function attachmentBlob(data: string, name: string): Blob {
+    const comma = data.indexOf(',');
+    const type = attachmentMime(name);
+    if (!type || comma < 0 || !data.startsWith('data:') ||
+        !data.slice(0, comma).endsWith(';base64') || data.length > 6 * 1024 * 1024) {
+        throw new Error('The local attachment format is unavailable.');
+    }
+    const decoded = atob(data.slice(comma + 1));
+    if (!decoded.length || decoded.length > fileLimit) throw new Error('The local attachment is outside the supported size.');
+    const bytes = Uint8Array.from(decoded, (character) => character.charCodeAt(0));
+    return new Blob([bytes], { type });
+}
 const fileKey = (file: FileReference) => file.kind + ':' + file.id + ':' + file.version;
 function validFileReference(value: FileReference) {
     return value && ['document', 'media'].includes(value.kind) &&
@@ -533,8 +555,16 @@ export class Vault {
             const id = /^[1-9]\d*$/.test(parent) ? Number(parent) : this.state.confirmed[parent]?.id;
             if (!id) continue;
             const kind = item.kind!;
-            const blob = await (await fetch(item.data)).blob();
-            if (blob.size > fileLimit || !blob.size) continue;
+            // Decoding data URLs locally avoids a fetch blocked by the shell CSP.
+            let blob: Blob;
+            try { blob = attachmentBlob(item.data, item.name); }
+            catch {
+                await this.change((state) => ({
+                    ...state, attachments: state.attachments.map((file) => file.id === item.id
+                        ? { ...file, issue: 'Local file format needs review; original bytes retained.' } : file),
+                }));
+                continue;
+            }
             const payload = new FormData();
             payload.set('account_id', String(workspace.accountId));
             payload.set('operation_id', item.id);

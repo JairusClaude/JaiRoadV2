@@ -2,7 +2,7 @@ import '../../../resources/css/jairoads-role-components.css';
 import { labels, renderFields, titleFor, validateFields } from './field-forms';
 import type { Tab } from './field-forms';
 import { hostMode } from './host-mode';
-import { loadWorkspace, pendingAttachment, RequestError } from './queue';
+import { attachmentMime, loadWorkspace, pendingAttachment, RequestError } from './queue';
 import { updateOfflineMap } from './offline-map';
 import { exportLocalFile } from './host-mode';
 import type { Fields, Row, Vault } from './queue';
@@ -372,7 +372,7 @@ function getFile(file: File) {
         const reader = new FileReader();
         reader.onload = () => resolve(String(reader.result));
         reader.onerror = () => reject(new Error('Could not read that file.'));
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(new Blob([file], { type: attachmentMime(file.name) }));
     });
 }
 
