@@ -1,0 +1,13 @@
+.jr-dialog-position {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Workspace sheets are anchored directly. Desktop centering does not apply. */
+@media (max-width: 639px) {
+    body:has(.jr-stage, .jr-responsive-shell)
+        .jr-dialog-position[data-mobile-layout] {
+        transform: none;
+    }
+}
