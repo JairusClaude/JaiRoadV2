@@ -181,6 +181,19 @@ jobs:
           grep -E "^application: .*icon='[^']*ic_launcher" "$RUNNER_TEMP/jairoads-apk-badging.txt"
           unzip -l "$apk" | grep -E 'res/.*peo_ddo_logo\.webp'
           unzip -l "$apk" | grep -E 'res/.*ic_launcher\.xml'
+          # Reject a regression to an app-supplied opaque launcher background.
+          python3 - "$apk" <<'PY'
+          import pathlib, sys, xml.etree.ElementTree as ET, zipfile
+          root = pathlib.Path("mobile/android-pilot/android/app/src/main/res")
+          ns = "{http://schemas.android.com/apk/res/android}"
+          icon = ET.parse(root / "mipmap-anydpi-v26/ic_launcher.xml").getroot()
+          assert icon.find("background").attrib[ns + "drawable"] == "@android:color/transparent"
+          logo = (root / "drawable-nodpi/peo_ddo_logo.webp").read_bytes()
+          with zipfile.ZipFile(sys.argv[1]) as apk:
+              assets = [n for n in apk.namelist() if n.startswith("res/") and n.endswith("/peo_ddo_logo.webp")]
+              assert len(assets) == 1 and apk.read(assets[0]) == logo
+          print("Transparent launcher background and original emblem verified.")
+          PY
           sha256sum "$apk"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:

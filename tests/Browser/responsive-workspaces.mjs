@@ -185,6 +185,44 @@ export async function verifyMobileWorkspaces({
                             const problems = [];
                             const close = (a, b) => Math.abs(a - b) <= 2;
 
+                            for (const head of document.querySelectorAll('.jr-page-head')) {
+                                const siblings = [];
+                                for (
+                                    let next = head.nextElementSibling;
+                                    next;
+                                    next = next.nextElementSibling
+                                ) {
+                                    siblings.push(next);
+                                }
+                                const firstPanel = siblings.find((element) =>
+                                    element.matches(
+                                        '.jr-directory-summary, .jr-directory-filter-panel, .jr-road-coverage-main-container',
+                                    ),
+                                );
+                                if (!firstPanel) continue;
+                                const target =
+                                    firstPanel.querySelector(
+                                        '.jr-directory-summary',
+                                    ) || firstPanel;
+                                if (!target.getClientRects().length) continue;
+                                const gap =
+                                    target.getBoundingClientRect().top -
+                                    head.getBoundingClientRect().bottom;
+                                if (gap < 10) {
+                                    problems.push(
+                                        'Missing hero-to-content gutter: ' + gap,
+                                    );
+                                }
+                                if (
+                                    head.nextElementSibling === firstPanel &&
+                                    gap > 16
+                                ) {
+                                    problems.push(
+                                        'Excess hero-to-content gutter: ' + gap,
+                                    );
+                                }
+                            }
+
                             for (const summary of document.querySelectorAll(
                                 '.jr-directory-summary',
                             )) {

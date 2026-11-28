@@ -2,4 +2,4 @@
 <!-- Keep the entire original PEO-DDO emblem inside the adaptive icon safe area. -->
 <inset xmlns:android="http://schemas.android.com/apk/res/android"
     android:drawable="@drawable/peo_ddo_logo"
-    android:inset="25%" />
+    android:inset="20%" />

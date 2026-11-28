@@ -318,3 +318,37 @@ html.dark .jr-app .jr-stage .jr-directory-filter-panel.jr-filters {
         text-align: center;
     }
 }
+
+/* Mobile directory rhythm: the first content panel must not touch the hero.
+ * The hero keeps its artwork, with a compact bottom inset and a real gutter.
+ * Apply to the shared field directories, not the dashboard or detail/editor pages.
+ */
+@media (max-width: 767px) {
+    .jr-app
+        .jr-stage
+        .jr-page-head:has(
+            ~ :is(
+                .jr-directory-summary,
+                .jr-directory-filter-panel,
+                .jr-road-coverage-main-container
+            )
+        ) {
+        min-height: 0;
+        padding-bottom: 12px;
+        margin-bottom: 12px;
+    }
+
+    /* Road Coverages uses a separate rounded content surface. Its own padding
+     * supplies the gutter, rather than overlapping the header or doubling it.
+     */
+    .jr-app
+        .jr-stage
+        .jr-road-coverage-directory
+        .jr-page-head:has(~ .jr-road-coverage-main-container) {
+        margin-bottom: 0;
+    }
+    .jr-app .jr-stage .jr-road-coverage-directory .jr-road-coverage-main-container {
+        margin-top: 0;
+        padding-top: 12px;
+    }
+}

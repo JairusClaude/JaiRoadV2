@@ -87,6 +87,42 @@ try {
                         result.push('Viewport overflow');
                     }
 
+                    if (innerWidth <= 767) {
+                        for (const head of document.querySelectorAll(
+                            '.jr-page-head',
+                        )) {
+                            const siblings = [];
+                            for (
+                                let next = head.nextElementSibling;
+                                next;
+                                next = next.nextElementSibling
+                            ) {
+                                siblings.push(next);
+                            }
+                            const firstPanel = siblings.find((element) =>
+                                element.matches(
+                                    '.jr-directory-summary, .jr-directory-filter-panel, .jr-road-coverage-main-container',
+                                ),
+                            );
+                            if (!firstPanel) continue;
+                            const target =
+                                firstPanel.querySelector(
+                                    '.jr-directory-summary',
+                                ) || firstPanel;
+                            if (!target.getClientRects().length) continue;
+                            const gap =
+                                target.getBoundingClientRect().top -
+                                head.getBoundingClientRect().bottom;
+                            if (
+                                gap < 10 ||
+                                (head.nextElementSibling === firstPanel &&
+                                    gap > 16)
+                            ) {
+                                result.push('Hero-to-content gutter: ' + gap);
+                            }
+                        }
+                    }
+
                     const summaries = document.querySelectorAll(
                         '.jr-directory-summary',
                     );
