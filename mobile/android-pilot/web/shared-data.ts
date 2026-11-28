@@ -472,18 +472,17 @@ export function offlinePage(
         status,
         offlineSnapshot: true,
     };
-    const page = (component: string, props: Record<string, unknown>): Page =>
-        ({
-            rescuedProps: [],
-            flash: {},
-            rememberedState: {},
-            component,
-            props: { ...baseProps, ...props },
-            url: url.pathname + url.search,
-            version: dashboard.version,
-            clearHistory: false,
-            encryptHistory: true,
-        });
+    const page = (component: string, props: Record<string, unknown>): Page => ({
+        rescuedProps: [],
+        flash: {},
+        rememberedState: {},
+        component,
+        props: { ...baseProps, ...props },
+        url: url.pathname + url.search,
+        version: dashboard.version,
+        clearHistory: false,
+        encryptHistory: true,
+    });
     const path = pathFor(url);
     const bits = path.split('/').filter(Boolean);
     const [section, first, nested, fourth, fifth] = bits;

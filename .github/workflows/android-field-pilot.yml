@@ -48,6 +48,8 @@ jobs:
           bash scripts/ci/install-composer.sh
           touch .env
           php artisan wayfinder:generate --with-form
+          npm run types:check
+          npx tsc --project mobile/android-pilot/tsconfig.json
           npm run build -- --mode review
       - run: node mobile/android-pilot/package-workspace.mjs
       - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
