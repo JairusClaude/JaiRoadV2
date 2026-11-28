@@ -144,7 +144,7 @@ async function openWorkspace(vault: Vault, offline: boolean) {
     const { openFieldReports } = await import('./main');
     password.value = '';
     sheet.close();
-    openFieldReports(vault, offline);
+    await openFieldReports(vault, offline);
 }
 
 function openHostedDashboard() {

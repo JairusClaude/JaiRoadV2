@@ -1,4 +1,5 @@
 import { router } from '@inertiajs/react';
+import { androidWorkspace } from '@/lib/android-workspace-bridge';
 import { WifiOff } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -222,6 +223,7 @@ export function JaiRoadsNavigationFeedback() {
 
 export function AndroidFieldFeedback() {
     const [offline, setOffline] = useState(false);
+    const [fieldMessage, setFieldMessage] = useState('');
 
     useEffect(() => {
         if (!navigator.userAgent.includes('JaiROADSField/')) {
@@ -232,9 +234,12 @@ export function AndroidFieldFeedback() {
             const workspace = document.querySelector(
                 '.jr-engineer-workspace, .jr-viewer-workspace, .jr-admin-workspace, .jr-superadmin-workspace',
             );
-            const show = Boolean(workspace) && !navigator.onLine;
+            const status = androidWorkspace()?.status();
+            const message = status?.message ?? (!navigator.onLine ? 'Offline Mode' : '');
+            const show = Boolean(workspace) && Boolean(message);
             document.body.classList.toggle('jr-android-hosted-offline', show);
             setOffline(show);
+            setFieldMessage(message);
         };
         const offNavigate = router.on('navigate', () =>
             requestAnimationFrame(update),
@@ -242,6 +247,7 @@ export function AndroidFieldFeedback() {
         update();
         window.addEventListener('online', update);
         window.addEventListener('offline', update);
+        window.addEventListener('jairoads-field-status', update);
         const stopRawError = router.on('httpException', (event) => {
             const status = event.detail.response.status;
 
@@ -262,6 +268,7 @@ export function AndroidFieldFeedback() {
             stopRawError();
             window.removeEventListener('online', update);
             window.removeEventListener('offline', update);
+            window.removeEventListener('jairoads-field-status', update);
             document.body.classList.remove('jr-android-hosted-offline');
         };
     }, []);
@@ -272,7 +279,7 @@ export function AndroidFieldFeedback() {
 
     return createPortal(
         <div className="jr-android-hosted-banner" role="status">
-            <WifiOff size={17} aria-hidden="true" /> Offline Mode
+            <WifiOff size={17} aria-hidden="true" /> {fieldMessage || 'Offline Mode'}
         </div>,
         document.body,
     );

@@ -47,6 +47,22 @@ let savedLocally = false;
 let synced = false;
 let hideSync: number;
 let preparingFiles = false;
+let sharedActive = false;
+let sharedFrame: HTMLIFrameElement | undefined;
+function fieldStatus() {
+    const offline = !connected() || !reachable;
+    const pending = pendingCount();
+    return { offline, message: offline ? (pending ? 'Offline Mode — Saved locally · Waiting for internet' : 'Offline Mode')
+        : checking && pending ? 'Synchronizing saved work…'
+        : pending ? 'Pending synchronization'
+        : unresolvedFileCount() ? 'Some local files need review'
+        : synced ? 'All changes synced' : '' };
+}
+function signalShared() {
+    if (!sharedFrame?.contentWindow) return;
+    const target = sharedFrame.contentWindow;
+    target.dispatchEvent(new Event('jairoads-field-status'));
+}
 let detailsOpen = false;
 const pendingCount = () => vault.state.pending.length + vault.state.attachments.filter(pendingAttachment).length;
 const unresolvedFileCount = () => vault.state.attachments.filter((file) => !file.receipt && !pendingAttachment(file)).length;
@@ -58,6 +74,7 @@ function note(text: string, target = 'field-message') {
 }
 
 function showStatus() {
+    if (sharedActive) { signalShared(); return; }
     const pending = pendingCount();
     const message = !connected()
         ? savedLocally
@@ -130,6 +147,7 @@ function renderOfflineMap() {
 }
 
 function renderDirectory() {
+    if (sharedActive) { signalShared(); return; }
     const { snapshot, pending, attachments } = vault.state;
     el('directory-title').textContent = labels[tab][0];
     el('workspace-page-title').textContent = editor.hidden
@@ -377,7 +395,7 @@ function getFile(file: File) {
 }
 
 function presentLocal(path = '') {
-    if (!ready) {
+    if (!ready || sharedActive) {
         return;
     }
 
@@ -412,6 +430,7 @@ function presentLocal(path = '') {
 }
 
 function goOnline(allowPending = false) {
+    if (sharedActive) { signalShared(); return; }
     if (
         !connected() ||
         !reachable ||
@@ -429,6 +448,7 @@ function goOnline(allowPending = false) {
 }
 
 function showCachedWorkspace() {
+    if (sharedActive) { signalShared(); return; }
     hostMode('show-local');
     presentLocal();
 }
@@ -462,7 +482,7 @@ async function refresh() {
         if (hadChanges) {
             await vault.sync(workspace);
             await vault.syncAttachments(workspace);
-        } else if (!visibleLocally && !vault.state.pending.length) {
+        } else if ((!visibleLocally || sharedActive) && !vault.state.pending.length) {
             await vault.update(workspace);
         }
 
@@ -638,6 +658,12 @@ el('lock').addEventListener('click', () =>
     }),
 );
 window.addEventListener('jairoads-back', (event) => {
+    if (sharedActive && sharedFrame?.contentWindow) {
+        event.preventDefault();
+        const target = sharedFrame.contentWindow;
+        target.history.back();
+        return;
+    }
     if (menu.open) {
         event.preventDefault();
         menu.close();
@@ -693,7 +719,7 @@ document.addEventListener('visibilitychange', () => {
     }
 });
 
-export function openFieldReports(workspace: Vault, offlineSignIn: boolean) {
+export async function openFieldReports(workspace: Vault, offlineSignIn: boolean) {
     vault = workspace;
     applyWorkspaceAppearance();
     ready = true;
@@ -708,8 +734,29 @@ export function openFieldReports(workspace: Vault, offlineSignIn: boolean) {
     );
     el('workspace-role').textContent = vault.state.snapshot.role;
     hostMode('cache-ready');
-
-    if (offlineSignIn || !connected()) {
+    opening.hidden = false;
+    const { openSharedWorkspace } = await import('./shared-workspace');
+    const frame = document.createElement('iframe');
+    frame.title = 'JaiROADS workspace';
+    frame.id = 'shared-workspace';
+    frame.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:0;z-index:10;background:white';
+    const activated = await openSharedWorkspace(vault, frame, {
+        status: fieldStatus,
+        offlineSignIn,
+        onSaved: () => { savedLocally = true; showStatus(); void refresh(); },
+        onUnavailable: () => { reachable = false; showStatus(); },
+        onOnline: () => { reachable = true; showStatus(); },
+        onLock: () => { hostMode('lock'); location.reload(); },
+    });
+    if (activated) {
+        sharedActive = true;
+        sharedFrame = frame;
+        field.hidden = true;
+        opening.hidden = true;
+        hostMode('show-local');
+        document.body.append(frame);
+        frame.src = '/jairoads-android-pilot/workspace.html';
+    } else if (offlineSignIn || !connected()) {
         showCachedWorkspace();
     } else {
         opening.hidden = false;

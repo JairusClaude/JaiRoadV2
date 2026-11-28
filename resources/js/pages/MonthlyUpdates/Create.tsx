@@ -10,6 +10,7 @@ import { editUrl, formReturn, returnLabel } from '@/lib/form-navigation';
 import { validateMonthlyUpdate } from '@/lib/monthly-updates';
 import { validRecordChoices } from '@/lib/project-choice-page';
 import { workspaceHref } from '@/lib/workspace-navigation';
+import { androidWorkspace } from '@/lib/android-workspace-bridge';
 import type {
     MonthlyCreateProps,
     MonthlyParentProject,
@@ -175,7 +176,7 @@ export default function Create(parents: MonthlyCreateProps) {
             return;
         }
 
-        if (!navigator.onLine) {
+        if (!navigator.onLine && !androidWorkspace()) {
             setSaveError(
                 'Offline. Save a draft or queue reconnect submission.',
             );

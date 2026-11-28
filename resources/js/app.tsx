@@ -1,4 +1,5 @@
-import { createInertiaApp } from '@inertiajs/react';
+import { createInertiaApp, router } from '@inertiajs/react';
+import { androidWorkspace, fieldHttp, installFieldResources } from '@/lib/android-workspace-bridge';
 import { lazy, Suspense, useEffect } from 'react';
 import '../css/jairoads-role-components.css';
 import '../css/jairoads-dark-appearance.css';
@@ -36,7 +37,11 @@ function DismissStartupMessage() {
     return null;
 }
 
+const fieldWorkspace = androidWorkspace();
+if (fieldWorkspace) installFieldResources(fieldWorkspace);
+
 void createInertiaApp({
+    ...(fieldWorkspace ? { page: fieldWorkspace.initial, http: fieldHttp(fieldWorkspace) } : {}),
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         switch (true) {
@@ -138,7 +143,13 @@ void createInertiaApp({
         );
     },
     progress: false,
+}).then(() => {
+    if (fieldWorkspace) {
+        router.on('navigate', (event) => fieldWorkspace.current(event.detail.page));
+        fieldWorkspace.ready();
+    }
 }).catch(() => {
+    fieldWorkspace?.fail();
     const message = document.getElementById('jairoads-startup-message');
 
     if (message) {

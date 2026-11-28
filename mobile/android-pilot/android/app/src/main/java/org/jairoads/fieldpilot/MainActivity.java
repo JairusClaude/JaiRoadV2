@@ -100,7 +100,8 @@ public final class MainActivity extends Activity {
             return true;
         }
         NetworkCapabilities capabilities = connectivity.getNetworkCapabilities(connectivity.getActiveNetwork());
-        return capabilities != null && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+        return capabilities != null && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
     }
 
     private void networkChanged() {
@@ -229,9 +230,12 @@ public final class MainActivity extends Activity {
     }
 
     private WebView createView(boolean local) {
+        WebViewAssetLoader.AssetsPathHandler assets = new WebViewAssetLoader.AssetsPathHandler(this);
         WebViewAssetLoader loader = new WebViewAssetLoader.Builder()
                 .setDomain(HOST)
-                .addPathHandler(ASSET_PATH, new WebViewAssetLoader.AssetsPathHandler(this))
+                .addPathHandler(ASSET_PATH, assets)
+                .addPathHandler("/build/", path -> assets.handle("site-build/" + path))
+                .addPathHandler("/images/", path -> assets.handle("site-images/" + path))
                 .build();
         WebView view = new WebView(this);
         view.getSettings().setUserAgentString(view.getSettings().getUserAgentString() + " JaiROADSField/0.4");

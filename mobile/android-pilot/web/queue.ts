@@ -44,10 +44,16 @@ export type FileReference = {
     title: string;
     version: string;
     available: boolean;
+    parent?: number;
+    mime?: string;
+    description?: string | null;
+    uploadedAt?: string;
+    uploader?: string;
 };
 type CachedFile = { key: string; data: string };
 type Snapshot = {
     accountId: number;
+    engineerId?: number | null;
     role: 'Engineer' | 'Viewer';
     canWrite: boolean;
     canSync: boolean;
@@ -67,6 +73,7 @@ type State = {
     confirmed: Record<string, Receipt>;
     attachments: Attachment[];
     cachedFiles?: CachedFile[];
+    dashboard?: unknown;
 };
 type Encrypted = {
     salt: Uint8Array<ArrayBuffer>;
@@ -264,6 +271,7 @@ async function digest(text: string) {
 function snapshotOf(workspace: Workspace): Snapshot {
     return {
         accountId: workspace.accountId,
+        engineerId: workspace.engineerId,
         role: workspace.role,
         canWrite: workspace.canWrite,
         canSync: workspace.canSync,
@@ -432,7 +440,12 @@ export class Vault {
         return [...rows.values()];
     }
 
+    async cacheDashboard(page: unknown) {
+        await this.change((state) => ({ ...state, dashboard: page }));
+    }
+
     async save(kind: Kind, fields: Fields, row?: Row) {
+        let saved = '';
         await this.change((state) => {
             if (!state.snapshot.canWrite) {
                 throw new Error('This workspace only allows viewing.');
@@ -442,6 +455,7 @@ export class Vault {
             const entity = String(
                 resolved?.id ?? row?.id ?? crypto.randomUUID(),
             );
+            saved = entity;
             const existing = state.pending.find(
                 (entry) => entry.kind === kind && entry.entity === entity,
             );
@@ -481,6 +495,7 @@ export class Vault {
 
             return { ...state, pending };
         });
+        return saved;
     }
 
     async attach(
@@ -492,6 +507,7 @@ export class Vault {
         parent: string,
         title: string,
     ) {
+        const id = crypto.randomUUID();
         await this.change((state) => {
             if (!state.snapshot.canWrite) {
                 throw new Error('This workspace only allows viewing.');
@@ -502,7 +518,7 @@ export class Vault {
                 attachments: [
                     ...state.attachments,
                     {
-                        id: crypto.randomUUID(),
+                        id,
                         record,
                         name,
                         description,
@@ -514,6 +530,7 @@ export class Vault {
                 ],
             };
         });
+        return id;
     }
 
     fileData(file: FileReference) {

@@ -37,21 +37,22 @@ final class AndroidFieldController extends OperationsFrontendController
             ->when($actor['role'] === 'Engineer', fn ($query) => $query->where('m.managing_engineer_id', $engineer))
             ->orderByDesc('m.updated_at')->orderByDesc('m.id')->limit(101)
             ->select(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter', 'm.start_date',
-                'm.estimated_duration_days', 'm.complete_date', 'm.status', 'm.description'])->selectRaw('m.xmin::text as version')->get();
+                'm.estimated_duration_days', 'm.complete_date', 'm.status', 'm.description', 'm.created_at', 'm.updated_at', 'm.managing_engineer_id', 'e.first_name', 'e.last_name', 'a.username as creator_name'])->selectRaw('m.xmin::text as version')->get();
         $projects = $this->projects($actor, false)->where(function ($query) use ($records, $actor): void {
             $query->whereIn('p.id', $records->take(100)->pluck('project_id'));
             if ($actor['role'] === 'Engineer') {
                 $query->orWhere('p.created_by', $actor['account_id']);
             }
         })->orderByDesc('p.updated_at')->orderByDesc('p.id')->limit(151)
-            ->select(['p.id', 'p.project_title', 'p.road_coverage_id', 'p.description'])->selectRaw('p.xmin::text as version')->get();
+            ->select(['p.id', 'p.project_title', 'p.road_coverage_id', 'p.description', 'p.created_at', 'p.updated_at', 'a.username as creator_name'])->selectRaw('p.xmin::text as version')->get();
         $roads = DB::table('jairoads_next.road_coverages')->where(function ($query) use ($projects, $engineer): void {
             $query->whereIn('id', $projects->take(150)->pluck('road_coverage_id'));
             if ($engineer !== null) {
                 $query->orWhere('created_by', $engineer);
             }
         })->orderByDesc('updated_at')->orderByDesc('id')->limit(201)
-            ->select(['id', 'road_name', 'lgu_id', 'kilometers', 'pavement_type', 'state_category', 'updated_at'])
+            ->select(['id', 'road_name', 'lgu_id', 'kilometers', 'pavement_type', 'state_category', 'updated_at', 'created_at', 'created_by'])
+            ->selectSub(DB::table('jairoads_next.maintenance_projects')->whereColumn('road_coverage_id', 'road_coverages.id')->orderBy('id')->limit(1)->select('id'), 'linked_project_id')
             ->selectRaw('xmin::text as version')
             ->selectRaw('CASE WHEN octet_length(geojson::text) <= 32768 THEN geojson::text END AS geojson')
             ->get();
@@ -64,7 +65,7 @@ final class AndroidFieldController extends OperationsFrontendController
         $recordIds = $visibleRecords->pluck('id')->all();
         $monthly = Schema::hasTable('jairoads_next.monthly_updates')
             ? DB::table('jairoads_next.monthly_updates')->whereIn('maintenance_id', $recordIds)
-                ->orderByDesc('id')->limit(100)->get(['id', 'maintenance_id', 'update_month', 'progress_percentage', 'summary_of_text_reports'])
+                ->orderByDesc('id')->limit(100)->get(['id', 'maintenance_id', 'update_month', 'progress_percentage', 'summary_of_text_reports', 'created_at', 'updated_at'])
             : collect();
         $files = collect();
         if (Schema::hasTable('jairoads_next.maintenance_documents')) {
@@ -73,16 +74,18 @@ final class AndroidFieldController extends OperationsFrontendController
                     'kind' => 'document', 'id' => (int) $d->id, 'record' => (int) $d->maintenance_id,
                     'name' => (string) $d->file_name, 'title' => (string) $d->document_title,
                     'version' => (string) $d->updated_at, 'available' => $d->file_path !== '' && $this->documents->configured(),
+                    'description' => $d->description, 'uploadedAt' => (string) $d->uploaded_at, 'uploader' => (string) $d->uploader_name,
                 ]);
         }
         if (Schema::hasTable('jairoads_next.media') && $monthly->isNotEmpty()) {
             $photos = DB::table('jairoads_next.media as m')->join('jairoads_next.monthly_updates as u', 'u.id', '=', 'm.monthly_update_id')
                 ->whereIn('u.id', $monthly->pluck('id'))->whereIn('m.file_type', ['image/jpeg', 'image/png', 'image/webp'])
-                ->orderByDesc('m.id')->limit(40)->get(['m.id', 'm.file_name', 'm.created_at', 'u.maintenance_id'])
+                ->orderByDesc('m.id')->limit(40)->get(['m.id', 'm.file_name', 'm.created_at', 'm.file_type', 'm.monthly_update_id', 'u.maintenance_id'])
                 ->map(fn (\stdClass $p): array => [
                     'kind' => 'media', 'id' => (int) $p->id, 'record' => (int) $p->maintenance_id,
                     'name' => (string) $p->file_name, 'title' => (string) $p->file_name,
                     'version' => (string) $p->created_at, 'available' => $this->media->configured(),
+                    'parent' => (int) $p->monthly_update_id, 'mime' => (string) $p->file_type,
                 ]);
             $files = $files->concat($photos);
         }
