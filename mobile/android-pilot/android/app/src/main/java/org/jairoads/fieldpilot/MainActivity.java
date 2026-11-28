@@ -88,7 +88,7 @@ public final class MainActivity extends Activity {
             web.setWebChromeClient(new WebChromeClient() {
                 @Override
                 public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
-                    if (!(origin + PILOT_PAGE + "#field-reports").equals(view.getUrl())) {
+                    if (view.getUrl() == null || !view.getUrl().startsWith(origin + "/")) {
                         return false;
                     }
                     if (chooser != null) {

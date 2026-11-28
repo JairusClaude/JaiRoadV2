@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 final class AndroidFieldController extends OperationsFrontendController
@@ -87,7 +88,7 @@ final class AndroidFieldController extends OperationsFrontendController
             'operation_id' => ['required', 'uuid'],
             'kind' => ['required', 'in:road,project,record,monthly'],
             'id' => ['nullable', 'integer', 'min:1', 'prohibited_if:kind,monthly'],
-            'version' => ['nullable', 'required_with:id', 'prohibited_without:id', 'string', 'max:64'],
+            'version' => ['nullable', 'required_with:id', Rule::prohibitedIf(! $request->filled('id')), 'string', 'max:64'],
             'fields' => ['required', 'array:road_name,lgu_id,kilometers,pavement_type,state_category,geojson,correction_reason,project_title,road_coverage_id,description,project_id,maintenance_year,quarter,start_date,estimated_duration_days,complete_date,status,maintenance_id,update_month,progress_percentage,summary_of_text_reports'],
         ]);
         abort_unless((int) $data['account_id'] === $actor['account_id'], 403);

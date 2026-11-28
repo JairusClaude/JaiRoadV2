@@ -50,12 +50,18 @@ class PilotUnreachable extends Error {}
 
 async function startSession() {
     try {
-        return await fetch('/login', {
+        const response = await fetch('/login', {
             cache: 'no-store',
             credentials: 'same-origin',
             redirect: 'manual',
             signal: AbortSignal.timeout(12000),
         });
+
+        if (response.status >= 500) {
+            throw new PilotUnreachable();
+        }
+
+        return response;
     } catch {
         throw new PilotUnreachable();
     }
@@ -178,7 +184,13 @@ form.addEventListener('submit', async (event) => {
             );
         } catch (error) {
             if (error instanceof PilotUnreachable) {
-                await signInOffline(emailAddress, secret);
+                try {
+                    await signInOffline(emailAddress, secret);
+                } catch {
+                    throw new Error(
+                        'JaiROADS is unavailable. Use the last credentials saved on this phone, or try again online.',
+                    );
+                }
 
                 return;
             }

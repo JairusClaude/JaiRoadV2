@@ -557,6 +557,14 @@ export class Vault {
                     pending: state.pending.filter(
                         (entry) => entry.operation !== item.operation,
                     ),
+                    attachments:
+                        item.kind === 'record'
+                            ? state.attachments.map((file) =>
+                                  file.record === item.entity
+                                      ? { ...file, record: String(receipt.id) }
+                                      : file,
+                              )
+                            : state.attachments,
                     confirmed: /^\d+$/.test(item.entity)
                         ? state.confirmed
                         : { ...state.confirmed, [item.entity]: receipt },
