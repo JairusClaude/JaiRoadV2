@@ -24,6 +24,8 @@ Route::middleware(['auth'])->prefix('workspace/ui')->name('jairoads.ui.')->group
         ->middleware('throttle:60,1,jr-field-workspace-')->name('android-field.workspace');
     Route::post('/android-field/operations', [AndroidFieldController::class, 'submit'])
         ->middleware('throttle:60,1,jr-field-operations-')->name('android-field.operations');
+    Route::post('/android-field/attachments', [AndroidFieldController::class, 'submitAttachment'])
+        ->middleware('throttle:8,1,jr-field-attachments-')->name('android-field.attachments');
     Route::get('/android-pilot/workspace', [AndroidPilotController::class, 'workspace'])
         ->middleware('throttle:60,1,jr-android-workspace-')->name('android.workspace');
     Route::post('/android-pilot/reports', [AndroidPilotController::class, 'submit'])

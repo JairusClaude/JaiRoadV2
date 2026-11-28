@@ -59,7 +59,38 @@ final class AndroidFieldController extends OperationsFrontendController
         $visibleProjects = $projects->take(150)->whereIn('road_coverage_id', $roadIds)->values();
         $visibleRecords = $records->take(100)->whereIn('project_id', $visibleProjects->pluck('id')->all())->values();
 
+        // File metadata is scoped to the same authorized record snapshot; no
+        // private object paths, keys or signed URLs are sent to the device.
+        $recordIds = $visibleRecords->pluck('id')->all();
+        $monthly = Schema::hasTable('jairoads_next.monthly_updates')
+            ? DB::table('jairoads_next.monthly_updates')->whereIn('maintenance_id', $recordIds)
+                ->orderByDesc('id')->limit(100)->get(['id', 'maintenance_id', 'update_month', 'progress_percentage', 'summary_of_text_reports'])
+            : collect();
+        $files = collect();
+        if (Schema::hasTable('jairoads_next.maintenance_documents')) {
+            $files = $this->documentQuery($actor)->whereIn('d.maintenance_id', $recordIds)
+                ->orderByDesc('d.id')->limit(40)->get()->map(fn (\stdClass $d): array => [
+                    'kind' => 'document', 'id' => (int) $d->id, 'record' => (int) $d->maintenance_id,
+                    'name' => (string) $d->file_name, 'title' => (string) $d->document_title,
+                    'version' => (string) $d->updated_at, 'available' => $d->file_path !== '' && $this->documents->configured(),
+                ]);
+        }
+        if (Schema::hasTable('jairoads_next.media') && $monthly->isNotEmpty()) {
+            $photos = DB::table('jairoads_next.media as m')->join('jairoads_next.monthly_updates as u', 'u.id', '=', 'm.monthly_update_id')
+                ->whereIn('u.id', $monthly->pluck('id'))->whereIn('m.file_type', ['image/jpeg', 'image/png', 'image/webp'])
+                ->orderByDesc('m.id')->limit(40)->get(['m.id', 'm.file_name', 'm.created_at', 'u.maintenance_id'])
+                ->map(fn (\stdClass $p): array => [
+                    'kind' => 'media', 'id' => (int) $p->id, 'record' => (int) $p->maintenance_id,
+                    'name' => (string) $p->file_name, 'title' => (string) $p->file_name,
+                    'version' => (string) $p->created_at, 'available' => $this->media->configured(),
+                ]);
+            $files = $files->concat($photos);
+        }
+
         return response()->json([
+            'fileSync' => true,
+            'monthly' => $monthly,
+            'files' => $files->values(),
             'accountId' => $actor['account_id'],
             'role' => $actor['role'],
             'engineerId' => $engineer,
@@ -145,5 +176,68 @@ final class AndroidFieldController extends OperationsFrontendController
 
         return response()->json(['operationId' => strtolower($data['operation_id'])] + $receipt)
             ->header('Cache-Control', 'private, no-store');
+    }
+
+    /** Upload a queued file through the existing private-storage and audit path.
+     * The receipt is committed with the metadata, not before Storage confirms.
+     */
+    public function submitAttachment(Request $request): JsonResponse
+    {
+        $actor = $this->fieldActor($request);
+        abort_unless($actor['role'] === 'Engineer' && $actor['engineer_id'] !== null, 403);
+        abort_unless(Schema::hasTable(self::RECEIPTS), 503, 'Field synchronization is unavailable.');
+        $v = $request->validate([
+            'account_id' => ['required', 'integer', 'min:1'],
+            'operation_id' => ['required', 'uuid'],
+            'kind' => ['required', 'in:document,media'],
+            'parent_id' => ['required', 'integer', 'min:1'],
+            'document_title' => ['nullable', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:5000'],
+            'file' => ['required', 'file', 'max:4096'],
+        ]);
+        abort_unless((int) $v['account_id'] === $actor['account_id'], 403);
+        $file = $request->file('file');
+        abort_unless($file instanceof \Illuminate\Http\UploadedFile, 422);
+        $hash = hash_file('sha256', $file->getRealPath());
+        abort_unless(is_string($hash), 422);
+        $key = strtolower($v['operation_id']);
+        $fingerprint = hash('sha256', json_encode([
+            'attachment', $v['kind'], (int) $v['parent_id'], $v['document_title'] ?? null,
+            $v['description'] ?? null, $file->getClientOriginalName(), $hash,
+        ], JSON_THROW_ON_ERROR));
+        $receipt = fn () => DB::table(self::RECEIPTS)->where('account_id', $actor['account_id'])
+            ->where('operation_id', $key)->first();
+        $answer = function (\stdClass $row) use ($fingerprint, $key): JsonResponse {
+            abort_unless(hash_equals($row->fingerprint, $fingerprint), 409, 'This saved file operation has different content.');
+            return response()->json(['operationId' => $key, 'id' => (int) $row->entity_id, 'version' => $row->entity_version])
+                ->header('Cache-Control', 'private, no-store');
+        };
+        if (($prior = $receipt()) !== null) {
+            return $answer($prior);
+        }
+
+        $request->attributes->set('jairoads.field_attachment_receipt', [
+            'account_id' => $actor['account_id'], 'operation_id' => $key, 'fingerprint' => $fingerprint,
+        ]);
+        $request->merge([
+            'maintenance_id' => $v['kind'] === 'document' ? (int) $v['parent_id'] : null,
+            'monthly_update_id' => $v['kind'] === 'media' ? (int) $v['parent_id'] : null,
+        ]);
+        try {
+            if ($v['kind'] === 'document') {
+                $this->operations->uploadDocument($request, $this->identities, $this->documents);
+            } else {
+                $this->operations->uploadMedia($request, $this->identities, $this->media);
+            }
+        } catch (\Throwable $error) {
+            // A concurrent or interrupted request may already have committed.
+            if (($prior = $receipt()) !== null) {
+                return $answer($prior);
+            }
+            throw $error;
+        }
+        $saved = $receipt();
+        abort_unless($saved !== null, 503, 'The file receipt was not confirmed.');
+        return $answer($saved);
     }
 }

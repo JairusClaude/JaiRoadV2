@@ -391,3 +391,22 @@ body.field-reports-open:has(#field-reports[data-appearance='dark']) {
     color: var(--ink);
     border: 1px solid var(--line);
 }
+
+#offline-road-map {
+    height: clamp(240px, 44vh, 440px);
+    margin-top: 10px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--page);
+    z-index: 0;
+}
+#field-reports .offline-photo {
+    display: block;
+    max-width: 100%;
+    max-height: 240px;
+    object-fit: contain;
+    margin-block: 8px;
+    border-radius: 8px;
+}
+#field-detail-content li { list-style: none; }
+#field-detail-content h2 { margin-top: 12px; }

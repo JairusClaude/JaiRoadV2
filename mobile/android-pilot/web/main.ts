@@ -2,7 +2,9 @@ import '../../../resources/css/jairoads-role-components.css';
 import { labels, renderFields, titleFor, validateFields } from './field-forms';
 import type { Tab } from './field-forms';
 import { hostMode } from './host-mode';
-import { loadWorkspace, RequestError } from './queue';
+import { loadWorkspace, pendingAttachment, RequestError } from './queue';
+import { updateOfflineMap } from './offline-map';
+import { exportLocalFile } from './host-mode';
 import type { Fields, Row, Vault } from './queue';
 import './style.css';
 
@@ -44,6 +46,10 @@ let reachable = false;
 let savedLocally = false;
 let synced = false;
 let hideSync: number;
+let preparingFiles = false;
+let detailsOpen = false;
+const pendingCount = () => vault.state.pending.length + vault.state.attachments.filter(pendingAttachment).length;
+const unresolvedFileCount = () => vault.state.attachments.filter((file) => !file.receipt && !pendingAttachment(file)).length;
 
 function note(text: string, target = 'field-message') {
     const message = el(target);
@@ -52,17 +58,19 @@ function note(text: string, target = 'field-message') {
 }
 
 function showStatus() {
-    const { pending } = vault.state;
+    const pending = pendingCount();
     const message = !connected()
         ? savedLocally
-            ? 'Offline Mode — Changes saved locally'
+            ? 'Offline Mode — Saved locally · Waiting for internet'
             : 'Offline Mode — Working locally'
-        : checking && pending.length
+        : checking && pending
           ? 'Connection restored — Synchronizing'
           : !reachable
             ? 'Server unavailable — Working locally'
-            : pending.length
+            : pending
               ? 'Pending synchronization'
+              : unresolvedFileCount()
+                ? 'Some local files need review'
               : synced
                 ? 'All changes synced'
                 : '';
@@ -99,14 +107,36 @@ function item(title: string, detail = '') {
     return row;
 }
 
+function localFileAction(entry: HTMLLIElement, data: string, name: string) {
+    if (/^data:image\/(jpeg|png|webp);base64,/.test(data)) {
+        const photo = document.createElement('img');
+        photo.src = data;
+        photo.alt = name;
+        photo.loading = 'lazy';
+        photo.className = 'offline-photo';
+        entry.append(photo);
+    }
+    entry.append(action('Open / save local copy', () => exportLocalFile(name, data)));
+}
+
+function renderOfflineMap() {
+    const panel = el('field-map');
+    const show = visibleLocally && (home || tab === 'road') && !detailsOpen;
+    panel.hidden = !show;
+    if (!show) return;
+    const coords = !editor.hidden && tab === 'road'
+        ? form.querySelector<HTMLTextAreaElement>('textarea[name=coordinates]') : null;
+    updateOfflineMap(el('offline-road-map'), vault.rows('road'), coords);
+}
+
 function renderDirectory() {
     const { snapshot, pending, attachments } = vault.state;
     el('directory-title').textContent = labels[tab][0];
     el('workspace-page-title').textContent = editor.hidden
         ? (home ? 'Dashboard' : labels[tab][0])
         : el('editor-title').textContent;
-    el('field-home').hidden = !home || !editor.hidden;
-    directory.hidden = home || !editor.hidden;
+    el('field-home').hidden = !home || !editor.hidden || detailsOpen;
+    directory.hidden = home || !editor.hidden || detailsOpen;
 
     for (const kind of ['project', 'record', 'road'] as const) {
         el(kind + '-count').textContent = String(vault.rows(kind).length);
@@ -132,29 +162,37 @@ function renderDirectory() {
     let rows: HTMLLIElement[];
 
     if (tab === 'files') {
-        rows = attachments.map((attachment) => {
-            const entry = item(
-                attachment.name,
-                'Saved locally · ' +
-                    (attachment.description || 'Available on this device'),
-            );
-            const file = document.createElement('a');
-            file.href = attachment.data;
-            file.download = attachment.name;
-            file.textContent = 'Download local copy';
-            entry.append(file);
-
+        rows = (snapshot.files ?? []).map((reference) => {
+            const data = vault.fileData(reference);
+            const entry = item(reference.title || reference.name, data
+                ? 'Available offline · ' + reference.name : 'No local copy · Requires internet');
+            if (data) localFileAction(entry, data, reference.name);
+            else if (connected() && reachable && reference.available) {
+                entry.append(action('Save for offline use', async () => {
+                    try { await vault.cacheFile(reference); renderDirectory(); }
+                    catch { note('Could not cache this file. It may be unavailable, too large, or local storage may be full.'); }
+                }));
+            }
             return entry;
         });
-    } else if (tab === 'monthly') {
-        rows = pending
-            .filter(({ kind }) => kind === 'monthly')
-            .map((change) =>
-                item(
-                    titleFor('monthly', change.fields),
-                    change.issue || 'Pending synchronization',
-                ),
+        rows.push(...attachments.map((attachment) => {
+            const entry = item(
+                attachment.name,
+                attachment.receipt ? 'Synced · Local copy retained'
+                    : attachment.issue || (pendingAttachment(attachment)
+                        ? 'Saved locally · Waiting for internet / server'
+                        : 'Saved locally · Earlier attachment requires review'),
             );
+            localFileAction(entry, attachment.data, attachment.name);
+            return entry;
+        }));
+    } else if (tab === 'monthly') {
+        rows = vault.rows('monthly').map((row) => {
+            const change = pending.find((entry) => entry.kind === 'monthly' && entry.entity === String(row.id));
+            const entry = item(titleFor('monthly', row), change?.issue || (change ? 'Saved locally · Pending synchronization' : String(row.progress_percentage ?? '') + '% progress'));
+            entry.append(action('View details', () => openDetails('monthly', row)));
+            return entry;
+        });
     } else {
         const kind = tab;
         rows = vault.rows(kind).map((row) => {
@@ -176,6 +214,7 @@ function renderDirectory() {
                     : reference,
             );
 
+            entry.append(action('View details', () => openDetails(kind, row)));
             if (snapshot.canWrite) {
                 const edit = action('Edit ' + labels[kind][1], () =>
                     openEditor(row),
@@ -199,7 +238,7 @@ function renderDirectory() {
                   ),
               ]),
     );
-    el('field-outbox').hidden = pending.length === 0;
+    el('field-outbox').hidden = pendingCount() === 0 && unresolvedFileCount() === 0;
     el('field-pending').replaceChildren(
         ...pending.map((change) => {
             const detail =
@@ -208,15 +247,66 @@ function renderDirectory() {
 
             return item(titleFor(change.kind, change.fields), detail);
         }),
+        ...attachments.filter((file) => !file.receipt).map((file) => item(file.name, file.issue || (pendingAttachment(file) ? 'Saved locally · Waiting for internet / server' : 'Local file retained; review required'))),
     );
+    renderOfflineMap();
     showStatus();
 }
+
+function openDetails(kind: 'road' | 'project' | 'record' | 'monthly', row: Row) {
+    detailsOpen = true;
+    const target = el('field-detail-content');
+    target.replaceChildren();
+    const heading = document.createElement('h2');
+    heading.textContent = titleFor(kind, row);
+    target.append(heading);
+    const labels: Record<string, string> = {
+        road_name: 'Road name', lgu_id: 'Municipality ID', pavement_type: 'Pavement',
+        state_category: 'Road condition', kilometers: 'Length (km)', project_title: 'Project title',
+        description: 'Description', maintenance_year: 'Year', quarter: 'Quarter', status: 'Status',
+        start_date: 'Start date', complete_date: 'Completion date', estimated_duration_days: 'Estimated duration (days)',
+        update_month: 'Reporting month', progress_percentage: 'Progress (%)', summary_of_text_reports: 'Report notes',
+    };
+    for (const [key, label] of Object.entries(labels)) {
+        if (row[key] === undefined || row[key] === null) continue;
+        const term = document.createElement('p');
+        term.textContent = label + ': ' + String(row[key]);
+        target.append(term);
+    }
+    const related = kind === 'project' ? vault.rows('record').filter((r) => String(r.project_id) === String(row.id))
+        : kind === 'record' ? vault.rows('monthly').filter((r) => String(r.maintenance_id) === String(row.id)) : [];
+    for (const child of related) {
+        target.append(action(titleFor(kind === 'project' ? 'record' : 'monthly', child), () => openDetails(kind === 'project' ? 'record' : 'monthly', child)));
+    }
+    const recordIds = kind === 'project' ? related.map((r) => String(r.id)) : kind === 'record' ? [String(row.id)] : kind === 'monthly' ? [String(row.maintenance_id)] : [];
+    for (const file of (vault.state.snapshot.files ?? []).filter((f) => recordIds.includes(String(f.record)))) {
+        const entry = item(file.title || file.name, vault.fileData(file) ? 'Available offline' : 'Requires internet');
+        const data = vault.fileData(file);
+        if (data) localFileAction(entry, data, file.name);
+        target.append(entry);
+    }
+    for (const file of vault.state.attachments.filter((f) => recordIds.includes(f.record))) {
+        const entry = item(file.name, file.receipt ? 'Synced · Local copy retained' : 'Saved locally');
+        localFileAction(entry, file.data, file.name);
+        target.append(entry);
+    }
+    el('field-detail').hidden = false;
+    renderDirectory();
+}
+function closeDetails() {
+    detailsOpen = false;
+    el('field-detail').hidden = true;
+    el('field-detail-content').replaceChildren();
+    renderDirectory();
+}
+el('field-detail-back').addEventListener('click', closeDetails);
 
 function openEditor(row?: Row) {
     if (busy) {
         return;
     }
 
+    if (detailsOpen) closeDetails();
     editing = row;
     dirty = false;
     el('editor-title').textContent = (row ? 'Edit ' : 'Add ') + labels[tab][1];
@@ -225,6 +315,7 @@ function openEditor(row?: Row) {
     renderFields(inputs, vault, tab, row);
     note('', 'field-error');
     editor.hidden = false;
+    renderOfflineMap();
     el('workspace-page-title').textContent = el('editor-title').textContent;
     el('field-home').hidden = true;
     directory.hidden = true;
@@ -327,7 +418,7 @@ function goOnline(allowPending = false) {
         !editor.hidden ||
         menu.open ||
         busy ||
-        (!allowPending && vault.state.pending.length)
+        (!allowPending && pendingCount())
     ) {
         return;
     }
@@ -353,7 +444,7 @@ async function refresh() {
         return;
     }
 
-    const hadChanges = vault.state.pending.some(({ issue }) => !issue);
+    const hadChanges = vault.state.pending.some(({ issue }) => !issue) || vault.state.attachments.some(pendingAttachment);
     checking = true;
     showStatus();
 
@@ -370,13 +461,22 @@ async function refresh() {
 
         if (hadChanges) {
             await vault.sync(workspace);
+            await vault.syncAttachments(workspace);
         } else if (!visibleLocally && !vault.state.pending.length) {
             await vault.update(workspace);
         }
 
         // Keep locally acknowledged rows until the next normal sign-in refresh.
         // A bounded server snapshot can omit an item just saved in the field.
-        synced = hadChanges && vault.state.pending.length === 0;
+        synced = hadChanges && pendingCount() === 0 && unresolvedFileCount() === 0;
+        if (!preparingFiles && workspace.fileSync) {
+            preparingFiles = true;
+            const active = vault;
+            void active.prepareFiles(workspace, () => ready && active === vault && connected()).finally(() => {
+                preparingFiles = false;
+                if (ready && active === vault && visibleLocally && editor.hidden) renderDirectory();
+            });
+        }
 
         if (synced) {
             clearTimeout(hideSync);
@@ -432,6 +532,7 @@ async function refresh() {
 
 form.addEventListener('input', () => {
     dirty = true;
+    if (tab === 'road') renderOfflineMap();
 });
 form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -452,21 +553,25 @@ form.addEventListener('submit', async (event) => {
                 throw new Error('Choose a photo or document first.');
             }
 
-            await vault.attach(
-                String(data.get('maintenance_id')),
-                file.name,
-                String(data.get('description')),
-                await getFile(file),
-            );
-            note(
-                'File saved locally. Upload through the online workspace when connected.',
-            );
+            const record = String(data.get('maintenance_id'));
+            const photo = /\.(jpe?g|png|webp)$/i.test(file.name);
+            const report = String(data.get('monthly_update_id') || '');
+            if (!vault.rows('record').some((row) => String(row.id) === record)) {
+                throw new Error('Choose an available maintenance record.');
+            }
+            if (photo && !vault.rows('monthly').some((row) => String(row.id) === report && String(row.maintenance_id) === record)) {
+                throw new Error('Choose a monthly update for this maintenance record before attaching a photo.');
+            }
+            await vault.attach(record, file.name, String(data.get('description')), await getFile(file),
+                photo ? 'media' : 'document', photo ? report : record,
+                String(data.get('document_title') || file.name).slice(0, 255));
+            note('Saved locally — Waiting for internet connection to synchronize the file.');
         } else {
             const values = Object.fromEntries(data) as Fields;
             validateFields(tab, values, editing);
             await vault.save(tab, values, editing);
             note(
-                'Saved locally. Changes will sync when JaiROADS is available.',
+                'Saved locally — Waiting for internet connection. Changes will synchronize automatically.',
             );
         }
 
@@ -487,6 +592,8 @@ form.addEventListener('submit', async (event) => {
 });
 function selectPage(page: Tab | 'home') {
     leave(() => {
+        detailsOpen = false;
+        el('field-detail').hidden = true;
         home = page === 'home';
 
         if (page !== 'home') {
@@ -537,6 +644,9 @@ window.addEventListener('jairoads-back', (event) => {
     } else if (discard.open) {
         event.preventDefault();
         discard.close('keep');
+    } else if (detailsOpen) {
+        event.preventDefault();
+        closeDetails();
     } else if (!editor.hidden || busy) {
         event.preventDefault();
         leave(closeEditor);

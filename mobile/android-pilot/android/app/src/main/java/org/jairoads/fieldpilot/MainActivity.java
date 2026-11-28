@@ -29,6 +29,8 @@ import org.json.JSONObject;
 
 public final class MainActivity extends Activity {
     private static final int FIELD_FILE = 491;
+    private static final int FIELD_EXPORT = 492;
+    private byte[] exportBytes;
     private static final String ORIGIN = "https://jairoads-dd-review-20261114.onrender.com";
     private static final String HOST = "jairoads-dd-review-20261114.onrender.com";
     private static final String ASSET_PATH = "/jairoads-android-pilot/";
@@ -117,7 +119,9 @@ public final class MainActivity extends Activity {
     }
 
     private void handleMode(String mode) {
-        if ("cache-ready".equals(mode)) {
+        if (mode != null && mode.startsWith("export-file:")) {
+            exportFile(mode.substring("export-file:".length()));
+        } else if ("cache-ready".equals(mode)) {
             cached = true;
         } else if ("show-online".equals(mode)) {
             onlineRequested = true;
@@ -127,6 +131,35 @@ public final class MainActivity extends Activity {
             showLocal();
         } else if ("lock".equals(mode)) {
             resetViews();
+        }
+    }
+
+    private void exportFile(String payload) {
+        if (!cached || exportBytes != null || payload.length() > 6 * 1024 * 1024) return;
+        try {
+            JSONObject file = new JSONObject(payload);
+            String name = file.getString("name").replaceAll("[/\\\\\\p{Cntrl}]", "_");
+            String data = file.getString("data");
+            int comma = data.indexOf(',');
+            if (name.isEmpty() || name.length() > 255 || comma < 0 || !data.startsWith("data:")) return;
+            String type = data.substring(5, comma);
+            if (!type.endsWith(";base64")) return;
+            type = type.substring(0, type.length() - 7);
+            if (!type.equals("application/pdf") && !type.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+                    && !type.equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    && !type.equals("application/vnd.openxmlformats-officedocument.presentationml.presentation")
+                    && !type.equals("image/jpeg") && !type.equals("image/png") && !type.equals("image/webp")) return;
+            byte[] bytes = android.util.Base64.decode(data.substring(comma + 1), android.util.Base64.DEFAULT);
+            if (bytes.length == 0 || bytes.length > 4 * 1024 * 1024) return;
+            exportBytes = bytes;
+            Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType(type);
+            intent.putExtra(Intent.EXTRA_TITLE, name);
+            startActivityForResult(intent, FIELD_EXPORT);
+        } catch (Exception error) {
+            exportBytes = null;
+            android.widget.Toast.makeText(this, "Could not open the local file.", android.widget.Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -172,6 +205,7 @@ public final class MainActivity extends Activity {
 
     private void resetViews() {
         cached = false;
+        exportBytes = null;
         onlineRequested = false;
         hostedReady = false;
         hostedFailed = false;
@@ -326,7 +360,19 @@ public final class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request, result, data);
-        if (request == FIELD_FILE && chooser != null) {
+        if (request == FIELD_EXPORT) {
+            byte[] bytes = exportBytes;
+            exportBytes = null;
+            if (result == RESULT_OK && data != null && data.getData() != null && bytes != null) {
+                try (java.io.OutputStream out = getContentResolver().openOutputStream(data.getData(), "w")) {
+                    if (out == null) throw new java.io.IOException("File unavailable");
+                    out.write(bytes);
+                    android.widget.Toast.makeText(this, "Local file saved.", android.widget.Toast.LENGTH_SHORT).show();
+                } catch (Exception error) {
+                    android.widget.Toast.makeText(this, "Could not save the exported copy.", android.widget.Toast.LENGTH_SHORT).show();
+                }
+            }
+        } else if (request == FIELD_FILE && chooser != null) {
             ValueCallback<Uri[]> pending = chooser;
             chooser = null;
             pending.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(result, data));

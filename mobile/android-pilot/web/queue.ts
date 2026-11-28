@@ -30,7 +30,22 @@ export type Attachment = {
     name: string;
     description: string;
     data: string;
+    kind?: 'document' | 'media';
+    parent?: string;
+    title?: string;
+    receipt?: Receipt;
+    issue?: string;
 };
+export type FileReference = {
+    kind: 'document' | 'media';
+    id: number;
+    record: number;
+    name: string;
+    title: string;
+    version: string;
+    available: boolean;
+};
+type CachedFile = { key: string; data: string };
 type Snapshot = {
     accountId: number;
     role: 'Engineer' | 'Viewer';
@@ -41,6 +56,9 @@ type Snapshot = {
     roads: Row[];
     projects: Row[];
     records: Row[];
+    monthly?: Row[];
+    files?: FileReference[];
+    fileSync?: boolean;
 };
 type Workspace = Snapshot & { csrfToken: string };
 type State = {
@@ -48,6 +66,7 @@ type State = {
     pending: Change[];
     confirmed: Record<string, Receipt>;
     attachments: Attachment[];
+    cachedFiles?: CachedFile[];
 };
 type Encrypted = {
     salt: Uint8Array<ArrayBuffer>;
@@ -63,6 +82,55 @@ const relation = {
     monthly: 'maintenance_id',
 } as const;
 const limit = 24 * 1024 * 1024;
+const fileLimit = 4 * 1024 * 1024;
+const cacheBudget = 8 * 1024 * 1024; // Encoded bytes; leave capacity for pending work.
+const allowedFileTypes = new Set([
+    'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'image/jpeg', 'image/png', 'image/webp',
+]);
+const fileKey = (file: FileReference) => file.kind + ':' + file.id + ':' + file.version;
+function validFileReference(value: FileReference) {
+    return value && ['document', 'media'].includes(value.kind) &&
+        Number.isSafeInteger(value.id) && value.id > 0 &&
+        Number.isSafeInteger(value.record) && value.record > 0 &&
+        typeof value.name === 'string' && typeof value.title === 'string' &&
+        typeof value.version === 'string' && typeof value.available === 'boolean';
+}
+export function pendingAttachment(file: Attachment) {
+    return !file.receipt && !file.issue && Boolean(file.kind && file.parent);
+}
+async function readPrivateFile(file: FileReference) {
+    const response = await fetch('/workspace/files/' + file.kind + '/' + file.id, {
+        credentials: 'same-origin', cache: 'no-store', redirect: 'error',
+        signal: AbortSignal.timeout(20000),
+    });
+    const mime = (response.headers.get('content-type') || '').split(';')[0].trim();
+    if (!response.ok || !allowedFileTypes.has(mime) || !response.body) throw new Error('Private file unavailable.');
+    const reader = response.body.getReader();
+    const chunks: Uint8Array<ArrayBuffer>[] = [];
+    let size = 0;
+    try {
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            size += value.byteLength;
+            if (size > fileLimit) throw new Error('File exceeds the offline size limit.');
+            chunks.push(new Uint8Array(value));
+        }
+    } finally {
+        await reader.cancel().catch(() => {});
+    }
+    if (!size) throw new Error('Empty file.');
+    return await new Promise<string>((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(String(fr.result));
+        fr.onerror = () => reject(fr.error);
+        fr.readAsDataURL(new Blob(chunks, { type: mime }));
+    });
+}
+
 
 export class RequestError extends Error {
     constructor(
@@ -79,7 +147,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
         cache: 'no-store',
         credentials: 'same-origin',
         redirect: 'manual',
-        signal: AbortSignal.timeout(18000),
+        signal: init.signal ?? AbortSignal.timeout(18000),
         headers: { Accept: 'application/json', ...init.headers },
     });
     const json = response.headers
@@ -182,6 +250,9 @@ function snapshotOf(workspace: Workspace): Snapshot {
         roads: workspace.roads,
         projects: workspace.projects,
         records: workspace.records,
+        monthly: Array.isArray(workspace.monthly) ? workspace.monthly : [],
+        files: Array.isArray(workspace.files) ? workspace.files.filter(validFileReference) : [],
+        fileSync: workspace.fileSync === true,
     };
 }
 
@@ -189,6 +260,7 @@ const tables = {
     road: 'roads',
     project: 'projects',
     record: 'records',
+    monthly: 'monthly',
 } as const;
 
 export class Vault {
@@ -309,15 +381,16 @@ export class Vault {
 
     async update(workspace: Workspace) {
         this.assertIdentity(workspace);
-        await this.change((state) => ({
-            ...state,
-            snapshot: snapshotOf(workspace),
-        }));
+        await this.change((state) => {
+            const snapshot = snapshotOf(workspace);
+            const keys = new Set((snapshot.files ?? []).filter((file) => file.available).map(fileKey));
+            return { ...state, snapshot, cachedFiles: (state.cachedFiles ?? []).filter((file) => keys.has(file.key)) };
+        });
     }
 
     rows(kind: keyof typeof tables): Row[] {
         const rows = new Map(
-            this.state.snapshot[tables[kind]].map((row) => [
+            (this.state.snapshot[tables[kind]] ?? []).map((row) => [
                 String(row.id),
                 row,
             ]),
@@ -393,6 +466,9 @@ export class Vault {
         name: string,
         description: string,
         data: string,
+        kind: 'document' | 'media',
+        parent: string,
+        title: string,
     ) {
         await this.change((state) => {
             if (!state.snapshot.canWrite) {
@@ -409,10 +485,90 @@ export class Vault {
                         name,
                         description,
                         data,
+                        kind,
+                        parent,
+                        title,
                     },
                 ],
             };
         });
+    }
+
+    fileData(file: FileReference) {
+        return this.state.cachedFiles?.find((entry) => entry.key === fileKey(file))?.data;
+    }
+
+    async cacheFile(file: FileReference) {
+        if (!file.available || this.fileData(file)) return;
+        const data = await readPrivateFile(file);
+        await this.change((state) => {
+            if (!(state.snapshot.files ?? []).some((entry) => entry.available && fileKey(entry) === fileKey(file))) return state;
+            const current = (state.cachedFiles ?? []).filter((entry) => entry.key !== fileKey(file));
+            const cachedFiles = [...current, { key: fileKey(file), data }];
+            while (cachedFiles.reduce((total, entry) => total + entry.data.length, 0) > cacheBudget) cachedFiles.shift();
+            if (!cachedFiles.some((entry) => entry.key === fileKey(file))) return state;
+            return { ...state, cachedFiles };
+        });
+    }
+
+    // Automatically prepare small authorized files without delaying dashboard login.
+    async prepareFiles(workspace: Workspace, shouldContinue: () => boolean) {
+        this.assertIdentity(workspace);
+        for (const file of (this.state.snapshot.files ?? []).slice(0, 8)) {
+            if (!shouldContinue()) return;
+            if (!file.available || this.fileData(file)) continue;
+            // Don't churn the bounded cache or crowd out encrypted pending work.
+            const used = (this.state.cachedFiles ?? []).reduce((sum, entry) => sum + entry.data.length, 0);
+            if (used >= cacheBudget / 2) break;
+            try { await this.cacheFile(file); } catch { /* Unavailable or oversized: directory shows no local copy. */ }
+        }
+    }
+
+    async syncAttachments(workspace: Workspace) {
+        this.assertIdentity(workspace);
+        if (!workspace.fileSync) return;
+        if (!workspace.canWrite || !workspace.canSync) throw new RequestError(503);
+        for (const item of this.state.attachments.filter(pendingAttachment)) {
+            const parent = item.parent!;
+            const id = /^[1-9]\d*$/.test(parent) ? Number(parent) : this.state.confirmed[parent]?.id;
+            if (!id) continue;
+            const kind = item.kind!;
+            const blob = await (await fetch(item.data)).blob();
+            if (blob.size > fileLimit || !blob.size) continue;
+            const payload = new FormData();
+            payload.set('account_id', String(workspace.accountId));
+            payload.set('operation_id', item.id);
+            payload.set('kind', kind);
+            payload.set('parent_id', String(id));
+            payload.set('document_title', item.title || item.name.slice(0, 255));
+            payload.set('description', item.description);
+            payload.set('file', blob, item.name);
+            let receipt: Receipt;
+            try {
+                receipt = await request<Receipt>('/attachments', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': workspace.csrfToken },
+                    body: payload,
+                    signal: AbortSignal.timeout(60000),
+                });
+            } catch (error) {
+                if (error instanceof RequestError && [403, 409, 422].includes(error.status)) {
+                    await this.change((state) => ({
+                        ...state,
+                        attachments: state.attachments.map((file) => file.id === item.id
+                            ? { ...file, issue: error.message || 'Server validation or authorization needs review. Local file retained.' } : file),
+                    }));
+                    continue;
+                }
+                throw error;
+            }
+            if (receipt.operationId !== item.id || !Number.isSafeInteger(receipt.id) ||
+                receipt.id < 1 || typeof receipt.version !== 'string') throw new RequestError(502);
+            await this.change((state) => ({
+                ...state,
+                attachments: state.attachments.map((file) => file.id === item.id ? { ...file, receipt } : file),
+            }));
+        }
     }
 
     private wire(change: Change): Wire | null {
@@ -527,16 +683,16 @@ export class Vault {
             await this.change((state) => {
                 const snapshot = { ...state.snapshot };
 
-                if (item.kind !== 'monthly') {
+                {
                     const table = tables[item.kind];
-                    const old = snapshot[table].find(
+                    const old = (snapshot[table] ?? []).find(
                         (row) => row.id === receipt.id,
                     );
                     const fields = { ...wire.fields };
                     const geometry = fields.geojson;
                     delete fields.geojson;
                     snapshot[table] = [
-                        ...snapshot[table].filter(
+                        ...(snapshot[table] ?? []).filter(
                             (row) => row.id !== receipt.id,
                         ),
                         {
@@ -561,7 +717,7 @@ export class Vault {
                         item.kind === 'record'
                             ? state.attachments.map((file) =>
                                   file.record === item.entity
-                                      ? { ...file, record: String(receipt.id) }
+                                      ? { ...file, record: String(receipt.id), parent: file.kind === 'document' ? String(receipt.id) : file.parent }
                                       : file,
                               )
                             : state.attachments,

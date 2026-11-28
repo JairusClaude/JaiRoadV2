@@ -827,6 +827,29 @@ class OperationsController extends Controller
         }
     }
 
+    /** Only the authenticated Android field endpoint can set this server-side attribute.
+     * Called inside the existing metadata/audit transaction. A duplicate receipt
+     * rolls back the duplicate metadata; upload-journal recovery owns any orphan.
+     */
+    private function recordFieldAttachmentReceipt(Request $request, array $actor, int $id, string $table): void
+    {
+        $receipt = $request->attributes->get('jairoads.field_attachment_receipt');
+        if (! is_array($receipt)) {
+            return;
+        }
+        abort_unless(DB::transactionLevel() > 0 && (int) $receipt['account_id'] === $actor['account_id'], 403);
+        $key = (string) $receipt['operation_id'];
+        DB::select('select pg_advisory_xact_lock(hashtextextended(?, 0))', ['jairoads-field:'.$actor['account_id'].':'.$key]);
+        $query = DB::table('jairoads_security.android_field_receipts')
+            ->where('account_id', $actor['account_id'])->where('operation_id', $key);
+        abort_if($query->exists(), 409, 'This file operation has already been received.');
+        $version = $this->t($table)->where('id', $id)->selectRaw('xmin::text as version')->first()?->version;
+        abort_unless(is_string($version), 500);
+        DB::table('jairoads_security.android_field_receipts')->insert($receipt + [
+            'entity_id' => $id, 'entity_version' => $version,
+        ]);
+    }
+
     public function uploadDocument(Request $request, AccountIdentityResolver $resolver, PrivateSupabaseStorage $storage): RedirectResponse
     {
         $actor = $this->actor($request, $resolver);
@@ -862,6 +885,7 @@ class OperationsController extends Controller
                 'file_path' => $path, 'uploaded_by' => $actor['account_id'], 'uploaded_at' => now(), 'updated_at' => now(),
             ]);
             $this->audit($actor, 'CREATE', 'MaintenanceDocument', $id, 'Formal maintenance document uploaded.');
+            $this->recordFieldAttachmentReceipt($request, $actor, $id, 'maintenance_documents');
         });
 
         return $this->done('documents', 'Document uploaded.');
@@ -899,6 +923,7 @@ class OperationsController extends Controller
                 'file_path' => $path, 'file_type' => $mime, 'uploaded_by' => $actor['account_id'], 'created_at' => now(),
             ]);
             $this->audit($actor, 'CREATE', 'Media', $id, 'MonthlyUpdate media evidence uploaded.');
+            $this->recordFieldAttachmentReceipt($request, $actor, $id, 'media');
         });
 
         return $this->done('updates', 'Evidence uploaded.');
