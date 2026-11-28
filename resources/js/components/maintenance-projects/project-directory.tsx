@@ -258,10 +258,11 @@ export function ProjectDirectory({
                 tabIndex={0}
             >
                 <table
+                    role="table"
                     className={
                         isViewer
-                            ? 'jr-table jr-project-table-readonly'
-                            : 'jr-table'
+                            ? 'jr-table jr-mobile-table jr-project-table-readonly'
+                            : 'jr-table jr-mobile-table'
                     }
                 >
                     <colgroup>
@@ -269,9 +270,9 @@ export function ProjectDirectory({
                         <col style={{ width: isViewer ? '35%' : '30%' }} />
                         {!isViewer && <col style={{ width: '10%' }} />}
                     </colgroup>
-                    <thead>
-                        <tr>
-                            <th>
+                    <thead role="rowgroup">
+                        <tr role="row">
+                            <th role="columnheader">
                                 <div className="jr-project-line">
                                     {selecting && (
                                         <Checkbox
@@ -300,17 +301,23 @@ export function ProjectDirectory({
                                     <span>Project</span>
                                 </div>
                             </th>
-                            <th className={isViewer ? '!text-left' : undefined}>
+                            <th
+                                role="columnheader"
+                                className={isViewer ? '!text-left' : undefined}
+                            >
                                 Municipality
                             </th>
                             {!isViewer && (
-                                <th className="text-right">Actions</th>
+                                <th role="columnheader" className="text-right">
+                                    Actions
+                                </th>
                             )}
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody role="rowgroup">
                         {projects.data.map((project) => (
                             <tr
+                                role="row"
                                 key={project.id}
                                 data-selected={selected.has(project.id)}
                                 onClick={() =>
@@ -323,7 +330,7 @@ export function ProjectDirectory({
                                           )
                                 }
                             >
-                                <td>
+                                <td role="cell" data-mobile-cell="primary">
                                     <div className="jr-project-line">
                                         {selecting && (
                                             <Checkbox
@@ -384,7 +391,10 @@ export function ProjectDirectory({
                                         </div>
                                     </div>
                                 </td>
-                                <td>
+                                <td
+                                    role="cell"
+                                    data-mobile-label="Municipality"
+                                >
                                     {project.municipality ?? (
                                         <span className="jr-muted">
                                             Coverage not mapped
@@ -393,6 +403,8 @@ export function ProjectDirectory({
                                 </td>
                                 {!isViewer && (
                                     <td
+                                        role="cell"
+                                        data-mobile-cell="actions"
                                         className="text-right"
                                         onClick={(event) =>
                                             event.stopPropagation()

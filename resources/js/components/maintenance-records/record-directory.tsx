@@ -349,7 +349,7 @@ export function RecordDirectory({
                 aria-label="Maintenance Records table"
                 tabIndex={0}
             >
-                <table className="jr-table">
+                <table role="table" className="jr-table jr-mobile-table">
                     <colgroup>
                         {[isViewer ? 35 : 27, 12, 9, 10, 14, 20].map(
                             (width, index) => (
@@ -361,9 +361,9 @@ export function RecordDirectory({
                         )}
                         {!isViewer && <col style={{ width: '8%' }} />}
                     </colgroup>
-                    <thead>
-                        <tr>
-                            <th>
+                    <thead role="rowgroup">
+                        <tr role="row">
+                            <th role="columnheader">
                                 <div className="jr-project-line">
                                     {selecting && (
                                         <Checkbox
@@ -392,17 +392,18 @@ export function RecordDirectory({
                                     <span>Maintenance Project</span>
                                 </div>
                             </th>
-                            <th>Municipality</th>
-                            <th>Period</th>
-                            <th>Status</th>
-                            <th>Managing Engineer</th>
-                            <th>Maintenance Timeline</th>
-                            {!isViewer && <th>Actions</th>}
+                            <th role="columnheader">Municipality</th>
+                            <th role="columnheader">Period</th>
+                            <th role="columnheader">Status</th>
+                            <th role="columnheader">Managing Engineer</th>
+                            <th role="columnheader">Maintenance Timeline</th>
+                            {!isViewer && <th role="columnheader">Actions</th>}
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody role="rowgroup">
                         {records.data.map((record) => (
                             <tr
+                                role="row"
                                 key={record.id}
                                 data-record-id={record.id}
                                 data-selected={selected.has(record.id)}
@@ -413,7 +414,7 @@ export function RecordDirectory({
                                           onNavigate(record.details_url)
                                 }
                             >
-                                <td>
+                                <td role="cell" data-mobile-cell="primary">
                                     <div className="jr-project-line">
                                         {selecting && (
                                             <Checkbox
@@ -480,17 +481,24 @@ export function RecordDirectory({
                                         </div>
                                     </div>
                                 </td>
-                                <td>
+                                <td
+                                    role="cell"
+                                    data-mobile-label="Municipality"
+                                >
                                     {record.project.municipality ?? (
                                         <span className="jr-muted">
                                             Coverage not mapped
                                         </span>
                                     )}
                                 </td>
-                                <td className="jr-record-period">
+                                <td
+                                    role="cell"
+                                    data-mobile-label="Period"
+                                    className="jr-record-period"
+                                >
                                     {record.quarter} {record.year}
                                 </td>
-                                <td>
+                                <td role="cell" data-mobile-label="Status">
                                     <span
                                         className="jr-status"
                                         data-status={record.status}
@@ -498,12 +506,18 @@ export function RecordDirectory({
                                         {record.status}
                                     </span>
                                 </td>
-                                <td>
+                                <td
+                                    role="cell"
+                                    data-mobile-label="Managing engineer"
+                                >
                                     {record.managing_engineer
                                         ? engineerName(record.managing_engineer)
                                         : 'NULL (unassigned)'}
                                 </td>
-                                <td>
+                                <td
+                                    role="cell"
+                                    data-mobile-label="Maintenance timeline"
+                                >
                                     <span>{date(record.start_date)}</span>
                                     <div className="jr-project-id">
                                         {record.status === 'Completed'
@@ -513,6 +527,8 @@ export function RecordDirectory({
                                 </td>
                                 {!isViewer && (
                                     <td
+                                        role="cell"
+                                        data-mobile-cell="actions"
                                         className="text-right"
                                         onClick={(event) =>
                                             event.stopPropagation()

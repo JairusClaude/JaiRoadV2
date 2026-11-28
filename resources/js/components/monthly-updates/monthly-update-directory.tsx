@@ -298,7 +298,10 @@ export function MonthlyUpdateDirectory({
                     aria-label="Monthly updates table"
                     tabIndex={0}
                 >
-                    <table className="jr-table jr-monthly-table">
+                    <table
+                        role="table"
+                        className="jr-table jr-mobile-table jr-monthly-table"
+                    >
                         <colgroup>
                             <col style={{ width: '20%' }} />
                             <col style={{ width: isViewer ? '44%' : '35%' }} />
@@ -306,9 +309,9 @@ export function MonthlyUpdateDirectory({
                             <col style={{ width: '18%' }} />
                             {!isViewer && <col style={{ width: '9%' }} />}
                         </colgroup>
-                        <thead>
-                            <tr>
-                                <th>
+                        <thead role="rowgroup">
+                            <tr role="row">
+                                <th role="columnheader">
                                     <div className="jr-project-line">
                                         {selecting && (
                                             <Checkbox
@@ -337,17 +340,23 @@ export function MonthlyUpdateDirectory({
                                         <span>Update Month</span>
                                     </div>
                                 </th>
-                                <th>Maintenance Project</th>
-                                <th>Progress</th>
-                                <th>Last Updated</th>
+                                <th role="columnheader">Maintenance Project</th>
+                                <th role="columnheader">Progress</th>
+                                <th role="columnheader">Last Updated</th>
                                 {!isViewer && (
-                                    <th className="text-right">Actions</th>
+                                    <th
+                                        role="columnheader"
+                                        className="text-right"
+                                    >
+                                        Actions
+                                    </th>
                                 )}
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody role="rowgroup">
                             {updates.data.map((item) => (
                                 <tr
+                                    role="row"
                                     key={item.id}
                                     data-update-id={item.id}
                                     data-selected={selected.has(item.id)}
@@ -357,7 +366,7 @@ export function MonthlyUpdateDirectory({
                                             : onAction('Details', item)
                                     }
                                 >
-                                    <td>
+                                    <td role="cell" data-mobile-cell="primary">
                                         <div className="jr-project-line">
                                             {selecting && (
                                                 <Checkbox
@@ -393,7 +402,10 @@ export function MonthlyUpdateDirectory({
                                             </button>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Maintenance project"
+                                    >
                                         <div className="jr-project-title">
                                             {item.project.project_title}
                                         </div>
@@ -402,19 +414,27 @@ export function MonthlyUpdateDirectory({
                                             {item.record.year}
                                         </div>
                                     </td>
-                                    <td>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Progress"
+                                    >
                                         <MonthlyProgress
                                             value={item.progress_percentage}
                                             label={`Progress for update ${item.id}`}
                                         />
                                     </td>
-                                    <td>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Last updated"
+                                    >
                                         <time dateTime={item.updated_at}>
                                             {modifiedDate(item.updated_at)}
                                         </time>
                                     </td>
                                     {!isViewer && (
                                         <td
+                                            role="cell"
+                                            data-mobile-cell="actions"
                                             className="text-right"
                                             onClick={(event) =>
                                                 event.stopPropagation()

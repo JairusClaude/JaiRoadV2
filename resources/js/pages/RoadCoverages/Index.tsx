@@ -411,7 +411,7 @@ export default function Index({
                 </div>
 
                 {/* Main White Content Container matching Maintenance Documents smooth fully-rounded top corners */}
-                <main className="jr-road-coverage-main-container relative -mx-7 -mt-3.5 rounded-t-[20px] bg-white px-7 pt-6 pb-8 shadow-sm">
+                <main className="jr-road-coverage-main-container relative -mx-7 -mt-3.5 rounded-t-[20px] bg-white px-7 pb-8 pt-6 shadow-sm">
                     {/* 1. Metric Cards */}
                     <section
                         aria-label="Road coverage statistics"
@@ -509,7 +509,7 @@ export default function Index({
                     {/* 3. Road Coverages Directory Table (Separated Cards Layout) */}
                     <section
                         aria-label="Road coverages directory"
-                        className="jr-table-card-container rounded-t-[20px] rounded-b-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm"
+                        className="jr-table-card-container rounded-b-2xl rounded-t-[20px] border border-[#E2E8F0] bg-white p-5 shadow-sm"
                     >
                         <form
                             className="jr-filters"
@@ -676,7 +676,10 @@ export default function Index({
                             aria-busy={busy}
                             tabIndex={0}
                         >
-                            <table className="jr-table jr-road-coverage-table">
+                            <table
+                                role="table"
+                                className="jr-table jr-mobile-table jr-road-coverage-table"
+                            >
                                 <colgroup>
                                     {selecting && (
                                         <col style={{ width: '48px' }} />
@@ -698,10 +701,13 @@ export default function Index({
                                         <col style={{ width: '7%' }} />
                                     )}
                                 </colgroup>
-                                <thead>
-                                    <tr>
+                                <thead role="rowgroup">
+                                    <tr role="row">
                                         {selecting && (
-                                            <th className="w-12 px-3 text-center">
+                                            <th
+                                                role="columnheader"
+                                                className="w-12 px-3 text-center"
+                                            >
                                                 <Checkbox
                                                     aria-label="Select all road coverages on this page"
                                                     checked={
@@ -728,21 +734,33 @@ export default function Index({
                                                 />
                                             </th>
                                         )}
-                                        <th>Road Coverage</th>
-                                        <th>Municipality</th>
-                                        <th>Length</th>
-                                        <th>Pavement Type</th>
-                                        <th>Road Condition</th>
+                                        <th role="columnheader">
+                                            Road Coverage
+                                        </th>
+                                        <th role="columnheader">
+                                            Municipality
+                                        </th>
+                                        <th role="columnheader">Length</th>
+                                        <th role="columnheader">
+                                            Pavement Type
+                                        </th>
+                                        <th role="columnheader">
+                                            Road Condition
+                                        </th>
                                         {!isViewer && (
-                                            <th className="text-right">
+                                            <th
+                                                role="columnheader"
+                                                className="text-right"
+                                            >
                                                 Actions
                                             </th>
                                         )}
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody role="rowgroup">
                                     {coverages.data.map((coverage) => (
                                         <tr
+                                            role="row"
                                             key={coverage.id}
                                             data-road-coverage-id={coverage.id}
                                             data-selected={selected.has(
@@ -765,6 +783,8 @@ export default function Index({
                                         >
                                             {selecting && (
                                                 <td
+                                                    role="cell"
+                                                    data-mobile-cell="selection"
                                                     className="w-12 px-3 text-center"
                                                     onClick={(event) =>
                                                         event.stopPropagation()
@@ -781,7 +801,10 @@ export default function Index({
                                                     />
                                                 </td>
                                             )}
-                                            <td>
+                                            <td
+                                                role="cell"
+                                                data-mobile-cell="primary"
+                                            >
                                                 <Link
                                                     className="jr-project-title"
                                                     href={editUrl(
@@ -802,14 +825,29 @@ export default function Index({
                                                     {coverage.road_name}
                                                 </Link>
                                             </td>
-                                            <td>
+                                            <td
+                                                role="cell"
+                                                data-mobile-label="Municipality"
+                                            >
                                                 {coverage.lgu.municipality_name}
                                             </td>
-                                            <td className="whitespace-nowrap">
+                                            <td
+                                                role="cell"
+                                                data-mobile-label="Length"
+                                                className="whitespace-nowrap"
+                                            >
                                                 {length(coverage.kilometers)}
                                             </td>
-                                            <td>{coverage.pavement_type}</td>
-                                            <td>
+                                            <td
+                                                role="cell"
+                                                data-mobile-label="Pavement type"
+                                            >
+                                                {coverage.pavement_type}
+                                            </td>
+                                            <td
+                                                role="cell"
+                                                data-mobile-label="Road condition"
+                                            >
                                                 <span
                                                     className="jr-coverage-condition"
                                                     data-condition={
@@ -821,6 +859,8 @@ export default function Index({
                                             </td>
                                             {!isViewer && (
                                                 <td
+                                                    role="cell"
+                                                    data-mobile-cell="actions"
                                                     className="text-right"
                                                     onClick={(event) =>
                                                         event.stopPropagation()

@@ -65,7 +65,11 @@ export async function verifyMobileWorkspaces({
             const paths = [
                 ...common,
                 ...(privileged
-                    ? ['/workspace/users', '/workspace/audit-logs', ui + '/lgus/create']
+                    ? [
+                          '/workspace/users',
+                          '/workspace/audit-logs',
+                          ui + '/lgus/create',
+                      ]
                     : []),
                 ...(role === 'viewer' ? [] : forms),
             ];
@@ -80,9 +84,14 @@ export async function verifyMobileWorkspaces({
 
                 for (const width of [320, 375, 390, 768, 1024, 1440, 1920]) {
                     await page.setViewportSize({ width, height: 844 });
-                    await page.evaluate(() => new Promise(resolve => {
-                        requestAnimationFrame(() => requestAnimationFrame(resolve));
-                    }));
+                    await page.evaluate(
+                        () =>
+                            new Promise((resolve) => {
+                                requestAnimationFrame(() =>
+                                    requestAnimationFrame(resolve),
+                                );
+                            }),
+                    );
 
                     if (role === 'admin' && path === '/workspace/dashboard') {
                         assert.equal(
@@ -306,6 +315,72 @@ export async function verifyMobileWorkspaces({
             assert.ok(
                 geometry.touch > 0 && geometry.scroll <= 391,
                 role + ' touch layout',
+            );
+            const projects = phone.getByRole('region', {
+                name: 'Maintenance Projects table',
+            });
+            const rows = projects.getByRole('table').locator('tbody tr');
+            const firstProject = rows.first();
+            await firstProject.waitFor();
+            assert.ok(
+                await projects.evaluate(
+                    (element) =>
+                        element.scrollWidth <= element.clientWidth + 1 &&
+                        getComputedStyle(element.querySelector('tbody tr'))
+                            .display === 'grid',
+                ),
+                role + ' can read project fields without swiping sideways',
+            );
+            const municipality = firstProject.locator(
+                '[data-mobile-label="Municipality"]',
+            );
+            await municipality.waitFor();
+            assert.match(
+                await municipality.evaluate(
+                    (element) => getComputedStyle(element, '::before').content,
+                ),
+                /Municipality/,
+            );
+            const action = firstProject.locator('.jr-action-trigger');
+
+            if (await action.isVisible()) {
+                const button = await action.boundingBox();
+                assert.ok(
+                    button && button.width >= 44 && button.height >= 44,
+                    role + ' project actions have a phone-sized touch target',
+                );
+            }
+
+            const selectProjects = phone.getByRole('button', {
+                name: 'Select projects',
+                exact: true,
+            });
+
+            if (
+                (await selectProjects.isVisible()) &&
+                (await selectProjects.isEnabled())
+            ) {
+                await selectProjects.tap();
+                await projects
+                    .getByRole('checkbox', {
+                        name: 'Select all projects on this page',
+                    })
+                    .waitFor({ state: 'visible' });
+                await phone
+                    .getByRole('button', {
+                        name: 'Cancel selection',
+                        exact: true,
+                    })
+                    .tap();
+            }
+
+            const header = phone.locator('.jr-global-header');
+            assert.equal(
+                await header.evaluate(
+                    (element) => getComputedStyle(element).position,
+                ),
+                'sticky',
+                role + ' navigation stays available on long pages',
             );
             await phone
                 .getByRole('button', { name: 'Open navigation', exact: true })

@@ -384,7 +384,10 @@ export default function Index({
                     aria-label="LGU table"
                     tabIndex={0}
                 >
-                    <table className="jr-table jr-lgu-table">
+                    <table
+                        role="table"
+                        className="jr-table jr-mobile-table jr-lgu-table"
+                    >
                         <colgroup>
                             {selecting && <col style={{ width: '48px' }} />}
                             <col style={{ width: selecting ? '25%' : '28%' }} />
@@ -393,10 +396,13 @@ export default function Index({
                             <col style={{ width: isViewer ? '30%' : '23%' }} />
                             {!isViewer && <col style={{ width: '7%' }} />}
                         </colgroup>
-                        <thead>
-                            <tr>
+                        <thead role="rowgroup">
+                            <tr role="row">
                                 {selecting && (
-                                    <th className="w-12 px-3 text-center">
+                                    <th
+                                        role="columnheader"
+                                        className="w-12 px-3 text-center"
+                                    >
                                         <Checkbox
                                             aria-label="Select all LGUs on this page"
                                             checked={
@@ -420,18 +426,24 @@ export default function Index({
                                         />
                                     </th>
                                 )}
-                                <th>Municipality</th>
-                                <th>Province</th>
-                                <th>Region</th>
-                                <th>Municipal Mayor</th>
+                                <th role="columnheader">Municipality</th>
+                                <th role="columnheader">Province</th>
+                                <th role="columnheader">Region</th>
+                                <th role="columnheader">Municipal Mayor</th>
                                 {!isViewer && (
-                                    <th className="text-right">Actions</th>
+                                    <th
+                                        role="columnheader"
+                                        className="text-right"
+                                    >
+                                        Actions
+                                    </th>
                                 )}
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody role="rowgroup">
                             {lgus.data.map((lgu) => (
                                 <tr
+                                    role="row"
                                     key={lgu.id}
                                     data-lgu-id={lgu.id}
                                     data-selected={selected.has(lgu.id)}
@@ -452,6 +464,8 @@ export default function Index({
                                 >
                                     {selecting && (
                                         <td
+                                            role="cell"
+                                            data-mobile-cell="selection"
                                             className="w-12 px-3 text-center"
                                             onClick={(event) =>
                                                 event.stopPropagation()
@@ -466,7 +480,7 @@ export default function Index({
                                             />
                                         </td>
                                     )}
-                                    <td>
+                                    <td role="cell" data-mobile-cell="primary">
                                         <Link
                                             className="jr-project-title"
                                             href={workspaceHref(
@@ -487,11 +501,25 @@ export default function Index({
                                             {lgu.municipality_name}
                                         </Link>
                                     </td>
-                                    <td>{lgu.province}</td>
-                                    <td>{lgu.region}</td>
-                                    <td>{mayorName(lgu)}</td>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Province"
+                                    >
+                                        {lgu.province}
+                                    </td>
+                                    <td role="cell" data-mobile-label="Region">
+                                        {lgu.region}
+                                    </td>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Municipal mayor"
+                                    >
+                                        {mayorName(lgu)}
+                                    </td>
                                     {!isViewer && (
                                         <td
+                                            role="cell"
+                                            data-mobile-cell="actions"
                                             className="text-right"
                                             onClick={(event) =>
                                                 event.stopPropagation()

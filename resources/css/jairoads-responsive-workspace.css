@@ -1,5 +1,4 @@
-/* Shared responsive layout; no role palette, authorization or desktop geometry changes.
-   Tables keep their native semantics and every column, inside their own scroll region. */
+/* Shared responsive layout. Wide comparison tables retain their own scroll region. */
 .jr-app > .jr-stage,
 .jr-app > .jr-stage > .jr-content,
 .jr-app > .jr-stage .jr-workspace,
@@ -334,6 +333,16 @@
     }
 }
 @media (max-width: 639px) {
+    html:has(.jr-app > .jr-stage) {
+        scroll-padding-top: 64px;
+    }
+    .jr-app > .jr-stage > .jr-global-header {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        min-height: 56px;
+        padding-block: 5px;
+    }
     .jr-app
         > .jr-stage
         .jr-global-header
@@ -408,7 +417,7 @@
     .jr-stage .jr-monthly-directory .jr-filter-row {
         display: grid;
         width: 100%;
-        grid-template-columns: minmax(0, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
         gap: 8px;
     }
     .jr-stage .jr-filter-row > * {
@@ -438,7 +447,10 @@
     }
     .jr-stage :is(.jr-table-toolbar, .jr-table-footer) {
         gap: 10px;
-        align-items: flex-start;
+        align-items: center;
+    }
+    .jr-stage .jr-table-toolbar [data-slot='button'] {
+        min-height: 44px;
     }
     .jr-stage .jr-table-footer nav {
         display: flex;
@@ -468,6 +480,113 @@
         color: inherit;
         opacity: 0.78;
         line-height: 1.4;
+    }
+    .jr-stage .jr-table-wrap:has(> .jr-mobile-table)::before {
+        content: none;
+    }
+    .jr-stage .jr-mobile-table {
+        --jr-mobile-row-surface: #fff;
+        --jr-mobile-row-border: #dbe2eb;
+        display: block;
+        min-width: 0;
+        width: 100%;
+    }
+    html.dark .jr-stage .jr-mobile-table {
+        --jr-mobile-row-surface: var(--jr-dark-surface);
+        --jr-mobile-row-border: var(--jr-dark-border);
+    }
+    .jr-stage .jr-mobile-table colgroup {
+        display: none;
+    }
+    .jr-stage .jr-mobile-table :is(thead, thead tr, tbody) {
+        display: block;
+    }
+    /* The clipped headings still describe the cells to assistive technology. */
+    .jr-stage .jr-mobile-table thead th:not(:has([role='checkbox'])) {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+    .jr-stage .jr-mobile-table thead th:has([role='checkbox']) {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 44px;
+        margin-bottom: 8px;
+        border-radius: 10px;
+    }
+    .jr-stage .jr-mobile-table thead th:has(> [role='checkbox'])::after {
+        content: 'Select all';
+        content: 'Select all' / '';
+    }
+    .jr-stage .jr-mobile-table tbody tr {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+        gap: 10px 14px;
+        margin-bottom: 10px;
+        padding: 12px;
+        border: 1px solid var(--jr-mobile-row-border);
+        border-radius: 12px;
+        background-color: var(--jr-mobile-row-surface);
+    }
+    .jr-stage .jr-mobile-table tbody tr[data-selected='true'] {
+        border-color: var(--jr-display-accent, var(--ring));
+        background-color: var(--jr-display-soft, var(--muted));
+    }
+    .jr-stage .jr-mobile-table tbody td {
+        display: block;
+        width: auto;
+        min-width: 0;
+        height: auto;
+        padding: 0;
+        border-block-end: 0;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        font-size: 14px;
+    }
+    .jr-stage .jr-mobile-table td[data-mobile-label]::before {
+        content: attr(data-mobile-label);
+        content: attr(data-mobile-label) / '';
+        display: block;
+        margin-bottom: 2px;
+        color: #475569;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    html.dark .jr-stage .jr-mobile-table td[data-mobile-label]::before {
+        color: var(--jr-dark-muted);
+    }
+    .jr-stage .jr-mobile-table [data-mobile-cell='primary'] {
+        grid-column: 1 / -1;
+    }
+    .jr-stage .jr-mobile-table [data-mobile-cell='primary'] .jr-project-title {
+        font-size: 15px;
+    }
+    .jr-stage
+        .jr-mobile-table
+        tr:has([data-mobile-cell='actions'] > button)
+        [data-mobile-cell='primary'] {
+        min-height: 34px;
+        padding-inline-end: 48px;
+    }
+    .jr-stage .jr-mobile-table [data-mobile-cell='actions'] {
+        position: absolute;
+        top: 4px;
+        inset-inline-end: 4px;
+    }
+    .jr-stage .jr-mobile-table [data-mobile-cell='actions'] .jr-action-trigger {
+        min-width: 44px;
+        min-height: 44px;
+    }
+    .jr-stage .jr-mobile-table [data-mobile-cell='selection'] {
+        grid-column: 1 / -1;
+        justify-self: start;
     }
     .jr-stage :is(.jr-table, .um-table) :is(th, td) {
         line-height: 1.4;
@@ -501,6 +620,37 @@
         min-width: 0;
         padding: 12px;
         overflow-wrap: anywhere;
+    }
+    .jr-app > .jr-stage .jr-metrics-grid .jr-metric-card {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-content: start;
+        align-items: center;
+        gap: 4px 6px;
+        padding: 12px;
+    }
+    .jr-app > .jr-stage .jr-metrics-grid .jr-metric-card .jr-metric-label,
+    .jr-app
+        > .jr-stage
+        .jr-metrics-grid
+        .jr-metric-card
+        .jr-metric-description {
+        grid-column: 1 / -1;
+        min-height: 0;
+        margin: 0;
+        padding: 0;
+    }
+    .jr-stage .jr-metrics-grid .jr-metric-value {
+        grid-column: 1;
+        grid-row: 2;
+        margin: 0;
+    }
+    .jr-stage .jr-metrics-grid .jr-metric-icon {
+        position: static;
+        grid-column: 2;
+        grid-row: 2;
+        width: 32px;
+        height: 32px;
     }
     .jr-stage
         :is(

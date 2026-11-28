@@ -217,7 +217,10 @@ export default function Index({
                     aria-label="Maintenance documents table"
                     tabIndex={0}
                 >
-                    <table className="jr-table jr-document-table">
+                    <table
+                        role="table"
+                        className="jr-table jr-mobile-table jr-document-table"
+                    >
                         <colgroup>
                             {[isViewer ? 34 : 27, 24, 16, 12, 14].map(
                                 (width, i) => (
@@ -229,9 +232,9 @@ export default function Index({
                             )}
                             {!isViewer && <col style={{ width: '7%' }} />}
                         </colgroup>
-                        <thead>
-                            <tr>
-                                <th>
+                        <thead role="rowgroup">
+                            <tr role="row">
+                                <th role="columnheader">
                                     <div className="jr-project-line">
                                         {selecting && (
                                             <Checkbox
@@ -263,18 +266,24 @@ export default function Index({
                                         Document
                                     </div>
                                 </th>
-                                <th>Maintenance Project</th>
-                                <th>Maintenance Record</th>
-                                <th>Uploaded By</th>
-                                <th>Date Uploaded</th>
+                                <th role="columnheader">Maintenance Project</th>
+                                <th role="columnheader">Maintenance Record</th>
+                                <th role="columnheader">Uploaded By</th>
+                                <th role="columnheader">Date Uploaded</th>
                                 {!isViewer && (
-                                    <th className="text-right">Actions</th>
+                                    <th
+                                        role="columnheader"
+                                        className="text-right"
+                                    >
+                                        Actions
+                                    </th>
                                 )}
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody role="rowgroup">
                             {documents.data.map((doc) => (
                                 <tr
+                                    role="row"
                                     key={doc.id}
                                     data-document-id={doc.id}
                                     data-selected={selected.has(doc.id)}
@@ -288,7 +297,7 @@ export default function Index({
                                               )
                                     }
                                 >
-                                    <td>
+                                    <td role="cell" data-mobile-cell="primary">
                                         <div className="jr-project-line">
                                             {selecting && (
                                                 <Checkbox
@@ -338,14 +347,34 @@ export default function Index({
                                             </div>
                                         </div>
                                     </td>
-                                    <td>{doc.project.project_title}</td>
-                                    <td>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Maintenance project"
+                                    >
+                                        {doc.project.project_title}
+                                    </td>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Maintenance record"
+                                    >
                                         {doc.record.quarter} {doc.record.year}
                                     </td>
-                                    <td>{doc.uploaded_by}</td>
-                                    <td>{documentDate(doc.uploaded_at)}</td>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Uploaded by"
+                                    >
+                                        {doc.uploaded_by}
+                                    </td>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Date uploaded"
+                                    >
+                                        {documentDate(doc.uploaded_at)}
+                                    </td>
                                     {!isViewer && (
                                         <td
+                                            role="cell"
+                                            data-mobile-cell="actions"
                                             className="text-right"
                                             onClick={(e) => e.stopPropagation()}
                                         >
