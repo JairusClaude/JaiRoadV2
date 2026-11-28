@@ -46,11 +46,22 @@ try {
         .fill('Disposable-Test!123');
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     await page.waitForURL(/workspace\/dashboard/);
-    await page.goto(createUrl);
-    await page
-        .getByRole('button', { name: 'Select month and year', exact: true })
+    const createResponse = await page.goto(createUrl);
+    assert.equal(createResponse?.status(), 200);
+    await page.getByRole('combobox', { name: /^Reporting Month/ }).click();
+    const reportingPicker = page.getByRole('dialog', {
+        name: 'Choose reporting month and year',
+    });
+    await reportingPicker
+        .getByRole('button', { name: /^Change reporting year,/ })
         .click();
-    await page.getByRole('button', { name: 'April 2026', exact: true }).click();
+    await reportingPicker.getByLabel('Go to year').fill('2026');
+    await reportingPicker
+        .getByRole('button', { name: 'Go', exact: true })
+        .click();
+    await reportingPicker
+        .getByRole('button', { name: 'April 2026', exact: true })
+        .click();
     await page.getByLabel(/^Progress Percentage/).fill('31.5');
     await page.getByLabel(/^Progress Summary/).fill(summary);
     const consent = (page) =>
