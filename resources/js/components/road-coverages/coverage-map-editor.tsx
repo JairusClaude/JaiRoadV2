@@ -20,6 +20,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { androidWorkspace } from '@/lib/android-workspace-bridge';
 import { watchBasemap } from '@/lib/road-coverages/basemap';
 import type { BasemapStatus } from '@/lib/road-coverages/basemap';
 import { attachFieldBasemap } from '@/lib/road-coverages/field-basemap';
@@ -590,18 +591,24 @@ function EditableCoverageMapEditor({
         }
 
         try {
-            if (!services?.routing) {
-                throw new Error(
-                    'Routing is not configured. Trace this portion manually.',
+            const a = state.points[i], b = state.points[i + 1];
+            const offline = androidWorkspace()?.status().offline === true;
+            if (offline && alternatives) {
+                setNotice('Offline map provides one road alignment suggestion. Trace an alternative manually.');
+                return;
+            }
+            let response;
+            if (offline) {
+                const { offlineAlignment } = await import('@/lib/road-coverages/offline-network.mjs');
+                const line = await offlineAlignment(a,b,c.signal);
+                response = {code:line?'Ok':'NoRoute',routes:line?[{geometry:{type:'LineString',coordinates:line}}]:[]};
+            } else {
+                if (!services?.routing) throw new Error('Routing is not configured. Trace this portion manually.');
+                response = await json(
+                    `${services.routing}/${a.join(',')};${b.join(',')}?overview=full&geometries=geojson&alternatives=${alternatives}&steps=false&radiuses=50;50`,
+                    c.signal,
                 );
             }
-
-            const a = state.points[i],
-                b = state.points[i + 1];
-            const response = await json(
-                `${services.routing}/${a.join(',')};${b.join(',')}?overview=full&geometries=geojson&alternatives=${alternatives}&steps=false&radiuses=50;50`,
-                c.signal,
-            );
 
             if (c.signal.aborted || generation !== generations.current[i]) {
                 return;
@@ -639,6 +646,7 @@ function EditableCoverageMapEditor({
                 const next = structuredClone(current.current);
                 acceptAutomatic(next, i, lines[0]);
                 apply(next);
+                if (offline) setNotice('Offline road alignment suggestion · OpenStreetMap. Verify road position and condition in the field.');
             }
         } catch (e) {
             if (c.signal.aborted || generation !== generations.current[i]) {
@@ -1673,6 +1681,13 @@ function EditableCoverageMapEditor({
                         type="button"
                         onClick={async () => {
                             try {
+                                if (androidWorkspace()?.status().offline) {
+                                    const { offlinePlaceSearch } = await import('@/lib/road-coverages/offline-network.mjs');
+                                    const matches = await offlinePlaceSearch(query);
+                                    setResults(matches.map(entry => ({p:entry.point,label:entry.name})));
+                                    setSearchNotice(matches.length?'Offline road and place index.':'No matching cached place.');
+                                    return;
+                                }
                                 if (!services?.geocoding) {
                                     throw new Error(
                                         'Location search is not configured.',
@@ -1731,8 +1746,7 @@ function EditableCoverageMapEditor({
                                 </button>
                             ))}
                             <small>
-                                {searchNotice} Place search: Photon /
-                                OpenStreetMap
+                                {searchNotice} Place search: {androidWorkspace()?.status().offline ? 'Offline OpenStreetMap' : 'Photon / OpenStreetMap'}
                             </small>
                         </div>
                     )}

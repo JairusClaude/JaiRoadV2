@@ -39,3 +39,7 @@ A one-off isolated review workflow renders Davao de Oro roads from the OpenStree
 ### v0.5.2 expanded offline review
 
 New clients request an expanded, role-authorized workspace snapshot; assigned work and related project/road parents are prioritized. Bounded record and file counts remain, with visible partial-cache state. Encrypted file budgets can expand based on device quota, up to 2 GiB per category, reserving space for pending work. Existing documents support offline metadata revisions using the same server-side authorization and version-checked receipt protocol; file removal/replacement stays online-only. No production data migrations are required.
+
+### Broader offline map review
+
+The proposed bundled dataset now renders roads to native zoom 15, satellite imagery to native zoom 14 (approximately 10 m source resolution), and a machine-readable, attributed ODbL road junction network with named roads and settlements. The offline editor offers local lookup and a single connected road alignment suggestion, with manual tracing when there is no nearby mapped junction or connected path. This is not turn-by-turn driving navigation, a passability guarantee, or survey-grade alignment. The build must verify all raster assets and the network digest.

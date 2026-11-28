@@ -11,7 +11,7 @@ import sys
 ROOT = pathlib.Path("mobile/android-pilot/build/web/bundled-maps")
 LIMIT = 180 * 1024 * 1024
 BBOX = (125.65, 7.05, 126.32, 8.02)
-VERSION = "2025-review-v1"
+VERSION = "2025-review-v2"
 
 
 def verify():
@@ -25,6 +25,13 @@ def verify():
             raw = path.read_bytes()
             assert len(raw) == tile["bytes"] and hashlib.sha256(raw).hexdigest() == tile["sha256"]
             total += len(raw)
+    network = data["network"]
+    network_bytes = (ROOT / "road-network.json").read_bytes()
+    assert len(network_bytes) == network["bytes"] and hashlib.sha256(network_bytes).hexdigest() == network["sha256"]
+    graph = json.loads(network_bytes)
+    assert len(graph["points"]) > 1000 and len(graph["edges"]) > 1000 and graph["places"]
+    assert len(network_bytes) <= 48 * 1024 * 1024
+    total += len(network_bytes)
     assert total <= LIMIT
     print("Verified", len(data["packs"]), "real data packs;", total, "bytes", flush=True)
 
@@ -104,13 +111,17 @@ w,s,e,n=BBOX
 roads=[]
 water=[]
 places=[]
+road_points={}
+road_edges=set()
+road_names={}
+route_types={'motorway','trunk','primary','secondary','tertiary','unclassified','residential','living_street','service','track','motorway_link','trunk_link','primary_link','secondary_link','tertiary_link'}
 source_url="https://download.openstreetmap.fr/extracts/asia/philippines/davao_region-latest.osm.pbf"
 
 class RegionSource(osmium.SimpleHandler):
     def node(self,node):
         place=node.tags.get("place")
         name=node.tags.get("name")
-        if place in ("city","town","village") and name and node.location.valid():
+        if place in ("city","town","village","hamlet","suburb","neighbourhood") and name and node.location.valid():
             lon,lat=node.location.lon,node.location.lat
             if w<=lon<=e and s<=lat<=n:
                 places.append({"lat":lat,"lon":lon,"tags":{"place":place,"name":name}})
@@ -128,6 +139,25 @@ class RegionSource(osmium.SimpleHandler):
         if highway:
             item["tags"]["highway"]=highway
             roads.append(item)
+            name=way.tags.get("name")
+            if name:
+                for lon,lat in points:
+                    if w<=lon<=e and s<=lat<=n:
+                        road_names.setdefault(name,(round(lon,6),round(lat,6)))
+                        break
+            # Shared OSM node identities preserve actual road junction topology.
+            # Undirected road geometry suggestions are not vehicle navigation.
+            if highway in route_types and way.tags.get("access") not in ("private","no"):
+                previous=None
+                for node in way.nodes:
+                    if not node.location.valid() or not (w<=node.lon<=e and s<=node.lat<=n):
+                        previous=None
+                        continue
+                    ref=node.ref
+                    road_points[ref]=(round(node.lon,6),round(node.lat,6))
+                    if previous is not None and previous!=ref:
+                        road_edges.add(tuple(sorted((previous,ref))))
+                    previous=ref
         elif waterway:
             item["tags"]["waterway"]=waterway
             water.append(item)
@@ -149,6 +179,20 @@ with TemporaryDirectory() as temporary:
     source_hash=digest.hexdigest()
 assert len(roads)>200 and places,"Unexpectedly sparse regional road extract"
 print("OSM regional source",len(roads),"roads,",len(places),"settlements,",size,"bytes",flush=True)
+ROOT.mkdir(parents=True,exist_ok=True)
+node_ids=sorted(road_points)
+assert 1000 < len(node_ids) <= 650000 and 1000 < len(road_edges) <= 1000000
+index={ref:i for i,ref in enumerate(node_ids)}
+graph={"points":[road_points[ref] for ref in node_ids],
+       "edges":[[index[a],index[b]] for a,b in sorted(road_edges)],
+       "places":[{"name":p["tags"]["name"][:160],"point":[p["lon"],p["lat"]]} for p in places]+[{"name":name[:160],"point":point} for name,point in sorted(road_names.items())],
+       "source":{"url":source_url,"date":osm_date,"sha256":source_hash,"license":"ODbL-1.0","attribution":"OpenStreetMap contributors","license_url":"https://www.openstreetmap.org/copyright"}}
+network_bytes=json.dumps(graph,separators=(",",":"),ensure_ascii=False).encode()
+assert len(network_bytes)<=48*1024*1024
+(ROOT/"road-network.json").write_bytes(network_bytes)
+network={"bytes":len(network_bytes),"sha256":hashlib.sha256(network_bytes).hexdigest()}
+print("Offline road network",len(node_ids),"nodes,",len(road_edges),"edges,",len(graph["places"]),"searchable names",flush=True)
+del graph,network_bytes,road_points,road_edges,index,node_ids,road_names
 font_path="/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 major={"motorway","trunk","primary","secondary"}
 middle={"tertiary","unclassified","residential"}
@@ -187,11 +231,11 @@ def streets(z):
         draw.text((x+4,y-8),label,fill="#463b2e",font=font,stroke_width=1,stroke_fill="#ffffff")
     return img
 
-street_pack=write_tiles("ddo-streets","Davao de Oro roads (offline)","© OpenStreetMap contributors — ODbL 1.0; openstreetmap.org/copyright",14,streets,{"date":osm_date,"source":source_url,"source_sha256":source_hash,"bbox":BBOX})
+street_pack=write_tiles("ddo-streets","Davao de Oro roads (offline)","© OpenStreetMap contributors — ODbL 1.0; openstreetmap.org/copyright",15,streets,{"date":osm_date,"source":source_url,"source_sha256":source_hash,"bbox":BBOX})
 
 # Use a low-cloud L2A RGB product mosaic, not imagery from an unlicensed commercial tile layer.
-# The native satellite zoom is 13 (~19 m pixels at the equator).
-z=13
+# Native zoom 14 (~9.55 m pixels at the equator; source resolution ~10 m).
+z=14
 x0,y0,width,height=image_grid(z)
 pixel_size=2*WORLD/(2**z*256)
 west=-WORLD+x0*256*pixel_size
@@ -247,11 +291,15 @@ def satellite(zoom):
     scale=2**(z-zoom)
     crop=((x*scale-x0)*256,(y*scale-y0)*256,(x*scale-x0)*256+ww*scale,(y*scale-y0)*256+hh*scale)
     # Coarser tile edges outside the region are neutral no-data, not invented imagery.
-    canvas=Image.new("RGB",(ww*scale,hh*scale),"#ebebeb")
-    canvas.paste(rgb,(-crop[0],-crop[1]))
-    return canvas.resize((ww,hh),Image.Resampling.LANCZOS)
+    # Resample only the intersection, avoiding a giant coarse-zoom canvas.
+    left,top,right,bottom=max(0,crop[0]),max(0,crop[1]),min(rgb.width,crop[2]),min(rgb.height,crop[3])
+    output=Image.new("RGB",(ww,hh),"#ebebeb")
+    if right>left and bottom>top:
+        patch=rgb.crop((left,top,right,bottom)).resize((max(1,round((right-left)/scale)),max(1,round((bottom-top)/scale))),Image.Resampling.LANCZOS)
+        output.paste(patch,(round((left-crop[0])/scale),round((top-crop[1])/scale)))
+    return output
 
-sat_pack=write_tiles("ddo-sentinel","Sentinel-2 satellite (2025, offline)","Contains modified Copernicus Sentinel data (2025), Earth Search; 19 m overview",13,satellite,{"scenes":provenance,"coverage_fraction":coverage,"bbox":BBOX})
-manifest={"packs":[street_pack,sat_pack]}
+sat_pack=write_tiles("ddo-sentinel","Sentinel-2 satellite (2025, offline)","Contains modified Copernicus Sentinel data (2025), Earth Search; 10 m overview",14,satellite,{"scenes":provenance,"coverage_fraction":coverage,"bbox":BBOX})
+manifest={"packs":[street_pack,sat_pack],"network":network}
 (ROOT/"manifest.json").write_text(json.dumps(manifest,indent=2)+"\n")
 verify()
