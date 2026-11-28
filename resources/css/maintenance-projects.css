@@ -986,6 +986,7 @@
 }
 .jr-form-footer {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     gap: 20px;
@@ -996,6 +997,7 @@
 .jr-form-footer p {
     font-size: 11px;
     color: #94a3b8;
+    overflow-wrap: anywhere;
 }
 .jr-details-heading {
     margin-bottom: 25px;
@@ -1567,10 +1569,13 @@
 /* Scoped form pairs and record details; sidebar and A1 geometry stay unchanged. */
 .jr-form-footer > div {
     display: grid;
+    flex: 0 0 auto;
+    width: min(100%, 284px);
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .jr-app .jr-form-footer > div > [data-slot='button'] {
-    width: 138px;
+    width: 100%;
+    min-width: 0;
     height: 40px;
 }
 .jr-header-actions {
