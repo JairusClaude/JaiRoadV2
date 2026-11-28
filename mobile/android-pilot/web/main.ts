@@ -1,6 +1,7 @@
 import '../../../resources/css/jairoads-role-components.css';
 import { labels, renderFields, titleFor, validateFields } from './field-forms';
 import type { Tab } from './field-forms';
+import { hostMode } from './host-mode';
 import { loadWorkspace, RequestError } from './queue';
 import type { Fields, Row, Vault } from './queue';
 import './style.css';
@@ -12,9 +13,16 @@ const field = el('field-reports');
 const editor = el('field-editor');
 const directory = el('field-directory');
 const discard = el<HTMLDialogElement>('discard-field-dialog');
+const menu = el<HTMLDialogElement>('field-menu');
+const opening = el('open-dashboard-status');
 const banner = el('field-banner');
 let vault: Vault;
 let tab: Tab = 'project';
+let home = true;
+let visibleLocally = false;
+let nativeLink: boolean | undefined;
+let ready = false;
+const connected = () => nativeLink ?? navigator.onLine;
 let editing: Row | undefined;
 let dirty = false;
 let busy = false;
@@ -32,14 +40,14 @@ function note(text: string, target = 'field-message') {
 
 function showStatus() {
     const { pending } = vault.state;
-    const message = !navigator.onLine
+    const message = !connected()
         ? savedLocally
             ? 'Offline Mode — Changes saved locally'
             : 'Offline Mode — Working locally'
         : checking && pending.length
           ? 'Connection restored — Synchronizing'
           : !reachable
-            ? 'Server unavailable — Working locally'
+            ? 'Offline Mode — Server unavailable'
             : pending.length
               ? 'Pending synchronization'
               : synced
@@ -48,9 +56,9 @@ function showStatus() {
     banner.hidden = !message;
     field.classList.toggle('has-field-banner', Boolean(message));
     el('field-banner-text').textContent = message;
-    el('field-wifi-off').hidden = navigator.onLine;
+    el('field-wifi-off').hidden = connected();
     el('online-dashboard').hidden =
-        !reachable || !navigator.onLine || !editor.hidden;
+        !reachable || !connected() || !editor.hidden || !visibleLocally;
 }
 
 function action(label: string, click: () => void) {
@@ -81,6 +89,17 @@ function item(title: string, detail = '') {
 function renderDirectory() {
     const { snapshot, pending, attachments } = vault.state;
     el('directory-title').textContent = labels[tab][0];
+    el('field-home').hidden = !home || !editor.hidden;
+    directory.hidden = home || !editor.hidden;
+
+    for (const kind of ['project', 'record', 'road'] as const) {
+        el(kind + '-count').textContent = String(vault.rows(kind).length);
+    }
+
+    if (vault.state.snapshot.truncated && home && el('field-message').hidden) {
+        note('Only your most recent assigned records are available offline.');
+    }
+
     const create = el<HTMLButtonElement>('new-field-item');
     create.hidden = !snapshot.canWrite;
     create.textContent = 'Add ' + labels[tab][1];
@@ -88,7 +107,10 @@ function renderDirectory() {
     for (const button of document.querySelectorAll<HTMLButtonElement>(
         '#field-tabs [data-tab]',
     )) {
-        button.setAttribute('aria-pressed', String(button.dataset.tab === tab));
+        button.setAttribute(
+            'aria-pressed',
+            String(button.dataset.tab === (home ? 'home' : tab)),
+        );
     }
 
     let rows: HTMLLIElement[];
@@ -187,6 +209,7 @@ function openEditor(row?: Row) {
     renderFields(inputs, vault, tab, row);
     note('', 'field-error');
     editor.hidden = false;
+    el('field-home').hidden = true;
     directory.hidden = true;
     showStatus();
     inputs
@@ -201,7 +224,6 @@ function closeEditor() {
     dirty = false;
     form.reset();
     editor.hidden = true;
-    directory.hidden = false;
     renderDirectory();
 }
 
@@ -246,8 +268,68 @@ function getFile(file: File) {
     });
 }
 
+function presentLocal(path = '') {
+    if (!ready) {
+        return;
+    }
+
+    const focus = !visibleLocally;
+
+    if (focus) {
+        const page = (
+            {
+                'maintenance-projects': 'project',
+                'maintenance-records': 'record',
+                'road-coverages': 'road',
+                'monthly-updates': 'monthly',
+                'maintenance-documents': 'files',
+            } as Record<string, Tab>
+        )[path.replace(/^\/workspace\/ui\//, '').split('/')[0]];
+
+        if (page) {
+            home = false;
+            tab = page;
+        }
+    }
+
+    visibleLocally = true;
+    opening.hidden = true;
+    field.hidden = false;
+    renderDirectory();
+
+    if (focus) {
+        field.focus({ preventScroll: true });
+    }
+}
+
+function goOnline() {
+    if (
+        !connected() ||
+        !reachable ||
+        !editor.hidden ||
+        menu.open ||
+        busy ||
+        vault.state.pending.length
+    ) {
+        return;
+    }
+
+    if (!hostMode('show-online')) {
+        location.replace('/dashboard');
+    }
+}
+
+function showCachedWorkspace() {
+    hostMode('show-local');
+    presentLocal();
+}
+
 async function refresh() {
-    if (busy || checking || !navigator.onLine || document.hidden) {
+    if (!ready) {
+        return;
+    }
+
+    if (busy || checking || !connected()) {
         showStatus();
 
         return;
@@ -270,6 +352,8 @@ async function refresh() {
 
         if (hadChanges) {
             await vault.sync(workspace);
+        } else if (!visibleLocally && !vault.state.pending.length) {
+            await vault.update(workspace);
         }
 
         // Keep locally acknowledged rows until the next normal sign-in refresh.
@@ -281,15 +365,24 @@ async function refresh() {
             hideSync = window.setTimeout(() => {
                 synced = false;
                 showStatus();
-            }, 3500);
+                goOnline();
+            }, 1700);
         }
 
         if (editor.hidden) {
             note('');
         }
+
+        if (visibleLocally && !synced) {
+            goOnline();
+        }
     } catch (error) {
         const status = error instanceof RequestError ? error.status : 0;
-        reachable = status >= 400 && status < 500;
+        reachable = status === 429;
+
+        if (!reachable) {
+            showCachedWorkspace();
+        }
 
         if (status === 401 || status === 419) {
             note(
@@ -303,7 +396,7 @@ async function refresh() {
             note(
                 'Synchronization will retry shortly. Local changes are still saved.',
             );
-        } else if (navigator.onLine) {
+        } else if (connected()) {
             note(
                 status >= 500
                     ? 'JaiROADS could not complete synchronization. Local changes are still saved.'
@@ -371,35 +464,97 @@ form.addEventListener('submit', async (event) => {
 
     void refresh();
 });
+function selectPage(page: Tab | 'home') {
+    leave(() => {
+        home = page === 'home';
+
+        if (page !== 'home') {
+            tab = page;
+        }
+
+        if (menu.open) {
+            menu.close();
+        }
+
+        closeEditor();
+    });
+}
+
+el('field-menu-open').addEventListener('click', () => menu.showModal());
+el('field-menu-close').addEventListener('click', () => menu.close());
 el('field-tabs').addEventListener('click', (event) => {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
         'button[data-tab]',
     );
 
     if (button) {
-        leave(() => {
-            tab = button.dataset.tab as Tab;
-            closeEditor();
-        });
+        selectPage(button.dataset.tab as Tab | 'home');
+    }
+});
+el('field-home').addEventListener('click', (event) => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
+        'button[data-cached-page]',
+    );
+
+    if (button) {
+        selectPage(button.dataset.cachedPage as Tab);
     }
 });
 el('new-field-item').addEventListener('click', () => openEditor());
 el('cancel-edit').addEventListener('click', () => leave(closeEditor));
-el('lock').addEventListener('click', () => leave(() => location.reload()));
+el('online-dashboard').addEventListener('click', goOnline);
+el('lock').addEventListener('click', () =>
+    leave(() => {
+        hostMode('lock');
+        location.reload();
+    }),
+);
 window.addEventListener('jairoads-back', (event) => {
-    if (discard.open) {
+    if (menu.open) {
+        event.preventDefault();
+        menu.close();
+    } else if (discard.open) {
         event.preventDefault();
         discard.close('keep');
-    } else if (!editor.hidden || busy || checking) {
+    } else if (!editor.hidden || busy) {
         event.preventDefault();
         leave(closeEditor);
+    } else if (!home && ready) {
+        event.preventDefault();
+        selectPage('home');
     }
 });
-window.addEventListener('offline', () => {
-    reachable = false;
-    showStatus();
-});
+function linkDown() {
+    if (ready) {
+        reachable = false;
+        showCachedWorkspace();
+    }
+}
+window.addEventListener('offline', linkDown);
 window.addEventListener('online', () => void refresh());
+window.addEventListener('jairoads-link-down', () => {
+    nativeLink = false;
+    linkDown();
+});
+window.addEventListener('jairoads-link-up', () => {
+    nativeLink = true;
+    void refresh();
+});
+window.addEventListener('jairoads-local-shown', (event) => {
+    presentLocal((event as CustomEvent<string>).detail ?? '');
+});
+window.addEventListener('jairoads-hosted-shown', () => {
+    visibleLocally = false;
+    savedLocally = false;
+    field.hidden = true;
+    opening.hidden = true;
+});
+window.addEventListener('jairoads-hosted-error', () => {
+    if (ready) {
+        reachable = false;
+        showCachedWorkspace();
+    }
+});
 window.addEventListener('jairoads-resume', () => void refresh());
 document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
@@ -409,6 +564,7 @@ document.addEventListener('visibilitychange', () => {
 
 export function openFieldReports(workspace: Vault, offlineSignIn: boolean) {
     vault = workspace;
+    ready = true;
     reachable = !offlineSignIn;
     history.replaceState(null, '', '#field-reports');
     el('sign-in-screen').hidden = true;
@@ -418,15 +574,17 @@ export function openFieldReports(workspace: Vault, offlineSignIn: boolean) {
             ? 'jr-engineer-workspace'
             : 'jr-viewer-workspace',
     );
-    el('workspace-role').textContent = vault.state.snapshot.role + ' workspace';
-    field.hidden = false;
-    renderDirectory();
-    field.focus({ preventScroll: true });
+    el('workspace-role').textContent = vault.state.snapshot.role;
+    hostMode('cache-ready');
 
-    if (vault.state.snapshot.truncated) {
-        note(
-            'Recent assigned work is available offline. Older records are available in the online dashboard.',
-        );
+    if (offlineSignIn || !connected()) {
+        showCachedWorkspace();
+    } else {
+        opening.hidden = false;
+
+        if (!hostMode('show-online')) {
+            location.replace('/dashboard');
+        }
     }
 
     void refresh();

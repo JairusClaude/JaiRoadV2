@@ -1,3 +1,4 @@
+import { hostMode } from './host-mode';
 import { loadWorkspace, RequestError, Vault } from './queue';
 import { bindSignInSheet } from './sign-in-sheet';
 import './sign-in.css';
@@ -146,6 +147,14 @@ async function openWorkspace(vault: Vault, offline: boolean) {
     openFieldReports(vault, offline);
 }
 
+function openHostedDashboard() {
+    password.value = '';
+
+    if (!hostMode('show-online')) {
+        location.replace('/dashboard');
+    }
+}
+
 async function signInOffline(emailAddress: string, secret: string) {
     try {
         await openWorkspace(await Vault.open(emailAddress, secret), true);
@@ -207,8 +216,7 @@ form.addEventListener('submit', async (event) => {
         });
 
         if (!workspace) {
-            password.value = '';
-            location.replace('/dashboard');
+            openHostedDashboard();
 
             return;
         }
@@ -219,9 +227,11 @@ form.addEventListener('submit', async (event) => {
                 false,
             );
         } catch {
-            throw new Error(
-                'Could not open saved fieldwork with this password. Your existing files are still on this phone.',
+            showStatus(
+                'Offline preparation was unavailable. Saved fieldwork remains on this phone.',
+                true,
             );
+            openHostedDashboard();
         }
     } catch (error) {
         showStatus(
@@ -304,6 +314,14 @@ function showSlide(index: number) {
 element('previous').addEventListener('click', () => showSlide(activeSlide - 1));
 element('next').addEventListener('click', () => showSlide(activeSlide + 1));
 showSlide(1);
+window.addEventListener('jairoads-hosted-error', () => {
+    if (location.hash !== '#field-reports') {
+        showStatus(
+            'The dashboard could not open. Check your connection and try again.',
+            true,
+        );
+    }
+});
 window.addEventListener('online', renderConnection);
 window.addEventListener('offline', renderConnection);
 renderConnection();
