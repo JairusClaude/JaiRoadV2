@@ -70,7 +70,7 @@ final class AndroidFieldController extends OperationsFrontendController
         $files = collect();
         if (Schema::hasTable('jairoads_next.maintenance_documents')) {
             $files = $this->documentQuery($actor)->whereIn('d.maintenance_id', $recordIds)
-                ->orderByDesc('d.id')->limit(40)->get()->map(fn (\stdClass $d): array => [
+                ->orderByDesc('d.id')->limit(200)->get()->map(fn (\stdClass $d): array => [
                     'kind' => 'document', 'id' => (int) $d->id, 'record' => (int) $d->maintenance_id,
                     'name' => (string) $d->file_name, 'title' => (string) $d->document_title,
                     'version' => (string) $d->updated_at, 'available' => $d->file_path !== '' && $this->documents->configured(),
@@ -80,7 +80,7 @@ final class AndroidFieldController extends OperationsFrontendController
         if (Schema::hasTable('jairoads_next.media') && $monthly->isNotEmpty()) {
             $photos = DB::table('jairoads_next.media as m')->join('jairoads_next.monthly_updates as u', 'u.id', '=', 'm.monthly_update_id')
                 ->whereIn('u.id', $monthly->pluck('id'))->whereIn('m.file_type', ['image/jpeg', 'image/png', 'image/webp'])
-                ->orderByDesc('m.id')->limit(40)->get(['m.id', 'm.file_name', 'm.created_at', 'm.file_type', 'm.monthly_update_id', 'u.maintenance_id'])
+                ->orderByDesc('m.id')->limit(200)->get(['m.id', 'm.file_name', 'm.created_at', 'm.file_type', 'm.monthly_update_id', 'u.maintenance_id'])
                 ->map(fn (\stdClass $p): array => [
                     'kind' => 'media', 'id' => (int) $p->id, 'record' => (int) $p->maintenance_id,
                     'name' => (string) $p->file_name, 'title' => (string) $p->file_name,
@@ -126,7 +126,7 @@ final class AndroidFieldController extends OperationsFrontendController
             'fields' => ['required', 'array:road_name,lgu_id,kilometers,pavement_type,state_category,geojson,correction_reason,project_title,road_coverage_id,description,project_id,maintenance_year,quarter,start_date,estimated_duration_days,complete_date,status,maintenance_id,update_month,progress_percentage,summary_of_text_reports'],
         ]);
         abort_unless((int) $data['account_id'] === $actor['account_id'], 403);
-        $kind = $data['kind'];
+        $kind = (string) $data['kind'];
         $id = isset($data['id']) ? (int) $data['id'] : null;
         $fields = $data['fields'];
         if ($kind === 'record') {
@@ -155,6 +155,7 @@ final class AndroidFieldController extends OperationsFrontendController
                     'project' => $this->operations->saveProject($request, $this->identities, $id),
                     'record' => $this->operations->saveRecord($request, $this->identities, $id),
                     'monthly' => $this->operations->saveUpdate($request, $this->identities),
+                    default => throw ValidationException::withMessages(['kind' => 'Unknown field operation.']),
                 };
                 $savedId = $id ?? $request->attributes->getInt('jairoads.field_saved_id');
                 abort_unless($savedId > 0, 500);
@@ -163,6 +164,7 @@ final class AndroidFieldController extends OperationsFrontendController
                     'project' => 'maintenance_projects',
                     'record' => 'maintenance_records',
                     'monthly' => 'monthly_updates',
+                    default => throw ValidationException::withMessages(['kind' => 'Unknown field operation.']),
                 };
                 $version = DB::table('jairoads_next.'.$table)->where('id', $savedId)->selectRaw('xmin::text as version')->first()?->version;
                 abort_unless(is_string($version), 500);
@@ -181,6 +183,11 @@ final class AndroidFieldController extends OperationsFrontendController
             ->header('Cache-Control', 'private, no-store');
     }
 
+    private function attachmentReceipt(int $account, string $key): ?\stdClass
+    {
+        return DB::table(self::RECEIPTS)->where('account_id', $account)->where('operation_id', $key)->first();
+    }
+
     /** Upload a queued file through the existing private-storage and audit path.
      * The receipt is committed with the metadata, not before Storage confirms.
      */
@@ -196,7 +203,7 @@ final class AndroidFieldController extends OperationsFrontendController
             'parent_id' => ['required', 'integer', 'min:1'],
             'document_title' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:5000'],
-            'file' => ['required', 'file', 'max:4096'],
+            'file' => ['required', 'file', 'max:20480'],
         ]);
         abort_unless((int) $v['account_id'] === $actor['account_id'], 403);
         $file = $request->file('file');
@@ -208,14 +215,12 @@ final class AndroidFieldController extends OperationsFrontendController
             'attachment', $v['kind'], (int) $v['parent_id'], $v['document_title'] ?? null,
             $v['description'] ?? null, $file->getClientOriginalName(), $hash,
         ], JSON_THROW_ON_ERROR));
-        $receipt = fn () => DB::table(self::RECEIPTS)->where('account_id', $actor['account_id'])
-            ->where('operation_id', $key)->first();
         $answer = function (\stdClass $row) use ($fingerprint, $key): JsonResponse {
             abort_unless(hash_equals($row->fingerprint, $fingerprint), 409, 'This saved file operation has different content.');
             return response()->json(['operationId' => $key, 'id' => (int) $row->entity_id, 'version' => $row->entity_version])
                 ->header('Cache-Control', 'private, no-store');
         };
-        if (($prior = $receipt()) !== null) {
+        if (($prior = $this->attachmentReceipt($actor['account_id'], $key)) !== null) {
             return $answer($prior);
         }
 
@@ -234,12 +239,12 @@ final class AndroidFieldController extends OperationsFrontendController
             }
         } catch (\Throwable $error) {
             // A concurrent or interrupted request may already have committed.
-            if (($prior = $receipt()) !== null) {
+            if (($prior = $this->attachmentReceipt($actor['account_id'], $key)) !== null) {
                 return $answer($prior);
             }
             throw $error;
         }
-        $saved = $receipt();
+        $saved = $this->attachmentReceipt($actor['account_id'], $key);
         abort_unless($saved !== null, 503, 'The file receipt was not confirmed.');
         return $answer($saved);
     }

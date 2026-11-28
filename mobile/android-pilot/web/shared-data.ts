@@ -96,7 +96,7 @@ export function projectData(vault: Vault, dashboard: Page) {
     const recordFor = (id: unknown) => records.find((r) => r.id === relatedId(vault, id));
     const sources = snapshot.files ?? [];
     const attachments = vault.state.attachments;
-    const localFile = (file: FileReference) => vault.fileData(file);
+    const localFile = (file: FileReference) => vault.fileAvailable(file);
     const fileRows = sources.flatMap((file) => {
         const record = recordFor(file.record);
         if (!record || file.kind !== 'document') return [];
@@ -125,13 +125,13 @@ export function projectData(vault: Vault, dashboard: Page) {
     function mediaFor(id: number) {
         const files = sources.filter((file) => file.kind === 'media' && same(file.parent, id)).map((file) => ({
             id: file.id, file_name: file.name, mime_type: file.mime || attachmentMime(file.name), size: null,
-            preview_url: localFile(file) ?? null, available: Boolean(localFile(file)), delete_url: null,
+            preview_url: localFile(file) ? '/workspace/files/media/'+file.id : null, available: Boolean(localFile(file)), delete_url: null,
         }));
         for (const item of attachments.filter((file) => file.kind === 'media' && relatedId(vault, file.parent) === id)) {
             const fileId = item.receipt?.id ?? presentationId(item.id);
             const existing = files.find((file) => file.id === fileId);
-            if (existing) { existing.preview_url = item.data; existing.available = true; continue; }
-            files.push({ id: fileId, file_name: item.name, mime_type: attachmentMime(item.name), size: null, preview_url: item.data, available: true, delete_url: null });
+            if (existing) { existing.preview_url = '/workspace/files/media/'+fileId; existing.available = true; continue; }
+            files.push({ id: fileId, file_name: item.name, mime_type: attachmentMime(item.name), size: null, preview_url: '/workspace/files/media/'+fileId, available: true, delete_url: null });
         }
         return files;
     }
@@ -365,9 +365,9 @@ export function offlineResource(vault: Vault, dashboard: Page, url: URL): unknow
 
 export function findFile(vault: Vault, kind: 'document'|'media', id: number) {
     const local=vault.state.attachments.find(r=>(r.kind??'document')===kind&&(r.receipt?.id===id||presentationId(r.id)===id));
-    if(local)return {name:local.name,data:local.data};
+    if(local)return {name:local.name,available:true,read:()=>vault.attachmentData(local),ref:undefined};
     const ref=vault.state.snapshot.files?.find(r=>r.kind===kind&&r.id===id);
-    return ref ? {name:ref.name,data:vault.fileData(ref),ref} : undefined;
+    return ref ? {name:ref.name,available:vault.fileAvailable(ref),read:()=>vault.fileData(ref),ref} : undefined;
 }
 export function fieldsFrom(data: Record<string, unknown>, names: string[]): Fields {
     return Object.fromEntries(names.filter(key=>data[key]!==undefined).map(key=>[key,text(data[key])]));

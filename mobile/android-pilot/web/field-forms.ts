@@ -245,7 +245,7 @@ export function renderFields(
             required: false,
         });
         input('document_title', 'Document title (optional)', { required: false, max: 255 });
-        input('attachment', 'Photo or document (up to 4 MB)', { type: 'file' });
+        input('attachment', 'Photo or document (up to 20 MB)', { type: 'file' });
         input('description', 'Description', {
             type: 'textarea',
             required: false,

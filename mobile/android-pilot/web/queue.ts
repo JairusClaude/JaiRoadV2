@@ -30,6 +30,7 @@ export type Attachment = {
     name: string;
     description: string;
     data: string;
+    storedBytes?: number;
     kind?: 'document' | 'media';
     parent?: string;
     title?: string;
@@ -73,6 +74,7 @@ type State = {
     confirmed: Record<string, Receipt>;
     attachments: Attachment[];
     cachedFiles?: CachedFile[];
+    cachedFileIndex?: {key:string;bytes:number}[];
     dashboard?: unknown;
 };
 type Encrypted = {
@@ -88,9 +90,12 @@ const relation = {
     record: 'project_id',
     monthly: 'maintenance_id',
 } as const;
-const limit = 24 * 1024 * 1024;
-const fileLimit = 4 * 1024 * 1024;
-const cacheBudget = 8 * 1024 * 1024; // Encoded bytes; leave capacity for pending work.
+const limit = 48 * 1024 * 1024; // Metadata and legacy inline attachments only.
+export const fieldFileLimit = 20 * 1024 * 1024;
+const fileLimit = fieldFileLimit;
+const cacheBudget = 256 * 1024 * 1024;
+const pendingFileBudget = 256 * 1024 * 1024;
+const encodedFileLimit = Math.ceil(fileLimit / 3) * 4 + 256;
 const allowedFileTypes = new Set([
     'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -111,7 +116,7 @@ function attachmentBlob(data: string, name: string): Blob {
     const comma = data.indexOf(',');
     const type = attachmentMime(name);
     if (!type || comma < 0 || !data.startsWith('data:') ||
-        !data.slice(0, comma).endsWith(';base64') || data.length > 6 * 1024 * 1024) {
+        !data.slice(0, comma).endsWith(';base64') || data.length > encodedFileLimit) {
         throw new Error('The local attachment format is unavailable.');
     }
     const decoded = atob(data.slice(comma + 1));
@@ -133,7 +138,7 @@ export function pendingAttachment(file: Attachment) {
 async function readPrivateFile(file: FileReference) {
     const response = await fetch('/workspace/files/' + file.kind + '/' + file.id, {
         credentials: 'same-origin', cache: 'no-store', redirect: 'error',
-        signal: AbortSignal.timeout(20000),
+        signal: AbortSignal.timeout(120000),
     });
     const mime = (response.headers.get('content-type') || '').split(';')[0].trim();
     if (!response.ok || !allowedFileTypes.has(mime) || !response.body) throw new Error('Private file unavailable.');
@@ -260,6 +265,18 @@ async function storage(
     }
 }
 
+async function removeStorage(id:string) {
+    const db=await database();
+    try {
+        await new Promise<void>((resolve,reject)=>{
+            const tx=db.transaction('workspaces','readwrite');
+            tx.objectStore('workspaces').delete(id);
+            tx.oncomplete=()=>resolve();
+            tx.onabort=()=>reject(tx.error ?? new Error('Local cleanup failed.'));
+            tx.onerror=()=>reject(tx.error);
+        });
+    } finally { db.close(); }
+}
 async function digest(text: string) {
     const bytes = await crypto.subtle.digest('SHA-256', encoder.encode(text));
 
@@ -300,6 +317,7 @@ export class Vault {
         private readonly storageId: string,
         private readonly salt: Uint8Array<ArrayBuffer>,
         private readonly encrypt: CryptoKey,
+        private readonly decrypt: CryptoKey,
         public state: State,
     ) {}
 
@@ -319,8 +337,8 @@ export class Vault {
         const salt = prior?.salt ?? crypto.getRandomValues(new Uint8Array(16));
         const encrypt = await keyFor(passphrase, salt, 'encrypt');
 
+        const decrypt = await keyFor(passphrase, salt, 'decrypt');
         if (prior) {
-            const decrypt = await keyFor(passphrase, salt, 'decrypt');
             const clear = await crypto.subtle.decrypt(
                 {
                     name: 'AES-GCM',
@@ -334,6 +352,7 @@ export class Vault {
                 id,
                 salt,
                 encrypt,
+                decrypt,
                 JSON.parse(decoder.decode(clear)) as State,
             );
 
@@ -350,7 +369,7 @@ export class Vault {
             confirmed: {},
             attachments: [],
         };
-        const vault = new Vault(id, salt, encrypt, state);
+        const vault = new Vault(id, salt, encrypt, decrypt, state);
         await vault.persist(state);
 
         return vault;
@@ -387,9 +406,9 @@ export class Vault {
         this.state = state;
     }
 
-    private change(transform: (state: State) => State) {
+    private change(transform: (state: State) => State | Promise<State>) {
         const task = this.writes.then(async () => {
-            const state = transform(this.state);
+            const state = await transform(this.state);
 
             if (state !== this.state) {
                 await this.persist(state);
@@ -409,13 +428,40 @@ export class Vault {
         }
     }
 
+    private fileStorageKey(key:string) { return this.storageId+':file:'+key; }
+    private async storeFile(key:string,data:string) {
+        const plain=encoder.encode(data);
+        if(plain.byteLength>encodedFileLimit)throw new Error('File exceeds the supported size.');
+        const iv=crypto.getRandomValues(new Uint8Array(12));
+        const id=this.fileStorageKey(key);
+        const bytes=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:encoder.encode(id)},this.encrypt,plain);
+        await storage(id,{salt:this.salt,iv,bytes});
+        return plain.byteLength;
+    }
+    private async readFile(key:string) {
+        const id=this.fileStorageKey(key);
+        const value=await storage(id);
+        if(!value)return undefined;
+        const clear=await crypto.subtle.decrypt({name:'AES-GCM',iv:value.iv,additionalData:encoder.encode(id)},this.decrypt,value.bytes);
+        return decoder.decode(clear);
+    }
+    private async deleteFile(key:string) { await removeStorage(this.fileStorageKey(key)); }
+    private pendingSize(state:State) { return state.attachments.reduce((sum,item)=>sum+(item.storedBytes??item.data.length),0); }
+    async attachmentData(item:Attachment) {
+        const current=this.state.attachments.find(file=>file.id===item.id);
+        if(!current)return undefined;
+        return current.storedBytes ? this.readFile('attachment:'+current.id) : current.data;
+    }
     async update(workspace: Workspace) {
         this.assertIdentity(workspace);
+        const dropped:string[]=[];
         await this.change((state) => {
             const snapshot = snapshotOf(workspace);
             const keys = new Set((snapshot.files ?? []).filter((file) => file.available).map(fileKey));
-            return { ...state, snapshot, cachedFiles: (state.cachedFiles ?? []).filter((file) => keys.has(file.key)) };
+            dropped.push(...(state.cachedFileIndex??[]).filter(file=>!keys.has(file.key)).map(file=>file.key));
+            return { ...state, snapshot, cachedFileIndex:(state.cachedFileIndex??[]).filter(file=>keys.has(file.key)), cachedFiles: (state.cachedFiles ?? []).filter((file) => keys.has(file.key)) };
         });
+        for(const key of dropped)await this.deleteFile(key).catch(()=>{});
     }
 
     rows(kind: keyof typeof tables): Row[] {
@@ -446,7 +492,8 @@ export class Vault {
 
     async save(kind: Kind, fields: Fields, row?: Row, photos:{name:string;data:string}[] = []) {
         let saved = '';
-        await this.change((state) => {
+        const written:string[]=[];
+        try { await this.change(async (state) => {
             if (!state.snapshot.canWrite) {
                 throw new Error('This workspace only allows viewing.');
             }
@@ -470,7 +517,7 @@ export class Vault {
                 kind === 'monthly' &&
                 state.pending.some(
                     (entry) =>
-                        entry.kind === kind &&
+                        entry.kind === kind && entry.entity !== entity &&
                         entry.fields.maintenance_id === fields.maintenance_id &&
                         entry.fields.update_month === fields.update_month,
                 )
@@ -493,11 +540,22 @@ export class Vault {
                   )
                 : [...state.pending, change];
 
-            const attachments = photos.length && kind === 'monthly' ? [...state.attachments, ...photos.map((photo):Attachment=>({
-                id:crypto.randomUUID(),record:fields.maintenance_id,name:photo.name,description:'',data:photo.data,kind:'media',parent:entity,title:photo.name,
-            }))] : state.attachments;
+            const attachments=[...state.attachments];
+            if(photos.length&&kind==='monthly'){
+                if(this.pendingSize(state)+photos.reduce((sum,photo)=>sum+photo.data.length,0)>pendingFileBudget)throw new Error('Local attachment storage is full. Synchronize saved work first.');
+                for(const photo of photos){
+                    attachmentBlob(photo.data,photo.name);
+                    const id=crypto.randomUUID(), key='attachment:'+id;
+                    const storedBytes=await this.storeFile(key,photo.data);
+                    written.push(key);
+                    attachments.push({id,record:fields.maintenance_id,name:photo.name,description:'',data:'',storedBytes,kind:'media',parent:entity,title:photo.name});
+                }
+            }
             return { ...state, pending, attachments };
-        });
+        }); } catch(error) {
+            for(const key of written)await this.deleteFile(key).catch(()=>{});
+            throw error;
+        }
         return saved;
     }
 
@@ -510,59 +568,59 @@ export class Vault {
         parent: string,
         title: string,
     ) {
-        const id = crypto.randomUUID();
-        await this.change((state) => {
-            if (!state.snapshot.canWrite) {
-                throw new Error('This workspace only allows viewing.');
-            }
-
-            return {
-                ...state,
-                attachments: [
-                    ...state.attachments,
-                    {
-                        id,
-                        record,
-                        name,
-                        description,
-                        data,
-                        kind,
-                        parent,
-                        title,
-                    },
-                ],
-            };
-        });
+        const id = crypto.randomUUID(), key='attachment:'+id;
+        let written=false;
+        try {
+            await this.change(async (state) => {
+                if (!state.snapshot.canWrite) throw new Error('This workspace only allows viewing.');
+                attachmentBlob(data,name);
+                if(this.pendingSize(state)+data.length>pendingFileBudget)throw new Error('Local attachment storage is full. Synchronize saved work first.');
+                const storedBytes=await this.storeFile(key,data);written=true;
+                return {...state,attachments:[...state.attachments,{id,record,name,description,data:'',storedBytes,kind,parent,title}]};
+            });
+        }catch(error){if(written)await this.deleteFile(key).catch(()=>{});throw error;}
         return id;
     }
 
-    fileData(file: FileReference) {
-        return this.state.cachedFiles?.find((entry) => entry.key === fileKey(file))?.data;
+    fileAvailable(file:FileReference) {
+        return file.available && Boolean(this.state.cachedFileIndex?.some(entry=>entry.key===fileKey(file))||this.state.cachedFiles?.some(entry=>entry.key===fileKey(file)));
     }
-
-    async cacheFile(file: FileReference) {
-        if (!file.available || this.fileData(file)) return;
-        const data = await readPrivateFile(file);
-        await this.change((state) => {
-            if (!(state.snapshot.files ?? []).some((entry) => entry.available && fileKey(entry) === fileKey(file))) return state;
-            const current = (state.cachedFiles ?? []).filter((entry) => entry.key !== fileKey(file));
-            const cachedFiles = [...current, { key: fileKey(file), data }];
-            while (cachedFiles.reduce((total, entry) => total + entry.data.length, 0) > cacheBudget) cachedFiles.shift();
-            if (!cachedFiles.some((entry) => entry.key === fileKey(file))) return state;
-            return { ...state, cachedFiles };
-        });
+    async fileData(file:FileReference) {
+        if(!this.fileAvailable(file))return undefined;
+        return this.state.cachedFiles?.find(entry=>entry.key===fileKey(file))?.data ?? await this.readFile(fileKey(file));
     }
-
-    // Automatically prepare small authorized files without delaying dashboard login.
-    async prepareFiles(workspace: Workspace, shouldContinue: () => boolean) {
+    private fileDownloads=new Map<string,Promise<void>>();
+    async cacheFile(file:FileReference) {
+        if(!file.available||this.fileAvailable(file))return;
+        const key=fileKey(file);
+        const running=this.fileDownloads.get(key);
+        if(running)return running;
+        const task=(async()=>{
+            const data=await readPrivateFile(file);
+            let written=false;
+            try {
+                await this.change(async state=>{
+                    if(!(state.snapshot.files??[]).some(entry=>entry.available&&fileKey(entry)===key))return state;
+                    const current=state.cachedFileIndex??[];
+                    if(current.some(entry=>entry.key===key))return state;
+                    const used=current.reduce((sum,entry)=>sum+entry.bytes,0)+(state.cachedFiles??[]).reduce((sum,entry)=>sum+entry.data.length,0);
+                    if(used+data.length>cacheBudget)throw new Error('Offline file cache is full. Existing files were retained.');
+                    const bytes=await this.storeFile(key,data);written=true;
+                    return {...state,cachedFileIndex:[...current,{key,bytes}]};
+                });
+            }catch(error){if(written)await this.deleteFile(key).catch(()=>{});throw error;}
+        })();
+        this.fileDownloads.set(key,task);
+        try{await task;}finally{this.fileDownloads.delete(key);}
+    }
+    private fileRetry=new Map<string,number>();
+    async prepareFiles(workspace:Workspace,shouldContinue:()=>boolean) {
         this.assertIdentity(workspace);
-        for (const file of (this.state.snapshot.files ?? []).slice(0, 8)) {
-            if (!shouldContinue()) return;
-            if (!file.available || this.fileData(file)) continue;
-            // Don't churn the bounded cache or crowd out encrypted pending work.
-            const used = (this.state.cachedFiles ?? []).reduce((sum, entry) => sum + entry.data.length, 0);
-            if (used >= cacheBudget / 2) break;
-            try { await this.cacheFile(file); } catch { /* Unavailable or oversized: directory shows no local copy. */ }
+        for(const file of this.state.snapshot.files??[]){
+            if(!shouldContinue())return;
+            if(!file.available||this.fileAvailable(file)||(this.fileRetry.get(fileKey(file))??0)>Date.now())continue;
+            try{await this.cacheFile(file);}
+            catch{this.fileRetry.set(fileKey(file),Date.now()+5*60*1000);}
         }
     }
 
@@ -577,7 +635,7 @@ export class Vault {
             const kind = item.kind!;
             // Decoding data URLs locally avoids a fetch blocked by the shell CSP.
             let blob: Blob;
-            try { blob = attachmentBlob(item.data, item.name); }
+            try { blob = attachmentBlob((await this.attachmentData(item))??'', item.name); }
             catch {
                 await this.change((state) => ({
                     ...state, attachments: state.attachments.map((file) => file.id === item.id
@@ -599,7 +657,7 @@ export class Vault {
                     method: 'POST',
                     headers: { 'X-CSRF-TOKEN': workspace.csrfToken },
                     body: payload,
-                    signal: AbortSignal.timeout(60000),
+                    signal: AbortSignal.timeout(180000),
                 });
             } catch (error) {
                 if (error instanceof RequestError && [403, 409, 422].includes(error.status)) {

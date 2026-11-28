@@ -9,6 +9,37 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import type { MonthlyMedia } from '@/types/monthly-updates';
+import { androidWorkspace } from '@/lib/android-workspace-bridge';
+import type { ImgHTMLAttributes } from 'react';
+
+function FieldImage(props:ImgHTMLAttributes<HTMLImageElement>) {
+    const {src,onError,...rest}=props;
+    const bridge=androidWorkspace();
+    const ref=useRef<HTMLImageElement>(null);
+    const [local,setLocal]=useState<{source:string;url:string}|null>(null);
+    const privateFile=Boolean(bridge&&src&&/^\/workspace\/files\/media\/\d+$/.test(new URL(src,location.origin).pathname)&&new URL(src,location.origin).origin===location.origin);
+    useEffect(()=>{
+        if(!privateFile||!src||!bridge)return;
+        const controller=new AbortController();
+        let objectUrl='';
+        let observer:IntersectionObserver|undefined;
+        const load=async()=>{
+            observer?.disconnect();
+            try{
+                const response=await fetch(src,{signal:controller.signal});
+                if(!response.ok)throw new Error('Unavailable');
+                const blob=await response.blob();
+                if(controller.signal.aborted)return;
+                objectUrl=URL.createObjectURL(blob);
+                setLocal({source:src,url:objectUrl});
+            }catch{if(!controller.signal.aborted)setLocal({source:src,url:''});}
+        };
+        if(ref.current&&typeof IntersectionObserver!=='undefined'){observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting))void load();});observer.observe(ref.current);}
+        else void load();
+        return()=>{controller.abort();observer?.disconnect();if(objectUrl)URL.revokeObjectURL(objectUrl);};
+    },[src,privateFile,bridge]);
+    return <img {...rest} ref={ref} src={privateFile?(local?.source===src?local.url||undefined:undefined):src} onError={onError}/>;
+}
 
 // A failed frame extraction affects only the thumbnail, never the video viewer.
 function VideoThumbnail({ file }: { file: MonthlyMedia }) {
@@ -178,7 +209,7 @@ export function MediaGallery({ media }: { media: MonthlyMedia[] }) {
                                     ) : video ? (
                                         <VideoThumbnail file={file} />
                                     ) : (
-                                        <img
+                                        <FieldImage
                                             src={file.preview_url!}
                                             alt=""
                                             onError={() => fail(file.id)}
@@ -285,7 +316,7 @@ export function MediaGallery({ media }: { media: MonthlyMedia[] }) {
                                     onError={() => fail(preview.id)}
                                 />
                             ) : (
-                                <img
+                                <FieldImage
                                     src={preview.preview_url!}
                                     alt={`Preview ${preview.file_name}`}
                                     onError={() => fail(preview.id)}

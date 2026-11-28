@@ -31,6 +31,12 @@ public final class MainActivity extends Activity {
     private static final int FIELD_FILE = 491;
     private static final int FIELD_EXPORT = 492;
     private byte[] exportBytes;
+    private String exportTransferId;
+    private String exportName;
+    private int exportLength;
+    private StringBuilder exportTransfer;
+    private static final int MAX_EXPORT_BYTES = 20 * 1024 * 1024;
+    private static final int MAX_EXPORT_ENCODED = ((MAX_EXPORT_BYTES + 2) / 3) * 4 + 256;
     private static final String ORIGIN = "https://jairoads-dd-review-20261114.onrender.com";
     private static final String HOST = "jairoads-dd-review-20261114.onrender.com";
     private static final String ASSET_PATH = "/jairoads-android-pilot/";
@@ -120,7 +126,13 @@ public final class MainActivity extends Activity {
     }
 
     private void handleMode(String mode) {
-        if (mode != null && mode.startsWith("export-file:")) {
+        if (mode != null && mode.startsWith("export-start:")) {
+            receiveExport("start", mode.substring("export-start:".length()));
+        } else if (mode != null && mode.startsWith("export-chunk:")) {
+            receiveExport("chunk", mode.substring("export-chunk:".length()));
+        } else if (mode != null && mode.startsWith("export-end:")) {
+            receiveExport("end", mode.substring("export-end:".length()));
+        } else if (mode != null && mode.startsWith("export-file:")) {
             exportFile(mode.substring("export-file:".length()));
         } else if ("cache-ready".equals(mode)) {
             cached = true;
@@ -135,12 +147,62 @@ public final class MainActivity extends Activity {
         }
     }
 
+    private void clearExportTransfer() {
+        exportTransferId = null;
+        exportName = null;
+        exportLength = 0;
+        exportTransfer = null;
+    }
+
+    private void receiveExport(String step, String payload) {
+        if (!cached || exportBytes != null || payload.length() > 150 * 1024) return;
+        try {
+            JSONObject part = new JSONObject(payload);
+            String id = part.getString("id");
+            if ("start".equals(step)) {
+                clearExportTransfer();
+                int length = part.getInt("length");
+                String name = part.getString("name");
+                if (!id.matches("[0-9a-fA-F-]{36}") || length <= 0 || length > MAX_EXPORT_ENCODED || name.isEmpty() || name.length() > 255) return;
+                exportTransferId = id;
+                exportName = name;
+                exportLength = length;
+                exportTransfer = new StringBuilder(Math.min(length, 256 * 1024));
+            } else if (exportTransfer != null && id.equals(exportTransferId)) {
+                if ("chunk".equals(step)) {
+                    String data = part.getString("data");
+                    if (part.getInt("offset") != exportTransfer.length() || data.length() > 128 * 1024 || exportTransfer.length() + data.length() > exportLength) {
+                        clearExportTransfer(); return;
+                    }
+                    exportTransfer.append(data);
+                } else if ("end".equals(step)) {
+                    if (exportTransfer.length() != exportLength) { clearExportTransfer(); return; }
+                    String name = exportName;
+                    String data = exportTransfer.toString();
+                    clearExportTransfer();
+                    exportData(name, data);
+                }
+            }
+        } catch (Exception error) {
+            clearExportTransfer();
+            android.widget.Toast.makeText(this, "Could not transfer the local file.", android.widget.Toast.LENGTH_SHORT).show();
+        }
+    }
+
     private void exportFile(String payload) {
         if (!cached || exportBytes != null || payload.length() > 6 * 1024 * 1024) return;
         try {
             JSONObject file = new JSONObject(payload);
-            String name = file.getString("name").replaceAll("[/\\\\\\p{Cntrl}]", "_");
-            String data = file.getString("data");
+            exportData(file.getString("name"), file.getString("data"));
+        } catch (Exception error) {
+            android.widget.Toast.makeText(this, "Could not open the local file.", android.widget.Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void exportData(String name, String data) {
+        if (!cached || exportBytes != null || data.length() > MAX_EXPORT_ENCODED) return;
+        try {
+            name = name.replaceAll("[/\\\\\\p{Cntrl}]", "_");
             int comma = data.indexOf(',');
             if (name.isEmpty() || name.length() > 255 || comma < 0 || !data.startsWith("data:")) return;
             String type = data.substring(5, comma);
@@ -151,7 +213,7 @@ public final class MainActivity extends Activity {
                     && !type.equals("application/vnd.openxmlformats-officedocument.presentationml.presentation")
                     && !type.equals("image/jpeg") && !type.equals("image/png") && !type.equals("image/webp")) return;
             byte[] bytes = android.util.Base64.decode(data.substring(comma + 1), android.util.Base64.DEFAULT);
-            if (bytes.length == 0 || bytes.length > 4 * 1024 * 1024) return;
+            if (bytes.length == 0 || bytes.length > MAX_EXPORT_BYTES) return;
             exportBytes = bytes;
             Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
             intent.addCategory(Intent.CATEGORY_OPENABLE);
@@ -206,6 +268,7 @@ public final class MainActivity extends Activity {
 
     private void resetViews() {
         cached = false;
+        clearExportTransfer();
         exportBytes = null;
         onlineRequested = false;
         hostedReady = false;

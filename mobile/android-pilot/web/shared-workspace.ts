@@ -51,7 +51,7 @@ function ensure(test: unknown, message: string): asserts test {
 }
 async function readAttachment(file: unknown): Promise<{name:string;data:string}> {
     const selected = file as File | undefined;
-    ensure(selected && typeof selected.name==='string' && selected.size>0 && selected.size<=4*1024*1024 && attachmentMime(selected.name), 'Choose a supported photo or document up to 4 MB.');
+    ensure(selected && typeof selected.name==='string' && selected.size>0 && selected.size<=20*1024*1024 && attachmentMime(selected.name), 'Choose a supported photo or document up to 20 MB.');
     const data=await new Promise<string>((resolve,reject)=>{
         const reader=new FileReader();
         reader.onload=()=>resolve(String(reader.result));
@@ -241,14 +241,16 @@ export async function openSharedWorkspace(vault:Vault,frame:HTMLIFrameElement,op
             const file=url.pathname.match(/^\/workspace\/files\/(document|media)\/(\d+)$/);
             if(file) {
                 const found=findFile(vault,file[1] as 'document'|'media',Number(file[2]));
-                if(found?.data) {
-                    const blob=bytes(found.data);
+                const local=await found?.read();
+                if(local) {
+                    const blob=bytes(local);
                     return new Response(blob,{headers:{'Content-Type':blob.type,'Cache-Control':'private, no-store'}});
                 }
                 if(force||options.status().offline)return new Response(null,{status:503});
                 if(found?.ref) {
                     try {await vault.cacheFile(found.ref);const cached=findFile(vault,file[1] as 'document'|'media',Number(file[2]));
-                        if(cached?.data){const blob=bytes(cached.data);return new Response(blob,{headers:{'Content-Type':blob.type,'Cache-Control':'private, no-store'}});}
+                        const data=await cached?.read();
+                        if(data){const blob=bytes(data);return new Response(blob,{headers:{'Content-Type':blob.type,'Cache-Control':'private, no-store'}});}
                     } catch {}
                 }
                 return null;
@@ -260,19 +262,20 @@ export async function openSharedWorkspace(vault:Vault,frame:HTMLIFrameElement,op
         },
         hasLocalFile(raw) {
             const url=urlFor(raw);const file=url.pathname.match(/^\/workspace\/files\/(document|media)\/(\d+)$/);
-            return Boolean(active&&url.origin===location.origin&&file&&findFile(vault,file[1] as 'document'|'media',Number(file[2]))?.data);
+            return Boolean(active&&url.origin===location.origin&&file&&findFile(vault,file[1] as 'document'|'media',Number(file[2]))?.available);
         },
         async exportFile(raw) {
             const url=urlFor(raw);
             const file=url.pathname.match(/^\/workspace\/files\/(document|media)\/(\d+)$/);
             if(!active||url.origin!==location.origin||!file)return false;
             let found=findFile(vault,file[1] as 'document'|'media',Number(file[2]));
-            if(found?.ref&&!found.data&&!options.status().offline) {
+            if(found?.ref&&!found.available&&!options.status().offline) {
                 try {await vault.cacheFile(found.ref);} catch {}
                 found=findFile(vault,file[1] as 'document'|'media',Number(file[2]));
             }
-            if(!found?.data){userMessage('No local file copy is available. Connect to download this file.');return false;}
-            exportLocalFile(found.name,found.data);return true;
+            const data=await found?.read();
+            if(!found||!data){userMessage('No local file copy is available. Connect to download this file.');return false;}
+            exportLocalFile(found.name,data);return true;
         },
         status:options.status,
         ready() { frame.dataset.ready='true'; },

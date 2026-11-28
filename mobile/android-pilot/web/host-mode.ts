@@ -18,7 +18,11 @@ export function hostMode(message: ModeMessage) {
 
 export function exportLocalFile(name: string, data: string) {
     if (window.JaiRoadsHost) {
-        window.JaiRoadsHost.postMessage('export-file:' + JSON.stringify({ name, data }));
+        const id=crypto.randomUUID();
+        const chunkSize=128*1024;
+        window.JaiRoadsHost.postMessage('export-start:'+JSON.stringify({id,name,length:data.length}));
+        for(let offset=0;offset<data.length;offset+=chunkSize){window.JaiRoadsHost.postMessage('export-chunk:'+JSON.stringify({id,offset,data:data.slice(offset,offset+chunkSize)}));}
+        window.JaiRoadsHost.postMessage('export-end:'+JSON.stringify({id}));
         return;
     }
     const link = document.createElement('a');

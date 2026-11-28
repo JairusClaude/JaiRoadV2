@@ -124,16 +124,11 @@ function item(title: string, detail = '') {
     return row;
 }
 
-function localFileAction(entry: HTMLLIElement, data: string, name: string) {
-    if (/^data:image\/(jpeg|png|webp);base64,/.test(data)) {
-        const photo = document.createElement('img');
-        photo.src = data;
-        photo.alt = name;
-        photo.loading = 'lazy';
-        photo.className = 'offline-photo';
-        entry.append(photo);
-    }
-    entry.append(action('Open / save local copy', () => exportLocalFile(name, data)));
+function localFileAction(entry:HTMLLIElement,read:()=>Promise<string|undefined>,name:string) {
+    entry.append(action('Open / save local copy',async()=>{
+        try{const data=await read();if(!data)throw new Error('Local copy unavailable.');exportLocalFile(name,data);}
+        catch{note('Could not open this local file. Your saved work has not been removed.');}
+    }));
 }
 
 function renderOfflineMap() {
@@ -181,10 +176,10 @@ function renderDirectory() {
 
     if (tab === 'files') {
         rows = (snapshot.files ?? []).map((reference) => {
-            const data = vault.fileData(reference);
-            const entry = item(reference.title || reference.name, data
+            const available = vault.fileAvailable(reference);
+            const entry = item(reference.title || reference.name, available
                 ? 'Available offline · ' + reference.name : 'No local copy · Requires internet');
-            if (data) localFileAction(entry, data, reference.name);
+            if (available) localFileAction(entry, () => vault.fileData(reference), reference.name);
             else if (connected() && reachable && reference.available) {
                 entry.append(action('Save for offline use', async () => {
                     try { await vault.cacheFile(reference); renderDirectory(); }
@@ -201,7 +196,7 @@ function renderDirectory() {
                         ? 'Saved locally · Waiting for internet / server'
                         : 'Saved locally · Earlier attachment requires review'),
             );
-            localFileAction(entry, attachment.data, attachment.name);
+            localFileAction(entry, () => vault.attachmentData(attachment), attachment.name);
             return entry;
         }));
     } else if (tab === 'monthly') {
@@ -298,14 +293,13 @@ function openDetails(kind: 'road' | 'project' | 'record' | 'monthly', row: Row) 
     }
     const recordIds = kind === 'project' ? related.map((r) => String(r.id)) : kind === 'record' ? [String(row.id)] : kind === 'monthly' ? [String(row.maintenance_id)] : [];
     for (const file of (vault.state.snapshot.files ?? []).filter((f) => recordIds.includes(String(f.record)))) {
-        const entry = item(file.title || file.name, vault.fileData(file) ? 'Available offline' : 'Requires internet');
-        const data = vault.fileData(file);
-        if (data) localFileAction(entry, data, file.name);
+        const entry = item(file.title || file.name, vault.fileAvailable(file) ? 'Available offline' : 'Requires internet');
+        if (vault.fileAvailable(file)) localFileAction(entry, () => vault.fileData(file), file.name);
         target.append(entry);
     }
     for (const file of vault.state.attachments.filter((f) => recordIds.includes(f.record))) {
         const entry = item(file.name, file.receipt ? 'Synced · Local copy retained' : 'Saved locally');
-        localFileAction(entry, file.data, file.name);
+        localFileAction(entry, () => vault.attachmentData(file), file.name);
         target.append(entry);
     }
     el('field-detail').hidden = false;
@@ -380,10 +374,10 @@ function leave(then: () => void) {
 function getFile(file: File) {
     if (
         !file.size ||
-        file.size > 4 * 1024 * 1024 ||
+        file.size > 20 * 1024 * 1024 ||
         !/\.(jpe?g|png|webp|pdf|docx|xlsx|pptx)$/i.test(file.name)
     ) {
-        throw new Error('Choose a supported photo or document up to 4 MB.');
+        throw new Error('Choose a supported photo or document up to 20 MB.');
     }
 
     return new Promise<string>((resolve, reject) => {
