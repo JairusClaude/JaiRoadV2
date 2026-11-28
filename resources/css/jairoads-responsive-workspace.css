@@ -1185,6 +1185,20 @@ html.dark .jr-stage .jr-field-error {
     body:has([data-mobile-layout][data-state='open']) .toaster {
         z-index: 40;
     }
+    [data-slot='dialog-content'].jr-notification-sheet[data-mobile-layout] {
+        inset: auto 0 var(--jr-dialog-bottom, 0px);
+        width: auto;
+        max-width: none;
+        margin: 0;
+        translate: none;
+        transform: none;
+        animation: none;
+    }
+    html.dark .jr-notification-sheet {
+        border-color: var(--jr-dark-border);
+        background: var(--jr-dark-surface);
+        color: var(--jr-dark-text);
+    }
     .jr-notification-sheet .jr-notification-refresh {
         min-height: 44px;
     }

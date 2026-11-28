@@ -434,16 +434,29 @@ export async function verifyMobileWorkspaces({
                     exact: true,
                 });
                 await sheet.waitFor();
-                assert.ok(
-                    await sheet.evaluate((element) => {
-                        const bounds = element.getBoundingClientRect();
+                await phone.waitForFunction(
+                    () => {
+                        const bounds = document
+                            .querySelector('.jr-notification-sheet')
+                            ?.getBoundingClientRect();
+
+                        if (!bounds) {
+                            return false;
+                        }
+
+                        const viewport = window.visualViewport;
+                        const bottom = viewport
+                            ? viewport.offsetTop + viewport.height
+                            : window.innerHeight;
 
                         return (
-                            Math.abs(bounds.bottom - innerHeight) <= 2 &&
-                            Math.abs(bounds.width - innerWidth) <= 2
+                            Math.abs(bounds.left) <= 2 &&
+                            Math.abs(bounds.bottom - bottom) <= 2 &&
+                            Math.abs(bounds.right - window.innerWidth) <= 2
                         );
-                    }),
-                    role + ' notifications open as a full-width bottom sheet',
+                    },
+                    undefined,
+                    { timeout: 5000 },
                 );
                 await sheet
                     .getByRole('button', { name: 'Close', exact: true })

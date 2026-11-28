@@ -182,7 +182,7 @@ function AccountNotifications({
         return (
             <Dialog open={open} onOpenChange={changeOpen}>
                 <DialogTrigger asChild>{trigger}</DialogTrigger>
-                <DialogContent className="jr-theme jr-menu jr-notification-popover jr-notification-sheet">
+                <DialogContent className="jr-theme jr-notification-popover jr-notification-sheet">
                     <DialogHeader>
                         <DialogTitle>My notifications</DialogTitle>
                         <DialogDescription>
