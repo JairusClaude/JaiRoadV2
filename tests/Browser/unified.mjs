@@ -5,6 +5,7 @@ import process from 'node:process';
 import { verifyAuditNotifications } from './audit-notifications.mjs';
 import { verifyAuthenticatedHistory } from './authenticated-history.mjs';
 import { verifyDuplicatePeriod } from './duplicate-period.mjs';
+import { verifyOfflineFieldReport } from './offline-field-report.mjs';
 import { verifyPermanentFileDeletion } from './permanent-file-deletion.mjs';
 import { verifyPreservedRelationships } from './preserved-relationships.mjs';
 import { pdf, png, startStorageMock } from './private-storage-mock.mjs';
@@ -21,7 +22,10 @@ const f = JSON.parse(
     await readFile(process.env.QUARTERLY_BROWSER_FIXTURE, 'utf8'),
 );
 const manifest = JSON.parse(
-    await readFile(new URL('../../public/build/manifest.json', import.meta.url), 'utf8'),
+    await readFile(
+        new URL('../../public/build/manifest.json', import.meta.url),
+        'utf8',
+    ),
 );
 const ui = `${base}/workspace/ui`;
 const storage = await startStorageMock();
@@ -87,7 +91,11 @@ async function signIn(email) {
     page.setDefaultTimeout(15000);
     page.on('pageerror', (e) => {
         errors.push(e.message);
-        console.error('Uncaught browser exception at', new URL(page.url()).pathname, e.stack ?? e.message);
+        console.error(
+            'Uncaught browser exception at',
+            new URL(page.url()).pathname,
+            e.stack ?? e.message,
+        );
     });
     page.on('dialog', (dialog) => dialog.accept());
     await page.goto(`${base}/login`);
@@ -114,10 +122,13 @@ async function signIn(email) {
         await page.getByRole('button', { name: 'Explore JaiROADS' }).click();
         await page.getByRole('button', { name: 'Continue to sign in' }).click();
         await page.getByLabel('Email address').waitFor({ state: 'visible' });
-        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+        assert.ok(
+            await page.evaluate(
+                () => document.documentElement.scrollWidth <= innerWidth,
+            ),
+        );
         await page.setViewportSize({ width: 1440, height: 1080 });
         await page.emulateMedia({ reducedMotion: 'no-preference' });
-
     }
 
     await page.getByLabel('Email address').fill(email);
@@ -125,11 +136,13 @@ async function signIn(email) {
         .getByLabel('Password', { exact: true })
         .fill('Disposable-Test!123');
     await page.evaluate(() => {
- document.documentElement.dataset.testLoginDocument = 'old';
-});
+        document.documentElement.dataset.testLoginDocument = 'old';
+    });
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     await page.waitForURL(/workspace\/dashboard|superadmin-home/);
-    await page.waitForFunction(() => document.documentElement.dataset.testLoginDocument !== 'old');
+    await page.waitForFunction(
+        () => document.documentElement.dataset.testLoginDocument !== 'old',
+    );
     assert.equal(await page.locator('.jr-auth-handoff').count(), 0);
 
     if (email === f.superadmin_email) {
@@ -177,19 +190,31 @@ async function csrfPost(page, path, data) {
 }
 
 try {
-    for (const entry of ['resources/js/app.tsx', 'resources/js/pages/auth/login.tsx']) {
+    for (const entry of [
+        'resources/js/app.tsx',
+        'resources/js/pages/auth/login.tsx',
+    ]) {
         assert.ok(manifest[entry]?.file, `Missing startup asset for ${entry}`);
         const asset = `${base}/build/${manifest[entry].file}`;
         const startupPage = await browser.newPage();
 
         try {
             await startupPage.route(asset, (route) => route.abort());
-            const failedAsset = startupPage.waitForEvent('requestfailed', (request) => request.url() === asset);
+            const failedAsset = startupPage.waitForEvent(
+                'requestfailed',
+                (request) => request.url() === asset,
+            );
             await startupPage.goto(`${base}/login`);
             await failedAsset;
-            const reload = startupPage.getByRole('link', { name: 'Reload page', exact: true });
+            const reload = startupPage.getByRole('link', {
+                name: 'Reload page',
+                exact: true,
+            });
             await reload.waitFor({ state: 'visible' });
-            assert.equal(await startupPage.getByLabel('Email address').count(), 0);
+            assert.equal(
+                await startupPage.getByLabel('Email address').count(),
+                0,
+            );
             await startupPage.unroute(asset);
             await reload.click();
             await startupPage.getByLabel('Email address').waitFor();
@@ -199,7 +224,9 @@ try {
         }
     }
 
-    console.log('PASS: login has a reload action even when its initial JavaScript is unavailable.');
+    console.log(
+        'PASS: login has a reload action even when its initial JavaScript is unavailable.',
+    );
 
     const engineer = await signIn(f.engineer_email);
     const admin = await signIn(f.admin_email);
@@ -213,23 +240,195 @@ try {
         [admin, 'rgb(200, 41, 61)', 'rgb(253, 231, 234)'],
         [viewer, 'rgb(29, 93, 181)', 'rgb(230, 239, 255)'],
     ]) {
-        for (const path of ['/maintenance-records', '/monthly-updates', '/road-coverages', '/lgus']) {
+        for (const path of [
+            '/maintenance-records',
+            '/monthly-updates',
+            '/road-coverages',
+            '/lgus',
+        ]) {
             await page.goto(ui + path);
             const icons = page.locator('.jr-metric-card .jr-metric-icon');
             await icons.first().waitFor();
-            const colors = await icons.evaluateAll(elements => elements.map(el => {
-                const style = getComputedStyle(el);
+            const colors = await icons.evaluateAll((elements) =>
+                elements.map((el) => {
+                    const style = getComputedStyle(el);
 
-                return [style.color, style.backgroundColor];
-            }));
+                    return [style.color, style.backgroundColor];
+                }),
+            );
 
             for (const pair of colors) {
-assert.deepEqual(pair, [foreground, background], path);
-}
+                assert.deepEqual(pair, [foreground, background], path);
+            }
         }
 
         await page.goto(base + '/workspace/dashboard');
     }
+
+
+    // Check actual rendered colors for every role, including System switching.
+    const luminance = (color) => {
+        const channels = color.match(/\d+(?:\.\d+)?/g).slice(0, 3);
+        const [red, green, blue] = channels.map((channel) => {
+            const value = Number(channel) / 255;
+
+            return value <= 0.04045
+                ? value / 12.92
+                : ((value + 0.055) / 1.055) ** 2.4;
+        });
+
+        return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+    };
+
+    for (const page of [superadmin, admin, engineer, viewer]) {
+        await page.goto(ui + '/maintenance-projects');
+        const banner = page.locator('.jr-page-head').first();
+        await banner.waitFor();
+
+        for (const [mode, scheme, dark] of [
+            ['light', 'light', false],
+            ['dark', 'light', true],
+            ['system', 'dark', true],
+        ]) {
+            await page.emulateMedia({ colorScheme: scheme });
+            await page.evaluate((mode) => {
+                localStorage.setItem('appearance', mode);
+            }, mode);
+            await page.reload();
+            await banner.waitFor();
+            const colors = await banner.evaluate((element) => ({
+                dark: document.documentElement.classList.contains('dark'),
+                heading: getComputedStyle(element.querySelector('h1')).color,
+                banner: getComputedStyle(element).backgroundColor,
+            }));
+            assert.equal(colors.dark, dark);
+            const foreground = luminance(colors.heading);
+            const background = luminance(colors.banner);
+            assert.ok(
+                (Math.max(foreground, background) + 0.05) /
+                    (Math.min(foreground, background) + 0.05) >=
+                    4.5,
+                `Directory banner contrast in ${mode}: ${JSON.stringify(colors)}`,
+            );
+            assert.ok(dark ? background < 0.2 : background > 0.5);
+        }
+
+        await page.emulateMedia({ colorScheme: 'light' });
+        await page.waitForFunction(
+            () => !document.documentElement.classList.contains('dark'),
+        );
+        await page.evaluate(() => localStorage.setItem('appearance', 'light'));
+        await page.goto(base + '/workspace/dashboard');
+    }
+
+    console.log(
+        'PASS: directory banner contrast in all three appearance modes for all four roles.',
+    );
+
+    await viewer.evaluate(() => localStorage.setItem('appearance', 'dark'));
+    await viewer.goto(base + '/workspace/dashboard');
+    const dashboard = viewer.locator('.jr-viewer-dashboard');
+    await dashboard.waitFor();
+    const overviewBackground = await dashboard
+        .locator('main')
+        .evaluate((element) => getComputedStyle(element).backgroundColor);
+    assert.ok(luminance(overviewBackground) < 0.2);
+    await dashboard
+        .getByRole('heading', { name: 'Read-only inventory analytics' })
+        .waitFor();
+
+    for (const route of [
+        '/maintenance-records',
+        '/monthly-updates',
+        '/maintenance-documents',
+        '/road-coverages',
+        '/lgus',
+    ]) {
+        await viewer.goto(ui + route);
+        const table = viewer.locator('.jr-table').first();
+        await table.waitFor();
+        assert.equal(
+            await table.getByRole('columnheader', { name: 'Actions', exact: true }).count(),
+            0,
+            route,
+        );
+
+        if (route === '/maintenance-documents') {
+            continue;
+        }
+
+        const metrics = viewer.locator('.jr-metric-card');
+        await metrics.first().waitFor();
+        const colors = await metrics.evaluateAll((cards) =>
+            cards.map((card) => ({
+                background: getComputedStyle(card).backgroundColor,
+                text: [...card.querySelectorAll('p')].map((p) => ({
+                    value: p.textContent.trim(),
+                    color: getComputedStyle(p).color,
+                })),
+            })),
+        );
+
+        for (const card of colors) {
+            const background = luminance(card.background);
+            assert.match(card.text[1].value, /\d/);
+
+            for (const text of card.text) {
+                const foreground = luminance(text.color);
+                assert.ok(
+                    (Math.max(foreground, background) + 0.05) /
+                        (Math.min(foreground, background) + 0.05) >= 4.5,
+                    route + ' metric contrast for ' + text.value,
+                );
+            }
+        }
+    }
+
+    await viewer.goto(ui + '/road-coverages');
+    const roadPanel = viewer.locator('.jr-table-card-container');
+    const roadColors = await roadPanel.evaluate((panel) => ({
+        background: getComputedStyle(panel).backgroundColor,
+        text: getComputedStyle(panel.querySelector('tbody td')).color,
+    }));
+    const roadBackground = luminance(roadColors.background);
+    assert.ok(roadBackground < 0.2);
+    assert.ok((luminance(roadColors.text) + 0.05) / (roadBackground + 0.05) >= 4.5);
+    await viewer.evaluate(() => localStorage.setItem('appearance', 'light'));
+    await viewer.goto(base + '/workspace/dashboard');
+    console.log(
+        'PASS: Viewer dark dashboard, readable directory metrics and road rows, and read-only table columns.',
+    );
+
+    // A filtered-away LGU must never remain in the visible selection count.
+    await superadmin.goto(`${ui}/lgus`);
+    await superadmin
+        .getByRole('button', { name: 'Select LGUs', exact: true })
+        .click();
+    await superadmin
+        .getByRole('checkbox', { name: 'Select all LGUs on this page' })
+        .check();
+    await superadmin.getByText(/^\d+ selected$/, { exact: true }).waitFor();
+    await superadmin
+        .getByRole('searchbox', { name: 'Search LGUs' })
+        .fill('NoSuchLguForSelectionRegression');
+    await superadmin.waitForURL(
+        (url) =>
+            url.searchParams.get('search') ===
+            'NoSuchLguForSelectionRegression',
+    );
+    await superadmin
+        .getByRole('button', { name: 'Select LGUs', exact: true })
+        .waitFor();
+    assert.equal(
+        await superadmin
+            .getByRole('button', { name: 'Delete selected', exact: true })
+            .count(),
+        0,
+    );
+    console.log(
+        'PASS: LGU selection is cleared when the directory scope changes.',
+    );
+    await superadmin.goto(base + '/workspace/dashboard');
 
     // Viewer palette is selected from the signed-in canonical role, not URL or preference.
     await viewer.locator('.jr-viewer-workspace').waitFor();
@@ -237,37 +436,100 @@ assert.deepEqual(pair, [foreground, background], path);
     await viewer.waitForFunction(() => {
         const logo = document.querySelector('.jr-viewer-brand-logo');
 
-        return logo instanceof HTMLImageElement && logo.complete && logo.naturalWidth > 0;
+        return (
+            logo instanceof HTMLImageElement &&
+            logo.complete &&
+            logo.naturalWidth > 0
+        );
     });
-    const viewerLogo = await viewer.locator('.jr-viewer-brand-logo').first().evaluate(img => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
+    const viewerLogo = await viewer
+        .locator('.jr-viewer-brand-logo')
+        .first()
+        .evaluate((img) => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
 
-        return { path: new URL(img.src).pathname, cornerAlpha: ctx.getImageData(0, 0, 1, 1).data[3], tile: getComputedStyle(img.parentElement).backgroundColor, shadow: getComputedStyle(img.parentElement).boxShadow };
-    });
+            return {
+                path: new URL(img.src).pathname,
+                cornerAlpha: ctx.getImageData(0, 0, 1, 1).data[3],
+                tile: getComputedStyle(img.parentElement).backgroundColor,
+                shadow: getComputedStyle(img.parentElement).boxShadow,
+            };
+        });
     assert.equal(viewerLogo.path, '/images/jairoads/peo-ddo-transparent.webp');
     assert.equal(viewerLogo.cornerAlpha, 0);
     assert.equal(viewerLogo.tile, 'rgba(0, 0, 0, 0)');
     assert.equal(viewerLogo.shadow, 'none');
-    await viewer.getByRole('heading', { name: 'Road Maintenance Overview' }).waitFor();
+    await viewer
+        .getByRole('heading', { name: 'Road Maintenance Overview' })
+        .waitFor();
     await viewer.getByText('Read-Only Access', { exact: true }).waitFor();
-    assert.equal(await viewer.getByRole('button', { name: 'Refresh dashboard', includeHidden: true }).count(), 0);
+    assert.equal(
+        await viewer
+            .getByRole('button', {
+                name: 'Refresh dashboard',
+                includeHidden: true,
+            })
+            .count(),
+        0,
+    );
 
-    for (const route of ['/maintenance-projects', '/maintenance-records', '/monthly-updates', '/maintenance-documents', '/road-coverages', '/lgus']) {
+    for (const route of [
+        '/maintenance-projects',
+        '/maintenance-records',
+        '/monthly-updates',
+        '/maintenance-documents',
+        '/road-coverages',
+        '/lgus',
+    ]) {
         await viewer.goto(ui + route);
         await viewer.locator('.jr-viewer-workspace').waitFor();
-        assert.equal(await viewer.getByRole('button', { name: /^(Add|Create|Upload)\b/i, includeHidden: true }).count(), 0, route);
-        assert.equal(await viewer.getByRole('button', { name: /^Select (projects|records|updates|documents|road coverages|LGUs)$/i, includeHidden: true }).count(), 0, route);
+        assert.equal(
+            await viewer
+                .getByRole('button', {
+                    name: /^(Add|Create|Upload)\b/i,
+                    includeHidden: true,
+                })
+                .count(),
+            0,
+            route,
+        );
+        assert.equal(
+            await viewer
+                .getByRole('button', {
+                    name: /^Select (projects|records|updates|documents|road coverages|LGUs)$/i,
+                    includeHidden: true,
+                })
+                .count(),
+            0,
+            route,
+        );
     }
 
     await viewer.goto(ui + '/maintenance-projects');
-    await viewer.getByText('Browse road maintenance projects and their progress.', { exact: true }).waitFor();
-    assert.equal(await viewer.getByRole('columnheader', { name: 'Actions', exact: true, includeHidden: true }).count(), 0);
-    const viewerProjectTable = viewer.getByRole('region', { name: 'Maintenance Projects table', exact: true });
-    const projectLayout = await viewerProjectTable.evaluate(region => {
+    await viewer
+        .getByText('Browse road maintenance projects and their progress.', {
+            exact: true,
+        })
+        .waitFor();
+    assert.equal(
+        await viewer
+            .getByRole('columnheader', {
+                name: 'Actions',
+                exact: true,
+                includeHidden: true,
+            })
+            .count(),
+        0,
+    );
+    const viewerProjectTable = viewer.getByRole('region', {
+        name: 'Maintenance Projects table',
+        exact: true,
+    });
+    const projectLayout = await viewerProjectTable.evaluate((region) => {
         const table = region.querySelector('table');
         const headers = [...table.querySelectorAll('thead th')];
         const row = table.querySelector('tbody tr');
@@ -278,104 +540,386 @@ assert.deepEqual(pair, [foreground, background], path);
             headers: headers.length,
             cells: row?.cells.length,
             headerAlignment: getComputedStyle(last).textAlign,
-            gap: Math.abs(table.getBoundingClientRect().right - last.getBoundingClientRect().right),
+            cellPadding: row
+                ? parseFloat(getComputedStyle(row.cells[0]).paddingLeft)
+                : 0,
+            widthDifference: Math.abs(
+                region.clientWidth - table.getBoundingClientRect().width,
+            ),
+            gap: Math.abs(
+                table.getBoundingClientRect().right -
+                    last.getBoundingClientRect().right,
+            ),
         };
     });
     assert.equal(projectLayout.columns, 2);
     assert.equal(projectLayout.headers, 2);
     assert.equal(projectLayout.cells, 2);
     assert.equal(projectLayout.headerAlignment, 'left');
-    assert.ok(projectLayout.gap <= 1, 'Viewer table must not reserve space for a hidden action column');
+    assert.ok(projectLayout.cellPadding > 0, 'Viewer table cells need padding');
+    assert.ok(
+        projectLayout.widthDifference <= 1,
+        'Viewer table must fill its available width',
+    );
+    assert.ok(
+        projectLayout.gap <= 1,
+        'Viewer table must not reserve space for a hidden action column',
+    );
 
     await viewer.goto(ui + '/maintenance-records');
     const readOnlyRecord = viewer.locator('a[href*="/records/"]').first();
     await readOnlyRecord.waitFor();
     await readOnlyRecord.click();
-    await viewer.getByRole('heading', { name: 'Maintenance Record Details' }).waitFor();
-    assert.equal(await viewer.getByRole('button', { name: /^(Edit Record|Delete Record|Add Monthly Update|Upload Document)$/i, includeHidden: true }).count(), 0);
+    await viewer
+        .getByRole('heading', { name: 'Maintenance Record Details' })
+        .waitFor();
+    await viewer.getByRole('region', { name: 'Progress timeline' }).waitFor();
+    assert.equal(
+        await viewer
+            .getByRole('button', {
+                name: /^(Edit Record|Delete Record|Add Monthly Update|Upload Document)$/i,
+                includeHidden: true,
+            })
+            .count(),
+        0,
+    );
     await viewer.goto(base + '/workspace/dashboard');
-    assert.equal(await viewer.locator('.jr-viewer-sidebar .jr-nav-link.jr-active').first().evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(29, 93, 181)');
+    assert.equal(
+        await viewer
+            .locator('.jr-viewer-sidebar .jr-nav-link.jr-active')
+            .first()
+            .evaluate((el) => getComputedStyle(el).backgroundColor),
+        'rgb(29, 93, 181)',
+    );
 
     for (const other of [engineer, admin, superadmin]) {
         assert.equal(await other.locator('.jr-viewer-workspace').count(), 0);
     }
 
     await engineer.locator('.jr-engineer-workspace').waitFor();
-    await engineer.getByRole('heading', { name: 'Engineering Dashboard', exact: true }).waitFor();
+    await engineer
+        .getByRole('heading', { name: 'Engineering Dashboard', exact: true })
+        .waitFor();
     await engineer.getByText('Technical Workspace', { exact: true }).waitFor();
     await engineer.getByRole('button', { name: 'Refresh dashboard' }).waitFor();
     await engineer.waitForFunction(() => {
         const logo = document.querySelector('.jr-engineer-brand-logo');
 
-        return logo instanceof HTMLImageElement && logo.complete && logo.naturalWidth > 0;
+        return (
+            logo instanceof HTMLImageElement &&
+            logo.complete &&
+            logo.naturalWidth > 0
+        );
     });
-    assert.equal(await engineer.locator('.jr-engineer-sidebar .jr-nav-link.jr-active').first().evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(169, 75, 12)');
-    assert.equal(await engineer.locator('.jr-engineer-brand-logo').first().evaluate(el => new URL(el.src).pathname), '/images/jairoads/peo-ddo-transparent.webp');
-    assert.equal(await engineer.locator('.jr-engineer-brand-logo').first().evaluate(el => getComputedStyle(el.parentElement).backgroundColor), 'rgba(0, 0, 0, 0)');
+    assert.equal(
+        await engineer
+            .locator('.jr-engineer-sidebar .jr-nav-link.jr-active')
+            .first()
+            .evaluate((el) => getComputedStyle(el).backgroundColor),
+        'rgb(169, 75, 12)',
+    );
+    assert.equal(
+        await engineer
+            .locator('.jr-engineer-brand-logo')
+            .first()
+            .evaluate((el) => new URL(el.src).pathname),
+        '/images/jairoads/peo-ddo-transparent.webp',
+    );
+    assert.equal(
+        await engineer
+            .locator('.jr-engineer-brand-logo')
+            .first()
+            .evaluate(
+                (el) => getComputedStyle(el.parentElement).backgroundColor,
+            ),
+        'rgba(0, 0, 0, 0)',
+    );
 
     for (const other of [viewer, admin, superadmin]) {
         assert.equal(await other.locator('.jr-engineer-workspace').count(), 0);
     }
 
     await superadmin.locator('.jr-superadmin-workspace').waitFor();
-    await superadmin.getByRole('heading', { name: 'System Command Center', exact: true }).waitFor();
-    await superadmin.getByText('Highest Authority · SuperAdmin', { exact: true }).waitFor();
-    await superadmin.getByRole('button', { name: 'Refresh dashboard' }).waitFor();
+    await superadmin
+        .getByRole('heading', { name: 'System Command Center', exact: true })
+        .waitFor();
+    await superadmin
+        .getByText('Highest Authority · SuperAdmin', { exact: true })
+        .waitFor();
+    await superadmin
+        .getByRole('region', { name: 'System health and readiness' })
+        .waitFor();
+    await superadmin
+        .getByRole('region', { name: 'Maintenance intelligence' })
+        .waitFor();
+    await superadmin
+        .getByText('File recovery queue', { exact: true })
+        .waitFor();
+    await superadmin
+        .getByRole('heading', { name: 'Road review priority' })
+        .waitFor();
+    const intelligence = JSON.parse(
+        await superadmin.locator('script[data-page]').textContent(),
+    ).props.maintenanceIntelligence;
+    assert.ok(Number.isInteger(intelligence.conditions.Unknown));
+    assert.ok(intelligence.conditions.Unknown >= 0);
+    const conditionsSummary = superadmin.getByRole('region', {
+        name: 'Road condition',
+        exact: true,
+    });
+    const conditionLabels = ['Good', 'Fair', 'Bad'];
+    assert.deepEqual(
+        await conditionsSummary.locator('dt').allTextContents(),
+        conditionLabels,
+    );
+    assert.deepEqual(
+        (await conditionsSummary.locator('dd').allTextContents()).map(Number),
+        conditionLabels.map((condition) => intelligence.conditions[condition]),
+    );
+    const classified = conditionLabels.reduce(
+        (total, condition) => total + intelligence.conditions[condition],
+        0,
+    );
+    await conditionsSummary
+        .getByText(classified + ' classified', { exact: true })
+        .waitFor();
+    assert.equal(
+        intelligence.priority.length,
+        Math.min(12, intelligence.priorityTotal),
+    );
+    assert.ok(
+        intelligence.priority.every(
+            (road) =>
+                road.score ===
+                    road.conditionScore +
+                        road.overdueScore +
+                        road.reportScore &&
+                road.score > 0 &&
+                road.score <= 100,
+        ),
+    );
+    assert.ok(
+        intelligence.priority.every(
+            (road, index, roads) =>
+                index === 0 || roads[index - 1].score >= road.score,
+        ),
+    );
+
+    for (const other of [viewer, engineer, admin]) {
+        assert.equal(
+            await other
+                .getByRole('region', { name: 'System health and readiness' })
+                .count(),
+            0,
+        );
+        assert.equal(
+            await other
+                .getByRole('region', { name: 'Maintenance intelligence' })
+                .count(),
+            0,
+        );
+    }
+
+    await viewer
+        .getByRole('heading', { name: 'Read-only inventory analytics' })
+        .waitFor();
+    assert.equal(
+        await viewer
+            .getByRole('button', { name: 'Export report', includeHidden: true })
+            .count(),
+        0,
+    );
+
+    for (const [page, scope] of [
+        [admin, 'Operations overview'],
+        [engineer, 'My assigned work'],
+    ]) {
+        await page.getByRole('button', { name: 'Export report' }).click();
+        const download = page.waitForEvent('download');
+        await page.getByRole('menuitem', { name: 'CSV Data' }).click();
+        const file = await download;
+        const csv = await readFile(await file.path(), 'utf8');
+        const rows = csv.trim().split(/\r?\n/).slice(1);
+        assert.ok(rows.length > 0);
+        assert.ok(rows.every((row) => row.startsWith('"' + scope + '",')));
+        assert.doesNotMatch(csv, /sb_secret_|password_hash|signed_url/i);
+    }
+
+    const summaryDownload = superadmin.waitForEvent('download');
+    const exportMenu = superadmin.getByRole('button', {
+        name: 'Export report',
+    });
+    await exportMenu.focus();
+    await exportMenu.press('Enter');
+    await superadmin.getByRole('menuitem', { name: 'CSV Data' }).click();
+    const summaryFile = await summaryDownload;
+    assert.match(
+        summaryFile.suggestedFilename(),
+        /^JaiROADS_System-wide_Analytics_\d{4}-\d{2}\.csv$/,
+    );
+    const summaryText = await readFile(await summaryFile.path(), 'utf8');
+    assert.ok(
+        summaryText.includes(
+            '"report_scope","category","metric","period","value","unit"',
+        ),
+    );
+    assert.ok(summaryText.includes('"System-wide","monthly_trend"'));
+    assert.ok(!summaryText.includes('sb_secret_'));
+
+    for (const [format, label, signature] of [
+        ['XLSX', 'Excel Workbook', 'PK'],
+        ['PDF', 'PDF Report', '%PDF-1.4'],
+    ]) {
+        const downloadPromise = superadmin.waitForEvent('download');
+        await exportMenu.click();
+        await superadmin.getByRole('menuitem', { name: label }).click();
+        const file = await downloadPromise;
+        assert.match(
+            file.suggestedFilename(),
+            /^JaiROADS_System-wide_Analytics_\d{4}-\d{2}\.(pdf|xlsx)$/,
+        );
+        assert.ok(file.suggestedFilename().endsWith('.' + format.toLowerCase()));
+        const bytes = await readFile(await file.path());
+        assert.equal(bytes.subarray(0, signature.length).toString(), signature);
+        const content = bytes.toString('utf8');
+        assert.ok(content.includes('System-wide'));
+        assert.ok(!content.includes('sb_secret_'));
+        assert.ok(
+            content.includes(
+                format === 'XLSX'
+                    ? 'name="Monthly Trends"'
+                    : '/MediaBox [0 0 595 842]',
+            ),
+        );
+    }
+
+    await superadmin
+        .getByRole('button', { name: 'Refresh dashboard' })
+        .waitFor();
     await superadmin.waitForFunction(() => {
         const logo = document.querySelector('.jr-superadmin-brand-logo');
 
-        return logo instanceof HTMLImageElement && logo.complete && logo.naturalWidth > 0;
+        return (
+            logo instanceof HTMLImageElement &&
+            logo.complete &&
+            logo.naturalWidth > 0
+        );
     });
-    assert.equal(await superadmin.locator('.jr-superadmin-sidebar .jr-nav-link.jr-active').first().evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(81, 38, 155)');
-    assert.equal(await superadmin.locator('.jr-superadmin-brand-logo').first().evaluate(el => new URL(el.src).pathname), '/images/jairoads/peo-ddo-transparent.webp');
-    assert.equal(await superadmin.locator('.jr-superadmin-brand-logo').first().evaluate(el => getComputedStyle(el.parentElement).backgroundColor), 'rgba(0, 0, 0, 0)');
+    assert.equal(
+        await superadmin
+            .locator('.jr-superadmin-sidebar .jr-nav-link.jr-active')
+            .first()
+            .evaluate((el) => getComputedStyle(el).backgroundColor),
+        'rgb(81, 38, 155)',
+    );
+    assert.equal(
+        await superadmin
+            .locator('.jr-superadmin-brand-logo')
+            .first()
+            .evaluate((el) => new URL(el.src).pathname),
+        '/images/jairoads/peo-ddo-transparent.webp',
+    );
+    assert.equal(
+        await superadmin
+            .locator('.jr-superadmin-brand-logo')
+            .first()
+            .evaluate(
+                (el) => getComputedStyle(el.parentElement).backgroundColor,
+            ),
+        'rgba(0, 0, 0, 0)',
+    );
 
     for (const other of [viewer, engineer, admin]) {
-        assert.equal(await other.locator('.jr-superadmin-workspace').count(), 0);
+        assert.equal(
+            await other.locator('.jr-superadmin-workspace').count(),
+            0,
+        );
     }
 
     await admin.locator('.jr-admin-workspace').waitFor();
-    await admin.getByRole('heading', { name: 'Administration Dashboard', exact: true }).waitFor();
+    await admin
+        .getByRole('heading', { name: 'Administration Dashboard', exact: true })
+        .waitFor();
     await admin.getByText('Administration Panel', { exact: true }).waitFor();
     await admin.getByRole('button', { name: 'Refresh dashboard' }).waitFor();
     await admin.waitForFunction(() => {
         const logo = document.querySelector('.jr-admin-brand-logo');
 
-        return logo instanceof HTMLImageElement && logo.complete && logo.naturalWidth > 0;
+        return (
+            logo instanceof HTMLImageElement &&
+            logo.complete &&
+            logo.naturalWidth > 0
+        );
     });
-    assert.equal(await admin.locator('.jr-admin-sidebar .jr-nav-link.jr-active').first().evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(200, 41, 61)');
-    assert.equal(await admin.locator('.jr-admin-brand-logo').first().evaluate(el => new URL(el.src).pathname), '/images/jairoads/peo-ddo-transparent.webp');
-    assert.equal(await admin.locator('.jr-admin-brand-logo').first().evaluate(el => getComputedStyle(el.parentElement).backgroundColor), 'rgba(0, 0, 0, 0)');
+    assert.equal(
+        await admin
+            .locator('.jr-admin-sidebar .jr-nav-link.jr-active')
+            .first()
+            .evaluate((el) => getComputedStyle(el).backgroundColor),
+        'rgb(200, 41, 61)',
+    );
+    assert.equal(
+        await admin
+            .locator('.jr-admin-brand-logo')
+            .first()
+            .evaluate((el) => new URL(el.src).pathname),
+        '/images/jairoads/peo-ddo-transparent.webp',
+    );
+    assert.equal(
+        await admin
+            .locator('.jr-admin-brand-logo')
+            .first()
+            .evaluate(
+                (el) => getComputedStyle(el.parentElement).backgroundColor,
+            ),
+        'rgba(0, 0, 0, 0)',
+    );
 
     for (const other of [viewer, engineer, superadmin]) {
         assert.equal(await other.locator('.jr-admin-workspace').count(), 0);
     }
 
     // Decorative motion uses each authenticated role's accent and obeys both preferences.
-    for (const [page, rgb] of [[viewer, '96 165 250'], [engineer, '251 146 60'], [admin, '241 107 118'], [superadmin, '167 139 250']]) {
+    for (const [page, rgb] of [
+        [viewer, '96 165 250'],
+        [engineer, '251 146 60'],
+        [admin, '241 107 118'],
+        [superadmin, '167 139 250'],
+    ]) {
         const layer = page.locator('.jr-sidebar-waves');
         const wave = layer.locator('.jr-sidebar-wave--primary');
         await layer.waitFor();
         assert.equal(await layer.getAttribute('aria-hidden'), 'true');
-        assert.equal(await layer.evaluate(el => getComputedStyle(el).pointerEvents), 'none');
-        assert.equal(await wave.evaluate(el => getComputedStyle(el).getPropertyValue('--jr-wave-rgb').trim()), rgb);
+        assert.equal(
+            await layer.evaluate((el) => getComputedStyle(el).pointerEvents),
+            'none',
+        );
+        assert.equal(
+            await wave.evaluate((el) =>
+                getComputedStyle(el).getPropertyValue('--jr-wave-rgb').trim(),
+            ),
+            rgb,
+        );
         // signIn creates a reduced-motion context.
-        assert.equal(await wave.evaluate(el => getComputedStyle(el).animationName), 'none');
+        assert.equal(
+            await wave.evaluate((el) => getComputedStyle(el).animationName),
+            'none',
+        );
         await page.emulateMedia({ reducedMotion: 'no-preference' });
-        await wave.evaluate(el => {
+        await wave.evaluate((el) => {
             if (getComputedStyle(el).animationName !== 'jr-sidebar-wave-flow') {
-throw new Error('Wave animation missing');
-}
+                throw new Error('Wave animation missing');
+            }
 
             if (getComputedStyle(el).animationIterationCount !== 'infinite') {
-throw new Error('Wave does not loop');
-}
+                throw new Error('Wave does not loop');
+            }
 
             const animation = el.getAnimations()[0];
 
             if (!animation) {
-throw new Error('Wave has no running animation');
-}
+                throw new Error('Wave has no running animation');
+            }
 
             animation.pause();
             animation.currentTime = 0;
@@ -385,50 +929,124 @@ throw new Error('Wave has no running animation');
             animation.play();
 
             if (start === middle) {
-throw new Error('Wave transform is static');
-}
+                throw new Error('Wave transform is static');
+            }
         });
-        await page.evaluate(() => document.documentElement.classList.add('jr-reduce-motion'));
-        assert.equal(await wave.evaluate(el => getComputedStyle(el).animationName), 'none');
-        await page.evaluate(() => document.documentElement.classList.remove('jr-reduce-motion'));
+        await page.evaluate(() =>
+            document.documentElement.classList.add('jr-reduce-motion'),
+        );
+        assert.equal(
+            await wave.evaluate((el) => getComputedStyle(el).animationName),
+            'none',
+        );
+        await page.evaluate(() =>
+            document.documentElement.classList.remove('jr-reduce-motion'),
+        );
         await page.emulateMedia({ reducedMotion: 'reduce' });
     }
 
-    const dashboardMap = engineer.getByRole('region', { name: 'My projects road map' });
+    const dashboardMap = engineer.getByRole('region', {
+        name: 'My projects road map',
+    });
     await dashboardMap.waitFor();
-    const myProjects = dashboardMap.getByRole('switch', { name: 'My projects only' });
+    const myProjects = dashboardMap.getByRole('switch', {
+        name: 'My projects only',
+    });
     await dashboardMap.locator('.jr-dashboard-road-mine').first().waitFor();
     await dashboardMap.locator('.jr-dashboard-road-other').first().waitFor();
-    const mineCount = await dashboardMap.locator('.jr-dashboard-road-mine').count();
-    const roadSelect = dashboardMap.getByRole('combobox', { name: 'Inspect a road' });
+    const mineCount = await dashboardMap
+        .locator('.jr-dashboard-road-mine')
+        .count();
+    const roadSelect = dashboardMap.getByRole('combobox', {
+        name: 'Inspect a road',
+    });
     await roadSelect.selectOption({ index: 1 });
-    const roadDetails = dashboardMap.getByRole('complementary', { name: 'Road details' });
+    const roadDetails = dashboardMap.getByRole('complementary', {
+        name: 'Road details',
+    });
     await roadDetails.waitFor();
-    await roadDetails.getByRole('heading', { name: 'Maintenance project', exact: true }).waitFor();
-    await roadDetails.getByRole('button', { name: 'Close road details' }).click();
+    await roadDetails
+        .getByRole('heading', { name: 'Maintenance project', exact: true })
+        .waitFor();
+    await roadDetails
+        .getByRole('button', { name: 'Close road details' })
+        .click();
     await roadDetails.waitFor({ state: 'hidden' });
+    const retainedRoad = await dashboardMap
+        .locator('.jr-dashboard-road-mine')
+        .first()
+        .elementHandle();
     await myProjects.check();
-    assert.equal(await dashboardMap.locator('.jr-dashboard-road-other').count(), 0);
-    assert.equal(await dashboardMap.locator('.jr-dashboard-road-mine').count(), mineCount);
+    assert.equal(await retainedRoad.evaluate((node) => node.isConnected), true);
+    await retainedRoad.dispose();
+    assert.equal(
+        await dashboardMap.locator('.jr-dashboard-road-other').count(),
+        0,
+    );
+    assert.equal(
+        await dashboardMap.locator('.jr-dashboard-road-mine').count(),
+        mineCount,
+    );
     await myProjects.uncheck();
     await dashboardMap.locator('.jr-dashboard-road-other').first().waitFor();
-    const relationship = dashboardMap.getByRole('combobox', { name: 'Filter project relationship' });
+    const relationship = dashboardMap.getByRole('combobox', {
+        name: 'Filter project relationship',
+    });
     await relationship.selectOption('created');
-    assert.equal(await dashboardMap.locator('.jr-dashboard-road-other, .jr-dashboard-road-assigned').count(), 0);
+    assert.equal(
+        await dashboardMap
+            .locator('.jr-dashboard-road-other, .jr-dashboard-road-assigned')
+            .count(),
+        0,
+    );
     await relationship.selectOption('assigned');
-    assert.equal(await dashboardMap.locator('.jr-dashboard-road-other, .jr-dashboard-road-created').count(), 0);
+    assert.equal(
+        await dashboardMap
+            .locator('.jr-dashboard-road-other, .jr-dashboard-road-created')
+            .count(),
+        0,
+    );
     await relationship.selectOption('both');
-    assert.equal(await dashboardMap.locator('.jr-dashboard-road-other, .jr-dashboard-road-created, .jr-dashboard-road-assigned').count(), 0);
+    assert.equal(
+        await dashboardMap
+            .locator(
+                '.jr-dashboard-road-other, .jr-dashboard-road-created, .jr-dashboard-road-assigned',
+            )
+            .count(),
+        0,
+    );
     await relationship.selectOption('all');
+    const conditions = dashboardMap.locator('.jr-road-map-header').getByRole(
+        'switch',
+        { name: 'Show road conditions' },
+    );
+    await conditions.check();
+    await dashboardMap
+        .locator('.jr-road-map-legend')
+        .getByText('Good', { exact: true })
+        .waitFor();
+    await dashboardMap.locator('.jr-dashboard-road-mine').first().waitFor();
+    await conditions.uncheck();
+    await dashboardMap
+        .locator('.jr-road-map-legend')
+        .getByText('Created by me (dashed)', { exact: true })
+        .waitFor();
     // Exercise client-side map teardown directly after a user zoom and filter update.
     await dashboardMap.locator('.leaflet-control-zoom-in').click();
     await relationship.selectOption('created');
-    await engineer.locator('.jr-engineer-sidebar a[href="/workspace/ui/road-coverages"]').first().click();
+    await engineer
+        .locator('.jr-engineer-sidebar a[href="/workspace/ui/road-coverages"]')
+        .first()
+        .click();
     await engineer.waitForURL(`${ui}/road-coverages`);
     await dashboardMap.waitFor({ state: 'detached' });
     await engineer.goto(base + '/workspace/dashboard');
     await dashboardMap.locator('.jr-dashboard-road-mine').first().waitFor();
-    assert.deepEqual(errors, [], 'Map navigation must not leave uncaught browser exceptions');
+    assert.deepEqual(
+        errors,
+        [],
+        'Map navigation must not leave uncaught browser exceptions',
+    );
     // A stalled map request must not block the Engineer workspace or its retry.
     const mapTimeoutPage = await engineer.context().newPage();
     const mapEndpoint = base + '/workspace/dashboard/map-roads';
@@ -443,51 +1061,87 @@ throw new Error('Wave transform is static');
         const mapRequest = mapTimeoutPage.waitForRequest(mapEndpoint);
         await mapTimeoutPage.goto(base + '/workspace/dashboard');
         await mapRequest;
-        const slowMap = mapTimeoutPage.getByRole('region', { name: 'My projects road map' });
+        const slowMap = mapTimeoutPage.getByRole('region', {
+            name: 'My projects road map',
+        });
         await slowMap.waitFor();
-        await mapTimeoutPage.getByRole('button', { name: 'Refresh dashboard' }).waitFor();
+        await mapTimeoutPage
+            .getByRole('button', { name: 'Refresh dashboard' })
+            .waitFor();
         await mapTimeoutPage.clock.fastForward(12_100);
-        await slowMap.getByText('Road map request timed out. You can retry.').waitFor();
+        await slowMap
+            .getByText('Road map request timed out. You can retry.')
+            .waitFor();
         await mapTimeoutPage.unroute(mapEndpoint, holdMap);
         await heldMapRoute?.abort().catch(() => {});
-        await slowMap.getByRole('button', { name: 'Retry', exact: true }).click();
+        await slowMap
+            .getByRole('button', { name: 'Retry', exact: true })
+            .click();
         await slowMap.locator('.jr-dashboard-road-mine').first().waitFor();
-        console.log('PASS: dashboard remains available during a stalled map request; deadline and retry recover the map.');
+        console.log(
+            'PASS: dashboard remains available during a stalled map request; deadline and retry recover the map.',
+        );
     } finally {
         await mapTimeoutPage.close();
     }
 
-    const mapModule = manifest['resources/js/components/road-coverages/simplified-coverage-map.tsx'];
-    assert.ok(mapModule?.file, 'The dashboard map module must have a build entry');
+    const mapModule =
+        manifest[
+            'resources/js/components/road-coverages/simplified-coverage-map.tsx'
+        ];
+    assert.ok(
+        mapModule?.file,
+        'The dashboard map module must have a build entry',
+    );
     const mapModuleUrl = `${base}/build/${mapModule.file}`;
     const mapModulePage = await engineer.context().newPage();
 
     try {
         await mapModulePage.route(mapModuleUrl, (route) => route.abort());
         await mapModulePage.goto(`${base}/workspace/dashboard`);
-        const retry = mapModulePage.getByRole('button', { name: 'Reload page to retry map' });
+        const retry = mapModulePage.getByRole('button', {
+            name: 'Reload page to retry map',
+        });
         await retry.waitFor();
-        await mapModulePage.getByRole('button', { name: 'Refresh dashboard' }).waitFor();
+        await mapModulePage
+            .getByRole('button', { name: 'Refresh dashboard' })
+            .waitFor();
         await mapModulePage.unroute(mapModuleUrl);
         await retry.click();
-        await mapModulePage.locator('.jr-dashboard-road-mine').first().waitFor();
-        console.log('PASS: a failed dashboard map module can recover once its asset is available.');
+        await mapModulePage
+            .locator('.jr-dashboard-road-mine')
+            .first()
+            .waitFor();
+        console.log(
+            'PASS: a failed dashboard map module can recover once its asset is available.',
+        );
     } finally {
         await mapModulePage.close();
     }
 
     const viewerMapRequests = [];
-    const recordViewerMapRequest = request => {
-        if (new URL(request.url()).pathname === '/workspace/dashboard/map-roads') {
-viewerMapRequests.push(request.url());
-}
+    const recordViewerMapRequest = (request) => {
+        if (
+            new URL(request.url()).pathname === '/workspace/dashboard/map-roads'
+        ) {
+            viewerMapRequests.push(request.url());
+        }
     };
     viewer.on('request', recordViewerMapRequest);
 
     try {
         await viewer.goto(base + '/workspace/dashboard');
-        await viewer.getByRole('heading', { name: 'Road Maintenance Overview' }).waitFor();
-        assert.equal(await viewer.getByRole('region', { name: /Viewer road coverage map|My projects road map/ }).count(), 0);
+        await viewer
+            .getByRole('heading', { name: 'Road Maintenance Overview' })
+            .waitFor();
+        assert.equal(
+            await viewer
+                .getByRole('region', {
+                    name: /Viewer road coverage map|My projects road map/,
+                })
+                .count(),
+            0,
+        );
         assert.equal(await viewer.locator('.jr-road-map-panel').count(), 0);
         assert.equal(viewerMapRequests.length, 0);
     } finally {
@@ -506,30 +1160,64 @@ viewerMapRequests.push(request.url());
     const projectPickers = await engineer.context().newPage();
 
     try {
-        await projectPickers.route('**/workspace/ui/project-filter-choices?*', (route) => {
-            const page = Number(new URL(route.request().url()).searchParams.get('page'));
+        await projectPickers.route(
+            '**/workspace/ui/project-filter-choices?*',
+            (route) => {
+                const page = Number(
+                    new URL(route.request().url()).searchParams.get('page'),
+                );
 
-            return route.fulfill({
-                json: { page, last_page: 2, data: [{ id: page, project_title: `Project on page ${page}` }] },
-            });
-        });
+                return route.fulfill({
+                    json: {
+                        page,
+                        last_page: 2,
+                        data: [
+                            {
+                                id: page,
+                                project_title: `Project on page ${page}`,
+                            },
+                        ],
+                    },
+                });
+            },
+        );
 
         for (const [path, label] of [
             ['/maintenance-records/create', 'Maintenance Project'],
             ['/monthly-updates', 'Project filter'],
         ]) {
             await projectPickers.goto(ui + path);
-            await projectPickers.getByLabel(new RegExp('^' + label)).press('Enter');
-            await projectPickers.getByText('Page 1 of 2', { exact: true }).waitFor();
-            const search = projectPickers.getByRole('textbox', { name: 'Search maintenance projects' });
-            await projectPickers.getByRole('button', { name: 'Next', exact: true }).press('Enter');
-            await projectPickers.getByText('Page 2 of 2', { exact: true }).waitFor();
-            assert.equal(await search.evaluate((element) => element === document.activeElement), true);
+            await projectPickers
+                .getByLabel(new RegExp('^' + label))
+                .press('Enter');
+            await projectPickers
+                .getByText('Page 1 of 2', { exact: true })
+                .waitFor();
+            const search = projectPickers.getByRole('textbox', {
+                name: 'Search maintenance projects',
+            });
+            await projectPickers
+                .getByRole('button', { name: 'Next', exact: true })
+                .press('Enter');
+            await projectPickers
+                .getByText('Page 2 of 2', { exact: true })
+                .waitFor();
+            assert.equal(
+                await search.evaluate(
+                    (element) => element === document.activeElement,
+                ),
+                true,
+            );
             await projectPickers.keyboard.press('ArrowDown');
-            assert.equal(await projectPickers.locator('[role="option"]:focus').count(), 1);
+            assert.equal(
+                await projectPickers.locator('[role="option"]:focus').count(),
+                1,
+            );
         }
 
-        console.log('PASS: project picker pagination retains keyboard access to the loaded options.');
+        console.log(
+            'PASS: project picker pagination retains keyboard access to the loaded options.',
+        );
     } finally {
         await projectPickers.close();
     }
@@ -538,28 +1226,34 @@ viewerMapRequests.push(request.url());
         await page.goto(`${ui}/road-coverages`);
 
         if (page === viewer) {
-await page.locator('.jr-viewer-workspace').waitFor();
-} else {
-assert.equal(await page.locator('.jr-viewer-workspace').count(), 0);
-}
+            await page.locator('.jr-viewer-workspace').waitFor();
+        } else {
+            assert.equal(await page.locator('.jr-viewer-workspace').count(), 0);
+        }
 
         if (page === engineer) {
-await page.locator('.jr-engineer-workspace').waitFor();
-} else {
-assert.equal(await page.locator('.jr-engineer-workspace').count(), 0);
-}
+            await page.locator('.jr-engineer-workspace').waitFor();
+        } else {
+            assert.equal(
+                await page.locator('.jr-engineer-workspace').count(),
+                0,
+            );
+        }
 
         if (page === superadmin) {
-await page.locator('.jr-superadmin-workspace').waitFor();
-} else {
-assert.equal(await page.locator('.jr-superadmin-workspace').count(), 0);
-}
+            await page.locator('.jr-superadmin-workspace').waitFor();
+        } else {
+            assert.equal(
+                await page.locator('.jr-superadmin-workspace').count(),
+                0,
+            );
+        }
 
         if (page === admin) {
-await page.locator('.jr-admin-workspace').waitFor();
-} else {
-assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
-}
+            await page.locator('.jr-admin-workspace').waitFor();
+        } else {
+            assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
+        }
 
         await page
             .getByRole('heading', { name: 'Road Coverages', exact: true })
@@ -579,6 +1273,104 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     await engineer.goto(`${ui}/road-coverages/${f.road_id}`);
     await engineer.locator('.jr-saved-coverage-line').waitFor();
     await engineer.getByText('Test project', { exact: true }).first().waitFor();
+    const geometryDownload = engineer.waitForEvent('download');
+    await engineer
+        .getByRole('button', { name: 'Download saved road geometry (GeoJSON)' })
+        .click();
+    const geometryFile = await geometryDownload;
+    assert.equal(
+        geometryFile.suggestedFilename(),
+        'jairoads-road-geometry.geojson',
+    );
+    const exportedGeometry = JSON.parse(
+        await readFile(await geometryFile.path(), 'utf8'),
+    );
+    assert.equal(exportedGeometry.type, 'MultiLineString');
+    assert.ok(exportedGeometry.coordinates.length > 0);
+    assert.ok(exportedGeometry.coordinates.every((line) => line.length >= 2));
+    assert.deepEqual(Object.keys(exportedGeometry).sort(), [
+        'coordinates',
+        'type',
+    ]);
+
+    const osmTiles = 'https://tile.openstreetmap.org/**';
+    const failTiles = (route) => route.abort('failed');
+    await engineer.route(osmTiles, failTiles);
+    await engineer.goto(`${ui}/road-coverages/${f.road_id}`);
+    await engineer
+        .getByText(
+            'Background map unavailable. Saved road geometry remains available.',
+            { exact: true },
+        )
+        .waitFor();
+    const savedLine = await engineer
+        .locator('.jr-saved-coverage-line')
+        .first()
+        .elementHandle();
+    await engineer.unroute(osmTiles, failTiles);
+    await engineer
+        .getByRole('button', { name: 'Retry map tiles', exact: true })
+        .click();
+    await engineer.locator('.leaflet-tile-loaded').first().waitFor();
+    assert.equal(await savedLine.evaluate((node) => node.isConnected), true);
+    await savedLine.dispose();
+
+    lastPage = superadmin;
+    superadmin.on('console', (message) => {
+        if (message.type() === 'error') {
+            console.error('Map fallback browser error:', message.text());
+        }
+    });
+    superadmin.on('requestfailed', (request) => {
+        console.error(
+            'Map fallback request failed:',
+            request.url(),
+            request.failure()?.errorText,
+        );
+    });
+    const unavailableBasemap = 'https://tiles.openfreemap.org/**';
+    await superadmin.route(unavailableBasemap, (route) =>
+        route.abort('failed'),
+    );
+    await superadmin.goto(
+        base + '/workspace/projects?view=show&project=' + f.project_id,
+    );
+    const fallbackMap = superadmin.getByRole('region', {
+        name: 'Interactive road coverage map',
+    });
+    const degradedBasemap = fallbackMap.getByText(
+        /^(Basemap unavailable\. Showing saved road lines\.|Some basemap tiles were unavailable\. Saved road lines remain visible\.)$/,
+    );
+    await degradedBasemap.waitFor();
+    assert.match(
+        await fallbackMap.locator('.jr-road-map-count').textContent(),
+        /^1 of 1 road lines$/,
+    );
+    await fallbackMap
+        .getByRole('button', { name: 'Locate selected road' })
+        .click();
+    await superadmin.unroute(unavailableBasemap);
+    let releaseBasemap;
+    const stalledBasemap = new Promise((resolve) => {
+        releaseBasemap = resolve;
+    });
+    await superadmin.route(unavailableBasemap, async (route) => {
+        await stalledBasemap;
+        await route.abort('failed').catch(() => {});
+    });
+
+    try {
+        await superadmin.goto(
+            base + '/workspace/projects?view=show&project=' + f.project_id,
+        );
+        await degradedBasemap.waitFor();
+        await fallbackMap
+            .getByRole('button', { name: 'Locate selected road' })
+            .click();
+    } finally {
+        releaseBasemap();
+        await superadmin.unroute(unavailableBasemap);
+    }
 
     for (const saved of f.geometry_roads) {
         const path = `/road-coverages/${saved.id}`;
@@ -730,9 +1522,13 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         .click();
     assert.ok((await saved).status() < 400);
     await engineer.waitForURL(`${ui}/road-coverages`);
-    const road = (
+    const roadRow = (
         await props(engineer, '/road-coverages?search=Unified browser road')
     ).coverages.data[0];
+    assert.equal(roadRow.road_name, 'Unified browser road');
+    assert.equal(roadRow.geojson, undefined);
+    const road = (await props(engineer, `/road-coverages/${roadRow.id}`))
+        .coverage;
     assert.equal(road.road_name, 'Unified browser road');
     assert.equal(
         road.geojson.properties.jairoads_mapping.control_points.length,
@@ -743,26 +1539,44 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     await engineer.locator('.jr-saved-coverage-line').waitFor();
     assert.equal(await engineer.locator('.jr-saved-location').count(), 3);
     await engineer.goto(`${ui}/maintenance-projects/create`);
-    const assignedSwitch = engineer.getByRole('switch', { name: 'Show assigned' });
-    const assignedRoad = engineer.locator(`input[name="road_coverage_id"][value="${f.road_id}"]`);
+    const assignedSwitch = engineer.getByRole('switch', {
+        name: 'Show assigned',
+    });
+    const assignedRoad = engineer.locator(
+        `input[name="road_coverage_id"][value="${f.road_id}"]`,
+    );
     assert.equal(await assignedRoad.count(), 0);
     await assignedSwitch.check();
     await assignedRoad.waitFor({ state: 'visible' });
     assert.equal(await assignedRoad.isDisabled(), true);
-    await engineer.getByText('Linked project: Test project', { exact: true }).waitFor();
+    await engineer
+        .getByText('Linked project: Test project', { exact: true })
+        .waitFor();
     await engineer.getByRole('radio', { name: /Unified browser road/ }).check();
     await engineer.locator('.jr-saved-coverage-line').waitFor();
     const choiceSearch = engineer.getByRole('searchbox', {
         name: 'Search road coverage by name or municipality',
     });
     await choiceSearch.fill('Unified browser road');
-    await engineer.getByRole('radio', { name: /Unified browser road/ }).waitFor();
-    assert.equal(await engineer.getByRole('radio', { name: /Unified browser road/ }).isChecked(), true);
+    await engineer
+        .getByRole('radio', { name: /Unified browser road/ })
+        .waitFor();
+    assert.equal(
+        await engineer
+            .getByRole('radio', { name: /Unified browser road/ })
+            .isChecked(),
+        true,
+    );
     await choiceSearch.clear();
     await assignedRoad.waitFor({ state: 'visible' });
     await assignedSwitch.uncheck();
     assert.equal(await assignedRoad.count(), 0);
-    assert.equal(await engineer.getByRole('radio', { name: /Unified browser road/ }).isChecked(), true);
+    assert.equal(
+        await engineer
+            .getByRole('radio', { name: /Unified browser road/ })
+            .isChecked(),
+        true,
+    );
     await engineer
         .getByLabel(/^Project title/i)
         .fill('Unified browser project');
@@ -849,21 +1663,234 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         csrfPost,
         props,
     });
-    await engineer.goto(
+    lastPage = engineer;
+    const monthlyCreateResponse = await engineer.goto(
         `${ui}/monthly-updates/create?maintenance_id=${record.id}`,
     );
-    await engineer.getByLabel(/^Reporting Month/).click();
+    assert.equal(monthlyCreateResponse?.status(), 200);
     await engineer
+        .getByRole('combobox', { name: /^Reporting Month/ })
+        .click();
+    const reportingPicker = engineer.getByRole('dialog', {
+        name: 'Choose reporting month and year',
+    });
+    await reportingPicker
+        .getByRole('button', { name: /^Change reporting year,/ })
+        .click();
+    await reportingPicker.getByLabel('Go to year').fill('2026');
+    await reportingPicker
+        .getByRole('button', { name: 'Go', exact: true })
+        .click();
+    await reportingPicker
         .getByRole('button', { name: 'April 2026', exact: true })
         .click();
     await engineer.getByLabel(/^Progress Percentage/).fill('43.5');
     await engineer
         .getByLabel(/^Progress Summary/)
         .fill('Canonical browser report');
+    await engineer.getByLabel(/I understand that the draft/).check();
+    const fieldDraftDownload = engineer.waitForEvent('download');
+    await engineer.getByRole('button', { name: 'Download draft' }).click();
+    const fieldDraftFile = await fieldDraftDownload;
+    const fieldDraft = JSON.parse(
+        await readFile(await fieldDraftFile.path(), 'utf8'),
+    );
+    assert.equal(
+        fieldDraft.summary_of_text_reports,
+        'Canonical browser report',
+    );
+    assert.equal(fieldDraft.progress_percentage, '43.5');
+    assert.equal(fieldDraft.update_month, '2026-04');
+    assert.equal(fieldDraft.attachments, undefined);
+    await engineer.getByLabel(/^Progress Summary/).fill('');
     await engineer
-        .getByRole('button', { name: /Save Monthly Update|Save Update/ })
+        .getByLabel('Import field report draft file')
+        .setInputFiles(await fieldDraftFile.path());
+    await engineer.waitForFunction(
+        () =>
+            document.getElementById('summary_of_text_reports')?.value ===
+            'Canonical browser report',
+    );
+
+    const passphrase = 'synthetic-browser-draft-passphrase';
+    const longSummary = 'Field evidence '.repeat(900);
+    const encryptedDraft = await verifyOfflineFieldReport({
+        browser,
+        engineer,
+        draft: { ...fieldDraft, summary_of_text_reports: longSummary },
+        passphrase,
+    });
+    // Import without preloading any project records into the form.
+    await engineer.goto(`${ui}/monthly-updates/create`);
+    await engineer.getByLabel(/I understand that the draft/).check();
+    await engineer.getByLabel(/^Draft passphrase/).fill(passphrase);
+    let releaseImportChoices;
+    const importChoicesGate = new Promise((resolve) => {
+        releaseImportChoices = resolve;
+    });
+    const delayedImportChoices = async (route) => {
+        await importChoicesGate;
+        await route.continue();
+    };
+    await engineer.route(
+        '**/monthly-updates/form-choices?project=*',
+        delayedImportChoices,
+    );
+    await engineer.getByLabel('Import field report draft file').setInputFiles({
+        name: 'draft.json',
+        mimeType: 'application/json',
+        buffer: encryptedDraft,
+    });
+    await engineer.getByText('Processing draft…', { exact: true }).waitFor();
+    assert.equal(
+        await engineer.getByLabel(/^Progress Summary/).isDisabled(),
+        true,
+    );
+    assert.equal(
+        await engineer
+            .getByRole('button', { name: 'Saving…', exact: true })
+            .isDisabled(),
+        true,
+    );
+    releaseImportChoices();
+    await engineer.unroute(
+        '**/monthly-updates/form-choices?project=*',
+        delayedImportChoices,
+    );
+    await engineer.waitForFunction(
+        (expected) =>
+            document.getElementById('summary_of_text_reports')?.value ===
+            expected,
+        longSummary,
+    );
+    await engineer
+        .getByLabel(/^Progress Summary/)
+        .fill(fieldDraft.summary_of_text_reports);
+    console.log(
+        'PASS: long encrypted drafts survive offline reopening and signed-in import.',
+    );
+    await engineer
+        .getByRole('button', {
+            name: 'Check saved reporting period',
+            exact: true,
+        })
         .click();
+    await engineer
+        .getByText(
+            'No report was found at the time of checking. An earlier request may still be processing.',
+            { exact: true },
+        )
+        .waitFor();
+    await engineer.context().setOffline(true);
+    await engineer
+        .getByRole('button', { name: 'Submit once when connected' })
+        .click();
+    await engineer
+        .getByRole('button', { name: 'Cancel queued submission' })
+        .click();
+    await engineer
+        .getByText('Queued submission cancelled.', { exact: true })
+        .waitFor();
+    const outcomeRoute = '**/monthly-updates/submission-outcome?*';
+    let queuedWrites = 0;
+    const observeQueuedWrite = (request) => {
+        if (
+            request.method() === 'POST' &&
+            new URL(request.url()).pathname === '/workspace/ui/monthly-updates'
+        ) {
+            queuedWrites++;
+        }
+    };
+    engineer.on('request', observeQueuedWrite);
+    const deniedOutcome = (route) =>
+        route.fulfill({ status: 403, json: { message: 'Denied fixture' } });
+    await engineer.route(outcomeRoute, deniedOutcome);
+    await engineer
+        .getByRole('button', { name: 'Submit once when connected' })
+        .click();
+    await engineer.context().setOffline(false);
+    await engineer
+        .getByText(
+            'Could not verify current access or reporting period. No queued submission was sent.',
+            { exact: true },
+        )
+        .waitFor();
+    assert.equal(queuedWrites, 0);
+    await engineer.unroute(outcomeRoute, deniedOutcome);
+    await engineer.context().setOffline(true);
+    const occupiedOutcome = (route) => route.fulfill({ json: { reportId: 1 } });
+    await engineer.route(outcomeRoute, occupiedOutcome);
+    await engineer
+        .getByRole('button', { name: 'Submit once when connected' })
+        .click();
+    await engineer.context().setOffline(false);
+    await engineer
+        .getByText(
+            'A report already exists for this period. Check the saved reporting period before retrying.',
+            { exact: true },
+        )
+        .waitFor();
+    assert.equal(queuedWrites, 0);
+    await engineer.unroute(outcomeRoute, occupiedOutcome);
+    // Changing a queued report invalidates its consent before any write.
+    await engineer.context().setOffline(true);
+    await engineer
+        .getByRole('button', { name: 'Submit once when connected' })
+        .click();
+    await engineer
+        .getByLabel(/^Progress Summary/)
+        .fill('Changed after queueing');
+    await engineer.context().setOffline(false);
+    await engineer
+        .getByText('Queued report cancelled. Review and save manually.', {
+            exact: true,
+        })
+        .waitFor();
+    assert.equal(queuedWrites, 0);
+    assert.equal(
+        await engineer.getByLabel(/^Progress Summary/).inputValue(),
+        'Changed after queueing',
+    );
+    await engineer
+        .getByLabel(/^Progress Summary/)
+        .fill(fieldDraft.summary_of_text_reports);
+    // Cancellation while the read-only preflight is outstanding must not write.
+    let releaseCancelledPreflight;
+    const cancelledPreflightGate = new Promise((resolve) => {
+        releaseCancelledPreflight = resolve;
+    });
+    const cancelledPreflight = async (route) => {
+        await cancelledPreflightGate;
+        await route.fulfill({ json: { reportId: null } }).catch(() => {});
+    };
+    await engineer.route(outcomeRoute, cancelledPreflight);
+    await engineer.context().setOffline(true);
+    await engineer
+        .getByRole('button', { name: 'Submit once when connected' })
+        .click();
+    await engineer.context().setOffline(false);
+    await engineer
+        .getByText('Verifying current reporting period before submission…', {
+            exact: true,
+        })
+        .waitFor();
+    await engineer
+        .getByRole('button', { name: 'Cancel queued submission' })
+        .click();
+    await engineer
+        .getByText('Queued submission cancelled.', { exact: true })
+        .waitFor();
+    releaseCancelledPreflight();
+    await engineer.unroute(outcomeRoute, cancelledPreflight);
+    assert.equal(queuedWrites, 0);
+    await engineer.context().setOffline(true);
+    await engineer
+        .getByRole('button', { name: 'Submit once when connected' })
+        .click();
+    await engineer.context().setOffline(false);
     await engineer.waitForURL(/workspace\/ui\/monthly-updates\/\d+$/);
+    assert.equal(queuedWrites, 1);
+    engineer.off('request', observeQueuedWrite);
     const report = (
         await props(
             engineer,
@@ -871,6 +1898,77 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         )
     ).update;
     assert.equal(Number(report.progress_percentage), 43.5);
+    const recordSearchResponse = await viewer.request.get(
+        `${ui}/record-search?q=${encodeURIComponent(project.project_title)}`,
+        { headers: { Accept: 'application/json' } },
+    );
+    assert.equal(recordSearchResponse.status(), 200);
+    const recordSearchResults = (await recordSearchResponse.json()).results;
+    assert.ok(
+        recordSearchResults.some(
+            (item) =>
+                item.href === `/workspace/ui/monthly-updates/${report.id}`,
+        ),
+    );
+    assert.ok(
+        recordSearchResults.some(
+            (item) =>
+                item.href ===
+                `/workspace/ui/maintenance-projects/${project.id}/records/${record.id}`,
+        ),
+    );
+    assert.ok(
+        recordSearchResults.every(
+            (item) => Object.keys(item).sort().join(',') === 'href,kind,label',
+        ),
+    );
+    // A delayed record result must not change the highlighted directory.
+    const viewerBeforeQuickSearch = viewer.url();
+    await viewer.goto(`${ui}/maintenance-projects`);
+    let releaseSearch;
+    const searchGate = new Promise((resolve) => {
+        releaseSearch = resolve;
+    });
+    const delayedSearch = async (route) => {
+        await searchGate;
+        await route.fulfill({
+            json: { results: recordSearchResults },
+        });
+    };
+    await viewer.route('**/workspace/ui/record-search?q=*', delayedSearch);
+    await viewer
+        .getByRole('button', { name: 'Search JaiROADS pages (Control K)' })
+        .click();
+    const quickSearch = viewer.getByRole('searchbox', {
+        name: 'Search JaiROADS sections',
+    });
+    await quickSearch.fill('synthetic delayed query');
+    await viewer.getByText('Searching records…', { exact: true }).waitFor();
+    const selectedBefore = await viewer
+        .locator('.jr-command-selected')
+        .innerText();
+    releaseSearch();
+    await viewer
+        .getByText(
+            recordSearchResults[0].kind + ': ' + recordSearchResults[0].label,
+            { exact: true },
+        )
+        .waitFor();
+    assert.equal(
+        await viewer.locator('.jr-command-selected').innerText(),
+        selectedBefore,
+    );
+    await quickSearch.press('ArrowDown');
+    assert.notEqual(
+        await viewer.locator('.jr-command-selected').innerText(),
+        selectedBefore,
+    );
+    await quickSearch.press('Escape');
+    await viewer
+        .getByRole('dialog', { name: 'Quick navigation' })
+        .waitFor({ state: 'hidden' });
+    await viewer.unroute('**/workspace/ui/record-search?q=*', delayedSearch);
+    await viewer.goto(viewerBeforeQuickSearch);
     // File upload is part of the editable Monthly Update form, not its
     // read-only report page. Saving the form uploads the selected media.
     await engineer.goto(`${ui}/monthly-updates/${report.id}/edit`);
@@ -889,7 +1987,9 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     let originalMediaStored = false;
 
     for (let attempt = 0; attempt < 30; attempt++) {
-        const savedMedia = (await props(engineer, `/monthly-updates/${report.id}`)).media;
+        const savedMedia = (
+            await props(engineer, `/monthly-updates/${report.id}`)
+        ).media;
 
         if (savedMedia.some((file) => file.file_name === 'unified.png')) {
             originalMediaStored = true;
@@ -899,7 +1999,48 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
         await new Promise((resolve) => setTimeout(resolve, 200));
     }
 
-    assert.ok(originalMediaStored, 'Original private media must be persisted before later deletion tests');
+    assert.ok(
+        originalMediaStored,
+        'Original private media must be persisted before later deletion tests',
+    );
+    await engineer.goto(`${ui}/maintenance-documents/create`);
+    const documentChoiceRoute = '**/monthly-updates/form-choices?project=*';
+    const rejectDocumentChoices = (route) =>
+        route.fulfill({
+            status: 503,
+            json: { message: 'Disposable lookup failure' },
+        });
+    await engineer.route(documentChoiceRoute, rejectDocumentChoices);
+    await engineer.locator('#project_id').click();
+    await engineer
+        .getByRole('textbox', { name: 'Search maintenance projects' })
+        .fill(project.project_title);
+    await engineer
+        .getByRole('option')
+        .filter({ hasText: project.project_title })
+        .click();
+    await engineer
+        .getByText('Record choices unavailable.', { exact: false })
+        .waitFor();
+    assert.equal(
+        await engineer
+            .getByRole('button', { name: /Upload Document|Save Document/ })
+            .isDisabled(),
+        true,
+    );
+    await engineer.unroute(documentChoiceRoute, rejectDocumentChoices);
+    await engineer.getByRole('button', { name: 'Retry', exact: true }).click();
+    await choose(
+        engineer,
+        /^Maintenance Record/,
+        `${record.quarter} ${record.year}`,
+    );
+    await engineer
+        .getByLabel(/^Document Title/)
+        .fill('Standalone document form verified');
+    console.log(
+        'PASS: standalone document choices fail closed, retry and select authorized record.',
+    );
     await engineer.goto(
         `${ui}/maintenance-documents/create?maintenance_id=${record.id}`,
     );
@@ -948,6 +2089,15 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     const reports = (await props(engineer, '/monthly-updates')).updates.data;
     const january = reports.find((item) => item.update_month === '2026-01');
     assert.ok(january);
+    const comparedReport = await props(
+        viewer,
+        `/monthly-updates/${report.id}?compare=${january.id}`,
+    );
+    assert.equal(comparedReport.comparisonPeriod.id, january.id);
+    assert.equal(comparedReport.comparisonPeriod.month, '2026-01');
+    assert.ok(
+        comparedReport.comparisonPeriods.some((item) => item.id === january.id),
+    );
     await engineer.goto(`${ui}/monthly-updates/${january.id}/edit`);
     await engineer.getByLabel(/^Progress Percentage/).fill('16');
     await engineer
@@ -958,33 +2108,61 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     const parentOrigin = `/workspace/ui/maintenance-projects/${project.id}/records/${record.id}`;
 
     for (const [module, entity, directoryQuery] of [
-        ['monthly-updates', january, `?project=${project.id}&year=2026&sort=oldest&page=1`],
-        ['maintenance-documents', doc, `?project=${project.id}&sort=oldest&page=1`],
+        [
+            'monthly-updates',
+            january,
+            `?project=${project.id}&year=2026&sort=oldest&page=1`,
+        ],
+        [
+            'maintenance-documents',
+            doc,
+            `?project=${project.id}&sort=oldest&page=1`,
+        ],
     ]) {
         const directory = `/workspace/ui/${module}`;
         const detail = `${directory}/${entity.id}`;
 
-        for (const origin of [directory + directoryQuery, detail, parentOrigin]) {
-            await engineer.goto(base + detail + '/edit?' + new URLSearchParams({ return_to: origin }));
+        for (const origin of [
+            directory + directoryQuery,
+            detail,
+            parentOrigin,
+        ]) {
+            await engineer.goto(
+                base +
+                    detail +
+                    '/edit?' +
+                    new URLSearchParams({ return_to: origin }),
+            );
 
             if (module === 'monthly-updates') {
                 await engineer.getByLabel(/^Progress Percentage/).fill('17');
             } else {
-                await engineer.getByLabel(/^Document Title/).fill(doc.document_title);
+                await engineer
+                    .getByLabel(/^Document Title/)
+                    .fill(doc.document_title);
             }
 
-            await engineer.getByRole('button', { name: 'Save Changes', exact: true }).click();
+            await engineer
+                .getByRole('button', { name: 'Save Changes', exact: true })
+                .click();
             await engineer.waitForURL((url) => {
                 const expected = new URL(base + origin);
 
-                return url.pathname === expected.pathname &&
-                    [...expected.searchParams].every(([key, value]) => url.searchParams.get(key) === value) &&
-                    [...url.searchParams].length === [...expected.searchParams].length;
+                return (
+                    url.pathname === expected.pathname &&
+                    [...expected.searchParams].every(
+                        ([key, value]) => url.searchParams.get(key) === value,
+                    ) &&
+                    [...url.searchParams].length ===
+                        [...expected.searchParams].length
+                );
             });
         }
     }
 
-    console.log('PASS: both related modules return to directory, own details and parent record after editing.');
+    console.log(
+        'PASS: both related modules return to directory, own details and parent record after editing.',
+    );
     await engineer.goto(`${ui}/monthly-updates?project=${project.id}`);
     const firstMonth = () =>
         engineer
@@ -1046,25 +2224,42 @@ assert.equal(await page.locator('.jr-admin-workspace').count(), 0);
     assert.ok(targetHref);
     const targetURL = new URL(targetHref, base).href;
     let releaseVisit;
-    const visitGate = new Promise(resolve => {
- releaseVisit = resolve;
-});
-    const holdVisit = async route => {
+    const visitGate = new Promise((resolve) => {
+        releaseVisit = resolve;
+    });
+    const holdVisit = async (route) => {
         if (route.request().headers()['x-inertia']) {
-await visitGate;
-}
+            await visitGate;
+        }
 
         await route.continue();
     };
     await superadmin.route(targetURL, holdVisit);
     const navClick = navTarget.click();
-    const navigationStatus = superadmin.locator('[data-jr-navigation-status] .jr-navigation-status');
+    const navigationStatus = superadmin.locator(
+        '[data-jr-navigation-status] .jr-navigation-status',
+    );
 
     try {
         await navigationStatus.waitFor({ state: 'visible' });
-        assert.equal(await superadmin.locator('.jr-loading-layer, .jr-loading-track').count(), 0);
-        assert.equal(await navigationStatus.evaluate(el => Boolean(el.closest('header'))), true);
-        assert.equal(await navigationStatus.evaluate(el => getComputedStyle(el).pointerEvents), 'none');
+        assert.equal(
+            await superadmin
+                .locator('.jr-loading-layer, .jr-loading-track')
+                .count(),
+            0,
+        );
+        assert.equal(
+            await navigationStatus.evaluate((el) =>
+                Boolean(el.closest('header')),
+            ),
+            true,
+        );
+        assert.equal(
+            await navigationStatus.evaluate(
+                (el) => getComputedStyle(el).pointerEvents,
+            ),
+            'none',
+        );
     } finally {
         releaseVisit();
         await navClick;
@@ -1074,14 +2269,21 @@ await visitGate;
     await superadmin.waitForURL(targetURL);
     await navigationStatus.waitFor({ state: 'detached' });
     await superadmin.goto(`${ui}/monthly-updates`);
-    const motionToken = () => superadmin.evaluate(() =>
-        getComputedStyle(document.documentElement).getPropertyValue('--jr-motion-panel').trim(),
-    );
+    const motionToken = () =>
+        superadmin.evaluate(() =>
+            getComputedStyle(document.documentElement)
+                .getPropertyValue('--jr-motion-panel')
+                .trim(),
+        );
     await superadmin.emulateMedia({ reducedMotion: 'no-preference' });
     assert.ok(['280ms', '.28s', '0.28s'].includes(await motionToken()));
-    await superadmin.evaluate(() => document.documentElement.classList.add('jr-reduce-motion'));
+    await superadmin.evaluate(() =>
+        document.documentElement.classList.add('jr-reduce-motion'),
+    );
     assert.ok(['0ms', '0s'].includes(await motionToken()));
-    await superadmin.evaluate(() => document.documentElement.classList.remove('jr-reduce-motion'));
+    await superadmin.evaluate(() =>
+        document.documentElement.classList.remove('jr-reduce-motion'),
+    );
     await superadmin.emulateMedia({ reducedMotion: 'reduce' });
     assert.ok(['0ms', '0s'].includes(await motionToken()));
     const collapseSidebar = superadmin.getByRole('button', {
@@ -1119,9 +2321,13 @@ await visitGate;
     );
     assert.equal(await monthlyMetrics.count(), 2);
     assert.equal(await monthlyMetrics.locator('.jr-metric-icon').count(), 2);
-    const monthlyHeader = superadmin.locator('.jr-monthly-table thead th').first();
+    const monthlyHeader = superadmin
+        .locator('.jr-monthly-table thead th')
+        .first();
     assert.equal(
-        await monthlyHeader.evaluate((el) => getComputedStyle(el).backgroundColor),
+        await monthlyHeader.evaluate(
+            (el) => getComputedStyle(el).backgroundColor,
+        ),
         'rgb(244, 237, 255)',
     );
     const purpleProgress = superadmin
@@ -1135,10 +2341,12 @@ await visitGate;
         /rgb\(81, 38, 155\)/,
     );
     await superadmin.goto(`${base}/workspace/users`);
-    await superadmin.getByRole('heading', {
-        name: 'User Management',
-        exact: true,
-    }).waitFor();
+    await superadmin
+        .getByRole('heading', {
+            name: 'User Management',
+            exact: true,
+        })
+        .waitFor();
     assert.equal(
         await superadmin.locator('.jr-header-page-title').innerText(),
         'User Management',
@@ -1147,12 +2355,15 @@ await visitGate;
         .getByRole('navigation', { name: 'User management pagination' })
         .waitFor();
     assert.equal(
-        await superadmin.locator('.um-table thead th').first().evaluate(
-            (el) => getComputedStyle(el).backgroundColor,
-        ),
+        await superadmin
+            .locator('.um-table thead th')
+            .first()
+            .evaluate((el) => getComputedStyle(el).backgroundColor),
         'rgb(244, 237, 255)',
     );
-    console.log('PASS: SuperAdmin sidebar states, monthly metrics, purple headers and progress, shared pagination, and User Management breadcrumb.');
+    console.log(
+        'PASS: SuperAdmin sidebar states, monthly metrics, purple headers and progress, shared pagination, and User Management breadcrumb.',
+    );
 
     // Both confirmations use the unchanged server-side impact service and its signed snapshot.
     const openRoadMunicipalityChange = async () => {
@@ -1241,7 +2452,20 @@ await visitGate;
     lastPage = admin;
 
     await verifyDirectoryLayouts(admin, ui);
-    await verifyMobileWorkspaces({ browser, base, admin, superadmin, engineer, viewer, projectId: project.id, recordId: record.id, monthlyId: january.id, documentId: doc.id, roadId: road.id, lguId: road.lgu_id });
+    await verifyMobileWorkspaces({
+        browser,
+        base,
+        admin,
+        superadmin,
+        engineer,
+        viewer,
+        projectId: project.id,
+        recordId: record.id,
+        monthlyId: january.id,
+        documentId: doc.id,
+        roadId: road.id,
+        lguId: road.lgu_id,
+    });
 
     await verifyAuditNotifications({
         admin,

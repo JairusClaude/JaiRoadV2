@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Services\PreviewDataService;
 use App\Services\RoleAccess;
+use App\Support\BoundedDirectoryPage;
 use App\Support\LiteralDirectorySearch;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -28,15 +29,15 @@ final class MaintenanceDocumentPageController extends OperationsFrontendControll
         }
 
         $actor = $this->actor($request);
-        $filters = ['search' => LiteralDirectorySearch::normalize($request->query('search')), 'project' => LiteralDirectorySearch::option($request->query('project')),
+        $filters = ['search' => LiteralDirectorySearch::normalize($request->query('search')), 'project' => LiteralDirectorySearch::numericOption($request->query('project')),
             'sort' => $request->query('sort') === 'oldest' ? 'oldest' : 'newest'];
-        $q = $this->documentQuery($actor)->when($filters['search'] !== '', fn (Builder $q) => $q->where('d.document_title', 'ilike', LiteralDirectorySearch::pattern($filters['search'])));
+        $q = $this->documentQuery($actor, false)->when($filters['search'] !== '', fn (Builder $q) => $q->where('d.document_title', 'ilike', LiteralDirectorySearch::pattern($filters['search'])));
         if (ctype_digit($filters['project'])) {
             $q->where('p.id', $filters['project']);
         }
 
         return $this->render('MaintenanceDocuments/Index', $request, [
-            'documents' => $q->orderBy('d.id', $filters['sort'] === 'oldest' ? 'asc' : 'desc')->paginate(12)->withQueryString()->through(fn (\stdClass $d): array => $this->documentData($d, $actor)),
+            'documents' => BoundedDirectoryPage::paginate($q->orderBy('d.id', $filters['sort'] === 'oldest' ? 'asc' : 'desc'), $request, 12)->through(fn (\stdClass $d): array => $this->documentData($d, $actor, false)),
             ...$this->projectFilterProps($actor, $filters['project']),
             'filters' => $filters, 'canWrite' => $this->writable($actor),
         ]);
@@ -67,7 +68,12 @@ final class MaintenanceDocumentPageController extends OperationsFrontendControll
         abort_if($id !== null && $d === null, 404);
         abort_if($d !== null && ! $this->canWriteRecord($d, $actor), 403);
 
-        return $this->render('MaintenanceDocuments/Form', $request, $this->parents($actor, $request, $d === null ? null : (int) $d->maintenance_id) + [
+        $context = $d === null ? ($request->integer('maintenance_id', $request->integer('record')) ?: null) : (int) $d->maintenance_id;
+        $parents = $context === null
+            ? ['projects' => [], 'records' => [], 'contextRecordId' => null, 'canWrite' => true, 'formChoicesUrl' => self::BASE.'/monthly-updates/form-choices']
+            : $this->parents($actor, $request, $context);
+
+        return $this->render('MaintenanceDocuments/Form', $request, $parents + [
             'document' => $d === null ? null : $this->documentData($d, $actor),
             'submitUrl' => self::BASE.'/maintenance-documents'.($id === null ? '' : '/'.$id),
             'cancelUrl' => self::BASE.'/maintenance-documents'.($id === null ? '' : '/'.$id),

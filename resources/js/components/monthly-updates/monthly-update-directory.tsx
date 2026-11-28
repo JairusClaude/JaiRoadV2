@@ -11,6 +11,8 @@ import {
 import { useState } from 'react';
 import {
     DirectoryFilter,
+    DirectoryFilterHeading,
+    DirectoryFilterField,
     DirectoryPagination,
     DirectorySelectionToolbar,
 } from '@/components/directory-controls';
@@ -30,9 +32,9 @@ import { Input } from '@/components/ui/input';
 import { manilaDate } from '@/lib/manila-time';
 import { updateMonth } from '@/lib/monthly-updates';
 import type {
+    MonthlyDirectoryRow,
     MonthlyUpdateFilters,
     MonthlyUpdatePage,
-    MonthlyUpdateSummary,
 } from '@/types/monthly-updates';
 
 export { updateMonth } from '@/lib/monthly-updates';
@@ -67,10 +69,10 @@ export function MonthlyUpdateDirectory({
     onSearch: (search: string) => void;
     onFilters: (filters: MonthlyUpdateFilters) => void;
     onPage: (page: number, search: string) => void;
-    onDelete: (updates: MonthlyUpdateSummary[], bulk: boolean) => void;
+    onDelete: (updates: MonthlyDirectoryRow[], bulk: boolean) => void;
     onAction: (
         action: 'Add' | 'Details' | 'Edit',
-        update?: MonthlyUpdateSummary,
+        update?: MonthlyDirectoryRow,
     ) => void;
 }) {
     const page = usePage();
@@ -81,6 +83,13 @@ export function MonthlyUpdateDirectory({
     const canonical = page.props.canonicalFrontend === true;
     const canWrite = !isViewer && (!canonical || page.props.canWrite === true);
     const [search, setSearch] = useState(filters.search);
+    const [previousSearch, setPreviousSearch] = useState(filters.search);
+
+    if (previousSearch !== filters.search) {
+        setPreviousSearch(filters.search);
+        setSearch(filters.search);
+    }
+
     const [selecting, setSelecting] = useState(false);
     const [selected, setSelected] = useState<Set<number>>(new Set());
     const scope = JSON.stringify([
@@ -117,7 +126,9 @@ export function MonthlyUpdateDirectory({
         updates.data.length > 0 &&
         updates.data.every((item) => selected.has(item.id));
     const hasFilters = Boolean(
-        filters.search || filters.project || filters.year,
+        filters.search ||
+        (filters.project && filters.project !== 'all') ||
+        (filters.year && filters.year !== 'all'),
     );
 
     const displayedTotalReports =
@@ -140,8 +151,9 @@ export function MonthlyUpdateDirectory({
                     <div>
                         <h1>Monthly Updates</h1>
                         <p>
-                            Browse and manage monthly maintenance progress
-                            reports.
+                            {isViewer
+                                ? 'Browse monthly maintenance progress reports.'
+                                : 'Manage monthly maintenance progress reports.'}
                         </p>
                     </div>
                     {canWrite && (
@@ -155,32 +167,47 @@ export function MonthlyUpdateDirectory({
                         </Button>
                     )}
                 </div>
+                <section
+                    aria-label="Monthly update statistics"
+                    className="jr-metrics-grid jr-directory-summary"
+                >
+                    <MetricCard
+                        title="Total reports"
+                        icon={<ClipboardList className="size-5" />}
+                        value={displayedTotalReports}
+                        subtitle="Submitted progress reports"
+                        highlight={true}
+                    />
+                    <MetricCard
+                        title="Reports this month"
+                        icon={<CalendarDays className="size-5" />}
+                        value={displayedReportsThisMonth}
+                        subtitle="Current reporting period"
+                    />
+                </section>
                 <form
-                    className="jr-filters"
+                    className="jr-filters jr-directory-filter-panel"
                     onSubmit={(event) => {
                         event.preventDefault();
                         apply({ ...filters, search });
                     }}
                 >
-                    {/* 2 Metric Cards */}
-                    <section
-                        aria-label="Monthly update statistics"
-                        className="jr-metrics-grid mb-5 grid w-full gap-4 sm:grid-cols-2"
-                    >
-                        <MetricCard
-                            title="Total Monthly Reports"
-                            icon={<ClipboardList className="size-5" />}
-                            value={displayedTotalReports}
-                            subtitle="Submitted progress reports"
-                            highlight={true}
-                        />
-                        <MetricCard
-                            title="Reports this Month"
-                            icon={<CalendarDays className="size-5" />}
-                            value={displayedReportsThisMonth}
-                            subtitle="For current reporting period"
-                        />
-                    </section>
+                    <DirectoryFilterHeading
+                        disabled={busy}
+                        onReset={
+                            search || hasFilters || filters.sort !== 'newest'
+                                ? () => {
+                                      setSearch('');
+                                      apply({
+                                          search: '',
+                                          project: 'all',
+                                          year: '',
+                                          sort: 'newest',
+                                      });
+                                  }
+                                : undefined
+                        }
+                    />
                     <div className="jr-search">
                         <Search className="size-[18px]" />
                         <Input
@@ -197,20 +224,23 @@ export function MonthlyUpdateDirectory({
                         />
                     </div>
                     <div className="jr-filter-row">
-                        <MonthlyProjectFilter
-                            projects={projects}
-                            choicesUrl={projectFilterUrl}
-                            value={filters.project}
-                            onChange={(value) =>
-                                apply({
-                                    ...filters,
-                                    search,
-                                    project: value,
-                                })
-                            }
-                        />
+                        <DirectoryFilterField label="Project">
+                            <MonthlyProjectFilter
+                                projects={projects}
+                                choicesUrl={projectFilterUrl}
+                                value={filters.project}
+                                onChange={(value) =>
+                                    apply({
+                                        ...filters,
+                                        search,
+                                        project: value,
+                                    })
+                                }
+                            />
+                        </DirectoryFilterField>
                         <DirectoryFilter
                             label="Reporting Year filter"
+                            fieldLabel="Year"
                             className="jr-monthly-year-filter"
                             value={filters.year || 'all'}
                             onChange={(value) =>
@@ -230,6 +260,7 @@ export function MonthlyUpdateDirectory({
                         />
                         <DirectoryFilter
                             label="Sort monthly updates"
+                            fieldLabel="Sort by"
                             className="jr-monthly-sort-filter"
                             value={filters.sort}
                             onChange={(sort) =>
@@ -288,17 +319,20 @@ export function MonthlyUpdateDirectory({
                     aria-label="Monthly updates table"
                     tabIndex={0}
                 >
-                    <table className="jr-table jr-monthly-table">
+                    <table
+                        role="table"
+                        className="jr-table jr-mobile-table jr-monthly-table"
+                    >
                         <colgroup>
                             <col style={{ width: '20%' }} />
-                            <col style={{ width: '35%' }} />
+                            <col style={{ width: isViewer ? '44%' : '35%' }} />
                             <col style={{ width: '18%' }} />
                             <col style={{ width: '18%' }} />
-                            <col style={{ width: '9%' }} />
+                            {!isViewer && <col style={{ width: '9%' }} />}
                         </colgroup>
-                        <thead>
-                            <tr>
-                                <th>
+                        <thead role="rowgroup">
+                            <tr role="row">
+                                <th role="columnheader">
                                     <div className="jr-project-line">
                                         {selecting && (
                                             <Checkbox
@@ -327,15 +361,23 @@ export function MonthlyUpdateDirectory({
                                         <span>Update Month</span>
                                     </div>
                                 </th>
-                                <th>Maintenance Project</th>
-                                <th>Progress</th>
-                                <th>Last Updated</th>
-                                <th className="text-right">Actions</th>
+                                <th role="columnheader">Maintenance Project</th>
+                                <th role="columnheader">Progress</th>
+                                <th role="columnheader">Last Updated</th>
+                                {!isViewer && (
+                                    <th
+                                        role="columnheader"
+                                        className="text-right"
+                                    >
+                                        Actions
+                                    </th>
+                                )}
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody role="rowgroup">
                             {updates.data.map((item) => (
                                 <tr
+                                    role="row"
                                     key={item.id}
                                     data-update-id={item.id}
                                     data-selected={selected.has(item.id)}
@@ -345,7 +387,7 @@ export function MonthlyUpdateDirectory({
                                             : onAction('Details', item)
                                     }
                                 >
-                                    <td>
+                                    <td role="cell" data-mobile-cell="primary">
                                         <div className="jr-project-line">
                                             {selecting && (
                                                 <Checkbox
@@ -381,7 +423,10 @@ export function MonthlyUpdateDirectory({
                                             </button>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Maintenance project"
+                                    >
                                         <div className="jr-project-title">
                                             {item.project.project_title}
                                         </div>
@@ -390,73 +435,86 @@ export function MonthlyUpdateDirectory({
                                             {item.record.year}
                                         </div>
                                     </td>
-                                    <td>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Progress"
+                                    >
                                         <MonthlyProgress
                                             value={item.progress_percentage}
                                             label={`Progress for update ${item.id}`}
                                         />
                                     </td>
-                                    <td>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Last updated"
+                                    >
                                         <time dateTime={item.updated_at}>
                                             {modifiedDate(item.updated_at)}
                                         </time>
                                     </td>
-                                    <td
-                                        className="text-right"
-                                        onClick={(event) =>
-                                            event.stopPropagation()
-                                        }
-                                    >
-                                        {!selecting && canWrite && (
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="jr-action-trigger"
-                                                        aria-label={`Actions for update ${item.id}`}
+                                    {!isViewer && (
+                                        <td
+                                            role="cell"
+                                            data-mobile-cell="actions"
+                                            className="text-right"
+                                            onClick={(event) =>
+                                                event.stopPropagation()
+                                            }
+                                        >
+                                            {!selecting && canWrite && (
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger
+                                                        asChild
                                                     >
-                                                        <MoreHorizontal />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent
-                                                    className="jr-theme jr-menu"
-                                                    align="end"
-                                                >
-                                                    <DropdownMenuItem
-                                                        disabled={
-                                                            !canWrite ||
-                                                            item.can_edit ===
-                                                                false
-                                                        }
-                                                        onSelect={() =>
-                                                            onAction(
-                                                                'Edit',
-                                                                item,
-                                                            )
-                                                        }
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="jr-action-trigger"
+                                                            aria-label={`Actions for update ${item.id}`}
+                                                        >
+                                                            <MoreHorizontal />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent
+                                                        className="jr-theme jr-menu"
+                                                        align="end"
                                                     >
-                                                        <Pencil />
-                                                        Edit Monthly Update
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        variant="destructive"
-                                                        disabled={busy}
-                                                        className="text-red-600 focus:bg-red-50 focus:text-red-700"
-                                                        onSelect={() =>
-                                                            onDelete(
-                                                                [item],
-                                                                false,
-                                                            )
-                                                        }
-                                                    >
-                                                        <Trash2 className="size-4" />
-                                                        Delete Monthly Update
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        )}
-                                    </td>
+                                                        <DropdownMenuItem
+                                                            disabled={
+                                                                !canWrite ||
+                                                                item.can_edit ===
+                                                                    false
+                                                            }
+                                                            onSelect={() =>
+                                                                onAction(
+                                                                    'Edit',
+                                                                    item,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Pencil />
+                                                            Edit Monthly Update
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            variant="destructive"
+                                                            disabled={busy}
+                                                            className="text-red-600 focus:bg-red-50 focus:text-red-700"
+                                                            onSelect={() =>
+                                                                onDelete(
+                                                                    [item],
+                                                                    false,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Trash2 className="size-4" />
+                                                            Delete Monthly
+                                                            Update
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            )}
+                                        </td>
+                                    )}
                                 </tr>
                             ))}
                         </tbody>

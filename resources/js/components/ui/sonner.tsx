@@ -1,9 +1,11 @@
+import { useIsPhone } from '@/hooks/use-mobile';
 import { useFlashToast } from '@/hooks/use-flash-toast';
 import { useAppearance } from '@/hooks/use-appearance';
 import { Toaster as Sonner, type ToasterProps } from 'sonner';
 
 function Toaster({ ...props }: ToasterProps) {
     const { appearance } = useAppearance();
+    const phone = useIsPhone();
 
     useFlashToast();
 
@@ -11,10 +13,19 @@ function Toaster({ ...props }: ToasterProps) {
         <Sonner
             theme={appearance}
             className="toaster group"
-            position="top-center"
+            position={phone ? 'bottom-center' : 'top-center'}
+            visibleToasts={phone ? 1 : 3}
             duration={3000}
             offset={76}
-            mobileOffset={64}
+            mobileOffset={
+                phone
+                    ? {
+                          bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+                          left: 16,
+                          right: 16,
+                      }
+                    : 64
+            }
             closeButton
             richColors
             style={

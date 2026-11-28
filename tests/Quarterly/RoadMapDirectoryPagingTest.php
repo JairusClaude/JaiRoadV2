@@ -38,6 +38,10 @@ it('bounds the initial road directory map and pages older road geometry for View
         ->assertOk()->assertHeader('Cache-Control', 'no-store, private')
         ->assertJsonCount(5, 'data')->assertJsonPath('next_cursor', null);
     $this->assertContains($fixture['road'], array_column($response->json('data'), 'id'));
+    $this->getJson('/workspace/ui/map/road-index?condition=Bad')
+        ->assertOk()->assertJsonCount(0, 'data')->assertJsonPath('next_cursor', null);
+    $this->getJson('/workspace/ui/map/road-index?search=Paged&condition=Good&before='.$cursor)
+        ->assertOk()->assertJsonCount(4, 'data')->assertJsonPath('next_cursor', null);
     $this->getJson('/workspace/ui/map/road-index?before=invalid')->assertUnprocessable();
     auth()->logout();
     $this->getJson('/workspace/ui/map/road-index?before='.$cursor)->assertUnauthorized();

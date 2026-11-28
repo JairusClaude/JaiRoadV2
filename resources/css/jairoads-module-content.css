@@ -198,9 +198,9 @@
     line-height: 1.6;
 }
 .dark .jr-module-content .jr-table-wrap {
-    background: #182538;
-    border-color: #344860;
+    background: var(--jr-role-dark-surface, #182538);
+    border-color: var(--jr-role-dark-border, #344860);
 }
 .dark .jr-module-content .jr-workspace-empty-content strong {
-    color: #f1f5f9;
+    color: var(--jr-role-dark-text, #f1f5f9);
 }

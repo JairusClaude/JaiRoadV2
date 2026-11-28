@@ -45,6 +45,83 @@ final class UnifiedFrontendTest extends PostgresTestCase
         }
     }
 
+    public function test_project_history_paginates_whole_years_and_preserves_direct_year_links(): void
+    {
+        $f = $this->fixture('Admin');
+        for ($year = 2014; $year <= 2026; $year++) {
+            foreach (['Q1', 'Q4'] as $quarter) {
+                DB::table('jairoads_next.maintenance_records')->insert(
+                    $this->recordData($f['project'], $f['engineer'], $quarter, $year)
+                        + ['created_by' => $f['user']->canonical_user_account_id]
+                );
+            }
+        }
+        $url = self::UI.'/maintenance-projects/'.$f['project'];
+        $this->get($url)->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('historyPagination.page', 1)->where('historyPagination.pages', 3)
+            ->where('historyPagination.totalYears', 13)->has('records', 10)
+            ->where('records.0.year', 2026)->where('records.9.year', 2022));
+        $this->get($url.'?history_page=999999999')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('historyPagination.page', 3)->has('records', 6)->where('records.5.year', 2014));
+        $this->get($url.'?record_year=2017&history_page=1')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('historyPagination.page', 2)->where('expandedYear', 2017)->has('records', 10));
+        $this->get($url.'?record_year%5B%5D=invalid')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('historyPagination.page', 1)->where('expandedYear', 2026));
+    }
+
+    public function test_record_history_paginates_documents_and_preserves_totals_and_checkpoints(): void
+    {
+        $f = $this->fixture('Admin');
+        $record = $this->record($f);
+        $update = $this->monthly($f, $record);
+        DB::table('jairoads_next.monthly_updates')->where('id', $update)->update(['progress_percentage' => 75]);
+        for ($i = 1; $i <= 24; $i++) {
+            DB::table('jairoads_next.monthly_updates')->insert([
+                'maintenance_id' => $record,
+                'update_month' => sprintf('%04d-%02d', 2027 + intdiv($i - 1, 12), ($i - 1) % 12 + 1),
+                'progress_percentage' => 80,
+                'summary_of_text_reports' => str_repeat('Synthetic history. ', 100),
+                'created_by' => $f['user']->canonical_user_account_id,
+            ]);
+        }
+        for ($i = 1; $i <= 13; $i++) {
+            DB::table('jairoads_next.maintenance_documents')->insert([
+                'maintenance_id' => $record,
+                'document_title' => 'History '.$i,
+                'description' => str_repeat('Synthetic document. ', 100),
+                'file_name' => 'seed.pdf',
+                'file_path' => 'maintenance-records/'.$record.'/00000000-0000-4000-8000-'.str_pad((string) $i, 12, '0', STR_PAD_LEFT).'.pdf',
+                'uploaded_by' => $f['user']->canonical_user_account_id,
+            ]);
+        }
+
+        $url = self::UI.'/maintenance-projects/'.$f['project'].'/records/'.$record;
+        $this->get($url)->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('documents', 12)->where('documentPagination.total', 13)
+            ->where('documentPagination.page', 1)->where('updatePagination.total', 25)
+            ->has('updates', 12)->where('updates.0.update_month', '2028-12')
+            ->missing('updates.0.summary_of_text_reports')->missing('documents.0.description')
+            ->where('checkpointMonths.0', '2026-10')->where('checkpointMonths.2', '2026-10')
+            ->where('checkpointMonths.3', null));
+        $this->get($url.'?document_page=999&update_page=999')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('documents', 1)->where('documentPagination.total', 13)
+            ->where('documentPagination.page', 2)->where('documents.0.document_title', 'History 1')
+            ->has('updates', 1)->where('updatePagination.page', 3)
+            ->where('updates.0.update_month', '2026-10')
+            ->where('checkpointMonths.2', '2026-10'));
+        $this->get(self::UI.'/monthly-updates')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('updates.data', 12)->missing('updates.data.0.summary_of_text_reports')
+            ->has('updates.data.0.media_count')->has('updates.data.0.project'));
+        $this->get(self::UI.'/maintenance-documents')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('documents.data', 12)->missing('documents.data.0.description')
+            ->has('documents.data.0.document_title')->has('documents.data.0.available'));
+        $this->get(self::UI.'/monthly-updates/'.$update)->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('update.summary_of_text_reports'));
+        $document = (int) DB::table('jairoads_next.maintenance_documents')->where('maintenance_id', $record)->orderBy('id')->value('id');
+        $this->get(self::UI.'/maintenance-documents/'.$document)->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('document.description', str_repeat('Synthetic document. ', 100)));
+    }
+
     public function test_dashboard_map_distinguishes_project_creator_and_record_assignment(): void
     {
         $f = $this->fixture('Engineer');
@@ -213,6 +290,24 @@ final class UnifiedFrontendTest extends PostgresTestCase
 
         $this->withSession(['password_hash_web' => null])->actingAs($this->account('Viewer'))
             ->deleteJson(self::UI.'/maintenance-records/'.$empty)->assertForbidden();
+    }
+
+    public function test_road_directory_omits_geometry_without_changing_detail_or_map_geometry(): void
+    {
+        $f = $this->fixture('Engineer');
+        $points = [];
+        for ($i = 0; $i < 1000; $i++) {
+            $points[] = [125.95 + $i * 0.00001, 7.59 + $i * 0.00001];
+        }
+        $geometry = ['type' => 'LineString', 'coordinates' => $points];
+        DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->update(['geojson' => json_encode($geometry, JSON_THROW_ON_ERROR)]);
+        $this->get(self::UI.'/road-coverages')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('coverages.data', 1)->missing('coverages.data.0.geojson')
+            ->where('coverages.data.0.id', $f['road'])->where('mapDeferred', true));
+        $this->get(self::UI.'/road-coverages/'.$f['road'])->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('coverage.geojson.coordinates', $points));
+        $this->getJson(self::UI.'/map/road-index')->assertOk()
+            ->assertJsonPath('data.0.geojson.coordinates', $points);
     }
 
     public function test_project_form_includes_assigned_roads_as_reference_only_and_preserves_current_edit_selection(): void

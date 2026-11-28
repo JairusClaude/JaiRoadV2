@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import { ChevronDown } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import type { CSSProperties } from 'react';
 import { useId, useState } from 'react';
 import { workspaceHref } from '@/lib/workspace-navigation';
 import '../../../css/maintenance-projects-alternative-navigation.css';
@@ -115,9 +116,13 @@ export function AlternativeNavigation({
         <nav
             id="jr-sidebar-nav"
             className="jr-alternative-nav"
+            data-expanded={expanded}
             aria-label="Main navigation"
         >
-            {items.map(({ title, href, icon: Icon }) => {
+            {items.map(({ title, href, icon: Icon }, index) => {
+                const revealStyle = {
+                    '--jr-nav-reveal-delay': `${Math.min(index, 8) * 24}ms`,
+                } as CSSProperties;
                 const moduleHref = href.replace(/^\/workspace\/ui(?=\/)/, '');
                 const key =
                     (
@@ -207,7 +212,11 @@ export function AlternativeNavigation({
                 );
 
                 return parent ? (
-                    <div key={href} className="jr-alternative-project-group">
+                    <div
+                        key={href}
+                        className="jr-alternative-project-group"
+                        style={revealStyle}
+                    >
                         <div className="jr-alternative-parent">
                             {link}
                             {expanded && (
@@ -318,7 +327,7 @@ export function AlternativeNavigation({
                         </div>
                     </div>
                 ) : (
-                    <div key={href}>
+                    <div key={href} style={revealStyle}>
                         {mainNavigation &&
                         key === 'road-coverages' &&
                         page.props.previewOnly !== true &&

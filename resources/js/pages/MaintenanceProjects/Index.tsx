@@ -50,7 +50,10 @@ export default function Index(
             <Head title="Maintenance Projects" />
             <ProjectDirectory
                 {...props}
-                onDelete={deletion.open}
+                onDelete={(projects, multiple) => {
+                    cancel();
+                    deletion.open(projects, multiple);
+                }}
                 onFilters={filter}
                 onSearch={(search) => {
                     cancel();

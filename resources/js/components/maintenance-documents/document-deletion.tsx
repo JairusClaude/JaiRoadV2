@@ -3,8 +3,10 @@ import { useRef, useState } from 'react';
 import { DeletionDialog } from '@/components/maintenance-projects/deletion-dialog';
 import { workspaceHref } from '@/lib/workspace-navigation';
 import type { DocumentSummary } from '@/types/maintenance-documents';
+type DeletableDocument = Pick<DocumentSummary, 'id' | 'document_title'>;
+
 export function useDocumentDeletion(returnRecordId?: number) {
-    const [selected, setSelected] = useState<DocumentSummary[]>([]);
+    const [selected, setSelected] = useState<DeletableDocument[]>([]);
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState('');
     const returnFocus = useRef<HTMLElement | null>(null);
@@ -15,7 +17,7 @@ export function useDocumentDeletion(returnRecordId?: number) {
         processing,
         error,
         returnFocus,
-        open: (items: DocumentSummary[]) => {
+        open: (items: DeletableDocument[]) => {
             returnFocus.current = document.activeElement as HTMLElement;
             setError('');
             setSelected(items);

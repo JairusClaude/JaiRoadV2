@@ -1,6 +1,6 @@
 # Road reference loading — Repair 5A
 
-The road editor no longer embeds the entire authorized road network in its form props. `/dd-phase3/ui/map/roads` is an authenticated, verified, writer-only read endpoint using the existing canonical identity and EngineerLGU scope.
+The road editor no longer embeds the entire authorized road network in its form props. `/workspace/ui/map/roads` is an authenticated, verified, writer-only read endpoint using the existing canonical identity and EngineerLGU scope.
 
 ## Contract and preservation
 

@@ -1,4 +1,6 @@
+import { maxReportSummaryCharacters } from '@/lib/encrypted-field-draft.mjs';
 import { manilaTimestamp } from '@/lib/manila-time';
+import { hasOccupiedReportingMonth } from '@/lib/occupied-reporting-months';
 import type {
     MonthlyCreateProps,
     MonthlyUpdateErrors,
@@ -47,12 +49,17 @@ export function validateMonthlyUpdate(
             'Enter a valid reporting month and four-digit year.';
     } else if (
         record &&
-        parents.existingUpdates.some(
-            (item) =>
-                item.id !== parents.update?.id &&
-                item.maintenance_id === record.id &&
-                item.update_month === values.update_month,
-        )
+        (hasOccupiedReportingMonth(
+            parents.occupiedMonths,
+            record.id,
+            values.update_month,
+        ) ||
+            parents.existingUpdates.some(
+                (item) =>
+                    item.id !== parents.update?.id &&
+                    item.maintenance_id === record.id &&
+                    item.update_month === values.update_month,
+            ))
     ) {
         errors.update_month =
             'This Maintenance Record already has an update for this reporting month.';
@@ -65,6 +72,12 @@ export function validateMonthlyUpdate(
     ) {
         errors.progress_percentage =
             'Enter progress from 0 to 100 with up to two decimal places.';
+    }
+
+    if (
+        [...values.summary_of_text_reports].length > maxReportSummaryCharacters
+    ) {
+        errors.summary_of_text_reports = 'Enter up to 20,000 characters.';
     }
 
     if (

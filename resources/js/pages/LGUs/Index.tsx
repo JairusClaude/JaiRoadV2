@@ -12,6 +12,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import {
     DirectoryFilter,
+    DirectoryFilterHeading,
     DirectoryPagination,
     DirectorySelectionToolbar,
 } from '@/components/directory-controls';
@@ -82,6 +83,19 @@ export default function Index({
     const [busy, setBusy] = useState(false);
     const [selecting, setSelecting] = useState(false);
     const [selected, setSelected] = useState<Set<number>>(new Set());
+    const scope = JSON.stringify([
+        lgus.current_page,
+        filters,
+        lgus.data.map((lgu) => lgu.id),
+    ]);
+    const [previousScope, setPreviousScope] = useState(scope);
+
+    if (previousScope !== scope) {
+        setPreviousScope(scope);
+        setSelecting(false);
+        setSelected(new Set());
+    }
+
     const [bulkTargets, setBulkTargets] = useState<LguSummary[] | null>(null);
     const [bulkDeleting, setBulkDeleting] = useState(false);
     const [bulkError, setBulkError] = useState('');
@@ -210,7 +224,9 @@ export default function Index({
                     <div>
                         <h1>LGU</h1>
                         <p>
-                            Browse and manage registered local government units.
+                            {isViewer
+                                ? 'Browse registered local government units.'
+                                : 'Manage registered local government units.'}
                         </p>
                     </div>
                     {!isViewer && lguPermissions.can_edit && (
@@ -235,45 +251,63 @@ export default function Index({
                         {lguReviewNotice}
                     </p>
                 )}
+                <section
+                    aria-label="LGU statistics"
+                    className="jr-metrics-grid jr-directory-summary"
+                >
+                    <MetricCard
+                        title="Municipalities"
+                        icon={<Building2 className="size-5" />}
+                        value={displayedMunicipalities}
+                        subtitle="Registered LGUs"
+                        highlight={true}
+                    />
+                    <MetricCard
+                        title="Road Coverages"
+                        icon={<MapPinned className="size-5" />}
+                        value={displayedRoadCoverages}
+                        subtitle="Across all municipalities"
+                    />
+                    <MetricCard
+                        title="Engineer Assignments"
+                        icon={<UsersRound className="size-5" />}
+                        value={displayedEngineerAssignments}
+                        subtitle="Active assignments"
+                    />
+                </section>
                 <form
-                    className="jr-filters"
+                    className="jr-filters jr-directory-filter-panel"
                     onSubmit={(e) => {
                         e.preventDefault();
                         visit({ ...filters, search });
                     }}
                 >
-                    {/* 3 Metric Cards */}
-                    <section
-                        aria-label="LGU statistics"
-                        className="jr-metrics-grid mb-5 grid w-full gap-4 sm:grid-cols-3"
-                    >
-                        <MetricCard
-                            title="Municipalities"
-                            icon={<Building2 className="size-5" />}
-                            value={displayedMunicipalities}
-                            subtitle="Registered local government units"
-                            highlight={true}
-                        />
-                        <MetricCard
-                            title="Road Coverages"
-                            icon={<MapPinned className="size-5" />}
-                            value={displayedRoadCoverages}
-                            subtitle="Across all municipalities"
-                        />
-                        <MetricCard
-                            title="Engineer Assignments"
-                            icon={<UsersRound className="size-5" />}
-                            value={displayedEngineerAssignments}
-                            subtitle="Active municipal engineers"
-                        />
-                    </section>
+                    <DirectoryFilterHeading
+                        disabled={busy}
+                        onReset={
+                            search ||
+                            filters.province ||
+                            filters.region ||
+                            filters.sort !== 'asc'
+                                ? () => {
+                                      setSearch('');
+                                      visit({
+                                          search: '',
+                                          province: '',
+                                          region: '',
+                                          sort: 'asc',
+                                      });
+                                  }
+                                : undefined
+                        }
+                    />
                     <div className="jr-search">
                         <Search className="size-[18px]" />
                         <Input
                             type="search"
                             maxLength={255}
                             aria-label="Search LGUs"
-                            placeholder="Search municipalities, provinces, regions, or mayors..."
+                            placeholder="Search LGUs..."
                             value={search}
                             onChange={(e) => {
                                 const value = e.target.value;
@@ -290,6 +324,7 @@ export default function Index({
                     <div className="jr-filter-row">
                         <DirectoryFilter
                             label="Province filter"
+                            fieldLabel="Province"
                             value={filters.province || 'all'}
                             options={[
                                 { value: 'all', label: 'All Provinces' },
@@ -308,6 +343,7 @@ export default function Index({
                         />
                         <DirectoryFilter
                             label="Region filter"
+                            fieldLabel="Region"
                             value={filters.region || 'all'}
                             options={[
                                 { value: 'all', label: 'All Regions' },
@@ -326,6 +362,7 @@ export default function Index({
                         />
                         <DirectoryFilter
                             label="Sort LGUs"
+                            fieldLabel="Sort by"
                             value={filters.sort}
                             options={[
                                 { value: 'asc', label: 'Municipality A–Z' },
@@ -369,19 +406,25 @@ export default function Index({
                     aria-label="LGU table"
                     tabIndex={0}
                 >
-                    <table className="jr-table jr-lgu-table">
+                    <table
+                        role="table"
+                        className="jr-table jr-mobile-table jr-lgu-table"
+                    >
                         <colgroup>
                             {selecting && <col style={{ width: '48px' }} />}
                             <col style={{ width: selecting ? '25%' : '28%' }} />
                             <col style={{ width: '20%' }} />
                             <col style={{ width: '22%' }} />
-                            <col style={{ width: '23%' }} />
-                            <col style={{ width: '7%' }} />
+                            <col style={{ width: isViewer ? '30%' : '23%' }} />
+                            {!isViewer && <col style={{ width: '7%' }} />}
                         </colgroup>
-                        <thead>
-                            <tr>
+                        <thead role="rowgroup">
+                            <tr role="row">
                                 {selecting && (
-                                    <th className="w-12 px-3 text-center">
+                                    <th
+                                        role="columnheader"
+                                        className="w-12 px-3 text-center"
+                                    >
                                         <Checkbox
                                             aria-label="Select all LGUs on this page"
                                             checked={
@@ -405,16 +448,24 @@ export default function Index({
                                         />
                                     </th>
                                 )}
-                                <th>Municipality</th>
-                                <th>Province</th>
-                                <th>Region</th>
-                                <th>Municipal Mayor</th>
-                                <th className="text-right">Actions</th>
+                                <th role="columnheader">Municipality</th>
+                                <th role="columnheader">Province</th>
+                                <th role="columnheader">Region</th>
+                                <th role="columnheader">Municipal Mayor</th>
+                                {!isViewer && (
+                                    <th
+                                        role="columnheader"
+                                        className="text-right"
+                                    >
+                                        Actions
+                                    </th>
+                                )}
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody role="rowgroup">
                             {lgus.data.map((lgu) => (
                                 <tr
+                                    role="row"
                                     key={lgu.id}
                                     data-lgu-id={lgu.id}
                                     data-selected={selected.has(lgu.id)}
@@ -435,6 +486,8 @@ export default function Index({
                                 >
                                     {selecting && (
                                         <td
+                                            role="cell"
+                                            data-mobile-cell="selection"
                                             className="w-12 px-3 text-center"
                                             onClick={(event) =>
                                                 event.stopPropagation()
@@ -449,7 +502,7 @@ export default function Index({
                                             />
                                         </td>
                                     )}
-                                    <td>
+                                    <td role="cell" data-mobile-cell="primary">
                                         <Link
                                             className="jr-project-title"
                                             href={workspaceHref(
@@ -470,70 +523,86 @@ export default function Index({
                                             {lgu.municipality_name}
                                         </Link>
                                     </td>
-                                    <td>{lgu.province}</td>
-                                    <td>{lgu.region}</td>
-                                    <td>{mayorName(lgu)}</td>
                                     <td
-                                        className="text-right"
-                                        onClick={(event) =>
-                                            event.stopPropagation()
-                                        }
+                                        role="cell"
+                                        data-mobile-label="Province"
                                     >
-                                        {!isViewer &&
-                                            (lguPermissions.can_edit ||
-                                                lguPermissions.can_delete) && (
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger
-                                                        asChild
-                                                    >
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="jr-action-trigger"
-                                                            aria-label={`Actions for ${lgu.municipality_name}`}
+                                        {lgu.province}
+                                    </td>
+                                    <td role="cell" data-mobile-label="Region">
+                                        {lgu.region}
+                                    </td>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Municipal mayor"
+                                    >
+                                        {mayorName(lgu)}
+                                    </td>
+                                    {!isViewer && (
+                                        <td
+                                            role="cell"
+                                            data-mobile-cell="actions"
+                                            className="text-right"
+                                            onClick={(event) =>
+                                                event.stopPropagation()
+                                            }
+                                        >
+                                            {!isViewer &&
+                                                (lguPermissions.can_edit ||
+                                                    lguPermissions.can_delete) && (
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger
+                                                            asChild
                                                         >
-                                                            <MoreHorizontal />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent
-                                                        align="end"
-                                                        className="jr-theme jr-menu"
-                                                    >
-                                                        <DropdownMenuItem
-                                                            disabled={
-                                                                !lguPermissions.can_edit
-                                                            }
-                                                            onSelect={() =>
-                                                                router.visit(
-                                                                    workspaceHref(
-                                                                        editUrl(
-                                                                            `/lgus/${lgu.id}/edit`,
-                                                                            page.url,
-                                                                        ),
-                                                                    ),
-                                                                )
-                                                            }
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="jr-action-trigger"
+                                                                aria-label={`Actions for ${lgu.municipality_name}`}
+                                                            >
+                                                                <MoreHorizontal />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent
+                                                            align="end"
+                                                            className="jr-theme jr-menu"
                                                         >
-                                                            <Pencil />
-                                                            Edit LGU
-                                                        </DropdownMenuItem>
-                                                        {lguPermissions.can_delete && (
                                                             <DropdownMenuItem
-                                                                className="text-red-600 focus:bg-red-50 focus:text-red-700"
+                                                                disabled={
+                                                                    !lguPermissions.can_edit
+                                                                }
                                                                 onSelect={() =>
-                                                                    deletion.open(
-                                                                        lgu,
+                                                                    router.visit(
+                                                                        workspaceHref(
+                                                                            editUrl(
+                                                                                `/lgus/${lgu.id}/edit`,
+                                                                                page.url,
+                                                                            ),
+                                                                        ),
                                                                     )
                                                                 }
                                                             >
-                                                                <Trash2 className="size-4" />
-                                                                Delete LGU
+                                                                <Pencil />
+                                                                Edit LGU
                                                             </DropdownMenuItem>
-                                                        )}
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            )}
-                                    </td>
+                                                            {lguPermissions.can_delete && (
+                                                                <DropdownMenuItem
+                                                                    className="text-red-600 focus:bg-red-50 focus:text-red-700"
+                                                                    onSelect={() =>
+                                                                        deletion.open(
+                                                                            lgu,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Trash2 className="size-4" />
+                                                                    Delete LGU
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                )}
+                                        </td>
+                                    )}
                                 </tr>
                             ))}
                         </tbody>

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Services\Files\FileRecoverySchedule;
 use App\Services\Files\PermanentFileDeletion;
 use Illuminate\Console\Command;
 
@@ -9,7 +10,8 @@ final class ResumeFileDeletions extends Command
 {
     protected $signature = 'jairoads:resume-file-deletions
         {--limit=50 : Maximum accepted commands to retry in this batch}
-        {--budget= : Seconds after which the batch stops starting new operations}';
+        {--budget= : Seconds after which the batch stops starting new operations}
+        {--scheduled : Record that the scheduler invocation was requested}';
 
     protected $description = 'Reconcile previously authorized individual file deletions; never accepts a path or creates a new deletion command';
 
@@ -34,18 +36,23 @@ final class ResumeFileDeletions extends Command
             return self::FAILURE;
         }
         $deadline = $seconds === null ? null : hrtime(true) + $seconds * 1_000_000_000;
-        $pending = false;
+        $attempted = 0;
+        $completed = 0;
+        $budgetReached = false;
         foreach ($deletions->pendingIds($limit) as $id) {
             if ($deadline !== null && hrtime(true) >= $deadline) {
                 $this->warn('Batch budget reached. Remaining operations will be retried in a later run.');
 
-                return $pending ? self::FAILURE : self::SUCCESS;
+                $budgetReached = true;
+                break;
             }
             $result = $deletions->process($id);
+            $attempted++;
+            $completed += $result['state'] === 'completed' ? 1 : 0;
             $this->line('Operation '.$id.': '.$result['state']);
-            $pending = $pending || $result['state'] !== 'completed';
         }
+        FileRecoverySchedule::recordRun($attempted, $completed, $budgetReached, $this->option('scheduled') === true);
 
-        return $pending ? self::FAILURE : self::SUCCESS;
+        return $attempted !== $completed ? self::FAILURE : self::SUCCESS;
     }
 }

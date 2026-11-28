@@ -3,6 +3,13 @@ import { ArrowLeft } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -70,6 +77,12 @@ export function CoverageForm({
     const geometryLocked =
         !!coverage && geometryEditingMode(coverage.geojson) !== 'editable';
     const saving = useRef(false);
+    const approvedLeave = useRef(false);
+    const apk =
+        typeof navigator !== 'undefined' &&
+        navigator.userAgent.includes('JaiROADSField/');
+    const [discardUrl, setDiscardUrl] = useState<string | null>(null);
+    const [saveNotice, setSaveNotice] = useState('');
     const [mappingDirty, setMappingDirty] = useState(false);
     const [pending, setPending] = useState(false);
     const [geometryNotice, setGeometryNotice] = useState('');
@@ -109,6 +122,22 @@ export function CoverageForm({
         };
         window.addEventListener('beforeunload', unload);
         const remove = router.on('before', (event) => {
+            if (apk) {
+                const visit = event.detail.visit;
+
+                if (
+                    visit.method === 'get' &&
+                    !approvedLeave.current &&
+                    (form.isDirty || mappingDirty) &&
+                    !saving.current
+                ) {
+                    event.preventDefault();
+                    setDiscardUrl(visit.url.href);
+                }
+
+                return;
+            }
+
             if (
                 (form.isDirty || mappingDirty) &&
                 !saving.current &&
@@ -122,11 +151,49 @@ export function CoverageForm({
             window.removeEventListener('beforeunload', unload);
             remove();
         };
-    }, [form.isDirty, mappingDirty]);
+    }, [apk, form.isDirty, mappingDirty]);
 
     return (
         <>
             <Head title={title} />
+            {apk && (
+                <Dialog
+                    open={Boolean(discardUrl)}
+                    onOpenChange={(open) => {
+                        if (!open) {
+                            setDiscardUrl(null);
+                        }
+                    }}
+                >
+                    <DialogContent>
+                        <DialogTitle>Discard unsaved changes?</DialogTitle>
+                        <DialogDescription>
+                            Changes already saved on this device will remain
+                            available.
+                        </DialogDescription>
+                        <DialogFooter>
+                            <Button
+                                variant="outline"
+                                onClick={() => setDiscardUrl(null)}
+                            >
+                                Keep editing
+                            </Button>
+                            <Button
+                                onClick={() => {
+                                    if (discardUrl) {
+                                        approvedLeave.current = true;
+                                        router.visit(discardUrl);
+                                        approvedLeave.current = false;
+                                        setDiscardUrl(null);
+                                    }
+                                }}
+                            >
+                                Discard changes
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            )}
             <ProjectWorkspace>
                 <div className="jr-record-screen jr-coverage-form">
                     <button
@@ -160,6 +227,7 @@ export function CoverageForm({
                             }
 
                             form.clearErrors();
+                            setSaveNotice('');
                             const errors = validateCoverage(
                                 form.data,
                                 municipalities,
@@ -260,6 +328,30 @@ export function CoverageForm({
                                 ),
                                 {
                                     preserveScroll: true,
+                                    ...(apk
+                                        ? {
+                                              onHttpException: (response) => {
+                                                  setSaveNotice(
+                                                      [401, 419].includes(
+                                                          response.status,
+                                                      )
+                                                          ? 'Your session expired. Your edits are still here.'
+                                                          : 'JaiROADS could not save online. Your edits are still here.',
+                                                  );
+
+                                                  return false;
+                                              },
+                                              onNetworkError: () => {
+                                                  setSaveNotice(
+                                                      navigator.onLine
+                                                          ? 'Could not reach JaiROADS. Your edits are still here.'
+                                                          : 'You are offline. Use the field workspace to save locally.',
+                                                  );
+
+                                                  return false;
+                                              },
+                                          }
+                                        : {}),
                                     onFinish: () => {
                                         saving.current = false;
                                     },
@@ -267,6 +359,11 @@ export function CoverageForm({
                             );
                         }}
                     >
+                        {saveNotice && (
+                            <p className="jr-field-error" role="alert">
+                                {saveNotice}
+                            </p>
+                        )}
                         <CoverageMapEditor
                             initial={coverage?.geojson ?? null}
                             referenceCoverages={referenceCoverages}

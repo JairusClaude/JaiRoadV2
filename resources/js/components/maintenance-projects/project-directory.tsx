@@ -2,6 +2,8 @@ import { usePage } from '@inertiajs/react';
 import { Plus, Search } from 'lucide-react';
 import { useState } from 'react';
 import {
+    DirectoryFilterField,
+    DirectoryFilterHeading,
     DirectoryPagination,
     DirectorySelectionToolbar,
 } from '@/components/directory-controls';
@@ -62,9 +64,20 @@ export function ProjectDirectory({
             page.props.jairoadsIdentity as { role?: string } | undefined
         )?.role?.toLowerCase() === 'viewer';
     const [search, setSearch] = useState(filters.search);
+    const [previousSearch, setPreviousSearch] = useState(filters.search);
+
+    if (previousSearch !== filters.search) {
+        setPreviousSearch(filters.search);
+        setSearch(filters.search);
+    }
+
     const [selecting, setSelecting] = useState(false);
     const [selected, setSelected] = useState<Set<number>>(new Set());
-    const selectionScope = `${projects.current_page}:${filters.municipality}:${filters.sort}:${projects.data.map((project) => project.id).join(',')}`;
+    const selectionScope = JSON.stringify([
+        projects.current_page,
+        filters,
+        projects.data.map((project) => project.id),
+    ]);
     const [previousScope, setPreviousScope] = useState(selectionScope);
 
     // Reset only selection when the returned scope changes. Keep the directory
@@ -135,12 +148,30 @@ export function ProjectDirectory({
             </div>
             <IntegrationNotice integration={integration} />
             <form
-                className="jr-filters"
+                className="jr-filters jr-directory-filter-panel"
                 onSubmit={(event) => {
                     event.preventDefault();
                     apply({ ...filters, search });
                 }}
             >
+                <DirectoryFilterHeading
+                    disabled={!integration.ready || busy}
+                    onReset={
+                        search ||
+                        (filters.municipality &&
+                            filters.municipality !== 'all') ||
+                        filters.sort !== 'newest'
+                            ? () => {
+                                  setSearch('');
+                                  apply({
+                                      search: '',
+                                      municipality: '',
+                                      sort: 'newest',
+                                  });
+                              }
+                            : undefined
+                    }
+                />
                 <div className="jr-search">
                     <Search className="size-[18px]" />
                     <Input
@@ -158,60 +189,71 @@ export function ProjectDirectory({
                     />
                 </div>
                 <div className="jr-filter-row">
-                    <Select
-                        value={String(filters.municipality || 'all')}
-                        onValueChange={(value) =>
-                            apply({
-                                ...filters,
-                                search,
-                                municipality: value === 'all' ? '' : value,
-                            })
-                        }
-                        disabled={!integration.ready || busy}
-                    >
-                        <SelectTrigger
-                            aria-label="Municipality filter"
-                            className="jr-municipality-filter"
+                    <DirectoryFilterField label="Municipality">
+                        <Select
+                            value={String(filters.municipality || 'all')}
+                            onValueChange={(value) =>
+                                apply({
+                                    ...filters,
+                                    search,
+                                    municipality: value === 'all' ? '' : value,
+                                })
+                            }
+                            disabled={!integration.ready || busy}
                         >
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent
-                            className="jr-theme jr-menu jr-filter-menu"
-                            align="start"
-                            sideOffset={4}
-                        >
-                            <SelectItem value="all">
-                                All Municipalities
-                            </SelectItem>
-                            {municipalities.map((lgu) => (
-                                <SelectItem key={lgu.id} value={String(lgu.id)}>
-                                    {lgu.municipality_name}
+                            <SelectTrigger
+                                aria-label="Municipality filter"
+                                className="jr-municipality-filter"
+                            >
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent
+                                className="jr-theme jr-menu jr-filter-menu"
+                                align="start"
+                                sideOffset={4}
+                            >
+                                <SelectItem value="all">
+                                    All Municipalities
                                 </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <Select
-                        value={filters.sort}
-                        onValueChange={(value: 'newest' | 'oldest') =>
-                            apply({ ...filters, search, sort: value })
-                        }
-                        disabled={!integration.ready || busy}
-                    >
-                        <SelectTrigger
-                            aria-label="Sort projects"
-                            className="jr-sort-filter"
+                                {municipalities.map((lgu) => (
+                                    <SelectItem
+                                        key={lgu.id}
+                                        value={String(lgu.id)}
+                                    >
+                                        {lgu.municipality_name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </DirectoryFilterField>
+                    <DirectoryFilterField label="Sort by">
+                        <Select
+                            value={filters.sort}
+                            onValueChange={(value: 'newest' | 'oldest') =>
+                                apply({ ...filters, search, sort: value })
+                            }
+                            disabled={!integration.ready || busy}
                         >
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent
-                            className="jr-theme jr-menu jr-filter-menu"
-                            align="start"
-                            sideOffset={4}
-                        >
-                            <SelectItem value="newest">Newest first</SelectItem>
-                            <SelectItem value="oldest">Oldest first</SelectItem>
-                        </SelectContent>
-                    </Select>
+                            <SelectTrigger
+                                aria-label="Sort projects"
+                                className="jr-sort-filter"
+                            >
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent
+                                className="jr-theme jr-menu jr-filter-menu"
+                                align="start"
+                                sideOffset={4}
+                            >
+                                <SelectItem value="newest">
+                                    Newest first
+                                </SelectItem>
+                                <SelectItem value="oldest">
+                                    Oldest first
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </DirectoryFilterField>
                 </div>
                 <span className="sr-only">
                     Search results update automatically while typing.
@@ -247,16 +289,21 @@ export function ProjectDirectory({
                 tabIndex={0}
             >
                 <table
-                    className={`jr-table${isViewer ? 'jr-project-table-readonly' : ''}`}
+                    role="table"
+                    className={
+                        isViewer
+                            ? 'jr-table jr-mobile-table jr-project-table-readonly'
+                            : 'jr-table jr-mobile-table'
+                    }
                 >
                     <colgroup>
                         <col style={{ width: isViewer ? '65%' : '60%' }} />
                         <col style={{ width: isViewer ? '35%' : '30%' }} />
                         {!isViewer && <col style={{ width: '10%' }} />}
                     </colgroup>
-                    <thead>
-                        <tr>
-                            <th>
+                    <thead role="rowgroup">
+                        <tr role="row">
+                            <th role="columnheader">
                                 <div className="jr-project-line">
                                     {selecting && (
                                         <Checkbox
@@ -285,17 +332,23 @@ export function ProjectDirectory({
                                     <span>Project</span>
                                 </div>
                             </th>
-                            <th className={isViewer ? '!text-left' : undefined}>
+                            <th
+                                role="columnheader"
+                                className={isViewer ? '!text-left' : undefined}
+                            >
                                 Municipality
                             </th>
                             {!isViewer && (
-                                <th className="text-right">Actions</th>
+                                <th role="columnheader" className="text-right">
+                                    Actions
+                                </th>
                             )}
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody role="rowgroup">
                         {projects.data.map((project) => (
                             <tr
+                                role="row"
                                 key={project.id}
                                 data-selected={selected.has(project.id)}
                                 onClick={() =>
@@ -308,7 +361,7 @@ export function ProjectDirectory({
                                           )
                                 }
                             >
-                                <td>
+                                <td role="cell" data-mobile-cell="primary">
                                     <div className="jr-project-line">
                                         {selecting && (
                                             <Checkbox
@@ -369,7 +422,10 @@ export function ProjectDirectory({
                                         </div>
                                     </div>
                                 </td>
-                                <td>
+                                <td
+                                    role="cell"
+                                    data-mobile-label="Municipality"
+                                >
                                     {project.municipality ?? (
                                         <span className="jr-muted">
                                             Coverage not mapped
@@ -378,6 +434,8 @@ export function ProjectDirectory({
                                 </td>
                                 {!isViewer && (
                                     <td
+                                        role="cell"
+                                        data-mobile-cell="actions"
                                         className="text-right"
                                         onClick={(event) =>
                                             event.stopPropagation()

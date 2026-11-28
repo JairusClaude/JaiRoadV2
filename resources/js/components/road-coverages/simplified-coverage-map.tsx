@@ -1,6 +1,9 @@
 import L from 'leaflet';
 import { MapPin } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { watchBasemap } from '@/lib/road-coverages/basemap';
+import type { BasemapStatus } from '@/lib/road-coverages/basemap';
+import { attachFieldBasemap } from '@/lib/road-coverages/field-basemap';
 import { savedRoadLines } from '@/lib/road-coverages/saved-lines';
 import { RoadDetailsPanel } from './road-details-panel';
 import 'leaflet/dist/leaflet.css';
@@ -19,12 +22,20 @@ const ROAD_COLORS = {
     other: '#64748b',
 } as const;
 
+const CONDITION_COLORS = {
+    Good: '#15803d',
+    Fair: '#a16207',
+    Bad: '#b91c1c',
+    Unknown: '#64748b',
+} as const;
+
 export type SimplifiedCoverageItem = {
     id: number;
     road_name: string;
     municipality?: string | null;
     lgu?: { id?: number; municipality_name?: string };
     assigned?: boolean;
+    state_category?: 'Good' | 'Fair' | 'Bad';
     has_projects?: boolean;
     geojson: unknown;
     project_id?: number | null;
@@ -52,6 +63,9 @@ export function SimplifiedCoverageMap({
 }: SimplifiedCoverageMapProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<L.Map | null>(null);
+    const tileMonitor = useRef<ReturnType<typeof watchBasemap> | null>(null);
+    const [basemap, setBasemap] = useState<BasemapStatus>('loading');
+    const [conditionMode, setConditionMode] = useState(false);
     const [mineOnly, setMineOnly] = useState(false);
     const [relationship, setRelationship] = useState<
         'all' | 'created' | 'assigned' | 'both'
@@ -59,6 +73,18 @@ export function SimplifiedCoverageMap({
     const dashboardView = engineerView || viewerView;
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const roadLayers = useRef<{ id: number; line: L.Polyline }[]>([]);
+    const roadGroupRef = useRef<L.FeatureGroup | null>(null);
+    const renderedRoads = useRef(
+        new Map<
+            number,
+            {
+                signature: string;
+                group: L.FeatureGroup;
+                lines: L.Polyline[];
+            }
+        >(),
+    );
+    const fittedRoads = useRef(false);
 
     const mappedCoverages = useMemo(() => {
         return coverages.map((coverage) => {
@@ -74,11 +100,19 @@ export function SimplifiedCoverageMap({
             const assigned =
                 coverage.assigned === true || coverage.has_projects === true;
 
+            const condition = coverage.state_category;
+
             return {
                 id: coverage.id,
                 name: coverage.road_name,
                 municipality,
                 assigned,
+                condition:
+                    condition === 'Good' ||
+                    condition === 'Fair' ||
+                    condition === 'Bad'
+                        ? condition
+                        : ('Unknown' as const),
                 projectId: coverage.project_id,
                 projectTitle: coverage.project_title,
                 mine:
@@ -96,6 +130,7 @@ export function SimplifiedCoverageMap({
         });
     }, [coverages]);
 
+    const showConditions = conditionMode;
     const mappedCount = mappedCoverages.filter(
         (c) => c.lines.length > 0,
     ).length;
@@ -123,6 +158,9 @@ export function SimplifiedCoverageMap({
         [mappedCoverages, myOnly, engineerView, relationship],
     );
 
+    const visibleMappedCount = visibleCoverages.filter(
+        (coverage) => coverage.lines.length > 0,
+    ).length;
     const selected = dashboardView
         ? visibleCoverages.find((item) => item.id === selectedId)
         : undefined;
@@ -142,12 +180,21 @@ export function SimplifiedCoverageMap({
             inertia: false,
         });
         mapRef.current = map;
+        roadGroupRef.current = L.featureGroup().addTo(map);
+        const entries = renderedRoads.current;
 
         // Standard OpenStreetMap tile layer (identical to Road Coverage Details and Add pages)
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '© OpenStreetMap contributors',
-        }).addTo(map);
+        const tiles = L.tileLayer(
+            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap contributors',
+            },
+        );
+        const monitor = watchBasemap(tiles, setBasemap);
+        tileMonitor.current = monitor;
+        tiles.addTo(map);
+        attachFieldBasemap(map, tiles, setBasemap);
 
         // Metric scale indicator in bottom-left
         L.control.scale({ imperial: false, maxWidth: 120 }).addTo(map);
@@ -175,6 +222,12 @@ export function SimplifiedCoverageMap({
 
         return () => {
             mapRef.current = null;
+            roadGroupRef.current = null;
+            entries.clear();
+            roadLayers.current = [];
+            fittedRoads.current = false;
+            monitor.dispose();
+            tileMonitor.current = null;
             observer.disconnect();
 
             if (resizeFrame) {
@@ -188,13 +241,22 @@ export function SimplifiedCoverageMap({
 
     useEffect(() => {
         const map = mapRef.current;
+        const roadGroup = roadGroupRef.current;
 
-        if (!map) {
+        if (!map || !roadGroup) {
             return;
         }
 
-        const roadGroup = L.featureGroup();
+        const entries = renderedRoads.current;
+        const desired = new Set(visibleCoverages.map((item) => item.id));
         roadLayers.current = [];
+
+        for (const [id, entry] of entries) {
+            if (!desired.has(id)) {
+                roadGroup.removeLayer(entry.group);
+                entries.delete(id);
+            }
+        }
 
         // Draw background roads first so the engineer's highlighted roads stay on top.
         const ordered = engineerView
@@ -204,9 +266,30 @@ export function SimplifiedCoverageMap({
             : visibleCoverages;
 
         for (const item of ordered) {
+            const signature = JSON.stringify([
+                item,
+                engineerView,
+                viewerView,
+                dashboardView,
+                showConditions,
+            ]);
+            const existing = entries.get(item.id);
+
+            if (existing?.signature === signature) {
+                continue;
+            }
+
+            if (existing) {
+                roadGroup.removeLayer(existing.group);
+                entries.delete(item.id);
+            }
+
             if (!item.lines.length) {
                 continue;
             }
+
+            const group = L.featureGroup();
+            const lines: L.Polyline[] = [];
 
             // Use the canonical road brown (#843b12) from the Add Road Coverage editor and Details view
             const highlighted = engineerView && item.mine;
@@ -219,11 +302,13 @@ export function SimplifiedCoverageMap({
                       : item.managed
                         ? 'assigned'
                         : 'other';
-            const lineColor = engineerView
-                ? ROAD_COLORS[category]
-                : viewerView
-                  ? '#1d5db5'
-                  : '#843b12';
+            const lineColor = showConditions
+                ? CONDITION_COLORS[item.condition]
+                : engineerView
+                  ? ROAD_COLORS[category]
+                  : viewerView
+                    ? '#1d5db5'
+                    : '#843b12';
 
             for (const segment of item.lines) {
                 // White halo background line for contrast and legibility
@@ -233,7 +318,7 @@ export function SimplifiedCoverageMap({
                     opacity: muted ? 0.55 : 0.9,
                     smoothFactor: 0,
                     interactive: false,
-                }).addTo(roadGroup);
+                }).addTo(group);
 
                 // Main colored road polyline matching Add Road Coverage page
                 const line = L.polyline(segment, {
@@ -258,7 +343,7 @@ export function SimplifiedCoverageMap({
 
                 if (dashboardView) {
                     line.on('click', () => setSelectedId(item.id));
-                    roadLayers.current.push({ id: item.id, line });
+                    lines.push(line);
                 } else {
                     // Preserve the read-only popup for every other map.
                     const popup = document.createElement('div');
@@ -269,6 +354,9 @@ export function SimplifiedCoverageMap({
                     const detail = document.createElement('p');
                     detail.textContent = item.municipality;
                     popup.append(detail);
+                    const condition = document.createElement('p');
+                    condition.textContent = 'Road condition: ' + item.condition;
+                    popup.append(condition);
 
                     if (item.assigned) {
                         const status = document.createElement('p');
@@ -279,14 +367,31 @@ export function SimplifiedCoverageMap({
                     line.bindPopup(popup, { closeButton: true });
                 }
 
-                line.addTo(roadGroup);
+                line.addTo(group);
+            }
+
+            group.addTo(roadGroup);
+            entries.set(item.id, { signature, group, lines });
+        }
+
+        // Keep the engineer's foreground roads above the background roads.
+        for (const item of ordered) {
+            const entry = entries.get(item.id);
+
+            if (entry) {
+                if (engineerView && item.mine) {
+                    entry.group.bringToFront();
+                }
+
+                for (const line of entry.lines) {
+                    roadLayers.current.push({ id: item.id, line });
+                }
             }
         }
 
-        roadGroup.addTo(map);
-
-        // Auto-fit bounds to the road network or fall back to Davao de Oro province bounds
-        if (roadGroup.getLayers().length > 0) {
+        // Fit the first available geometry only. Pagination and filtering
+        // must not discard the user's chosen viewport or zoom.
+        if (!fittedRoads.current && roadGroup.getLayers().length > 0) {
             const bounds = roadGroup.getBounds();
 
             if (bounds.isValid()) {
@@ -294,21 +399,16 @@ export function SimplifiedCoverageMap({
                     maxZoom: 15,
                     animate: false,
                 });
-            } else {
-                map.fitBounds(PROVINCE_BOUNDS, { animate: false });
+                fittedRoads.current = true;
             }
-        } else {
-            map.fitBounds(PROVINCE_BOUNDS, { animate: false });
         }
-
-        return () => {
-            if (mapRef.current === map) {
-                roadGroup.removeFrom(map);
-            }
-
-            roadLayers.current = [];
-        };
-    }, [visibleCoverages, engineerView, viewerView, dashboardView]);
+    }, [
+        visibleCoverages,
+        engineerView,
+        viewerView,
+        dashboardView,
+        showConditions,
+    ]);
 
     useEffect(() => {
         for (const { id, line } of roadLayers.current) {
@@ -321,48 +421,66 @@ export function SimplifiedCoverageMap({
                 line.bringToFront();
             }
         }
-    }, [selected?.id, visibleCoverages]);
+    }, [selected?.id, visibleCoverages, showConditions]);
 
     return (
         <div className={`jr-road-map-panel w-full ${className}`}>
             <div className="jr-road-map-header">
                 <div className="jr-road-map-heading">
-                    <MapPin size={17} />
+                    <MapPin size={17} aria-hidden="true" />
                     <strong>Davao de Oro · Road Coverage Map</strong>
                     <span className="jr-road-map-count">
-                        {
-                            visibleCoverages.filter((c) => c.lines.length > 0)
-                                .length
-                        }{' '}
-                        mapped road line
-                        {visibleCoverages.filter((c) => c.lines.length > 0)
-                            .length === 1
-                            ? ''
-                            : 's'}
+                        {visibleMappedCount} mapped road line
+                        {visibleMappedCount === 1 ? '' : 's'}
                     </span>
                 </div>
-                {engineerView && (
+                <div className="jr-road-map-switches">
+                    {engineerView && (
+                        <label className="jr-engineer-map-toggle">
+                            <input
+                                type="checkbox"
+                                role="switch"
+                                checked={mineOnly}
+                                onChange={(event) => {
+                                    const checked = event.target.checked;
+                                    setMineOnly(checked);
+
+                                    if (checked && selected && !selected.mine) {
+                                        setSelectedId(null);
+                                    }
+                                }}
+                            />
+                            My projects only
+                        </label>
+                    )}
                     <label className="jr-engineer-map-toggle">
                         <input
                             type="checkbox"
                             role="switch"
-                            checked={mineOnly}
-                            onChange={(event) => {
-                                setMineOnly(event.target.checked);
-
-                                if (
-                                    event.target.checked &&
-                                    selected &&
-                                    !selected.mine
-                                ) {
-                                    setSelectedId(null);
-                                }
-                            }}
+                            checked={showConditions}
+                            disabled={visibleMappedCount === 0}
+                            onChange={(event) =>
+                                setConditionMode(event.target.checked)
+                            }
                         />
-                        My projects only
+                        Show road conditions
                     </label>
-                )}
+                </div>
             </div>
+            {basemap === 'unavailable' && (
+                <div className="jr-road-map-toolbar">
+                    <span role="status">
+                        Some background tiles failed. Saved road lines remain
+                        available.
+                    </span>
+                    <button
+                        type="button"
+                        onClick={() => tileMonitor.current?.retry()}
+                    >
+                        Retry map tiles
+                    </button>
+                </div>
+            )}
             {dashboardView && (
                 <div className="jr-road-map-toolbar">
                     <span role="status">
@@ -451,7 +569,16 @@ export function SimplifiedCoverageMap({
 
             <div className="jr-road-map-footer">
                 <div className="jr-road-map-legend">
-                    {engineerView ? (
+                    {showConditions ? (
+                        Object.entries(CONDITION_COLORS).map(
+                            ([condition, color]) => (
+                                <span key={condition}>
+                                    <i style={{ background: color }} />{' '}
+                                    {condition}
+                                </span>
+                            ),
+                        )
+                    ) : engineerView ? (
                         <>
                             <span>
                                 <i

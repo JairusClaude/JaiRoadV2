@@ -3,6 +3,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import type { MouseEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { validProjectPage } from '@/lib/project-choice-page';
 import type { MonthlyParentProject } from '@/types/monthly-updates';
 
 // Search input and option buttons share the established menu surface. Native
@@ -71,7 +72,7 @@ export function ProjectSelector<T extends MonthlyParentProject>({
 
                 const result = await response.json();
 
-                if (!Array.isArray(result.data)) {
+                if (!validProjectPage(result)) {
                     throw new Error('Invalid project choices');
                 }
 

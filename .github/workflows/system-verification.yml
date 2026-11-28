@@ -1,16 +1,21 @@
 name: JaiROADS full system verification
 on:
   push:
-    branches: ['integration/dd-system-completion', 'Oct10_Front&BackEnd_Merge_Integration', 'fix/security-auth-revocation-passkey-dependencies', 'fix/canonical-only-provisioned-auth', 'fix/audit-multirecipient-consistency', 'fix/ordinary-mutation-authorization-races', 'integration/combined-review-candidate-2026-11-07', 'fix/full-system-role-acceptance', 'fix/uat-defect-and-recovery-gates', 'fix/controlled-release-readiness', 'merged-system', 'merged-system_refactor2', 'merged-system2']
+    branches: ['integration/dd-system-completion', 'Oct10_Front&BackEnd_Merge_Integration', 'fix/security-auth-revocation-passkey-dependencies', 'fix/canonical-only-provisioned-auth', 'fix/audit-multirecipient-consistency', 'fix/ordinary-mutation-authorization-races', 'integration/combined-review-candidate-2026-11-07', 'fix/full-system-role-acceptance', 'fix/uat-defect-and-recovery-gates', 'fix/controlled-release-readiness', 'merged-system', 'merged-system_refactor2', 'merged-system2', 'main', 'Improvement1']
   pull_request:
-    branches: [merged-system2]
+    branches: [merged-system2, main]
   workflow_dispatch:
+# Supersede obsolete runs only on the review branch; keep other release runs independent.
+concurrency:
+  group: ${{ github.workflow }}-${{ (github.head_ref == 'Improvement1' || github.ref_name == 'Improvement1') && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.head_ref == 'Improvement1' || github.ref_name == 'Improvement1' }}
+
 permissions:
   contents: read
 jobs:
   reviewed-lineage:
     # Delivery branches verify the merged-system contracts below.
-    if: ${{ !contains(fromJSON('["merged-system","merged-system_refactor2","merged-system2"]'), github.base_ref || github.ref_name) }}
+    if: ${{ !contains(fromJSON('["merged-system","merged-system_refactor2","merged-system2","main","Improvement1"]'), github.base_ref || github.ref_name) }}
     name: integration / canonical and teammate ancestry
     runs-on: ubuntu-latest
     permissions:
@@ -24,7 +29,7 @@ jobs:
         run: bash tests/Integration/assert-reviewed-history.sh
 
   merged-contracts:
-    if: ${{ contains(fromJSON('["merged-system","merged-system_refactor2","merged-system2"]'), github.base_ref || github.ref_name) }}
+    if: ${{ contains(fromJSON('["merged-system","merged-system_refactor2","merged-system2","main","Improvement1"]'), github.base_ref || github.ref_name) }}
     name: integration / merged-system canonical contracts
     runs-on: ubuntu-latest
     permissions:
@@ -123,7 +128,7 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with: { node-version: '22', cache: npm }
       - run: |
-          composer install --no-interaction --prefer-dist
+          bash scripts/ci/install-composer.sh
           npm ci
           touch .env
           php artisan wayfinder:generate --with-form
@@ -157,7 +162,19 @@ jobs:
             routes)
               php scripts/refactor/verify-backend-layout.php &&
               php artisan route:list --except-vendor ;;
-            composer-audit) composer audit --locked --no-interaction ;;
+            composer-audit)
+              # Retry only transport failures; actual advisory findings still fail.
+              for attempt in 1 2 3; do
+                if composer audit --locked --no-interaction; then
+                  exit 0
+                else
+                  status=$?
+                fi
+                if [ "$status" -ne 100 ] || [ "$attempt" -eq 3 ]; then
+                  exit "$status"
+                fi
+                sleep "$((attempt * 5))"
+              done ;;
             npm-audit) npm audit --audit-level=high ;;
           esac
   feature-postgres:
@@ -186,7 +203,7 @@ jobs:
         with: { persist-credentials: false }
       - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
         with: { php-version: '8.4', extensions: 'pdo_pgsql, mbstring', tools: 'composer:v2', coverage: none }
-      - run: composer install --no-interaction --prefer-dist
+      - run: bash scripts/ci/install-composer.sh
       - run: touch .env
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with: { node-version: '22', cache: npm }
@@ -226,7 +243,7 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with: { node-version: '22' }
       - run: |
-          composer install --no-interaction --prefer-dist
+          bash scripts/ci/install-composer.sh
           touch .env
           php tests/Browser/prepare-system.php > "$QUARTERLY_BROWSER_FIXTURE"
       - name: Build production image without database initialization
@@ -296,7 +313,7 @@ jobs:
         if: always()
         run: docker rm -f jairoads-system || true
   unified-browser:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     services:
       postgres:
         image: postgres:17
@@ -341,7 +358,7 @@ jobs:
         with: { node-version: '22', cache: npm }
       - name: Build real application and prepare guarded disposable fixture
         run: |
-          composer install --no-interaction --prefer-dist
+          bash scripts/ci/install-composer.sh
           npm ci
           touch .env
           npm run build
@@ -349,7 +366,7 @@ jobs:
           node --experimental-strip-types tests/Browser/field-contracts.mjs
           php tests/Browser/prepare-unified.php > "$QUARTERLY_BROWSER_FIXTURE"
           npm install --prefix "$RUNNER_TEMP/jairoads-browser" playwright@1.62.1
-          "$RUNNER_TEMP/jairoads-browser/node_modules/.bin/playwright" install --with-deps chromium
+          bash scripts/ci/install-browser.sh "$RUNNER_TEMP/jairoads-browser/node_modules/.bin/playwright"
       - name: Real Fortify and canonical frontend browser acceptance
         run: |
           php artisan serve --host=127.0.0.1 --port=8011 --no-reload > /tmp/jairoads-unified-server.log 2>&1 &
@@ -360,9 +377,32 @@ jobs:
             sleep 1
           done
           PLAYWRIGHT_MODULE="$RUNNER_TEMP/jairoads-browser/node_modules/playwright/index.mjs" node tests/Browser/unified.mjs
+      - name: Print Laravel browser server log on failure
+        if: failure()
+        run: |
+          cat /tmp/jairoads-unified-server.log || true
+          if [ -f storage/logs/laravel.log ]; then tail -n 200 storage/logs/laravel.log; fi
+      - name: Real encrypted receipt queue lifecycle on a separate disposable database
+        env:
+          DB_DATABASE: jairoads_scratch_receipt_browser
+          APP_URL: http://127.0.0.1:8012
+          QUARTERLY_BROWSER_URL: http://127.0.0.1:8012
+          QUARTERLY_BROWSER_FIXTURE: /tmp/jairoads-receipt-fixture.json
+          JAIROADS_MONTHLY_RECEIPTS_ENABLED: 'true'
+        run: |
+          PGPASSWORD="$DB_PASSWORD" createdb -h 127.0.0.1 -p 5432 -U postgres "$DB_DATABASE"
+          php tests/Browser/prepare-unified.php > "$QUARTERLY_BROWSER_FIXTURE"
+          php artisan serve --host=127.0.0.1 --port=8012 --no-reload > /tmp/jairoads-receipt-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -fsS "$APP_URL/up" >/dev/null; then break; fi
+            sleep 1
+          done
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/jairoads-browser/node_modules/playwright/index.mjs" node tests/Browser/durable-report-queue.mjs
 
   passkey-browser:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     services:
       postgres:
         image: postgres:17
@@ -402,13 +442,13 @@ jobs:
         with: { node-version: '22', cache: npm }
       - name: Build real application and prepare guarded disposable fixture
         run: |
-          composer install --no-interaction --prefer-dist
+          bash scripts/ci/install-composer.sh
           npm ci
           touch .env
           npm run build
           php tests/Browser/prepare-passkey-lifecycle.php > "$PASSKEY_BROWSER_FIXTURE"
           npm install --prefix "$RUNNER_TEMP/jairoads-browser" playwright@1.62.1
-          "$RUNNER_TEMP/jairoads-browser/node_modules/.bin/playwright" install --with-deps chromium
+          bash scripts/ci/install-browser.sh "$RUNNER_TEMP/jairoads-browser/node_modules/.bin/playwright"
       - name: Real WebAuthn signatures and canonical account lifecycle
         run: |
           php artisan serve --host=127.0.0.1 --port=8013 --no-reload > /tmp/jairoads-passkey-server.log 2>&1 &

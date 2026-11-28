@@ -24,6 +24,11 @@ import { ProjectSelector } from './project-selector';
 
 export function MonthlyUpdateForm({
     parents,
+    draftTools,
+    recordChoicesLoading,
+    recordChoicesPending,
+    recordPageControls,
+    retryRecordChoices,
     backLabel,
     savedMedia,
     onRemoveSaved,
@@ -33,10 +38,20 @@ export function MonthlyUpdateForm({
     enabled,
     onChange,
     onFiles,
+    saveError,
     onSave,
     onCancel,
 }: {
     parents: MonthlyCreateProps;
+    draftTools?: ReactNode;
+    recordChoicesLoading?: boolean;
+    recordChoicesPending?: boolean;
+    recordPageControls?: {
+        page: number;
+        hasMore: boolean;
+        onPage: (page: number) => void;
+    };
+    retryRecordChoices?: () => void;
     backLabel?: string;
     savedMedia?: MonthlyMedia[];
     onRemoveSaved?: (id: number) => void;
@@ -52,6 +67,7 @@ export function MonthlyUpdateForm({
         value: string,
     ) => void;
     onFiles: (files: File[]) => void;
+    saveError?: string;
     onSave: () => void;
     onCancel: () => void;
 }) {
@@ -187,6 +203,9 @@ export function MonthlyUpdateForm({
                                     'Maintenance Project',
                                     <ProjectSelector
                                         projects={parents.projects}
+                                        choicesUrl={
+                                            parents.formChoicesUrl ?? undefined
+                                        }
                                         value={values.project_id}
                                         disabled={disabled}
                                         invalid={Boolean(errors.project_id)}
@@ -203,11 +222,19 @@ export function MonthlyUpdateForm({
                                         disabled={
                                             disabled ||
                                             !project ||
+                                            recordChoicesLoading ||
                                             !options.length
                                         }
-                                        onValueChange={(value) =>
-                                            onChange('maintenance_id', value)
-                                        }
+                                        onValueChange={(value) => {
+                                            // A draft can select a record while its options mount.
+                                            // The menu has no empty option, and changing projects clears the record.
+                                            if (value) {
+                                                onChange(
+                                                    'maintenance_id',
+                                                    value,
+                                                );
+                                            }
+                                        }}
                                     >
                                         <SelectTrigger
                                             {...attrs('maintenance_id')}
@@ -215,11 +242,13 @@ export function MonthlyUpdateForm({
                                         >
                                             <SelectValue
                                                 placeholder={
-                                                    !project
-                                                        ? 'Select a project first'
-                                                        : options.length
-                                                          ? 'Select record'
-                                                          : 'No maintenance records'
+                                                    recordChoicesLoading
+                                                        ? 'Loading records…'
+                                                        : !project
+                                                          ? 'Select a project first'
+                                                          : options.length
+                                                            ? 'Select record'
+                                                            : 'No maintenance records'
                                                 }
                                             />
                                         </SelectTrigger>
@@ -242,6 +271,67 @@ export function MonthlyUpdateForm({
                                     project && !options.length
                                         ? 'This project has no Maintenance Records. Add a record from Project Details first.'
                                         : undefined,
+                                )}
+                                {recordPageControls &&
+                                    (recordPageControls.page > 1 ||
+                                        recordPageControls.hasMore) && (
+                                        <nav
+                                            aria-label="Maintenance record pages"
+                                            className="flex flex-wrap items-center gap-2 text-sm"
+                                        >
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                disabled={
+                                                    disabled ||
+                                                    recordChoicesLoading ||
+                                                    recordPageControls.page <= 1
+                                                }
+                                                onClick={() =>
+                                                    recordPageControls.onPage(
+                                                        recordPageControls.page -
+                                                            1,
+                                                    )
+                                                }
+                                            >
+                                                Previous
+                                            </Button>
+                                            <span>
+                                                Page {recordPageControls.page}
+                                            </span>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                disabled={
+                                                    disabled ||
+                                                    recordChoicesLoading ||
+                                                    !recordPageControls.hasMore
+                                                }
+                                                onClick={() =>
+                                                    recordPageControls.onPage(
+                                                        recordPageControls.page +
+                                                            1,
+                                                    )
+                                                }
+                                            >
+                                                Next
+                                            </Button>
+                                        </nav>
+                                    )}
+                                {retryRecordChoices && (
+                                    <div
+                                        className="jr-field-hint"
+                                        role="status"
+                                    >
+                                        Could not load maintenance records.{' '}
+                                        <button
+                                            type="button"
+                                            className="font-semibold underline"
+                                            onClick={retryRecordChoices}
+                                        >
+                                            Try again
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                         )}
@@ -338,6 +428,12 @@ export function MonthlyUpdateForm({
                             onChange={onFiles}
                         />
                     </section>
+                    {draftTools}
+                    {saveError && (
+                        <p className="jr-field-error" role="alert">
+                            {saveError}
+                        </p>
+                    )}
                     <footer className="jr-form-footer">
                         <p>
                             {canonical
@@ -356,7 +452,7 @@ export function MonthlyUpdateForm({
                             <Button
                                 type="submit"
                                 className="jr-primary"
-                                disabled={disabled}
+                                disabled={disabled || recordChoicesPending}
                             >
                                 {processing
                                     ? 'Saving…'

@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import {
     Activity,
     FileText,
@@ -8,11 +8,10 @@ import {
     ShieldCheck,
     Users,
     Wrench,
-    RefreshCw,
 } from 'lucide-react';
-import { useState } from 'react';
 import { DashboardAnalytics } from '@/components/dashboard/dashboard-analytics';
 import type { DashboardSummary } from '@/components/dashboard/dashboard-analytics';
+import { DashboardRefresh } from '@/components/dashboard/dashboard-refresh';
 import WorkspaceLguDirectory from '@/components/lgus/workspace-directory';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import CanonicalUserManagement from '@/components/user-management/canonical-user-management';
@@ -130,7 +129,6 @@ export default function WorkspaceDirectory({
     analytics,
     historyUrl,
 }: Props) {
-    const [refreshing, setRefreshing] = useState(false);
     const adminDashboard = section === 'dashboard' && identity.role === 'Admin';
 
     if (section === 'lgus') {
@@ -210,27 +208,13 @@ export default function WorkspaceDirectory({
                         </p>
                     </div>
                     {section === 'dashboard' && (
-                        <button
-                            type="button"
+                        <DashboardRefresh
                             className={
                                 adminDashboard
                                     ? 'jr-admin-refresh'
                                     : 'jr-primary rounded-xl px-4 py-2.5 text-sm font-semibold text-white'
                             }
-                            disabled={refreshing}
-                            onClick={() =>
-                                router.reload({
-                                    onStart: () => setRefreshing(true),
-                                    onFinish: () => setRefreshing(false),
-                                })
-                            }
-                        >
-                            <RefreshCw
-                                className={`size-4 ${refreshing ? 'animate-spin' : ''}`}
-                                aria-hidden="true"
-                            />
-                            {refreshing ? 'Refreshing…' : 'Refresh dashboard'}
-                        </button>
+                        />
                     )}
                 </div>
 

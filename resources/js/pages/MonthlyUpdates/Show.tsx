@@ -8,6 +8,7 @@ import {
     MonthlyDeletionDialog,
     useMonthlyDeletion,
 } from '@/components/monthly-updates/monthly-update-deletion';
+import { PhotoComparison } from '@/components/monthly-updates/photo-comparison';
 import { Button } from '@/components/ui/button';
 import { editUrl } from '@/lib/form-navigation';
 import { updateMonth, updateTimestamp } from '@/lib/monthly-updates';
@@ -20,6 +21,11 @@ export default function Show({
     backUrl,
     backLabel,
     directoryUrl,
+    comparisonPeriods = [],
+    comparisonPage = 1,
+    comparisonHasMore = false,
+    comparisonMedia = [],
+    comparisonPeriod,
 }: MonthlyDetailProps) {
     const page = usePage();
     const preview =
@@ -193,6 +199,111 @@ export default function Show({
                             <p className="jr-field-hint">{mediaBreakdown}</p>
                         </div>
                         <MediaGallery key={update.id} media={media} />
+                        {comparisonPeriods.length > 0 && (
+                            <label className="mt-4 grid gap-2 text-sm">
+                                Compare with another reporting period
+                                <select
+                                    className="w-full max-w-md rounded-lg border p-2"
+                                    value={comparisonPeriod?.id ?? ''}
+                                    onChange={(event) => {
+                                        const id = event.target.value;
+                                        router.get(
+                                            workspaceHref(
+                                                `/monthly-updates/${update.id}`,
+                                            ),
+                                            {
+                                                comparison_page: comparisonPage,
+                                                ...(id ? { compare: id } : {}),
+                                            },
+                                            { preserveScroll: true },
+                                        );
+                                    }}
+                                >
+                                    <option value="">
+                                        Current update only
+                                    </option>
+                                    {comparisonPeriods.map((period) => (
+                                        <option
+                                            key={period.id}
+                                            value={period.id}
+                                        >
+                                            {updateMonth(period.month)} (#
+                                            {period.id})
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                        )}
+                        {(comparisonPage > 1 || comparisonHasMore) && (
+                            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+                                <button
+                                    type="button"
+                                    disabled={comparisonPage <= 1}
+                                    onClick={() =>
+                                        router.get(
+                                            workspaceHref(
+                                                `/monthly-updates/${update.id}`,
+                                            ),
+                                            {
+                                                comparison_page:
+                                                    comparisonPage - 1,
+                                                ...(comparisonPeriod
+                                                    ? {
+                                                          compare:
+                                                              comparisonPeriod.id,
+                                                      }
+                                                    : {}),
+                                            },
+                                            { preserveScroll: true },
+                                        )
+                                    }
+                                >
+                                    Newer reporting periods
+                                </button>
+                                <span>Page {comparisonPage}</span>
+                                <button
+                                    type="button"
+                                    disabled={!comparisonHasMore}
+                                    onClick={() =>
+                                        router.get(
+                                            workspaceHref(
+                                                `/monthly-updates/${update.id}`,
+                                            ),
+                                            {
+                                                comparison_page:
+                                                    comparisonPage + 1,
+                                                ...(comparisonPeriod
+                                                    ? {
+                                                          compare:
+                                                              comparisonPeriod.id,
+                                                      }
+                                                    : {}),
+                                            },
+                                            { preserveScroll: true },
+                                        )
+                                    }
+                                >
+                                    Older reporting periods
+                                </button>
+                            </div>
+                        )}
+                        <PhotoComparison
+                            key={`${update.id}:${comparisonPeriod?.id ?? ''}`}
+                            media={media.map((file) => ({
+                                ...file,
+                                parent_label: updateMonth(update.update_month),
+                            }))}
+                            comparisonMedia={
+                                comparisonPeriod
+                                    ? comparisonMedia.map((file) => ({
+                                          ...file,
+                                          parent_label: updateMonth(
+                                              comparisonPeriod.month,
+                                          ),
+                                      }))
+                                    : undefined
+                            }
+                        />
                     </section>
                     <footer className="jr-report-footer">
                         <dl

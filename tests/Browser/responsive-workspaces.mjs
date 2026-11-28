@@ -61,28 +61,37 @@ export async function verifyMobileWorkspaces({
         const previous = page.viewportSize();
 
         try {
-            for (const width of [320, 390, 768, 1024]) {
-                await page.setViewportSize({ width, height: 844 });
-                const privileged = role === 'admin' || role === 'superadmin';
-                const paths = [
-                    ...common,
-                    ...(privileged
-                        ? [
-                              '/workspace/users',
-                              '/workspace/audit-logs',
-                              ui + '/lgus/create',
-                          ]
-                        : []),
-                    ...(role === 'viewer' ? [] : forms),
-                ];
+            const privileged = role === 'admin' || role === 'superadmin';
+            const paths = [
+                ...common,
+                ...(privileged
+                    ? [
+                          '/workspace/users',
+                          '/workspace/audit-logs',
+                          ui + '/lgus/create',
+                      ]
+                    : []),
+                ...(role === 'viewer' ? [] : forms),
+            ];
 
-                for (const path of paths) {
-                    const response = await page.goto(base + path);
-                    assert.ok(
-                        response && response.status() < 400,
-                        role + ': ' + path,
+            for (const path of paths) {
+                // Exercise a narrow first load, then resize the same page to
+                // cover all breakpoints without repeating server work.
+                await page.setViewportSize({ width: 320, height: 844 });
+                const response = await page.goto(base + path);
+                assert.equal(response?.status(), 200, role + ': ' + path);
+                await page.locator('.jr-stage').waitFor();
+
+                for (const width of [320, 375, 390, 768, 1024, 1440, 1920]) {
+                    await page.setViewportSize({ width, height: 844 });
+                    await page.evaluate(
+                        () =>
+                            new Promise((resolve) => {
+                                requestAnimationFrame(() =>
+                                    requestAnimationFrame(resolve),
+                                );
+                            }),
                     );
-                    await page.locator('.jr-stage').waitFor();
 
                     if (role === 'admin' && path === '/workspace/dashboard') {
                         assert.equal(
@@ -170,6 +179,174 @@ export async function verifyMobileWorkspaces({
                             ': ' +
                             JSON.stringify(sizes),
                     );
+
+                    if (width <= 390) {
+                        const imbalance = await page.evaluate(() => {
+                            const problems = [];
+                            const close = (a, b) => Math.abs(a - b) <= 2;
+
+                            for (const head of document.querySelectorAll('.jr-page-head')) {
+                                const siblings = [];
+                                for (
+                                    let next = head.nextElementSibling;
+                                    next;
+                                    next = next.nextElementSibling
+                                ) {
+                                    siblings.push(next);
+                                }
+                                const firstPanel = siblings.find((element) =>
+                                    element.matches(
+                                        '.jr-directory-summary, .jr-directory-filter-panel, .jr-road-coverage-main-container',
+                                    ),
+                                );
+                                if (!firstPanel) continue;
+                                const target =
+                                    firstPanel.querySelector(
+                                        '.jr-directory-summary',
+                                    ) || firstPanel;
+                                if (!target.getClientRects().length) continue;
+                                const gap =
+                                    target.getBoundingClientRect().top -
+                                    head.getBoundingClientRect().bottom;
+                                if (gap < 10) {
+                                    problems.push(
+                                        'Missing hero-to-content gutter: ' + gap,
+                                    );
+                                }
+                                if (
+                                    head.nextElementSibling === firstPanel &&
+                                    gap > 16
+                                ) {
+                                    problems.push(
+                                        'Excess hero-to-content gutter: ' + gap,
+                                    );
+                                }
+                            }
+
+                            for (const summary of document.querySelectorAll(
+                                '.jr-directory-summary',
+                            )) {
+                                const cards = [...summary.children];
+                                const bounds = summary.getBoundingClientRect();
+
+                                if (cards.length === 3) {
+                                    const first =
+                                        cards[0].getBoundingClientRect();
+                                    const second =
+                                        cards[1].getBoundingClientRect();
+                                    const last =
+                                        cards[2].getBoundingClientRect();
+
+                                    if (
+                                        !close(first.width, second.width) ||
+                                        !close(first.top, second.top) ||
+                                        !close(last.width, bounds.width - 2)
+                                    ) {
+                                        problems.push(
+                                            'Unbalanced three-metric summary',
+                                        );
+                                    }
+                                }
+
+                                for (const card of cards) {
+                                    if (
+                                        card.scrollWidth >
+                                        card.clientWidth + 2
+                                    ) {
+                                        problems.push(
+                                            'Metric content overflows',
+                                        );
+                                    }
+                                }
+                            }
+
+                            for (const row of document.querySelectorAll(
+                                '.jr-directory-filter-panel .jr-filter-row',
+                            )) {
+                                const fields = [...row.children];
+
+                                if (
+                                    fields.length > 1 &&
+                                    fields.length % 2 === 1
+                                ) {
+                                    const last = fields
+                                        .at(-1)
+                                        .getBoundingClientRect();
+
+                                    if (
+                                        !close(
+                                            last.width,
+                                            row.getBoundingClientRect().width,
+                                        )
+                                    ) {
+                                        problems.push(
+                                            'Final filter leaves an empty cell',
+                                        );
+                                    }
+                                }
+
+                                for (const field of fields) {
+                                    const control = field.querySelector(
+                                        '[data-slot="select-trigger"]',
+                                    );
+                                    const label = field.querySelector(
+                                        '.jr-directory-filter-label',
+                                    );
+
+                                    if (
+                                        !label ||
+                                        !control ||
+                                        control.getBoundingClientRect().height <
+                                            43
+                                    ) {
+                                        problems.push(
+                                            'Filter missing caption or touch target',
+                                        );
+                                    }
+                                }
+                            }
+
+                            return problems;
+                        });
+                        assert.deepEqual(
+                            imbalance,
+                            [],
+                            role +
+                                ' ' +
+                                path +
+                                ' balanced controls at ' +
+                                width,
+                        );
+                    }
+
+                    if (width === 390) {
+                        const overflowingCards = await page
+                            .locator('.jr-mobile-table')
+                            .evaluateAll((tables) =>
+                                tables
+                                    .filter((table) => {
+                                        const region = table.parentElement;
+
+                                        return (
+                                            region.scrollWidth >
+                                            region.clientWidth + 1
+                                        );
+                                    })
+                                    .map((table) =>
+                                        table.parentElement.getAttribute(
+                                            'aria-label',
+                                        ),
+                                    ),
+                            );
+                        assert.deepEqual(
+                            overflowingCards,
+                            [],
+                            role +
+                                ' ' +
+                                path +
+                                ' mobile cards fit without swiping',
+                        );
+                    }
 
                     if (width < 1024) {
                         assert.ok(
@@ -261,6 +438,8 @@ export async function verifyMobileWorkspaces({
                         await drawer.waitFor({ state: 'visible' });
                         await page.keyboard.press('Escape');
                         await drawer.waitFor({ state: 'hidden' });
+                        await page.goto(base + path);
+                        await page.locator('.jr-stage').waitFor();
                     }
 
                     count++;
@@ -305,6 +484,72 @@ export async function verifyMobileWorkspaces({
                 geometry.touch > 0 && geometry.scroll <= 391,
                 role + ' touch layout',
             );
+            const projects = phone.getByRole('region', {
+                name: 'Maintenance Projects table',
+            });
+            const rows = projects.getByRole('table').locator('tbody tr');
+            const firstProject = rows.first();
+            await firstProject.waitFor();
+            assert.ok(
+                await projects.evaluate(
+                    (element) =>
+                        element.scrollWidth <= element.clientWidth + 1 &&
+                        getComputedStyle(element.querySelector('tbody tr'))
+                            .display === 'grid',
+                ),
+                role + ' can read project fields without swiping sideways',
+            );
+            const municipality = firstProject.locator(
+                '[data-mobile-label="Municipality"]',
+            );
+            await municipality.waitFor();
+            assert.match(
+                await municipality.evaluate(
+                    (element) => getComputedStyle(element, '::before').content,
+                ),
+                /Municipality/,
+            );
+            const action = firstProject.locator('.jr-action-trigger');
+
+            if (await action.isVisible()) {
+                const button = await action.boundingBox();
+                assert.ok(
+                    button && button.width >= 44 && button.height >= 44,
+                    role + ' project actions have a phone-sized touch target',
+                );
+            }
+
+            const selectProjects = phone.getByRole('button', {
+                name: 'Select projects',
+                exact: true,
+            });
+
+            if (
+                (await selectProjects.isVisible()) &&
+                (await selectProjects.isEnabled())
+            ) {
+                await selectProjects.tap();
+                await projects
+                    .getByRole('checkbox', {
+                        name: 'Select all projects on this page',
+                    })
+                    .waitFor({ state: 'visible' });
+                await phone
+                    .getByRole('button', {
+                        name: 'Cancel selection',
+                        exact: true,
+                    })
+                    .tap();
+            }
+
+            const header = phone.locator('.jr-global-header');
+            assert.equal(
+                await header.evaluate(
+                    (element) => getComputedStyle(element).position,
+                ),
+                'sticky',
+                role + ' navigation stays available on long pages',
+            );
             await phone
                 .getByRole('button', { name: 'Open navigation', exact: true })
                 .tap();
@@ -316,6 +561,57 @@ export async function verifyMobileWorkspaces({
                 .getByRole('button', { name: 'Close navigation', exact: true })
                 .tap();
             await drawer.waitFor({ state: 'hidden' });
+            const notifications = phone.getByRole('button', {
+                name: 'My account notifications',
+                exact: true,
+            });
+
+            if (role !== 'viewer') {
+                await notifications.tap();
+                const sheet = phone.getByRole('dialog', {
+                    name: 'My notifications',
+                    exact: true,
+                });
+                await sheet.waitFor();
+                const geometry = await sheet.evaluate(async (element) => {
+                    await Promise.all(
+                        element
+                            .getAnimations()
+                            .map((animation) =>
+                                animation.finished.catch(() => {}),
+                            ),
+                    );
+                    const bounds = element.getBoundingClientRect();
+                    const overlay = document
+                        .querySelector(
+                            '[data-slot="dialog-overlay"][data-state="open"]',
+                        )
+                        ?.getBoundingClientRect();
+                    const style = getComputedStyle(element);
+
+                    return {
+                        position: style.position,
+                        inset: Number.parseFloat(style.bottom),
+                        left: bounds.left - (overlay?.left ?? 0),
+                        right: bounds.right - (overlay?.right ?? 0),
+                        gap: (overlay?.bottom ?? 0) - bounds.bottom,
+                    };
+                });
+                assert.ok(
+                    geometry.position === 'fixed' &&
+                        Math.abs(geometry.left) <= 2 &&
+                        Math.abs(geometry.right) <= 2 &&
+                        Math.abs(geometry.gap - geometry.inset) <= 2,
+                    role +
+                        ' notification sheet geometry ' +
+                        JSON.stringify(geometry),
+                );
+                await sheet
+                    .getByRole('button', { name: 'Close', exact: true })
+                    .tap();
+                await sheet.waitFor({ state: 'hidden' });
+            }
+
             await phone
                 .locator('html')
                 .evaluate((el) => el.classList.add('dark'));
@@ -331,6 +627,28 @@ export async function verifyMobileWorkspaces({
                     path: evidence + '/touch-dark-' + role + '.png',
                     fullPage: true,
                 });
+            }
+
+            await phone.goto(base + ui + '/road-coverages');
+            await phone
+                .getByRole('link', { name: 'Road list', exact: true })
+                .tap();
+            await phone.waitForURL(/#road-coverage-list$/);
+            await phone
+                .getByRole('link', { name: 'Back to map', exact: true })
+                .tap();
+            await phone.waitForURL(/#road-coverage-map$/);
+
+            if (role !== 'viewer') {
+                await phone.goto(base + '/workspace/dashboard');
+                const refresh = phone.getByRole('button', {
+                    name: 'Refresh dashboard',
+                    exact: true,
+                });
+                await refresh.tap();
+                await phone
+                    .locator('.jr-dashboard-refresh-status time')
+                    .waitFor();
             }
         } finally {
             await context.close();

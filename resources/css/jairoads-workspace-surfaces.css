@@ -257,35 +257,35 @@
 
 /* Explicit dark preference: keep legible backgrounds even when appearance is Dark. */
 .dark .jr-normal-workspace {
-    --jr-surface: #172234;
-    --jr-divider: #334459;
-    --jr-ink: #f5f7fb;
-    --jr-muted: #b3c1d1;
+    --jr-surface: var(--jr-role-dark-surface, #172234);
+    --jr-divider: var(--jr-role-dark-border, #334459);
+    --jr-ink: var(--jr-role-dark-text, #f5f7fb);
+    --jr-muted: var(--jr-role-dark-muted, #b3c1d1);
 }
 .dark .jr-normal-workspace :where(.jr-table-wrap),
 .dark .jr-normal-workspace :where(div.overflow-x-auto:has(> table)),
 .dark .jr-normal-workspace :where(table),
 .dark .jr-normal-workspace :where(.jr-detail-section) {
-    background: #172234;
-    color: #e7ecf5;
+    background: var(--jr-role-dark-surface, #172234);
+    color: var(--jr-role-dark-text, #e7ecf5);
 }
 .dark .jr-normal-workspace :where(table thead) {
-    background: #25344a;
+    background: var(--jr-role-dark-elevated, #25344a);
 }
 .dark .jr-normal-workspace :where(table thead th) {
-    color: #cad7e7;
-    border-color: #3b4a61;
+    color: var(--jr-role-dark-text, #cad7e7);
+    border-color: var(--jr-role-dark-border, #3b4a61);
 }
 .dark .jr-normal-workspace :where(table tbody td),
 .dark .jr-normal-workspace :where(.jr-record-row) {
-    border-color: #334459;
+    border-color: var(--jr-role-dark-border, #334459);
 }
 .dark .jr-normal-workspace :where(table tbody tr:hover) {
-    background: #22334b;
+    background: var(--jr-role-dark-elevated, #22334b);
 }
 .dark .jr-normal-workspace :where(table .jr-project-title),
 .dark .jr-normal-workspace :where(.jr-empty strong) {
-    color: #f2f5fa;
+    color: var(--jr-role-dark-text, #f2f5fa);
 }
 
 /* === JaiROADS viewport-aligned workspaces, v1 (Admin/Engineer/Viewer only) ===

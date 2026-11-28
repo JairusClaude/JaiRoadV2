@@ -20,6 +20,10 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { androidWorkspace } from '@/lib/android-workspace-bridge';
+import { watchBasemap } from '@/lib/road-coverages/basemap';
+import type { BasemapStatus } from '@/lib/road-coverages/basemap';
+import { attachFieldBasemap } from '@/lib/road-coverages/field-basemap';
 import {
     distanceKm,
     geometryEditingMode,
@@ -29,6 +33,7 @@ import {
     samePoint,
 } from '@/lib/road-coverages/geometry.mjs';
 import type { Point } from '@/lib/road-coverages/geometry.mjs';
+import { validRoadPage } from '@/lib/road-coverages/road-page';
 import { savedRoadLines } from '@/lib/road-coverages/saved-lines';
 import type { RoadCoverageReference } from '@/types/road-coverages';
 import { CoverageMapPreview } from './coverage-map-preview';
@@ -167,6 +172,7 @@ function EditableCoverageMapEditor({
     >([]);
     const [referenceState, setReferenceState] = useState('idle');
     const [referenceNotice, setReferenceNotice] = useState('');
+    const [referenceAttempt, retryReferences] = useState(0);
     const [draft, setDraft] = useState<Draft>(() => {
         const data = mappingData(initial);
 
@@ -205,7 +211,8 @@ function EditableCoverageMapEditor({
         root.current = element;
         setPortalContainer(element);
     }, []);
-    const [tilesReady, setTilesReady] = useState(false);
+    const [basemap, setBasemap] = useState<BasemapStatus>('loading');
+    const tileMonitor = useRef<ReturnType<typeof watchBasemap> | null>(null);
     const [placing, setPlacing] = useState(!editing),
         [infoOpen, setInfoOpen] = useState(true),
         [hidden, setHidden] = useState(false),
@@ -584,18 +591,49 @@ function EditableCoverageMapEditor({
         }
 
         try {
-            if (!services?.routing) {
-                throw new Error(
-                    'Routing is not configured. Trace this portion manually.',
-                );
-            }
-
             const a = state.points[i],
                 b = state.points[i + 1];
-            const response = await json(
-                `${services.routing}/${a.join(',')};${b.join(',')}?overview=full&geometries=geojson&alternatives=${alternatives}&steps=false&radiuses=50;50`,
-                c.signal,
-            );
+            const offline = androidWorkspace()?.status().offline === true;
+
+            if (offline && alternatives) {
+                setNotice(
+                    'Offline map provides one road alignment suggestion. Trace an alternative manually.',
+                );
+
+                return;
+            }
+
+            let response;
+
+            if (offline) {
+                const { offlineAlignment } =
+                    await import('@/lib/road-coverages/offline-network.mjs');
+                const line = await offlineAlignment(a, b, c.signal);
+                response = {
+                    code: line ? 'Ok' : 'NoRoute',
+                    routes: line
+                        ? [
+                              {
+                                  geometry: {
+                                      type: 'LineString',
+                                      coordinates: line,
+                                  },
+                              },
+                          ]
+                        : [],
+                };
+            } else {
+                if (!services?.routing) {
+                    throw new Error(
+                        'Routing is not configured. Trace this portion manually.',
+                    );
+                }
+
+                response = await json(
+                    `${services.routing}/${a.join(',')};${b.join(',')}?overview=full&geometries=geojson&alternatives=${alternatives}&steps=false&radiuses=50;50`,
+                    c.signal,
+                );
+            }
 
             if (c.signal.aborted || generation !== generations.current[i]) {
                 return;
@@ -633,6 +671,12 @@ function EditableCoverageMapEditor({
                 const next = structuredClone(current.current);
                 acceptAutomatic(next, i, lines[0]);
                 apply(next);
+
+                if (offline) {
+                    setNotice(
+                        'Offline road alignment suggestion · OpenStreetMap. Verify road position and condition in the field.',
+                    );
+                }
             }
         } catch (e) {
             if (c.signal.aborted || generation !== generations.current[i]) {
@@ -833,8 +877,11 @@ function EditableCoverageMapEditor({
                 maxZoom: 19,
                 attribution: '© OpenStreetMap contributors · Routing: OSRM',
             },
-        ).addTo(instance);
-        tiles.on('tileload', () => setTilesReady(true));
+        );
+        const monitor = watchBasemap(tiles, setBasemap);
+        tileMonitor.current = monitor;
+        tiles.addTo(instance);
+        attachFieldBasemap(instance, tiles, setBasemap);
         L.control.scale({ imperial: false }).addTo(instance);
         active.current = L.layerGroup().addTo(instance);
         references.current = L.layerGroup().addTo(instance);
@@ -862,6 +909,8 @@ function EditableCoverageMapEditor({
         const pendingControllers = controllers.current;
 
         return () => {
+            monitor.dispose();
+            tileMonitor.current = null;
             map.current = null;
             active.current = null;
             references.current = null;
@@ -1164,6 +1213,11 @@ function EditableCoverageMapEditor({
 
                 try {
                     let cursor: number | null = null;
+                    let limited = false;
+                    const deadline = AbortSignal.any([
+                        signal,
+                        AbortSignal.timeout(15_000),
+                    ]);
 
                     do {
                         if (cursor !== null) {
@@ -1172,12 +1226,16 @@ function EditableCoverageMapEditor({
 
                         const response = await fetch(
                             `${referenceUrl}?${params}`,
-                            { signal, headers: { Accept: 'application/json' } },
+                            {
+                                signal: deadline,
+                                headers: { Accept: 'application/json' },
+                                cache: 'no-store',
+                            },
                         );
 
                         if (!response.ok) {
                             throw new Error(
-                                'Reference roads could not be loaded. Pan the map to retry.',
+                                'Reference roads could not be loaded. Retry or pan the map.',
                             );
                         }
 
@@ -1185,15 +1243,30 @@ function EditableCoverageMapEditor({
                             data: RoadCoverageReference[];
                             next_cursor: number | null;
                         } = await response.json();
-                        roads.push(...page.data);
+
+                        if (!validRoadPage(page, cursor, 'ascending')) {
+                            throw new Error('Invalid reference-road response.');
+                        }
+
+                        const remaining = 1000 - roads.length;
+                        roads.push(...page.data.slice(0, remaining));
+                        limited = page.data.length > remaining;
                         cursor = page.next_cursor;
-                    } while (cursor !== null && !signal.aborted);
+                    } while (
+                        cursor !== null &&
+                        roads.length < 1000 &&
+                        !signal.aborted
+                    );
 
                     if (!signal.aborted) {
                         setLoadedReferences(roads);
-                        setReferenceState('ready');
+                        setReferenceState(
+                            cursor === null && !limited ? 'ready' : 'limited',
+                        );
                         setReferenceNotice(
-                            `${roads.length} reference roads loaded for this view.`,
+                            cursor === null && !limited
+                                ? `${roads.length} reference roads loaded for this view.`
+                                : `Showing ${roads.length} reference roads. Zoom in for remaining roads.`,
                         );
                     }
                 } catch (error) {
@@ -1216,7 +1289,7 @@ function EditableCoverageMapEditor({
             clearTimeout(timer);
             instance.off('moveend', refresh);
         };
-    }, [referenceUrl, municipality, all, showRoads]);
+    }, [referenceUrl, municipality, all, showRoads, referenceAttempt]);
 
     useEffect(() => {
         const layer = references.current;
@@ -1638,6 +1711,26 @@ function EditableCoverageMapEditor({
                         type="button"
                         onClick={async () => {
                             try {
+                                if (androidWorkspace()?.status().offline) {
+                                    const { offlinePlaceSearch } =
+                                        await import('@/lib/road-coverages/offline-network.mjs');
+                                    const matches =
+                                        await offlinePlaceSearch(query);
+                                    setResults(
+                                        matches.map((entry) => ({
+                                            p: entry.point,
+                                            label: entry.name,
+                                        })),
+                                    );
+                                    setSearchNotice(
+                                        matches.length
+                                            ? 'Offline road and place index.'
+                                            : 'No matching cached place.',
+                                    );
+
+                                    return;
+                                }
+
                                 if (!services?.geocoding) {
                                     throw new Error(
                                         'Location search is not configured.',
@@ -1696,8 +1789,10 @@ function EditableCoverageMapEditor({
                                 </button>
                             ))}
                             <small>
-                                {searchNotice} Place search: Photon /
-                                OpenStreetMap
+                                {searchNotice} Place search:{' '}
+                                {androidWorkspace()?.status().offline
+                                    ? 'Offline OpenStreetMap'
+                                    : 'Photon / OpenStreetMap'}
                             </small>
                         </div>
                     )}
@@ -1763,10 +1858,21 @@ function EditableCoverageMapEditor({
                 )}
                 <div className="jr-map-instruction" role="status">
                     {instruction}
-                    {!tilesReady && (
+                    {basemap === 'loading' && (
                         <small style={{ display: 'block', marginTop: 4 }}>
-                            Map tiles are loading. If this persists, check
-                            access to OpenStreetMap; your work is retained.
+                            Map tiles are loading. Your work is retained.
+                        </small>
+                    )}
+                    {basemap === 'unavailable' && (
+                        <small style={{ display: 'block', marginTop: 4 }}>
+                            Background map unavailable. Your work is retained.{' '}
+                            <button
+                                type="button"
+                                className="font-semibold underline"
+                                onClick={() => tileMonitor.current?.retry()}
+                            >
+                                Retry map tiles
+                            </button>
                         </small>
                     )}
                 </div>
@@ -1963,6 +2069,19 @@ function EditableCoverageMapEditor({
                         >
                             <strong>Saved road references</strong>
                             <p>{referenceNotice}</p>
+                            {referenceState === 'error' && (
+                                <button
+                                    type="button"
+                                    className="font-semibold underline"
+                                    onClick={() =>
+                                        retryReferences(
+                                            (attempt) => attempt + 1,
+                                        )
+                                    }
+                                >
+                                    Retry reference roads
+                                </button>
+                            )}
                             <small>
                                 These are existing road coverages returned by
                                 the server for the current map area. They are

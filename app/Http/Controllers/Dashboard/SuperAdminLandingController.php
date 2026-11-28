@@ -10,6 +10,11 @@ use App\Models\User;
 use App\Services\AccountIdentityResolver;
 use App\Services\AuditActorIdentifier;
 use App\Services\DashboardAnalytics;
+use App\Services\Documents\PrivateSupabaseStorage;
+use App\Services\Files\FileRecoverySchedule;
+use App\Services\Files\PermanentFileDeletion;
+use App\Services\MaintenanceIntelligence;
+use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -39,20 +44,20 @@ final class SuperAdminLandingController extends Controller
 
         $roleCounts = $table('user_accounts')
             ->select('account_type')
-            ->selectRaw('COUNT(*) AS total')
+            ->selectRaw('count(*) as total, count(*) filter (where is_active is true) as active, count(*) filter (where is_active is false) as inactive, count(*) filter (where engineer_id is null) as unlinked')
             ->groupBy('account_type')
-            ->pluck('total', 'account_type');
+            ->get()
+            ->keyBy('account_type');
 
         $counts = [
-            'accounts' => (int) $table('user_accounts')->count(),
-            'activeAccounts' => (int) $table('user_accounts')->where('is_active', true)->count(),
-            'inactiveAccounts' => (int) $table('user_accounts')->where('is_active', false)->count(),
-            'superadmins' => (int) ($roleCounts['SuperAdmin'] ?? 0),
-            'admins' => (int) ($roleCounts['Admin'] ?? 0),
-            'engineerAccounts' => (int) ($roleCounts['Engineer'] ?? 0),
-            'viewers' => (int) ($roleCounts['Viewer'] ?? 0),
-            'unlinkedAdmins' => (int) $table('user_accounts')
-                ->where('account_type', 'Admin')->whereNull('engineer_id')->count(),
+            'accounts' => (int) $roleCounts->sum('total'),
+            'activeAccounts' => (int) $roleCounts->sum('active'),
+            'inactiveAccounts' => (int) $roleCounts->sum('inactive'),
+            'superadmins' => (int) ($roleCounts->get('SuperAdmin')->total ?? 0),
+            'admins' => (int) ($roleCounts->get('Admin')->total ?? 0),
+            'engineerAccounts' => (int) ($roleCounts->get('Engineer')->total ?? 0),
+            'viewers' => (int) ($roleCounts->get('Viewer')->total ?? 0),
+            'unlinkedAdmins' => (int) ($roleCounts->get('Admin')->unlinked ?? 0),
             'engineers' => (int) $table('engineers')->count(),
             'retiredEngineers' => (int) $table('engineers')
                 ->where('engineer_status', 'Retired')->count(),
@@ -109,10 +114,23 @@ final class SuperAdminLandingController extends Controller
                 'progress' => max(0, min(100, (float) ($row->progress_percentage ?? 0))),
             ])->all();
 
+        $revision = config('app.revision');
+
         return Inertia::render('SuperAdminDashboard/CommandCenter', [
             'username' => (string) $account->username,
             'counts' => $counts,
+            'health' => [
+                'databaseReadSucceeded' => true,
+                'documentStorageConfigured' => app(PrivateSupabaseStorage::class)->configured(),
+                'mediaStorageConfigured' => app(PrivateMonthlyMediaStorage::class)->configured(),
+                'recovery' => FileRecoverySchedule::readiness(),
+                'lastRecoveryRun' => FileRecoverySchedule::lastRun(),
+                'recoveryCounts' => app(PermanentFileDeletion::class)->recoveryCounts(),
+                'deploymentRevision' => is_string($revision) && preg_match('/\A[a-f0-9]{40}\z/i', $revision) === 1 ? $revision : null,
+                'checkedAt' => now()->utc()->toIso8601String(),
+            ],
             'analytics' => app(DashboardAnalytics::class)->summary($identity),
+            'maintenanceIntelligence' => app(MaintenanceIntelligence::class)->summary(),
             'privilegedAccounts' => $privilegedAccounts,
             'recentEvents' => $recentEvents,
             'recentMonthlyUpdates' => $recentMonthlyUpdates,

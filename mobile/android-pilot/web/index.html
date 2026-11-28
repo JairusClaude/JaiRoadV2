@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#f3e9da" />
+        <meta name="referrer" content="same-origin" />
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; frame-src 'self'; base-uri 'none'; object-src 'none'; form-action 'self'"
+        />
+        <title>Sign in · JaiROADS</title>
+        <script type="module" src="./sign-in.ts"></script>
+    </head>
+    <body>
+        <div id="sign-in-screen">
+            <div class="screen" id="preview-screen">
+                <header class="hero">
+                    <div class="brand">
+                        <img
+                            src="../../../public/images/jairoads/peo-ddo-transparent.webp"
+                            width="48"
+                            height="48"
+                            alt=""
+                        />
+                        <div>
+                            <strong>JaiROADS</strong>
+                            <small>Road infrastructure management</small>
+                        </div>
+                    </div>
+                    <div class="landscape" aria-hidden="true"></div>
+                </header>
+                <section
+                    id="showcase"
+                    class="showcase"
+                    aria-label="JaiROADS preview"
+                >
+                    <div class="photo"><img id="slide-image" alt="" /></div>
+                    <div class="caption" aria-live="polite">
+                        <p id="slide-label" class="eyebrow"></p>
+                        <h2 id="slide-title"></h2>
+                        <p id="slide-description" class="description"></p>
+                    </div>
+                    <div class="showcase-controls">
+                        <span id="slide-position" aria-hidden="true"></span>
+                        <button
+                            class="outline"
+                            id="previous"
+                            type="button"
+                            aria-label="Previous slide"
+                        >
+                            ←
+                        </button>
+                        <button
+                            class="outline"
+                            id="next"
+                            type="button"
+                            aria-label="Next slide"
+                        >
+                            →
+                        </button>
+                    </div>
+                    <button id="continue" class="primary" type="button">
+                        Continue to sign in
+                    </button>
+                </section>
+            </div>
+            <div class="screen auth-page" id="auth-page" hidden>
+                <header class="hero">
+                    <div class="brand">
+                        <img
+                            src="../../../public/images/jairoads/peo-ddo-transparent.webp"
+                            width="48"
+                            height="48"
+                            alt=""
+                        />
+                        <div>
+                            <strong>JaiROADS</strong>
+                            <small>Road infrastructure management</small>
+                        </div>
+                    </div>
+                    <div class="landscape" aria-hidden="true"></div>
+                </header>
+                <section
+                    class="panel"
+                    id="sign-in-panel"
+                    aria-labelledby="sign-in-title"
+                >
+                    <div class="panel-top">
+                        <span class="secure-label"
+                            ><svg
+                                aria-hidden="true"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.8"
+                                width="17"
+                                height="17"
+                            >
+                                <path
+                                    d="M12 3 4 6v5c0 5 3 8 8 10 5-2 8-5 8-10V6Z"
+                                />
+                                <path d="m9 12 2 2 4-4" />
+                            </svg>
+                            Secure workspace</span
+                        >
+                        <span>JaiROADS</span>
+                    </div>
+                    <h1 id="sign-in-title" tabindex="-1">Welcome back</h1>
+                    <p class="description">
+                        Sign in to your JaiROADS workspace.
+                    </p>
+                    <form
+                        id="credentials"
+                        method="post"
+                        action="/login"
+                        aria-describedby="sign-in-status"
+                    >
+                        <div class="field">
+                            <label for="email">Email address</label>
+                            <div class="input-icon-wrap">
+                                <svg
+                                    aria-hidden="true"
+                                    class="input-icon"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.7"
+                                >
+                                    <rect
+                                        x="3"
+                                        y="5"
+                                        width="18"
+                                        height="14"
+                                        rx="2"
+                                    />
+                                    <path d="m3 7 9 6 9-6" />
+                                </svg>
+                                <input
+                                    id="email"
+                                    name="email"
+                                    type="email"
+                                    inputmode="email"
+                                    autocomplete="username"
+                                    autocapitalize="none"
+                                    spellcheck="false"
+                                    placeholder="you@example.com"
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label for="password">Password</label>
+                            <div class="password input-icon-wrap">
+                                <svg
+                                    aria-hidden="true"
+                                    class="input-icon"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.7"
+                                >
+                                    <rect
+                                        x="4"
+                                        y="10"
+                                        width="16"
+                                        height="11"
+                                        rx="2"
+                                    />
+                                    <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                                    <circle cx="12" cy="15.5" r="1" />
+                                </svg>
+                                <input
+                                    id="password"
+                                    name="password"
+                                    type="password"
+                                    autocomplete="current-password"
+                                    placeholder="Enter your password"
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    id="show-password"
+                                    aria-controls="password"
+                                    aria-label="Show password"
+                                >
+                                    <svg
+                                        aria-hidden="true"
+                                        width="18"
+                                        height="18"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="1.6"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    >
+                                        <path
+                                            d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6Z"
+                                        />
+                                        <circle cx="12" cy="12" r="2.7" />
+                                        <path
+                                            id="password-slash"
+                                            d="m3 3 18 18"
+                                            visibility="hidden"
+                                        />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <label class="remember">
+                            <input
+                                name="remember"
+                                type="checkbox"
+                                aria-describedby="remember-help"
+                            />
+                            Keep me signed in
+                        </label>
+                        <button
+                            class="primary"
+                            id="submit"
+                            type="submit"
+                            disabled
+                        >
+                            Sign in <span aria-hidden="true">→</span>
+                        </button>
+                    </form>
+                    <p
+                        class="note status"
+                        id="sign-in-status"
+                        role="status"
+                        hidden
+                    ></p>
+                    <p class="note" id="remember-help">
+                        Use only on a private, trusted device.
+                    </p>
+                    <p class="note help-note">
+                        <svg
+                            aria-hidden="true"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.7"
+                            width="18"
+                            height="18"
+                        >
+                            <rect x="4" y="10" width="16" height="11" rx="2" />
+                            <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                            <circle cx="12" cy="15.5" r="1" />
+                        </svg>
+                        Need help? Contact your administrator.
+                    </p>
+                </section>
+            </div>
+        </div>
+        <p
+            id="open-dashboard-status"
+            class="open-dashboard-status"
+            role="status"
+            hidden
+        >
+            Opening dashboard…
+        </p>
+        <main id="field-reports" tabindex="-1" hidden>
+            <header class="workspace-topbar">
+                <button
+                    type="button"
+                    id="field-menu-open"
+                    class="workspace-menu-toggle"
+                    aria-label="Open navigation"
+                >
+                    <svg
+                        width="23"
+                        height="23"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        aria-hidden="true"
+                    >
+                        <path d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <span class="workspace-brand" id="workspace-page-title"
+                    >Dashboard</span
+                >
+                <span class="workspace-role" id="workspace-role"></span>
+            </header>
+            <div class="workspace-content">
+                <p id="field-message" role="status" hidden></p>
+                <section id="field-home" class="workspace-dashboard">
+                    <div class="workspace-heading">
+                        <h1>Dashboard</h1>
+                    </div>
+                    <div class="workspace-metrics">
+                        <button
+                            type="button"
+                            class="secondary"
+                            data-cached-page="project"
+                        >
+                            <strong id="project-count">0</strong
+                            ><span>Maintenance Projects</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="secondary"
+                            data-cached-page="record"
+                        >
+                            <strong id="record-count">0</strong
+                            ><span>Maintenance Records</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="secondary"
+                            data-cached-page="road"
+                        >
+                            <strong id="road-count">0</strong
+                            ><span>Road Coverages</span>
+                        </button>
+                    </div>
+                </section>
+                <dialog
+                    id="field-menu"
+                    class="workspace-menu"
+                    aria-label="Workspace navigation"
+                >
+                    <div class="workspace-menu-header">
+                        <img
+                            width="34"
+                            height="34"
+                            alt=""
+                            src="../../../public/images/jairoads/peo-ddo-transparent.webp"
+                        />
+                        <strong>JaiROADS</strong>
+                        <button
+                            type="button"
+                            class="workspace-menu-close"
+                            id="field-menu-close"
+                            aria-label="Close navigation"
+                        >
+                            ×
+                        </button>
+                    </div>
+                    <nav id="field-tabs" aria-label="Workspace">
+                        <button type="button" class="secondary" data-tab="home">
+                            Dashboard
+                        </button>
+                        <button
+                            type="button"
+                            class="secondary"
+                            data-tab="project"
+                        >
+                            Maintenance Projects
+                        </button>
+                        <button
+                            type="button"
+                            class="secondary"
+                            data-tab="record"
+                        >
+                            Maintenance Records
+                        </button>
+                        <button type="button" class="secondary" data-tab="road">
+                            Road Sections
+                        </button>
+                        <button
+                            type="button"
+                            class="secondary"
+                            data-tab="monthly"
+                        >
+                            Monthly Updates
+                        </button>
+                        <button
+                            type="button"
+                            class="secondary"
+                            data-tab="files"
+                        >
+                            Maintenance Documents
+                        </button>
+                        <button type="button" class="secondary" id="lock">
+                            Lock workspace
+                        </button>
+                    </nav>
+                </dialog>
+                <section id="field-directory" hidden>
+                    <div class="title-row">
+                        <h2 id="directory-title"></h2>
+                        <button type="button" id="new-field-item"></button>
+                    </div>
+                    <ul id="field-items"></ul>
+                </section>
+                <section id="field-editor" hidden>
+                    <h2 id="editor-title"></h2>
+                    <form id="field-form">
+                        <div id="field-inputs"></div>
+                        <p id="field-error" role="alert" hidden></p>
+                        <div class="actions">
+                            <button type="submit">Save locally</button>
+                            <button
+                                type="button"
+                                class="secondary"
+                                id="cancel-edit"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </section>
+                <section id="field-detail" hidden>
+                    <button
+                        type="button"
+                        id="field-detail-back"
+                        class="secondary"
+                    >
+                        Back to list
+                    </button>
+                    <div id="field-detail-content"></div>
+                </section>
+                <section id="field-map" hidden>
+                    <h2>Davao de Oro · Road Coverage Map</h2>
+                    <p>
+                        Saved road geometry · Offline map without street tiles.
+                        Tap the map to add points when editing a road.
+                    </p>
+                    <div
+                        id="offline-road-map"
+                        aria-label="Interactive offline road coverage map"
+                    ></div>
+                </section>
+                <section id="field-outbox" hidden>
+                    <h2>Pending synchronization</h2>
+                    <ul id="field-pending"></ul>
+                </section>
+                <button
+                    id="online-dashboard"
+                    type="button"
+                    class="secondary"
+                    hidden
+                >
+                    Continue to online workspace
+                </button>
+            </div>
+            <footer id="field-banner" role="status" aria-live="polite" hidden>
+                <svg
+                    id="field-wifi-off"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    aria-hidden="true"
+                >
+                    <path
+                        d="m3 3 18 18M2 8c.7-.6 1.4-1.2 2.2-1.6M9 4.4A16 16 0 0 1 22 8M5 12.5a11 11 0 0 1 3.2-2M13.5 10.1a11 11 0 0 1 5.5 2.4M8.5 16a6 6 0 0 1 7 0M12 20h.01"
+                    />
+                </svg>
+                <span id="field-banner-text"></span>
+            </footer>
+            <dialog
+                id="discard-field-dialog"
+                aria-labelledby="discard-field-title"
+            >
+                <h2 id="discard-field-title">Discard unsaved changes?</h2>
+                <p>
+                    Changes already saved on this device will remain available.
+                </p>
+                <form method="dialog" class="actions">
+                    <button class="secondary" value="keep" autofocus>
+                        Keep editing
+                    </button>
+                    <button value="discard">Discard changes</button>
+                </form>
+            </dialog>
+        </main>
+    </body>
+</html>

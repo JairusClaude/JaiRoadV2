@@ -29,14 +29,22 @@ const startDate = (value?: string | null) =>
           }).format(new Date(`${value}T00:00:00Z`))
         : 'Unavailable';
 
+export type HistoryPagination = {
+    page: number;
+    pages: number;
+    totalYears: number;
+};
+
 export function MaintenanceHistory({
     records,
     recordCreateUrl,
     expandedYear,
+    pagination,
 }: {
     records: MaintenanceRecordSummary[];
     recordCreateUrl?: string;
     expandedYear?: number;
+    pagination?: HistoryPagination;
 }) {
     const page = usePage();
     const isViewer =
@@ -266,6 +274,53 @@ export function MaintenanceHistory({
                                 </details>
                             ))}
                         </div>
+                        {pagination && pagination.pages > 1 && (
+                            <nav
+                                aria-label="Maintenance history years"
+                                className="mt-4 flex flex-wrap items-center gap-3"
+                            >
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled={pagination.page <= 1}
+                                    onClick={() =>
+                                        router.get(
+                                            page.url.split('?')[0],
+                                            {
+                                                history_page:
+                                                    pagination.page - 1,
+                                            },
+                                            { preserveScroll: true },
+                                        )
+                                    }
+                                >
+                                    Newer years
+                                </Button>
+                                <span className="text-sm" role="status">
+                                    Page {pagination.page} of {pagination.pages}{' '}
+                                    · {pagination.totalYears} years
+                                </span>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled={
+                                        pagination.page >= pagination.pages
+                                    }
+                                    onClick={() =>
+                                        router.get(
+                                            page.url.split('?')[0],
+                                            {
+                                                history_page:
+                                                    pagination.page + 1,
+                                            },
+                                            { preserveScroll: true },
+                                        )
+                                    }
+                                >
+                                    Older years
+                                </Button>
+                            </nav>
+                        )}
                         {records.some((record) => !record.details_url) && (
                             <p className="jr-history-pending">
                                 Maintenance Record Details and record actions

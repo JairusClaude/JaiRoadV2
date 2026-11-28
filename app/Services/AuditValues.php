@@ -11,7 +11,7 @@ final class AuditValues
 {
     public const TABLES = ['LGU' => 'lgus', 'Engineer' => 'engineers', 'EngineerLGU' => 'engineer_lgus',
         'UserAccount' => 'user_accounts', 'RoadCoverage' => 'road_coverages', 'MaintenanceProject' => 'maintenance_projects',
-        'MaintenanceRecord' => 'maintenance_records', 'MonthlyUpdate' => 'monthly_updates',
+        'MaintenanceRecord' => 'maintenance_records', 'MaintenanceMilestone' => 'maintenance_milestones', 'MonthlyUpdate' => 'monthly_updates',
         'MaintenanceDocument' => 'maintenance_documents', 'Media' => 'media'];
 
     /** @return list<string> */
@@ -25,6 +25,7 @@ final class AuditValues
             'RoadCoverage' => ['id', 'road_name', 'lgu_id', 'kilometers', 'pavement_type', 'state_category', 'geojson', 'created_by'],
             'MaintenanceProject' => ['id', 'project_title', 'road_coverage_id', 'description', 'created_by'],
             'MaintenanceRecord' => ['id', 'project_id', 'managing_engineer_id', 'maintenance_year', 'quarter', 'start_date', 'estimated_duration_days', 'complete_date', 'status', 'description', 'created_by'],
+            'MaintenanceMilestone' => ['id', 'maintenance_id', 'title', 'planned_date', 'completed_date', 'status', 'created_by', 'updated_by', 'version'],
             'MonthlyUpdate' => ['id', 'maintenance_id', 'update_month', 'progress_percentage', 'summary_of_text_reports', 'created_by'],
             'MaintenanceDocument' => ['id', 'maintenance_id', 'document_title', 'description', 'file_name', 'uploaded_by'],
             'Media' => ['id', 'monthly_update_id', 'file_name', 'file_type', 'uploaded_by'],
@@ -60,7 +61,7 @@ final class AuditValues
                 $result[$key] = in_array($value, [true, 1, '1', 'true', 't'], true);
             } elseif (in_array($key, ['kilometers', 'progress_percentage'], true)) {
                 $result[$key] = number_format((float) $value, 2, '.', '');
-            } elseif ($key === 'id' || str_ends_with($key, '_id') || in_array($key, ['maintenance_year', 'estimated_duration_days', 'created_by', 'uploaded_by', 'initiated_by', 'created_by_engineer_id'], true)) {
+            } elseif ($key === 'id' || str_ends_with($key, '_id') || in_array($key, ['maintenance_year', 'estimated_duration_days', 'created_by', 'updated_by', 'version', 'uploaded_by', 'initiated_by', 'created_by_engineer_id'], true)) {
                 $result[$key] = (int) $value;
             } elseif ($key === 'file_name') {
                 $result[$key] = basename(str_replace('\\', '/', (string) $value));

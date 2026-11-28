@@ -14,6 +14,7 @@ import { useState } from 'react';
 import type { RefObject } from 'react';
 import {
     DirectoryFilter,
+    DirectoryFilterHeading,
     DirectoryPagination,
     DirectorySelectionToolbar,
 } from '@/components/directory-controls';
@@ -84,6 +85,13 @@ export function RecordDirectory({
             page.props.jairoadsIdentity as { role?: string } | undefined
         )?.role?.toLowerCase() === 'viewer';
     const [search, setSearch] = useState(filters.search);
+    const [previousSearch, setPreviousSearch] = useState(filters.search);
+
+    if (previousSearch !== filters.search) {
+        setPreviousSearch(filters.search);
+        setSearch(filters.search);
+    }
+
     const [selecting, setSelecting] = useState(false);
     const [selected, setSelected] = useState<Set<number>>(new Set());
     const scope = JSON.stringify([
@@ -126,6 +134,7 @@ export function RecordDirectory({
     ) => (
         <DirectoryFilter
             label={`${label} filter`}
+            fieldLabel={label === 'Reporting Year' ? 'Year' : label}
             value={filters[key] || 'all'}
             disabled={!integration.ready || busy}
             onChange={(value) =>
@@ -175,8 +184,9 @@ export function RecordDirectory({
                 <div>
                     <h1>Maintenance Records</h1>
                     <p>
-                        Browse and manage quarterly maintenance records across
-                        projects.
+                        {isViewer
+                            ? 'Browse quarterly maintenance records across projects.'
+                            : 'Manage quarterly maintenance records across projects.'}
                     </p>
                 </div>
                 {!isViewer && canCreate && (
@@ -192,44 +202,61 @@ export function RecordDirectory({
                 )}
             </div>
             <IntegrationNotice integration={integration} />
+            <section
+                aria-label="Maintenance records statistics"
+                className="jr-metrics-grid jr-directory-summary"
+            >
+                <MetricCard
+                    title="Total Projects"
+                    icon={<FolderKanban className="size-5" />}
+                    value={displayedTotalProjects}
+                    subtitle="Active maintenance projects"
+                    highlight={true}
+                />
+                <MetricCard
+                    title="Total Records"
+                    icon={<ClipboardList className="size-5" />}
+                    value={displayedTotalRecords}
+                    subtitle="Quarterly maintenance records"
+                />
+                <MetricCard
+                    title="Completed Records"
+                    icon={<ClipboardCheck className="size-5" />}
+                    value={displayedCompletedRoads}
+                    subtitle="Completed maintenance"
+                />
+                <MetricCard
+                    title="Ongoing Records"
+                    icon={<Clock className="size-5" />}
+                    value={displayedOngoingRoads}
+                    subtitle="In progress or scheduled"
+                />
+            </section>
             <form
-                className="jr-filters"
+                className="jr-filters jr-directory-filter-panel"
                 onSubmit={(event) => {
                     event.preventDefault();
                     apply({ ...filters, search });
                 }}
             >
-                {/* 4 Metric Cards */}
-                <section
-                    aria-label="Maintenance records statistics"
-                    className="jr-metrics-grid mb-5 grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-4"
-                >
-                    <MetricCard
-                        title="Total Projects"
-                        icon={<FolderKanban className="size-5" />}
-                        value={displayedTotalProjects}
-                        subtitle="Active maintenance projects"
-                        highlight={true}
-                    />
-                    <MetricCard
-                        title="Total Records"
-                        icon={<ClipboardList className="size-5" />}
-                        value={displayedTotalRecords}
-                        subtitle="Quarterly maintenance records"
-                    />
-                    <MetricCard
-                        title="Completed Records"
-                        icon={<ClipboardCheck className="size-5" />}
-                        value={displayedCompletedRoads}
-                        subtitle="Completed maintenance"
-                    />
-                    <MetricCard
-                        title="Ongoing Records"
-                        icon={<Clock className="size-5" />}
-                        value={displayedOngoingRoads}
-                        subtitle="In progress or scheduled"
-                    />
-                </section>
+                <DirectoryFilterHeading
+                    disabled={!integration.ready || busy}
+                    onReset={
+                        search || hasFilters || filters.sort !== 'newest'
+                            ? () => {
+                                  setSearch('');
+                                  apply({
+                                      search: '',
+                                      municipality: 'all',
+                                      year: 'all',
+                                      quarter: 'all',
+                                      status: 'all',
+                                      sort: 'newest',
+                                  });
+                              }
+                            : undefined
+                    }
+                />
                 <div className="jr-record-filter-controls">
                     <div className="jr-search">
                         <Search className="size-[18px]" />
@@ -237,7 +264,7 @@ export function RecordDirectory({
                             type="search"
                             maxLength={255}
                             aria-label="Search maintenance projects or managing engineers"
-                            placeholder="Search maintenance projects or managing engineers..."
+                            placeholder="Search records..."
                             value={search}
                             disabled={!integration.ready || busy}
                             onChange={(event) => {
@@ -275,6 +302,7 @@ export function RecordDirectory({
                         )}
                         <DirectoryFilter
                             label="Sort records"
+                            fieldLabel="Sort by"
                             value={filters.sort}
                             disabled={!integration.ready || busy}
                             options={[
@@ -291,25 +319,6 @@ export function RecordDirectory({
                         />
                     </div>
                 </div>
-                {hasFilters && (
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                            setSearch('');
-                            apply({
-                                search: '',
-                                municipality: 'all',
-                                year: 'all',
-                                quarter: 'all',
-                                status: 'all',
-                                sort: 'newest',
-                            });
-                        }}
-                    >
-                        Clear filters
-                    </Button>
-                )}
                 <span className="sr-only">
                     Search results update automatically while typing.
                 </span>
@@ -341,15 +350,21 @@ export function RecordDirectory({
                 aria-label="Maintenance Records table"
                 tabIndex={0}
             >
-                <table className="jr-table">
+                <table role="table" className="jr-table jr-mobile-table">
                     <colgroup>
-                        {[27, 12, 9, 10, 14, 20, 8].map((width, index) => (
-                            <col key={index} style={{ width: `${width}%` }} />
-                        ))}
+                        {[isViewer ? 35 : 27, 12, 9, 10, 14, 20].map(
+                            (width, index) => (
+                                <col
+                                    key={index}
+                                    style={{ width: `${width}%` }}
+                                />
+                            ),
+                        )}
+                        {!isViewer && <col style={{ width: '8%' }} />}
                     </colgroup>
-                    <thead>
-                        <tr>
-                            <th>
+                    <thead role="rowgroup">
+                        <tr role="row">
+                            <th role="columnheader">
                                 <div className="jr-project-line">
                                     {selecting && (
                                         <Checkbox
@@ -378,17 +393,18 @@ export function RecordDirectory({
                                     <span>Maintenance Project</span>
                                 </div>
                             </th>
-                            <th>Municipality</th>
-                            <th>Period</th>
-                            <th>Status</th>
-                            <th>Managing Engineer</th>
-                            <th>Maintenance Timeline</th>
-                            <th>Actions</th>
+                            <th role="columnheader">Municipality</th>
+                            <th role="columnheader">Period</th>
+                            <th role="columnheader">Status</th>
+                            <th role="columnheader">Managing Engineer</th>
+                            <th role="columnheader">Maintenance Timeline</th>
+                            {!isViewer && <th role="columnheader">Actions</th>}
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody role="rowgroup">
                         {records.data.map((record) => (
                             <tr
+                                role="row"
                                 key={record.id}
                                 data-record-id={record.id}
                                 data-selected={selected.has(record.id)}
@@ -399,7 +415,7 @@ export function RecordDirectory({
                                           onNavigate(record.details_url)
                                 }
                             >
-                                <td>
+                                <td role="cell" data-mobile-cell="primary">
                                     <div className="jr-project-line">
                                         {selecting && (
                                             <Checkbox
@@ -466,17 +482,24 @@ export function RecordDirectory({
                                         </div>
                                     </div>
                                 </td>
-                                <td>
+                                <td
+                                    role="cell"
+                                    data-mobile-label="Municipality"
+                                >
                                     {record.project.municipality ?? (
                                         <span className="jr-muted">
                                             Coverage not mapped
                                         </span>
                                     )}
                                 </td>
-                                <td className="jr-record-period">
+                                <td
+                                    role="cell"
+                                    data-mobile-label="Period"
+                                    className="jr-record-period"
+                                >
                                     {record.quarter} {record.year}
                                 </td>
-                                <td>
+                                <td role="cell" data-mobile-label="Status">
                                     <span
                                         className="jr-status"
                                         data-status={record.status}
@@ -484,12 +507,18 @@ export function RecordDirectory({
                                         {record.status}
                                     </span>
                                 </td>
-                                <td>
+                                <td
+                                    role="cell"
+                                    data-mobile-label="Managing engineer"
+                                >
                                     {record.managing_engineer
                                         ? engineerName(record.managing_engineer)
                                         : 'NULL (unassigned)'}
                                 </td>
-                                <td>
+                                <td
+                                    role="cell"
+                                    data-mobile-label="Maintenance timeline"
+                                >
                                     <span>{date(record.start_date)}</span>
                                     <div className="jr-project-id">
                                         {record.status === 'Completed'
@@ -497,63 +526,71 @@ export function RecordDirectory({
                                             : `Estimated: ${Number.isInteger(record.estimated_duration_days) && record.estimated_duration_days > 0 ? `${record.estimated_duration_days} ${record.estimated_duration_days === 1 ? 'day' : 'days'}` : 'Unavailable'}`}
                                     </div>
                                 </td>
-                                <td
-                                    className="text-right"
-                                    onClick={(event) => event.stopPropagation()}
-                                >
-                                    {!isViewer && !selecting && (
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="jr-action-trigger"
-                                                    aria-label={`Actions for Record ID: ${record.id}`}
-                                                >
-                                                    <MoreHorizontal className="size-[18px]" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent
-                                                className="jr-theme jr-menu"
-                                                align="end"
-                                                onClick={(event) =>
-                                                    event.stopPropagation()
-                                                }
-                                            >
-                                                <DropdownMenuItem
-                                                    disabled={
-                                                        !record.edit_url || busy
-                                                    }
-                                                    onSelect={() =>
-                                                        record.edit_url &&
-                                                        onNavigate(
-                                                            record.edit_url,
-                                                        )
+                                {!isViewer && (
+                                    <td
+                                        role="cell"
+                                        data-mobile-cell="actions"
+                                        className="text-right"
+                                        onClick={(event) =>
+                                            event.stopPropagation()
+                                        }
+                                    >
+                                        {!isViewer && !selecting && (
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="jr-action-trigger"
+                                                        aria-label={`Actions for Record ID: ${record.id}`}
+                                                    >
+                                                        <MoreHorizontal className="size-[18px]" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent
+                                                    className="jr-theme jr-menu"
+                                                    align="end"
+                                                    onClick={(event) =>
+                                                        event.stopPropagation()
                                                     }
                                                 >
-                                                    <Pencil />
-                                                    Edit Maintenance Record
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem
-                                                    variant="destructive"
-                                                    disabled={
-                                                        !canDelete || busy
-                                                    }
-                                                    className="text-red-600 focus:bg-red-50 focus:text-red-700"
-                                                    onSelect={() =>
-                                                        onDelete(
-                                                            [record],
-                                                            false,
-                                                        )
-                                                    }
-                                                >
-                                                    <Trash2 className="size-4" />
-                                                    Delete Maintenance Record
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    )}
-                                </td>
+                                                    <DropdownMenuItem
+                                                        disabled={
+                                                            !record.edit_url ||
+                                                            busy
+                                                        }
+                                                        onSelect={() =>
+                                                            record.edit_url &&
+                                                            onNavigate(
+                                                                record.edit_url,
+                                                            )
+                                                        }
+                                                    >
+                                                        <Pencil />
+                                                        Edit Maintenance Record
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        variant="destructive"
+                                                        disabled={
+                                                            !canDelete || busy
+                                                        }
+                                                        className="text-red-600 focus:bg-red-50 focus:text-red-700"
+                                                        onSelect={() =>
+                                                            onDelete(
+                                                                [record],
+                                                                false,
+                                                            )
+                                                        }
+                                                    >
+                                                        <Trash2 className="size-4" />
+                                                        Delete Maintenance
+                                                        Record
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        )}
+                                    </td>
+                                )}
                             </tr>
                         ))}
                     </tbody>

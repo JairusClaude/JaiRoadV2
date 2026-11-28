@@ -4,11 +4,27 @@ import {
     BarChart3,
     Clock3,
     ClipboardCheck,
+    Download,
+    FileSpreadsheet,
     FileText,
     FolderKanban,
     MapPinned,
 } from 'lucide-react';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
+import { toast } from 'sonner';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
+const reportFormats = [
+    { format: 'PDF', label: 'PDF Report', icon: FileText },
+    { format: 'XLSX', label: 'Excel Workbook', icon: FileSpreadsheet },
+    { format: 'CSV', label: 'CSV Data', icon: Download },
+] as const;
 
 export type DashboardSummary = {
     scope: string;
@@ -53,6 +69,7 @@ export function DashboardAnalytics({
     omitInventoryMetrics = false,
     omitOngoingMetric = false,
     showActivity = true,
+    showExport = true,
     activityReplacement,
 }: {
     data: DashboardSummary;
@@ -60,6 +77,7 @@ export function DashboardAnalytics({
     omitInventoryMetrics?: boolean;
     omitOngoingMetric?: boolean;
     showActivity?: boolean;
+    showExport?: boolean;
     activityReplacement?: ReactNode;
 }) {
     const max = Math.max(1, ...data.trend.map((item) => item.count));
@@ -100,6 +118,32 @@ export function DashboardAnalytics({
             ) && !(omitOngoingMetric && label === 'Ongoing records'),
     );
     const items = data.activity;
+    const [exporting, setExporting] = useState(false);
+    const [exportError, setExportError] = useState('');
+
+    const exportReport = async (
+        format: (typeof reportFormats)[number]['format'],
+    ) => {
+        setExporting(true);
+        setExportError('');
+
+        try {
+            const { downloadAnalyticsReport } =
+                await import('@/lib/analytics-export');
+            downloadAnalyticsReport(
+                format,
+                data.scope,
+                visibleCards,
+                data.metrics.reportingCoverage,
+                data.trend,
+            );
+            toast.success(`${format} report download started.`);
+        } catch {
+            setExportError('The report could not be generated. Try again.');
+        } finally {
+            setExporting(false);
+        }
+    };
 
     return (
         <section
@@ -117,6 +161,44 @@ export function DashboardAnalytics({
                         sample data.
                     </p>
                 </div>
+                {showExport && (
+                    <div className="min-w-0">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger
+                                type="button"
+                                className="jr-analytics-export"
+                                disabled={exporting}
+                                aria-busy={exporting}
+                            >
+                                <Download size={16} aria-hidden="true" />
+                                Export report
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                align="end"
+                                className="jr-analytics-export-menu"
+                            >
+                                {reportFormats.map(
+                                    ({ format, label, icon: Icon }) => (
+                                        <DropdownMenuItem
+                                            key={format}
+                                            onSelect={() =>
+                                                void exportReport(format)
+                                            }
+                                        >
+                                            <Icon aria-hidden="true" />
+                                            {label}
+                                        </DropdownMenuItem>
+                                    ),
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        {exportError && (
+                            <p className="jr-field-error mt-2" role="alert">
+                                {exportError}
+                            </p>
+                        )}
+                    </div>
+                )}
                 <span className="rounded-full border border-[var(--jr-role-accent-soft)] bg-[var(--jr-role-accent-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--jr-role-accent-ink)]">
                     {data.scope}
                 </span>

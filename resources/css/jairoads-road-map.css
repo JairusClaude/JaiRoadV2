@@ -280,15 +280,27 @@
     color: #ffd89e;
 }
 
-/* Engineer dashboard map: a display filter, never an access-control toggle. */
+/* Display controls share the available header width with the map title. */
+.jr-road-map-switches {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 16px;
+    margin-inline-start: auto;
+}
+@media (max-width: 600px) {
+    .jr-road-map-switches {
+        margin-inline-start: 0;
+    }
+}
 .jr-engineer-map-toggle {
     display: flex;
     align-items: center;
     gap: 9px;
+    min-height: 44px;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    white-space: nowrap;
 }
 .jr-engineer-map-toggle input {
     appearance: none;
@@ -312,7 +324,30 @@
     transition: transform 0.15s;
 }
 .jr-engineer-map-toggle input:checked {
-    background: #843b12;
+    background: var(--primary, #843b12);
+}
+.jr-engineer-map-toggle input:focus-visible {
+    outline-color: var(--ring, #bd7435);
+}
+.jr-engineer-map-toggle input:hover:not(:disabled) {
+    box-shadow: 0 0 0 3px
+        color-mix(in srgb, var(--ring, #bd7435) 24%, transparent);
+}
+.jr-engineer-map-toggle:has(input:disabled) {
+    opacity: 0.65;
+    cursor: default;
+}
+.jr-engineer-map-toggle input:disabled {
+    cursor: default;
+}
+@media (forced-colors: active) {
+    .jr-engineer-map-toggle input {
+        appearance: auto;
+    }
+
+    .jr-engineer-map-toggle input::after {
+        display: none;
+    }
 }
 .jr-engineer-map-toggle input:checked::after {
     transform: translateX(16px);

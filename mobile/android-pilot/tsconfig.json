@@ -1,0 +1,10 @@
+{
+    "extends": "../../tsconfig.json",
+    "include": [
+        "web/**/*.ts",
+        "../../resources/js/**/*.d.ts"
+    ],
+    "compilerOptions": {
+        "noEmit": true
+    }
+}

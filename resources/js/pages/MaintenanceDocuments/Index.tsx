@@ -3,6 +3,8 @@ import { MoreHorizontal, Pencil, Search, Trash2, Upload } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import {
     DirectoryFilter,
+    DirectoryFilterHeading,
+    DirectoryFilterField,
     DirectoryPagination,
     DirectorySelectionToolbar,
 } from '@/components/directory-controls';
@@ -47,6 +49,13 @@ export default function Index({
                 page.props.canWrite === true));
     const deletion = useDocumentDeletion();
     const [search, setSearch] = useState(filters.search);
+    const [previousSearch, setPreviousSearch] = useState(filters.search);
+
+    if (previousSearch !== filters.search) {
+        setPreviousSearch(filters.search);
+        setSearch(filters.search);
+    }
+
     const [selecting, setSelecting] = useState(false);
     const [selected, setSelected] = useState<Set<number>>(new Set());
     const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -108,8 +117,9 @@ export default function Index({
                     <div>
                         <h1>Maintenance Documents</h1>
                         <p>
-                            Browse and manage documents associated with
-                            maintenance records.
+                            {isViewer
+                                ? 'Browse documents associated with maintenance records.'
+                                : 'Manage documents associated with maintenance records.'}
                         </p>
                     </div>
                     {enabled && (
@@ -133,18 +143,35 @@ export default function Index({
                     )}
                 </div>
                 <form
-                    className="jr-filters"
+                    className="jr-filters jr-directory-filter-panel"
                     onSubmit={(e) => {
                         e.preventDefault();
                         visit({ ...filters, search });
                     }}
                 >
+                    <DirectoryFilterHeading
+                        disabled={deletion.processing}
+                        onReset={
+                            search ||
+                            (filters.project && filters.project !== 'all') ||
+                            filters.sort !== 'newest'
+                                ? () => {
+                                      setSearch('');
+                                      visit({
+                                          search: '',
+                                          project: 'all',
+                                          sort: 'newest',
+                                      });
+                                  }
+                                : undefined
+                        }
+                    />
                     <div className="jr-search">
                         <Search className="size-[18px]" />
                         <Input
                             type="search"
                             aria-label="Search documents"
-                            placeholder="Search document titles or filenames..."
+                            placeholder="Search documents..."
                             value={search}
                             onChange={(e) => {
                                 const value = e.target.value;
@@ -159,16 +186,19 @@ export default function Index({
                         />
                     </div>
                     <div className="jr-filter-row">
-                        <MonthlyProjectFilter
-                            projects={projects}
-                            choicesUrl={projectFilterUrl}
-                            value={filters.project}
-                            onChange={(project) =>
-                                visit({ ...filters, search, project })
-                            }
-                        />
+                        <DirectoryFilterField label="Project">
+                            <MonthlyProjectFilter
+                                projects={projects}
+                                choicesUrl={projectFilterUrl}
+                                value={filters.project}
+                                onChange={(project) =>
+                                    visit({ ...filters, search, project })
+                                }
+                            />
+                        </DirectoryFilterField>
                         <DirectoryFilter
                             label="Sort documents"
+                            fieldLabel="Sort by"
                             value={filters.sort}
                             options={[
                                 { value: 'newest', label: 'Newest First' },
@@ -209,15 +239,24 @@ export default function Index({
                     aria-label="Maintenance documents table"
                     tabIndex={0}
                 >
-                    <table className="jr-table jr-document-table">
+                    <table
+                        role="table"
+                        className="jr-table jr-mobile-table jr-document-table"
+                    >
                         <colgroup>
-                            {[27, 24, 16, 12, 14, 7].map((width, i) => (
-                                <col key={i} style={{ width: `${width}%` }} />
-                            ))}
+                            {[isViewer ? 34 : 27, 24, 16, 12, 14].map(
+                                (width, i) => (
+                                    <col
+                                        key={i}
+                                        style={{ width: `${width}%` }}
+                                    />
+                                ),
+                            )}
+                            {!isViewer && <col style={{ width: '7%' }} />}
                         </colgroup>
-                        <thead>
-                            <tr>
-                                <th>
+                        <thead role="rowgroup">
+                            <tr role="row">
+                                <th role="columnheader">
                                     <div className="jr-project-line">
                                         {selecting && (
                                             <Checkbox
@@ -249,16 +288,24 @@ export default function Index({
                                         Document
                                     </div>
                                 </th>
-                                <th>Maintenance Project</th>
-                                <th>Maintenance Record</th>
-                                <th>Uploaded By</th>
-                                <th>Date Uploaded</th>
-                                <th className="text-right">Actions</th>
+                                <th role="columnheader">Maintenance Project</th>
+                                <th role="columnheader">Maintenance Record</th>
+                                <th role="columnheader">Uploaded By</th>
+                                <th role="columnheader">Date Uploaded</th>
+                                {!isViewer && (
+                                    <th
+                                        role="columnheader"
+                                        className="text-right"
+                                    >
+                                        Actions
+                                    </th>
+                                )}
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody role="rowgroup">
                             {documents.data.map((doc) => (
                                 <tr
+                                    role="row"
                                     key={doc.id}
                                     data-document-id={doc.id}
                                     data-selected={selected.has(doc.id)}
@@ -272,7 +319,7 @@ export default function Index({
                                               )
                                     }
                                 >
-                                    <td>
+                                    <td role="cell" data-mobile-cell="primary">
                                         <div className="jr-project-line">
                                             {selecting && (
                                                 <Checkbox
@@ -322,74 +369,100 @@ export default function Index({
                                             </div>
                                         </div>
                                     </td>
-                                    <td>{doc.project.project_title}</td>
-                                    <td>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Maintenance project"
+                                    >
+                                        {doc.project.project_title}
+                                    </td>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Maintenance record"
+                                    >
                                         {doc.record.quarter} {doc.record.year}
                                     </td>
-                                    <td>{doc.uploaded_by}</td>
-                                    <td>{documentDate(doc.uploaded_at)}</td>
                                     <td
-                                        className="text-right"
-                                        onClick={(e) => e.stopPropagation()}
+                                        role="cell"
+                                        data-mobile-label="Uploaded by"
                                     >
-                                        {!selecting && enabled && (
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="jr-action-trigger"
-                                                        aria-label={`Actions for document ${doc.id}`}
-                                                    >
-                                                        <MoreHorizontal />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent
-                                                    align="end"
-                                                    className="jr-theme jr-menu"
-                                                >
-                                                    <DropdownMenuItem
-                                                        disabled={
-                                                            !enabled ||
-                                                            doc.can_edit ===
-                                                                false
-                                                        }
-                                                        onSelect={() =>
-                                                            router.visit(
-                                                                editUrl(
-                                                                    workspaceHref(
-                                                                        `/maintenance-documents/${doc.id}/edit`,
-                                                                    ),
-                                                                    page.url,
-                                                                ),
-                                                            )
-                                                        }
-                                                    >
-                                                        <Pencil />
-                                                        Edit Maintenance
-                                                        Document
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        variant="destructive"
-                                                        disabled={
-                                                            page.props
-                                                                .canonicalFrontend ===
-                                                            true
-                                                                ? !doc.delete_url
-                                                                : !enabled
-                                                        }
-                                                        onSelect={() =>
-                                                            deletion.open([doc])
-                                                        }
-                                                    >
-                                                        <Trash2 />
-                                                        Delete Maintenance
-                                                        Document
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        )}
+                                        {doc.uploaded_by}
                                     </td>
+                                    <td
+                                        role="cell"
+                                        data-mobile-label="Date uploaded"
+                                    >
+                                        {documentDate(doc.uploaded_at)}
+                                    </td>
+                                    {!isViewer && (
+                                        <td
+                                            role="cell"
+                                            data-mobile-cell="actions"
+                                            className="text-right"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            {!selecting && enabled && (
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger
+                                                        asChild
+                                                    >
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="jr-action-trigger"
+                                                            aria-label={`Actions for document ${doc.id}`}
+                                                        >
+                                                            <MoreHorizontal />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent
+                                                        align="end"
+                                                        className="jr-theme jr-menu"
+                                                    >
+                                                        <DropdownMenuItem
+                                                            disabled={
+                                                                !enabled ||
+                                                                doc.can_edit ===
+                                                                    false
+                                                            }
+                                                            onSelect={() =>
+                                                                router.visit(
+                                                                    editUrl(
+                                                                        workspaceHref(
+                                                                            `/maintenance-documents/${doc.id}/edit`,
+                                                                        ),
+                                                                        page.url,
+                                                                    ),
+                                                                )
+                                                            }
+                                                        >
+                                                            <Pencil />
+                                                            Edit Maintenance
+                                                            Document
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            variant="destructive"
+                                                            disabled={
+                                                                page.props
+                                                                    .canonicalFrontend ===
+                                                                true
+                                                                    ? !doc.delete_url
+                                                                    : !enabled
+                                                            }
+                                                            onSelect={() =>
+                                                                deletion.open([
+                                                                    doc,
+                                                                ])
+                                                            }
+                                                        >
+                                                            <Trash2 />
+                                                            Delete Maintenance
+                                                            Document
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            )}
+                                        </td>
+                                    )}
                                 </tr>
                             ))}
                         </tbody>

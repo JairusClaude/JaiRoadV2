@@ -12,6 +12,7 @@ import {
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import {
     DirectoryFilter,
+    DirectoryFilterHeading,
     DirectoryPagination,
     DirectorySelectionToolbar,
 } from '@/components/directory-controls';
@@ -28,11 +29,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { editUrl } from '@/lib/form-navigation';
+import { validRoadPage } from '@/lib/road-coverages/road-page';
 import { workspaceHref } from '@/lib/workspace-navigation';
 import type {
     RoadCoverageDirectoryProps,
+    RoadCoverageDirectoryRow,
     RoadCoverageFilters,
-    RoadCoverageRow,
 } from '@/types/road-coverages';
 import '../../../css/road-coverage-directory.css';
 
@@ -82,10 +84,24 @@ export default function Index({
     const [selecting, setSelecting] = useState(false);
     const [selected, setSelected] = useState<Set<number>>(new Set());
     const [deleteTargets, setDeleteTargets] = useState<
-        RoadCoverageRow[] | null
+        RoadCoverageDirectoryRow[] | null
     >(null);
     const [deleting, setDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState('');
+    const selectionScope = JSON.stringify([
+        coverages.current_page,
+        filters,
+        coverages.data.map((road) => road.id),
+    ]);
+    const [previousSelectionScope, setPreviousSelectionScope] =
+        useState(selectionScope);
+
+    if (previousSelectionScope !== selectionScope) {
+        setPreviousSelectionScope(selectionScope);
+        setSelecting(false);
+        setSelected(new Set());
+    }
+
     const [loadedMap, setLoadedMap] = useState(mapCoverages ?? []);
     const [mapCursor, setMapCursor] = useState<number | null>(
         mapNextCursor ?? null,
@@ -119,6 +135,13 @@ export default function Index({
         setMapError('');
     }
 
+    const mapQuery = new URLSearchParams({
+        search: filters.search,
+        municipality: filters.municipality,
+        condition: filters.condition,
+        pavement: filters.pavement,
+    }).toString();
+
     useEffect(() => {
         if (!mapDeferred) {
             return;
@@ -131,7 +154,7 @@ export default function Index({
             setMapLoading(false);
         }, 12_000);
 
-        fetch('/workspace/ui/map/road-index', {
+        fetch(`/workspace/ui/map/road-index?${mapQuery}`, {
             credentials: 'same-origin',
             headers: { Accept: 'application/json' },
             cache: 'no-store',
@@ -144,7 +167,7 @@ export default function Index({
 
                 const result = await response.json();
 
-                if (!Array.isArray(result.data)) {
+                if (!validRoadPage(result, null, 'descending')) {
                     throw new Error('Unexpected map response');
                 }
 
@@ -173,10 +196,10 @@ export default function Index({
             mapRequest.current?.abort();
             mapRequest.current = null;
         };
-    }, [coverages, mapAttempt, mapDeferred]);
+    }, [coverages, mapAttempt, mapDeferred, mapQuery]);
 
     const loadMoreMap = async () => {
-        if (mapCursor === null || mapLoading) {
+        if (mapCursor === null || mapLoading || mapRequest.current) {
             return;
         }
 
@@ -188,7 +211,7 @@ export default function Index({
 
         try {
             const response = await fetch(
-                `/workspace/ui/map/road-index?before=${encodeURIComponent(mapCursor)}`,
+                `/workspace/ui/map/road-index?${mapQuery}&before=${encodeURIComponent(mapCursor)}`,
                 {
                     credentials: 'same-origin',
                     headers: { Accept: 'application/json' },
@@ -206,7 +229,7 @@ export default function Index({
                 next_cursor: number | null;
             };
 
-            if (!Array.isArray(result.data)) {
+            if (!validRoadPage(result, mapCursor, 'descending')) {
                 throw new Error('Unexpected map response.');
             }
 
@@ -352,9 +375,9 @@ export default function Index({
     };
     const filtered = !!(
         filters.search ||
-        filters.municipality ||
-        filters.condition ||
-        filters.pavement
+        (filters.municipality && filters.municipality !== 'all') ||
+        (filters.condition && filters.condition !== 'all') ||
+        (filters.pavement && filters.pavement !== 'all')
     );
 
     return (
@@ -393,10 +416,10 @@ export default function Index({
                     {/* 1. Metric Cards */}
                     <section
                         aria-label="Road coverage statistics"
-                        className="jr-metrics-grid mb-6 grid gap-4 sm:grid-cols-3"
+                        className="jr-metrics-grid jr-directory-summary"
                     >
                         <MetricCard
-                            title="Total Road Coverages"
+                            title="Road coverages"
                             value={displayedTotalCoverages}
                             subtitle="Registered road coverages"
                             highlight
@@ -405,15 +428,15 @@ export default function Index({
                         <MetricCard
                             title="Linked Projects"
                             value={displayedLinkedProjects}
-                            subtitle="Maintenance projects linked to coverages"
+                            subtitle="With road coverage"
                             icon={<FolderKanban className="size-5" />}
                         />
                         <MetricCard
-                            title="Total Network Length"
+                            title="Network length"
                             value={
                                 <>
                                     {Number(displayedTotalLengthKm).toFixed(2)}{' '}
-                                    <span className="text-sm font-medium text-[#64748B]">
+                                    <span className="jr-metric-unit text-sm font-medium text-[#64748B]">
                                         km
                                     </span>
                                 </>
@@ -423,9 +446,18 @@ export default function Index({
                         />
                     </section>
 
+                    <nav
+                        className="jr-road-mobile-links"
+                        aria-label="Road coverage views"
+                    >
+                        <a href="#road-coverage-map">Map</a>
+                        <a href="#road-coverage-list">Road list</a>
+                    </nav>
                     {/* 2. Simplified Coverage Map (Separated Cards Layout) */}
                     <section
                         aria-label="Road coverage map"
+                        id="road-coverage-map"
+                        tabIndex={-1}
                         className="jr-map-card-container mb-6 overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white p-4 shadow-sm sm:p-5"
                     >
                         {mapReady ? (
@@ -457,9 +489,9 @@ export default function Index({
                         )}
                         {mapCursor !== null && (
                             <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
-                                <p>
+                                <p className="jr-map-count">
                                     Showing {loadedMap.length} of{' '}
-                                    {displayedTotalCoverages} road coverages on
+                                    {coverages.total} matching road coverages on
                                     the map.
                                 </p>
                                 <Button
@@ -487,22 +519,46 @@ export default function Index({
                     {/* 3. Road Coverages Directory Table (Separated Cards Layout) */}
                     <section
                         aria-label="Road coverages directory"
+                        id="road-coverage-list"
+                        tabIndex={-1}
                         className="jr-table-card-container rounded-t-[20px] rounded-b-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm"
                     >
+                        <div className="jr-road-mobile-links">
+                            <a href="#road-coverage-map">Back to map</a>
+                        </div>
                         <form
-                            className="jr-filters"
+                            className="jr-filters jr-directory-filter-panel"
                             onSubmit={(event) => {
                                 event.preventDefault();
                                 visit({ ...filters, search });
                             }}
                         >
+                            <DirectoryFilterHeading
+                                disabled={busy}
+                                onReset={
+                                    search ||
+                                    filtered ||
+                                    filters.sort !== 'newest'
+                                        ? () => {
+                                              setSearch('');
+                                              visit({
+                                                  search: '',
+                                                  municipality: '',
+                                                  condition: '',
+                                                  pavement: '',
+                                                  sort: 'newest',
+                                              });
+                                          }
+                                        : undefined
+                                }
+                            />
                             <div className="jr-search">
                                 <Search className="size-[18px]" />
                                 <Input
                                     type="search"
                                     maxLength={255}
                                     aria-label="Search road coverages"
-                                    placeholder="Search road coverage names..."
+                                    placeholder="Search roads..."
                                     value={search}
                                     onChange={(event) => {
                                         const value = event.target.value;
@@ -523,6 +579,7 @@ export default function Index({
                             <div className="jr-filter-row">
                                 <DirectoryFilter
                                     label="Municipality filter"
+                                    fieldLabel="Municipality"
                                     className="jr-road-municipality-filter"
                                     value={filters.municipality || 'all'}
                                     options={[
@@ -546,6 +603,7 @@ export default function Index({
                                 />
                                 <DirectoryFilter
                                     label="Road Condition filter"
+                                    fieldLabel="Road condition"
                                     value={filters.condition || 'all'}
                                     options={[
                                         {
@@ -570,6 +628,7 @@ export default function Index({
                                 />
                                 <DirectoryFilter
                                     label="Pavement Type filter"
+                                    fieldLabel="Pavement"
                                     value={filters.pavement || 'all'}
                                     options={[
                                         {
@@ -597,6 +656,7 @@ export default function Index({
                                 />
                                 <DirectoryFilter
                                     label="Sort road coverages"
+                                    fieldLabel="Sort by"
                                     value={filters.sort}
                                     options={[
                                         {
@@ -654,7 +714,10 @@ export default function Index({
                             aria-busy={busy}
                             tabIndex={0}
                         >
-                            <table className="jr-table jr-road-coverage-table">
+                            <table
+                                role="table"
+                                className="jr-table jr-mobile-table jr-road-coverage-table"
+                            >
                                 <colgroup>
                                     {selecting && (
                                         <col style={{ width: '48px' }} />
@@ -664,16 +727,25 @@ export default function Index({
                                             width: selecting ? '27%' : '30%',
                                         }}
                                     />
-                                    <col style={{ width: '19%' }} />
+                                    <col
+                                        style={{
+                                            width: isViewer ? '26%' : '19%',
+                                        }}
+                                    />
                                     <col style={{ width: '12%' }} />
                                     <col style={{ width: '16%' }} />
                                     <col style={{ width: '16%' }} />
-                                    <col style={{ width: '7%' }} />
+                                    {!isViewer && (
+                                        <col style={{ width: '7%' }} />
+                                    )}
                                 </colgroup>
-                                <thead>
-                                    <tr>
+                                <thead role="rowgroup">
+                                    <tr role="row">
                                         {selecting && (
-                                            <th className="w-12 px-3 text-center">
+                                            <th
+                                                role="columnheader"
+                                                className="w-12 px-3 text-center"
+                                            >
                                                 <Checkbox
                                                     aria-label="Select all road coverages on this page"
                                                     checked={
@@ -700,17 +772,33 @@ export default function Index({
                                                 />
                                             </th>
                                         )}
-                                        <th>Road Coverage</th>
-                                        <th>Municipality</th>
-                                        <th>Length</th>
-                                        <th>Pavement Type</th>
-                                        <th>Road Condition</th>
-                                        <th className="text-right">Actions</th>
+                                        <th role="columnheader">
+                                            Road Coverage
+                                        </th>
+                                        <th role="columnheader">
+                                            Municipality
+                                        </th>
+                                        <th role="columnheader">Length</th>
+                                        <th role="columnheader">
+                                            Pavement Type
+                                        </th>
+                                        <th role="columnheader">
+                                            Road Condition
+                                        </th>
+                                        {!isViewer && (
+                                            <th
+                                                role="columnheader"
+                                                className="text-right"
+                                            >
+                                                Actions
+                                            </th>
+                                        )}
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody role="rowgroup">
                                     {coverages.data.map((coverage) => (
                                         <tr
+                                            role="row"
                                             key={coverage.id}
                                             data-road-coverage-id={coverage.id}
                                             data-selected={selected.has(
@@ -733,6 +821,8 @@ export default function Index({
                                         >
                                             {selecting && (
                                                 <td
+                                                    role="cell"
+                                                    data-mobile-cell="selection"
                                                     className="w-12 px-3 text-center"
                                                     onClick={(event) =>
                                                         event.stopPropagation()
@@ -749,7 +839,10 @@ export default function Index({
                                                     />
                                                 </td>
                                             )}
-                                            <td>
+                                            <td
+                                                role="cell"
+                                                data-mobile-cell="primary"
+                                            >
                                                 <Link
                                                     className="jr-project-title"
                                                     href={editUrl(
@@ -770,14 +863,29 @@ export default function Index({
                                                     {coverage.road_name}
                                                 </Link>
                                             </td>
-                                            <td>
+                                            <td
+                                                role="cell"
+                                                data-mobile-label="Municipality"
+                                            >
                                                 {coverage.lgu.municipality_name}
                                             </td>
-                                            <td className="whitespace-nowrap">
+                                            <td
+                                                role="cell"
+                                                data-mobile-label="Length"
+                                                className="whitespace-nowrap"
+                                            >
                                                 {length(coverage.kilometers)}
                                             </td>
-                                            <td>{coverage.pavement_type}</td>
-                                            <td>
+                                            <td
+                                                role="cell"
+                                                data-mobile-label="Pavement type"
+                                            >
+                                                {coverage.pavement_type}
+                                            </td>
+                                            <td
+                                                role="cell"
+                                                data-mobile-label="Road condition"
+                                            >
                                                 <span
                                                     className="jr-coverage-condition"
                                                     data-condition={
@@ -787,83 +895,89 @@ export default function Index({
                                                     {coverage.state_category}
                                                 </span>
                                             </td>
-                                            <td
-                                                className="text-right"
-                                                onClick={(event) =>
-                                                    event.stopPropagation()
-                                                }
-                                            >
-                                                {!isViewer &&
-                                                    (canEdit ||
-                                                        effectiveCanDelete) && (
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger
-                                                                asChild
-                                                            >
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="jr-action-trigger"
-                                                                    aria-label={`Actions for ${coverage.road_name}`}
+                                            {!isViewer && (
+                                                <td
+                                                    role="cell"
+                                                    data-mobile-cell="actions"
+                                                    className="text-right"
+                                                    onClick={(event) =>
+                                                        event.stopPropagation()
+                                                    }
+                                                >
+                                                    {!isViewer &&
+                                                        (canEdit ||
+                                                            effectiveCanDelete) && (
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger
+                                                                    asChild
                                                                 >
-                                                                    <MoreHorizontal />
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent
-                                                                className="jr-theme jr-menu"
-                                                                align="end"
-                                                            >
-                                                                <DropdownMenuItem
-                                                                    disabled={
-                                                                        !canEdit
-                                                                    }
-                                                                    onSelect={() =>
-                                                                        router.visit(
-                                                                            editUrl(
-                                                                                workspaceHref(
-                                                                                    `/road-coverages/${coverage.id}/edit`,
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="jr-action-trigger"
+                                                                        aria-label={`Actions for ${coverage.road_name}`}
+                                                                    >
+                                                                        <MoreHorizontal />
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent
+                                                                    className="jr-theme jr-menu"
+                                                                    align="end"
+                                                                >
+                                                                    <DropdownMenuItem
+                                                                        disabled={
+                                                                            !canEdit
+                                                                        }
+                                                                        onSelect={() =>
+                                                                            router.visit(
+                                                                                editUrl(
+                                                                                    workspaceHref(
+                                                                                        `/road-coverages/${coverage.id}/edit`,
+                                                                                    ),
+                                                                                    page.url,
                                                                                 ),
-                                                                                page.url,
-                                                                            ),
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <Pencil />
-                                                                    Edit Road
-                                                                    Coverage
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem
-                                                                    disabled={
-                                                                        !effectiveCanDelete ||
-                                                                        Boolean(
-                                                                            coverage.has_projects,
-                                                                        )
-                                                                    }
-                                                                    title={
-                                                                        coverage.has_projects
-                                                                            ? `Referenced by ${coverage.project_title || 'a maintenance project'}`
-                                                                            : undefined
-                                                                    }
-                                                                    className="text-red-600 focus:bg-red-50 focus:text-red-700"
-                                                                    onSelect={() => {
-                                                                        setDeleteError(
-                                                                            '',
-                                                                        );
-                                                                        setDeleteTargets(
-                                                                            [
-                                                                                coverage,
-                                                                            ],
-                                                                        );
-                                                                    }}
-                                                                >
-                                                                    <Trash2 className="size-4" />
-                                                                    Delete Road
-                                                                    Coverage
-                                                                </DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    )}
-                                            </td>
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <Pencil />
+                                                                        Edit
+                                                                        Road
+                                                                        Coverage
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem
+                                                                        disabled={
+                                                                            !effectiveCanDelete ||
+                                                                            Boolean(
+                                                                                coverage.has_projects,
+                                                                            )
+                                                                        }
+                                                                        title={
+                                                                            coverage.has_projects
+                                                                                ? `Referenced by ${coverage.project_title || 'a maintenance project'}`
+                                                                                : undefined
+                                                                        }
+                                                                        className="text-red-600 focus:bg-red-50 focus:text-red-700"
+                                                                        onSelect={() => {
+                                                                            setDeleteError(
+                                                                                '',
+                                                                            );
+                                                                            setDeleteTargets(
+                                                                                [
+                                                                                    coverage,
+                                                                                ],
+                                                                            );
+                                                                        }}
+                                                                    >
+                                                                        <Trash2 className="size-4" />
+                                                                        Delete
+                                                                        Road
+                                                                        Coverage
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        )}
+                                                </td>
+                                            )}
                                         </tr>
                                     ))}
                                 </tbody>

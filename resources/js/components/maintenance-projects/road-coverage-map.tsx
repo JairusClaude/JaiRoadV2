@@ -27,6 +27,7 @@ import {
     useRef,
     useState,
 } from 'react';
+import { savedRoadLines } from '@/lib/road-coverages/saved-lines';
 import type { CoverageChoice } from '@/types/maintenance-projects';
 import {
     DAVAO_DE_ORO_BOUNDS,
@@ -70,73 +71,21 @@ type RoadCollection = {
     features: RoadFeature[];
 };
 
-function validPair(value: unknown): value is [number, number] {
-    return (
-        Array.isArray(value) &&
-        value.length >= 2 &&
-        typeof value[0] === 'number' &&
-        typeof value[1] === 'number' &&
-        Number.isFinite(value[0]) &&
-        Number.isFinite(value[1]) &&
-        Math.abs(value[0]) <= 180 &&
-        Math.abs(value[1]) <= 90
-    );
-}
-
 function extractLines(geometry: unknown): LineGeometry[] {
+    let parsed = geometry;
+
     if (typeof geometry === 'string') {
         try {
-            return extractLines(JSON.parse(geometry));
+            parsed = JSON.parse(geometry);
         } catch {
             return [];
         }
     }
 
-    if (!geometry || typeof geometry !== 'object') {
-        return [];
-    }
-
-    const value = geometry as Record<string, unknown>;
-
-    if (value.type === 'Feature') {
-        return extractLines(value.geometry);
-    }
-
-    if (value.type === 'FeatureCollection' && Array.isArray(value.features)) {
-        return value.features.flatMap(extractLines);
-    }
-
-    if (
-        value.type === 'GeometryCollection' &&
-        Array.isArray(value.geometries)
-    ) {
-        return value.geometries.flatMap(extractLines);
-    }
-
-    if (value.type === 'LineString' && Array.isArray(value.coordinates)) {
-        const pairs = value.coordinates
-            .filter(validPair)
-            .map((point) => [point[0], point[1]]);
-
-        return pairs.length >= 2
-            ? [{ type: 'LineString', coordinates: pairs }]
-            : [];
-    }
-
-    if (value.type === 'MultiLineString' && Array.isArray(value.coordinates)) {
-        const parts = value.coordinates
-            .filter(Array.isArray)
-            .map((segment: unknown[]) =>
-                segment.filter(validPair).map((point) => [point[0], point[1]]),
-            )
-            .filter((segment: number[][]) => segment.length >= 2);
-
-        return parts.length
-            ? [{ type: 'MultiLineString', coordinates: parts }]
-            : [];
-    }
-
-    return [];
+    return savedRoadLines(parsed).map((coordinates) => ({
+        type: 'LineString',
+        coordinates,
+    }));
 }
 
 function featuresFor(
@@ -286,6 +235,8 @@ export function RoadCoverageMap({
     const [focus, setFocus] = useState(false);
     const [mapReady, setMapReady] = useState(false);
     const [mapError, setMapError] = useState('');
+    const basemapState = useRef<'loading' | 'ready' | 'fallback'>('loading');
+    const basemapDeadline = useRef<number | undefined>(undefined);
     const [roadsVisible, setRoadsVisible] = useState(true);
     const roadsVisibleRef = useRef(true);
     const selectedRef = useRef<number | null>(selectedId);
@@ -390,11 +341,34 @@ export function RoadCoverageMap({
         [fitProvince],
     );
 
+    const showSavedRoads = useCallback((map: MapLibreMap) => {
+        if (basemapState.current !== 'loading') {
+            return;
+        }
+
+        window.clearTimeout(basemapDeadline.current);
+        basemapState.current = 'fallback';
+        setMapError('Basemap unavailable. Showing saved road lines.');
+        map.setStyle({ version: 8, sources: {}, layers: [] }, { diff: false });
+    }, []);
+
+    const startBasemapDeadline = useCallback(
+        (map: MapLibreMap) => {
+            window.clearTimeout(basemapDeadline.current);
+            basemapDeadline.current = window.setTimeout(
+                () => showSavedRoads(map),
+                8_000,
+            );
+        },
+        [showSavedRoads],
+    );
+
     useEffect(() => {
         if (!containerRef.current) {
             return;
         }
 
+        basemapState.current = 'loading';
         const map = new MapLibreMap({
             container: containerRef.current,
             style: STYLE_URLS.street,
@@ -405,6 +379,7 @@ export function RoadCoverageMap({
             cooperativeGestures: true,
         });
         mapRef.current = map;
+        startBasemapDeadline(map);
         map.addControl(
             new NavigationControl({ visualizePitch: false }),
             'top-right',
@@ -415,6 +390,8 @@ export function RoadCoverageMap({
         );
 
         const installRoadLayers = () => {
+            window.clearTimeout(basemapDeadline.current);
+
             // Styles are replaced when switching Streets/Light; reinstall road layers.
             // The province remains geographically locked with maxBounds + center checks,
             // but NO provincial shading or highlighted outline is drawn.
@@ -473,6 +450,12 @@ export function RoadCoverageMap({
             }
 
             setMapReady(true);
+
+            if (basemapState.current === 'fallback') {
+                setMapError('Basemap unavailable. Showing saved road lines.');
+            } else {
+                basemapState.current = 'ready';
+            }
         };
         map.on('style.load', installRoadLayers);
         // Respect a preselected project road even on the first render.
@@ -494,9 +477,11 @@ export function RoadCoverageMap({
             }
         });
         map.on('error', () => {
-            if (!map.isStyleLoaded()) {
+            if (basemapState.current === 'loading') {
+                showSavedRoads(map);
+            } else if (basemapState.current === 'ready') {
                 setMapError(
-                    'Map tiles could not load. Check internet access to tiles.openfreemap.org.',
+                    'Some basemap tiles were unavailable. Saved road lines remain visible.',
                 );
             }
         });
@@ -542,12 +527,13 @@ export function RoadCoverageMap({
         });
 
         return () => {
+            window.clearTimeout(basemapDeadline.current);
             selectedMarkerRef.current?.remove();
             selectedMarkerRef.current = null;
             mapRef.current = null;
             map.remove();
         };
-    }, [fitProvince, fitRoads]);
+    }, [fitProvince, fitRoads, startBasemapDeadline, showSavedRoads]);
 
     useEffect(() => {
         const map = mapRef.current;
@@ -591,18 +577,28 @@ export function RoadCoverageMap({
         }
     }, [features, selectedId, fitRoads]);
 
+    const loadBasemap = useCallback(
+        (nextStyle: MapStyle) => {
+            const map = mapRef.current;
+
+            if (map) {
+                basemapState.current = 'loading';
+                setMapReady(false);
+                setMapError('');
+                startBasemapDeadline(map);
+                map.setStyle(STYLE_URLS[nextStyle], { diff: false });
+            }
+        },
+        [startBasemapDeadline],
+    );
+
     const activeStyleRef = useRef<MapStyle>('street');
     useEffect(() => {
-        const map = mapRef.current;
-
-        if (!map || activeStyleRef.current === style) {
-            return;
+        if (activeStyleRef.current !== style) {
+            activeStyleRef.current = style;
+            loadBasemap(style);
         }
-
-        activeStyleRef.current = style;
-        setMapReady(false);
-        map.setStyle(STYLE_URLS[style]);
-    }, [style]);
+    }, [loadBasemap, style]);
 
     useEffect(() => {
         const map = mapRef.current;
@@ -770,7 +766,14 @@ export function RoadCoverageMap({
                 )}
                 {mapError && (
                     <div className="jr-road-map-warning" role="alert">
-                        {mapError}
+                        <span>{mapError}</span>
+                        <button
+                            type="button"
+                            className="ml-2 font-semibold underline"
+                            onClick={() => loadBasemap(style)}
+                        >
+                            Retry basemap
+                        </button>
                     </div>
                 )}
                 <div className="jr-road-map-footer">

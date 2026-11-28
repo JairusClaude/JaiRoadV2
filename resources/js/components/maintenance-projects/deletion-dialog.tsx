@@ -12,6 +12,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import type { ReactNode, RefObject } from 'react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { useMobileDialogViewport } from '@/hooks/use-mobile-dialog-viewport';
 import type { DependentCounts } from '@/types/maintenance-projects';
 import '../../../css/jairoads-deletion-dialog.css';
 
@@ -112,6 +113,7 @@ export function DeletionDialog({
     onConfirm: (confirmation?: DeleteConfirmation) => void;
     returnFocus?: RefObject<HTMLElement | null>;
 }) {
+    const viewport = useMobileDialogViewport();
     const cancelRef = useRef<HTMLButtonElement>(null);
     const opener = useRef<HTMLElement | null>(null);
     const [confirmation, setConfirmation] = useState('');
@@ -207,6 +209,8 @@ export function DeletionDialog({
                 <Dialog.Overlay className="jr-delete-overlay" />
                 <Dialog.Content
                     className="jr-app jr-theme jr-delete-dialog jr-delete-premium"
+                    data-mobile-layout="sheet"
+                    ref={viewport}
                     data-blocked={blocked}
                     aria-busy={processing}
                     onOpenAutoFocus={(event) => {

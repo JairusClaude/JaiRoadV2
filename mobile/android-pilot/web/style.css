@@ -1,0 +1,412 @@
+#field-reports {
+    color-scheme: light;
+    font:
+        16px/1.5 system-ui,
+        sans-serif;
+    --page: #f4f5f8;
+    --surface: #fff;
+    --ink: #15253b;
+    --muted: #53657a;
+    --line: #e9e6e2;
+    --accent: var(--primary, #15253b);
+}
+#field-reports[data-appearance='dark'] {
+    color-scheme: dark;
+    --page: #111927;
+    --surface: #192435;
+    --ink: #eef4fb;
+    --muted: #b9c7d9;
+    --line: #344259;
+}
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+body.field-reports-open {
+    margin: 0;
+    background: #f4f5f8;
+}
+body.field-reports-open:has(#field-reports[data-appearance='dark']) {
+    background: #111927;
+}
+#field-reports {
+    color: var(--ink);
+    max-width: 46rem;
+    margin: auto;
+    padding: 1rem 1rem max(2rem, env(safe-area-inset-bottom));
+}
+#field-reports {
+    section {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 1rem;
+        padding: 1rem;
+        margin-block: 1rem;
+    }
+    h1 {
+        font-size: clamp(1.55rem, 7vw, 2rem);
+        line-height: 1.2;
+        margin: 0;
+    }
+    h2 {
+        font-size: 1.12rem;
+        margin: 0;
+    }
+    p {
+        margin-block: 0.4rem;
+        overflow-wrap: anywhere;
+    }
+    .eyebrow {
+        color: var(--muted);
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+    #message:not(:empty) {
+        background: var(--surface);
+        border-inline-start: 3px solid var(--accent);
+        padding: 0.7rem;
+    }
+    form {
+        display: grid;
+        gap: 0.9rem;
+        margin-block: 1rem;
+    }
+    label {
+        display: grid;
+        gap: 0.3rem;
+        min-width: 0;
+    }
+    input,
+    select,
+    textarea,
+    button {
+        font: inherit;
+        min-height: 44px;
+    }
+    input,
+    select,
+    textarea {
+        background: var(--surface);
+        color: var(--ink);
+        border: 1px solid var(--line);
+        border-radius: 0.55rem;
+        width: 100%;
+        padding: 0.45rem;
+    }
+    button {
+        border: 1px solid transparent;
+        border-radius: 0.55rem;
+        font-weight: 650;
+        background: var(--accent);
+        color: #fff;
+        padding: 0.45rem 0.8rem;
+    }
+    button:disabled {
+        opacity: 0.55;
+    }
+    button.secondary {
+        border-color: var(--line);
+        color: var(--ink);
+        background: var(--surface);
+    }
+    :focus-visible {
+        outline: 2px solid #c76e36;
+        outline-offset: 2px;
+    }
+    .fields {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 135px), 1fr));
+        gap: 0.6rem;
+    }
+    .check {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.6rem;
+    }
+    .check input {
+        width: 1.3rem;
+        min-height: 1.3rem;
+        margin-top: 0.22rem;
+        flex: none;
+    }
+    .title-row,
+    .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .actions {
+        justify-content: flex-start;
+        margin-block: 0.8rem;
+    }
+    details {
+        margin-block: 0.8rem;
+    }
+    summary {
+        cursor: pointer;
+        min-height: 44px;
+        align-content: center;
+    }
+    ul {
+        padding: 0;
+        list-style: none;
+    }
+    li {
+        border-top: 1px solid var(--line);
+        padding-block: 0.65rem;
+        overflow-wrap: anywhere;
+    }
+    li button,
+    li a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        margin-inline-end: 0.5rem;
+    }
+    a {
+        color: var(--ink);
+    }
+    #offline-mode {
+        border: 1px solid var(--line);
+        border-radius: 0.6rem;
+        background: var(--surface);
+        padding: 0.7rem;
+    }
+}
+
+#field-reports {
+    --accent: var(--primary, var(--ink));
+}
+#field-reports.has-field-banner {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+}
+#field-tabs,
+#field-inputs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+#field-inputs {
+    flex-direction: column;
+}
+#field-tabs button[aria-pressed='true'] {
+    color: var(--primary-foreground);
+    background: var(--primary);
+}
+#field-banner {
+    position: fixed;
+    z-index: 10;
+    inset: auto 0 0;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 9px 16px max(9px, env(safe-area-inset-bottom));
+    color: var(--primary-foreground, #fff);
+    background: var(--primary, var(--ink));
+    font-size: 0.86rem;
+    font-weight: 650;
+}
+#field-banner svg {
+    flex: none;
+}
+#discard-field-dialog {
+    max-width: min(24rem, calc(100vw - 24px));
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+}
+#discard-field-dialog::backdrop {
+    background: rgb(0 0 0 / 40%);
+}
+#field-message,
+#field-error {
+    padding: 0.55rem 0.75rem;
+    border-inline-start: 3px solid var(--primary);
+    background: var(--surface);
+}
+
+.open-dashboard-status {
+    margin: 0;
+    display: grid;
+    place-items: center;
+    min-height: 100svh;
+    font:
+        600 15px system-ui,
+        sans-serif;
+}
+#field-reports {
+    min-height: 100svh;
+    max-width: none;
+    padding: 0 0 max(2rem, env(safe-area-inset-bottom));
+    background: var(--page);
+}
+#field-reports .workspace-topbar {
+    position: sticky;
+    z-index: 3;
+    top: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    min-height: 58px;
+    padding: max(5px, env(safe-area-inset-top)) 1rem 5px;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+}
+#field-reports .workspace-menu-toggle,
+#field-reports .workspace-menu-close {
+    display: grid;
+    place-items: center;
+    padding: 0.45rem;
+    background: transparent;
+    color: var(--ink);
+}
+.workspace-brand {
+    font-weight: 750;
+    letter-spacing: -0.03em;
+}
+.workspace-role {
+    margin-inline-start: auto;
+    padding: 0.25rem 0.6rem;
+    border-radius: 1rem;
+    background: var(--jr-role-accent-soft);
+    color: var(--jr-role-accent-ink);
+    font-size: 0.75rem;
+    font-weight: 650;
+}
+.workspace-content {
+    max-width: 46rem;
+    margin-inline: auto;
+    padding: 0.9rem 1rem;
+}
+#field-reports .workspace-dashboard {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+}
+.workspace-heading {
+    padding: 1.1rem 1rem;
+    border-radius: 0.85rem;
+    background: var(--jr-role-accent-soft);
+    color: var(--jr-role-accent-ink);
+}
+.workspace-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.7rem;
+    margin-block: 0.9rem;
+}
+#field-reports .workspace-metrics button {
+    display: grid;
+    gap: 0.2rem;
+    justify-items: start;
+    padding: 0.9rem;
+    text-align: start;
+    font-size: 0.87rem;
+}
+.workspace-metrics strong {
+    color: var(--jr-role-accent);
+    font-size: 1.35rem;
+}
+#field-reports .workspace-menu {
+    inset: 0 auto 0 0;
+    width: min(84vw, 280px);
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    padding: 1rem;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    border: 0;
+    background: var(--surface);
+    color: var(--ink);
+    overscroll-behavior: contain;
+}
+.workspace-menu::backdrop {
+    background: rgb(0 0 0 / 35%);
+}
+.workspace-menu-header {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    margin-bottom: 0.8rem;
+}
+.workspace-menu-header button {
+    margin-inline-start: auto;
+    font-size: 1.4rem;
+}
+#field-reports #field-tabs {
+    display: grid;
+}
+#field-reports #field-tabs button {
+    text-align: start;
+}
+
+/* Match the hosted workspace's role-aware header, navigation and surfaces. */
+#field-reports .workspace-brand {
+    font-size: 1rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+#field-reports .workspace-role {
+    flex: none;
+}
+#field-reports .workspace-topbar {
+    min-height: 56px;
+    box-shadow: 0 1px 3px rgb(15 23 42 / 5%);
+}
+#field-reports .workspace-content {
+    padding-bottom: 1.25rem;
+}
+#field-reports .workspace-menu {
+    width: min(84vw, 280px);
+}
+#field-reports .workspace-menu-header {
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0.9rem;
+}
+#field-reports #field-tabs button {
+    border-color: transparent;
+    border-radius: 0.75rem;
+    padding-inline: 1rem;
+}
+#field-reports #field-tabs button[aria-pressed='true'] {
+    color: var(--primary-foreground, #fff);
+    background: var(--primary, var(--ink));
+}
+#field-reports #field-banner {
+    width: 100%;
+    text-align: center;
+    padding-inline: max(12px, env(safe-area-inset-left));
+}
+#field-reports[data-appearance='dark'] .workspace-heading,
+#field-reports[data-appearance='dark'] .workspace-role {
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--line);
+}
+
+#offline-road-map {
+    height: clamp(240px, 44vh, 440px);
+    margin-top: 10px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--page);
+    z-index: 0;
+}
+#field-reports .offline-photo {
+    display: block;
+    max-width: 100%;
+    max-height: 240px;
+    object-fit: contain;
+    margin-block: 8px;
+    border-radius: 8px;
+}
+#field-detail-content li { list-style: none; }
+#field-detail-content h2 { margin-top: 12px; }

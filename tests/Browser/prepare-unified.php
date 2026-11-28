@@ -13,6 +13,11 @@ final class UnifiedFrontendBrowserFixture extends PostgresTestCase
         $this->setUp();
         // Final DD: project and ManagingEngineer references must remain required.
         (require base_path('database/proposals/create_file_deletions.php'))->up(); // Guarded disposable rehearsal, never shared.
+        if (config('jairoads_monthly_updates.durable_receipts_enabled') === true) {
+            $sql = file_get_contents(base_path('database/proposals/monthly_submission_receipts_REVIEW_ONLY.sql'));
+            $this->assertIsString($sql);
+            DB::unprepared(str_replace(["\nBEGIN;\n", "\nCOMMIT;\n"], "\n", $sql));
+        }
         $f = $this->fixture('Engineer');
         $lgu = DB::table('jairoads_next.road_coverages')->where('id', $f['road'])->value('lgu_id');
         DB::table('jairoads_next.lgus')->where('id', $lgu)->update(['municipality_name' => 'Compostela']);

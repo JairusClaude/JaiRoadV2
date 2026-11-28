@@ -33,6 +33,20 @@ At 500 roads:
 
 The raw file also includes 1, 100 and 1000 roads. The one-LGU benchmark does not measure an N-LGU speedup; the regression fixture with 110 LGUs instead asserts a bounded query count (at most 12 for record creation) and compares batched choices with the individual approved eligibility results for Engineer/Admin/SuperAdmin. PHP memory/timing and browser limitations are described in the road report.
 
+## Improvement1 follow-up
+
+Maintenance record details now return at most 12 monthly updates and 12 documents per page while preserving total counts and earliest progress checkpoints across the complete history. Monthly report selection pages return 25 record choices plus at most one selected historical record, and request reporting-month data only for that record. The follow-up aggregates month occupancy into one 12-bit mask per occupied year, excludes the currently edited report, and retains exact duplicate detection across all supported years. This reduces a complete year from twelve row objects to one integer without another online request or a schema change; the number of occupied years can still grow. The regression fixture now exercises multiple report and document pages. These are structural bounds and regression assertions, not new measured latency or memory figures. The table above describes Repair 5A only; collect new same-fixture samples before claiming a speedup.
+
+The next candidate also omits the unused long report and document text from record-history list queries and returns full text on the individual detail routes. Comparison pages clamp out-of-range values, explicitly project only report ID/month, and query only image attachments for the comparison side. `HistoryPayloadMeasurementsTest.php` emits actual synthetic 1/100/1000-row observations in the focused PostgreSQL workflow logs (three warmed requests each) and asserts row bounds, exact totals, and omission of detail text. The focused PostgreSQL job for commit `59dcbf22359f5c9391e2cd1bde4c3ddcc6340673` ([45953193585 / 140353560327](https://github.com/JairusClaude/JaiRoadV2/actions/runs/45953193585/job/140353560327)) passed and emitted the following warmed-request medians:
+
+| Reports and documents each | JSON bytes | SQL queries | Server ms | Peak PHP delta bytes |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 2,942 | 11 | 9.562 | 94,760 |
+| 100 | 12,377 | 11 | 10.816 | 173,856 |
+| 1,000 | 12,427 | 11 | 19.277 | 173,856 |
+
+These are synthetic, uncompressed Inertia responses on the CI runner; they are not hosted performance figures or a controlled before/after speedup comparison. The same commit failed frontend TypeScript because the timeline still required the full report type, and browser installation failed on an unrelated Microsoft apt feed. The follow-up narrows the timeline contract and repairs the CI installation path without disabling any application check.
+
 ## Verification
 
 `LeanFormChoicesTest.php` proves all 110 authorized projects/periods remain present, the last fixed record is selectable, unauthorized fixed contexts fail, report uniqueness data is parent-scoped, batched manager eligibility is unchanged, and all 300 history rows remain reachable with complete descriptions on the detail route. Existing canonical, password, authorization and real browser suites remain enabled.

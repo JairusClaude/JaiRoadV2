@@ -1,5 +1,11 @@
 import { usePage } from '@inertiajs/react';
-import { CheckSquare, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+    CheckSquare,
+    ChevronLeft,
+    ChevronRight,
+    SlidersHorizontal,
+} from 'lucide-react';
+import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Select,
@@ -9,8 +15,55 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 
+/** A visible field caption does not replace the control's accessible name. */
+export function DirectoryFilterField({
+    label,
+    children,
+}: {
+    label: string;
+    children: ReactNode;
+}) {
+    return (
+        <div className="jr-directory-filter-field">
+            <span className="jr-directory-filter-label" aria-hidden="true">
+                {label}
+            </span>
+            {children}
+        </div>
+    );
+}
+
+export function DirectoryFilterHeading({
+    onReset,
+    disabled = false,
+}: {
+    onReset?: () => void;
+    disabled?: boolean;
+}) {
+    return (
+        <div className="jr-directory-filter-heading">
+            <h2>
+                <SlidersHorizontal aria-hidden="true" />
+                Search &amp; filter
+            </h2>
+            {onReset && (
+                <button
+                    type="button"
+                    className="jr-directory-filter-reset"
+                    disabled={disabled}
+                    onClick={onReset}
+                    aria-label="Reset search and filters"
+                >
+                    Reset
+                </button>
+            )}
+        </div>
+    );
+}
+
 export function DirectoryFilter({
     label,
+    fieldLabel,
     value,
     options,
     onChange,
@@ -18,13 +71,14 @@ export function DirectoryFilter({
     disabled = false,
 }: {
     label: string;
+    fieldLabel?: string;
     value: string;
     options: { value: string; label: string }[];
     onChange: (value: string) => void;
     className?: string;
     disabled?: boolean;
 }) {
-    return (
+    const control = (
         <Select value={value} onValueChange={onChange} disabled={disabled}>
             <SelectTrigger aria-label={label} className={className}>
                 <SelectValue />
@@ -46,6 +100,14 @@ export function DirectoryFilter({
                 ))}
             </SelectContent>
         </Select>
+    );
+
+    return fieldLabel ? (
+        <DirectoryFilterField label={fieldLabel}>
+            {control}
+        </DirectoryFilterField>
+    ) : (
+        control
     );
 }
 
@@ -87,7 +149,11 @@ export function DirectorySelectionToolbar({
             </span>
             {isViewer || !canDelete ? null : selecting ? (
                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={onCancel}>
+                    <Button
+                        className="jr-selection-toggle"
+                        variant="outline"
+                        onClick={onCancel}
+                    >
                         Cancel selection
                     </Button>
                     {canDelete && (
@@ -102,6 +168,7 @@ export function DirectorySelectionToolbar({
                 </div>
             ) : (
                 <Button
+                    className="jr-selection-toggle"
                     variant="outline"
                     disabled={disabled || total === 0}
                     onClick={onSelect}

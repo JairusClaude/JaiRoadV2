@@ -5,15 +5,18 @@ import { updateMonth } from '@/lib/monthly-updates';
 import { workspaceHref } from '@/lib/workspace-navigation';
 import type { MonthlyUpdateSummary } from '@/types/monthly-updates';
 
+type DeletableUpdate = Pick<
+    MonthlyUpdateSummary,
+    'id' | 'update_month' | 'project' | 'record' | 'media_count'
+>;
+
 export function useMonthlyDeletion(query: string) {
     const returnFocus = useRef<HTMLElement | null>(null);
-    const [selected, setSelected] = useState<MonthlyUpdateSummary[] | null>(
-        null,
-    );
+    const [selected, setSelected] = useState<DeletableUpdate[] | null>(null);
     const [bulk, setBulk] = useState(false);
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState('');
-    const open = (updates: MonthlyUpdateSummary[], multiple = false) => {
+    const open = (updates: DeletableUpdate[], multiple = false) => {
         if (processing) {
             return;
         }

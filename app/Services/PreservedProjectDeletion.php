@@ -117,6 +117,14 @@ final class PreservedProjectDeletion
             ->lockForUpdate()
             ->get();
 
+        // Fail before private file preflight when retained milestones exist.
+        if (Schema::hasTable('jairoads_next.maintenance_milestones')
+            && DB::table('jairoads_next.maintenance_milestones')->whereIn('maintenance_id', $records->pluck('id'))->exists()) {
+            throw ValidationException::withMessages([
+                'confirmation_token' => 'This project has retained milestones. Project deletion is unavailable until an approved preservation workflow exists.',
+            ]);
+        }
+
         $updates = DB::table('jairoads_next.monthly_updates')
             ->whereIn('maintenance_id', $records->pluck('id'))
             ->orderBy('id')

@@ -1,0 +1,202 @@
+name: JaiROADS Android field pilot
+
+on:
+  push:
+    branches: [Improvement1]
+    paths:
+      - 'mobile/android-pilot/**'
+      - '.github/workflows/android-field-pilot.yml'
+      - 'resources/js/lib/encrypted-field-draft.mjs'
+      - 'resources/js/lib/receipt-queue.ts'
+      - 'resources/js/**'
+      - 'resources/css/**'
+      - 'public/images/**'
+      - 'vite.config.ts'
+  workflow_dispatch:
+    inputs:
+      require_stable_signing:
+        description: Require the organization's stable signing certificate
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: android-field-pilot-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  apk:
+    name: Build internal Android pilot APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx vite build --config mobile/android-pilot/vite.config.mjs
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with:
+          php-version: '8.4'
+          extensions: 'pdo_pgsql, pdo_sqlite, mbstring'
+          tools: composer:v2
+          coverage: none
+      - run: |
+          bash scripts/ci/install-composer.sh
+          touch .env
+          php artisan wayfinder:generate --with-form
+          npm run types:check
+          npx tsc --project mobile/android-pilot/tsconfig.json
+          npm run build -- --mode review
+      - run: node mobile/android-pilot/package-workspace.mjs
+      - name: Restore public offline map bundle cache
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
+        with:
+          path: mobile/android-pilot/build/web/bundled-maps
+          key: jairoads-ddo-maps-v2-${{ hashFiles('mobile/android-pilot/build-open-map-packs.py') }}
+      - name: Prepare verified offline map bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          maps=mobile/android-pilot/build/web/bundled-maps
+          script=mobile/android-pilot/build-open-map-packs.py
+          if python3 "$script" --verify-only; then
+            echo "Reusing verified cached public map assets."
+            exit 0
+          fi
+          rm -rf "$maps"
+          # Seed from a known successful artifact only when the map generator is unchanged.
+          # The complete artifact digest and every map/network hash must match.
+          if [[ "$REPOSITORY" == "JairusClaude/JaiRoadV2" && "$(git hash-object "$script")" == "5ed1c377dc2d3f1e14daebb535b32716efe59b1c" ]]; then
+            seed="$RUNNER_TEMP/jairoads-verified-map-seed.zip"
+            if curl --fail --silent --show-error --location --retry 2 --retry-delay 5 --max-time 120 \
+              -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/$REPOSITORY/actions/artifacts/15266558887/zip" -o "$seed" &&
+              echo "fa278f63fe0c54fd7c845c7971ed42f0b76a0f54e01d1da6283a8eb904134d8a  $seed" | sha256sum --check &&
+              python3 mobile/android-pilot/restore-verified-maps.py "$seed" "$maps" &&
+              python3 "$script" --verify-only; then
+              rm -f "$seed"
+              echo "Reused the verified v0.5.3 geographic assets; new workspace and APK are still built from current source."
+              exit 0
+            fi
+            rm -f "$seed"
+            rm -rf "$maps"
+            echo "::notice::Prior map artifact unavailable; regenerating from licensed sources."
+          fi
+          python3 -m venv /tmp/jairoads-maps
+          /tmp/jairoads-maps/bin/pip install --disable-pip-version-check requests numpy pillow rasterio shapely osmium
+          /tmp/jairoads-maps/bin/python "$script"
+      - name: Verify source and map asset hashes
+        run: |
+          node tests/Browser/offline-network-unit.mjs
+          python3 mobile/android-pilot/build-open-map-packs.py --verify-only
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
+        with:
+          packages: 'platforms;android-35 build-tools;35.0.0'
+      - name: Restore Gradle dependency cache
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
+        with:
+          path: ~/.gradle/caches/modules-2
+          key: jairoads-gradle-${{ runner.os }}-8.11.1-${{ hashFiles('mobile/android-pilot/android/**/*.gradle', 'mobile/android-pilot/android/gradle.properties') }}
+      - name: Assemble APK and verify signing certificate
+        env:
+          ANDROID_KEYSTORE_B64: ${{ secrets.JAIROADS_ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.JAIROADS_ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.JAIROADS_ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.JAIROADS_ANDROID_KEY_PASSWORD }}
+          ANDROID_CERT_SHA256: ${{ secrets.JAIROADS_ANDROID_CERT_SHA256 }}
+          REQUIRE_STABLE: ${{ inputs.require_stable_signing || false }}
+        run: |
+          set -euo pipefail
+          gradle_archive="$RUNNER_TEMP/gradle-8.11.1-bin.zip"
+          curl --fail --silent --show-error --location --retry 3 --retry-delay 10 --max-time 180 https://services.gradle.org/distributions/gradle-8.11.1-bin.zip -o "$gradle_archive"
+          echo "f397b287023acdba1e9f6fc5ea72d22dd63669d59ed4a289a29b1a76eee151c6  $gradle_archive" | sha256sum --check
+          unzip -q "$gradle_archive" -d "$RUNNER_TEMP"
+          gradle="$RUNNER_TEMP/gradle-8.11.1/bin/gradle"
+          assemble() {
+            local task="$1"
+            local log="$RUNNER_TEMP/jairoads-gradle-attempt.log"
+            for attempt in 1 2 3; do
+              if "$gradle" --no-daemon -p mobile/android-pilot/android "$task" 2>&1 | tee "$log"; then
+                return 0
+              fi
+              if [[ "$attempt" == 3 ]] || ! grep -Eqi 'Received status code (429|5[0-9][0-9])|Read timed out|Connection reset|connect timed out|Temporary failure in name resolution' "$log"; then
+                return 1
+              fi
+              echo "::warning::Transient Gradle dependency/network failure; retrying with downloaded dependencies retained."
+              sleep "$((30 * attempt))"
+            done
+            return 1
+          }
+          signer="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          mkdir -p mobile/android-pilot/build/delivery
+          apk=mobile/android-pilot/build/delivery/JaiROADS.apk
+          if [[ -n "$ANDROID_KEYSTORE_B64" || -n "$ANDROID_KEYSTORE_PASSWORD" || -n "$ANDROID_KEY_ALIAS" || -n "$ANDROID_KEY_PASSWORD" || -n "$ANDROID_CERT_SHA256" || "$REQUIRE_STABLE" == true ]]; then
+            if [[ -z "$ANDROID_KEYSTORE_B64" || -z "$ANDROID_KEYSTORE_PASSWORD" || -z "$ANDROID_KEY_ALIAS" || -z "$ANDROID_KEY_PASSWORD" || -z "$ANDROID_CERT_SHA256" ]]; then
+              echo "Stable signing requested but the organization's signing configuration is incomplete."
+              exit 1
+            fi
+            keyfile=$(mktemp "$RUNNER_TEMP/jairoads-signing-XXXXXX.p12")
+            trap 'rm -f "$keyfile"' EXIT
+            chmod 600 "$keyfile"
+            printf '%s' "$ANDROID_KEYSTORE_B64" | base64 --decode > "$keyfile"
+            assemble :app:assembleRelease
+            "$signer" sign --ks "$keyfile" --ks-key-alias "$ANDROID_KEY_ALIAS" --ks-pass env:ANDROID_KEYSTORE_PASSWORD --key-pass env:ANDROID_KEY_PASSWORD --out "$apk" mobile/android-pilot/android/app/build/outputs/apk/release/app-release-unsigned.apk
+            actual=$("$signer" verify --print-certs "$apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+            expected=$(printf '%s' "$ANDROID_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')
+            if [[ "$actual" != "$expected" ]]; then
+              echo "Signing certificate does not match the pinned organization certificate."
+              exit 1
+            fi
+            echo "Stable release signing verified."
+          else
+            assemble :app:assembleDebug
+            cp mobile/android-pilot/android/app/build/outputs/apk/debug/app-debug.apk "$apk"
+            echo "::warning::Ephemeral debug signing is for review only; do not uninstall a prior app containing unsynced work."
+          fi
+          "$signer" verify --print-certs "$apk"
+          unzip -l "$apk" | grep 'assets/index.html'
+          unzip -l "$apk" | grep 'assets/workspace.html'
+          unzip -l "$apk" | grep 'assets/site-build/manifest.json'
+          unzip -l "$apk" | grep 'assets/bundled-maps/road-network.json'
+          unzip -p "$apk" assets/bundled-maps/manifest.json | python3 -c 'import json,sys; m=json.load(sys.stdin); p=m["packs"]; assert {x["id"] for x in p} == {"ddo-streets","ddo-sentinel"}; assert m["network"]["bytes"] > 0; print([(x["id"], len(x["tiles"]), x["maxZoom"]) for x in p])'
+          # Confirm the packaged manifest references the branded launcher resource.
+          "$ANDROID_HOME/build-tools/35.0.0/aapt2" dump badging "$apk" > "$RUNNER_TEMP/jairoads-apk-badging.txt"
+          grep -E "^application: .*icon='[^']*ic_launcher" "$RUNNER_TEMP/jairoads-apk-badging.txt"
+          unzip -l "$apk" | grep -E 'res/.*peo_ddo_logo\.webp'
+          unzip -l "$apk" | grep -E 'res/.*ic_launcher\.xml'
+          # Reject a regression to an app-supplied opaque launcher background.
+          python3 - "$apk" <<'PY'
+          import pathlib, sys, xml.etree.ElementTree as ET, zipfile
+          root = pathlib.Path("mobile/android-pilot/android/app/src/main/res")
+          ns = "{http://schemas.android.com/apk/res/android}"
+          icon = ET.parse(root / "mipmap-anydpi-v26/ic_launcher.xml").getroot()
+          assert icon.find("background").attrib[ns + "drawable"] == "@android:color/transparent"
+          logo = (root / "drawable-nodpi/peo_ddo_logo.webp").read_bytes()
+          with zipfile.ZipFile(sys.argv[1]) as apk:
+              assets = [n for n in apk.namelist() if n.startswith("res/") and n.endswith("/peo_ddo_logo.webp")]
+              assert len(assets) == 1 and apk.read(assets[0]) == logo
+          print("Transparent launcher background and original emblem verified.")
+          PY
+          sha256sum "$apk"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: JaiROADS-Android-Field-Pilot
+          path: mobile/android-pilot/build/delivery/JaiROADS.apk
+          if-no-files-found: error

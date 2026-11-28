@@ -13,6 +13,7 @@ use App\Services\RoleAccess;
 use App\Services\SecurityMonitoring\AuthenticationTelemetry;
 use App\Services\SecurityMonitoring\OnlinePresence;
 use App\Services\SecurityMonitoring\SessionCatalog;
+use App\Support\BoundedDirectoryPage;
 use App\Support\LiteralDirectorySearch;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Query\Builder;
@@ -62,9 +63,8 @@ final class AuditHistoryController extends Controller
         }
         $this->dates($query, $v, 'activity', 'audit.created_at');
         $direction = ($v['activity_order'] ?? 'newest') === 'oldest' ? 'asc' : 'desc';
-        $events = $query->orderBy('audit.created_at', $direction)->orderBy('audit.id', $direction)
-            ->paginate(25, ['audit.id', 'audit.user_id', 'audit.actor_identifier', 'audit.action', 'audit.entity_type', 'audit.entity_id', 'audit.description',
-                'audit.old_value', 'audit.new_value', 'audit.recipient_user_id', 'audit.notification_message', 'audit.created_at', 'account.account_type as current_account_type'])
+        $events = BoundedDirectoryPage::paginate($query->orderBy('audit.created_at', $direction)->orderBy('audit.id', $direction), $request, 25, ['audit.id', 'audit.user_id', 'audit.actor_identifier', 'audit.action', 'audit.entity_type', 'audit.entity_id', 'audit.description',
+            'audit.old_value', 'audit.new_value', 'audit.recipient_user_id', 'audit.notification_message', 'audit.created_at', 'account.account_type as current_account_type'])
             ->withPath($request->getPathInfo())->withQueryString()->through(function (\stdClass $row): array {
                 $row->description = AuditActorIdentifier::description($row->description);
                 foreach (['old_value', 'new_value'] as $field) {
@@ -79,7 +79,7 @@ final class AuditHistoryController extends Controller
             });
         $available = app(AuthenticationTelemetry::class)->available();
         $collecting = $available && config('security-monitoring.enabled') && app(AuthenticationTelemetry::class)->available(true);
-        $authentication = new LengthAwarePaginator([], 0, 25, max(1, $request->integer('auth_page', 1)), ['path' => $request->getPathInfo(), 'pageName' => 'auth_page']);
+        $authentication = new LengthAwarePaginator([], 0, 25, 1, ['path' => $request->getPathInfo(), 'pageName' => 'auth_page']);
         $success = $failures = 0;
         if ($available) {
             try {
@@ -95,7 +95,7 @@ final class AuditHistoryController extends Controller
                     $reference = SessionCatalog::reference(mb_strtolower(trim($v['auth_search'])), 'attempt');
                     $auth->where(static fn (Builder $q) => $q->where('actor_identifier', 'ilike', $search)->orWhereRaw("regexp_replace(actor_identifier, '^DD-UserAccount#', 'User Account #', 'i') ILIKE ?", [$search])->orWhere('attempted_identifier', 'ilike', $search)->orWhere('attempt_reference', $reference));
                 }
-                $authentication = $auth->orderByDesc('created_at')->orderByDesc('id')->paginate(25,
+                $authentication = BoundedDirectoryPage::paginate($auth->orderByDesc('created_at')->orderByDesc('id'), $request, 25,
                     ['id', 'user_account_id', 'actor_identifier', 'account_type', 'attempted_identifier', 'event', 'outcome', 'method', 'client_description', 'created_at'], 'auth_page')
                     ->withPath($request->getPathInfo())->withQueryString()->through(static function (\stdClass $row): array {
                         $row->actor_identifier = AuditActorIdentifier::display($row->actor_identifier);
@@ -105,7 +105,7 @@ final class AuditHistoryController extends Controller
                     });
             } catch (\Throwable) {
                 $available = $collecting = false;
-                $authentication = new LengthAwarePaginator([], 0, 25, max(1, $request->integer('auth_page', 1)), ['path' => $request->getPathInfo(), 'pageName' => 'auth_page']);
+                $authentication = new LengthAwarePaginator([], 0, 25, 1, ['path' => $request->getPathInfo(), 'pageName' => 'auth_page']);
             }
         }
         $presence = app(OnlinePresence::class)->readForRequest($request, $actor);

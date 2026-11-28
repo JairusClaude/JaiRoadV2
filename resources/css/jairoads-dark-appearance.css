@@ -2,17 +2,45 @@
    Scope DD Settings and the modern Settings preview so role accent palettes,
    read-only permissions, and semantic status colors remain unchanged. */
 
+/* Shared dark surfaces follow the active workspace identity, including portalled menus. */
+html.dark body:has(.jr-superadmin-workspace) {
+    --jr-role-dark-canvas: #190f2a;
+    --jr-role-dark-surface: #30213e;
+    --jr-role-dark-elevated: #3b294d;
+    --jr-role-dark-border: #8b72a5;
+    --jr-role-dark-text: #faf5ff;
+    --jr-role-dark-muted: #d9c9ee;
+}
+
+html.dark body:has(.jr-admin-workspace) {
+    --jr-role-dark-canvas: #251217;
+    --jr-role-dark-surface: #361b22;
+    --jr-role-dark-elevated: #44242e;
+    --jr-role-dark-border: #a86e7d;
+    --jr-role-dark-text: #fff5f5;
+    --jr-role-dark-muted: #f0c6ce;
+}
+
+html.dark body:has(.jr-engineer-workspace) {
+    --jr-role-dark-canvas: #211610;
+    --jr-role-dark-surface: #352218;
+    --jr-role-dark-elevated: #432c20;
+    --jr-role-dark-border: #a57b5d;
+    --jr-role-dark-text: #fff7ed;
+    --jr-role-dark-muted: #efd0b7;
+}
+
 html.dark .jr-app:has(.jr-workspace-settings) {
-    --background: #0b1220;
-    --foreground: #e2e8f0;
-    --card: #172238;
-    --card-foreground: #e2e8f0;
-    --popover: #172238;
-    --popover-foreground: #e2e8f0;
-    --muted: #223149;
-    --muted-foreground: #b0c0d6;
-    --border: #36475d;
-    --input: #40516a;
+    --background: var(--jr-role-dark-canvas, #0b1220);
+    --foreground: var(--jr-role-dark-text, #e2e8f0);
+    --card: var(--jr-role-dark-surface, #172238);
+    --card-foreground: var(--jr-role-dark-text, #e2e8f0);
+    --popover: var(--jr-role-dark-surface, #172238);
+    --popover-foreground: var(--jr-role-dark-text, #e2e8f0);
+    --muted: var(--jr-role-dark-elevated, #223149);
+    --muted-foreground: var(--jr-role-dark-muted, #b0c0d6);
+    --border: var(--jr-role-dark-border, #36475d);
+    --input: var(--jr-role-dark-border, #40516a);
     --color-background: var(--background);
     --color-foreground: var(--foreground);
     --color-card: var(--card);
@@ -24,77 +52,77 @@ html.dark .jr-app:has(.jr-workspace-settings) {
     --color-border: var(--border);
     --color-input: var(--input);
     color-scheme: dark;
-    color: #e2e8f0;
-    background-color: #0b1220 !important;
+    color: var(--jr-role-dark-text, #e2e8f0);
+    background-color: var(--jr-role-dark-canvas, #0b1220) !important;
 }
 html.dark
     .jr-app:has(.jr-workspace-settings)
     :is(.jr-stage, .jr-content, .jr-workspace) {
-    background-color: #0b1220 !important;
-    color: #e2e8f0;
+    background-color: var(--jr-role-dark-canvas, #0b1220) !important;
+    color: var(--jr-role-dark-text, #e2e8f0);
 }
 html.dark .jr-app:has(.jr-workspace-settings) .jr-global-header {
-    background-color: #172238 !important;
-    border-color: #36475d !important;
-    color: #cbd5e1;
+    background-color: var(--jr-role-dark-surface, #172238) !important;
+    border-color: var(--jr-role-dark-border, #36475d) !important;
+    color: var(--jr-role-dark-text, #cbd5e1);
 }
 html.dark .jr-app:has(.jr-workspace-settings) .jr-global-header strong {
-    color: #f1f5f9;
+    color: var(--jr-role-dark-text, #f1f5f9);
 }
 html.dark .jr-workspace-settings .jr-page-head {
-    background-color: #131f31 !important;
+    background-color: var(--jr-role-dark-surface, #131f31) !important;
 }
 html.dark .jr-workspace-settings .jr-page-head::before {
     opacity: 0.16;
 }
 html.dark .jr-workspace-settings .jr-page-head h1 {
-    color: #f1f5f9 !important;
+    color: var(--jr-role-dark-text, #f1f5f9) !important;
 }
 html.dark .jr-workspace-settings .jr-page-head p {
-    color: #aabbd0 !important;
+    color: var(--jr-role-dark-muted, #aabbd0) !important;
 }
 html.dark .jr-workspace-settings main {
-    background-color: #0f172a !important;
-    color: #e2e8f0;
+    background-color: var(--jr-role-dark-canvas, #0f172a) !important;
+    color: var(--jr-role-dark-text, #e2e8f0);
 }
 html.dark .jr-workspace-settings main > section,
 html.dark .jr-workspace-settings main > div.grid > section {
-    border-color: #36475d !important;
-    background-color: #172238 !important;
+    border-color: var(--jr-role-dark-border, #36475d) !important;
+    background-color: var(--jr-role-dark-surface, #172238) !important;
 }
 html.dark .jr-workspace-settings main section .rounded-xl.bg-white,
 html.dark .jr-workspace-settings main section .rounded-xl.bg-slate-50 {
-    background-color: #223149 !important;
-    border-color: #40516a !important;
+    background-color: var(--jr-role-dark-elevated, #223149) !important;
+    border-color: var(--jr-role-dark-border, #40516a) !important;
 }
 html.dark
     .jr-workspace-settings
     :is(.text-slate-900, .text-slate-800, .text-slate-700) {
-    color: #e2e8f0 !important;
+    color: var(--jr-role-dark-text, #e2e8f0) !important;
 }
 html.dark .jr-workspace-settings :is(.text-slate-600, .text-slate-500) {
-    color: #b0c0d6 !important;
+    color: var(--jr-role-dark-muted, #b0c0d6) !important;
 }
 html.dark .jr-workspace-settings input {
     color-scheme: dark;
-    color: #f1f5f9 !important;
-    background-color: #223149 !important;
-    border-color: #52637a !important;
+    color: var(--jr-role-dark-text, #f1f5f9) !important;
+    background-color: var(--jr-role-dark-elevated, #223149) !important;
+    border-color: var(--jr-role-dark-border, #52637a) !important;
 }
 html.dark .jr-workspace-settings input:focus {
     border-color: var(--jr-role-accent, #a78bfa) !important;
 }
 html.dark .jr-workspace-settings button[aria-pressed='false'] {
-    color: #e2e8f0 !important;
-    background-color: #223149 !important;
-    border-color: #40516a !important;
+    color: var(--jr-role-dark-text, #e2e8f0) !important;
+    background-color: var(--jr-role-dark-elevated, #223149) !important;
+    border-color: var(--jr-role-dark-border, #40516a) !important;
 }
 html.dark .jr-workspace-settings button[aria-pressed='false']:hover {
-    background-color: #2d405b !important;
+    background-color: var(--jr-role-dark-surface, #2d405b) !important;
 }
 html.dark .jr-workspace-settings button[aria-pressed='true'] {
     color: var(--jr-dark-selection-text, #c4b5fd) !important;
-    background-color: #29374d !important;
+    background-color: var(--jr-role-dark-elevated, #29374d) !important;
     border-color: var(--jr-role-accent, #51269b) !important;
 }
 html.dark body:has(.jr-superadmin-workspace) .jr-workspace-settings {
@@ -133,36 +161,36 @@ html.dark
     .jr-responsive-shell:has(.jr-settings)
     .jr-normal-workspace.jr-content-view,
 html.dark .jr-responsive-shell:has(.jr-settings) .jr-workspace {
-    background-color: #0f172a !important;
-    border-color: #36475d !important;
-    color: #e2e8f0;
+    background-color: var(--jr-role-dark-canvas, #0f172a) !important;
+    border-color: var(--jr-role-dark-border, #36475d) !important;
+    color: var(--jr-role-dark-text, #e2e8f0);
 }
 html.dark .jr-responsive-shell:has(.jr-settings) .jr-normal-workspace {
-    --jr-surface: #0f172a;
-    --jr-surface-soft: #172238;
-    --jr-divider: #36475d;
-    --jr-ink: #e2e8f0;
-    --jr-muted: #aabbd0;
+    --jr-surface: var(--jr-role-dark-canvas, #0f172a);
+    --jr-surface-soft: var(--jr-role-dark-surface, #172238);
+    --jr-divider: var(--jr-role-dark-border, #36475d);
+    --jr-ink: var(--jr-role-dark-text, #e2e8f0);
+    --jr-muted: var(--jr-role-dark-muted, #aabbd0);
 }
 html.dark .jr-responsive-shell:has(.jr-settings) .jr-page-head h1 {
-    color: #f1f5f9 !important;
+    color: var(--jr-role-dark-text, #f1f5f9) !important;
 }
 html.dark .jr-responsive-shell:has(.jr-settings) .jr-page-head p {
-    color: #aabbd0 !important;
+    color: var(--jr-role-dark-muted, #aabbd0) !important;
 }
 
 /* Settings pages in the canonical module shell also need dark tokens.
    Keep role-specific --primary, --ring and sidebar palette definitions. */
 html.dark .jr-app:has(.jr-settings) .jr-theme,
 html.dark .jr-app.jr-theme:has(.jr-settings) {
-    --background: #0b1220;
-    --foreground: #e2e8f0;
-    --card: #172238;
-    --card-foreground: #e2e8f0;
-    --popover: #172238;
-    --popover-foreground: #e2e8f0;
-    --border: #36475d;
-    --input: #40516a;
+    --background: var(--jr-role-dark-canvas, #0b1220);
+    --foreground: var(--jr-role-dark-text, #e2e8f0);
+    --card: var(--jr-role-dark-surface, #172238);
+    --card-foreground: var(--jr-role-dark-text, #e2e8f0);
+    --popover: var(--jr-role-dark-surface, #172238);
+    --popover-foreground: var(--jr-role-dark-text, #e2e8f0);
+    --border: var(--jr-role-dark-border, #36475d);
+    --input: var(--jr-role-dark-border, #40516a);
     --color-background: var(--background);
     --color-foreground: var(--foreground);
     --color-card: var(--card);
@@ -177,4 +205,157 @@ html.dark .jr-app.jr-theme:has(.jr-settings) {
 html.dark .jr-workspace-settings .jr-appearance-choice[aria-pressed='true'] {
     background-color: var(--jr-dark-selection-bg, #432868) !important;
     border-color: var(--jr-dark-selection-text, #c4b5fd) !important;
+}
+
+/* Directory tokens retain the shared slate palette for workspaces without an override. */
+html.dark body {
+    --jr-dark-surface: var(--jr-role-dark-surface, #1e293b);
+    --jr-dark-elevated: var(--jr-role-dark-elevated, #263449);
+    --jr-dark-border: var(--jr-role-dark-border, #40516a);
+    --jr-dark-text: var(--jr-role-dark-text, #e2e8f0);
+    --jr-dark-muted: var(--jr-role-dark-muted, #a7b5ca);
+}
+
+html.dark
+    .jr-app
+    :is(.jr-directory-exploration, .jr-monthly-directory)
+    .jr-page-head {
+    background-color: var(--jr-dark-surface);
+}
+
+html.dark
+    .jr-app
+    :is(.jr-directory-exploration, .jr-monthly-directory)
+    .jr-page-head::before {
+    opacity: 0.24;
+}
+
+html.dark .jr-app :is(.jr-filters, .jr-metric-card, .jr-empty) {
+    background-color: var(--jr-dark-surface);
+    border-color: var(--jr-dark-border);
+    color: var(--jr-dark-text);
+}
+
+html.dark
+    .jr-app
+    :is(.jr-search input, .jr-filter-row [data-slot='select-trigger']),
+html.dark .jr-app .jr-table-footer [data-slot='button']:not([aria-current]) {
+    background-color: var(--jr-dark-elevated);
+    border-color: var(--jr-dark-border);
+    color: var(--jr-dark-text);
+}
+
+html.dark .jr-app .jr-search input::placeholder {
+    color: var(--jr-dark-muted);
+}
+
+html.dark .jr-app .jr-table th {
+    background-color: var(--jr-dark-elevated);
+    color: var(--jr-dark-text);
+}
+
+html.dark .jr-app .jr-table td {
+    border-color: var(--jr-dark-border);
+    color: var(--jr-dark-text);
+}
+
+html.dark .jr-app .jr-table tr:is(:hover, :focus-within) {
+    background-color: var(--jr-dark-elevated);
+}
+
+html.dark .jr-app .jr-table tr[data-selected='true'] {
+    background-color: var(--jr-display-soft, var(--jr-dark-elevated));
+}
+
+html.dark
+    .jr-app
+    .jr-table
+    :is(.jr-project-title, .jr-monthly-context-links a) {
+    color: var(--jr-dark-text);
+}
+
+html.dark
+    .jr-app
+    .jr-table
+    :is(.jr-project-title, .jr-monthly-context-links a):hover {
+    color: var(--jr-display-accent, var(--jr-dark-text));
+    text-decoration: underline;
+}
+
+html.dark
+    .jr-app
+    :is(.jr-project-id, .jr-muted, .jr-table-toolbar, .jr-table-footer) {
+    color: var(--jr-dark-muted);
+}
+
+html.dark .jr-app .jr-monthly-progress-track {
+    background-color: var(--jr-dark-elevated);
+}
+
+html.dark .jr-app .jr-metric-card .jr-metric-value {
+    color: var(--jr-dark-text);
+}
+
+html.dark
+    .jr-app
+    .jr-metric-card
+    :is(.jr-metric-label, .jr-metric-description) {
+    color: var(--jr-dark-muted);
+}
+
+html.dark .jr-app .jr-metric-card:first-child > .jr-metric-label {
+    color: var(--jr-display-accent, var(--jr-dark-text)) !important;
+}
+
+html.dark
+    .jr-app
+    .jr-road-coverage-directory
+    :is(
+        .jr-road-coverage-main-container,
+        .jr-map-card-container,
+        .jr-table-card-container
+    ) {
+    background-color: var(--jr-dark-surface);
+    border-color: var(--jr-dark-border);
+    color: var(--jr-dark-text);
+}
+
+html.dark
+    .jr-app
+    .jr-road-coverage-directory
+    :is(.jr-metric-unit, .jr-map-count) {
+    color: var(--jr-dark-muted);
+}
+
+html.dark body:has(.jr-viewer-workspace) .jr-monthly-progress > span {
+    color: var(--jr-display-accent) !important;
+}
+
+html.dark body:has(.jr-viewer-workspace) .jr-monthly-progress-track > span {
+    background: var(--jr-display-accent) !important;
+}
+
+html.dark
+    body:has(
+        .jr-superadmin-workspace,
+        .jr-admin-workspace,
+        .jr-engineer-workspace
+    )
+    .jr-table-toolbar
+    .jr-selection-toggle {
+    background-color: var(--jr-dark-elevated);
+    border-color: var(--jr-dark-border);
+    color: var(--jr-dark-text);
+}
+
+html.dark
+    body:has(
+        .jr-superadmin-workspace,
+        .jr-admin-workspace,
+        .jr-engineer-workspace
+    )
+    .jr-table-toolbar
+    .jr-selection-toggle:hover {
+    background-color: var(--jr-display-soft, var(--jr-dark-surface));
+    color: var(--jr-display-accent, var(--jr-dark-text));
 }

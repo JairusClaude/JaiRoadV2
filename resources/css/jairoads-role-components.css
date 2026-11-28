@@ -696,3 +696,48 @@ html.dark .jr-dashboard-analytics [class*='text-[var(--jr-role-accent'] {
     .jr-primary {
     display: none !important;
 }
+
+.jr-analytics-export {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    gap: 8px;
+    padding-inline: 14px;
+    border: 1px solid var(--jr-display-accent, currentColor);
+    border-radius: 10px;
+    background-color: var(--jr-display-soft, var(--muted));
+    color: var(--jr-display-accent, var(--foreground));
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.jr-analytics-export:hover:not(:disabled),
+.jr-analytics-export-menu [data-highlighted] {
+    background-color: var(--jr-display-soft, var(--muted));
+    color: var(--jr-display-accent, var(--foreground));
+    text-decoration: underline;
+}
+
+.jr-analytics-export:focus-visible {
+    outline: 2px solid var(--jr-display-accent, currentColor);
+    outline-offset: 2px;
+}
+
+.jr-analytics-export:disabled {
+    cursor: wait;
+    opacity: 0.72;
+}
+
+.jr-analytics-export-menu {
+    min-width: 11rem;
+}
+
+.jr-analytics-export-menu [data-slot='dropdown-menu-item'] {
+    min-height: 44px;
+}
+
+html.dark .jr-analytics-export-menu {
+    border-color: var(--jr-dark-border);
+    background-color: var(--jr-dark-surface);
+    color: var(--jr-dark-text);
+}

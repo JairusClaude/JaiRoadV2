@@ -1,26 +1,31 @@
 import L from 'leaflet';
-import { Map, Maximize2, Minimize2 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { Download, Map, Maximize2, Minimize2 } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { watchBasemap } from '@/lib/road-coverages/basemap';
+import type { BasemapStatus } from '@/lib/road-coverages/basemap';
+import { attachFieldBasemap } from '@/lib/road-coverages/field-basemap';
 import { mappingData } from '@/lib/road-coverages/geometry.mjs';
-import { savedRoadLines } from '@/lib/road-coverages/saved-lines';
+import {
+    savedLineMetrics,
+    savedRoadLines,
+} from '@/lib/road-coverages/saved-lines';
 import 'leaflet/dist/leaflet.css';
 import '../../../css/road-coverage-details.css';
 
 // A display-only map: never initialize the editor, call routing, or change data.
 export function CoverageMapPreview({ geojson }: { geojson: unknown | null }) {
-    let parsed: object | null = null;
-
-    if (typeof geojson === 'string') {
-        try {
-            parsed = JSON.parse(geojson);
-        } catch {
-            parsed = null;
+    const parsed = useMemo(() => {
+        if (typeof geojson === 'string') {
+            try {
+                return JSON.parse(geojson) as object;
+            } catch {
+                return null;
+            }
         }
-    } else if (geojson && typeof geojson === 'object') {
-        parsed = geojson;
-    }
 
-    const lines = savedRoadLines(parsed);
+        return geojson && typeof geojson === 'object' ? geojson : null;
+    }, [geojson]);
+    const lines = useMemo(() => savedRoadLines(parsed), [parsed]);
 
     if (!lines.length) {
         return (
@@ -35,18 +40,24 @@ export function CoverageMapPreview({ geojson }: { geojson: unknown | null }) {
         );
     }
 
-    return <SavedCoverageMap geojson={parsed!} />;
+    return <SavedCoverageMap geojson={parsed!} lines={lines} />;
 }
 
-function SavedCoverageMap({ geojson }: { geojson: object }) {
+function SavedCoverageMap({
+    geojson,
+    lines,
+}: {
+    geojson: object;
+    lines: ReturnType<typeof savedRoadLines>;
+}) {
     const container = useRef<HTMLDivElement>(null);
     const node = useRef<HTMLDivElement>(null);
     const [full, setFull] = useState(false);
     const [notice, setNotice] = useState('');
+    const [basemap, setBasemap] = useState<BasemapStatus>('loading');
+    const tileMonitor = useRef<ReturnType<typeof watchBasemap> | null>(null);
 
     useEffect(() => {
-        const lines = savedRoadLines(geojson);
-
         if (!node.current || !lines.length) {
             return;
         }
@@ -56,10 +67,17 @@ function SavedCoverageMap({ geojson }: { geojson: object }) {
             zoomAnimation: false,
             inertia: false,
         });
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '© OpenStreetMap contributors',
-        }).addTo(map);
+        const tiles = L.tileLayer(
+            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap contributors',
+            },
+        );
+        const monitor = watchBasemap(tiles, setBasemap);
+        tileMonitor.current = monitor;
+        tiles.addTo(map);
+        attachFieldBasemap(map, tiles, setBasemap);
         L.control.scale({ imperial: false }).addTo(map);
         L.polyline(
             lines.map((line) =>
@@ -113,12 +131,15 @@ function SavedCoverageMap({ geojson }: { geojson: object }) {
 
         return () => {
             disposed = true;
+            monitor.dispose();
+            tileMonitor.current = null;
             resize.disconnect();
             document.removeEventListener('fullscreenchange', fullscreen);
             map.stop();
             map.remove();
         };
-    }, [geojson]);
+    }, [geojson, lines]);
+    const metrics = useMemo(() => savedLineMetrics(lines), [lines]);
 
     return (
         <div className="jr-coverage-map-preview" ref={container}>
@@ -128,6 +149,32 @@ function SavedCoverageMap({ geojson }: { geojson: object }) {
                 role="region"
                 aria-label="Saved road coverage map. Use arrow keys to pan and plus or minus to zoom."
             />
+            <button
+                type="button"
+                className="jr-map-geometry-download"
+                aria-label="Download saved road geometry (GeoJSON)"
+                title="Download GeoJSON"
+                onClick={() => {
+                    const geometry = {
+                        type: 'MultiLineString',
+                        coordinates: lines,
+                    };
+                    const url = URL.createObjectURL(
+                        new Blob([JSON.stringify(geometry)], {
+                            type: 'application/geo+json',
+                        }),
+                    );
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'jairoads-road-geometry.geojson';
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+                }}
+            >
+                <Download size={18} aria-hidden="true" />
+            </button>
             <button
                 type="button"
                 className="jr-map-fullscreen"
@@ -148,10 +195,32 @@ function SavedCoverageMap({ geojson }: { geojson: object }) {
             >
                 {full ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
             </button>
-            {notice && (
-                <p className="jr-coverage-map-notice" role="status">
-                    {notice}
-                </p>
+            <div
+                className="jr-map-geometry-facts"
+                aria-label="Saved geometry measurements"
+            >
+                Approx. {metrics.kilometers.toFixed(2)} km · {metrics.segments}{' '}
+                line(s) · {metrics.vertices} vertices
+            </div>
+            {(notice || basemap === 'unavailable') && (
+                <div className="jr-coverage-map-notice">
+                    {notice && <p role="status">{notice}</p>}
+                    {basemap === 'unavailable' && (
+                        <>
+                            <p role="status">
+                                Background map unavailable. Saved road geometry
+                                remains available.
+                            </p>
+                            <button
+                                type="button"
+                                className="font-semibold underline"
+                                onClick={() => tileMonitor.current?.retry()}
+                            >
+                                Retry map tiles
+                            </button>
+                        </>
+                    )}
+                </div>
             )}
         </div>
     );

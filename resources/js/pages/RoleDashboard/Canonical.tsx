@@ -1,8 +1,7 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import {
     Bell,
     Eye,
-    RefreshCw,
     CircleAlert,
     FileText,
     FolderKanban,
@@ -15,9 +14,11 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { DashboardAnalytics } from '@/components/dashboard/dashboard-analytics';
 import type { DashboardSummary } from '@/components/dashboard/dashboard-analytics';
+import { DashboardRefresh } from '@/components/dashboard/dashboard-refresh';
 import { RenderErrorBoundary } from '@/components/jairoads/render-error-boundary';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import type { SimplifiedCoverageItem } from '@/components/road-coverages/simplified-coverage-map';
+import { validRoadPage } from '@/lib/road-coverages/road-page';
 import '../../../css/maintenance-projects-exploration.css';
 
 type Role = 'engineer' | 'viewer';
@@ -103,14 +104,7 @@ function DashboardRoadMap({
                     next_cursor: number | null;
                 };
 
-                if (
-                    !Array.isArray(result.data) ||
-                    (result.next_cursor !== null &&
-                        (!Number.isSafeInteger(result.next_cursor) ||
-                            result.next_cursor <= 0 ||
-                            (requestCursor !== null &&
-                                result.next_cursor >= requestCursor)))
-                ) {
+                if (!validRoadPage(result, requestCursor, 'descending')) {
                     throw new Error('Invalid map data');
                 }
 
@@ -286,7 +280,6 @@ export default function RoleDashboard({
     analytics,
 }: Props) {
     const isEngineer = role === 'engineer';
-    const [refreshing, setRefreshing] = useState(false);
     const notificationPanel = (
         <section
             className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm"
@@ -321,7 +314,11 @@ export default function RoleDashboard({
 
     return (
         <div
-            className={`jr-directory-exploration${isEngineer ? 'jr-engineer-dashboard' : 'jr-viewer-dashboard'}`}
+            className={
+                isEngineer
+                    ? 'jr-directory-exploration jr-engineer-dashboard'
+                    : 'jr-directory-exploration jr-viewer-dashboard'
+            }
         >
             <Head
                 title={`${isEngineer ? 'Engineer' : 'Viewer'} Dashboard · JaiROADS`}
@@ -352,27 +349,7 @@ export default function RoleDashboard({
                         </p>
                     </div>
                     {isEngineer && (
-                        <button
-                            type="button"
-                            className={
-                                isEngineer
-                                    ? 'jr-engineer-refresh'
-                                    : 'jr-viewer-refresh'
-                            }
-                            disabled={refreshing}
-                            onClick={() =>
-                                router.reload({
-                                    onStart: () => setRefreshing(true),
-                                    onFinish: () => setRefreshing(false),
-                                })
-                            }
-                        >
-                            <RefreshCw
-                                className={`size-4${refreshing ? 'animate-spin' : ''}`}
-                                aria-hidden="true"
-                            />
-                            {refreshing ? 'Refreshing…' : 'Refresh dashboard'}
-                        </button>
+                        <DashboardRefresh className="jr-engineer-refresh" />
                     )}
                 </div>
 
@@ -386,7 +363,7 @@ export default function RoleDashboard({
                         aria-label="Road maintenance summary"
                     >
                         <div
-                            className={`grid gap-3 sm:grid-cols-2 xl:grid-cols-4${isEngineer ? 'jr-engineer-metrics' : 'jr-viewer-metrics'}`}
+                            className={`grid gap-3 sm:grid-cols-2 xl:grid-cols-4 ${isEngineer ? 'jr-engineer-metrics' : 'jr-viewer-metrics'}`}
                         >
                             {isEngineer ? (
                                 <>
@@ -479,6 +456,7 @@ export default function RoleDashboard({
                         omitInventoryMetrics
                         omitOngoingMetric={isEngineer}
                         showActivity={false}
+                        showExport={isEngineer}
                         activityReplacement={
                             isEngineer ? notificationPanel : undefined
                         }

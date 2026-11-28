@@ -23,8 +23,13 @@ export type MonthlyUpdateSummary = {
     media_count: number;
 };
 
+export type MonthlyDirectoryRow = Omit<
+    MonthlyUpdateSummary,
+    'summary_of_text_reports'
+>;
+
 export type MonthlyUpdatePage = {
-    data: MonthlyUpdateSummary[];
+    data: MonthlyDirectoryRow[];
     total: number;
     current_page: number;
     last_page: number;
@@ -63,10 +68,17 @@ export type MonthlyCreateProps = {
         maintenance_id: number;
         update_month: string;
     }[];
+    occupiedMonths?: {
+        recordId: number;
+        years: Record<string, number>;
+    } | null;
     contextRecordId?: number;
+    formChoicesUrl?: string | null;
     update?: MonthlyUpdateSummary;
     media?: MonthlyMedia[];
     submitUrl?: string;
+    reconnectAccountId?: number | null;
+    durableReceiptsAvailable?: boolean;
     cancelUrl: string;
 };
 
@@ -88,4 +100,9 @@ export type MonthlyDetailProps = {
     backLabel: string;
     directoryUrl: string;
     canUploadMedia?: boolean;
+    comparisonPeriods?: { id: number; month: string }[];
+    comparisonPage?: number;
+    comparisonHasMore?: boolean;
+    comparisonMedia?: MonthlyMedia[];
+    comparisonPeriod?: { id: number; month: string } | null;
 };

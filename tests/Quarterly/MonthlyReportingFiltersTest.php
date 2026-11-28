@@ -99,3 +99,109 @@ it('handles supported zero-padded reporting years without casting the stored mon
     $this->get('/workspace/ui/monthly-updates?year=1')->assertInertia(fn (Assert $page) => $page
         ->where('years', [2027, 2026, 1])->where('filters.year', '1')->has('updates.data', 1)->where('updates.data.0.id', $id));
 });
+
+it('loads scoped monthly form choices on demand', function (): void {
+    $other = $this->fixture('Engineer');
+    $otherRecord = (int) DB::table('jairoads_next.maintenance_records')->insertGetId(
+        $this->recordData($other['project'], $other['engineer']) + ['created_by' => $other['user']->canonical_user_account_id]
+    );
+    ($this->report)('2026-03', '2028-01-02 00:00:00', $otherRecord);
+    $this->actingAs($this->f['user']);
+
+    $this->get('/workspace/ui/monthly-updates/create')->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('formChoicesUrl', '/workspace/ui/monthly-updates/form-choices')
+            ->has('projects', 0)->has('records', 0)->has('existingUpdates', 0));
+    $url = '/workspace/ui/monthly-updates/form-choices';
+    $this->getJson($url)->assertOk()->assertHeader('Cache-Control', 'no-store, private')->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $this->f['project']);
+    $this->getJson($url.'?page=999999999')->assertOk()
+        ->assertJsonPath('page', 1)->assertJsonCount(1, 'data');
+    $this->getJson($url.'?project='.$this->f['project'])->assertOk()->assertJsonPath('project.id', $this->f['project'])
+        ->assertJsonCount(1, 'records')->assertJsonPath('records.0.id', $this->recordId)
+        ->assertJsonCount(0, 'existingUpdates')->assertJsonPath('recordHasMore', false);
+    $this->getJson($url.'?project='.$this->f['project'].'&record='.$this->recordId)
+        ->assertOk()->assertJsonCount(0, 'existingUpdates')->assertJsonPath('selectedRecordId', $this->recordId)
+        ->assertJsonPath('occupiedMonths.recordId', $this->recordId)
+        ->assertJsonPath('occupiedMonths.years.2026', 1)->assertJsonPath('occupiedMonths.years.2027', 2048);
+    $this->getJson($url.'?project='.$this->f['project'].'&record='.$otherRecord)->assertNotFound();
+    for ($year = 2030; $year < 2056; $year++) {
+        DB::table('jairoads_next.maintenance_records')->insert(
+            $this->recordData($this->f['project'], $this->f['engineer'], 'Q1', $year) + ['created_by' => $this->f['user']->canonical_user_account_id]
+        );
+    }
+    $this->getJson($url.'?project='.$this->f['project'])->assertOk()
+        ->assertJsonCount(25, 'records')->assertJsonPath('recordHasMore', true)->assertJsonCount(0, 'existingUpdates');
+    $this->getJson($url.'?project='.$this->f['project'].'&record='.$this->recordId)->assertOk()
+        ->assertJsonCount(26, 'records')->assertJsonCount(0, 'existingUpdates')
+        ->assertJsonPath('occupiedMonths.years.2026', 1)->assertJsonPath('occupiedMonths.years.2027', 2048);
+    $this->getJson($url.'?project='.$this->f['project'].'&record_page=2')->assertOk()
+        ->assertJsonCount(2, 'records')->assertJsonPath('recordHasMore', false);
+    $this->getJson($url.'?project='.$other['project'])->assertNotFound();
+    $this->withSession(['password_hash_web' => null])->actingAs($this->account('Viewer'));
+    $this->getJson($url)->assertForbidden();
+});
+
+it('checks an uncertain report period without writing or exposing report content', function (): void {
+    $url = '/workspace/ui/monthly-updates/submission-outcome?'.http_build_query([
+        'account_id' => $this->f['user']->canonical_user_account_id,
+        'project_id' => $this->f['project'],
+        'maintenance_id' => $this->recordId,
+    ]);
+    $this->getJson($url.'&update_month=2026-01')->assertOk()
+        ->assertHeader('Cache-Control', 'no-store, private')
+        ->assertExactJson(['reportId' => $this->january]);
+    $this->getJson($url.'&update_month=2026-02')->assertOk()->assertExactJson(['reportId' => null]);
+    $this->getJson($url.'&update_month=0000-01')->assertUnprocessable();
+    $this->getJson($url.'&update_month=2026-01&account_id=999999999')->assertForbidden();
+    DB::table('jairoads_next.maintenance_records')->where('id', $this->recordId)->update(['managing_engineer_id' => $this->engineer()]);
+    $this->getJson($url.'&update_month=2026-01')->assertNotFound();
+    expect(DB::table('jairoads_next.monthly_updates')->count())->toBe(2);
+});
+
+it('keeps older comparison periods reachable and clamps excessive page numbers', function (): void {
+    $older = ($this->report)('2000-01', '2028-01-01 00:00:00');
+    for ($i = 0; $i < 64; $i++) {
+        ($this->report)(sprintf('%04d-%02d', 2001 + intdiv($i, 12), $i % 12 + 1), '2028-01-01 00:00:00');
+    }
+    $url = '/workspace/ui/monthly-updates/'.$this->december;
+    $this->get($url.'?compare='.$older)->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('comparisonPage', 1)->where('comparisonHasMore', true)
+        ->has('comparisonPeriods', 61)->where('comparisonPeriods.0.id', $older)
+        ->where('comparisonPeriod.id', $older)->missing('comparisonPeriods.0.summary_of_text_reports'));
+    $this->get($url.'?comparison_page=999999999&compare='.$older)->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('comparisonPage', 2)->where('comparisonHasMore', false)
+        ->has('comparisonPeriods', 6)->where('comparisonPeriod.id', $older));
+    $other = $this->fixture('Engineer');
+    $otherRecord = (int) DB::table('jairoads_next.maintenance_records')->insertGetId(
+        $this->recordData($other['project'], $other['engineer']) + ['created_by' => $other['user']->canonical_user_account_id]
+    );
+    $foreign = ($this->report)('2000-01', '2028-01-01 00:00:00', $otherRecord);
+    $this->withSession(['password_hash_web' => null])->actingAs($this->f['user'])->get($url.'?compare='.$foreign)->assertNotFound();
+});
+
+it('compresses complete report occupancy without losing old months or rejecting the edited report itself', function (): void {
+    $rows = [];
+    for ($i = 0; $i < 1200; $i++) {
+        $rows[] = [
+            'maintenance_id' => $this->recordId,
+            'update_month' => sprintf('%04d-%02d', 1900 + intdiv($i, 12), $i % 12 + 1),
+            'progress_percentage' => 20,
+            'created_by' => $this->f['user']->canonical_user_account_id,
+        ];
+    }
+    foreach (array_chunk($rows, 100) as $chunk) {
+        DB::table('jairoads_next.monthly_updates')->insert($chunk);
+    }
+    ($this->report)('0001-01', '2028-01-01 00:00:00');
+    ($this->report)('9999-12', '2028-01-01 00:00:00');
+    $url = '/workspace/ui/monthly-updates/form-choices?project='.$this->f['project'].'&record='.$this->recordId;
+    $response = $this->getJson($url)->assertOk()->assertJsonCount(0, 'existingUpdates')
+        ->assertJsonCount(104, 'occupiedMonths.years')->assertJsonPath('occupiedMonths.years.1900', 4095)
+        ->assertJsonPath('occupiedMonths.years.1999', 4095)->assertJsonPath('occupiedMonths.years.0001', 1)
+        ->assertJsonPath('occupiedMonths.years.9999', 2048);
+    expect(strlen($response->getContent()))->toBeLessThan(5000);
+    $this->get('/workspace/ui/monthly-updates/'.$this->january.'/edit')->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->has('existingUpdates', 0)
+            ->where('occupiedMonths.recordId', $this->recordId)->missing('occupiedMonths.years.2026')
+            ->where('occupiedMonths.years.2027', 2048));
+});

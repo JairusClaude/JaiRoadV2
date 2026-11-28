@@ -1,12 +1,20 @@
-import { createInertiaApp } from '@inertiajs/react';
+import { createInertiaApp, router } from '@inertiajs/react';
 import { lazy, Suspense, useEffect } from 'react';
 import '../css/jairoads-role-components.css';
 import '../css/jairoads-dark-appearance.css';
-import { JaiRoadsNavigationFeedback } from '@/components/jairoads/navigation-feedback';
+import {
+    AndroidFieldFeedback,
+    JaiRoadsNavigationFeedback,
+} from '@/components/jairoads/navigation-feedback';
 import { RenderErrorBoundary } from '@/components/jairoads/render-error-boundary';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
+import {
+    androidWorkspace,
+    fieldHttp,
+    installFieldResources,
+} from '@/lib/android-workspace-bridge';
 import '../css/jairoads-motion.css';
 
 // Load workspace shells only after the corresponding page is requested.
@@ -33,7 +41,27 @@ function DismissStartupMessage() {
     return null;
 }
 
+const fieldWorkspace = androidWorkspace();
+
+if (fieldWorkspace) {
+    installFieldResources(fieldWorkspace);
+    void import('@/lib/road-coverages/offline-map-packs').then(
+        ({ prepareOfflineMapPacks }) => {
+            const prepare = () => {
+                void prepareOfflineMapPacks(
+                    () => !fieldWorkspace.status().offline,
+                );
+            };
+            window.addEventListener('jairoads-field-status', prepare);
+            prepare();
+        },
+    );
+}
+
 void createInertiaApp({
+    ...(fieldWorkspace
+        ? { page: fieldWorkspace.initial, http: fieldHttp(fieldWorkspace) }
+        : {}),
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         switch (true) {
@@ -88,11 +116,12 @@ void createInertiaApp({
                         <div className="grid min-h-screen place-items-center text-sm">
                             <div className="text-center">
                                 <p role="alert">
-                                    JaiROADS could not open this page.
+                                    JaiROADS could not open this page. Check the
+                                    record before retrying a submission.
                                 </p>
                                 <button
                                     type="button"
-                                    className="mt-3 underline"
+                                    className="mt-3 rounded px-3 py-2 underline focus-visible:ring-2"
                                     onClick={() => window.location.reload()}
                                 >
                                     Reload page
@@ -105,9 +134,21 @@ void createInertiaApp({
                         fallback={
                             <div
                                 role="status"
-                                className="grid min-h-screen place-items-center text-sm"
+                                className="mx-auto flex min-h-screen w-full max-w-5xl flex-col justify-center gap-4 p-6 text-sm"
                             >
-                                Loading JaiROADS workspace…
+                                <span>Loading JaiROADS workspace…</span>
+                                <div
+                                    aria-hidden="true"
+                                    className="space-y-4 motion-safe:animate-pulse"
+                                >
+                                    <div className="h-9 w-2/5 rounded-lg bg-muted" />
+                                    <div className="grid gap-3 sm:grid-cols-3">
+                                        <div className="h-24 rounded-xl bg-muted" />
+                                        <div className="h-24 rounded-xl bg-muted" />
+                                        <div className="h-24 rounded-xl bg-muted" />
+                                    </div>
+                                    <div className="h-48 rounded-xl bg-muted" />
+                                </div>
                             </div>
                         }
                     >
@@ -116,19 +157,33 @@ void createInertiaApp({
                 </RenderErrorBoundary>
                 <DismissStartupMessage />
                 <JaiRoadsNavigationFeedback />
+                <AndroidFieldFeedback />
                 <Toaster />
             </TooltipProvider>
         );
     },
     progress: false,
-}).catch(() => {
-    const message = document.getElementById('jairoads-startup-message');
+})
+    .then(() => {
+        if (fieldWorkspace) {
+            router.on('navigate', (event) =>
+                fieldWorkspace.current(event.detail.page),
+            );
+            window.addEventListener('jairoads-field-back', () =>
+                router.visit('/workspace/dashboard'),
+            );
+            fieldWorkspace.ready();
+        }
+    })
+    .catch(() => {
+        fieldWorkspace?.fail();
+        const message = document.getElementById('jairoads-startup-message');
 
-    if (message) {
-        message.textContent =
-            'JaiROADS could not load. Check your connection and reload the page.';
-    }
-});
+        if (message) {
+            message.textContent =
+                'JaiROADS could not load. Check your connection and reload the page.';
+        }
+    });
 
 // This will set light / dark mode on load...
 initializeTheme();

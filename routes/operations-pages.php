@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\AndroidFieldController;
+use App\Http\Controllers\AndroidPilotController;
 use App\Http\Controllers\AuditLogPageController;
 use App\Http\Controllers\LguPageController;
 use App\Http\Controllers\MaintenanceDocumentPageController;
@@ -13,8 +15,22 @@ use App\Http\Controllers\PreservedHistoryController;
 use App\Http\Controllers\RoadCoveragePageController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/android-pilot/availability', [AndroidPilotController::class, 'availability'])
+    ->middleware('throttle:30,1,jr-android-availability-')->name('jairoads.android.availability');
+
 // These URLs are canonical DD projections. Legacy public.* route quarantine stays intact.
 Route::middleware(['auth'])->prefix('workspace/ui')->name('jairoads.ui.')->group(function (): void {
+    Route::get('/android-field/workspace', [AndroidFieldController::class, 'workspace'])
+        ->middleware('throttle:60,1,jr-field-workspace-')->name('android-field.workspace');
+    Route::post('/android-field/operations', [AndroidFieldController::class, 'submit'])
+        ->middleware('throttle:60,1,jr-field-operations-')->name('android-field.operations');
+    Route::post('/android-field/attachments', [AndroidFieldController::class, 'submitAttachment'])
+        ->middleware('throttle:8,1,jr-field-attachments-')->name('android-field.attachments');
+    Route::get('/android-pilot/workspace', [AndroidPilotController::class, 'workspace'])
+        ->middleware('throttle:60,1,jr-android-workspace-')->name('android.workspace');
+    Route::post('/android-pilot/reports', [AndroidPilotController::class, 'submit'])
+        ->middleware('throttle:30,1,jr-android-reports-')->name('android.reports');
+    Route::get('/record-search', [OperationsFrontendController::class, 'recordSearch'])->middleware('throttle:60,1,jr-record-search-')->name('record-search');
     Route::get('/map/roads', [RoadCoveragePageController::class, 'roadReferences'])->name('roads.references');
     Route::get('/map/road-index', [RoadCoveragePageController::class, 'roadMapPage'])->middleware('throttle:90,1,jr-road-index-map-')->name('roads.map-page');
     Route::get('/road-coverages', [RoadCoveragePageController::class, 'roadIndex'])->name('roads.index');
@@ -43,6 +59,8 @@ Route::middleware(['auth'])->prefix('workspace/ui')->name('jairoads.ui.')->group
     Route::get('/maintenance-projects/{project}/records/{id}/edit', [MaintenanceRecordPageController::class, 'recordForm'])->whereNumber('project')->whereNumber('id')->name('records.edit');
     Route::post('/maintenance-projects/{project}/records', [MaintenanceRecordPageController::class, 'saveRecord'])->whereNumber('project')->name('records.store');
     Route::put('/maintenance-projects/{project}/records/{id}', [MaintenanceRecordPageController::class, 'saveRecord'])->whereNumber('project')->whereNumber('id')->name('records.update');
+    Route::post('/maintenance-projects/{project}/records/{id}/milestones', [MaintenanceRecordPageController::class, 'saveMilestone'])->whereNumber('project')->whereNumber('id')->middleware('throttle:20,1,jr-milestones-')->name('records.milestones.store');
+    Route::put('/maintenance-projects/{project}/records/{id}/milestones/{milestone}', [MaintenanceRecordPageController::class, 'saveMilestone'])->whereNumber('project')->whereNumber('id')->whereNumber('milestone')->middleware('throttle:20,1,jr-milestones-')->name('records.milestones.update');
     Route::post('/maintenance-projects/{project}/records/{id}/reassignment', [MaintenanceRecordPageController::class, 'reassign'])->whereNumber('project')->whereNumber('id')->middleware('throttle:10,1,jr-records-reassign-')->name('records.reassign');
     Route::get('/maintenance-records', [MaintenanceRecordPageController::class, 'recordIndex'])->name('records.index');
     Route::get('/record-period-choices', [MaintenanceRecordPageController::class, 'periodChoices'])->middleware('throttle:90,1,jr-record-period-choices-')->name('records.period-choices');
@@ -51,6 +69,8 @@ Route::middleware(['auth'])->prefix('workspace/ui')->name('jairoads.ui.')->group
     Route::delete('/maintenance-records/{id}', [MaintenanceRecordPageController::class, 'deleteRecord'])->whereNumber('id')->name('records.destroy');
     Route::get('/monthly-updates', [MonthlyUpdatePageController::class, 'updateIndex'])->name('updates.index');
     Route::get('/monthly-updates/create', [MonthlyUpdatePageController::class, 'updateForm'])->name('updates.create');
+    Route::get('/monthly-updates/form-choices', [MonthlyUpdatePageController::class, 'formChoices'])->middleware('throttle:90,1,jr-monthly-form-choices-')->name('updates.form-choices');
+    Route::get('/monthly-updates/submission-outcome', [MonthlyUpdatePageController::class, 'submissionOutcome'])->middleware('throttle:30,1,jr-monthly-outcome-')->name('updates.submission-outcome');
     Route::get('/monthly-updates/{id}', [MonthlyUpdatePageController::class, 'updateShow'])->whereNumber('id')->name('updates.show');
     Route::get('/monthly-updates/{id}/edit', [MonthlyUpdatePageController::class, 'updateForm'])->whereNumber('id')->name('updates.edit');
     Route::post('/monthly-updates', [MonthlyUpdatePageController::class, 'saveUpdate'])->name('updates.store');

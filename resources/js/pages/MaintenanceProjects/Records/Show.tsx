@@ -5,14 +5,20 @@ import {
     RecordDeletionDialog,
     useRecordDeletion,
 } from '@/components/maintenance-projects/record-deletion';
+import { RecordMilestones } from '@/components/maintenance-projects/record-milestones';
+import type { Milestone } from '@/components/maintenance-projects/record-milestones';
+import { RecordProgressTimeline } from '@/components/maintenance-projects/record-progress-timeline';
 import { RecordRelatedLists } from '@/components/maintenance-projects/record-related-lists';
-import type { RelatedMonthlyUpdate } from '@/components/maintenance-projects/record-related-lists';
+import type {
+    RelatedDocument,
+    RelatedMonthlyUpdate,
+    RelatedPagination,
+} from '@/components/maintenance-projects/record-related-lists';
 import { Button } from '@/components/ui/button';
 import { editUrl } from '@/lib/form-navigation';
 import { engineerName, validRecordDate } from '@/lib/maintenance-records';
 import { manilaTimestamp } from '@/lib/manila-time';
 import { workspaceHref } from '@/lib/workspace-navigation';
-import type { DocumentSummary } from '@/types/maintenance-documents';
 import type { ProjectSummary } from '@/types/maintenance-projects';
 import type { MaintenanceRecordDetail } from '@/types/maintenance-records';
 
@@ -31,12 +37,22 @@ export default function ShowRecord({
     monthlyUpdateCreateUrl,
     documents = [],
     updates = [],
+    documentPagination,
+    updatePagination,
+    checkpointMonths,
+    milestones = null,
+    milestonesWritable = false,
 }: {
     project: ProjectSummary;
     record: MaintenanceRecordDetail;
     monthlyUpdateCreateUrl?: string;
-    documents?: DocumentSummary[];
+    documents?: RelatedDocument[];
     updates?: RelatedMonthlyUpdate[];
+    documentPagination?: RelatedPagination;
+    updatePagination?: RelatedPagination;
+    checkpointMonths?: (string | null)[];
+    milestones?: Milestone[] | null;
+    milestonesWritable?: boolean;
     canReassign?: boolean;
     canUnassign?: boolean;
     managerChoices?: { id: number; first_name: string; last_name: string }[];
@@ -193,11 +209,28 @@ export default function ShowRecord({
                         </div>
                     </dl>
                 </section>
+                <RecordProgressTimeline
+                    record={record}
+                    updates={updates}
+                    checkpointMonths={checkpointMonths}
+                    pagination={updatePagination}
+                />
+                {milestones && (
+                    <RecordMilestones
+                        milestones={milestones}
+                        writable={milestonesWritable && !isViewer}
+                        url={workspaceHref(
+                            `/maintenance-projects/${project.id}/records/${record.id}/milestones`,
+                        )}
+                    />
+                )}
                 <RecordRelatedLists
                     recordId={record.id}
                     monthlyUpdateCreateUrl={monthlyUpdateCreateUrl}
                     updates={updates}
                     documents={documents}
+                    documentPagination={documentPagination}
+                    updatePagination={updatePagination}
                 />
             </ProjectWorkspace>
             <RecordDeletionDialog deletion={deletion} />

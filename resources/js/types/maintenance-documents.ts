@@ -26,7 +26,8 @@ export type DocumentSummary = MaintenanceDocument & {
 export type DocumentParents = {
     projects: MonthlyParentProject[];
     records: MonthlyParentRecord[];
-    contextRecordId?: number;
+    contextRecordId?: number | null;
+    formChoicesUrl?: string;
     document?: DocumentSummary;
     cancelUrl: string;
     submitUrl: string;
@@ -38,7 +39,7 @@ export type DocumentFilters = {
 };
 export type DocumentDirectoryProps = {
     documents: {
-        data: DocumentSummary[];
+        data: Omit<DocumentSummary, 'description'>[];
         total: number;
         current_page: number;
         last_page: number;

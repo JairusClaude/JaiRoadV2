@@ -15,6 +15,7 @@ final class MonthlyUpdatePageRoutingTest extends TestCase
         $expected = [
             'jairoads.ui.updates.index' => ['GET', 'workspace/ui/monthly-updates', 'updateIndex'],
             'jairoads.ui.updates.create' => ['GET', 'workspace/ui/monthly-updates/create', 'updateForm'],
+            'jairoads.ui.updates.submission-outcome' => ['GET', 'workspace/ui/monthly-updates/submission-outcome', 'submissionOutcome'],
             'jairoads.ui.updates.show' => ['GET', 'workspace/ui/monthly-updates/{id}', 'updateShow'],
             'jairoads.ui.updates.edit' => ['GET', 'workspace/ui/monthly-updates/{id}/edit', 'updateForm'],
             'jairoads.ui.updates.store' => ['POST', 'workspace/ui/monthly-updates', 'saveUpdate'],

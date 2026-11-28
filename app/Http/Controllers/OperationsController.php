@@ -13,6 +13,7 @@ use App\Services\Files\PermanentFileDeletion;
 use App\Services\Files\UploadJournal;
 use App\Services\LinkedPasswordUpdater;
 use App\Services\ManagingEngineerEligibility;
+use App\Services\MonthlyUpdates\MonthlySubmissionReceipt;
 use App\Services\MonthlyUpdates\PrivateMonthlyMediaStorage;
 use App\Services\OperationAudit;
 use App\Services\PreservedProjectDeletion;
@@ -300,6 +301,21 @@ class OperationsController extends Controller
         ]);
     }
 
+    private function assertFieldVersion(Request $request, \stdClass $row): void
+    {
+        if ($request->attributes->getBoolean('jairoads.field_write')) {
+            abort_unless($request->attributes->get('jairoads.field_version') === (string) $row->field_version,
+                409, 'This record changed online. Review your local copy before retrying.');
+        }
+    }
+
+    private function fieldSaved(Request $request, int $id): void
+    {
+        if ($request->attributes->getBoolean('jairoads.field_write')) {
+            $request->attributes->set('jairoads.field_saved_id', $id);
+        }
+    }
+
     public function saveRoad(Request $request, AccountIdentityResolver $resolver, ?int $id = null): RedirectResponse
     {
         $actor = $this->actor($request, $resolver);
@@ -338,7 +354,7 @@ class OperationsController extends Controller
             // Obtain the road before lifecycle authority: a request waiting for
             // this row must not block deactivation by holding a lifecycle lock.
             $row = $id === null ? null : $this->t('road_coverages')->where('id', $id)
-                ->lockForUpdate()->first();
+                ->when($request->attributes->getBoolean('jairoads.field_write'), fn (Builder $query) => $query->selectRaw('*, xmin::text as field_version'))->lockForUpdate()->first();
             abort_if($id !== null && $row === null, 404);
             // Other existing workflows take lifecycle before road locks. Never
             // wait in the inverse order: busy lifecycle work must finish first.
@@ -382,12 +398,14 @@ class OperationsController extends Controller
                     }
                 }
                 $id2 = (int) $this->t('road_coverages')->insertGetId($data + ['created_by' => $engineerId, 'created_at' => now()]);
+                $this->fieldSaved($request, $id2);
                 $this->audit($actor, 'CREATE', 'RoadCoverage', $id2, 'Authorized RoadCoverage created.', [
                     'created_by_engineer_id' => $engineerId,
                     'lgu_id' => (int) $v['lgu_id'],
                 ]);
             } else {
                 $this->lguAllowed($actor, (int) $row->lgu_id);
+                $this->assertFieldVersion($request, $row);
                 if ((int) $row->lgu_id !== (int) $v['lgu_id']) {
                     throw ValidationException::withMessages([
                         'lgu_id' => 'Use Change municipality to review affected records and confirm the municipality transition separately.',
@@ -420,7 +438,7 @@ class OperationsController extends Controller
             'road_coverage_id' => ['required', 'integer', 'min:1'],
             'description' => ['nullable', 'string', 'max:10000'],
         ]);
-        DB::transaction(function () use ($actor, $v, $id): void {
+        DB::transaction(function () use ($actor, $v, $id, $request): void {
             $road = $this->t('road_coverages')->where('id', $v['road_coverage_id'])->lockForUpdate()->first(['lgu_id']);
             abort_unless($road !== null, 404);
             $this->lguAllowed($actor, (int) $road->lgu_id);
@@ -433,8 +451,9 @@ class OperationsController extends Controller
                 throw ValidationException::withMessages(['road_coverage_id' => 'This road coverage is already assigned to another project.']);
             }
             if ($id !== null) {
-                $existing = $this->t('maintenance_projects')->where('id', $id)->lockForUpdate()->first();
+                $existing = $this->t('maintenance_projects')->where('id', $id)->when($request->attributes->getBoolean('jairoads.field_write'), fn (Builder $query) => $query->selectRaw('*, xmin::text as field_version'))->lockForUpdate()->first();
                 abort_unless($existing !== null, 404);
+                $this->assertFieldVersion($request, $existing);
                 $old = $this->projectLgu($id);
                 abort_unless($old !== null, 404);
                 $this->lguAllowed($actor, $old);
@@ -449,6 +468,7 @@ class OperationsController extends Controller
                 'description' => $v['description'] ?? null, 'updated_at' => now()];
             if ($id === null) {
                 $pid = (int) $this->t('maintenance_projects')->insertGetId($data + ['created_by' => $actor['account_id'], 'created_at' => now()]);
+                $this->fieldSaved($request, $pid);
                 $this->audit($actor, 'CREATE', 'MaintenanceProject', $pid, 'Authorized project created.');
             } else {
                 if (! $this->changed('MaintenanceProject', $existing, $data)) {
@@ -502,15 +522,17 @@ class OperationsController extends Controller
                     $history = $this->t('maintenance_records')->where('project_id', $project->id)->get(['maintenance_year', 'quarter']);
                     app(TwiceYearlyMaintenance::class)->validateCreation($history, (int) $v['maintenance_year'], $v['quarter']);
                     $rid = (int) $this->t('maintenance_records')->insertGetId($data + ['created_by' => $actor['account_id'], 'created_at' => now()]);
+                    $this->fieldSaved($request, $rid);
                     $this->audit($actor, 'CREATE', 'MaintenanceRecord', $rid, 'Authorized maintenance record created.');
                 } else {
-                    $period = $this->t('maintenance_records')->where('id', $id)->lockForUpdate()->first();
+                    $period = $this->t('maintenance_records')->where('id', $id)->when($request->attributes->getBoolean('jairoads.field_write'), fn (Builder $query) => $query->selectRaw('*, xmin::text as field_version'))->lockForUpdate()->first();
                     abort_unless($period !== null, 404);
                     $login = $request->user();
                     abort_unless($login instanceof User, 403);
                     app(RecordMutationAuthority::class)->lock($login, $actor, $lgu);
                     // Scope must come from the locked state, not a pre-wait read.
                     $row = $this->recordScope($actor, $id, true);
+                    $this->assertFieldVersion($request, $period);
                     $manager = $period->managing_engineer_id === null ? null : $this->t('engineers')
                         ->where('id', $period->managing_engineer_id)->sharedLock()->first(['engineer_status']);
                     abort_unless($period->managing_engineer_id === null || $manager?->engineer_status === 'Active', 422, 'Managing Engineer must be active.');
@@ -600,7 +622,15 @@ class OperationsController extends Controller
             'summary_of_text_reports' => ['nullable', 'string', 'max:20000'],
         ]);
         $parent = $this->recordScope($actor, (int) $v['maintenance_id'], true);
-        DB::transaction(function () use ($request, $resolver, $actor, $parent, $v, $id): void {
+        $submission = MonthlySubmissionReceipt::submissionKey($request, $actor['account_id'], (int) $parent->project_id, $id !== null);
+        $fingerprints = $submission === null ? null : MonthlySubmissionReceipt::fingerprints(
+            (int) $parent->project_id, (int) $v['maintenance_id'], $v['update_month'],
+            (string) $v['progress_percentage'], $v['summary_of_text_reports'] ?? null,
+        );
+        $reportId = DB::transaction(function () use ($request, $resolver, $actor, $parent, $v, $id, $submission, $fingerprints): ?int {
+            if ($submission !== null) {
+                MonthlySubmissionReceipt::lock($actor['account_id'], $submission);
+            }
             // Match reassignment's project -> record lock order. Authorization
             // checked before a lock wait is not authority to save after it.
             abort_unless($this->t('maintenance_projects')->where('id', $parent->project_id)->lockForUpdate()->first(['id']) !== null, 404);
@@ -613,6 +643,14 @@ class OperationsController extends Controller
             app(RecordMutationAuthority::class)->lock($login, $actor, $lgu);
             abort_unless($this->actor($request, $resolver) === $actor, 403);
             $this->recordScope($actor, (int) $record->id, true);
+            if ($submission !== null) {
+                $confirmed = MonthlySubmissionReceipt::confirmedReport(
+                    $actor['account_id'], $submission, (int) $record->project_id, (int) $record->id, $v['update_month'], $fingerprints,
+                );
+                if ($confirmed !== null) {
+                    return $confirmed;
+                }
+            }
             $duplicate = $this->t('monthly_updates')->where('maintenance_id', $v['maintenance_id'])->where('update_month', $v['update_month']);
             if ($id !== null) {
                 $duplicate->where('id', '!=', $id);
@@ -624,23 +662,36 @@ class OperationsController extends Controller
                 'progress_percentage' => $v['progress_percentage'],
                 'summary_of_text_reports' => $v['summary_of_text_reports'] ?? null, 'updated_at' => now()];
             if ($id === null) {
-                if ($this->t('monthly_updates')->where('maintenance_id', $v['maintenance_id'])->where('update_month', $v['update_month'])->exists()) {
-                    throw ValidationException::withMessages(['update_month' => 'An update already exists for this maintenance record and month.']);
-                }
                 $uid = (int) $this->t('monthly_updates')->insertGetId($data + ['created_by' => $actor['account_id'], 'created_at' => now()]);
                 $this->audit($actor, 'CREATE', 'MonthlyUpdate', $uid, 'Authorized monthly update created.');
+                if ($submission !== null && $fingerprints !== null) {
+                    MonthlySubmissionReceipt::record($actor['account_id'], $submission, (int) $record->project_id, (int) $record->id, $v['update_month'], $fingerprints[0], $uid);
+                }
+
+                return $uid;
             } else {
-                $old = $this->t('monthly_updates')->where('id', $id)->lockForUpdate()->first();
+                $old = $this->t('monthly_updates')->where('id', $id)
+                    ->when($request->attributes->getBoolean('jairoads.field_write'), fn (Builder $query) => $query->selectRaw('*, xmin::text as field_version'))
+                    ->lockForUpdate()->first();
                 abort_unless($old !== null, 404);
                 $this->recordScope($actor, (int) $old->maintenance_id, true);
+                $this->assertFieldVersion($request, $old);
                 abort_unless((int) $old->maintenance_id === (int) $v['maintenance_id'], 422, 'Cannot move monthly update to another maintenance record.');
                 if (! $this->changed('MonthlyUpdate', $old, $data)) {
-                    return;
+                    return null;
                 }
                 $this->t('monthly_updates')->where('id', $id)->update($data);
                 $this->audit($actor, 'UPDATE', 'MonthlyUpdate', $id, 'Authorized monthly update revised.', app(AuditValues::class)->persisted('MonthlyUpdate', $id), (array) $old);
             }
+
+            return null;
         });
+        if ($reportId !== null) {
+            $this->fieldSaved($request, $reportId);
+            if ($submission !== null) {
+                $request->attributes->set('jairoads.receipt_report_id', $reportId);
+            }
+        }
 
         return $this->done('updates', 'Monthly update saved.');
     }
@@ -692,10 +743,13 @@ class OperationsController extends Controller
             $parent = $this->t('maintenance_documents')->where('id', $id)->first(['maintenance_id']);
             abort_unless($parent !== null, 404);
             $this->lockUploadAuthorization($request, $resolver, $actor, (int) $parent->maintenance_id);
-            $document = $this->t('maintenance_documents')->where('id', $id)->lockForUpdate()->first();
+            $document = $this->t('maintenance_documents')->where('id', $id)
+                ->when($request->attributes->getBoolean('jairoads.field_write'), fn (Builder $query) => $query->selectRaw('*, xmin::text as field_version'))
+                ->lockForUpdate()->first();
             abort_unless($document !== null && $document->maintenance_id === $parent->maintenance_id, 409);
             // Engineer must be the current ManagingEngineer.
             $this->recordScope($actor, (int) $document->maintenance_id, true);
+            $this->assertFieldVersion($request, $document);
             app(PermanentFileDeletion::class)->assertNotPending('document', $id);
             $data = ['document_title' => $v['document_title'],
                 'description' => $v['description'] ?? null,
@@ -779,6 +833,31 @@ class OperationsController extends Controller
         }
     }
 
+    /** Only the authenticated Android field endpoint can set this server-side attribute.
+     * Called inside the existing metadata/audit transaction. A duplicate receipt
+     * rolls back the duplicate metadata; upload-journal recovery owns any orphan.
+     *
+     * @param  array{account_id:int,role:string,engineer_id:?int}  $actor
+     */
+    private function recordFieldAttachmentReceipt(Request $request, array $actor, int $id, string $table): void
+    {
+        $receipt = $request->attributes->get('jairoads.field_attachment_receipt');
+        if (! is_array($receipt)) {
+            return;
+        }
+        abort_unless(DB::transactionLevel() > 0 && (int) $receipt['account_id'] === $actor['account_id'], 403);
+        $key = (string) $receipt['operation_id'];
+        DB::select('select pg_advisory_xact_lock(hashtextextended(?, 0))', ['jairoads-field:'.$actor['account_id'].':'.$key]);
+        $query = DB::table('jairoads_security.android_field_receipts')
+            ->where('account_id', $actor['account_id'])->where('operation_id', $key);
+        abort_if($query->exists(), 409, 'This file operation has already been received.');
+        $version = $this->t($table)->where('id', $id)->selectRaw('xmin::text as version')->first()?->version;
+        abort_unless(is_string($version), 500);
+        DB::table('jairoads_security.android_field_receipts')->insert($receipt + [
+            'entity_id' => $id, 'entity_version' => $version,
+        ]);
+    }
+
     public function uploadDocument(Request $request, AccountIdentityResolver $resolver, PrivateSupabaseStorage $storage): RedirectResponse
     {
         $actor = $this->actor($request, $resolver);
@@ -814,6 +893,7 @@ class OperationsController extends Controller
                 'file_path' => $path, 'uploaded_by' => $actor['account_id'], 'uploaded_at' => now(), 'updated_at' => now(),
             ]);
             $this->audit($actor, 'CREATE', 'MaintenanceDocument', $id, 'Formal maintenance document uploaded.');
+            $this->recordFieldAttachmentReceipt($request, $actor, $id, 'maintenance_documents');
         });
 
         return $this->done('documents', 'Document uploaded.');
@@ -851,6 +931,7 @@ class OperationsController extends Controller
                 'file_path' => $path, 'file_type' => $mime, 'uploaded_by' => $actor['account_id'], 'created_at' => now(),
             ]);
             $this->audit($actor, 'CREATE', 'Media', $id, 'MonthlyUpdate media evidence uploaded.');
+            $this->recordFieldAttachmentReceipt($request, $actor, $id, 'media');
         });
 
         return $this->done('updates', 'Evidence uploaded.');

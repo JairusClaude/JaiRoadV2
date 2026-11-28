@@ -16,6 +16,7 @@ final class DashboardAnalytics
     public function summary(array $actor): array
     {
         $role = (string) $actor['role'];
+        abort_unless(in_array($role, ['SuperAdmin', 'Admin', 'Engineer', 'Viewer'], true), 403);
         $engineerId = $actor['engineer_id'];
         $manager = in_array($role, ['SuperAdmin', 'Admin'], true);
         $scope = null;

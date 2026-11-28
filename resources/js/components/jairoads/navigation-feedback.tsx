@@ -1,6 +1,9 @@
 import { router } from '@inertiajs/react';
+import { WifiOff } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { toast } from 'sonner';
+import { androidWorkspace } from '@/lib/android-workspace-bridge';
 import '../../../css/jairoads-navigation-ux.css';
 
 /**
@@ -216,4 +219,79 @@ export function JaiRoadsNavigationFeedback() {
         : message === 'loading'
           ? null
           : indicator;
+}
+
+export function AndroidFieldFeedback() {
+    const [offline, setOffline] = useState(false);
+    const [fieldMessage, setFieldMessage] = useState('');
+
+    useEffect(() => {
+        if (!navigator.userAgent.includes('JaiROADSField/')) {
+            return;
+        }
+
+        const update = () => {
+            const workspace = document.querySelector(
+                '.jr-engineer-workspace, .jr-viewer-workspace, .jr-admin-workspace, .jr-superadmin-workspace',
+            );
+            const status = androidWorkspace()?.status();
+            const message =
+                status?.message ?? (!navigator.onLine ? 'Offline Mode' : '');
+            const show = Boolean(workspace) && Boolean(message);
+            document.body.classList.toggle('jr-android-hosted-offline', show);
+            setOffline(show);
+            setFieldMessage(message);
+        };
+        const offNavigate = router.on('navigate', () =>
+            requestAnimationFrame(update),
+        );
+        update();
+        window.addEventListener('online', update);
+        window.addEventListener('offline', update);
+        window.addEventListener('jairoads-field-status', update);
+        const fieldNotice = (event: Event) => {
+            const message = (event as CustomEvent<string>).detail;
+
+            if (message) {
+                toast.error(message, { id: 'jr-field-local-error' });
+            }
+        };
+        window.addEventListener('jairoads-field-message', fieldNotice);
+        const stopRawError = router.on('httpException', (event) => {
+            const status = event.detail.response.status;
+
+            if (status >= 500 || status === 419 || status === 401) {
+                toast.error(
+                    status === 401 || status === 419
+                        ? 'Your online session expired. Your local field work is still available.'
+                        : 'JaiROADS could not complete that request. Try again when the server is available.',
+                    { id: 'jr-android-request-error' },
+                );
+
+                return false;
+            }
+        });
+
+        return () => {
+            offNavigate();
+            stopRawError();
+            window.removeEventListener('online', update);
+            window.removeEventListener('offline', update);
+            window.removeEventListener('jairoads-field-status', update);
+            window.removeEventListener('jairoads-field-message', fieldNotice);
+            document.body.classList.remove('jr-android-hosted-offline');
+        };
+    }, []);
+
+    if (!offline) {
+        return null;
+    }
+
+    return createPortal(
+        <div className="jr-android-hosted-banner" role="status">
+            <WifiOff size={17} aria-hidden="true" />{' '}
+            {fieldMessage || 'Offline Mode'}
+        </div>,
+        document.body,
+    );
 }

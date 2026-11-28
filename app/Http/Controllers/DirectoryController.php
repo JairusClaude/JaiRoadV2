@@ -9,6 +9,8 @@ use App\Services\AccountIdentityResolver;
 use App\Services\DashboardAnalytics;
 use App\Services\PreservedProjectDeletion;
 use App\Services\RoleAccess;
+use App\Support\BoundedDirectoryPage;
+use App\Support\LiteralDirectorySearch;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -85,7 +87,8 @@ class DirectoryController extends Controller
         $accounts = collect();
         $engineers = collect();
         $directory = null;
-        $requestedEngineerId = $section === 'users' && $allowedManager ? $request->integer('engineer_id') : 0;
+        $requestedEngineerId = $section === 'users' && $allowedManager
+            ? (int) LiteralDirectorySearch::numericOption($request->query('engineer_id')) : 0;
         if ($section === 'users' && $allowedManager) {
             // Search and paginate in PostgreSQL instead of filtering only the
             // first 200 records. Related names are loaded for the visible rows.
@@ -98,7 +101,13 @@ class DirectoryController extends Controller
             // Escape PostgreSQL LIKE wildcards and the escape character. A search is
             // literal text, never a caller-controlled pattern.
             $needle = '%'.addcslashes($search, '%_\\').'%';
-            $requestedPage = filter_var($request->query('directory_page'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            // A direct profile link must not inherit an old search or page.
+            if ($requestedEngineerId > 0) {
+                $search = '';
+                $state = 'all';
+                $role = 'all';
+                $needle = '%%';
+            }
             if ($tab === 'accounts') {
                 $query = $t('user_accounts as ua')->leftJoin('jairoads_next.engineers as e', 'e.id', '=', 'ua.engineer_id');
                 if ($search !== '') {
@@ -115,9 +124,8 @@ class DirectoryController extends Controller
                 }
                 // Clamp out-of-range pages before querying, including after
                 // a search or filter reduces the number of matches.
-                $lastPage = max(1, (int) ceil((clone $query)->count() / 15));
-                $pageNumber = min($requestedPage === false ? 1 : $requestedPage, $lastPage);
-                $page = $query->orderByDesc('ua.id')->paginate(15, ['ua.id', 'ua.username', 'ua.email', 'ua.account_type', 'ua.engineer_id', 'ua.is_active'], 'directory_page', $pageNumber);
+                $page = BoundedDirectoryPage::paginate($query->orderByDesc('ua.id'), $request, 15,
+                    ['ua.id', 'ua.username', 'ua.email', 'ua.account_type', 'ua.engineer_id', 'ua.is_active'], 'directory_page');
                 $accounts = collect($page->items());
                 $engineers = $t('engineers')->whereIn('id', $accounts->pluck('engineer_id')->filter()->all())
                     ->get(['id', 'first_name', 'middle_name', 'last_name', 'contact_no', 'rank', 'engineer_status']);
@@ -137,9 +145,8 @@ class DirectoryController extends Controller
                 if ($requestedEngineerId > 0) {
                     $query->orderByRaw('CASE WHEN e.id = ? THEN 0 ELSE 1 END', [$requestedEngineerId]);
                 }
-                $lastPage = max(1, (int) ceil((clone $query)->count() / 15));
-                $pageNumber = min($requestedPage === false ? 1 : $requestedPage, $lastPage);
-                $page = $query->orderByDesc('e.id')->paginate(15, ['e.id', 'e.first_name', 'e.middle_name', 'e.last_name', 'e.contact_no', 'e.rank', 'e.engineer_status'], 'directory_page', $pageNumber);
+                $page = BoundedDirectoryPage::paginate($query->orderByDesc('e.id'), $request, 15,
+                    ['e.id', 'e.first_name', 'e.middle_name', 'e.last_name', 'e.contact_no', 'e.rank', 'e.engineer_status'], 'directory_page', $requestedEngineerId > 0 ? 1 : null);
                 $engineers = collect($page->items());
                 $accounts = $t('user_accounts')->whereIn('engineer_id', $engineers->pluck('id')->all())
                     ->get(['id', 'username', 'email', 'account_type', 'engineer_id', 'is_active']);

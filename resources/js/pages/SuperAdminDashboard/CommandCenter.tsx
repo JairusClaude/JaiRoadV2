@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import {
     ArrowRight,
     CalendarDays,
@@ -6,17 +6,19 @@ import {
     Crown,
     FileText,
     FolderKanban,
-    RefreshCw,
     ShieldCheck,
     UsersRound,
 } from 'lucide-react';
-import { useState } from 'react';
 import { DashboardAnalytics } from '@/components/dashboard/dashboard-analytics';
 import type { DashboardSummary } from '@/components/dashboard/dashboard-analytics';
+import { DashboardRefresh } from '@/components/dashboard/dashboard-refresh';
+import { MaintenanceIntelligencePanel } from '@/components/dashboard/maintenance-intelligence-panel';
+import type { MaintenanceIntelligenceSummary } from '@/components/dashboard/maintenance-intelligence-panel';
+import { SystemHealthPanel } from '@/components/dashboard/system-health-panel';
+import type { SystemHealth } from '@/components/dashboard/system-health-panel';
 import { ProjectWorkspace } from '@/components/maintenance-projects/project-workspace';
 import { MetricCard } from '@/components/metric-card';
 import { MonthlyProgress } from '@/components/monthly-updates/monthly-progress';
-import { Button } from '@/components/ui/button';
 import '../../../css/maintenance-projects-exploration.css';
 
 type Counts = {
@@ -69,6 +71,8 @@ type MonthlyPreview = {
 type Props = {
     username: string;
     analytics: DashboardSummary;
+    health?: SystemHealth;
+    maintenanceIntelligence?: MaintenanceIntelligenceSummary;
     counts: Counts;
     privilegedAccounts: PrivilegedAccount[];
     recentEvents: AuditEvent[];
@@ -88,12 +92,12 @@ export default function SuperAdminCommandCenter({
     username,
     counts,
     analytics,
+    health,
+    maintenanceIntelligence,
     privilegedAccounts,
     recentEvents,
     recentMonthlyUpdates,
 }: Props) {
-    const [refreshing, setRefreshing] = useState(false);
-
     return (
         <div className="jr-directory-exploration jr-superadmin-dashboard">
             <Head title="System Command Center - Dashboard" />
@@ -110,23 +114,7 @@ export default function SuperAdminCommandCenter({
                             and road maintenance across JaiROADS.
                         </p>
                     </div>
-                    <div className="jr-page-actions">
-                        <Button
-                            className="jr-superadmin-refresh"
-                            disabled={refreshing}
-                            onClick={() =>
-                                router.reload({
-                                    onStart: () => setRefreshing(true),
-                                    onFinish: () => setRefreshing(false),
-                                })
-                            }
-                        >
-                            <RefreshCw
-                                className={`mr-2 size-4 ${refreshing ? 'animate-spin' : ''}`}
-                            />
-                            {refreshing ? 'Refreshing…' : 'Refresh dashboard'}
-                        </Button>
-                    </div>
+                    <DashboardRefresh className="jr-superadmin-refresh" />
                 </div>
 
                 <main className="relative mx-0 -mt-3.5 min-w-0 space-y-6 rounded-t-[20px] bg-white px-4 pt-7 pb-10 shadow-sm sm:px-6 lg:-mx-7 lg:px-7">
@@ -161,6 +149,12 @@ export default function SuperAdminCommandCenter({
                             icon={<FolderKanban className="size-5" />}
                         />
                     </section>
+
+                    {maintenanceIntelligence && (
+                        <MaintenanceIntelligencePanel
+                            data={maintenanceIntelligence}
+                        />
+                    )}
 
                     {/* Real counts and reporting chart, with a concise operations rail. */}
                     <div className="jr-command-overview grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(290px,0.9fr)]">
@@ -287,6 +281,8 @@ export default function SuperAdminCommandCenter({
                             </section>
                         </aside>
                     </div>
+
+                    {health && <SystemHealthPanel health={health} />}
 
                     <section className="jr-command-panel rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
                         <div className="flex flex-wrap items-center justify-between gap-2">

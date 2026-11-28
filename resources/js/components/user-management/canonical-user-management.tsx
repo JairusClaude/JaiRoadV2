@@ -21,6 +21,7 @@ import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import AccountLifecycle from '@/components/user-management/account-lifecycle';
 import AccountTypeBadge from '@/components/user-management/account-type-badge';
 import EngineerLifecycle from '@/components/user-management/engineer-lifecycle';
+import { useMobileDialogViewport } from '@/hooks/use-mobile-dialog-viewport';
 import '../../../css/canonical-user-management.css';
 
 type Role = 'SuperAdmin' | 'Admin' | 'Engineer' | 'Viewer';
@@ -409,6 +410,7 @@ export default function CanonicalUserManagement({
     const [role, setRole] = useState(directory?.role ?? 'all');
     const [state, setState] = useState(directory?.state ?? 'all');
     const [page, setPage] = useState(1);
+    const dialogViewport = useMobileDialogViewport();
     const [modal, setModal] = useState<Modal | null>(() =>
         initialEngineerId && engineers.some((e) => e.id === initialEngineerId)
             ? { kind: 'engineer', id: initialEngineerId }
@@ -725,17 +727,20 @@ export default function CanonicalUserManagement({
                     tabIndex={0}
                 >
                     {tab === 'accounts' ? (
-                        <table className="um-table">
-                            <thead>
-                                <tr>
-                                    <th>Account</th>
-                                    <th>Account Type</th>
-                                    <th>Linked Engineer</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
+                        <table
+                            role="table"
+                            className="um-table jr-mobile-table"
+                        >
+                            <thead role="rowgroup">
+                                <tr role="row">
+                                    <th role="columnheader">Account</th>
+                                    <th role="columnheader">Account Type</th>
+                                    <th role="columnheader">Linked Engineer</th>
+                                    <th role="columnheader">Status</th>
+                                    <th role="columnheader">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody role="rowgroup">
                                 {filteredAccounts
                                     .slice(sliceStart, sliceEnd)
                                     .map((a) => {
@@ -746,10 +751,14 @@ export default function CanonicalUserManagement({
 
                                         return (
                                             <tr
+                                                role="row"
                                                 key={a.id}
                                                 data-account-id={a.id}
                                             >
-                                                <td>
+                                                <td
+                                                    role="cell"
+                                                    data-mobile-cell="primary"
+                                                >
                                                     <div className="um-person">
                                                         <span className="um-avatar">
                                                             {a.username
@@ -773,12 +782,18 @@ export default function CanonicalUserManagement({
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td>
+                                                <td
+                                                    role="cell"
+                                                    data-mobile-label="Account Type"
+                                                >
                                                     <AccountTypeBadge
                                                         role={a.account_type}
                                                     />
                                                 </td>
-                                                <td>
+                                                <td
+                                                    role="cell"
+                                                    data-mobile-label="Linked Engineer"
+                                                >
                                                     {e ? (
                                                         <>
                                                             <strong>
@@ -797,12 +812,18 @@ export default function CanonicalUserManagement({
                                                         </span>
                                                     )}
                                                 </td>
-                                                <td>
+                                                <td
+                                                    role="cell"
+                                                    data-mobile-label="Status"
+                                                >
                                                     <Status
                                                         active={a.is_active}
                                                     />
                                                 </td>
-                                                <td>
+                                                <td
+                                                    role="cell"
+                                                    data-mobile-cell="actions"
+                                                >
                                                     <button
                                                         className="um-secondary um-row-action"
                                                         type="button"
@@ -826,17 +847,20 @@ export default function CanonicalUserManagement({
                             </tbody>
                         </table>
                     ) : (
-                        <table className="um-table">
-                            <thead>
-                                <tr>
-                                    <th>Engineer</th>
-                                    <th>Rank</th>
-                                    <th>Linked Account</th>
-                                    <th>Engineer Status</th>
-                                    <th>Actions</th>
+                        <table
+                            role="table"
+                            className="um-table jr-mobile-table"
+                        >
+                            <thead role="rowgroup">
+                                <tr role="row">
+                                    <th role="columnheader">Engineer</th>
+                                    <th role="columnheader">Rank</th>
+                                    <th role="columnheader">Linked Account</th>
+                                    <th role="columnheader">Engineer Status</th>
+                                    <th role="columnheader">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody role="rowgroup">
                                 {filteredEngineers
                                     .slice(sliceStart, sliceEnd)
                                     .map((e) => {
@@ -846,10 +870,14 @@ export default function CanonicalUserManagement({
 
                                         return (
                                             <tr
+                                                role="row"
                                                 key={e.id}
                                                 data-engineer-id={e.id}
                                             >
-                                                <td>
+                                                <td
+                                                    role="cell"
+                                                    data-mobile-cell="primary"
+                                                >
                                                     <div className="um-person">
                                                         <span className="um-avatar">
                                                             {(
@@ -874,8 +902,16 @@ export default function CanonicalUserManagement({
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td>{e.rank}</td>
-                                                <td>
+                                                <td
+                                                    role="cell"
+                                                    data-mobile-label="Rank"
+                                                >
+                                                    {e.rank}
+                                                </td>
+                                                <td
+                                                    role="cell"
+                                                    data-mobile-label="Linked Account"
+                                                >
                                                     {account ? (
                                                         <>
                                                             <strong>
@@ -918,7 +954,10 @@ export default function CanonicalUserManagement({
                                                         </span>
                                                     )}
                                                 </td>
-                                                <td>
+                                                <td
+                                                    role="cell"
+                                                    data-mobile-label="Engineer Status"
+                                                >
                                                     <Status
                                                         active={
                                                             e.engineer_status ===
@@ -929,7 +968,10 @@ export default function CanonicalUserManagement({
                                                         }
                                                     />
                                                 </td>
-                                                <td>
+                                                <td
+                                                    role="cell"
+                                                    data-mobile-cell="actions"
+                                                >
                                                     {account ? (
                                                         <DirectoryActions
                                                             label={
@@ -1040,6 +1082,8 @@ export default function CanonicalUserManagement({
                     <Dialog.Overlay className="um-overlay" />
                     <Dialog.Content
                         className="um-dialog"
+                        data-mobile-layout="fullscreen"
+                        ref={dialogViewport}
                         onEscapeKeyDown={(e) => {
                             if (busy) {
                                 e.preventDefault();

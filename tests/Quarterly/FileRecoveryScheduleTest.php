@@ -6,6 +6,7 @@ namespace Tests\Quarterly;
 
 use App\Services\Files\FileRecoverySchedule;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 final class FileRecoveryScheduleTest extends PostgresTestCase
@@ -35,6 +36,40 @@ final class FileRecoveryScheduleTest extends PostgresTestCase
         Http::assertNothingSent();
     }
 
+    public function test_batch_evidence_expires_and_rejects_impossible_counts(): void
+    {
+        config(['cache.default' => 'array']);
+        FileRecoverySchedule::recordRun(3, 2, true, scheduled: true);
+        $this->assertSame('scheduled', FileRecoverySchedule::lastRun()['trigger']);
+        $this->assertFalse(FileRecoverySchedule::lastRun()['stale']);
+        FileRecoverySchedule::recordRun(1, 2, false);
+        $this->assertSame(3, FileRecoverySchedule::lastRun()['attempted']);
+        $this->travel(16)->minutes();
+        $this->assertTrue(FileRecoverySchedule::lastRun()['stale']);
+        $this->assertGreaterThanOrEqual(960, FileRecoverySchedule::lastRun()['age_seconds']);
+        $this->travel(8)->days();
+        $this->assertNull(FileRecoverySchedule::lastRun());
+    }
+
+    public function test_batch_evidence_rejects_normalized_invalid_dates_and_future_timestamps(): void
+    {
+        config(['cache.default' => 'array']);
+        $this->travelTo(now()->setDate(2026, 3, 3)->setTime(12, 0)->utc());
+        $key = 'jairoads:recovery:last-finished-batch:v1';
+        FileRecoverySchedule::recordRun(2, 1, false);
+        $evidence = Cache::get($key);
+        $this->assertSame('manual', FileRecoverySchedule::lastRun()['trigger']);
+        unset($evidence['trigger']);
+        Cache::put($key, $evidence);
+        $this->assertSame('unknown', FileRecoverySchedule::lastRun()['trigger']);
+        foreach (['2026-02-30T12:00:00+00:00', '2026-03-02T24:00:00+00:00', now()->addSecond()->toIso8601String()] as $timestamp) {
+            Cache::put($key, array_replace($evidence, ['finished_at' => $timestamp]));
+            $this->assertNull(FileRecoverySchedule::lastRun());
+        }
+        Cache::put($key, array_replace($evidence, ['finished_at' => now()->utc()->format('Y-m-d\TH:i:s\Z')]));
+        $this->assertNotNull(FileRecoverySchedule::lastRun());
+    }
+
     public function test_scheduler_registers_only_the_approved_bounded_command_with_locks(): void
     {
         Http::fake();
@@ -47,7 +82,7 @@ final class FileRecoveryScheduleTest extends PostgresTestCase
         FileRecoverySchedule::register($schedule);
         $this->assertCount(1, $schedule->events());
         $event = $schedule->events()[0];
-        $this->assertStringContainsString(FileRecoverySchedule::COMMAND, $event->command);
+        $this->assertStringContainsString(FileRecoverySchedule::COMMAND.' --scheduled', $event->command);
         $this->assertSame('*/5 * * * *', $event->expression);
         $this->assertTrue($event->withoutOverlapping);
         $this->assertTrue($event->onOneServer);

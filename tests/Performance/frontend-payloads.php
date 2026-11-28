@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\OperationsFrontendController;
+use App\Http\Controllers\RoadCoveragePageController;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -48,7 +49,8 @@ $benchmark = new class('runMeasurements') extends PostgresTestCase
             }
             foreach (['road' => '/road-coverages/create', 'record' => '/maintenance-records/create', 'fixed-record' => '/maintenance-projects/'.$f['project'].'/records/create',
                 'monthly' => '/monthly-updates/create', 'fixed-monthly' => '/monthly-updates/create?maintenance_id='.$record,
-                'project-history' => '/maintenance-projects/'.$f['project']] as $name => $path) {
+                'project-history' => '/maintenance-projects/'.$f['project'], 'document-form' => '/maintenance-documents/create',
+                'monthly-directory' => '/monthly-updates', 'document-directory' => '/maintenance-documents'] as $name => $path) {
                 // Warm once, then three observations. Response bytes are uncompressed JSON.
                 $warm = $this->get('/workspace/ui'.$path, $headers);
                 if ($warm->getStatusCode() !== 200) {
@@ -62,13 +64,16 @@ $benchmark = new class('runMeasurements') extends PostgresTestCase
                     $startMemory = memory_get_usage();
                     $start = hrtime(true);
                     $response = $this->get('/workspace/ui'.$path, $headers);
+                    if ($response->getStatusCode() !== 200) {
+                        throw new RuntimeException('Timed benchmark response: '.$response->getStatusCode());
+                    }
                     $samples[] = ['bytes' => strlen($response->getContent()), 'queries' => count(DB::getQueryLog()),
                         'milliseconds' => round((hrtime(true) - $start) / 1e6, 3), 'peak_delta_bytes' => max(0, memory_get_peak_usage() - $startMemory)];
                     DB::disableQueryLog();
                 }
                 $results[] = ['roads' => $i, 'page' => $name, 'samples' => $samples];
             }
-            if (method_exists(OperationsFrontendController::class, 'roadReferences')) {
+            if (method_exists(RoadCoveragePageController::class, 'roadReferences') || method_exists(OperationsFrontendController::class, 'roadReferences')) {
                 $samples = [];
                 for ($run = 0; $run < 3; $run++) {
                     $cursor = null;
@@ -91,7 +96,11 @@ $benchmark = new class('runMeasurements') extends PostgresTestCase
                         $queries += count(DB::getQueryLog());
                         $count += count($data['data']);
                         $peak = max($peak, memory_get_peak_usage() - $memory);
-                        $cursor = $data['next_cursor'];
+                        $next = $data['next_cursor'];
+                        if ($next !== null && (! is_int($next) || $next <= ($cursor ?? 0) || count($data['data']) === 0)) {
+                            throw new RuntimeException('Reference benchmark cursor did not advance.');
+                        }
+                        $cursor = $next;
                         DB::disableQueryLog();
                     } while ($cursor !== null);
                     $samples[] = ['bytes' => $bytes, 'queries' => $queries, 'milliseconds' => round((hrtime(true) - $start) / 1e6, 3), 'peak_delta_bytes' => $peak, 'visible_roads' => $count];

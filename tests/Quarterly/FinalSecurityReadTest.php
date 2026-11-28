@@ -37,10 +37,12 @@ final class FinalSecurityReadTest extends PostgresTestCase
             }
         }
         $history = DB::table('jairoads_next.audit_logs')->orderBy('id')->get()->toJson();
-        $this->getJson('/jairoads/notifications?recipient_user_id='.$other->canonical_user_account_id)->assertOk()->assertExactJson([
+        $response = $this->getJson('/jairoads/notifications?recipient_user_id='.$other->canonical_user_account_id)->assertOk()->assertExactJson([
             'notifications' => [['id' => $own, 'notification_message' => 'Safe event for recipient '.$f['user']->canonical_user_account_id,
                 'created_at' => '2026-11-03 10:00:00']],
         ]);
+        $this->assertTrue($response->headers->hasCacheControlDirective('private'));
+        $this->assertTrue($response->headers->hasCacheControlDirective('no-store'));
         // The canonical ops router deliberately has no audit mutation resource.
         $this->putJson('/workspace/ops/audit_logs/'.$own, ['actor_identifier' => 'Tampered'])->assertNotFound();
         $this->deleteJson('/workspace/ops/audit_logs/'.$own)->assertNotFound();

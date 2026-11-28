@@ -34,6 +34,7 @@ it('pages dashboard maps without dropping older assigned roads', function (): vo
 
     $response = $this->getJson('/workspace/dashboard/map-roads')
         ->assertOk()->assertJsonCount(100, 'data');
+    $response->assertJsonPath('data.0.state_category', 'Good');
     $cursor = $response->json('next_cursor');
     expect($cursor)->toBeInt()->toBeGreaterThan(0);
     $result = $this->getJson('/workspace/dashboard/map-roads?before='.$cursor)

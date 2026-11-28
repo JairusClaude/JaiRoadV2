@@ -174,8 +174,8 @@ export async function verifyAuditNotifications({
         }
     }
 
-    // A narrow viewport guarantees horizontal overflow even with short audit values.
-    await admin.setViewportSize({ width: 390, height: 844 });
+    // Tablet-width comparison tables still support horizontal mouse and keyboard scrolling.
+    await admin.setViewportSize({ width: 768, height: 844 });
     await activityTable.locator('thead th').first().scrollIntoViewIfNeeded();
     await activityTable.evaluate((el) => {
         el.scrollLeft = 0;
@@ -247,8 +247,11 @@ export async function verifyAuditNotifications({
                     ['auto', 'scroll'].includes(
                         getComputedStyle(region).overflowX,
                     ) &&
-                    el.getBoundingClientRect().width >= 350 &&
-                    el.scrollWidth <= el.clientWidth + 1
+                    el.scrollWidth <= el.clientWidth + 1 &&
+                    (window.innerWidth < 640
+                        ? region.scrollWidth <= region.clientWidth + 1 &&
+                          getComputedStyle(el.closest('tr')).display === 'grid'
+                        : el.getBoundingClientRect().width >= 350)
                 );
             }),
         );
