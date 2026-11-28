@@ -104,6 +104,13 @@ final class AndroidFieldWritesTest extends PostgresTestCase
         $this->post(self::URL.'/attachments', array_replace($attachment, ['document_title' => 'Changed']) + ['file' => $pdf()], ['Accept' => 'application/json'])->assertConflict();
         $this->assertSame(1, DB::table('jairoads_next.maintenance_documents')->where('maintenance_id', $record['id'])->count());
         Http::assertSentCount(1);
+        $docEdit = ['account_id' => $account, 'operation_id' => '8a612a3d-ef3d-480a-8e0b-fb2ebf6559f2', 'kind' => 'document', 'id' => $first['id'], 'version' => $first['version'], 'fields' => ['document_title' => 'Updated field inspection', 'description' => 'Revised offline']];
+        $docReceipt = $this->postJson(self::URL.'/operations', $docEdit)->assertOk()->json();
+        $this->postJson(self::URL.'/operations', $docEdit)->assertOk()->assertExactJson($docReceipt);
+        $this->postJson(self::URL.'/operations', array_replace($docEdit, ['operation_id' => '8a612a3d-ef3d-480a-8e0b-fb2ebf6559f3', 'version' => 'stale']))->assertConflict();
+        $this->assertSame('Updated field inspection', DB::table('jairoads_next.maintenance_documents')->where('id', $first['id'])->value('document_title'));
+        $this->getJson(self::URL.'/workspace?profile=expanded')->assertOk()->assertJsonPath('documentEdit', true)->assertJsonStructure(['files' => [['rowVersion']]]);
+        Http::assertSentCount(1);
         $this->getJson(self::URL.'/workspace')->assertOk()->assertJsonPath('fileSync', true)->assertJsonPath('files.0.id', $first['id']);
         $large = UploadedFile::fake()->createWithContent('inspection-large.pdf', "%PDF-1.4\n".str_repeat('% field evidence padding '.str_repeat('x', 100)."\n", 45000).'%%EOF');
         $this->post(self::URL.'/attachments', array_replace($attachment, ['operation_id' => '611c973d-6d78-4433-a3e5-6705ad7248d4']) + ['file' => $large], ['Accept' => 'application/json'])->assertOk();

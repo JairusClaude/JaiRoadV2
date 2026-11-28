@@ -35,3 +35,7 @@ The local adapter also serves LGU directory/details in read-only mode and allows
 ### Licensed map bundle review
 
 A one-off isolated review workflow renders Davao de Oro roads from the OpenStreetMap France Davao Region PBF extract and a 2025 Sentinel-2 L2A RGB mosaic. It packages SHA-256-verified raster tiles inside the Android APK rather than scraping third-party public tiles. The road layer has native zoom 14 and the satellite layer native zoom 13; higher zooms are enlarged, not higher-resolution survey imagery. Source attribution and imagery acquisition metadata are retained in the manifest. No map is marked ready unless both data sources pass coverage and asset checks. The geographic extent is bounded to the project province and surrounding margin. This is an internal QA build, not a production map survey.
+
+### v0.5.2 expanded offline review
+
+New clients request an expanded, role-authorized workspace snapshot; assigned work and related project/road parents are prioritized. Bounded record and file counts remain, with visible partial-cache state. Encrypted file budgets can expand based on device quota, up to 2 GiB per category, reserving space for pending work. Existing documents support offline metadata revisions using the same server-side authorization and version-checked receipt protocol; file removal/replacement stays online-only. No production data migrations are required.

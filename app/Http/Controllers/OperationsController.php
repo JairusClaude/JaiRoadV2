@@ -743,10 +743,13 @@ class OperationsController extends Controller
             $parent = $this->t('maintenance_documents')->where('id', $id)->first(['maintenance_id']);
             abort_unless($parent !== null, 404);
             $this->lockUploadAuthorization($request, $resolver, $actor, (int) $parent->maintenance_id);
-            $document = $this->t('maintenance_documents')->where('id', $id)->lockForUpdate()->first();
+            $document = $this->t('maintenance_documents')->where('id', $id)
+                ->when($request->attributes->getBoolean('jairoads.field_write'), fn (Builder $query) => $query->selectRaw('*, xmin::text as field_version'))
+                ->lockForUpdate()->first();
             abort_unless($document !== null && $document->maintenance_id === $parent->maintenance_id, 409);
             // Engineer must be the current ManagingEngineer.
             $this->recordScope($actor, (int) $document->maintenance_id, true);
+            $this->assertFieldVersion($request, $document);
             app(PermanentFileDeletion::class)->assertNotPending('document', $id);
             $data = ['document_title' => $v['document_title'],
                 'description' => $v['description'] ?? null,

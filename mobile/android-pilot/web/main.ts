@@ -77,7 +77,9 @@ function fieldStatus() {
         message: offline
             ? pending
                 ? 'Offline Mode — Saved locally · Waiting for internet'
-                : 'Offline Mode'
+                : vault.state.snapshot.truncated
+                  ? 'Offline Mode · Partial cached workspace'
+                  : 'Offline Mode'
             : checking && pending
               ? 'Synchronizing saved work…'
               : pending
@@ -244,7 +246,7 @@ function renderDirectory() {
     }
 
     if (vault.state.snapshot.truncated && home && el('field-message').hidden) {
-        note('Only your most recent assigned records are available offline.');
+        note('Some records or files exceed the prepared offline snapshot. Connect to access additional data.');
     }
 
     const create = el<HTMLButtonElement>('new-field-item');

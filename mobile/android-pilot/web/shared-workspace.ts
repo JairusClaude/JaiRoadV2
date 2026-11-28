@@ -274,6 +274,17 @@ export async function openSharedWorkspace(
                 text(data.document_title),
             );
             destination = BASE + '/maintenance-documents';
+        } else if (section === 'maintenance-documents' && first && !nested && method === 'put') {
+            const document = projection.documents.find(entry => entry.id === Number(first));
+            const row = cachedRow(vault, 'document', first);
+            ensure(document?.can_edit && row?.version, 'This document is not editable offline. Refresh it while connected.');
+            ensure(rawId(vault, data.maintenance_id) === rawId(vault, document.maintenance_id), 'The parent record cannot change.');
+            ensure(!data.attachment, 'Replacing files requires an online connection.');
+            const fields = fieldsFrom(data, ['document_title', 'description']);
+            ensure(fields.document_title?.trim() && fields.document_title.length <= 255, 'Enter a valid document title.');
+            ensure((fields.description ?? '').length <= 5000, 'Description exceeds 5,000 characters.');
+            await vault.save('document', fields, row);
+            destination = BASE + '/maintenance-documents/' + first;
         } else if (
             section === 'monthly-updates' &&
             first &&

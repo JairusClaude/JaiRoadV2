@@ -208,6 +208,7 @@ export function projectData(vault: Vault, dashboard: Page) {
     const sources = snapshot.files ?? [];
     const attachments = vault.state.attachments;
     const localFile = (file: FileReference) => vault.fileAvailable(file);
+    const documentEdits = vault.rows('document');
     const fileRows = sources.flatMap((file) => {
         const record = recordFor(file.record);
 
@@ -215,16 +216,17 @@ export function projectData(vault: Vault, dashboard: Page) {
             return [];
         }
 
+        const edit = documentEdits.find(row => same(row.id, file.id));
         return [
             {
                 id: file.id,
                 maintenance_id: record.id,
-                document_title: file.title || file.name,
-                description: file.description ?? null,
+                document_title: text(edit?.document_title) || file.title || file.name,
+                description: edit ? text(edit.description) || null : file.description ?? null,
                 file_name: file.name,
                 download_url: '/workspace/files/document/' + file.id,
                 delete_url: null,
-                can_edit: false,
+                can_edit: Boolean(record.edit_url && snapshot.documentEdit && edit?.version),
                 uploaded_by: file.uploader || '',
                 uploaded_at: file.uploadedAt || file.version,
                 updated_at: file.version,
@@ -1017,13 +1019,20 @@ export function offlinePage(
 
         const document = lookup(d.documents, first);
 
-        if (!document || nested) {
-            return null;
+        if (!document) return null;
+        if (nested === 'edit') {
+            if (!document.can_edit) return null;
+            return page('MaintenanceDocuments/Form', {
+                ...d.parents(document.maintenance_id),
+                document,
+                submitUrl: BASE + '/maintenance-documents/' + document.id,
+                cancelUrl: BASE + '/maintenance-documents/' + document.id,
+            });
         }
-
+        if (nested) return null;
         return page('MaintenanceDocuments/Show', {
             document,
-            canWrite: d.canWrite,
+            canWrite: document.can_edit,
         });
     }
 

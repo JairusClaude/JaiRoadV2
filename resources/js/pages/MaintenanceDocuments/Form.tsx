@@ -518,7 +518,9 @@ export default function Form(parents: DocumentParents) {
                             <h2>Document Attachment</h2>
                             <p className="jr-field-hint mb-4">
                                 {doc
-                                    ? 'Remove the attachment with X, then save. The document title and information remain; Cancel keeps the file.'
+                                    ? page.props.offlineSnapshot === true
+                                        ? 'Edit document details offline. The existing private file is retained; removal requires an online session.'
+                                        : 'Remove the attachment with X, then save. The document title and information remain; Cancel keeps the file.'
                                     : 'Upload one supporting document.'}
                             </p>
                             <DocumentAttachment
@@ -547,7 +549,9 @@ export default function Form(parents: DocumentParents) {
                         </section>
                         <footer className="jr-form-footer">
                             <p>
-                                {page.props.canonicalFrontend === true
+                                {page.props.offlineSnapshot === true
+                                    ? 'Changes are saved locally and synchronized when connected.'
+                                    : page.props.canonicalFrontend === true
                                     ? 'Files remain private. X stages removal; Save Changes confirms permanent deletion. Cancel retains the file.'
                                     : 'Local preview only · files and changes reset on restart.'}
                             </p>

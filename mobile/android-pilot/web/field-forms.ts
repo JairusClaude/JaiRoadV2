@@ -4,7 +4,7 @@ import {
 } from '../../../resources/js/lib/road-coverages/geometry.mjs';
 import type { Fields, Kind, Row, Vault } from './queue';
 
-export type Tab = Kind | 'files';
+export type Tab = Exclude<Kind, 'document'> | 'files';
 export type Choices = [string, string][];
 export const labels: Record<Tab, [string, string]> = {
     project: ['Maintenance Projects', 'project'],
@@ -16,7 +16,8 @@ export const labels: Record<Tab, [string, string]> = {
 
 export function titleFor(kind: Kind, row: Row | Fields) {
     return String(
-        row.road_name ??
+        row.document_title ??
+            row.road_name ??
             row.project_title ??
             (kind === 'record'
                 ? `${row.maintenance_year} · ${row.quarter}`

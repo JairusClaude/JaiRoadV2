@@ -32,67 +32,84 @@ final class AndroidFieldController extends OperationsFrontendController
         abort_unless(in_array($actor['role'], ['Engineer', 'Viewer'], true), 403);
         $engineer = $actor['engineer_id'];
         $canWrite = $engineer !== null && $actor['role'] === 'Engineer' && $this->writable($actor);
-        // The field cache includes recent assigned work and the projects and roads
-        // it references. Other records remain available from the online workspace.
+        // Expanded clients use the same authorized read scope as the online directories.
+        // Prefer assigned work and retain explicit bounded snapshot limits.
+        $expanded = $request->query('profile') === 'expanded';
+        $recordLimit = $expanded ? 600 : 100;
+        $projectLimit = $expanded ? 700 : 150;
+        $roadLimit = $expanded ? 800 : 200;
+        $monthlyLimit = $expanded ? 800 : 100;
+        $fileLimit = $expanded ? 1000 : 200;
         $records = $this->records($actor)
-            ->when($actor['role'] === 'Engineer', fn ($query) => $query->where('m.managing_engineer_id', $engineer))
-            ->orderByDesc('m.updated_at')->orderByDesc('m.id')->limit(101)
+            ->when(! $expanded && $actor['role'] === 'Engineer', fn ($query) => $query->where('m.managing_engineer_id', $engineer))
+            ->when($expanded && $engineer !== null, fn ($query) => $query->orderByRaw('CASE WHEN m.managing_engineer_id = ? THEN 0 ELSE 1 END', [$engineer]))
+            ->orderByDesc('m.updated_at')->orderByDesc('m.id')->limit($recordLimit + 1)
             ->select(['m.id', 'm.project_id', 'm.maintenance_year', 'm.quarter', 'm.start_date',
                 'm.estimated_duration_days', 'm.complete_date', 'm.status', 'm.description', 'm.created_at', 'm.updated_at', 'm.managing_engineer_id', 'e.first_name', 'e.last_name', 'a.username as creator_name'])->selectRaw('m.xmin::text as version')->get();
-        $projects = $this->projects($actor, false)->where(function ($query) use ($records, $actor): void {
-            $query->whereIn('p.id', $records->take(100)->pluck('project_id'));
+        $projectIds = $records->take($recordLimit)->pluck('project_id')->unique()->values();
+        $projects = $this->projects($actor, false)->when(! $expanded, fn ($outer) => $outer->where(function ($query) use ($projectIds, $actor): void {
+            $query->whereIn('p.id', $projectIds);
             if ($actor['role'] === 'Engineer') {
                 $query->orWhere('p.created_by', $actor['account_id']);
             }
-        })->orderByDesc('p.updated_at')->orderByDesc('p.id')->limit(151)
+        }))->when($expanded && $projectIds->isNotEmpty(), fn ($query) => $query->orderByRaw('CASE WHEN p.id IN ('.implode(',', array_fill(0, $projectIds->count(), '?')).') THEN 0 ELSE 1 END', $projectIds->all()))
+            ->orderByDesc('p.updated_at')->orderByDesc('p.id')->limit($projectLimit + 1)
             ->select(['p.id', 'p.project_title', 'p.road_coverage_id', 'p.description', 'p.created_at', 'p.updated_at', 'a.username as creator_name'])->selectRaw('p.xmin::text as version')->get();
-        $roads = DB::table('jairoads_next.road_coverages')->where(function ($query) use ($projects, $engineer): void {
-            $query->whereIn('id', $projects->take(150)->pluck('road_coverage_id'));
+        $linkedRoads = $projects->take($projectLimit)->pluck('road_coverage_id')->unique()->values();
+        $roads = DB::table('jairoads_next.road_coverages')->when(! $expanded, fn ($outer) => $outer->where(function ($query) use ($linkedRoads, $engineer): void {
+            $query->whereIn('id', $linkedRoads);
             if ($engineer !== null) {
                 $query->orWhere('created_by', $engineer);
             }
-        })->orderByDesc('updated_at')->orderByDesc('id')->limit(201)
+        }))->when($expanded && $linkedRoads->isNotEmpty(), fn ($query) => $query->orderByRaw('CASE WHEN id IN ('.implode(',', array_fill(0, $linkedRoads->count(), '?')).') THEN 0 ELSE 1 END', $linkedRoads->all()))
+            ->orderByDesc('updated_at')->orderByDesc('id')->limit($roadLimit + 1)
             ->select(['id', 'road_name', 'lgu_id', 'kilometers', 'pavement_type', 'state_category', 'updated_at', 'created_at', 'created_by'])
             ->selectSub(DB::table('jairoads_next.maintenance_projects')->whereColumn('road_coverage_id', 'road_coverages.id')->orderBy('id')->limit(1)->select('id'), 'linked_project_id')
             ->selectRaw('xmin::text as version')
             ->selectRaw('CASE WHEN octet_length(geojson::text) <= 32768 THEN geojson::text END AS geojson')
             ->get();
-        $roadIds = $roads->take(200)->pluck('id')->all();
-        $visibleProjects = $projects->take(150)->whereIn('road_coverage_id', $roadIds)->values();
-        $visibleRecords = $records->take(100)->whereIn('project_id', $visibleProjects->pluck('id')->all())->values();
+        $roadIds = $roads->take($roadLimit)->pluck('id')->all();
+        $visibleProjects = $projects->take($projectLimit)->whereIn('road_coverage_id', $roadIds)->values();
+        $visibleRecords = $records->take($recordLimit)->whereIn('project_id', $visibleProjects->pluck('id')->all())->values();
 
         // File metadata is scoped to the same authorized record snapshot; no
         // private object paths, keys or signed URLs are sent to the device.
         $recordIds = $visibleRecords->pluck('id')->all();
         $monthly = Schema::hasTable('jairoads_next.monthly_updates')
             ? DB::table('jairoads_next.monthly_updates')->whereIn('maintenance_id', $recordIds)
-                ->orderByDesc('id')->limit(100)->select(['id', 'maintenance_id', 'update_month', 'progress_percentage', 'summary_of_text_reports', 'created_at', 'updated_at'])->selectRaw('xmin::text as version')->get()
+                ->orderByDesc('id')->limit($monthlyLimit + 1)->select(['id', 'maintenance_id', 'update_month', 'progress_percentage', 'summary_of_text_reports', 'created_at', 'updated_at'])->selectRaw('xmin::text as version')->get()
             : collect();
+        $monthlyTruncated = $monthly->count() > $monthlyLimit;
+        $monthly = $monthly->take($monthlyLimit)->values();
         $files = collect();
         if (Schema::hasTable('jairoads_next.maintenance_documents')) {
             $files = $this->documentQuery($actor)->whereIn('d.maintenance_id', $recordIds)
-                ->orderByDesc('d.id')->limit(200)->get()->map(fn (\stdClass $d): array => [
+                ->orderByDesc('d.id')->limit($fileLimit + 1)->selectRaw('d.xmin::text as field_version')->get()->map(fn (\stdClass $d): array => [
                     'kind' => 'document', 'id' => (int) $d->id, 'record' => (int) $d->maintenance_id,
                     'name' => (string) $d->file_name, 'title' => (string) $d->document_title,
-                    'version' => (string) $d->updated_at, 'available' => $d->file_path !== '' && $this->documents->configured(),
+                    'version' => (string) $d->updated_at, 'rowVersion' => (string) $d->field_version, 'available' => $d->file_path !== '' && $this->documents->configured(),
                     'description' => $d->description, 'uploadedAt' => (string) $d->uploaded_at, 'uploader' => (string) $d->uploader_name,
                 ]);
         }
+        $fileTruncated = $files->count() > $fileLimit;
+        $files = $files->take($fileLimit);
         if (Schema::hasTable('jairoads_next.media') && $monthly->isNotEmpty()) {
             $photos = DB::table('jairoads_next.media as m')->join('jairoads_next.monthly_updates as u', 'u.id', '=', 'm.monthly_update_id')
                 ->whereIn('u.id', $monthly->pluck('id'))->whereIn('m.file_type', ['image/jpeg', 'image/png', 'image/webp'])
-                ->orderByDesc('m.id')->limit(200)->get(['m.id', 'm.file_name', 'm.created_at', 'm.file_type', 'm.monthly_update_id', 'u.maintenance_id'])
+                ->orderByDesc('m.id')->limit($fileLimit + 1)->get(['m.id', 'm.file_name', 'm.created_at', 'm.file_type', 'm.monthly_update_id', 'u.maintenance_id'])
                 ->map(fn (\stdClass $p): array => [
                     'kind' => 'media', 'id' => (int) $p->id, 'record' => (int) $p->maintenance_id,
                     'name' => (string) $p->file_name, 'title' => (string) $p->file_name,
                     'version' => (string) $p->created_at, 'available' => $this->media->configured(),
                     'parent' => (int) $p->monthly_update_id, 'mime' => (string) $p->file_type,
                 ]);
-            $files = $files->concat($photos);
+            $fileTruncated = $fileTruncated || $photos->count() > $fileLimit;
+            $files = $files->concat($photos->take($fileLimit));
         }
 
         return response()->json([
             'fileSync' => true,
+            'documentEdit' => true,
             'monthly' => $monthly,
             'files' => $files->values(),
             'accountId' => $actor['account_id'],
@@ -101,11 +118,11 @@ final class AndroidFieldController extends OperationsFrontendController
             'canWrite' => $canWrite,
             'canSync' => $canWrite && Schema::hasTable(self::RECEIPTS),
             'csrfToken' => $request->session()->token(),
-            'truncated' => $visibleRecords->count() < $records->count() || $visibleProjects->count() < $projects->count() || $roads->count() > 200,
+            'truncated' => $visibleRecords->count() < $records->count() || $visibleProjects->count() < $projects->count() || $roads->count() > $roadLimit || $monthlyTruncated || $fileTruncated,
             'municipalities' => DB::table('jairoads_next.lgus')->orderBy('municipality_name')->get(['id', 'municipality_name', 'province', 'region', 'mayor_first_name', 'mayor_middle_name', 'mayor_last_name']),
             'lguAssignments' => DB::table('jairoads_next.engineer_lgus as el')->join('jairoads_next.engineers as e', 'e.id', '=', 'el.engineer_id')
                 ->orderBy('el.lgu_id')->orderBy('e.id')->limit(2001)->get(['el.lgu_id', 'e.id as engineer_id', 'e.first_name', 'e.last_name', 'e.rank', 'el.is_active']),
-            'roads' => $roads->take(200)->values()->map(function (\stdClass $road): \stdClass {
+            'roads' => $roads->take($roadLimit)->values()->map(function (\stdClass $road): \stdClass {
                 $road->geojson = $road->geojson === null ? null : json_decode($road->geojson, true, 64);
 
                 return $road;
@@ -123,10 +140,10 @@ final class AndroidFieldController extends OperationsFrontendController
         $data = $request->validate([
             'account_id' => ['required', 'integer', 'min:1'],
             'operation_id' => ['required', 'uuid'],
-            'kind' => ['required', 'in:road,project,record,monthly'],
-            'id' => ['nullable', 'integer', 'min:1'],
+            'kind' => ['required', 'in:road,project,record,monthly,document'],
+            'id' => ['nullable', 'required_if:kind,document', 'integer', 'min:1'],
             'version' => ['nullable', 'required_with:id', Rule::prohibitedIf(! $request->filled('id')), 'string', 'max:64'],
-            'fields' => ['required', 'array:road_name,lgu_id,kilometers,pavement_type,state_category,geojson,correction_reason,project_title,road_coverage_id,description,project_id,maintenance_year,quarter,start_date,estimated_duration_days,complete_date,status,maintenance_id,update_month,progress_percentage,summary_of_text_reports'],
+            'fields' => ['required', 'array:road_name,lgu_id,kilometers,pavement_type,state_category,geojson,correction_reason,project_title,road_coverage_id,description,project_id,maintenance_year,quarter,start_date,estimated_duration_days,complete_date,status,maintenance_id,update_month,progress_percentage,summary_of_text_reports,document_title'],
         ]);
         abort_unless((int) $data['account_id'] === $actor['account_id'], 403);
         $kind = (string) $data['kind'];
@@ -158,6 +175,7 @@ final class AndroidFieldController extends OperationsFrontendController
                     'project' => $this->operations->saveProject($request, $this->identities, $id),
                     'record' => $this->operations->saveRecord($request, $this->identities, $id),
                     'monthly' => $this->operations->saveUpdate($request, $this->identities, $id),
+                    'document' => $this->operations->updateDocument($request, $this->identities, $id ?? throw ValidationException::withMessages(['id' => 'Existing document required.'])),
                     default => throw ValidationException::withMessages(['kind' => 'Unknown field operation.']),
                 };
                 $savedId = $id ?? $request->attributes->getInt('jairoads.field_saved_id');
@@ -167,6 +185,7 @@ final class AndroidFieldController extends OperationsFrontendController
                     'project' => 'maintenance_projects',
                     'record' => 'maintenance_records',
                     'monthly' => 'monthly_updates',
+                    'document' => 'maintenance_documents',
                 };
                 $version = DB::table('jairoads_next.'.$table)->where('id', $savedId)->selectRaw('xmin::text as version')->first()?->version;
                 abort_unless(is_string($version), 500);
