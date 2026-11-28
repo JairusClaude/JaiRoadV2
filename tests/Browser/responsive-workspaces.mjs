@@ -187,6 +187,7 @@ export async function verifyMobileWorkspaces({
                                 tables
                                     .filter((table) => {
                                         const region = table.parentElement;
+
                                         return (
                                             region.scrollWidth >
                                             region.clientWidth + 1
