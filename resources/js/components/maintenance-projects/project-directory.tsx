@@ -258,7 +258,11 @@ export function ProjectDirectory({
                 tabIndex={0}
             >
                 <table
-                    className={`jr-table${isViewer ? 'jr-project-table-readonly' : ''}`}
+                    className={
+                        isViewer
+                            ? 'jr-table jr-project-table-readonly'
+                            : 'jr-table'
+                    }
                 >
                     <colgroup>
                         <col style={{ width: isViewer ? '65%' : '60%' }} />

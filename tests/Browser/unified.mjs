@@ -406,6 +406,12 @@ try {
             headers: headers.length,
             cells: row?.cells.length,
             headerAlignment: getComputedStyle(last).textAlign,
+            cellPadding: row
+                ? parseFloat(getComputedStyle(row.cells[0]).paddingLeft)
+                : 0,
+            widthDifference: Math.abs(
+                region.clientWidth - table.getBoundingClientRect().width,
+            ),
             gap: Math.abs(
                 table.getBoundingClientRect().right -
                     last.getBoundingClientRect().right,
@@ -416,6 +422,11 @@ try {
     assert.equal(projectLayout.headers, 2);
     assert.equal(projectLayout.cells, 2);
     assert.equal(projectLayout.headerAlignment, 'left');
+    assert.ok(projectLayout.cellPadding > 0, 'Viewer table cells need padding');
+    assert.ok(
+        projectLayout.widthDifference <= 1,
+        'Viewer table must fill its available width',
+    );
     assert.ok(
         projectLayout.gap <= 1,
         'Viewer table must not reserve space for a hidden action column',
